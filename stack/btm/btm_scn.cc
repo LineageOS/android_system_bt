@@ -18,7 +18,7 @@
 
 #include <cstdint>
 #include "stack/btm/btm_int_types.h"  // tBTM_CB
-#include "stack/include/rfcdefs.h"    // BTM_MAX_SCN
+#include "stack/include/rfcdefs.h"    // PORT_MAX_RFC_PORTS
 
 extern tBTM_CB btm_cb;
 
@@ -36,7 +36,7 @@ uint8_t BTM_AllocateSCN(void) {
   BTM_TRACE_DEBUG("BTM_AllocateSCN");
 
   // stack reserves scn 1 for HFP, HSP we still do the correct way
-  for (x = 1; x < BTM_MAX_SCN; x++) {
+  for (x = 1; x < PORT_MAX_RFC_PORTS; x++) {
     if (!btm_cb.btm_scn[x]) {
       btm_cb.btm_scn[x] = true;
       return (x + 1);
@@ -60,7 +60,7 @@ bool BTM_TryAllocateSCN(uint8_t scn) {
   /* Make sure we don't exceed max port range.
    * Stack reserves scn 1 for HFP, HSP we still do the correct way.
    */
-  if ((scn >= BTM_MAX_SCN) || (scn == 1)) return false;
+  if ((scn >= PORT_MAX_RFC_PORTS) || (scn == 1)) return false;
 
   /* check if this port is available */
   if (!btm_cb.btm_scn[scn - 1]) {
@@ -82,7 +82,7 @@ bool BTM_TryAllocateSCN(uint8_t scn) {
  ******************************************************************************/
 bool BTM_FreeSCN(uint8_t scn) {
   BTM_TRACE_DEBUG("BTM_FreeSCN ");
-  if (scn <= BTM_MAX_SCN) {
+  if (scn <= PORT_MAX_RFC_PORTS) {
     btm_cb.btm_scn[scn - 1] = false;
     return (true);
   } else {
