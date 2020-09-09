@@ -121,20 +121,6 @@ typedef struct {
   tBTM_AUTH_REQ loc_auth_req; /* the auth_req flag  */
 } tBTM_DEVCB;
 
-/* Define the structures and constants used for inquiry
- */
-
-/* Definitions of limits for inquiries */
-#define BTM_PER_INQ_MIN_MAX_PERIOD HCI_PER_INQ_MIN_MAX_PERIOD
-#define BTM_PER_INQ_MAX_MAX_PERIOD HCI_PER_INQ_MAX_MAX_PERIOD
-#define BTM_PER_INQ_MIN_MIN_PERIOD HCI_PER_INQ_MIN_MIN_PERIOD
-#define BTM_PER_INQ_MAX_MIN_PERIOD HCI_PER_INQ_MAX_MIN_PERIOD
-#define BTM_MAX_INQUIRY_LENGTH HCI_MAX_INQUIRY_LENGTH
-#define BTM_MIN_INQUIRY_LEN 0x01
-
-#define BTM_MIN_INQ_TX_POWER (-70)
-#define BTM_MAX_INQ_TX_POWER 20
-
 typedef struct {
   uint32_t inq_count; /* Used for determining if a response has already been */
   /* received for the current inquiry operation. (We do not   */
