@@ -23,24 +23,18 @@
  *
  ******************************************************************************/
 
-#include <device/include/esco_parameters.h>
-#include <stack/include/btm_api_types.h>
-#include <string.h>
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bt_types.h"
-#include "bt_utils.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btm_int_types.h"
-#include "btu.h"
+#include <cstdint>
+
 #include "device/include/controller.h"
 #include "device/include/esco_parameters.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btm_api_types.h"
+
+extern tBTM_CB btm_cb;
 
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
