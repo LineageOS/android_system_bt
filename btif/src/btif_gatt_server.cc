@@ -282,7 +282,7 @@ static bt_status_t btif_gatts_unregister_app(int server_if) {
 static void btif_gatts_open_impl(int server_if, const RawAddress& address,
                                  bool is_direct, int transport_param) {
   // Ensure device is in inquiry database
-  int addr_type = 0;
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   int device_type = 0;
   tBT_TRANSPORT transport = BT_TRANSPORT_LE;
 

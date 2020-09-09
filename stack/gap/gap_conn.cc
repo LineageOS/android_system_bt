@@ -77,7 +77,7 @@ typedef struct {
 
 namespace {
 tGAP_CONN conn;
-}
+}  // namespace
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
@@ -239,7 +239,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 
   /* Register the PSM with L2CAP */
   if (transport == BT_TRANSPORT_BR_EDR) {
-    p_ccb->psm = L2CA_Register2(psm, &conn.reg_info, false /* enable_snoop */,
+    p_ccb->psm = L2CA_Register2(psm, conn.reg_info, false /* enable_snoop */,
                                 &p_ccb->ertm_info, L2CAP_MTU_SIZE, security);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
@@ -250,8 +250,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    p_ccb->psm =
-        L2CA_RegisterLECoc(psm, (tL2CAP_APPL_INFO*)&conn.reg_info, security);
+    p_ccb->psm = L2CA_RegisterLECoc(psm, conn.reg_info, security);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);

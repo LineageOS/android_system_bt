@@ -216,7 +216,7 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       flags |= BTSOCK_FLAG_LE_COC;
 
       // Ensure device is in inquiry database
-      int addr_type = 0;
+      tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
       int device_type = 0;
 
       if (btif_get_address_type(*bd_addr, &addr_type) &&

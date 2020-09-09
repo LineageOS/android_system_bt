@@ -23,6 +23,7 @@ flatbuffers::Offset<bluetooth::common::InitFlagsData> bluetooth::dumpsys::InitFl
   auto title = fb_builder->CreateString("----- Init Flags -----");
   common::InitFlagsDataBuilder builder(*fb_builder);
   builder.add_title(title);
+  builder.add_gd_advertising_enabled(bluetooth::common::InitFlags::GdAdvertisingEnabled());
   builder.add_gd_security_enabled(bluetooth::common::InitFlags::GdSecurityEnabled());
   builder.add_gd_acl_enabled(bluetooth::common::InitFlags::GdAclEnabled());
   builder.add_gd_hci_enabled(bluetooth::common::InitFlags::GdHciEnabled());

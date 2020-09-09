@@ -344,7 +344,7 @@ tSMP_STATUS smp_calculate_comfirm(tSMP_CB* p_cb, const Octet16& rand,
                                   Octet16* output) {
   SMP_TRACE_DEBUG("%s", __func__);
   RawAddress remote_bda;
-  tBLE_ADDR_TYPE remote_bd_addr_type = 0;
+  tBLE_ADDR_TYPE remote_bd_addr_type = BLE_ADDR_PUBLIC;
   /* get remote connection specific bluetooth address */
   if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, remote_bda,
                                     &remote_bd_addr_type)) {

@@ -65,7 +65,8 @@ class PyLeSecurity(Closable):
         return display_passkey_capture.get()
 
     def wait_device_disconnect(self, address):
-        assertThat(self._helper_event_stream).emits(SecurityMatchers.HelperMsg(HelperMsgType.DEVICE_DISCONNECTED))
+        assertThat(self._helper_event_stream).emits(
+            SecurityMatchers.HelperMsg(HelperMsgType.DEVICE_DISCONNECTED, address))
 
     def SetLeAuthRequirements(self, *args, **kwargs):
         return self._device.security.SetLeAuthRequirements(LeAuthRequirementsMessage(*args, **kwargs))
