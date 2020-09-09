@@ -66,7 +66,6 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "internal_include/stack_config.h"
-#include "main/shim/btif_dm.h"
 #include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
@@ -248,63 +247,8 @@ static bool is_bonding_or_sdp() {
          (pairing_cb.state == BT_BOND_STATE_BONDED && pairing_cb.sdp_attempts);
 }
 
-static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t bond_state) {
-  btif_stats_add_bond_event(address, BTIF_DM_FUNC_BOND_STATE_CHANGED,
-                            bond_state);
-
-  if (bond_state == BT_BOND_STATE_NONE) {
-    MetricIdAllocator::GetInstance().ForgetDevice(address);
-  } else if (bond_state == BT_BOND_STATE_BONDED) {
-    MetricIdAllocator::GetInstance().AllocateId(address);
-    if (!MetricIdAllocator::GetInstance().SaveDevice(address)) {
-      LOG(FATAL) << __func__ << ": Fail to save metric id for device "
-                 << address;
-    }
-  }
-
-  invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address, bond_state);
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    // TODO(b/165394095): Clean up the callback path and find the uniform place
-    // to start service discovery
-    btif_dm_get_remote_services(address, BT_TRANSPORT_UNKNOWN);
-  }
-}
-
 void btif_dm_init(uid_set_t* set) {
   uid_set = set;
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    bluetooth::shim::BTIF_DM_SetUiCallback([](RawAddress address,
-                                              bt_bdname_t bd_name, uint32_t cod,
-                                              bt_ssp_variant_t pairing_variant,
-                                              uint32_t pass_key) {
-      LOG(ERROR) << __func__ << ": UI Callback fired!";
-
-      // TODO: java BondStateMachine requires change into bonding state. If we
-      // ever send this event separately, consider removing this line
-      invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address,
-                                   BT_BOND_STATE_BONDING);
-
-      if (pairing_variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
-        // For passkey entry we must actually use pin request, due to
-        // BluetoothPairingController (in Settings)
-        invoke_pin_request_cb(address, bd_name, cod, false);
-        return;
-      }
-
-      invoke_ssp_request_cb(address, bd_name, cod, pairing_variant, pass_key);
-    });
-
-    bluetooth::shim::BTIF_RegisterBondStateChangeListener(
-        [](RawAddress address) {
-          btif_dm_send_bond_state_changed(address, BT_BOND_STATE_BONDING);
-        },
-        [](RawAddress address) {
-          btif_dm_send_bond_state_changed(address, BT_BOND_STATE_BONDED);
-        },
-        [](RawAddress address) {
-          btif_dm_send_bond_state_changed(address, BT_BOND_STATE_NONE);
-        });
-  }
 }
 
 void btif_dm_cleanup(void) {
@@ -1996,16 +1940,6 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
                        uint8_t pin_len, bt_pin_code_t pin_code) {
   BTIF_TRACE_EVENT("%s: accept=%d", __func__, accept);
 
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    uint8_t tmp_dev_type = 0;
-    tBLE_ADDR_TYPE tmp_addr_type = BLE_ADDR_PUBLIC;
-    BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
-
-    bluetooth::shim::BTIF_DM_pin_reply(bd_addr, tmp_addr_type, accept, pin_len,
-                                       pin_code);
-    return;
-  }
-
   if (pairing_cb.is_le_only) {
     int i;
     uint32_t passkey = 0;
@@ -2032,15 +1966,6 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
  ******************************************************************************/
 void btif_dm_ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant,
                        uint8_t accept) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    tBT_DEVICE_TYPE tmp_dev_type;
-    tBLE_ADDR_TYPE tmp_addr_type = BLE_ADDR_PUBLIC;
-    BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
-
-    bluetooth::shim::BTIF_DM_ssp_reply(bd_addr, tmp_addr_type, variant, accept);
-    return;
-  }
-
   BTIF_TRACE_EVENT("%s: accept=%d", __func__, accept);
   if (pairing_cb.is_le_only) {
     if (pairing_cb.is_le_nc) {
