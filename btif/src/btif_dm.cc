@@ -647,7 +647,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
 
   int device_type = 0;
-  int addr_type;
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   std::string addrstr = bd_addr.ToString();
   const char* bdstr = addrstr.c_str();
   if (transport == BT_TRANSPORT_LE) {
@@ -659,7 +659,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
       // Try to read address type. OOB pairing might have set it earlier, but
       // didn't store it, it defaults to BLE_ADDR_PUBLIC
       uint8_t tmp_dev_type;
-      uint8_t tmp_addr_type;
+      tBLE_ADDR_TYPE tmp_addr_type = BLE_ADDR_PUBLIC;
       BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
       addr_type = tmp_addr_type;
 
@@ -1179,7 +1179,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
         bt_device_type_t dev_type;
         uint32_t num_properties = 0;
         bt_status_t status;
-        int addr_type = 0;
+        tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
 
         memset(properties, 0, sizeof(properties));
         /* RawAddress */
@@ -1890,7 +1890,8 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, int transport,
   // value.
   if (memcmp(oob_data.le_bt_dev_addr, empty, 7) != 0) {
     /* byte no 7 is address type in LE Bluetooth Address OOB data */
-    uint8_t address_type = oob_data.le_bt_dev_addr[6];
+    tBLE_ADDR_TYPE address_type =
+        static_cast<tBLE_ADDR_TYPE>(oob_data.le_bt_dev_addr[6]);
     if (address_type == BLE_ADDR_PUBLIC || address_type == BLE_ADDR_RANDOM) {
       // bd_addr->address is already reversed, so use it instead of
       // oob_data->le_bt_dev_addr
@@ -2001,7 +2002,7 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
     uint8_t tmp_dev_type = 0;
-    uint8_t tmp_addr_type = 0;
+    tBLE_ADDR_TYPE tmp_addr_type = BLE_ADDR_PUBLIC;
     BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
 
     bluetooth::shim::BTIF_DM_pin_reply(bd_addr, tmp_addr_type, accept, pin_len,
@@ -2036,8 +2037,8 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
 void btif_dm_ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant,
                        uint8_t accept) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    uint8_t tmp_dev_type = 0;
-    uint8_t tmp_addr_type = 0;
+    tBT_DEVICE_TYPE tmp_dev_type;
+    tBLE_ADDR_TYPE tmp_addr_type = BLE_ADDR_PUBLIC;
     BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
 
     bluetooth::shim::BTIF_DM_ssp_reply(bd_addr, tmp_addr_type, variant, accept);
@@ -2436,7 +2437,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
   if (p_auth_cmpl->success) {
     status = BT_STATUS_SUCCESS;
     state = BT_BOND_STATE_BONDED;
-    int addr_type;
+    tBLE_ADDR_TYPE addr_type;
     RawAddress bdaddr = p_auth_cmpl->bd_addr;
     if (btif_storage_get_remote_addr_type(&bdaddr, &addr_type) !=
         BT_STATUS_SUCCESS)
