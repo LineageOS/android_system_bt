@@ -27,10 +27,6 @@
 
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 
-/* Definitions for Server Channel Number (SCN) management
- */
-#define BTM_MAX_SCN PORT_MAX_RFC_PORTS
-
 /* Define masks for supported and exception 2.0 ACL packet types
  */
 #define BTM_ACL_SUPPORTED_PKTS_MASK                                           \
