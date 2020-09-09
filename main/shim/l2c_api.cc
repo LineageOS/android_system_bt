@@ -179,15 +179,6 @@ bool bluetooth::shim::L2CA_GetPeerLECocConfig(uint16_t lcid,
   return false;
 }
 
-/**
- * Channel Data Writes
- */
-bool bluetooth::shim::L2CA_SetConnectionCallbacks(
-    uint16_t cid, const tL2CAP_APPL_INFO* callbacks) {
-  LOG_INFO("Unsupported API %s", __func__);
-  return false;
-}
-
 uint8_t bluetooth::shim::L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
   bool write_success = shim_l2cap.Write(cid, p_data);
   return write_success ? L2CAP_DW_SUCCESS : L2CAP_DW_FAILED;
