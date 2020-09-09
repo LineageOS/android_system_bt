@@ -68,8 +68,8 @@ typedef struct {
   uint16_t lmp_subversion;
   uint16_t manufacturer;
   uint16_t pkt_types_mask;
-  uint8_t active_remote_addr_type;
-  uint8_t conn_addr_type;
+  tBLE_ADDR_TYPE active_remote_addr_type;
+  tBLE_ADDR_TYPE conn_addr_type;
   uint8_t disconnect_reason;
 
  private:
