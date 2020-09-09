@@ -23,6 +23,7 @@
 #include "osi/include/list.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_ble_int_types.h"
+#include "stack/btm/btm_sco.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/btm_ble_api_types.h"
 
