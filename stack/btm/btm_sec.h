@@ -122,7 +122,7 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
  * Parameters:      is_originator - true if originating the connection
  *                  p_name      - Name of the service relevant only if
  *                                authorization will show this name to user.
- *                                Ignored if BTM_SEC_SERVICE_NAME_LEN is 0.
+ *                                Ignored if BT_MAX_SERVICE_NAME_LEN is 0.
  *                  service_id  - service ID for the service passed to
  *                                authorization callback
  *                  sec_level   - bit mask of the security features
