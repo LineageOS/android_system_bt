@@ -454,8 +454,7 @@ class StackRfcommTest : public Test {
     bluetooth::l2cap::SetMockInterface(&l2cap_interface_);
     rfcomm_callback = &rfcomm_callback_;
     EXPECT_CALL(l2cap_interface_, Register(BT_PSM_RFCOMM, _, _, _))
-        .WillOnce(
-            DoAll(SaveArgPointee<1>(&l2cap_appl_info_), Return(BT_PSM_RFCOMM)));
+        .WillOnce(Return(BT_PSM_RFCOMM));
     RFCOMM_Init();
     rfc_cb.trace_level = BT_TRACE_LEVEL_DEBUG;
   }

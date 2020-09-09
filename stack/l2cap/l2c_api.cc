@@ -42,7 +42,7 @@ void btsnd_hcic_enhanced_flush(uint16_t handle,
 
 using base::StringPrintf;
 
-uint16_t L2CA_Register2(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                         uint16_t required_mtu, uint16_t sec_level) {
   auto ret =
@@ -65,7 +65,7 @@ uint16_t L2CA_Register2(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
  *                  L2CA_ErtmConnectReq() and L2CA_Deregister()
  *
  ******************************************************************************/
-uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                        uint16_t required_mtu) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
@@ -83,8 +83,8 @@ uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
   **             for here because it is possible to be only a client
   **             or only a server.
   */
-  if ((!p_cb_info->pL2CA_ConfigCfm_Cb) || (!p_cb_info->pL2CA_ConfigInd_Cb) ||
-      (!p_cb_info->pL2CA_DataInd_Cb) || (!p_cb_info->pL2CA_DisconnectInd_Cb)) {
+  if ((!p_cb_info.pL2CA_ConfigCfm_Cb) || (!p_cb_info.pL2CA_ConfigInd_Cb) ||
+      (!p_cb_info.pL2CA_DataInd_Cb) || (!p_cb_info.pL2CA_DisconnectInd_Cb)) {
     L2CAP_TRACE_ERROR("L2CAP - no cb registering PSM: 0x%04x", psm);
     return (0);
   }
@@ -97,7 +97,7 @@ uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
 
   /* Check if this is a registration for an outgoing-only connection to */
   /* a dynamic PSM. If so, allocate a "virtual" PSM for the app to use. */
-  if ((psm >= 0x1001) && (p_cb_info->pL2CA_ConnectInd_Cb == NULL)) {
+  if ((psm >= 0x1001) && (p_cb_info.pL2CA_ConnectInd_Cb == NULL)) {
     for (vpsm = 0x1002; vpsm < 0x8000; vpsm += 2) {
       p_rcb = l2cu_find_rcb_by_psm(vpsm);
       if (p_rcb == NULL) break;
@@ -119,7 +119,7 @@ uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
   }
 
   p_rcb->log_packets = enable_snoop;
-  p_rcb->api = *p_cb_info;
+  p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
 
   return (vpsm);
@@ -450,7 +450,7 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
  *                  and L2CA_DeregisterLECoc()
  *
  ******************************************************************************/
-uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                             uint16_t sec_level) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info);
@@ -464,7 +464,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
   **             for here because it is possible to be only a client
   **             or only a server.
   */
-  if ((!p_cb_info->pL2CA_DataInd_Cb) || (!p_cb_info->pL2CA_DisconnectInd_Cb)) {
+  if ((!p_cb_info.pL2CA_DataInd_Cb) || (!p_cb_info.pL2CA_DisconnectInd_Cb)) {
     L2CAP_TRACE_ERROR("%s No cb registering BLE PSM: 0x%04x", __func__, psm);
     return 0;
   }
@@ -481,7 +481,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
   /* Check if this is a registration for an outgoing-only connection to */
   /* a dynamic PSM. If so, allocate a "virtual" PSM for the app to use. */
   if ((psm >= LE_DYNAMIC_PSM_START) &&
-      (p_cb_info->pL2CA_ConnectInd_Cb == NULL)) {
+      (p_cb_info.pL2CA_ConnectInd_Cb == NULL)) {
     vpsm = L2CA_AllocateLePSM();
     if (vpsm == 0) {
       L2CAP_TRACE_ERROR("%s: Out of free BLE PSM", __func__);
@@ -504,7 +504,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
     }
   }
 
-  p_rcb->api = *p_cb_info;
+  p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
 
   return vpsm;
