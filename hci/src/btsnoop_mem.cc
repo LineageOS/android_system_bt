@@ -57,6 +57,11 @@ void btsnoop_mem_capture(const BT_HDR* packet, uint64_t timestamp_us) {
     case BT_EVT_TO_BTU_HCI_SCO:
       if (packet->len > 2) length = data[2] + 3;
       break;
+
+    case BT_EVT_TO_LM_HCI_ISO:
+    case BT_EVT_TO_BTU_HCI_ISO:
+      if (packet->len > 3) length = (data[2] | ((data[3] & 0x3f) << 8)) + 4;
+      break;
   }
 
   if (length && data_callback)
