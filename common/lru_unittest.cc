@@ -26,11 +26,11 @@
 
 namespace testing {
 
-using bluetooth::common::LruCache;
+using bluetooth::common::LegacyLruCache;
 
-TEST(BluetoothLruCacheTest, LruCacheMainTest1) {
+TEST(BluetoothLegacyLruCacheTest, LegacyLruCacheMainTest1) {
   int* value = new int(0);
-  LruCache<int, int> cache(3, "testing");  // capacity = 3;
+  LegacyLruCache<int, int> cache(3, "testing");  // capacity = 3;
   cache.Put(1, 10);
   EXPECT_EQ(cache.Size(), 1);
   EXPECT_FALSE(cache.Put(2, 20));
@@ -74,9 +74,9 @@ TEST(BluetoothLruCacheTest, LruCacheMainTest1) {
   EXPECT_EQ(*value, 60);
 }
 
-TEST(BluetoothLruCacheTest, LruCacheMainTest2) {
+TEST(BluetoothLegacyLruCacheTest, LegacyLruCacheMainTest2) {
   int* value = new int(0);
-  LruCache<int, int> cache(2, "testing");  // size = 2;
+  LegacyLruCache<int, int> cache(2, "testing");  // size = 2;
   EXPECT_FALSE(cache.Put(1, 10));
   EXPECT_FALSE(cache.Put(2, 20));
   EXPECT_THAT(cache.Put(3, 30), Optional(Pair(1, 10)));
@@ -126,8 +126,8 @@ TEST(BluetoothLruCacheTest, LruCacheMainTest2) {
   EXPECT_EQ(*value, 50);
 }
 
-TEST(BluetoothLruCacheTest, LruCacheFindTest) {
-  LruCache<int, int> cache(10, "testing");
+TEST(BluetoothLegacyLruCacheTest, LegacyLruCacheFindTest) {
+  LegacyLruCache<int, int> cache(10, "testing");
   cache.Put(1, 10);
   cache.Put(2, 20);
   int value = 0;
@@ -143,8 +143,8 @@ TEST(BluetoothLruCacheTest, LruCacheFindTest) {
   EXPECT_EQ(cache.Find(10), nullptr);
 }
 
-TEST(BluetoothLruCacheTest, LruCacheGetTest) {
-  LruCache<int, int> cache(10, "testing");
+TEST(BluetoothLegacyLruCacheTest, LegacyLruCacheGetTest) {
+  LegacyLruCache<int, int> cache(10, "testing");
   cache.Put(1, 10);
   cache.Put(2, 20);
   int value = 0;
@@ -157,8 +157,8 @@ TEST(BluetoothLruCacheTest, LruCacheGetTest) {
   EXPECT_EQ(value, 10);
 }
 
-TEST(BluetoothLruCacheTest, LruCacheRemoveTest) {
-  LruCache<int, int> cache(10, "testing");
+TEST(BluetoothLegacyLruCacheTest, LegacyLruCacheRemoveTest) {
+  LegacyLruCache<int, int> cache(10, "testing");
   for (int key = 0; key <= 30; key++) {
     cache.Put(key, key * 100);
   }
@@ -176,8 +176,8 @@ TEST(BluetoothLruCacheTest, LruCacheRemoveTest) {
   }
 }
 
-TEST(BluetoothLruCacheTest, LruCacheClearTest) {
-  LruCache<int, int> cache(10, "testing");
+TEST(BluetoothLegacyLruCacheTest, LegacyLruCacheClearTest) {
+  LegacyLruCache<int, int> cache(10, "testing");
   for (int key = 0; key < 10; key++) {
     cache.Put(key, key * 100);
   }
@@ -197,10 +197,10 @@ TEST(BluetoothLruCacheTest, LruCacheClearTest) {
   }
 }
 
-TEST(BluetoothLruCacheTest, LruCachePressureTest) {
+TEST(BluetoothLegacyLruCacheTest, LegacyLruCachePressureTest) {
   auto started = std::chrono::high_resolution_clock::now();
   int max_size = 0xFFFFF;  // 2^20 = 1M
-  LruCache<int, int> cache(static_cast<size_t>(max_size), "testing");
+  LegacyLruCache<int, int> cache(static_cast<size_t>(max_size), "testing");
 
   // fill the cache
   for (int key = 0; key < max_size; key++) {
@@ -239,8 +239,8 @@ TEST(BluetoothLruCacheTest, LruCachePressureTest) {
   EXPECT_LT(execution_time, 10000);
 }
 
-TEST(BluetoothLruCacheTest, BluetoothLruMultiThreadPressureTest) {
-  LruCache<int, int> cache(100, "testing");
+TEST(BluetoothLegacyLruCacheTest, BluetoothLruMultiThreadPressureTest) {
+  LegacyLruCache<int, int> cache(100, "testing");
   auto pointer = &cache;
   // make sure no deadlock
   std::vector<std::thread> workers;

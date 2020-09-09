@@ -33,7 +33,7 @@ namespace bluetooth {
 namespace common {
 
 template <typename K, typename V>
-class LruCache {
+class LegacyLruCache {
  public:
   using Node = std::pair<K, V>;
   /**
@@ -42,7 +42,7 @@ class LruCache {
    * @param capacity maximum size of the cache
    * @param log_tag, keyword to put at the head of log.
    */
-  LruCache(const size_t& capacity, const std::string& log_tag)
+  LegacyLruCache(const size_t& capacity, const std::string& log_tag)
       : capacity_(capacity) {
     if (capacity_ == 0) {
       // don't allow invalid capacity
@@ -51,10 +51,10 @@ class LruCache {
   }
 
   // delete copy constructor
-  LruCache(LruCache const&) = delete;
-  LruCache& operator=(LruCache const&) = delete;
+  LegacyLruCache(LegacyLruCache const&) = delete;
+  LegacyLruCache& operator=(LegacyLruCache const&) = delete;
 
-  ~LruCache() { Clear(); }
+  ~LegacyLruCache() { Clear(); }
 
   /**
    * Clear the cache
