@@ -901,7 +901,6 @@ uint16_t SDP_GetDiRecord(uint8_t get_record_index,
  ******************************************************************************/
 uint16_t SDP_SetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
                               uint32_t* p_handle) {
-#if (SDP_SERVER_ENABLED == TRUE)
   uint16_t result = SDP_SUCCESS;
   uint32_t handle;
   uint16_t di_uuid = UUID_SERVCLASS_PNP_INFORMATION;
@@ -1026,9 +1025,6 @@ uint16_t SDP_SetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
     sdp_cb.server_db.di_primary_handle = handle;
 
   return result;
-#else  /* SDP_SERVER_ENABLED is FALSE */
-  return SDP_DI_REG_FAILED;
-#endif /* if SDP_SERVER_ENABLED */
 }
 
 /*******************************************************************************

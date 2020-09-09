@@ -652,11 +652,6 @@
  *
  *****************************************************************************/
 
-/* This is set to enable SDP server functionality. */
-#ifndef SDP_SERVER_ENABLED
-#define SDP_SERVER_ENABLED TRUE
-#endif
-
 /* The maximum number of SDP records the server can support. */
 #ifndef SDP_MAX_RECORDS
 #define SDP_MAX_RECORDS 30
