@@ -1500,7 +1500,7 @@ void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
 
   /* Save the info */
   p_cur->inq_result_type |= BTM_INQ_RESULT_BLE;
-  p_cur->ble_addr_type = addr_type;
+  p_cur->ble_addr_type = static_cast<tBLE_ADDR_TYPE>(addr_type);
   p_cur->rssi = rssi;
   p_cur->ble_primary_phy = primary_phy;
   p_cur->ble_secondary_phy = secondary_phy;
