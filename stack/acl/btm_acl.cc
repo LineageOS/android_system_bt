@@ -75,6 +75,23 @@ StackAclBtmAcl internal_;
 
 #define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS 3
 
+/* Define masks for supported and exception 2.0 ACL packet types
+ */
+#define BTM_ACL_SUPPORTED_PKTS_MASK                                           \
+  (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM3 | \
+   HCI_PKT_TYPES_MASK_DH3 | HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5)
+
+#define BTM_ACL_EXCEPTION_PKTS_MASK                            \
+  (HCI_PKT_TYPES_MASK_NO_2_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH1 | \
+   HCI_PKT_TYPES_MASK_NO_2_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH3 | \
+   HCI_PKT_TYPES_MASK_NO_2_DH5 | HCI_PKT_TYPES_MASK_NO_3_DH5)
+
+#define BTM_EPR_AVAILABLE(p)                                        \
+  ((HCI_ATOMIC_ENCRYPT_SUPPORTED((p)->peer_lmp_feature_pages[0]) && \
+    controller_get_interface()->supports_encryption_pause())        \
+       ? true                                                       \
+       : false)
+
 extern tBTM_CB btm_cb;
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
