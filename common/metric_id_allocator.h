@@ -119,8 +119,8 @@ class MetricIdAllocator {
   static const std::string LOGGING_TAG;
   mutable std::mutex id_allocator_mutex_;
 
-  LruCache<RawAddress, int> paired_device_cache_;
-  LruCache<RawAddress, int> temporary_device_cache_;
+  LegacyLruCache<RawAddress, int> paired_device_cache_;
+  LegacyLruCache<RawAddress, int> temporary_device_cache_;
   std::unordered_set<int> id_set_;
 
   int next_id_{kMinId};

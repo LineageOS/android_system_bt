@@ -27,10 +27,6 @@
 
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 
-/* Definitions for Server Channel Number (SCN) management
- */
-#define BTM_MAX_SCN PORT_MAX_RFC_PORTS
-
 /* Define masks for supported and exception 2.0 ACL packet types
  */
 #define BTM_ACL_SUPPORTED_PKTS_MASK                                           \
@@ -121,20 +117,6 @@ typedef struct {
   tBTM_AUTH_REQ loc_auth_req; /* the auth_req flag  */
 } tBTM_DEVCB;
 
-/* Define the structures and constants used for inquiry
- */
-
-/* Definitions of limits for inquiries */
-#define BTM_PER_INQ_MIN_MAX_PERIOD HCI_PER_INQ_MIN_MAX_PERIOD
-#define BTM_PER_INQ_MAX_MAX_PERIOD HCI_PER_INQ_MAX_MAX_PERIOD
-#define BTM_PER_INQ_MIN_MIN_PERIOD HCI_PER_INQ_MIN_MIN_PERIOD
-#define BTM_PER_INQ_MAX_MIN_PERIOD HCI_PER_INQ_MAX_MIN_PERIOD
-#define BTM_MAX_INQUIRY_LENGTH HCI_MAX_INQUIRY_LENGTH
-#define BTM_MIN_INQUIRY_LEN 0x01
-
-#define BTM_MIN_INQ_TX_POWER (-70)
-#define BTM_MAX_INQ_TX_POWER 20
-
 typedef struct {
   uint32_t inq_count; /* Used for determining if a response has already been */
   /* received for the current inquiry operation. (We do not   */
@@ -159,121 +141,8 @@ typedef struct {
 enum { INQ_NONE, INQ_GENERAL };
 typedef uint8_t tBTM_INQ_TYPE;
 
-typedef struct {
-  tBTM_CMPL_CB* p_remname_cmpl_cb;
-
-#define BTM_EXT_RMT_NAME_TIMEOUT_MS (40 * 1000) /* 40 seconds */
-
-  alarm_t* remote_name_timer;
-
-  uint16_t discoverable_mode;
-  uint16_t connectable_mode;
-  uint16_t page_scan_window;
-  uint16_t page_scan_period;
-  uint16_t inq_scan_window;
-  uint16_t inq_scan_period;
-  uint16_t inq_scan_type;
-  uint16_t page_scan_type; /* current page scan type */
-
-  RawAddress remname_bda; /* Name of bd addr for active remote name request */
-#define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */
-  bool remname_active; /* State of a remote name request by external API */
-
-  tBTM_CMPL_CB* p_inq_cmpl_cb;
-  tBTM_INQ_RESULTS_CB* p_inq_results_cb;
-  uint32_t inq_counter; /* Counter incremented each time an inquiry completes */
-  /* Used for determining whether or not duplicate devices */
-  /* have responded to the same inquiry */
-  tINQ_BDADDR* p_bd_db;    /* Pointer to memory that holds bdaddrs */
-  uint16_t num_bd_entries; /* Number of entries in database */
-  uint16_t max_bd_entries; /* Maximum number of entries that can be stored */
-  tINQ_DB_ENT inq_db[BTM_INQ_DB_SIZE];
-  tBTM_INQ_PARMS inqparms; /* Contains the parameters for the current inquiry */
-  tBTM_INQUIRY_CMPL
-      inq_cmpl_info; /* Status and number of responses from the last inquiry */
-
-  uint16_t per_min_delay; /* Current periodic minimum delay */
-  uint16_t per_max_delay; /* Current periodic maximum delay */
-  /* inquiry that has been cancelled*/
-  uint8_t inqfilt_type; /* Contains the inquiry filter type (BD ADDR, COD, or
-                           Clear) */
-
-#define BTM_INQ_INACTIVE_STATE 0
-#define BTM_INQ_ACTIVE_STATE \
-  3 /* Actual inquiry or periodic inquiry is in progress */
-
-  uint8_t state;      /* Current state that the inquiry process is in */
-  uint8_t inq_active; /* Bit Mask indicating type of inquiry is active */
-  bool no_inc_ssp;    /* true, to stop inquiry on incoming SSP */
-} tBTM_INQUIRY_VAR_ST;
-
 /* The MSB of the clock offset field indicates whether the offset is valid. */
 #define BTM_CLOCK_OFFSET_VALID 0x8000
-
-/* Define the structures needed by security management
- */
-
-typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
-
-/* MACROs to convert from SCO packet types mask to ESCO and back */
-#define BTM_SCO_PKT_TYPE_MASK \
-  (HCI_PKT_TYPES_MASK_HV1 | HCI_PKT_TYPES_MASK_HV2 | HCI_PKT_TYPES_MASK_HV3)
-
-/* Mask defining only the SCO types of an esco packet type */
-#define BTM_ESCO_PKT_TYPE_MASK \
-  (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | ESCO_PKT_TYPES_MASK_HV3)
-
-#define BTM_ESCO_2_SCO(escotype) \
-  ((uint16_t)(((escotype)&BTM_ESCO_PKT_TYPE_MASK) << 5))
-
-/* Define masks for supported and exception 2.0 SCO packet types
- */
-#define BTM_SCO_SUPPORTED_PKTS_MASK                    \
-  (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | \
-   ESCO_PKT_TYPES_MASK_HV3 | ESCO_PKT_TYPES_MASK_EV3 | \
-   ESCO_PKT_TYPES_MASK_EV4 | ESCO_PKT_TYPES_MASK_EV5)
-
-#define BTM_SCO_EXCEPTION_PKTS_MASK                              \
-  (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
-   ESCO_PKT_TYPES_MASK_NO_2_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV5)
-
-/* Define the structure that contains (e)SCO data */
-typedef struct {
-  tBTM_ESCO_CBACK* p_esco_cback; /* Callback for eSCO events     */
-  enh_esco_params_t setup;
-  tBTM_ESCO_DATA data; /* Connection complete information */
-  uint8_t hci_status;
-} tBTM_ESCO_INFO;
-
-/* Define the structure used for SCO Management
- */
-typedef struct {
-  tBTM_ESCO_INFO esco;    /* Current settings             */
-  tBTM_SCO_CB* p_conn_cb; /* Callback for when connected  */
-  tBTM_SCO_CB* p_disc_cb; /* Callback for when disconnect */
-  uint16_t state;         /* The state of the SCO link    */
-  uint16_t hci_handle;    /* HCI Handle                   */
-  bool is_orig;           /* true if the originator       */
-  bool rem_bd_known;      /* true if remote BD addr known */
-
-} tSCO_CONN;
-
-/* SCO Management control block */
-typedef struct {
-  tBTM_SCO_IND_CBACK* app_sco_ind_cb;
-  tSCO_CONN sco_db[BTM_MAX_SCO_LINKS];
-  enh_esco_params_t def_esco_parms;
-  uint16_t sco_disc_reason;
-  bool esco_supported;        /* true if 1.2 cntlr AND supports eSCO links */
-  esco_data_path_t sco_route; /* HCI, PCM, or TEST */
-} tSCO_CB;
-
-extern void btm_set_sco_ind_cback(tBTM_SCO_IND_CBACK* sco_ind_cb);
-extern void btm_accept_sco_link(uint16_t sco_inx, enh_esco_params_t* p_setup,
-                                tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb);
-extern void btm_reject_sco_link(uint16_t sco_inx);
-extern void btm_sco_chk_pend_rolechange(uint16_t hci_handle);
-extern void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle);
 
 /*
  * Define structure for Security Service Record.

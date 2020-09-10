@@ -23,24 +23,18 @@
  *
  ******************************************************************************/
 
-#include <device/include/esco_parameters.h>
-#include <stack/include/btm_api_types.h>
-#include <string.h>
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bt_types.h"
-#include "bt_utils.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btm_int_types.h"
-#include "btu.h"
+#include <cstdint>
+
 #include "device/include/controller.h"
 #include "device/include/esco_parameters.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btm_api_types.h"
+
+extern tBTM_CB btm_cb;
 
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
@@ -55,6 +49,31 @@
 #define SCO_ST_PEND_UNPARK 6
 #define SCO_ST_PEND_ROLECHANGE 7
 #define SCO_ST_PEND_MODECHANGE 8
+
+#define BTM_SCO_PKT_TYPE_MASK \
+  (HCI_PKT_TYPES_MASK_HV1 | HCI_PKT_TYPES_MASK_HV2 | HCI_PKT_TYPES_MASK_HV3)
+
+/* MACROs to convert from SCO packet types mask to ESCO and back */
+#define BTM_SCO_PKT_TYPE_MASK \
+  (HCI_PKT_TYPES_MASK_HV1 | HCI_PKT_TYPES_MASK_HV2 | HCI_PKT_TYPES_MASK_HV3)
+
+/* Mask defining only the SCO types of an esco packet type */
+#define BTM_ESCO_PKT_TYPE_MASK \
+  (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | ESCO_PKT_TYPES_MASK_HV3)
+
+#define BTM_ESCO_2_SCO(escotype) \
+  ((uint16_t)(((escotype)&BTM_ESCO_PKT_TYPE_MASK) << 5))
+
+/* Define masks for supported and exception 2.0 SCO packet types
+ */
+#define BTM_SCO_SUPPORTED_PKTS_MASK                    \
+  (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | \
+   ESCO_PKT_TYPES_MASK_HV3 | ESCO_PKT_TYPES_MASK_EV3 | \
+   ESCO_PKT_TYPES_MASK_EV4 | ESCO_PKT_TYPES_MASK_EV5)
+
+#define BTM_SCO_EXCEPTION_PKTS_MASK                              \
+  (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
+   ESCO_PKT_TYPES_MASK_NO_2_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV5)
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
