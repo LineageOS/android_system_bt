@@ -18,7 +18,6 @@
 
 #include <base/logging.h>
 
-#include "osi/include/log.h"
 #include "service/logging_helpers.h"
 #include "stack/include/bt_types.h"
 
@@ -120,7 +119,6 @@ bool GattServer::SendResponse(const std::string& device_address, int request_id,
   }
 
   if (offset < 0) {
-    android_errorWriteLog(0x534e4554, "143231677");
     LOG(ERROR) << "Offset is less than 0 offset: " << offset;
     return false;
   }

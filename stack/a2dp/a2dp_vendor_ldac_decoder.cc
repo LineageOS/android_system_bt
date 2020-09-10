@@ -203,19 +203,10 @@ void a2dp_vendor_ldac_decoder_cleanup(void) {
 
 bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf) {
   pthread_mutex_lock(&(a2dp_ldac_decoder_cb.mutex));
-  if (p_buf == nullptr) {
-    LOG_ERROR("%s Dropping packet with nullptr", __func__);
-    return false;
-  }
   unsigned char* pBuffer =
       reinterpret_cast<unsigned char*>(p_buf->data + p_buf->offset);
   //  unsigned int bufferSize = p_buf->len;
   unsigned int bytesValid = p_buf->len;
-  if (bytesValid == 0) {
-    LOG_WARN("%s Dropping packet with zero length", __func__);
-    return false;
-  }
-
   LDACBT_SMPL_FMT_T fmt;
   int bs_bytes, frame_number;
 
