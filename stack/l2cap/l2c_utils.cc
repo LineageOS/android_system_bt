@@ -2202,6 +2202,10 @@ bool l2cu_lcb_disconnecting(void) {
  *
  ******************************************************************************/
 
+#define BTM_IS_BRCM_CONTROLLER()                                 \
+  (controller_get_interface()->get_bt_version()->manufacturer == \
+   LMP_COMPID_BROADCOM)
+
 bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
                            bool reset_after_rs) {
   tL2C_LCB* p_lcb;
