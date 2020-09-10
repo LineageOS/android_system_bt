@@ -45,6 +45,7 @@
 #include "hcimsgs.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
+#include "stack/include/acl_api.h"
 
 using bluetooth::Uuid;
 
