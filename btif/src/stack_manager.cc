@@ -33,6 +33,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/semaphore.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/btu.h"
 
 // Temp includes
