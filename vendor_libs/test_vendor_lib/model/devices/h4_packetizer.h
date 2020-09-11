@@ -19,14 +19,21 @@
 #include <functional>
 #include <vector>
 
-#include "hci.h"
 #include "hci_protocol.h"
 
 namespace test_vendor_lib {
-namespace hci {
 
 using HciPacketReadyCallback = std::function<void(void)>;
 using ClientDisconnectCallback = std::function<void()>;
+
+enum class PacketType : uint8_t {
+  UNKNOWN = 0,
+  COMMAND = 1,
+  ACL = 2,
+  SCO = 3,
+  EVENT = 4,
+  ISO = 5,
+};
 
 class H4Packetizer : public HciProtocol {
  public:
@@ -71,7 +78,10 @@ class H4Packetizer : public HciProtocol {
   ClientDisconnectCallback disconnect_cb_;
   bool disconnected_{false};
 
-  hci::PacketType hci_packet_type_{hci::PacketType::UNKNOWN};
+  size_t HciGetPacketLengthForType(PacketType type,
+                                   const uint8_t* preamble) const;
+
+  PacketType hci_packet_type_{PacketType::UNKNOWN};
 
   enum State { HCI_TYPE, HCI_PREAMBLE, HCI_PAYLOAD };
   State state_{HCI_TYPE};
@@ -80,5 +90,4 @@ class H4Packetizer : public HciProtocol {
   size_t bytes_read_{0};
 };
 
-}  // namespace hci
 }  // namespace test_vendor_lib

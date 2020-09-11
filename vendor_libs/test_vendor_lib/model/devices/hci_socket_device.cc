@@ -71,13 +71,15 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
       't',
   });
 
-  h4_ = hci::H4Packetizer(
+  h4_ = H4Packetizer(
       socket_file_descriptor_,
       [this](const std::vector<uint8_t>& raw_command) {
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_command);
         HandleCommand(packet_copy);
       },
-      [](const std::vector<uint8_t>&) { LOG_ALWAYS_FATAL("Unexpected Event in HciSocketDevice!"); },
+      [](const std::vector<uint8_t>&) {
+        LOG_ALWAYS_FATAL("Unexpected Event in HciSocketDevice!");
+      },
       [this](const std::vector<uint8_t>& raw_acl) {
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_acl);
         HandleAcl(packet_copy);
@@ -93,10 +95,14 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
       });
 
   RegisterEventChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
-    SendHci(hci::PacketType::EVENT, packet);
+    SendHci(PacketType::EVENT, packet);
   });
-  RegisterAclChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) { SendHci(hci::PacketType::ACL, packet); });
-  RegisterScoChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) { SendHci(hci::PacketType::SCO, packet); });
+  RegisterAclChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
+    SendHci(PacketType::ACL, packet);
+  });
+  RegisterScoChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
+    SendHci(PacketType::SCO, packet);
+  });
 }
 
 void HciSocketDevice::TimerTick() {
@@ -104,7 +110,9 @@ void HciSocketDevice::TimerTick() {
   DualModeController::TimerTick();
 }
 
-void HciSocketDevice::SendHci(hci::PacketType packet_type, const std::shared_ptr<std::vector<uint8_t>> packet) {
+void HciSocketDevice::SendHci(
+    PacketType packet_type,
+    const std::shared_ptr<std::vector<uint8_t>> packet) {
   if (socket_file_descriptor_ == -1) {
     LOG_INFO("Closed socket. Dropping packet of type %d",
              static_cast<int>(packet_type));
