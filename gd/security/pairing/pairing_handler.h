@@ -17,10 +17,12 @@
  */
 #pragma once
 
+#include <neighbor/name_db.h>
 #include <utility>
 
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
+#include "neighbor/name_db.h"
 #include "security/channel/security_manager_channel.h"
 #include "security/record/security_record.h"
 #include "security/smp_packets.h"
@@ -37,9 +39,13 @@ namespace pairing {
  */
 class PairingHandler : public UICallbacks {
  public:
-  PairingHandler(channel::SecurityManagerChannel* security_manager_channel,
-                 std::shared_ptr<record::SecurityRecord> record)
-      : security_manager_channel_(security_manager_channel), record_(std::move(record)) {}
+  PairingHandler(
+      channel::SecurityManagerChannel* security_manager_channel,
+      std::shared_ptr<record::SecurityRecord> record,
+      neighbor::NameDbModule* name_db_module)
+      : security_manager_channel_(security_manager_channel),
+        record_(std::move(record)),
+        name_db_module_(name_db_module) {}
   virtual ~PairingHandler() = default;
 
   // Classic
@@ -74,10 +80,14 @@ class PairingHandler : public UICallbacks {
   channel::SecurityManagerChannel* GetChannel() {
     return security_manager_channel_;
   }
+  neighbor::NameDbModule* GetNameDbModule() {
+    return name_db_module_;
+  }
 
  private:
   channel::SecurityManagerChannel* security_manager_channel_ __attribute__((unused));
   std::shared_ptr<record::SecurityRecord> record_ __attribute__((unused));
+  neighbor::NameDbModule* name_db_module_;
 };
 
 }  // namespace pairing
