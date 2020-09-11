@@ -39,64 +39,6 @@ typedef struct {
 
 } tBTM_LE_CONN_PRAMS;
 
-/* Define the Device Management control structure
- */
-typedef struct {
-  tBTM_VS_EVT_CB* p_vend_spec_cb[BTM_MAX_VSE_CALLBACKS]; /* Register for vendor
-                                                            specific events  */
-
-  tBTM_CMPL_CB*
-      p_stored_link_key_cmpl_cb; /* Read/Write/Delete stored link key    */
-
-  alarm_t* read_local_name_timer; /* Read local name timer */
-  tBTM_CMPL_CB* p_rln_cmpl_cb;    /* Callback function to be called when  */
-                                  /* read local name function complete    */
-
-  alarm_t* read_rssi_timer;     /* Read RSSI timer */
-  tBTM_CMPL_CB* p_rssi_cmpl_cb; /* Callback function to be called when  */
-                                /* read RSSI function completes */
-
-  alarm_t* read_failed_contact_counter_timer; /* Read Failed Contact Counter */
-                                              /* timer */
-  tBTM_CMPL_CB* p_failed_contact_counter_cmpl_cb; /* Callback function to be */
-  /* called when read Failed Contact Counter function completes */
-
-  alarm_t*
-      read_automatic_flush_timeout_timer; /* Read Automatic Flush Timeout */
-                                          /* timer */
-  tBTM_CMPL_CB* p_automatic_flush_timeout_cmpl_cb; /* Callback function to be */
-  /* called when read Automatic Flush Timeout function completes */
-
-  alarm_t* read_link_quality_timer;
-  tBTM_CMPL_CB* p_link_qual_cmpl_cb; /* Callback function to be called when  */
-                                     /* read link quality function completes */
-
-  alarm_t* read_tx_power_timer;     /* Read tx power timer */
-  tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
-
-  DEV_CLASS dev_class; /* Local device class                   */
-
-  tBTM_CMPL_CB*
-      p_le_test_cmd_cmpl_cb; /* Callback function to be called when
-                             LE test mode command has been sent successfully */
-
-  RawAddress read_tx_pwr_addr; /* read TX power target address     */
-
-  tBTM_BLE_LOCAL_ID_KEYS id_keys;   /* local BLE ID keys */
-  Octet16 ble_encryption_key_value; /* BLE encryption key */
-
-#if (BTM_BLE_CONFORMANCE_TESTING == TRUE)
-  bool no_disc_if_pair_fail;
-  bool enable_test_mac_val;
-  BT_OCTET8 test_mac;
-  bool enable_test_local_sign_cntr;
-  uint32_t test_local_sign_cntr;
-#endif
-
-  tBTM_IO_CAP loc_io_caps;    /* IO capability of the local device */
-  tBTM_AUTH_REQ loc_auth_req; /* the auth_req flag  */
-} tBTM_DEVCB;
-
 typedef struct {
   uint32_t inq_count; /* Used for determining if a response has already been */
   /* received for the current inquiry operation. (We do not   */
