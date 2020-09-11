@@ -27,23 +27,6 @@
 
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 
-/* Define masks for supported and exception 2.0 ACL packet types
- */
-#define BTM_ACL_SUPPORTED_PKTS_MASK                                           \
-  (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM3 | \
-   HCI_PKT_TYPES_MASK_DH3 | HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5)
-
-#define BTM_ACL_EXCEPTION_PKTS_MASK                            \
-  (HCI_PKT_TYPES_MASK_NO_2_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH1 | \
-   HCI_PKT_TYPES_MASK_NO_2_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH3 | \
-   HCI_PKT_TYPES_MASK_NO_2_DH5 | HCI_PKT_TYPES_MASK_NO_3_DH5)
-
-#define BTM_EPR_AVAILABLE(p)                                        \
-  ((HCI_ATOMIC_ENCRYPT_SUPPORTED((p)->peer_lmp_feature_pages[0]) && \
-    controller_get_interface()->supports_encryption_pause())        \
-       ? true                                                       \
-       : false)
-
 #define BTM_IS_BRCM_CONTROLLER()                                 \
   (controller_get_interface()->get_bt_version()->manufacturer == \
    LMP_COMPID_BROADCOM)
@@ -219,8 +202,11 @@ typedef struct {
 } tBTM_SEC_BLE;
 
 /* Peering bond type */
-enum { BOND_TYPE_UNKNOWN, BOND_TYPE_PERSISTENT, BOND_TYPE_TEMPORARY };
-typedef uint8_t tBTM_BOND_TYPE;
+typedef enum : uint8_t {
+  BOND_TYPE_UNKNOWN = 0,
+  BOND_TYPE_PERSISTENT = 1,
+  BOND_TYPE_TEMPORARY = 2
+} tBTM_BOND_TYPE;
 
 /*
  * Define structure for Security Device Record.
