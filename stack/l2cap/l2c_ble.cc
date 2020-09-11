@@ -36,7 +36,6 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack_config.h"
 
@@ -71,7 +70,7 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
     }
   }
 
-  connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, rem_bda);
+  acl_cancel_le_connection(rem_bda);
 
   /* Do not remove lcb if an LE link is already up as a peripheral */
   if (p_lcb != NULL && !(p_lcb->IsLinkRoleSlave() &&
@@ -773,9 +772,9 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 /** This function is to initate a direct connection. Returns true if connection
  * initiated, false otherwise. */
 bool l2cble_create_conn(tL2C_LCB* p_lcb) {
-  bool ret = connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP,
-                                                    p_lcb->remote_bd_addr);
-  if (!ret) return ret;
+  if (!acl_create_le_connection(p_lcb->remote_bd_addr)) {
+    return false;
+  }
 
   p_lcb->link_state = LST_CONNECTING;
 
