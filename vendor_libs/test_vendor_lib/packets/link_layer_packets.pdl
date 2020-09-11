@@ -39,6 +39,8 @@ enum PacketType : 8 {
     LE_ENCRYPT_CONNECTION = 0x20,
     LE_ENCRYPT_CONNECTION_RESPONSE = 0x21,
     ISO = 0x22,
+    ISO_CONNECTION_REQUEST = 0x23,
+    ISO_CONNECTION_RESPONSE = 0x24,
 }
 
 packet LinkLayerPacket {
@@ -249,10 +251,14 @@ enum Complete : 1 {
 }
 
 packet IsoDataPacket : LinkLayerPacket (type = ISO) {
+  handle : 12,
+  _reserved_ : 4,
+  remote_handle : 12,
+  _reserved_ : 4,
   sc : StartContinuation,
   cmplt : Complete,
   _reserved_ : 6,
-  _size_(_payload_) : 8,
+  _size_(_payload_) : 16,
   _payload_,
 }
 
@@ -263,4 +269,33 @@ packet IsoStart : IsoDataPacket (sc = START) {
 
 packet IsoContinuation : IsoDataPacket (sc = CONTINUATION) {
   _payload_,
+}
+
+packet IsoConnectionRequest : LinkLayerPacket (type = ISO_CONNECTION_REQUEST) {
+  // Group
+  cig_id : 8,
+  sdu_interval_m_to_s : 32,
+  sdu_interval_s_to_m : 32,
+  interleaved : 1,
+  framed : 1,
+  _reserved_ : 6,
+  latency_m_to_s : 16,
+  latency_s_to_m : 16,
+  // Stream parameters
+  id : 8,
+  max_sdu_m_to_s_ : 16,
+  max_sdu_s_to_m_ : 16,
+  // For the response
+  requester_cis_handle : 12,
+  _reserved_ : 4,
+  requester_acl_handle : 12,
+  _reserved_ : 4,
+}
+
+packet IsoConnectionResponse  : LinkLayerPacket (type = ISO_CONNECTION_RESPONSE){
+  status : 8, // ErrorCode (SUCCESS == connected)
+  requester_cis_handle : 12,
+  _reserved_ : 4,
+  requester_acl_handle : 12,
+  _reserved_ : 4,
 }

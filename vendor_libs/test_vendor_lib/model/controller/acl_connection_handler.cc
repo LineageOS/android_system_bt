@@ -29,18 +29,15 @@ using ::bluetooth::hci::AddressType;
 using ::bluetooth::hci::AddressWithType;
 
 bool AclConnectionHandler::HasHandle(uint16_t handle) const {
-  if (acl_connections_.count(handle) == 0) {
-    return false;
-  }
-  return true;
+  return acl_connections_.count(handle) != 0;
 }
 
 uint16_t AclConnectionHandler::GetUnusedHandle() {
-  while (acl_connections_.count(last_handle_) == 1) {
-    last_handle_ = (last_handle_ + 1) % acl::kReservedHandle;
+  while (HasHandle(last_handle_)) {
+    last_handle_ = (last_handle_ + 1) % kReservedHandle;
   }
   uint16_t unused_handle = last_handle_;
-  last_handle_ = (last_handle_ + 1) % acl::kReservedHandle;
+  last_handle_ = (last_handle_ + 1) % kReservedHandle;
   return unused_handle;
 }
 
@@ -119,7 +116,7 @@ uint16_t AclConnectionHandler::CreateConnection(Address addr,
             Phy::Type::BR_EDR});
     return handle;
   }
-  return acl::kReservedHandle;
+  return kReservedHandle;
 }
 
 uint16_t AclConnectionHandler::CreateLeConnection(AddressWithType addr,
@@ -130,7 +127,7 @@ uint16_t AclConnectionHandler::CreateLeConnection(AddressWithType addr,
         handle, AclConnection{addr, own_addr, Phy::Type::LOW_ENERGY});
     return handle;
   }
-  return acl::kReservedHandle;
+  return kReservedHandle;
 }
 
 bool AclConnectionHandler::Disconnect(uint16_t handle) {
@@ -143,7 +140,7 @@ uint16_t AclConnectionHandler::GetHandle(AddressWithType addr) const {
       return std::get<0>(pair);
     }
   }
-  return acl::kReservedHandle;
+  return kReservedHandle;
 }
 
 uint16_t AclConnectionHandler::GetHandleOnlyAddress(
@@ -153,7 +150,7 @@ uint16_t AclConnectionHandler::GetHandleOnlyAddress(
       return std::get<0>(pair);
     }
   }
-  return acl::kReservedHandle;
+  return kReservedHandle;
 }
 
 AddressWithType AclConnectionHandler::GetAddress(uint16_t handle) const {
