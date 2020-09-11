@@ -79,17 +79,6 @@ void InitFlags::Load(const char** flags) {
   if (gd_controller_enabled && !gd_hci_enabled) {
     gd_hci_enabled = true;
   }
-
-  LOG_INFO(
-      "Flags loaded: gd_advertising_enabled %s, gd_security_enabled: %s, gd_acl_enabled: %s, gd_hci_enabled: %s, "
-      "gd_controller_enabled: %s, "
-      "gd_core_enabled: %s",
-      gd_advertising_enabled ? "true" : "false",
-      gd_security_enabled ? "true" : "false",
-      gd_acl_enabled ? "true" : "false",
-      gd_hci_enabled ? "true" : "false",
-      gd_controller_enabled ? "true" : "false",
-      gd_core_enabled ? "true" : "false");
 }
 
 void InitFlags::SetAll(bool value) {
