@@ -122,6 +122,14 @@ typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len, uint8_t* p_stream);
 */
 
 typedef struct {
+  uint32_t inq_count; /* Used for determining if a response has already been */
+  /* received for the current inquiry operation. (We do not   */
+  /* want to flood the caller with multiple responses from    */
+  /* the same device.                                         */
+  RawAddress bd_addr;
+} tINQ_BDADDR;
+
+typedef struct {
   tBTM_CMPL_CB* p_remname_cmpl_cb;
 
 #define BTM_EXT_RMT_NAME_TIMEOUT_MS (40 * 1000) /* 40 seconds */
