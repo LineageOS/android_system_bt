@@ -52,9 +52,6 @@ typedef struct {
   bool scan_rsp;
 } tINQ_DB_ENT;
 
-enum { INQ_NONE, INQ_GENERAL };
-typedef uint8_t tBTM_INQ_TYPE;
-
 /* The MSB of the clock offset field indicates whether the offset is valid. */
 #define BTM_CLOCK_OFFSET_VALID 0x8000
 
