@@ -26,11 +26,10 @@
 #include "os/log.h"
 
 namespace test_vendor_lib {
-namespace hci {
-size_t HciGetPacketLengthForType(hci::PacketType type,
-                                 const uint8_t* preamble) {
+size_t H4Packetizer::HciGetPacketLengthForType(PacketType type,
+                                               const uint8_t* preamble) const {
   static const size_t
-      packet_length_offset[static_cast<size_t>(hci::PacketType::ISO) + 1] = {
+      packet_length_offset[static_cast<size_t>(PacketType::ISO) + 1] = {
           0,
           H4Packetizer::COMMAND_LENGTH_OFFSET,
           H4Packetizer::ACL_LENGTH_OFFSET,
@@ -41,10 +40,10 @@ size_t HciGetPacketLengthForType(hci::PacketType type,
 
   size_t offset = packet_length_offset[static_cast<size_t>(type)];
   size_t size = preamble[offset];
-  if (type == hci::PacketType::ACL) {
+  if (type == PacketType::ACL) {
     size |= ((size_t)preamble[offset + 1]) << 8u;
   }
-  if (type == hci::PacketType::ISO) {
+  if (type == PacketType::ISO) {
     size |= ((size_t)preamble[offset + 1] & 0x0fu) << 8u;
   }
   return size;
@@ -79,16 +78,16 @@ size_t H4Packetizer::Send(uint8_t type, const uint8_t* data, size_t length) {
 
 void H4Packetizer::OnPacketReady() {
   switch (hci_packet_type_) {
-    case hci::PacketType::COMMAND:
+    case PacketType::COMMAND:
       command_cb_(packet_);
       break;
-    case hci::PacketType::ACL:
+    case PacketType::ACL:
       acl_cb_(packet_);
       break;
-    case hci::PacketType::SCO:
+    case PacketType::SCO:
       sco_cb_(packet_);
       break;
-    case hci::PacketType::EVENT:
+    case PacketType::EVENT:
       event_cb_(packet_);
       break;
     default:
@@ -96,7 +95,7 @@ void H4Packetizer::OnPacketReady() {
                        static_cast<int>(hci_packet_type_));
   }
   // Get ready for the next type byte.
-  hci_packet_type_ = hci::PacketType::UNKNOWN;
+  hci_packet_type_ = PacketType::UNKNOWN;
 }
 
 void H4Packetizer::OnDataReady(int fd) {
@@ -104,8 +103,8 @@ void H4Packetizer::OnDataReady(int fd) {
   ssize_t bytes_to_read = 0;
   uint8_t* buffer_pointer = nullptr;
 
-  static const size_t
-      preamble_size[static_cast<size_t>(hci::PacketType::ISO) + 1] = {
+  static const size_t preamble_size[static_cast<size_t>(PacketType::ISO) + 1] =
+      {
           0,
           H4Packetizer::COMMAND_PREAMBLE_SIZE,
           H4Packetizer::ACL_PREAMBLE_SIZE,
@@ -157,12 +156,12 @@ void H4Packetizer::OnDataReady(int fd) {
 
   switch (state_) {
     case HCI_TYPE:
-      hci_packet_type_ = static_cast<hci::PacketType>(packet_type_);
-      if (hci_packet_type_ != hci::PacketType::ACL &&
-          hci_packet_type_ != hci::PacketType::SCO &&
-          hci_packet_type_ != hci::PacketType::COMMAND &&
-          hci_packet_type_ != hci::PacketType::EVENT &&
-          hci_packet_type_ != hci::PacketType::ISO) {
+      hci_packet_type_ = static_cast<PacketType>(packet_type_);
+      if (hci_packet_type_ != PacketType::ACL &&
+          hci_packet_type_ != PacketType::SCO &&
+          hci_packet_type_ != PacketType::COMMAND &&
+          hci_packet_type_ != PacketType::EVENT &&
+          hci_packet_type_ != PacketType::ISO) {
         LOG_ALWAYS_FATAL("Unimplemented packet type %hhd", packet_type_);
       }
       state_ = HCI_PREAMBLE;
@@ -193,5 +192,4 @@ void H4Packetizer::OnDataReady(int fd) {
   }
 }
 
-}  // namespace hci
 }  // namespace test_vendor_lib
