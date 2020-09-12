@@ -509,7 +509,7 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
                                           tBT_DEVICE_TYPE device_type) {
   int num_properties = 0;
   bt_property_t properties[3];
-  bt_status_t status;
+  bt_status_t status = BT_STATUS_UNHANDLED;
   uint32_t cod;
   bt_device_type_t dev_type;
 
@@ -519,10 +519,12 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
   if (strlen((const char*)bd_name)) {
     BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties], BT_PROPERTY_BDNAME,
                                strlen((char*)bd_name), bd_name);
-    status = btif_storage_set_remote_device_property(
-        &bdaddr, &properties[num_properties]);
-    ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device name",
-            status);
+    if (!bluetooth::shim::is_gd_security_enabled()) {
+      status = btif_storage_set_remote_device_property(
+          &bdaddr, &properties[num_properties]);
+      ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device name",
+              status);
+    }
     num_properties++;
   }
 
@@ -545,10 +547,13 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
 
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
                              BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod);
-  status = btif_storage_set_remote_device_property(&bdaddr,
-                                                   &properties[num_properties]);
-  ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device class",
-          status);
+
+  if (!bluetooth::shim::is_gd_security_enabled()) {
+    status = btif_storage_set_remote_device_property(
+        &bdaddr, &properties[num_properties]);
+    ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device class",
+            status);
+  }
   num_properties++;
 
   /* device type */
@@ -557,18 +562,21 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_TYPE_OF_DEVICE,
                              sizeof(uint8_t), &remote_dev_type);
   if (btif_storage_get_remote_device_property(&bdaddr, &prop_name) ==
-      BT_STATUS_SUCCESS)
+      BT_STATUS_SUCCESS) {
     dev_type = (bt_device_type_t)(remote_dev_type | device_type);
-  else
+  } else {
     dev_type = (bt_device_type_t)device_type;
+  }
 
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
                              BT_PROPERTY_TYPE_OF_DEVICE, sizeof(dev_type),
                              &dev_type);
-  status = btif_storage_set_remote_device_property(&bdaddr,
-                                                   &properties[num_properties]);
-  ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device type",
-          status);
+  if (!bluetooth::shim::is_gd_security_enabled()) {
+    status = btif_storage_set_remote_device_property(
+        &bdaddr, &properties[num_properties]);
+    ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device type",
+            status);
+  }
   num_properties++;
 
   invoke_remote_device_properties_cb(status, bdaddr, num_properties,
@@ -885,29 +893,31 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
                    p_auth_cmpl->key_present);
 
   RawAddress bd_addr = p_auth_cmpl->bd_addr;
-  if ((p_auth_cmpl->success) && (p_auth_cmpl->key_present)) {
-    if ((p_auth_cmpl->key_type < HCI_LKEY_TYPE_DEBUG_COMB) ||
-        (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB) ||
-        (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
-        (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256) ||
-        pairing_cb.bond_type == BOND_TYPE_PERSISTENT) {
-      bt_status_t ret;
-      BTIF_TRACE_DEBUG("%s: Storing link key. key_type=0x%x, bond_type=%d",
-                       __func__, p_auth_cmpl->key_type, pairing_cb.bond_type);
-      ret = btif_storage_add_bonded_device(&bd_addr, p_auth_cmpl->key,
-                                           p_auth_cmpl->key_type,
-                                           pairing_cb.pin_code_len);
-      ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
-    } else {
-      BTIF_TRACE_DEBUG(
-          "%s: Temporary key. Not storing. key_type=0x%x, bond_type=%d",
-          __func__, p_auth_cmpl->key_type, pairing_cb.bond_type);
-      if (pairing_cb.bond_type == BOND_TYPE_TEMPORARY) {
-        BTIF_TRACE_DEBUG("%s: sending BT_BOND_STATE_NONE for Temp pairing",
-                         __func__);
-        btif_storage_remove_bonded_device(&bd_addr);
-        bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_NONE);
-        return;
+  if (!bluetooth::shim::is_gd_security_enabled()) {
+    if ((p_auth_cmpl->success) && (p_auth_cmpl->key_present)) {
+      if ((p_auth_cmpl->key_type < HCI_LKEY_TYPE_DEBUG_COMB) ||
+          (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB) ||
+          (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
+          (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256) ||
+          pairing_cb.bond_type == BOND_TYPE_PERSISTENT) {
+        bt_status_t ret;
+        BTIF_TRACE_DEBUG("%s: Storing link key. key_type=0x%x, bond_type=%d",
+                         __func__, p_auth_cmpl->key_type, pairing_cb.bond_type);
+        ret = btif_storage_add_bonded_device(&bd_addr, p_auth_cmpl->key,
+                                             p_auth_cmpl->key_type,
+                                             pairing_cb.pin_code_len);
+        ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
+      } else {
+        BTIF_TRACE_DEBUG(
+            "%s: Temporary key. Not storing. key_type=0x%x, bond_type=%d",
+            __func__, p_auth_cmpl->key_type, pairing_cb.bond_type);
+        if (pairing_cb.bond_type == BOND_TYPE_TEMPORARY) {
+          BTIF_TRACE_DEBUG("%s: sending BT_BOND_STATE_NONE for Temp pairing",
+                           __func__);
+          btif_storage_remove_bonded_device(&bd_addr);
+          bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_NONE);
+          return;
+        }
       }
     }
   }
@@ -928,7 +938,9 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       return;
     }
 
-    btif_storage_set_remote_addr_type(&bd_addr, p_auth_cmpl->addr_type);
+    if (!bluetooth::shim::is_gd_security_enabled()) {
+      btif_storage_set_remote_addr_type(&bd_addr, p_auth_cmpl->addr_type);
+    }
     btif_update_remote_properties(p_auth_cmpl->bd_addr, p_auth_cmpl->bd_name,
                                   NULL, p_auth_cmpl->dev_type);
     pairing_cb.timeout_retries = 0;
@@ -1005,16 +1017,22 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         break;
 
       case HCI_ERR_PAIRING_NOT_ALLOWED:
-        is_bonded_device_removed =
-            (btif_storage_remove_bonded_device(&bd_addr) == BT_STATUS_SUCCESS);
+        if (!bluetooth::shim::is_gd_security_enabled()) {
+          is_bonded_device_removed = (btif_storage_remove_bonded_device(
+                                          &bd_addr) == BT_STATUS_SUCCESS);
+        } else {
+          is_bonded_device_removed = true;
+        }
         status = BT_STATUS_AUTH_REJECTED;
         break;
 
       /* map the auth failure codes, so we can retry pairing if necessary */
       case HCI_ERR_AUTH_FAILURE:
       case HCI_ERR_KEY_MISSING:
-        is_bonded_device_removed =
-            (btif_storage_remove_bonded_device(&bd_addr) == BT_STATUS_SUCCESS);
+        is_bonded_device_removed = (bluetooth::shim::is_gd_security_enabled())
+                                       ? true
+                                       : (btif_storage_remove_bonded_device(
+                                              &bd_addr) == BT_STATUS_SUCCESS);
         [[fallthrough]];
       case HCI_ERR_HOST_REJECT_SECURITY:
       case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
@@ -1045,8 +1063,10 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       /* Remove Device as bonded in nvram as authentication failed */
       BTIF_TRACE_DEBUG("%s(): removing hid pointing device from nvram",
                        __func__);
-      is_bonded_device_removed =
-          (btif_storage_remove_bonded_device(&bd_addr) == BT_STATUS_SUCCESS);
+      is_bonded_device_removed = (bluetooth::shim::is_gd_security_enabled())
+                                     ? true
+                                     : (btif_storage_remove_bonded_device(
+                                            &bd_addr) == BT_STATUS_SUCCESS);
     }
     // Report bond state change to java only if we are bonding to a device or
     // a device is removed from the pairing list.
