@@ -25,6 +25,7 @@
 #include "internal_include/bt_target.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2c_api.h"
 #include "stack/smp/p_256_ecc_pp.h"
