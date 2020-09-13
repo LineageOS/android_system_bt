@@ -23,10 +23,10 @@
 #include "acl_connection.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
-#include "include/acl.h"
 #include "phy.h"
 
 namespace test_vendor_lib {
+static constexpr uint16_t kReservedHandle = 0xF00;
 
 class AclConnectionHandler {
  public:
@@ -75,7 +75,7 @@ class AclConnectionHandler {
       bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS};
 
   uint16_t GetUnusedHandle();
-  uint16_t last_handle_{acl::kReservedHandle - 2};
+  uint16_t last_handle_{kReservedHandle - 2};
 };
 
 }  // namespace test_vendor_lib
