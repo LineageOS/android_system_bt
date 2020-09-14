@@ -25,6 +25,7 @@
 
 #include "hci/hci_packets.h"
 
+#include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/btm_api_types.h"
 #include "types/raw_address.h"
 

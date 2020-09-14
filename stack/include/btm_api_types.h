@@ -68,82 +68,6 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 /*******************************
  *  Device Discovery Constants
  *******************************/
-/* Discoverable modes */
-#define BTM_NON_DISCOVERABLE 0
-#define BTM_LIMITED_DISCOVERABLE 1
-#define BTM_GENERAL_DISCOVERABLE 2
-#define BTM_DISCOVERABLE_MASK \
-  (BTM_LIMITED_DISCOVERABLE | BTM_GENERAL_DISCOVERABLE)
-#define BTM_MAX_DISCOVERABLE BTM_GENERAL_DISCOVERABLE
-/* high byte for BLE Discoverable modes */
-#define BTM_BLE_NON_DISCOVERABLE 0x0000
-#define BTM_BLE_LIMITED_DISCOVERABLE 0x0100
-#define BTM_BLE_GENERAL_DISCOVERABLE 0x0200
-#define BTM_BLE_MAX_DISCOVERABLE BTM_BLE_GENERAL_DISCOVERABLE
-#define BTM_BLE_DISCOVERABLE_MASK                            \
-  (BTM_BLE_NON_DISCOVERABLE | BTM_BLE_LIMITED_DISCOVERABLE | \
-   BTM_BLE_GENERAL_DISCOVERABLE)
-
-/* Connectable modes */
-#define BTM_NON_CONNECTABLE 0
-#define BTM_CONNECTABLE 1
-#define BTM_CONNECTABLE_MASK (BTM_NON_CONNECTABLE | BTM_CONNECTABLE)
-/* high byte for BLE Connectable modes */
-#define BTM_BLE_NON_CONNECTABLE 0x0000
-#define BTM_BLE_CONNECTABLE 0x0100
-#define BTM_BLE_MAX_CONNECTABLE BTM_BLE_CONNECTABLE
-#define BTM_BLE_CONNECTABLE_MASK (BTM_BLE_NON_CONNECTABLE | BTM_BLE_CONNECTABLE)
-
-/* Inquiry modes
- * Note: These modes are associated with the inquiry active values (BTM_*ACTIVE)
- */
-#define BTM_INQUIRY_NONE 0
-#define BTM_GENERAL_INQUIRY 0x01
-#define BTM_BR_INQUIRY_MASK (BTM_GENERAL_INQUIRY)
-
-/* high byte of inquiry mode for BLE inquiry mode */
-#define BTM_BLE_INQUIRY_NONE 0x00
-#define BTM_BLE_GENERAL_INQUIRY 0x10
-#define BTM_BLE_INQUIRY_MASK (BTM_BLE_GENERAL_INQUIRY)
-
-/* BTM_IsInquiryActive return values (Bit Mask)
- * Note: These bit masks are associated with the inquiry modes (BTM_*_INQUIRY)
- */
-/* no inquiry in progress */
-#define BTM_INQUIRY_INACTIVE 0x0
-/* a general inquiry is in progress */
-#define BTM_GENERAL_INQUIRY_ACTIVE BTM_GENERAL_INQUIRY
-/* SSP is active, so inquiry is disallowed (work around for FW bug) */
-#define BTM_SSP_INQUIRY_ACTIVE 0x4
-/* a general inquiry is in progress */
-#define BTM_LE_GENERAL_INQUIRY_ACTIVE BTM_BLE_GENERAL_INQUIRY
-
-/* inquiry activity mask */
-/* BR/EDR inquiry activity mask */
-#define BTM_BR_INQ_ACTIVE_MASK (BTM_GENERAL_INQUIRY_ACTIVE)
-/* LE scan activity mask */
-#define BTM_BLE_SCAN_ACTIVE_MASK 0xF0
-/* LE inquiry activity mask*/
-#define BTM_BLE_INQ_ACTIVE_MASK (BTM_LE_GENERAL_INQUIRY_ACTIVE)
-/* inquiry activity mask */
-#define BTM_INQUIRY_ACTIVE_MASK \
-  (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK)
-
-/* Define scan types */
-#define BTM_SCAN_TYPE_STANDARD 0
-#define BTM_SCAN_TYPE_INTERLACED 1 /* 1.2 devices only */
-
-/* Define inquiry results mode */
-#define BTM_INQ_RESULT_STANDARD 0
-#define BTM_INQ_RESULT_WITH_RSSI 1
-#define BTM_INQ_RESULT_EXTENDED 2
-/* RSSI value not supplied (ignore it) */
-#define BTM_INQ_RES_IGNORE_RSSI 0x7f
-
-/* Inquiry Filter Condition types (see tBTM_INQ_PARMS) */
-/* Inquiry Filtering is turned off */
-#define BTM_CLR_INQUIRY_FILTER 0
-
 /****************************
  * minor device class field
  ****************************/
@@ -395,21 +319,6 @@ typedef struct /* contains the two device class condition fields */
   DEV_CLASS dev_class_mask;
 } tBTM_COD_COND;
 
-typedef union /* contains the inquiry filter condition */
-{
-  RawAddress bdaddr_cond;
-  tBTM_COD_COND cod_cond;
-} tBTM_INQ_FILT_COND;
-
-typedef struct /* contains the parameters passed to the inquiry functions */
-{
-  uint8_t mode;      /* general or limited */
-  uint8_t duration;  /* duration of the inquiry (1.28 sec increments) */
-} tBTM_INQ_PARMS;
-
-#define BTM_INQ_RESULT_BR 0x01
-#define BTM_INQ_RESULT_BLE 0x02
-
 constexpr uint8_t BLE_EVT_CONNECTABLE_BIT = 0;
 constexpr uint8_t BLE_EVT_SCANNABLE_BIT = 1;
 constexpr uint8_t BLE_EVT_DIRECTED_BIT = 2;
@@ -424,65 +333,6 @@ constexpr uint8_t PHY_LE_CODED = 0x04;
 constexpr uint8_t NO_ADI_PRESENT = 0xFF;
 constexpr uint8_t TX_POWER_NOT_PRESENT = 0x7F;
 
-/* These are the fields returned in each device's response to the inquiry.  It
- * is returned in the results callback if registered.
-*/
-typedef struct {
-  uint16_t clock_offset;
-  RawAddress remote_bd_addr;
-  DEV_CLASS dev_class;
-  uint8_t page_scan_rep_mode;
-  uint8_t page_scan_per_mode;
-  uint8_t page_scan_mode;
-  int8_t rssi; /* Set to BTM_INQ_RES_IGNORE_RSSI if  not valid */
-  uint32_t eir_uuid[BTM_EIR_SERVICE_ARRAY_SIZE];
-  bool eir_complete_list;
-  tBT_DEVICE_TYPE device_type;
-  uint8_t inq_result_type;
-  tBLE_ADDR_TYPE ble_addr_type;
-  uint16_t ble_evt_type;
-  uint8_t ble_primary_phy;
-  uint8_t ble_secondary_phy;
-  uint8_t ble_advertising_sid;
-  int8_t ble_tx_power;
-  uint16_t ble_periodic_adv_int;
-  uint8_t flag;
-} tBTM_INQ_RESULTS;
-
-/* This is the inquiry response information held in its database by BTM, and
- * available to applications via BTM_InqDbRead, BTM_InqDbFirst, and
- * BTM_InqDbNext.
-*/
-typedef struct {
-  tBTM_INQ_RESULTS results;
-
-  bool appl_knows_rem_name; /* set by application if it knows the remote name of
-                               the peer device.
-                               This is later used by application to determine if
-                               remote name request is
-                               required to be done. Having the flag here avoid
-                               duplicate store of inquiry results */
-  uint16_t remote_name_len;
-  tBTM_BD_NAME remote_name;
-  uint8_t remote_name_state;
-  uint8_t remote_name_type;
-
-} tBTM_INQ_INFO;
-
-/* Structure returned with inquiry complete callback */
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t num_resp; /* Number of results from the current inquiry */
-} tBTM_INQUIRY_CMPL;
-
-/* Structure returned with remote name  request */
-typedef struct {
-  uint16_t status;
-  RawAddress bd_addr;
-  uint16_t length;
-  BD_NAME remote_bd_name;
-} tBTM_REMOTE_DEV_NAME;
-
 typedef struct {
   uint8_t pcm_intf_rate; /* PCM interface rate: 0: 128kbps, 1: 256 kbps;
                              2:512 bps; 3: 1024kbps; 4: 2048kbps */
@@ -491,15 +341,6 @@ typedef struct {
   uint8_t clock_mode;    /* clock mode: 0: slave; 1: master */
 
 } tBTM_SCO_PCM_PARAM;
-
-/****************************************
- *  Device Discovery Callback Functions
- ****************************************/
-/* Callback function for notifications when the BTM gets inquiry response.
- * First param is inquiry results database, second is pointer of EIR.
-*/
-typedef void(tBTM_INQ_RESULTS_CB)(tBTM_INQ_RESULTS* p_inq_results,
-                                  uint8_t* p_eir, uint16_t eir_len);
 
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT
