@@ -31,6 +31,8 @@
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
 
+extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+                                     const RawAddress& new_pseudo_addr);
 void btm_send_hci_create_connection(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
     uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
