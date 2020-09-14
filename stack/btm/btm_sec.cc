@@ -49,6 +49,7 @@
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
+void btm_inq_stop_on_ssp(void);
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
 extern void bta_dm_remove_device(const RawAddress& bd_addr);
