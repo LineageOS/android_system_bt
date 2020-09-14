@@ -26,6 +26,7 @@
 
 #include <cstdint>
 
+#include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/sdp_api.h"
