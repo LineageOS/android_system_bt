@@ -39,19 +39,6 @@ typedef struct {
 
 } tBTM_LE_CONN_PRAMS;
 
-typedef struct {
-  uint64_t time_of_resp;
-  uint32_t
-      inq_count; /* "timestamps" the entry with a particular inquiry count   */
-                 /* Used for determining if a response has already been      */
-                 /* received for the current inquiry operation. (We do not   */
-                 /* want to flood the caller with multiple responses from    */
-                 /* the same device.                                         */
-  tBTM_INQ_INFO inq_info;
-  bool in_use;
-  bool scan_rsp;
-} tINQ_DB_ENT;
-
 /* The MSB of the clock offset field indicates whether the offset is valid. */
 #define BTM_CLOCK_OFFSET_VALID 0x8000
 
