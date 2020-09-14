@@ -63,7 +63,6 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
-static void bnep_disconnect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void bnep_congestion_ind(uint16_t lcid, bool is_congested);
 
@@ -90,7 +89,6 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
   bnep_cb.reg_info.pL2CA_ConfigInd_Cb = bnep_config_ind;
   bnep_cb.reg_info.pL2CA_ConfigCfm_Cb = bnep_config_cfm;
   bnep_cb.reg_info.pL2CA_DisconnectInd_Cb = bnep_disconnect_ind;
-  bnep_cb.reg_info.pL2CA_DisconnectCfm_Cb = bnep_disconnect_cfm;
   bnep_cb.reg_info.pL2CA_DataInd_Cb = bnep_data_ind;
   bnep_cb.reg_info.pL2CA_CongestionStatus_Cb = bnep_congestion_ind;
 
@@ -355,20 +353,6 @@ static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   }
 
   bnepu_release_bcb(p_bcb);
-}
-
-/*******************************************************************************
- *
- * Function         bnep_disconnect_cfm
- *
- * Description      This function gets the disconnect confirm event from L2CAP
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bnep_disconnect_cfm(uint16_t l2cap_cid, uint16_t result) {
-  BNEP_TRACE_EVENT("BNEP - Rcvd L2CAP disc cfm, CID: 0x%x, Result 0x%x",
-                   l2cap_cid, result);
 }
 
 /*******************************************************************************
