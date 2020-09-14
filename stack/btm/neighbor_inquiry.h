@@ -20,6 +20,7 @@
 
 #include "osi/include/alarm.h"
 #include "stack/include/btm_api_types.h"
+#include "types/raw_address.h"
 
 /* Discoverable modes */
 #define BTM_NON_DISCOVERABLE 0
@@ -248,3 +249,6 @@ typedef union /* contains the inquiry filter condition */
 
 #define BTM_INQ_RESULT_BR 0x01
 #define BTM_INQ_RESULT_BLE 0x02
+
+extern bool btm_inq_find_bdaddr(const RawAddress& p_bda);
+extern tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda);
