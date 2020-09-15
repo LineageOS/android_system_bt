@@ -74,6 +74,8 @@ void main_thread_shut_down();
 void main_thread_start_up();
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_off();
+extern void btm_init(void);
+extern void btm_free(void);
 
 using bluetooth::common::MessageLoopThread;
 
