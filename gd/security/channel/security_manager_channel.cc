@@ -88,9 +88,9 @@ void SecurityManagerChannel::OnHciEventReceived(hci::EventPacketView packet) {
 
 void SecurityManagerChannel::OnLinkConnected(std::unique_ptr<l2cap::classic::LinkSecurityInterface> link) {
   // Multiple links possible?
-  link->Hold();
   auto remote = link->GetRemoteAddress();
   if (outgoing_pairing_remote_devices_.count(remote) == 1) {
+    link->Hold();
     link->EnsureAuthenticated();
     outgoing_pairing_remote_devices_.erase(remote);
   }
