@@ -333,8 +333,10 @@ void DualModeController::HandleSco(std::shared_ptr<std::vector<uint8_t>> packet)
 }
 
 void DualModeController::HandleIso(
-    std::shared_ptr<std::vector<uint8_t>> /* packet */) {
-  // TODO: implement handling similar to HandleSco
+    std::shared_ptr<std::vector<uint8_t>> packet) {
+  bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
+  auto iso = bluetooth::hci::IsoPacketView::Create(raw_packet);
+  link_layer_controller_.HandleIso(iso);
 }
 
 void DualModeController::HandleCommand(std::shared_ptr<std::vector<uint8_t>> packet) {
@@ -1924,7 +1926,10 @@ void DualModeController::LeCreateCis(CommandPacketView command) {
 void DualModeController::LeRemoveCig(CommandPacketView command) {
   auto command_view = gd_hci::LeRemoveCigView::Create(std::move(command));
   ASSERT(command_view.IsValid());
-  link_layer_controller_.LeRemoveCig(command_view.GetCigId());
+  uint8_t cig = command_view.GetCigId();
+  ErrorCode status = link_layer_controller_.LeRemoveCig(cig);
+  send_event_(bluetooth::hci::LeRemoveCigCompleteBuilder::Create(
+      kNumCommandPackets, status, cig));
 }
 
 void DualModeController::LeAcceptCisRequest(CommandPacketView command) {
