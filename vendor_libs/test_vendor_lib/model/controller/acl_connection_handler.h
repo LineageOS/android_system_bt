@@ -23,6 +23,7 @@
 #include "acl_connection.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
+#include "isochronous_connection_handler.h"
 #include "phy.h"
 
 namespace test_vendor_lib {
@@ -63,6 +64,39 @@ class AclConnectionHandler {
 
   Phy::Type GetPhyType(uint16_t handle) const;
 
+  std::unique_ptr<bluetooth::hci::LeSetCigParametersCompleteBuilder>
+  SetCigParameters(uint8_t id, uint32_t sdu_interval_m_to_s,
+                   uint32_t sdu_interval_s_to_m,
+                   bluetooth::hci::ClockAccuracy accuracy,
+                   bluetooth::hci::Packing packing,
+                   bluetooth::hci::Enable framing,
+                   uint16_t max_transport_latency_m_to_s_,
+                   uint16_t max_transport_latency_s_to_m_,
+                   std::vector<bluetooth::hci::CisParametersConfig>& streams);
+
+  void CreatePendingCis(bluetooth::hci::CreateCisConfig config);
+
+  bool ConnectCis(uint16_t handle);
+
+  uint16_t GetPendingAclHandle(uint16_t cis_handle) const;
+
+  bool RejectCis(uint16_t handle);
+
+  bool DisconnectCis(uint16_t handle);
+
+  bluetooth::hci::ErrorCode RemoveCig(uint8_t cig_id);
+
+  bool HasPendingCis() const;
+
+  bool HasPendingCisConnection(uint16_t handle) const;
+
+  bool HasCisHandle(uint16_t handle) const;
+
+  bool HasConnectedCis(uint16_t handle) const;
+
+  StreamParameters GetStreamParameters(uint16_t handle) const;
+  GroupParameters GetGroupParameters(uint8_t id) const;
+
  private:
   std::unordered_map<uint16_t, AclConnection> acl_connections_;
   bool classic_connection_pending_{false};
@@ -76,6 +110,9 @@ class AclConnectionHandler {
 
   uint16_t GetUnusedHandle();
   uint16_t last_handle_{kReservedHandle - 2};
+  IsochronousConnectionHandler isochronous_connection_handler_;
+  std::vector<bluetooth::hci::CreateCisConfig> connected_streams_;
+  std::vector<bluetooth::hci::CreateCisConfig> pending_streams_;
 };
 
 }  // namespace test_vendor_lib
