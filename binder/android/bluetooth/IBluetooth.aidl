@@ -285,4 +285,7 @@ interface IBluetooth
     boolean canBondWithoutDialog(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void generateLocalOobData(in int transport, IBluetoothOobDataCallback callback, in AttributionSource attributionSource);
+
+    int getDeviceType(in BluetoothDevice device);
+
 }
