@@ -175,9 +175,10 @@ class LinkLayerController {
       std::vector<bluetooth::hci::CisParametersConfig> cis_config);
   bluetooth::hci::ErrorCode LeCreateCis(
       std::vector<bluetooth::hci::CreateCisConfig> cis_config);
-  void LeRemoveCig(uint8_t cig_id);
+  bluetooth::hci::ErrorCode LeRemoveCig(uint8_t cig_id);
   bluetooth::hci::ErrorCode LeAcceptCisRequest(uint16_t handle);
-  void LeRejectCisRequest(uint16_t handle, bluetooth::hci::ErrorCode reason);
+  bluetooth::hci::ErrorCode LeRejectCisRequest(
+      uint16_t handle, bluetooth::hci::ErrorCode reason);
   bluetooth::hci::ErrorCode LeCreateBig(
       uint8_t big_handle, uint8_t advertising_handle, uint8_t num_bis,
       uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
@@ -312,6 +313,8 @@ class LinkLayerController {
   ErrorCode WriteDefaultLinkPolicySettings(uint16_t settings);
   uint16_t ReadDefaultLinkPolicySettings();
 
+  void HandleIso(bluetooth::hci::IsoPacketView iso);
+
  protected:
   void SendLeLinkLayerPacket(
       std::unique_ptr<model::packets::LinkLayerPacketBuilder> packet);
@@ -330,6 +333,11 @@ class LinkLayerController {
   void IncomingIoCapabilityResponsePacket(
       model::packets::LinkLayerPacketView packet);
   void IncomingIoCapabilityNegativeResponsePacket(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingIsoPacket(model::packets::LinkLayerPacketView packet);
+  void IncomingIsoConnectionRequestPacket(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingIsoConnectionResponsePacket(
       model::packets::LinkLayerPacketView packet);
   void IncomingLeAdvertisementPacket(
       model::packets::LinkLayerPacketView packet);
