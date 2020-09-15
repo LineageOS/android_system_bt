@@ -276,6 +276,7 @@ class LeAdvertisingManagerTest : public ::testing::Test {
     ASSERT_NE(client_handler_, nullptr);
     test_controller_->num_advertisers = 1;
     le_advertising_manager_ = fake_registry_.Start<LeAdvertisingManager>(&thread_);
+    le_advertising_manager_->RegisterAdvertisingCallback(&mock_advertising_callback_);
   }
 
   void TearDown() override {
@@ -322,10 +323,24 @@ class LeAdvertisingManagerTest : public ::testing::Test {
     set_terminated_promise_.reset();
   }
 
+  void sync_client_handler() {
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    client_handler_->Call(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    auto future_status = future.wait_for(std::chrono::seconds(1));
+    ASSERT_EQ(future_status, std::future_status::ready);
+  }
+
   std::unique_ptr<std::promise<Address>> address_promise_{};
   std::unique_ptr<std::promise<ErrorCode>> set_terminated_promise_{};
 
   OpCode param_opcode_{OpCode::LE_SET_ADVERTISING_PARAMETERS};
+
+  class MockAdvertisingCallback : public AdvertisingCallback {
+   public:
+    MOCK_METHOD3(OnAdvertisingSetStarted, void(uint8_t advertiser_id, int8_t tx_power, AdvertisingStatus status));
+    MOCK_METHOD3(onAdvertisingEnabled, void(uint8_t advertiser_id, bool enable, uint8_t status));
+  } mock_advertising_callback_;
 };
 
 class LeAndroidHciAdvertisingManagerTest : public LeAdvertisingManagerTest {
@@ -377,6 +392,9 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
       OpCode::LE_SET_ADVERTISING_DATA,
       OpCode::LE_SET_ADVERTISING_ENABLE,
   };
+  EXPECT_CALL(
+      mock_advertising_callback_, onAdvertisingEnabled(id, true, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+
   std::vector<uint8_t> success_vector{static_cast<uint8_t>(ErrorCode::SUCCESS)};
   auto result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
@@ -392,7 +410,10 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
   le_advertising_manager_->RemoveAdvertiser(id);
   result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
+  EXPECT_CALL(
+      mock_advertising_callback_, onAdvertisingEnabled(id, false, AdvertisingCallback::AdvertisingStatus::SUCCESS));
   test_hci_layer_->IncomingEvent(LeSetAdvertisingEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  sync_client_handler();
 }
 
 TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
@@ -457,6 +478,8 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   auto id = le_advertising_manager_->ExtendedCreateAdvertiser(advertising_config, scan_callback,
                                                               set_terminated_callback, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  EXPECT_CALL(
+      mock_advertising_callback_, OnAdvertisingSetStarted(id, -23, AdvertisingCallback::AdvertisingStatus::SUCCESS));
   std::vector<OpCode> adv_opcodes = {
       OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS,
       OpCode::LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE,
@@ -478,12 +501,16 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
           CommandCompleteBuilder::Create(uint8_t{1}, adv_opcodes[i], std::make_unique<RawBuilder>(success_vector)));
     }
   }
+  sync_client_handler();
   // Disable the advertiser
   last_command_future = test_hci_layer_->GetCommandFuture(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE);
   le_advertising_manager_->RemoveAdvertiser(id);
   result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
   test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  EXPECT_CALL(
+      mock_advertising_callback_, onAdvertisingEnabled(id, false, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+  sync_client_handler();
 }
 }  // namespace
 }  // namespace hci
