@@ -825,5 +825,4 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
   /* Send the buffer through L2CAP */
   L2CA_DataWrite(p_ccb->connection_id, p_buf);
 }
-
 #endif /* SDP_SERVER_ENABLED == TRUE */
