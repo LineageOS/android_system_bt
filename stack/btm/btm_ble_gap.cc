@@ -47,9 +47,14 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/gap_api.h"
 #include "stack/include/hcimsgs.h"
+#include "stack/include/inq_hci_link_interface.h"
 #include "types/raw_address.h"
 
 extern tBTM_CB btm_cb;
+
+extern void btm_inq_remote_name_timer_timeout(void* data);
+extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+                                     const RawAddress& new_pseudo_addr);
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
 #define MIN_ADV_LENGTH 2
