@@ -60,7 +60,7 @@ class ExtendedAdvertisingConfig : public AdvertisingConfig {
   ExtendedAdvertisingConfig(const AdvertisingConfig& config);
 };
 
-using AdvertiserId = int32_t;
+using AdvertiserId = uint8_t;
 
 class AdvertisingCallback {
  public:
@@ -80,7 +80,7 @@ class AdvertisingCallback {
 
 class LeAdvertisingManager : public bluetooth::Module {
  public:
-  static constexpr AdvertiserId kInvalidId = -1;
+  static constexpr AdvertiserId kInvalidId = 0xFF;
   static constexpr uint8_t kInvalidHandle = 0xFF;
   LeAdvertisingManager();
 
