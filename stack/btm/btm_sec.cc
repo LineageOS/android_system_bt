@@ -39,6 +39,7 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 
 #include "bt_types.h"
@@ -52,8 +53,11 @@
 void btm_inq_stop_on_ssp(void);
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
+extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+                                     const RawAddress& new_pseudo_addr);
 extern void bta_dm_remove_device(const RawAddress& bd_addr);
 extern void bta_dm_process_remove_device(const RawAddress& bd_addr);
+extern void btm_inq_clear_ssp(void);
 
 /*******************************************************************************
  *             L O C A L    F U N C T I O N     P R O T O T Y P E S            *
