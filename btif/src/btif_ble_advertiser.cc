@@ -26,6 +26,8 @@
 
 #include "ble_advertiser.h"
 #include "btif_common.h"
+#include "main/shim/le_advertising_manager.h"
+#include "main/shim/shim.h"
 #include "stack/include/btu.h"
 
 using base::Bind;
@@ -253,8 +255,12 @@ BleAdvertiserInterface* btLeAdvertiserInstance = nullptr;
 }  // namespace
 
 BleAdvertiserInterface* get_ble_advertiser_instance() {
-  if (btLeAdvertiserInstance == nullptr)
+  if (bluetooth::shim::is_gd_advertising_enabled()) {
+    LOG(INFO) << __func__ << " use gd le advertiser";
+    return bluetooth::shim::get_ble_advertiser_instance();
+  } else if (btLeAdvertiserInstance == nullptr) {
     btLeAdvertiserInstance = new BleAdvertiserInterfaceImpl();
+  }
 
   return btLeAdvertiserInstance;
 }
