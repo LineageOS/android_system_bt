@@ -390,7 +390,6 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
   for (index = 0; index < BTM_SEC_MAX_SERVICE_RECORDS; index++, p_srec++) {
     /* Check if there is already a record for this service */
     if (p_srec->security_flags & BTM_SEC_IN_USE) {
-#if BT_MAX_SERVICE_NAME_LEN > 0
       if (p_srec->psm == psm && p_srec->mx_proto_id == mx_proto_id &&
           service_id == p_srec->service_id && p_name &&
           (!strncmp(p_name, (char*)p_srec->orig_service_name,
@@ -399,10 +398,6 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
            !strncmp(p_name, (char*)p_srec->term_service_name,
                     /* strlcpy replaces end char with termination char*/
                     BT_MAX_SERVICE_NAME_LEN - 1)))
-#else
-      if (p_srec->psm == psm && p_srec->mx_proto_id == mx_proto_id &&
-          service_id == p_srec->service_id)
-#endif
       {
         record_allocated = true;
         break;
@@ -435,10 +430,8 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 
   if (is_originator) {
     p_srec->orig_mx_chan_id = mx_chan_id;
-#if BT_MAX_SERVICE_NAME_LEN > 0
     strlcpy((char*)p_srec->orig_service_name, p_name,
             BT_MAX_SERVICE_NAME_LEN + 1);
-#endif
 /* clear out the old setting, just in case it exists */
     {
       p_srec->security_flags &=
@@ -466,10 +459,8 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
       btm_cb.p_out_serv = p_srec;
   } else {
     p_srec->term_mx_chan_id = mx_chan_id;
-#if BT_MAX_SERVICE_NAME_LEN > 0
     strlcpy((char*)p_srec->term_service_name, p_name,
             BT_MAX_SERVICE_NAME_LEN + 1);
-#endif
 /* clear out the old setting, just in case it exists */
     {
       p_srec->security_flags &= ~(
@@ -498,11 +489,9 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
       "BTM_SEC_REG[%d]: id %d, is_orig %d, psm 0x%04x, proto_id %d, chan_id %d",
       index, service_id, is_originator, psm, mx_proto_id, mx_chan_id);
 
-#if BT_MAX_SERVICE_NAME_LEN > 0
   BTM_TRACE_API(
       "               : sec: 0x%x, service name [%s] (up to %d chars saved)",
       p_srec->security_flags, p_name, BT_MAX_SERVICE_NAME_LEN);
-#endif
 
   return (record_allocated);
 }
