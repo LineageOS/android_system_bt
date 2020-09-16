@@ -63,9 +63,9 @@ typedef struct {
   uint16_t psm;             /* L2CAP PSM value */
   uint16_t security_flags;  /* Bitmap of required security features */
   uint8_t service_id;       /* Passed in authorization callback */
-#if BTM_SEC_SERVICE_NAME_LEN > 0
-  uint8_t orig_service_name[BTM_SEC_SERVICE_NAME_LEN + 1];
-  uint8_t term_service_name[BTM_SEC_SERVICE_NAME_LEN + 1];
+#if BT_MAX_SERVICE_NAME_LEN > 0
+  uint8_t orig_service_name[BT_MAX_SERVICE_NAME_LEN + 1];
+  uint8_t term_service_name[BT_MAX_SERVICE_NAME_LEN + 1];
 #endif
 } tBTM_SEC_SERV_REC;
 
