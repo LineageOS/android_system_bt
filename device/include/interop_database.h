@@ -156,6 +156,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Honda High End Carkit
     {{{0x9c, 0x8d, 0x7c, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
+
+    // Honda Civic Carkit
+    {{{0x0c, 0xd9, 0xc1, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
 };
 
 typedef struct {

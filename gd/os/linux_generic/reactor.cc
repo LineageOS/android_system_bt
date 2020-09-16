@@ -145,10 +145,11 @@ void Reactor::Run() {
         reactable->on_write_ready_.Run();
       }
       {
-        std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
+        std::unique_lock<std::mutex> reactable_lock(reactable->mutex_);
         reactable->is_executing_ = false;
         if (reactable->removed_) {
           reactable->finished_promise_->set_value();
+          reactable_lock.unlock();
           delete reactable;
         }
       }
