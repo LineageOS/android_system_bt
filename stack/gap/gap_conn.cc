@@ -185,6 +185,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
     p_ccb->rem_dev_address = *p_rem_bda;
   } else if (!is_server) {
     /* remore addr is not specified and is not a server -> bad */
+    gap_release_ccb(p_ccb);
     return (GAP_INVALID_HANDLE);
   }
 
