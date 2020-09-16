@@ -651,12 +651,8 @@ extern void l2c_link_sec_comp2(const RawAddress& p_bda, tBT_TRANSPORT trasnport,
                                void* p_ref_data, uint8_t status);
 extern void l2c_link_adjust_chnl_allocation(void);
 
-#if (L2CAP_WAKE_PARKED_LINK == TRUE)
 extern bool l2c_link_check_power_mode(tL2C_LCB* p_lcb);
 #define L2C_LINK_CHECK_POWER_MODE(x) l2c_link_check_power_mode((x))
-#else  // L2CAP_WAKE_PARKED_LINK
-#define L2C_LINK_CHECK_POWER_MODE(x) (false)
-#endif  // L2CAP_WAKE_PARKED_LINK
 
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
 /* Used only for conformance testing */
