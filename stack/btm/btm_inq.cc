@@ -46,6 +46,9 @@
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/inq_hci_link_interface.h"
+
+extern void btm_inq_remote_name_timer_timeout(void* data);
 
 using bluetooth::Uuid;
 
