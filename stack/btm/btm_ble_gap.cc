@@ -178,27 +178,27 @@ static void btm_ble_observer_timer_timeout(void* data);
 #define BTM_BLE_INQ_RESULT 0x01
 #define BTM_BLE_OBS_RESULT 0x02
 
-bool ble_evt_type_is_connectable(uint16_t evt_type) {
+static bool ble_evt_type_is_connectable(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_CONNECTABLE_BIT);
 }
 
-bool ble_evt_type_is_scannable(uint16_t evt_type) {
+static bool ble_evt_type_is_scannable(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_SCANNABLE_BIT);
 }
 
-bool ble_evt_type_is_directed(uint16_t evt_type) {
+static bool ble_evt_type_is_directed(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_DIRECTED_BIT);
 }
 
-bool ble_evt_type_is_scan_resp(uint16_t evt_type) {
+static bool ble_evt_type_is_scan_resp(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_SCAN_RESPONSE_BIT);
 }
 
-bool ble_evt_type_is_legacy(uint16_t evt_type) {
+static bool ble_evt_type_is_legacy(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_LEGACY_BIT);
 }
 
-uint8_t ble_evt_type_data_status(uint16_t evt_type) {
+static uint8_t ble_evt_type_data_status(uint16_t evt_type) {
   return (evt_type >> 5) & 3;
 }
 
