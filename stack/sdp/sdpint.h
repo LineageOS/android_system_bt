@@ -106,7 +106,6 @@ typedef struct {
   tSDP_RECORD record[SDP_MAX_RECORDS];
 } tSDP_DB;
 
-#if (SDP_SERVER_ENABLED == TRUE)
 /* Continuation information for the SDP server response */
 typedef struct {
   uint16_t next_attr_index;    /* attr index for next continuation response */
@@ -119,7 +118,6 @@ typedef struct {
   uint16_t attr_offset; /* offset within the attr to keep trak of partial
                            attributes in the responses */
 } tSDP_CONT_INFO;
-#endif /* SDP_SERVER_ENABLED == TRUE */
 
 /* Define the SDP Connection Control Block */
 typedef struct {
@@ -165,11 +163,9 @@ typedef struct {
   uint8_t disc_state;
   uint8_t is_attr_search;
 
-#if (SDP_SERVER_ENABLED == TRUE)
   uint16_t cont_offset;     /* Continuation state data in the server response */
   tSDP_CONT_INFO cont_info; /* structure to hold continuation information for
                                the server response */
-#endif                      /* SDP_SERVER_ENABLED == TRUE */
 
 } tCONN_CB;
 
@@ -177,9 +173,7 @@ typedef struct {
 typedef struct {
   tL2CAP_CFG_INFO l2cap_my_cfg; /* My L2CAP config     */
   tCONN_CB ccb[SDP_MAX_CONNECTIONS];
-#if (SDP_SERVER_ENABLED == TRUE)
   tSDP_DB server_db;
-#endif
   tL2CAP_APPL_INFO reg_info;    /* L2CAP Registration info */
   uint16_t max_attr_list_size;  /* Max attribute list size to use   */
   uint16_t max_recs_per_search; /* Max records we want per seaarch  */
@@ -248,11 +242,7 @@ extern tSDP_ATTRIBUTE* sdp_db_find_attr_in_rec(tSDP_RECORD* p_rec,
 
 /* Functions provided by sdp_server.cc
  */
-#if (SDP_SERVER_ENABLED == TRUE)
 extern void sdp_server_handle_client_req(tCONN_CB* p_ccb, BT_HDR* p_msg);
-#else
-#define sdp_server_handle_client_req(p_ccb, p_msg)
-#endif
 
 /* Functions provided by sdp_discovery.cc
  */

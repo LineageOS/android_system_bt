@@ -35,8 +35,6 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 
-#if (SDP_SERVER_ENABLED == TRUE)
-
 /* Maximum number of bytes to reserve out of SDP MTU for response data */
 #define SDP_MAX_SERVICE_RSPHDR_LEN 12
 #define SDP_MAX_SERVATTR_RSPHDR_LEN 10
@@ -841,4 +839,3 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
   /* Send the buffer through L2CAP */
   L2CA_DataWrite(p_ccb->connection_id, p_buf);
 }
-#endif /* SDP_SERVER_ENABLED == TRUE */
