@@ -2483,9 +2483,9 @@ void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr) {
   }
 
   if (pairing_cb.ble.is_pid_key_rcvd) {
-    btif_storage_add_ble_bonding_key(
-        &bd_addr, (uint8_t*)&pairing_cb.ble.pid_key, BTIF_DM_LE_KEY_PID,
-        sizeof(tBTM_LE_PID_KEYS));
+    btif_storage_add_ble_bonding_key(&bd_addr,
+                                     (uint8_t*)&pairing_cb.ble.pid_key,
+                                     BTM_LE_KEY_PID, sizeof(tBTM_LE_PID_KEYS));
   }
 
   if (pairing_cb.ble.is_pcsrk_key_rcvd) {
