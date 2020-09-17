@@ -239,9 +239,14 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
         return GATT_INTERNAL_ERROR;
       }
 
-      el->attribute_handle =
-          gatts_add_characteristic(list.svc_db, el->permissions, el->properties,
-                                   el->extended_properties, uuid);
+      el->attribute_handle = gatts_add_characteristic(
+          list.svc_db, el->permissions, el->properties, uuid);
+
+      // add characteristic extended properties descriptor if needed
+      if (el->properties & GATT_CHAR_PROP_BIT_EXT_PROP) {
+        gatts_add_char_ext_prop_descr(list.svc_db, el->extended_properties);
+      }
+
     } else if (el->type == BTGATT_DB_DESCRIPTOR) {
       if (is_gatt_attr_type(uuid)) {
         LOG(ERROR) << __func__
