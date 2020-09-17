@@ -28,9 +28,6 @@
 #include "stack/include/smp_api_types.h"
 #include "types/bt_transport.h"
 
-/* Maximum number of bytes allowed for vendor specific command parameters */
-#define BTM_MAX_VENDOR_SPECIFIC_LEN HCI_COMMAND_SIZE
-
 /* Device name of peer (may be truncated to save space in BTM database) */
 typedef uint8_t tBTM_BD_NAME[BTM_MAX_REM_BD_NAME_LEN + 1];
 
