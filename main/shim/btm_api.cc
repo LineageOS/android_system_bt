@@ -290,8 +290,12 @@ class ShimUi : public bluetooth::security::UI {
     LOG(WARNING) << " ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ " << __func__;
   }
 
-  void HandleConfirm(const bluetooth::hci::AddressWithType& address,
-                     bt_bdname_t legacy_name, uint32_t numeric_value) {
+  void HandleConfirm(bluetooth::security::ConfirmationData data) {
+    const bluetooth::hci::AddressWithType& address = data.GetAddressWithType();
+    uint32_t numeric_value = data.GetNumericValue();
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, data.GetName().data(), data.GetName().length());
+
     if (bta_callbacks_->p_sp_callback) {
       // Call sp_cback for IO_REQ
       tBTM_SP_IO_REQ io_req_evt_data;
@@ -333,30 +337,22 @@ class ShimUi : public bluetooth::security::UI {
     }
   }
 
-  void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address,
-                           std::string name, uint32_t numeric_value) {
+  void DisplayConfirmValue(bluetooth::security::ConfirmationData data) {
     waiting_for_pairing_prompt_ = false;
-    bt_bdname_t legacy_name{0};
-    memcpy(legacy_name.name, name.data(), name.length());
-    HandleConfirm(address, legacy_name, numeric_value);
+    HandleConfirm(data);
   }
 
-  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
-                          std::string name) {
+  void DisplayYesNoDialog(bluetooth::security::ConfirmationData data) {
     waiting_for_pairing_prompt_ = false;
-    bt_bdname_t legacy_name{0};
-    memcpy(legacy_name.name, name.data(), name.length());
-    HandleConfirm(address, legacy_name, 0);
+    HandleConfirm(data);
   }
 
-  void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address,
-                                 std::string name) {
+  void DisplayEnterPasskeyDialog(bluetooth::security::ConfirmationData data) {
     waiting_for_pairing_prompt_ = false;
     LOG_WARN("UNIMPLEMENTED, Passkey not supported in GD");
   }
 
-  void DisplayPasskey(const bluetooth::hci::AddressWithType& address,
-                      std::string name, uint32_t passkey) {
+  void DisplayPasskey(bluetooth::security::ConfirmationData data) {
     waiting_for_pairing_prompt_ = false;
     LOG_WARN("UNIMPLEMENTED, Passkey not supported in GD");
   }

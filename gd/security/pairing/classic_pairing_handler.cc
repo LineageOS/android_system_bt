@@ -26,26 +26,26 @@ namespace pairing {
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
   ASSERT(user_interface_handler_ != nullptr);
-  user_interface_handler_->CallOn(
-      user_interface_, &UI::DisplayConfirmValue, *GetRecord()->GetPseudoAddress(), device_name_, numeric_value);
+  ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, numeric_value);
+  user_interface_handler_->CallOn(user_interface_, &UI::DisplayConfirmValue, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo() {
   ASSERT(user_interface_handler_ != nullptr);
-  user_interface_handler_->CallOn(
-      user_interface_, &UI::DisplayYesNoDialog, *GetRecord()->GetPseudoAddress(), device_name_);
+  ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
+  user_interface_handler_->CallOn(user_interface_, &UI::DisplayYesNoDialog, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
   ASSERT(user_interface_handler_ != nullptr);
-  user_interface_handler_->CallOn(
-      user_interface_, &UI::DisplayPasskey, *GetRecord()->GetPseudoAddress(), device_name_, passkey);
+  ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, passkey);
+  user_interface_handler_->CallOn(user_interface_, &UI::DisplayPasskey, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
   ASSERT(user_interface_handler_ != nullptr);
-  user_interface_handler_->CallOn(
-      user_interface_, &UI::DisplayEnterPasskeyDialog, *GetRecord()->GetPseudoAddress(), device_name_);
+  ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
+  user_interface_handler_->CallOn(user_interface_, &UI::DisplayEnterPasskeyDialog, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayCancel() {
