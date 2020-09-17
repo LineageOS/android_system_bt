@@ -136,7 +136,8 @@ bool btif_get_device_type(const RawAddress& bda, int* p_device_type) {
 
   if (!btif_config_get_int(bd_addr_str, "DevType", p_device_type)) return false;
 
-  LOG_DEBUG("%s: Device [%s] type %d", __func__, bd_addr_str, *p_device_type);
+  LOG_DEBUG("%s: Device [%s] device type %d", __func__, bd_addr_str,
+            *p_device_type);
   return true;
 }
 
