@@ -26,16 +26,19 @@
 #define CHNL_MAP_LEN 5
 typedef uint8_t tBTM_BLE_CHNL_MAP[CHNL_MAP_LEN];
 
-/* 0x00-0x04 only used for set advertising parameter command */
-#define BTM_BLE_CONNECT_EVT 0x00
-/* Connectable directed advertising */
-#define BTM_BLE_CONNECT_DIR_EVT 0x01
-/* Scannable undirected advertising */
-#define BTM_BLE_DISCOVER_EVT 0x02
-/* Non connectable undirected advertising */
-#define BTM_BLE_NON_CONNECT_EVT 0x03
-/* Connectable low duty cycle directed advertising  */
-#define BTM_BLE_CONNECT_LO_DUTY_DIR_EVT 0x04
+enum : uint8_t {
+  /* 0x00-0x04 only used for set advertising parameter command */
+  BTM_BLE_CONNECT_EVT = 0x00,
+  /* Connectable directed advertising */
+  BTM_BLE_CONNECT_DIR_EVT = 0x01,
+  /* Scannable undirected advertising */
+  BTM_BLE_DISCOVER_EVT = 0x02,
+  /* Non connectable undirected advertising */
+  BTM_BLE_NON_CONNECT_EVT = 0x03,
+  /* Connectable low duty cycle directed advertising  */
+  BTM_BLE_CONNECT_LO_DUTY_DIR_EVT = 0x04,
+};
+
 /* 0x00 - 0x04 can be received on adv event type */
 #define BTM_BLE_ADV_IND_EVT  0x00
 #define BTM_BLE_ADV_DIRECT_IND_EVT  0x01
