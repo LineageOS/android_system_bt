@@ -596,8 +596,9 @@ extern uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
                                            const bluetooth::Uuid& service);
 extern uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
                                          tGATT_CHAR_PROP property,
-                                         uint16_t extended_properties,
                                          const bluetooth::Uuid& char_uuid);
+extern uint16_t gatts_add_char_ext_prop_descr(tGATT_SVC_DB& db,
+                                              uint16_t extended_properties);
 extern uint16_t gatts_add_char_descr(tGATT_SVC_DB& db, tGATT_PERM perm,
                                      const bluetooth::Uuid& dscp_uuid);
 extern tGATT_STATUS gatts_db_read_attr_value_by_type(

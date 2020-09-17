@@ -376,7 +376,6 @@ uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
  ******************************************************************************/
 uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
                                   tGATT_CHAR_PROP property,
-                                  uint16_t extended_properties,
                                   const Uuid& char_uuid) {
   Uuid uuid = Uuid::From16Bit(GATT_UUID_CHAR_DECLARE);
 
@@ -391,16 +390,34 @@ uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
   char_decl.p_value->char_decl.char_val_handle = char_val.handle;
   char_val.gatt_type = BTGATT_DB_CHARACTERISTIC;
 
-  if (property & GATT_CHAR_PROP_BIT_EXT_PROP) {
-    Uuid char_ext_prop_uuid = Uuid::From16Bit(GATT_UUID_CHAR_EXT_PROP);
-    tGATT_ATTR& char_ext_prop =
-        allocate_attr_in_db(db, char_ext_prop_uuid, GATT_PERM_READ);
-    char_ext_prop.p_value.reset(new tGATT_ATTR_VALUE);
-    char_ext_prop.p_value->char_ext_prop = extended_properties;
-    char_ext_prop.gatt_type = BTGATT_DB_DESCRIPTOR;
-  }
-
   return char_val.handle;
+}
+
+/*******************************************************************************
+ *
+ * Function         gatts_add_char_ext_prop_descr
+ *
+ * Description      add a characteristics extended properties descriptor.
+ *
+ * Parameter        db: database pointer.
+ *                  extended_properties: characteristic descriptors values.
+ *
+ * Returns          Status of the operation.
+ *
+ ******************************************************************************/
+uint16_t gatts_add_char_ext_prop_descr(
+    tGATT_SVC_DB& db, uint16_t extended_properties) {
+  Uuid descr_uuid = Uuid::From16Bit(GATT_UUID_CHAR_EXT_PROP);
+
+  VLOG(1) << StringPrintf("gatts_add_char_ext_prop_descr uuid=%s",
+                          descr_uuid.ToString().c_str());
+
+  tGATT_ATTR& char_dscptr = allocate_attr_in_db(db, descr_uuid, GATT_PERM_READ);
+  char_dscptr.gatt_type = BTGATT_DB_DESCRIPTOR;
+  char_dscptr.p_value.reset(new tGATT_ATTR_VALUE);
+  char_dscptr.p_value->char_ext_prop = extended_properties;
+
+  return char_dscptr.handle;
 }
 
 /*******************************************************************************
