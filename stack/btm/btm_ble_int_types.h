@@ -137,7 +137,6 @@ typedef struct {
   alarm_t* inquiry_timer;
   bool scan_rsp;
   uint8_t state; /* Current state that the inquiry process is in */
-  int8_t tx_power;
 } tBTM_BLE_INQ_CB;
 
 /* random address resolving complete callback */
