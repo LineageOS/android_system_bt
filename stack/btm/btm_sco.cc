@@ -502,7 +502,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
         if (is_orig) {
           // can not create SCO link if in park mode
           tBTM_PM_STATE state;
-          if ((btm_read_power_mode_state(*remote_bda, &state) == BTM_SUCCESS)) {
+          if (BTM_ReadPowerMode(*remote_bda, &state)) {
             if (state == BTM_PM_ST_SNIFF || state == BTM_PM_ST_PARK ||
                 state == BTM_PM_ST_PENDING) {
               LOG(INFO) << __func__ << ": " << *remote_bda
@@ -882,9 +882,8 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
     return (BTM_SUCCESS);
   }
 
-  if ((btm_read_power_mode_state(p->esco.data.bd_addr, &state) ==
-       BTM_SUCCESS) &&
-      state == BTM_PM_ST_PENDING) {
+  if (BTM_ReadPowerMode(p->esco.data.bd_addr, &state) &&
+      (state == BTM_PM_ST_PENDING)) {
     BTM_TRACE_DEBUG("%s: BTM_PM_ST_PENDING for ACL mapped with SCO Link 0x%04x",
                     __func__, p->hci_handle);
     p->state = SCO_ST_PEND_MODECHANGE;
