@@ -129,8 +129,6 @@ typedef struct {
   alarm_t* fast_adv_timer;
 
   /* inquiry BD addr database */
-  uint8_t num_bd_entries;
-  uint8_t max_bd_entries;
   tBTM_BLE_LOCAL_ADV_DATA adv_data;
   tBTM_BLE_ADV_CHNL_MAP adv_chnl_map;
 
