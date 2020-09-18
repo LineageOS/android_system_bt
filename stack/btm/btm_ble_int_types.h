@@ -122,7 +122,14 @@ typedef struct {
 
   tBLE_ADDR_TYPE adv_addr_type;
   uint8_t evt_type;
+
   uint8_t adv_mode;
+  void enable_advertising_mode() { adv_mode = BTM_BLE_ADV_ENABLE; }
+  void disable_advertising_mode() { adv_mode = BTM_BLE_ADV_DISABLE; }
+  bool is_advertising_mode_enabled() const {
+    return (adv_mode == BTM_BLE_ADV_ENABLE);
+  }
+
   tBLE_BD_ADDR direct_bda;
   tBTM_BLE_EVT directed_conn;
   bool fast_adv_on;
