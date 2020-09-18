@@ -1094,7 +1094,8 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
   return status;
 }
 
-void btm_send_hci_scan_enable(uint8_t enable, uint8_t filter_duplicates) {
+static void btm_send_hci_scan_enable(uint8_t enable,
+                                     uint8_t filter_duplicates) {
   if (controller_get_interface()->supports_ble_extended_advertising()) {
     btsnd_hcic_ble_set_extended_scan_enable(enable, filter_duplicates, 0x0000,
                                             0x0000);
