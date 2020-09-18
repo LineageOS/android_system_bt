@@ -289,8 +289,6 @@ typedef struct {
   /* random address management control block */
   tBTM_LE_RANDOM_CB addr_mgnt_cb;
 
-  bool enabled;
-
   bool mixed_mode;                   /* privacy 1.2 mixed mode is on or not */
   tBTM_PRIVACY_MODE privacy_mode;    /* privacy mode */
   uint8_t resolving_list_avail_size; /* resolving list available size */
