@@ -70,13 +70,14 @@
 
 #define BTM_BLE_GAP_FAST_ADV_TIMEOUT_MS (30 * 1000)
 
-#define BTM_BLE_SEC_REQ_ACT_NONE 0
-/* encrypt the link using current key or key refresh */
-#define BTM_BLE_SEC_REQ_ACT_ENCRYPT 1
-#define BTM_BLE_SEC_REQ_ACT_PAIR 2
-/* discard the sec request while encryption is started but not completed */
-#define BTM_BLE_SEC_REQ_ACT_DISCARD 3
-typedef uint8_t tBTM_BLE_SEC_REQ_ACT;
+typedef enum : uint8_t {
+  BTM_BLE_SEC_REQ_ACT_NONE = 0,
+  /* encrypt the link using current key or key refresh */
+  BTM_BLE_SEC_REQ_ACT_ENCRYPT = 1,
+  BTM_BLE_SEC_REQ_ACT_PAIR = 2,
+  /* discard the sec request while encryption is started but not completed */
+  BTM_BLE_SEC_REQ_ACT_DISCARD = 3,
+} tBTM_BLE_SEC_REQ_ACT;
 
 /* LE scan activity bit mask, continue with LE inquiry bits */
 /* observe is in progress */
