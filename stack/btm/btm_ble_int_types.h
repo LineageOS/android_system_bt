@@ -224,6 +224,7 @@ typedef uint8_t tBTM_PRIVACY_MODE;
 */
 constexpr uint8_t kBTM_BLE_INQUIRY_ACTIVE = 0x10;
 constexpr uint8_t kBTM_BLE_OBSERVE_ACTIVE = 0x80;
+constexpr size_t kMasterAndSlaveCount = 2;
 
 typedef struct {
  private:
@@ -299,7 +300,9 @@ typedef struct {
 
   /* current BLE link state */
   tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
-  uint8_t link_count[2];          /* total link count master and slave*/
+
+  uint8_t
+      link_count[kMasterAndSlaveCount]; /* total link count master and slave*/
 } tBTM_BLE_CB;
 
 #endif  // BTM_BLE_INT_TYPES_H
