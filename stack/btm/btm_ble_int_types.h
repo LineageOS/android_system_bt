@@ -96,15 +96,6 @@ typedef struct {
   uint8_t* p_pad;
 } tBTM_BLE_LOCAL_ADV_DATA;
 
-typedef struct {
-  /* Used for determining if a response has already been received for the
-   * current inquiry operation. (We do not want to flood the caller with
-   * multiple responses from the same device. */
-  uint32_t inq_count;
-  bool scan_rsp;
-  tBLE_BD_ADDR le_bda;
-} tINQ_LE_BDADDR;
-
 #define BTM_BLE_ISVALID_PARAM(x, min, max) \
   (((x) >= (min) && (x) <= (max)) || ((x) == BTM_BLE_CONN_PARAM_UNDEF))
 
