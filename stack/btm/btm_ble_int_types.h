@@ -149,9 +149,6 @@ typedef void(tBTM_BLE_ADDR_CBACK)(const RawAddress& static_random, void* p);
 typedef struct {
   tBLE_ADDR_TYPE own_addr_type; /* local device LE address type */
   RawAddress private_addr;
-  RawAddress random_bda;
-  tBTM_BLE_ADDR_CBACK* p_generate_cback;
-  void* p;
   alarm_t* refresh_raddr_timer;
 } tBTM_LE_RANDOM_CB;
 
