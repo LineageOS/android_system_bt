@@ -836,34 +836,27 @@ uint16_t BTM_BleReadConnectability() {
 static void btm_ble_select_adv_interval(uint8_t evt_type,
                                         uint16_t* p_adv_int_min,
                                         uint16_t* p_adv_int_max) {
-  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
-  if (p_cb->adv_interval_min && p_cb->adv_interval_max) {
-    *p_adv_int_min = p_cb->adv_interval_min;
-    *p_adv_int_max = p_cb->adv_interval_max;
-  } else {
-    switch (evt_type) {
-      case BTM_BLE_CONNECT_EVT:
-      case BTM_BLE_CONNECT_LO_DUTY_DIR_EVT:
-        *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_1;
-        break;
+  switch (evt_type) {
+    case BTM_BLE_CONNECT_EVT:
+    case BTM_BLE_CONNECT_LO_DUTY_DIR_EVT:
+      *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_1;
+      break;
 
-      case BTM_BLE_NON_CONNECT_EVT:
-      case BTM_BLE_DISCOVER_EVT:
-        *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_2;
-        break;
+    case BTM_BLE_NON_CONNECT_EVT:
+    case BTM_BLE_DISCOVER_EVT:
+      *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_2;
+      break;
 
       /* connectable directed event */
-      case BTM_BLE_CONNECT_DIR_EVT:
-        *p_adv_int_min = BTM_BLE_GAP_ADV_DIR_MIN_INT;
-        *p_adv_int_max = BTM_BLE_GAP_ADV_DIR_MAX_INT;
-        break;
+    case BTM_BLE_CONNECT_DIR_EVT:
+      *p_adv_int_min = BTM_BLE_GAP_ADV_DIR_MIN_INT;
+      *p_adv_int_max = BTM_BLE_GAP_ADV_DIR_MAX_INT;
+      break;
 
-      default:
-        *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_SLOW_INT;
-        break;
-    }
+    default:
+      *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_SLOW_INT;
+      break;
   }
-  return;
 }
 
 /*******************************************************************************
