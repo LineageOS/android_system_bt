@@ -39,6 +39,7 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 
 #include "bt_types.h"
@@ -52,8 +53,11 @@
 void btm_inq_stop_on_ssp(void);
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
+extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+                                     const RawAddress& new_pseudo_addr);
 extern void bta_dm_remove_device(const RawAddress& bd_addr);
 extern void bta_dm_process_remove_device(const RawAddress& bd_addr);
+extern void btm_inq_clear_ssp(void);
 
 /*******************************************************************************
  *             L O C A L    F U N C T I O N     P R O T O T Y P E S            *
@@ -357,7 +361,7 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
  * Parameters:      is_originator - true if originating the connection
  *                  p_name      - Name of the service relevant only if
  *                                authorization will show this name to user.
- *                                Ignored if BTM_SEC_SERVICE_NAME_LEN is 0.
+ *                                Ignored if BT_MAX_SERVICE_NAME_LEN is 0.
  *                  service_id  - service ID for the service passed to
  *                                authorization callback
  *                  sec_level   - bit mask of the security features
@@ -386,19 +390,14 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
   for (index = 0; index < BTM_SEC_MAX_SERVICE_RECORDS; index++, p_srec++) {
     /* Check if there is already a record for this service */
     if (p_srec->security_flags & BTM_SEC_IN_USE) {
-#if BTM_SEC_SERVICE_NAME_LEN > 0
       if (p_srec->psm == psm && p_srec->mx_proto_id == mx_proto_id &&
           service_id == p_srec->service_id && p_name &&
           (!strncmp(p_name, (char*)p_srec->orig_service_name,
                     /* strlcpy replaces end char with termination char*/
-                    BTM_SEC_SERVICE_NAME_LEN - 1) ||
+                    BT_MAX_SERVICE_NAME_LEN - 1) ||
            !strncmp(p_name, (char*)p_srec->term_service_name,
                     /* strlcpy replaces end char with termination char*/
-                    BTM_SEC_SERVICE_NAME_LEN - 1)))
-#else
-      if (p_srec->psm == psm && p_srec->mx_proto_id == mx_proto_id &&
-          service_id == p_srec->service_id)
-#endif
+                    BT_MAX_SERVICE_NAME_LEN - 1)))
       {
         record_allocated = true;
         break;
@@ -431,10 +430,8 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 
   if (is_originator) {
     p_srec->orig_mx_chan_id = mx_chan_id;
-#if BTM_SEC_SERVICE_NAME_LEN > 0
     strlcpy((char*)p_srec->orig_service_name, p_name,
-            BTM_SEC_SERVICE_NAME_LEN + 1);
-#endif
+            BT_MAX_SERVICE_NAME_LEN + 1);
 /* clear out the old setting, just in case it exists */
     {
       p_srec->security_flags &=
@@ -462,10 +459,8 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
       btm_cb.p_out_serv = p_srec;
   } else {
     p_srec->term_mx_chan_id = mx_chan_id;
-#if BTM_SEC_SERVICE_NAME_LEN > 0
     strlcpy((char*)p_srec->term_service_name, p_name,
-            BTM_SEC_SERVICE_NAME_LEN + 1);
-#endif
+            BT_MAX_SERVICE_NAME_LEN + 1);
 /* clear out the old setting, just in case it exists */
     {
       p_srec->security_flags &= ~(
@@ -494,11 +489,9 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
       "BTM_SEC_REG[%d]: id %d, is_orig %d, psm 0x%04x, proto_id %d, chan_id %d",
       index, service_id, is_originator, psm, mx_proto_id, mx_chan_id);
 
-#if BTM_SEC_SERVICE_NAME_LEN > 0
   BTM_TRACE_API(
       "               : sec: 0x%x, service name [%s] (up to %d chars saved)",
-      p_srec->security_flags, p_name, BTM_SEC_SERVICE_NAME_LEN);
-#endif
+      p_srec->security_flags, p_name, BT_MAX_SERVICE_NAME_LEN);
 
   return (record_allocated);
 }

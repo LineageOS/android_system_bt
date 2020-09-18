@@ -25,6 +25,7 @@
 
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
+#include "hci/le_acl_connection_interface.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/shim.h"
 #include "osi/include/allocator.h"
@@ -187,25 +188,12 @@ static bool event_already_registered_in_hci_layer(
 
 static bool event_already_registered_in_le_advertising_manager(
     bluetooth::hci::EventCode event_code) {
-  switch (event_code) {
-    case bluetooth::hci::EventCode::CONNECTION_PACKET_TYPE_CHANGED:
-    case bluetooth::hci::EventCode::ROLE_CHANGE:
-    case bluetooth::hci::EventCode::CONNECTION_COMPLETE:
-    case bluetooth::hci::EventCode::CONNECTION_REQUEST:
-    case bluetooth::hci::EventCode::AUTHENTICATION_COMPLETE:
-    case bluetooth::hci::EventCode::READ_CLOCK_OFFSET_COMPLETE:
-    case bluetooth::hci::EventCode::MODE_CHANGE:
-    case bluetooth::hci::EventCode::QOS_SETUP_COMPLETE:
-    case bluetooth::hci::EventCode::FLOW_SPECIFICATION_COMPLETE:
-    case bluetooth::hci::EventCode::FLUSH_OCCURRED:
-    case bluetooth::hci::EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE:
-    case bluetooth::hci::EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE:
-    case bluetooth::hci::EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE:
-    case bluetooth::hci::EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED:
+  for (auto event : bluetooth::hci::AclConnectionEvents) {
+    if (event == event_code) {
       return bluetooth::shim::is_gd_advertising_enabled();
-    default:
-      return false;
+    }
   }
+  return false;
 }
 
 std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(

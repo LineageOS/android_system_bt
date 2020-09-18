@@ -43,7 +43,7 @@ typedef void (*btsock_signaled_cb)(int fd, int type, int flags,
                                    uint32_t user_id);
 typedef void (*btsock_cmd_cb)(int cmd_fd, int type, int size, uint32_t user_id);
 
-int btsock_thread_init();
+void btsock_thread_init();
 int btsock_thread_add_fd(int handle, int fd, int type, int flags,
                          uint32_t user_id);
 bool btsock_thread_remove_fd_and_close(int thread_handle, int fd);

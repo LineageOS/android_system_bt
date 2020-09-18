@@ -33,6 +33,7 @@
 #include <string.h>
 
 #include "btm_int.h" /* Included for UIPC_* macro definitions */
+#include "stack/include/acl_hci_link_interface.h"
 
 void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
                         uint8_t response_cnt) {
