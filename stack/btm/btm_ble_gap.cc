@@ -673,10 +673,15 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
   uint8_t evt_type;
   tBTM_SEC_DEV_REC* p_dev_rec;
 
-  evt_type =
-      (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE)
-          ? ((p_cb->scan_rsp) ? BTM_BLE_DISCOVER_EVT : BTM_BLE_NON_CONNECT_EVT)
-          : BTM_BLE_CONNECT_EVT;
+  if (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE) {
+    if (p_cb->scan_rsp) {
+      evt_type = BTM_BLE_DISCOVER_EVT;
+    } else {
+      evt_type = BTM_BLE_NON_CONNECT_EVT;
+    }
+  } else {
+    evt_type = BTM_BLE_CONNECT_EVT;
+  }
 
   if (evt_type == BTM_BLE_CONNECT_EVT) {
     evt_type = p_cb->directed_conn;
