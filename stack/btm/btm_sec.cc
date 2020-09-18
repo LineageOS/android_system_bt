@@ -3706,9 +3706,6 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
   tBTM_SEC_CALLBACK* p_callback = NULL;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
-  /* If page was delayed for disc complete, can do it now */
-  btm_cb.discing = false;
-
   btm_acl_resubmit_page();
 
   if (!p_dev_rec) return;

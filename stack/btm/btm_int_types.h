@@ -260,7 +260,6 @@ typedef struct {
   bool is_inquiry;    /* true, if inquiry is in progess */
   fixed_queue_t* page_queue;
   bool paging;
-  bool discing;
   fixed_queue_t* sec_pending_q; /* pending sequrity requests in
                                    tBTM_SEC_QUEUE_ENTRY format */
 
