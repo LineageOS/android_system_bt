@@ -603,9 +603,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
      * address in controller */
     if (controller_get_interface()->supports_ble_privacy()) {
       gap_ble_attr_value.addr_resolution = 1;
-      /* check vendor specific capability */
-      p_cb->privacy_mode =
-          btm_cb.ble_ctr_cb.mixed_mode ? BTM_PRIVACY_MIXED : BTM_PRIVACY_1_2;
+      p_cb->privacy_mode = BTM_PRIVACY_1_2;
     } else /* 4.1/4.0 controller */
       p_cb->privacy_mode = BTM_PRIVACY_1_1;
   }
