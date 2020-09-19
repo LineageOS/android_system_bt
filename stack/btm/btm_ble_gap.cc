@@ -2309,6 +2309,14 @@ void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) {
   }
 }
 
+void btm_ble_increment_link_topology_mask(uint8_t link_role) {
+  btm_ble_update_link_topology_mask(link_role, true);
+}
+
+void btm_ble_decrement_link_topology_mask(uint8_t link_role) {
+  btm_ble_update_link_topology_mask(link_role, false);
+}
+
 /*******************************************************************************
  *
  * Function         btm_ble_update_mode_operation
