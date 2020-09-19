@@ -220,15 +220,6 @@ typedef struct {
   (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_FAIL_UNKNOWN)
 #define BTA_DM_AUTH_SMP_CONN_TOUT (BTA_DM_AUTH_FAIL_BASE + SMP_CONN_TOUT)
 
-#define BTA_LE_KEY_PENC \
-  BTM_LE_KEY_PENC /* encryption information of peer device */
-#define BTA_LE_KEY_PID BTM_LE_KEY_PID     /* identity key of the peer device */
-#define BTA_LE_KEY_PCSRK BTM_LE_KEY_PCSRK /* peer SRK */
-#define BTA_LE_KEY_LENC \
-  BTM_LE_KEY_LENC                     /* master role security information:div */
-#define BTA_LE_KEY_LID BTM_LE_KEY_LID /* master device ID key */
-#define BTA_LE_KEY_LCSRK \
-  BTM_LE_KEY_LCSRK                /* local CSRK has been deliver to peer */
 typedef uint8_t tBTA_LE_KEY_TYPE; /* can be used as a bit mask */
 
 typedef union {
