@@ -29,6 +29,7 @@
 #include "internal_include/bt_trace.h"
 #include "main/shim/shim.h"
 #include "osi/include/alarm.h"
+#include "osi/include/log.h"
 #include "stack/btm/btm_ble_bgconn.h"
 #include "stack/include/l2c_api.h"
 
@@ -170,15 +171,20 @@ void on_app_deregistered(uint8_t app_id) {
   }
 }
 
-void on_connection_complete(const RawAddress& address) {
-  VLOG(2) << __func__;
+static void remove_all_clients_with_pending_connections(
+    const RawAddress& address) {
   auto it = bgconn_dev.find(address);
-
   while (it != bgconn_dev.end() && !it->second.doing_direct_conn.empty()) {
     uint8_t app_id = it->second.doing_direct_conn.begin()->first;
     direct_connect_remove(app_id, address);
     it = bgconn_dev.find(address);
   }
+}
+
+void on_connection_complete(const RawAddress& address) {
+  LOG_DEBUG("Le connection completed to device:%s", address.ToString().c_str());
+
+  remove_all_clients_with_pending_connections(address);
 }
 
 /** Reset bg device list. If called after controller reset, set |after_reset| to
