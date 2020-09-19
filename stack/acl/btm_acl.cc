@@ -562,53 +562,56 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
-
-  LOG_INFO("%s: peer %s new_role=0x%x", __func__,
-           remote_bd_addr.ToString().c_str(), new_role);
-
-  /* Make sure the local device supports switching */
-  if (!controller_get_interface()->supports_master_slave_role_switch())
-    return (BTM_MODE_UNSUPPORTED);
+  if (!controller_get_interface()->supports_master_slave_role_switch()) {
+    LOG_INFO("Local controller does not support role switching");
+    return BTM_MODE_UNSUPPORTED;
+  }
 
   tACL_CONN* p_acl =
       internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_acl == NULL) return (BTM_UNKNOWN_ADDR);
-
-  /* Finished if already in desired role */
-  if (p_acl->link_role == new_role) return (BTM_SUCCESS);
-
-  if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr))
-    return BTM_DEV_BLACKLISTED;
-
-  /* Check if there is any SCO Active on this BD Address */
-  if (BTM_IsScoActiveByBdaddr(remote_bd_addr)) return (BTM_NO_RESOURCES);
-
-  /* Ignore role switch request if the previous request was not completed */
-  if (!p_acl->is_switch_role_idle()) {
-    LOG_DEBUG("%s switch role in progress", __func__);
-    return BTM_BUSY;
+  if (p_acl == nullptr) {
+    LOG_INFO("Unable to find device for classic role switch");
+    return BTM_UNKNOWN_ADDR;
   }
 
-  if (interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &remote_bd_addr)) {
-    BTM_TRACE_DEBUG("%s, Device blacklisted under INTEROP_DYNAMIC_ROLE_SWITCH.",
-                    __func__);
+  if (p_acl->link_role == new_role) {
+    LOG_INFO("Requested role is already in effect");
+    return BTM_SUCCESS;
+  }
+
+  if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr)) {
+    LOG_INFO("Remote device is on list preventing role switch");
     return BTM_DEV_BLACKLISTED;
+  }
+
+  if (BTM_IsScoActiveByBdaddr(remote_bd_addr)) {
+    LOG_INFO("An active SCO to device prevents role switch at this time");
+    return BTM_NO_RESOURCES;
+  }
+
+  if (!p_acl->is_switch_role_idle()) {
+    LOG_DEBUG("Role switch is already progress");
+    return BTM_BUSY;
   }
 
   tBTM_PM_MODE pwr_mode;
   if (!BTM_ReadPowerMode(p_acl->remote_addr, &pwr_mode)) {
+    LOG_WARN(
+        "Unable to find device to read current power mode prior to role "
+        "switch");
     return BTM_UNKNOWN_ADDR;
   };
 
-  /* Wake up the link if in sniff or park before attempting switch */
   if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
     tBTM_PM_PWR_MD settings;
     memset((void*)&settings, 0, sizeof(settings));
     settings.mode = BTM_PM_MD_ACTIVE;
     tBTM_STATUS status =
         BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_acl->remote_addr, &settings);
-    if (status != BTM_CMD_STARTED) return (BTM_WRONG_MODE);
-
+    if (status != BTM_CMD_STARTED) {
+      LOG_WARN("Unable to set power mode before attempting switch");
+      return BTM_WRONG_MODE;
+    }
     p_acl->set_switch_role_changing();
   }
   /* some devices do not support switch while encryption is on */
@@ -627,7 +630,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
     }
   }
 
-  return (BTM_CMD_STARTED);
+  return BTM_CMD_STARTED;
 }
 
 /*******************************************************************************
