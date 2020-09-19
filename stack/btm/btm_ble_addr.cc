@@ -63,9 +63,6 @@ RawAddress generate_rpa_from_irk_and_rand(const Octet16& irk,
  * generated */
 void btm_gen_resolve_paddr_low(const RawAddress& address) {
   tBTM_LE_RANDOM_CB* p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
-
-  BTM_TRACE_EVENT("btm_gen_resolve_paddr_low");
-
   p_cb->private_addr = address;
 
   /* set it to controller */
@@ -85,7 +82,6 @@ void btm_gen_resolve_paddr_low(const RawAddress& address) {
 /** This function generate a resolvable private address using local IRK */
 void btm_gen_resolvable_private_addr(
     base::Callback<void(const RawAddress&)> cb) {
-  BTM_TRACE_EVENT("%s", __func__);
   /* generate 3B rand as BD LSB, SRK with it, get BD MSB */
   btsnd_hcic_ble_rand(base::Bind(
       [](base::Callback<void(const RawAddress&)> cb, BT_OCTET8 random) {
@@ -201,8 +197,6 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
  * matched to.
  */
 tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
-  BTM_TRACE_EVENT("%s", __func__);
-
   /* start to resolve random address */
   /* check for next security record */
 
