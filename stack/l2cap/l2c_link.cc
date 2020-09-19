@@ -37,6 +37,7 @@
 #include "types/raw_address.h"
 
 void btm_sco_acl_removed(const RawAddress* bda);
+void btm_ble_decrement_link_topology_mask(uint8_t link_role);
 
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
                                    tL2C_TX_COMPLETE_CB_INFO* p_cbi);

@@ -41,6 +41,7 @@
 
 using base::StringPrintf;
 
+void btm_ble_increment_link_topology_mask(uint8_t link_role);
 tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
                                               uint16_t psm, bool is_originator,
                                               tBTM_SEC_CALLBACK* p_callback,
