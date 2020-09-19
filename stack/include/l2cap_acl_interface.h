@@ -26,6 +26,8 @@ void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role);
 void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,
                                    bool is_bonding);
+bool acl_create_le_connection(const RawAddress& bd_addr);
+void acl_cancel_le_connection(const RawAddress& bd_addr);
 void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason);
 void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf);
 void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf);
