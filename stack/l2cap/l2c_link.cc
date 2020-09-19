@@ -343,7 +343,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
 
     /* Check for BLE and handle that differently */
     if (p_lcb->transport == BT_TRANSPORT_LE)
-      btm_ble_update_link_topology_mask(p_lcb->LinkRole(), false);
+      btm_ble_decrement_link_topology_mask(p_lcb->LinkRole());
     /* Link is disconnected. For all channels, send the event through */
     /* their FSMs. The CCBs should remove themselves from the LCB     */
     for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;) {
