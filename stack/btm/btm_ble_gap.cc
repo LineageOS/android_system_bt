@@ -1875,8 +1875,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
   uint8_t result = btm_ble_is_discoverable(bda, adv_data);
   if (result == 0) {
     cache.Clear(addr_type, bda);
-    LOG_WARN("%s device no longer discoverable, discarding advertising packet",
-             __func__);
+    LOG_DEBUG("device no longer discoverable, discarding advertising packet");
     return;
   }
 
