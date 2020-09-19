@@ -1557,38 +1557,38 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       }
 
       switch (p_data->ble_key.key_type) {
-        case BTA_LE_KEY_PENC:
-          BTIF_TRACE_DEBUG("Rcv BTA_LE_KEY_PENC");
+        case BTM_LE_KEY_PENC:
+          BTIF_TRACE_DEBUG("Rcv BTM_LE_KEY_PENC");
           pairing_cb.ble.is_penc_key_rcvd = true;
           pairing_cb.ble.penc_key = p_data->ble_key.p_key_value->penc_key;
           break;
 
-        case BTA_LE_KEY_PID:
-          BTIF_TRACE_DEBUG("Rcv BTA_LE_KEY_PID");
+        case BTM_LE_KEY_PID:
+          BTIF_TRACE_DEBUG("Rcv BTM_LE_KEY_PID");
           pairing_cb.ble.is_pid_key_rcvd = true;
           pairing_cb.ble.pid_key = p_data->ble_key.p_key_value->pid_key;
           break;
 
-        case BTA_LE_KEY_PCSRK:
-          BTIF_TRACE_DEBUG("Rcv BTA_LE_KEY_PCSRK");
+        case BTM_LE_KEY_PCSRK:
+          BTIF_TRACE_DEBUG("Rcv BTM_LE_KEY_PCSRK");
           pairing_cb.ble.is_pcsrk_key_rcvd = true;
           pairing_cb.ble.pcsrk_key = p_data->ble_key.p_key_value->pcsrk_key;
           break;
 
-        case BTA_LE_KEY_LENC:
-          BTIF_TRACE_DEBUG("Rcv BTA_LE_KEY_LENC");
+        case BTM_LE_KEY_LENC:
+          BTIF_TRACE_DEBUG("Rcv BTM_LE_KEY_LENC");
           pairing_cb.ble.is_lenc_key_rcvd = true;
           pairing_cb.ble.lenc_key = p_data->ble_key.p_key_value->lenc_key;
           break;
 
-        case BTA_LE_KEY_LCSRK:
-          BTIF_TRACE_DEBUG("Rcv BTA_LE_KEY_LCSRK");
+        case BTM_LE_KEY_LCSRK:
+          BTIF_TRACE_DEBUG("Rcv BTM_LE_KEY_LCSRK");
           pairing_cb.ble.is_lcsrk_key_rcvd = true;
           pairing_cb.ble.lcsrk_key = p_data->ble_key.p_key_value->lcsrk_key;
           break;
 
-        case BTA_LE_KEY_LID:
-          BTIF_TRACE_DEBUG("Rcv BTA_LE_KEY_LID");
+        case BTM_LE_KEY_LID:
+          BTIF_TRACE_DEBUG("Rcv BTM_LE_KEY_LID");
           pairing_cb.ble.is_lidk_key_rcvd = true;
           break;
 
@@ -2478,7 +2478,7 @@ void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr) {
 
   if (pairing_cb.ble.is_penc_key_rcvd) {
     btif_storage_add_ble_bonding_key(
-        &bd_addr, (uint8_t*)&pairing_cb.ble.penc_key, BTIF_DM_LE_KEY_PENC,
+        &bd_addr, (uint8_t*)&pairing_cb.ble.penc_key, BTM_LE_KEY_PENC,
         sizeof(tBTM_LE_PENC_KEYS));
   }
 
@@ -2490,25 +2490,25 @@ void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr) {
 
   if (pairing_cb.ble.is_pcsrk_key_rcvd) {
     btif_storage_add_ble_bonding_key(
-        &bd_addr, (uint8_t*)&pairing_cb.ble.pcsrk_key, BTIF_DM_LE_KEY_PCSRK,
+        &bd_addr, (uint8_t*)&pairing_cb.ble.pcsrk_key, BTM_LE_KEY_PCSRK,
         sizeof(tBTM_LE_PCSRK_KEYS));
   }
 
   if (pairing_cb.ble.is_lenc_key_rcvd) {
     btif_storage_add_ble_bonding_key(
-        &bd_addr, (uint8_t*)&pairing_cb.ble.lenc_key, BTIF_DM_LE_KEY_LENC,
+        &bd_addr, (uint8_t*)&pairing_cb.ble.lenc_key, BTM_LE_KEY_LENC,
         sizeof(tBTM_LE_LENC_KEYS));
   }
 
   if (pairing_cb.ble.is_lcsrk_key_rcvd) {
     btif_storage_add_ble_bonding_key(
-        &bd_addr, (uint8_t*)&pairing_cb.ble.lcsrk_key, BTIF_DM_LE_KEY_LCSRK,
+        &bd_addr, (uint8_t*)&pairing_cb.ble.lcsrk_key, BTM_LE_KEY_LCSRK,
         sizeof(tBTM_LE_LCSRK_KEYS));
   }
 
   if (pairing_cb.ble.is_lidk_key_rcvd) {
     uint8_t empty[] = {};
-    btif_storage_add_ble_bonding_key(&bd_addr, empty, BTIF_DM_LE_KEY_LID, 0);
+    btif_storage_add_ble_bonding_key(&bd_addr, empty, BTM_LE_KEY_LID, 0);
   }
 }
 
