@@ -2286,7 +2286,8 @@ bool btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state_mask) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) {
+static void btm_ble_update_link_topology_mask(uint8_t link_role,
+                                              bool increase) {
   btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_CONN_MASK);
 
   if (increase)
