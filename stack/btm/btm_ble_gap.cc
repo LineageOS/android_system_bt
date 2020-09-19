@@ -165,8 +165,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
                                   uint8_t advertising_sid, int8_t tx_power,
                                   int8_t rssi, uint16_t periodic_adv_int,
                                   uint8_t data_len, uint8_t* data);
-static uint8_t btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB* p_cb,
-                                               RawAddress& p_peer_addr_ptr,
+static uint8_t btm_set_conn_mode_adv_init_addr(RawAddress& p_peer_addr_ptr,
                                                tBLE_ADDR_TYPE* p_peer_addr_type,
                                                tBLE_ADDR_TYPE* p_own_addr_type);
 static void btm_ble_stop_observe(void);
@@ -670,8 +669,9 @@ static bool is_resolving_list_bit_set(void* data, void* context) {
  *
  ******************************************************************************/
 static uint8_t btm_set_conn_mode_adv_init_addr(
-    tBTM_BLE_INQ_CB* p_cb, RawAddress& p_peer_addr_ptr,
-    tBLE_ADDR_TYPE* p_peer_addr_type, tBLE_ADDR_TYPE* p_own_addr_type) {
+    RawAddress& p_peer_addr_ptr, tBLE_ADDR_TYPE* p_peer_addr_type,
+    tBLE_ADDR_TYPE* p_own_addr_type) {
+  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   uint8_t evt_type;
   tBTM_SEC_DEV_REC* p_dev_rec;
 
@@ -964,8 +964,8 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
 
   p_cb->discoverable_mode = mode;
 
-  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, address, &init_addr_type,
-                                             &own_addr_type);
+  evt_type =
+      btm_set_conn_mode_adv_init_addr(address, &init_addr_type, &own_addr_type);
 
   if (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE &&
       mode == BTM_BLE_NON_DISCOVERABLE)
@@ -1054,8 +1054,8 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
 
   p_cb->connectable_mode = mode;
 
-  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, address, &peer_addr_type,
-                                             &own_addr_type);
+  evt_type =
+      btm_set_conn_mode_adv_init_addr(address, &peer_addr_type, &own_addr_type);
 
   if (mode == BTM_BLE_NON_CONNECTABLE &&
       p_cb->discoverable_mode == BTM_BLE_NON_DISCOVERABLE)
@@ -2139,8 +2139,8 @@ static void btm_ble_start_slow_adv(void) {
 
     btm_ble_stop_adv();
 
-    p_cb->evt_type = btm_set_conn_mode_adv_init_addr(
-        p_cb, address, &init_addr_type, &own_addr_type);
+    p_cb->evt_type = btm_set_conn_mode_adv_init_addr(address, &init_addr_type,
+                                                     &own_addr_type);
 
     /* slow adv mode never goes into directed adv */
     btsnd_hcic_ble_write_adv_params(
