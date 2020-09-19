@@ -251,9 +251,9 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
  * Returns          success return true, otherwise false.
  *
  ******************************************************************************/
-bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
-                                 RawAddress& conn_addr,
-                                 tBLE_ADDR_TYPE* p_addr_type) {
+static bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+                                        RawAddress& conn_addr,
+                                        tBLE_ADDR_TYPE* p_addr_type) {
   bool st = true;
 
   if (p_dev_rec == NULL) {
