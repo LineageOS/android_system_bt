@@ -27,10 +27,6 @@
 
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 
-#define BTM_IS_BRCM_CONTROLLER()                                 \
-  (controller_get_interface()->get_bt_version()->manufacturer == \
-   LMP_COMPID_BROADCOM)
-
 typedef struct {
   uint16_t min_conn_int;
   uint16_t max_conn_int;
