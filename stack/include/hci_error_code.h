@@ -58,3 +58,16 @@
 #define HCI_ERR_LIMIT_REACHED 0x43  // stack/btm/btm_ble_multi_adv.cc
 
 #define HCI_ERR_MAX_ERR 0x43  // TODO remove. randomly used
+
+inline std::string hci_error_code_text(uint16_t error_code) {
+  switch (error_code) {
+    case HCI_ERR_CONNECTION_TOUT:
+      return std::string("Connection Timeout");
+    case HCI_ERR_PEER_USER:
+      return std::string("Remote Terminated Connection");
+    case HCI_ERR_CONN_CAUSE_LOCAL_HOST:
+      return std::string("Local Terminated Connection");
+    default:
+      return std::string("Unknown Error");
+  }
+}
