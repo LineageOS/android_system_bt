@@ -830,9 +830,10 @@ uint16_t BTM_BleReadConnectability() {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_select_adv_interval(tBTM_BLE_INQ_CB* p_cb, uint8_t evt_type,
-                                 uint16_t* p_adv_int_min,
-                                 uint16_t* p_adv_int_max) {
+static void btm_ble_select_adv_interval(uint8_t evt_type,
+                                        uint16_t* p_adv_int_min,
+                                        uint16_t* p_adv_int_max) {
+  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   if (p_cb->adv_interval_min && p_cb->adv_interval_max) {
     *p_adv_int_min = p_cb->adv_interval_min;
     *p_adv_int_max = p_cb->adv_interval_max;
@@ -971,7 +972,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
       mode == BTM_BLE_NON_DISCOVERABLE)
     new_mode = BTM_BLE_ADV_DISABLE;
 
-  btm_ble_select_adv_interval(p_cb, evt_type, &adv_int_min, &adv_int_max);
+  btm_ble_select_adv_interval(evt_type, &adv_int_min, &adv_int_max);
 
   alarm_cancel(p_cb->fast_adv_timer);
 
@@ -1061,7 +1062,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
       p_cb->discoverable_mode == BTM_BLE_NON_DISCOVERABLE)
     new_mode = BTM_BLE_ADV_DISABLE;
 
-  btm_ble_select_adv_interval(p_cb, evt_type, &adv_int_min, &adv_int_max);
+  btm_ble_select_adv_interval(evt_type, &adv_int_min, &adv_int_max);
 
   alarm_cancel(p_cb->fast_adv_timer);
   /* update adv params if needed */
