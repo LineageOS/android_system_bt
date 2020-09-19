@@ -82,13 +82,6 @@ typedef struct {
   bool is_lidk_key_rcvd;        /* local identity key received */
 } btif_dm_ble_cb_t;
 
-#define BTIF_DM_LE_KEY_PENC BTA_LE_KEY_PENC
-#define BTIF_DM_LE_KEY_PID BTA_LE_KEY_PID
-#define BTIF_DM_LE_KEY_PCSRK BTA_LE_KEY_PCSRK
-#define BTIF_DM_LE_KEY_LENC BTA_LE_KEY_LENC
-#define BTIF_DM_LE_KEY_LID BTA_LE_KEY_LID
-#define BTIF_DM_LE_KEY_LCSRK BTA_LE_KEY_LCSRK
-
 #define BTIF_DM_LE_LOCAL_KEY_IR (1 << 0)
 #define BTIF_DM_LE_LOCAL_KEY_IRK (1 << 1)
 #define BTIF_DM_LE_LOCAL_KEY_DHK (1 << 2)
