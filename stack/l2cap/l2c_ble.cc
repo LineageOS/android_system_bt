@@ -265,7 +265,7 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
 void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                       tBLE_ADDR_TYPE type, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
-  btm_ble_update_link_topology_mask(role, true);
+  btm_ble_increment_link_topology_mask(role);
 
   // role == HCI_ROLE_MASTER => scanner completed connection
   // role == HCI_ROLE_SLAVE => advertiser completed connection
