@@ -50,6 +50,7 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_api.h"
@@ -250,9 +251,9 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
  * Returns          success return true, otherwise false.
  *
  ******************************************************************************/
-bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
-                                 RawAddress& conn_addr,
-                                 tBLE_ADDR_TYPE* p_addr_type) {
+static bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+                                        RawAddress& conn_addr,
+                                        tBLE_ADDR_TYPE* p_addr_type) {
   bool st = true;
 
   if (p_dev_rec == NULL) {
@@ -2900,3 +2901,10 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
   btsnd_hcic_write_auto_flush_tout(p_acl->hci_handle, flush_timeout_in_ticks);
 }
 
+bool acl_create_le_connection(const RawAddress& bd_addr) {
+  return connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP, bd_addr);
+}
+
+void acl_cancel_le_connection(const RawAddress& bd_addr) {
+  connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, bd_addr);
+}

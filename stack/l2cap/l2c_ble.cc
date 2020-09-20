@@ -36,12 +36,12 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack_config.h"
 
 using base::StringPrintf;
 
+void btm_ble_increment_link_topology_mask(uint8_t link_role);
 tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
                                               uint16_t psm, bool is_originator,
                                               tBTM_SEC_CALLBACK* p_callback,
@@ -71,7 +71,7 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
     }
   }
 
-  connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, rem_bda);
+  acl_cancel_le_connection(rem_bda);
 
   /* Do not remove lcb if an LE link is already up as a peripheral */
   if (p_lcb != NULL && !(p_lcb->IsLinkRoleSlave() &&
@@ -265,7 +265,7 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
 void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                       tBLE_ADDR_TYPE type, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
-  btm_ble_update_link_topology_mask(role, true);
+  btm_ble_increment_link_topology_mask(role);
 
   // role == HCI_ROLE_MASTER => scanner completed connection
   // role == HCI_ROLE_SLAVE => advertiser completed connection
@@ -773,9 +773,9 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 /** This function is to initate a direct connection. Returns true if connection
  * initiated, false otherwise. */
 bool l2cble_create_conn(tL2C_LCB* p_lcb) {
-  bool ret = connection_manager::direct_connect_add(CONN_MGR_ID_L2CAP,
-                                                    p_lcb->remote_bd_addr);
-  if (!ret) return ret;
+  if (!acl_create_le_connection(p_lcb->remote_bd_addr)) {
+    return false;
+  }
 
   p_lcb->link_state = LST_CONNECTING;
 

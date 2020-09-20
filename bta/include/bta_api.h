@@ -56,35 +56,13 @@ typedef uint8_t tBTA_STATUS;
  * bta_service_id_to_btm_srv_id_lkup_tbl table in bta_dm_act.cc
  */
 
-#define BTA_RES_SERVICE_ID 0         /* Reserved */
-#define BTA_SPP_SERVICE_ID 1         /* Serial port profile. */
-#define BTA_DUN_SERVICE_ID 2         /* Dial-up networking profile. */
 #define BTA_A2DP_SOURCE_SERVICE_ID 3 /* A2DP Source profile. */
-#define BTA_LAP_SERVICE_ID 4         /* LAN access profile. */
 #define BTA_HSP_SERVICE_ID 5         /* Headset profile. */
 #define BTA_HFP_SERVICE_ID 6         /* Hands-free profile. */
-#define BTA_OPP_SERVICE_ID 7         /* Object push  */
-#define BTA_FTP_SERVICE_ID 8         /* File transfer */
-#define BTA_CTP_SERVICE_ID 9         /* Cordless Terminal */
-#define BTA_ICP_SERVICE_ID 10        /* Intercom Terminal */
-#define BTA_SYNC_SERVICE_ID 11       /* Synchronization */
-#define BTA_BPP_SERVICE_ID 12        /* Basic printing profile */
 #define BTA_BIP_SERVICE_ID 13        /* Basic Imaging profile */
-#define BTA_PANU_SERVICE_ID 14       /* PAN User */
-#define BTA_NAP_SERVICE_ID 15        /* PAN Network access point */
-#define BTA_GN_SERVICE_ID 16         /* PAN Group Ad-hoc networks */
-#define BTA_SAP_SERVICE_ID 17        /* SIM Access profile */
 #define BTA_A2DP_SINK_SERVICE_ID 18  /* A2DP Sink */
-#define BTA_AVRCP_SERVICE_ID 19      /* A/V remote control */
 #define BTA_HID_SERVICE_ID 20        /* HID */
-#define BTA_VDP_SERVICE_ID 21        /* Video distribution */
-#define BTA_PBAP_SERVICE_ID 22       /* PhoneBook Access Server*/
-#define BTA_HSP_HS_SERVICE_ID 23     /* HFP HS role */
 #define BTA_HFP_HS_SERVICE_ID 24     /* HSP HS role */
-#define BTA_MAP_SERVICE_ID 25        /* Message Access Profile */
-#define BTA_MN_SERVICE_ID 26         /* Message Notification Service */
-#define BTA_HDP_SERVICE_ID 27        /* Health Device Profile */
-#define BTA_PCE_SERVICE_ID 28        /* PhoneBook Access Client */
 #define BTA_SDP_SERVICE_ID 29        /* SDP Search */
 #define BTA_HIDD_SERVICE_ID 30       /* HID Device */
 
@@ -102,35 +80,9 @@ typedef uint8_t tBTA_SERVICE_ID;
 
 /* Service ID Mask */
 #define BTA_RES_SERVICE_MASK 0x00000001    /* Reserved */
-#define BTA_SPP_SERVICE_MASK 0x00000002    /* Serial port profile. */
-#define BTA_DUN_SERVICE_MASK 0x00000004    /* Dial-up networking profile. */
-#define BTA_FAX_SERVICE_MASK 0x00000008    /* Fax profile. */
-#define BTA_LAP_SERVICE_MASK 0x00000010    /* LAN access profile. */
 #define BTA_HSP_SERVICE_MASK 0x00000020    /* HSP AG role. */
 #define BTA_HFP_SERVICE_MASK 0x00000040    /* HFP AG role */
-#define BTA_OPP_SERVICE_MASK 0x00000080    /* Object push  */
-#define BTA_FTP_SERVICE_MASK 0x00000100    /* File transfer */
-#define BTA_CTP_SERVICE_MASK 0x00000200    /* Cordless Terminal */
-#define BTA_ICP_SERVICE_MASK 0x00000400    /* Intercom Terminal */
-#define BTA_SYNC_SERVICE_MASK 0x00000800   /* Synchronization */
-#define BTA_BPP_SERVICE_MASK 0x00001000    /* Print server */
-#define BTA_BIP_SERVICE_MASK 0x00002000    /* Basic Imaging */
-#define BTA_PANU_SERVICE_MASK 0x00004000   /* PAN User */
-#define BTA_NAP_SERVICE_MASK 0x00008000    /* PAN Network access point */
-#define BTA_GN_SERVICE_MASK 0x00010000     /* PAN Group Ad-hoc networks */
-#define BTA_SAP_SERVICE_MASK 0x00020000    /* PAN Group Ad-hoc networks */
-#define BTA_A2DP_SERVICE_MASK 0x00040000   /* Advanced audio distribution */
-#define BTA_AVRCP_SERVICE_MASK 0x00080000  /* A/V remote control */
-#define BTA_HID_SERVICE_MASK 0x00100000    /* HID */
-#define BTA_VDP_SERVICE_MASK 0x00200000    /* Video distribution */
-#define BTA_PBAP_SERVICE_MASK 0x00400000   /* Phone Book Server */
-#define BTA_HSP_HS_SERVICE_MASK 0x00800000 /* HFP HS role */
-#define BTA_HFP_HS_SERVICE_MASK 0x01000000 /* HSP HS role */
-#define BTA_MAS_SERVICE_MASK 0x02000000    /* Message Access Profile */
-#define BTA_MN_SERVICE_MASK 0x04000000     /* Message Notification Profile */
 #define BTA_HL_SERVICE_MASK 0x08000000     /* Health Device Profile */
-#define BTA_PCE_SERVICE_MASK 0x10000000    /* Phone Book Client */
-#define BTA_HIDD_SERVICE_MASK 0x20000000   /* HID Device */
 
 #define BTA_BLE_SERVICE_MASK 0x40000000  /* GATT based service */
 #define BTA_ALL_SERVICE_MASK 0x7FFFFFFF  /* All services supported by BTA. */
@@ -139,7 +91,6 @@ typedef uint8_t tBTA_SERVICE_ID;
 typedef uint32_t tBTA_SERVICE_MASK;
 
 /* Security Setting Mask */
-#define BTA_SEC_NONE BTM_SEC_NONE /* No security. */
 #define BTA_SEC_AUTHENTICATE \
   (BTM_SEC_IN_AUTHENTICATE | \
    BTM_SEC_OUT_AUTHENTICATE) /* Authentication required. */
@@ -147,13 +98,6 @@ typedef uint32_t tBTA_SERVICE_MASK;
   (BTM_SEC_IN_ENCRYPT | BTM_SEC_OUT_ENCRYPT) /* Encryption required. */
 
 typedef uint16_t tBTA_SEC;
-
-/* Ignore for Discoverable, Connectable, Pairable and Connectable Paired only
- * device modes */
-#define BTA_DM_IGNORE 0x00FF
-
-/* Ignore for Discoverable, Connectable only for LE modes */
-#define BTA_DM_LE_IGNORE 0xFF00
 
 #define BTA_APP_ID_PAN_MULTI 0xFE /* app id for pan multiple connection */
 #define BTA_ALL_APP_ID 0xFF
@@ -163,12 +107,6 @@ typedef uint16_t tBTA_SEC;
 #define BTA_DM_GENERAL_DISC                         \
   BTM_GENERAL_DISCOVERABLE /* General discoverable. \
                               */
-#define BTA_DM_BLE_NON_DISCOVERABLE \
-  BTM_BLE_NON_DISCOVERABLE /* Device is not LE discoverable */
-#define BTA_DM_BLE_GENERAL_DISCOVERABLE \
-  BTM_BLE_GENERAL_DISCOVERABLE /* Device is LE General discoverable */
-#define BTA_DM_BLE_LIMITED_DISCOVERABLE \
-  BTM_BLE_LIMITED_DISCOVERABLE /* Device is LE Limited discoverable */
 typedef uint16_t
     tBTA_DM_DISC; /* this discoverability mode is a bit mask among BR mode and
                      LE mode */
@@ -176,10 +114,6 @@ typedef uint16_t
 /* Connectable Modes */
 #define BTA_DM_NON_CONN BTM_NON_CONNECTABLE /* Device is not connectable. */
 #define BTA_DM_CONN BTM_CONNECTABLE         /* Device is connectable. */
-#define BTA_DM_BLE_NON_CONNECTABLE \
-  BTM_BLE_NON_CONNECTABLE /* Device is LE non-connectable. */
-#define BTA_DM_BLE_CONNECTABLE \
-  BTM_BLE_CONNECTABLE /* Device is LE connectable. */
 
 typedef uint16_t tBTA_DM_CONN;
 
@@ -225,41 +159,7 @@ typedef struct {
   uint8_t* bta_dm_eir_additional;      /* additional data */
 } tBTA_DM_EIR_CONF;
 
-enum {
-  BTA_BLE_BATCH_SCAN_MODE_PASS = 1,
-  BTA_BLE_BATCH_SCAN_MODE_ACTI = 2,
-  BTA_BLE_BATCH_SCAN_MODE_PASS_ACTI = 3
-};
-typedef uint8_t tBTA_BLE_BATCH_SCAN_MODE;
-
-enum { BTA_BLE_DISCARD_OLD_ITEMS = 0, BTA_BLE_DISCARD_LOWER_RSSI_ITEMS = 1 };
-typedef uint8_t tBTA_BLE_DISCARD_RULE;
-
-enum { BTA_BLE_ADV_SEEN_FIRST_TIME = 0, BTA_BLE_ADV_TRACKING_TIMEOUT = 1 };
-typedef uint8_t tBTA_BLE_ADV_CHANGE_REASON;
-
-/* BLE customer specific feature function type definitions */
-/* data type used on customer specific feature for RSSI monitoring */
-#define BTA_BLE_RSSI_ALERT_HI 0
-#define BTA_BLE_RSSI_ALERT_RANGE 1
-#define BTA_BLE_RSSI_ALERT_LO 2
 typedef uint8_t tBTA_DM_BLE_RSSI_ALERT_TYPE;
-
-#define BTA_BLE_RSSI_ALERT_NONE BTM_BLE_RSSI_ALERT_NONE     /*    (0) */
-#define BTA_BLE_RSSI_ALERT_HI_BIT BTM_BLE_RSSI_ALERT_HI_BIT /*    (1) */
-#define BTA_BLE_RSSI_ALERT_RANGE_BIT \
-  BTM_BLE_RSSI_ALERT_RANGE_BIT                              /*    (1 << 1) */
-#define BTA_BLE_RSSI_ALERT_LO_BIT BTM_BLE_RSSI_ALERT_LO_BIT /*    (1 << 2) */
-typedef uint8_t tBTA_DM_BLE_RSSI_ALERT_MASK;
-
-typedef void(tBTA_DM_BLE_RSSI_CBACK)(const RawAddress& bd_addr,
-                                     tBTA_DM_BLE_RSSI_ALERT_TYPE alert_type,
-                                     int8_t rssi);
-
-typedef int8_t tBTA_DM_RSSI_VALUE;
-typedef uint8_t tBTA_DM_LINK_QUALITY_VALUE;
-
-typedef uint8_t tBTA_SIG_STRENGTH_MASK;
 
 /* Security Callback Events */
 #define BTA_DM_PIN_REQ_EVT 2   /* PIN request. */
@@ -310,56 +210,16 @@ typedef struct {
  */
 #define BTA_DM_AUTH_CONVERT_SMP_CODE(x) (BTA_DM_AUTH_FAIL_BASE + (x))
 
-#define BTA_DM_AUTH_SMP_PASSKEY_FAIL \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_PASSKEY_ENTRY_FAIL)
-#define BTA_DM_AUTH_SMP_OOB_FAIL (BTA_DM_AUTH_FAIL_BASE + SMP_OOB_FAIL)
 #define BTA_DM_AUTH_SMP_PAIR_AUTH_FAIL \
   (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_AUTH_FAIL)
 #define BTA_DM_AUTH_SMP_CONFIRM_VALUE_FAIL \
   (BTA_DM_AUTH_FAIL_BASE + SMP_CONFIRM_VALUE_ERR)
 #define BTA_DM_AUTH_SMP_PAIR_NOT_SUPPORT \
   (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_NOT_SUPPORT)
-#define BTA_DM_AUTH_SMP_ENC_KEY_SIZE (BTA_DM_AUTH_FAIL_BASE + SMP_ENC_KEY_SIZE)
-#define BTA_DM_AUTH_SMP_INVALID_CMD (BTA_DM_AUTH_FAIL_BASE + SMP_INVALID_CMD)
 #define BTA_DM_AUTH_SMP_UNKNOWN_ERR \
   (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_FAIL_UNKNOWN)
-#define BTA_DM_AUTH_SMP_REPEATED_ATTEMPT \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_REPEATED_ATTEMPTS)
-#define BTA_DM_AUTH_SMP_INVALID_PARAMETERS \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_INVALID_PARAMETERS)
-#define BTA_DM_AUTH_SMP_INTERNAL_ERR \
-  (BTA_DM_AUTH_FAIL_BASE + SMP_PAIR_INTERNAL_ERR)
-#define BTA_DM_AUTH_SMP_UNKNOWN_IO (BTA_DM_AUTH_FAIL_BASE + SMP_UNKNOWN_IO_CAP)
-#define BTA_DM_AUTH_SMP_INIT_FAIL (BTA_DM_AUTH_FAIL_BASE + SMP_INIT_FAIL)
-#define BTA_DM_AUTH_SMP_CONFIRM_FAIL (BTA_DM_AUTH_FAIL_BASE + SMP_CONFIRM_FAIL)
-#define BTA_DM_AUTH_SMP_BUSY (BTA_DM_AUTH_FAIL_BASE + SMP_BUSY)
-#define BTA_DM_AUTH_SMP_ENC_FAIL (BTA_DM_AUTH_FAIL_BASE + SMP_ENC_FAIL)
-#define BTA_DM_AUTH_SMP_RSP_TIMEOUT (BTA_DM_AUTH_FAIL_BASE + SMP_RSP_TIMEOUT)
 #define BTA_DM_AUTH_SMP_CONN_TOUT (BTA_DM_AUTH_FAIL_BASE + SMP_CONN_TOUT)
 
-/* connection parameter boundary value and dummy value */
-#define BTA_DM_BLE_SCAN_INT_MIN BTM_BLE_SCAN_INT_MIN
-#define BTA_DM_BLE_SCAN_INT_MAX BTM_BLE_SCAN_INT_MAX
-#define BTA_DM_BLE_SCAN_WIN_MIN BTM_BLE_SCAN_WIN_MIN
-#define BTA_DM_BLE_SCAN_WIN_MAX BTM_BLE_SCAN_WIN_MAX
-#define BTA_DM_BLE_CONN_INT_MIN BTM_BLE_CONN_INT_MIN
-#define BTA_DM_BLE_CONN_INT_MAX BTM_BLE_CONN_INT_MAX
-#define BTA_DM_BLE_CONN_LATENCY_MAX BTM_BLE_CONN_LATENCY_MAX
-#define BTA_DM_BLE_CONN_SUP_TOUT_MIN BTM_BLE_CONN_SUP_TOUT_MIN
-#define BTA_DM_BLE_CONN_SUP_TOUT_MAX BTM_BLE_CONN_SUP_TOUT_MAX
-#define BTA_DM_BLE_CONN_PARAM_UNDEF                                          \
-  BTM_BLE_CONN_PARAM_UNDEF /* use this value when a specific value not to be \
-                              overwritten */
-
-#define BTA_LE_KEY_PENC \
-  BTM_LE_KEY_PENC /* encryption information of peer device */
-#define BTA_LE_KEY_PID BTM_LE_KEY_PID     /* identity key of the peer device */
-#define BTA_LE_KEY_PCSRK BTM_LE_KEY_PCSRK /* peer SRK */
-#define BTA_LE_KEY_LENC \
-  BTM_LE_KEY_LENC                     /* master role security information:div */
-#define BTA_LE_KEY_LID BTM_LE_KEY_LID /* master device ID key */
-#define BTA_LE_KEY_LCSRK \
-  BTM_LE_KEY_LCSRK                /* local CSRK has been deliver to peer */
 typedef uint8_t tBTA_LE_KEY_TYPE; /* can be used as a bit mask */
 
 typedef union {
@@ -384,7 +244,6 @@ typedef struct {
 
 #define BTA_DM_SEC_GRANTED BTA_SUCCESS
 #define BTA_DM_SEC_PAIR_NOT_SPT BTA_DM_AUTH_SMP_PAIR_NOT_SUPPORT
-#define BTA_DM_SEC_REP_ATTEMPTS BTA_DM_AUTH_SMP_REPEATED_ATTEMPT
 typedef uint8_t tBTA_DM_BLE_SEC_GRANT;
 
 /* Structure associated with BTA_DM_BLE_SEC_REQ_EVT */
@@ -520,9 +379,6 @@ typedef void(tBTA_DM_SEC_CBACK)(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data);
 
 typedef uint8_t tBTA_DM_SEARCH_EVT;
 
-#define BTA_DM_INQ_RES_IGNORE_RSSI \
-  BTM_INQ_RES_IGNORE_RSSI /* 0x7f RSSI value not supplied (ignore it) */
-
 /* Structure associated with BTA_DM_INQ_RES_EVT */
 typedef struct {
   RawAddress bd_addr;          /* BD address peer device. */
@@ -591,26 +447,9 @@ typedef void(tBTA_DM_ENCRYPT_CBACK)(const RawAddress& bd_addr,
                                     tBT_TRANSPORT transport,
                                     tBTA_STATUS result);
 
-#define BTA_DM_BLE_SEC_NONE BTM_BLE_SEC_NONE
-#define BTA_DM_BLE_SEC_ENCRYPT BTM_BLE_SEC_ENCRYPT
-#define BTA_DM_BLE_SEC_NO_MITM BTM_BLE_SEC_ENCRYPT_NO_MITM
-#define BTA_DM_BLE_SEC_MITM BTM_BLE_SEC_ENCRYPT_MITM
-
 #define BTA_DM_CONTRL_UNKNOWN 0 /* Unknown state */
-#define BTA_DM_CONTRL_ACTIVE 1  /* ACL link on, SCO link ongoing, sniff mode */
-#define BTA_DM_CONTRL_SCAN                   \
-  2 /* Scan state - paging/inquiry/trying to \
-       connect*/
-#define BTA_DM_CONTRL_IDLE                           \
-  3 /* Idle state - page scan, LE advt, inquiry scan \
-       */
 
 typedef uint8_t tBTA_DM_CONTRL_STATE;
-
-typedef uint8_t tBTA_DM_BLE_ADV_STATE;
-typedef uint8_t tBTA_DM_BLE_ADV_INFO_PRESENT;
-typedef uint8_t tBTA_DM_BLE_RSSI_VALUE;
-typedef uint16_t tBTA_DM_BLE_ADV_INFO_TIMESTAMP;
 
 typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
                                          tBTM_BLE_RX_TIME_MS rx_time,
@@ -621,8 +460,6 @@ typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
 
 /* Maximum service name length */
 #define BTA_SERVICE_NAME_LEN 35
-#define BTA_SERVICE_DESP_LEN BTA_SERVICE_NAME_LEN
-#define BTA_PROVIDER_NAME_LEN BTA_SERVICE_NAME_LEN
 
 /* power mode actions  */
 #define BTA_DM_PM_NO_ACTION 0x00 /* no change to the current pm setting */
@@ -768,26 +605,6 @@ typedef uint8_t tBTA_DM_PM_ACTION;
 #define BTA_DM_PM_PARK_TIMEOUT 0
 #endif
 
-/* Switch callback events */
-#define BTA_DM_SWITCH_CMPL_EVT 0 /* Completion of the Switch API */
-
-typedef uint8_t tBTA_DM_SWITCH_EVT;
-typedef void(tBTA_DM_SWITCH_CBACK)(tBTA_DM_SWITCH_EVT event,
-                                   tBTA_STATUS status);
-
-/* Audio routing out configuration */
-#define BTA_DM_ROUTE_NONE 0x00      /* No Audio output */
-#define BTA_DM_ROUTE_DAC 0x01       /* routing over analog output */
-#define BTA_DM_ROUTE_I2S 0x02       /* routing over digital (I2S) output */
-#define BTA_DM_ROUTE_BT_MONO 0x04   /* routing over SCO */
-#define BTA_DM_ROUTE_BT_STEREO 0x08 /* routing over BT Stereo */
-#define BTA_DM_ROUTE_HOST 0x10      /* routing over Host */
-#define BTA_DM_ROUTE_FMTX 0x20      /* routing over FMTX */
-#define BTA_DM_ROUTE_FMRX 0x40      /* routing over FMRX */
-#define BTA_DM_ROUTE_BTSNK 0x80     /* routing over BT SNK */
-
-typedef uint8_t tBTA_DM_ROUTE_PATH;
-
 /* Device Identification (DI) data structure
 */
 /* Used to set the DI record */
@@ -801,16 +618,7 @@ typedef tSDP_DISCOVERY_DB tBTA_DISCOVERY_DB;
 #define BTA_DI_NUM_MAX 3
 #endif
 
-/* ACL type
-*/
-#define BTA_DM_LINK_TYPE_BR_EDR 0x01
-#define BTA_DM_LINK_TYPE_LE 0x02
-#define BTA_DM_LINK_TYPE_ALL 0xFF
-typedef uint8_t tBTA_DM_LINK_TYPE;
-
 #define IMMEDIATE_DELY_MODE 0x00
-#define ONFOUND_DELY_MODE 0x01
-#define BATCH_DELY_MODE 0x02
 #define ALLOW_ALL_FILTER 0x00
 #define LOWEST_RSSI_VALUE 129
 

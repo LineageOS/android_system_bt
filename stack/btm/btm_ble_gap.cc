@@ -165,8 +165,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
                                   uint8_t advertising_sid, int8_t tx_power,
                                   int8_t rssi, uint16_t periodic_adv_int,
                                   uint8_t data_len, uint8_t* data);
-static uint8_t btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB* p_cb,
-                                               RawAddress& p_peer_addr_ptr,
+static uint8_t btm_set_conn_mode_adv_init_addr(RawAddress& p_peer_addr_ptr,
                                                tBLE_ADDR_TYPE* p_peer_addr_type,
                                                tBLE_ADDR_TYPE* p_own_addr_type);
 static void btm_ble_stop_observe(void);
@@ -179,27 +178,27 @@ static void btm_ble_observer_timer_timeout(void* data);
 #define BTM_BLE_INQ_RESULT 0x01
 #define BTM_BLE_OBS_RESULT 0x02
 
-bool ble_evt_type_is_connectable(uint16_t evt_type) {
+static bool ble_evt_type_is_connectable(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_CONNECTABLE_BIT);
 }
 
-bool ble_evt_type_is_scannable(uint16_t evt_type) {
+static bool ble_evt_type_is_scannable(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_SCANNABLE_BIT);
 }
 
-bool ble_evt_type_is_directed(uint16_t evt_type) {
+static bool ble_evt_type_is_directed(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_DIRECTED_BIT);
 }
 
-bool ble_evt_type_is_scan_resp(uint16_t evt_type) {
+static bool ble_evt_type_is_scan_resp(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_SCAN_RESPONSE_BIT);
 }
 
-bool ble_evt_type_is_legacy(uint16_t evt_type) {
+static bool ble_evt_type_is_legacy(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_LEGACY_BIT);
 }
 
-uint8_t ble_evt_type_data_status(uint16_t evt_type) {
+static uint8_t ble_evt_type_data_status(uint16_t evt_type) {
   return (evt_type >> 5) & 3;
 }
 
@@ -670,8 +669,9 @@ static bool is_resolving_list_bit_set(void* data, void* context) {
  *
  ******************************************************************************/
 static uint8_t btm_set_conn_mode_adv_init_addr(
-    tBTM_BLE_INQ_CB* p_cb, RawAddress& p_peer_addr_ptr,
-    tBLE_ADDR_TYPE* p_peer_addr_type, tBLE_ADDR_TYPE* p_own_addr_type) {
+    RawAddress& p_peer_addr_ptr, tBLE_ADDR_TYPE* p_peer_addr_type,
+    tBLE_ADDR_TYPE* p_own_addr_type) {
+  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   uint8_t evt_type;
   tBTM_SEC_DEV_REC* p_dev_rec;
 
@@ -830,9 +830,10 @@ uint16_t BTM_BleReadConnectability() {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_select_adv_interval(tBTM_BLE_INQ_CB* p_cb, uint8_t evt_type,
-                                 uint16_t* p_adv_int_min,
-                                 uint16_t* p_adv_int_max) {
+static void btm_ble_select_adv_interval(uint8_t evt_type,
+                                        uint16_t* p_adv_int_min,
+                                        uint16_t* p_adv_int_max) {
+  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   if (p_cb->adv_interval_min && p_cb->adv_interval_max) {
     *p_adv_int_min = p_cb->adv_interval_min;
     *p_adv_int_max = p_cb->adv_interval_max;
@@ -964,14 +965,14 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
 
   p_cb->discoverable_mode = mode;
 
-  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, address, &init_addr_type,
-                                             &own_addr_type);
+  evt_type =
+      btm_set_conn_mode_adv_init_addr(address, &init_addr_type, &own_addr_type);
 
   if (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE &&
       mode == BTM_BLE_NON_DISCOVERABLE)
     new_mode = BTM_BLE_ADV_DISABLE;
 
-  btm_ble_select_adv_interval(p_cb, evt_type, &adv_int_min, &adv_int_max);
+  btm_ble_select_adv_interval(evt_type, &adv_int_min, &adv_int_max);
 
   alarm_cancel(p_cb->fast_adv_timer);
 
@@ -1054,14 +1055,14 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
 
   p_cb->connectable_mode = mode;
 
-  evt_type = btm_set_conn_mode_adv_init_addr(p_cb, address, &peer_addr_type,
-                                             &own_addr_type);
+  evt_type =
+      btm_set_conn_mode_adv_init_addr(address, &peer_addr_type, &own_addr_type);
 
   if (mode == BTM_BLE_NON_CONNECTABLE &&
       p_cb->discoverable_mode == BTM_BLE_NON_DISCOVERABLE)
     new_mode = BTM_BLE_ADV_DISABLE;
 
-  btm_ble_select_adv_interval(p_cb, evt_type, &adv_int_min, &adv_int_max);
+  btm_ble_select_adv_interval(evt_type, &adv_int_min, &adv_int_max);
 
   alarm_cancel(p_cb->fast_adv_timer);
   /* update adv params if needed */
@@ -1875,8 +1876,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
   uint8_t result = btm_ble_is_discoverable(bda, adv_data);
   if (result == 0) {
     cache.Clear(addr_type, bda);
-    LOG_WARN("%s device no longer discoverable, discarding advertising packet",
-             __func__);
+    LOG_DEBUG("device no longer discoverable, discarding advertising packet");
     return;
   }
 
@@ -2140,8 +2140,8 @@ static void btm_ble_start_slow_adv(void) {
 
     btm_ble_stop_adv();
 
-    p_cb->evt_type = btm_set_conn_mode_adv_init_addr(
-        p_cb, address, &init_addr_type, &own_addr_type);
+    p_cb->evt_type = btm_set_conn_mode_adv_init_addr(address, &init_addr_type,
+                                                     &own_addr_type);
 
     /* slow adv mode never goes into directed adv */
     btsnd_hcic_ble_write_adv_params(
@@ -2286,7 +2286,8 @@ bool btm_ble_clear_topology_mask(tBTM_BLE_STATE_MASK request_state_mask) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) {
+static void btm_ble_update_link_topology_mask(uint8_t link_role,
+                                              bool increase) {
   btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_CONN_MASK);
 
   if (increase)
@@ -2307,6 +2308,14 @@ void btm_ble_update_link_topology_mask(uint8_t link_role, bool increase) {
     /* clear all adv states */
     btm_ble_clear_topology_mask(BTM_BLE_STATE_ALL_ADV_MASK);
   }
+}
+
+void btm_ble_increment_link_topology_mask(uint8_t link_role) {
+  btm_ble_update_link_topology_mask(link_role, true);
+}
+
+void btm_ble_decrement_link_topology_mask(uint8_t link_role) {
+  btm_ble_update_link_topology_mask(link_role, false);
 }
 
 /*******************************************************************************

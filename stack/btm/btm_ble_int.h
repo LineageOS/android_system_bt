@@ -35,7 +35,6 @@
 #include "hcidefs.h"
 #include "smp_api.h"
 
-extern bool ble_evt_type_is_connectable(uint16_t evt_type);
 extern void btm_ble_refresh_raddr_timer_timeout(void* data);
 extern tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
                                             tBTM_CMPL_CB* p_cb);
@@ -118,7 +117,6 @@ extern bool btm_ble_resume_bg_conn(void);
 extern void btm_ble_update_mode_operation(uint8_t link_role,
                                           const RawAddress* bda,
                                           uint8_t status);
-extern void btm_ble_update_link_topology_mask(uint8_t role, bool increase);
 extern void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr);
 
 /* BLE address management */

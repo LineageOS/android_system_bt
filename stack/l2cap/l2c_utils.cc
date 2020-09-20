@@ -2218,7 +2218,8 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
     return (false);
   }
 
-  if (BTM_IS_BRCM_CONTROLLER()) {
+  if (controller_get_interface()->get_bt_version()->manufacturer ==
+      LMP_COMPID_BROADCOM) {
     /* Called from above L2CAP through API; send VSC if changed */
     if ((!reset_after_rs && (priority != p_lcb->acl_priority)) ||
         /* Called because of a master/slave role switch; if high resend VSC */
