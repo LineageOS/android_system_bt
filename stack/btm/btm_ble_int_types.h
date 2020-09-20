@@ -261,6 +261,9 @@ typedef struct {
 
   /* white list information */
   uint8_t wl_state;
+  void set_whitelist_process_in_progress() { wl_state |= BTM_BLE_WL_INIT; }
+  void reset_whitelist_process_in_progress() { wl_state &= ~BTM_BLE_WL_INIT; }
+  bool is_whitelist_in_progress() const { return wl_state & BTM_BLE_WL_INIT; }
 
  private:
   enum : uint8_t { /* BLE connection state */
