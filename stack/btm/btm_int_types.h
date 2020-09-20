@@ -211,10 +211,15 @@ typedef struct {
                                         const Octet16& stk);
   uint16_t enc_handle;
 
- public:
+  friend void btm_ble_ltk_request(uint16_t handle, uint8_t rand[8],
+                                  uint16_t ediv);
   BT_OCTET8 enc_rand; /* received rand value from LTK request*/
+
   uint16_t ediv;      /* received ediv value from LTK request */
+
   uint8_t key_size;
+
+ public:
   tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 
   /* Packet types supported by the local device */
