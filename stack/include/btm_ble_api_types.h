@@ -40,13 +40,13 @@ enum : uint8_t {
 };
 
 /* 0x00 - 0x04 can be received on adv event type */
-#define BTM_BLE_ADV_IND_EVT  0x00
-#define BTM_BLE_ADV_DIRECT_IND_EVT  0x01
-#define BTM_BLE_ADV_SCAN_IND_EVT  0x02
-#define BTM_BLE_ADV_NONCONN_IND_EVT  0x03
-#define BTM_BLE_SCAN_RSP_EVT 0x04
-
-typedef uint8_t tBTM_BLE_EVT;
+typedef enum : uint8_t {
+  BTM_BLE_ADV_IND_EVT = 0x00,
+  BTM_BLE_ADV_DIRECT_IND_EVT = 0x01,
+  BTM_BLE_ADV_SCAN_IND_EVT = 0x02,
+  BTM_BLE_ADV_NONCONN_IND_EVT = 0x03,
+  BTM_BLE_SCAN_RSP_EVT = 0x04,
+} tBTM_BLE_EVT;
 
 typedef uint32_t tBTM_BLE_REF_VALUE;
 
