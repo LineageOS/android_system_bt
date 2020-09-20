@@ -116,8 +116,6 @@ extern void btm_sco_flush_sco_data(uint16_t sco_inx);
  *********************************************
 */
 extern void btm_dev_init(void);
-extern void btm_read_local_name_timeout(void* data);
-extern void btm_read_local_name_complete(uint8_t* p, uint16_t evt_len);
 
 extern void btm_ble_create_conn_cancel_complete(uint8_t* p);
 
