@@ -38,22 +38,14 @@
 extern void btm_ble_process_periodic_adv_sync_est_evt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_periodic_adv_pkt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_periodic_adv_sync_lost_evt(uint8_t len, uint8_t* p);
-extern tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
-                                            tBTM_CMPL_CB* p_cb);
-extern bool btm_ble_cancel_remote_name(const RawAddress& remote_bda);
-
-extern tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode);
-extern tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode);
 extern void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int,
                                          uint16_t scan_win,
                                          uint8_t addr_type_own,
                                          uint8_t scan_filter_policy);
-extern tBTM_STATUS btm_ble_start_inquiry(uint8_t duration);
 extern void btm_ble_stop_scan(void);
 extern void btm_clear_all_pending_le_entry(void);
 
 extern void btm_ble_stop_scan();
-extern void btm_ble_stop_inquiry(void);
 extern void btm_ble_init(void);
 extern void btm_ble_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t enc_mode, uint8_t role,
