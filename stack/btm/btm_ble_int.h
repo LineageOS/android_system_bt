@@ -45,7 +45,6 @@ extern void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int,
 extern void btm_ble_stop_scan(void);
 extern void btm_clear_all_pending_le_entry(void);
 
-extern void btm_ble_stop_scan();
 extern void btm_ble_init(void);
 extern void btm_ble_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t enc_mode, uint8_t role,
