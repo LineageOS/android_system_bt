@@ -78,19 +78,19 @@ enum : uint8_t {
 };
 
 /* Define scan types */
-#define BTM_SCAN_TYPE_STANDARD 0
-#define BTM_SCAN_TYPE_INTERLACED 1 /* 1.2 devices only */
+enum : uint16_t {
+  BTM_SCAN_TYPE_STANDARD = 0,
+  BTM_SCAN_TYPE_INTERLACED = 1, /* 1.2 devices only */
+};
 
 /* Define inquiry results mode */
-#define BTM_INQ_RESULT_STANDARD 0
-#define BTM_INQ_RESULT_WITH_RSSI 1
-#define BTM_INQ_RESULT_EXTENDED 2
-/* RSSI value not supplied (ignore it) */
-#define BTM_INQ_RES_IGNORE_RSSI 0x7f
-
-/* Inquiry Filter Condition types (see tBTM_INQ_PARMS) */
-/* Inquiry Filtering is turned off */
-#define BTM_CLR_INQUIRY_FILTER 0
+enum : uint8_t {
+  BTM_INQ_RESULT_STANDARD = 0,
+  BTM_INQ_RESULT_WITH_RSSI = 1,
+  BTM_INQ_RESULT_EXTENDED = 2,
+  /* RSSI value not supplied (ignore it) */
+  BTM_INQ_RES_IGNORE_RSSI = 0x7f,
+};
 
 /* These are the fields returned in each device's response to the inquiry.  It
  * is returned in the results callback if registered.
