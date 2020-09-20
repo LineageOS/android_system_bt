@@ -160,10 +160,12 @@ constexpr uint8_t BTM_BLE_WL_IDLE = 0;
 constexpr uint8_t BTM_BLE_WL_INIT = 1;
 
 /* resolving list using state as a bit mask */
-#define BTM_BLE_RL_IDLE 0
-#define BTM_BLE_RL_INIT 1
-#define BTM_BLE_RL_SCAN 2
-#define BTM_BLE_RL_ADV 4
+enum : uint8_t {
+  BTM_BLE_RL_IDLE = 0,
+  BTM_BLE_RL_INIT = (1 << 0),
+  BTM_BLE_RL_SCAN = (1 << 1),
+  BTM_BLE_RL_ADV = (1 << 2),
+};
 typedef uint8_t tBTM_BLE_RL_STATE;
 
 typedef struct { void* p_param; } tBTM_BLE_CONN_REQ;
