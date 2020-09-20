@@ -2163,13 +2163,6 @@ static void btm_ble_observer_timer_timeout(UNUSED_ATTR void* data) {
   btm_ble_stop_observe();
 }
 
-void btm_ble_refresh_raddr_timer_timeout(UNUSED_ATTR void* data) {
-  if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
-    /* refresh the random addr */
-    btm_gen_resolvable_private_addr(base::Bind(&btm_gen_resolve_paddr_low));
-  }
-}
-
 /*******************************************************************************
  *
  * Function         btm_ble_read_remote_features_complete

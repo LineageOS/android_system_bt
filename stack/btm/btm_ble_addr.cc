@@ -59,6 +59,13 @@ RawAddress generate_rpa_from_irk_and_rand(const Octet16& irk,
   return address;
 }
 
+static void btm_ble_refresh_raddr_timer_timeout(UNUSED_ATTR void* data) {
+  if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
+    /* refresh the random addr */
+    btm_gen_resolvable_private_addr(base::Bind(&btm_gen_resolve_paddr_low));
+  }
+}
+
 /** This function is called when random address for local controller was
  * generated */
 void btm_gen_resolve_paddr_low(const RawAddress& address) {

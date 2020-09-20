@@ -35,7 +35,6 @@
 #include "hcidefs.h"
 #include "smp_api.h"
 
-extern void btm_ble_refresh_raddr_timer_timeout(void* data);
 extern void btm_ble_process_periodic_adv_sync_est_evt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_periodic_adv_pkt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_periodic_adv_sync_lost_evt(uint8_t len, uint8_t* p);
