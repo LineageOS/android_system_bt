@@ -3643,8 +3643,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
     p_dev_rec->sec_flags |= (BTM_SEC_16_DIGIT_PIN_AUTHED << bit_shift);
   }
 
-  p_dev_rec->link_key_changed = false;
-
   /* After connection is established we perform security if we do not know */
   /* the name, or if we are originator because some procedure can have */
   /* been scheduled while connection was down */
