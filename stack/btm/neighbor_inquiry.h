@@ -53,37 +53,29 @@ enum : uint16_t {
 /* Inquiry modes
  * Note: These modes are associated with the inquiry active values (BTM_*ACTIVE)
  */
-#define BTM_INQUIRY_NONE 0
-#define BTM_GENERAL_INQUIRY 0x01
-#define BTM_BR_INQUIRY_MASK (BTM_GENERAL_INQUIRY)
-
-/* high byte of inquiry mode for BLE inquiry mode */
-#define BTM_BLE_INQUIRY_NONE 0x00
-#define BTM_BLE_GENERAL_INQUIRY 0x10
-#define BTM_BLE_INQUIRY_MASK (BTM_BLE_GENERAL_INQUIRY)
-
-/* BTM_IsInquiryActive return values (Bit Mask)
- * Note: These bit masks are associated with the inquiry modes (BTM_*_INQUIRY)
- */
-/* no inquiry in progress */
-#define BTM_INQUIRY_INACTIVE 0x0
-/* a general inquiry is in progress */
-#define BTM_GENERAL_INQUIRY_ACTIVE BTM_GENERAL_INQUIRY
-/* SSP is active, so inquiry is disallowed (work around for FW bug) */
-#define BTM_SSP_INQUIRY_ACTIVE 0x4
-/* a general inquiry is in progress */
-#define BTM_LE_GENERAL_INQUIRY_ACTIVE BTM_BLE_GENERAL_INQUIRY
-
-/* inquiry activity mask */
-/* BR/EDR inquiry activity mask */
-#define BTM_BR_INQ_ACTIVE_MASK (BTM_GENERAL_INQUIRY_ACTIVE)
-/* LE scan activity mask */
-#define BTM_BLE_SCAN_ACTIVE_MASK 0xF0
-/* LE inquiry activity mask*/
-#define BTM_BLE_INQ_ACTIVE_MASK (BTM_LE_GENERAL_INQUIRY_ACTIVE)
-/* inquiry activity mask */
-#define BTM_INQUIRY_ACTIVE_MASK \
-  (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK)
+enum : uint8_t {
+  BTM_INQUIRY_NONE = 0,
+  BTM_INQUIRY_INACTIVE = 0x0,
+  BTM_GENERAL_INQUIRY = 0x01,
+  /* SSP is active, so inquiry is disallowed (work around for FW bug) */
+  BTM_SSP_INQUIRY_ACTIVE = 0x4,
+  /* high nibble of inquiry mode for BLE inquiry mode */
+  BTM_BLE_GENERAL_INQUIRY = 0x10,
+  BTM_BR_INQUIRY_MASK = (BTM_GENERAL_INQUIRY),
+  BTM_BLE_INQUIRY_MASK = (BTM_BLE_GENERAL_INQUIRY),
+  BTM_BLE_INQUIRY_NONE = BTM_INQUIRY_NONE,
+  BTM_GENERAL_INQUIRY_ACTIVE = BTM_GENERAL_INQUIRY,
+  /* a general inquiry is in progress */
+  BTM_LE_GENERAL_INQUIRY_ACTIVE = BTM_BLE_GENERAL_INQUIRY,
+  /* BR/EDR inquiry activity mask */
+  BTM_BR_INQ_ACTIVE_MASK = (BTM_GENERAL_INQUIRY_ACTIVE),
+  /* LE scan activity mask */
+  BTM_BLE_SCAN_ACTIVE_MASK = 0xF0,
+  /* LE inquiry activity mask*/
+  BTM_BLE_INQ_ACTIVE_MASK = (BTM_LE_GENERAL_INQUIRY_ACTIVE),
+  /* inquiry activity mask */
+  BTM_INQUIRY_ACTIVE_MASK = (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK),
+};
 
 /* Define scan types */
 #define BTM_SCAN_TYPE_STANDARD 0
