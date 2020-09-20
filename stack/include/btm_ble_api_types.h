@@ -132,8 +132,12 @@ typedef uint8_t tBTM_BLE_SFP;
 #define BTM_BLE_SCAN_FAST_WIN 48 /* 30 ms = 48 *0.625 */
 
 /* default scan paramter used in reduced power cycle (background scanning) */
+#ifndef BTM_BLE_SCAN_SLOW_INT_1
 #define BTM_BLE_SCAN_SLOW_INT_1 2048 /* 1.28 s   = 2048 *0.625 */
+#endif
+#ifndef BTM_BLE_SCAN_SLOW_WIN_1
 #define BTM_BLE_SCAN_SLOW_WIN_1 48 /* 30 ms = 48 *0.625 */
+#endif
 
 /* default scan paramter used in reduced power cycle (background scanning) */
 #define BTM_BLE_SCAN_SLOW_INT_2 4096 /* 2.56 s   = 4096 *0.625 */
@@ -141,11 +145,15 @@ typedef uint8_t tBTM_BLE_SFP;
 
 /* default connection interval min */
 /* recommended min: 30ms  = 24 * 1.25 */
+#ifndef BTM_BLE_CONN_INT_MIN_DEF
 #define BTM_BLE_CONN_INT_MIN_DEF 24
+#endif
 
 /* default connectino interval max */
 /* recommended max: 50 ms = 56 * 1.25 */
+#ifndef BTM_BLE_CONN_INT_MAX_DEF
 #define BTM_BLE_CONN_INT_MAX_DEF 40
+#endif
 
 /* default slave latency */
 #define BTM_BLE_CONN_SLAVE_LATENCY_DEF 0 /* 0 */
@@ -157,7 +165,9 @@ typedef uint8_t tBTM_BLE_SFP;
 #define BTM_BLE_CONN_TIMEOUT_MIN_DEF 100
 
 /* minimum acceptable connection interval */
+#ifndef BTM_BLE_CONN_INT_MIN_LIMIT
 #define BTM_BLE_CONN_INT_MIN_LIMIT 0x0009
+#endif
 
 /* minimum acceptable connection interval when there is bonded Hearing Aid
  * device */
