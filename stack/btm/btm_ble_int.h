@@ -76,9 +76,6 @@ extern void btm_ble_link_encrypted(const RawAddress& bd_addr,
 /* LE device management functions */
 extern void btm_ble_reset_id(void);
 
-/* security related functions */
-extern void btm_ble_increment_sign_ctr(const RawAddress& bd_addr,
-                                       bool is_local);
 extern bool btm_get_local_div(const RawAddress& bd_addr, uint16_t* p_div);
 extern bool btm_ble_get_enc_key_type(const RawAddress& bd_addr,
                                      uint8_t* p_key_types);
