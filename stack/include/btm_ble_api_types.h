@@ -43,10 +43,7 @@ typedef uint8_t tBTM_BLE_CHNL_MAP[CHNL_MAP_LEN];
 #define BTM_BLE_ADV_NONCONN_IND_EVT  0x03
 #define BTM_BLE_SCAN_RSP_EVT 0x04
 
-#define BTM_BLE_UNKNOWN_EVT 0xff
-
 typedef uint8_t tBTM_BLE_EVT;
-typedef uint8_t tBTM_BLE_CONN_MODE;
 
 typedef uint32_t tBTM_BLE_REF_VALUE;
 
@@ -99,7 +96,6 @@ typedef uint8_t tBTM_BLE_SFP;
 #endif
 
 /* Full scan boundary values */
-#define BTM_BLE_ADV_SCAN_FULL_MIN 0x00
 #define BTM_BLE_ADV_SCAN_FULL_MAX 0x64
 
 /* Partial scan boundary values */
@@ -127,81 +123,51 @@ typedef uint8_t tBTM_BLE_SFP;
 /* default connection parameters if not configured, use GAP recommended value
  * for auto/selective connection */
 /* default scan interval */
-#ifndef BTM_BLE_SCAN_FAST_INT
 #define BTM_BLE_SCAN_FAST_INT 96 /* 30 ~ 60 ms (use 60)  = 96 *0.625 */
-#endif
 /* default scan window for background connection, applicable for auto connection
  * or selective connection */
-#ifndef BTM_BLE_SCAN_FAST_WIN
 #define BTM_BLE_SCAN_FAST_WIN 48 /* 30 ms = 48 *0.625 */
-#endif
 
 /* default scan paramter used in reduced power cycle (background scanning) */
-#ifndef BTM_BLE_SCAN_SLOW_INT_1
 #define BTM_BLE_SCAN_SLOW_INT_1 2048 /* 1.28 s   = 2048 *0.625 */
-#endif
-#ifndef BTM_BLE_SCAN_SLOW_WIN_1
 #define BTM_BLE_SCAN_SLOW_WIN_1 48 /* 30 ms = 48 *0.625 */
-#endif
 
 /* default scan paramter used in reduced power cycle (background scanning) */
-#ifndef BTM_BLE_SCAN_SLOW_INT_2
 #define BTM_BLE_SCAN_SLOW_INT_2 4096 /* 2.56 s   = 4096 *0.625 */
-#endif
-#ifndef BTM_BLE_SCAN_SLOW_WIN_2
 #define BTM_BLE_SCAN_SLOW_WIN_2 36 /* 22.5 ms = 36 *0.625 */
-#endif
 
 /* default connection interval min */
-#ifndef BTM_BLE_CONN_INT_MIN_DEF
 /* recommended min: 30ms  = 24 * 1.25 */
 #define BTM_BLE_CONN_INT_MIN_DEF 24
-#endif
 
 /* default connectino interval max */
-#ifndef BTM_BLE_CONN_INT_MAX_DEF
 /* recommended max: 50 ms = 56 * 1.25 */
 #define BTM_BLE_CONN_INT_MAX_DEF 40
-#endif
 
 /* default slave latency */
-#ifndef BTM_BLE_CONN_SLAVE_LATENCY_DEF
 #define BTM_BLE_CONN_SLAVE_LATENCY_DEF 0 /* 0 */
-#endif
 
 /* default supervision timeout */
-#ifndef BTM_BLE_CONN_TIMEOUT_DEF
 #define BTM_BLE_CONN_TIMEOUT_DEF 500
-#endif
 
 /* minimum supervision timeout */
-#ifndef BTM_BLE_CONN_TIMEOUT_MIN_DEF
 #define BTM_BLE_CONN_TIMEOUT_MIN_DEF 100
-#endif
 
 /* minimum acceptable connection interval */
-#ifndef BTM_BLE_CONN_INT_MIN_LIMIT
 #define BTM_BLE_CONN_INT_MIN_LIMIT 0x0009
-#endif
 
 /* minimum acceptable connection interval when there is bonded Hearing Aid
  * device */
-#ifndef BTM_BLE_CONN_INT_MIN_HEARINGAID
 #define BTM_BLE_CONN_INT_MIN_HEARINGAID 0x0010
-#endif
 
 #define BTM_CMAC_TLEN_SIZE 8 /* 64 bits */
 #define BTM_BLE_AUTH_SIGN_LEN \
   12 /* BLE data signature length 8 Bytes + 4 bytes counter*/
 typedef uint8_t BLE_SIGNATURE[BTM_BLE_AUTH_SIGN_LEN]; /* Device address */
 
-#ifndef BTM_BLE_HOST_SUPPORT
 #define BTM_BLE_HOST_SUPPORT 0x01
-#endif
 
-#ifndef BTM_BLE_SIMULTANEOUS_HOST
 #define BTM_BLE_SIMULTANEOUS_HOST 0x01
-#endif
 
 /* Appearance Values Reported with BTM_BLE_AD_TYPE_APPEARANCE */
 #define BTM_BLE_APPEARANCE_UKNOWN 0x0000
@@ -313,11 +279,9 @@ typedef struct {
 
 typedef void(tBTM_BLE_ADV_DATA_CMPL_CBACK)(tBTM_STATUS status);
 
-#ifndef BTM_BLE_MULTI_ADV_MAX
 #define BTM_BLE_MULTI_ADV_MAX                           \
   16 /* controller returned adv_inst_max should be less \
         than this number */
-#endif
 
 typedef uint8_t tGATT_IF;
 
@@ -325,14 +289,6 @@ typedef void(tBTM_BLE_SCAN_THRESHOLD_CBACK)(tBTM_BLE_REF_VALUE ref_value);
 using tBTM_BLE_SCAN_REP_CBACK =
     base::Callback<void(uint8_t /* status */, uint8_t /* report_format */,
                         uint8_t /* num_reports */, std::vector<uint8_t>)>;
-
-#ifndef BTM_BLE_BATCH_SCAN_MAX
-#define BTM_BLE_BATCH_SCAN_MAX 5
-#endif
-
-#ifndef BTM_BLE_BATCH_REP_MAIN_Q_SIZE
-#define BTM_BLE_BATCH_REP_MAIN_Q_SIZE 2
-#endif
 
 typedef enum {
   BTM_BLE_SCAN_INVALID_STATE = 0,
@@ -369,18 +325,10 @@ typedef struct {
 #define BTM_BLE_PF_TYPE_MAX 8
 
 /* max number of filter spot for different filter type */
-#ifndef BTM_BLE_MAX_UUID_FILTER
 #define BTM_BLE_MAX_UUID_FILTER 8
-#endif
-#ifndef BTM_BLE_MAX_ADDR_FILTER
 #define BTM_BLE_MAX_ADDR_FILTER 8
-#endif
-#ifndef BTM_BLE_PF_STR_COND_MAX
 #define BTM_BLE_PF_STR_COND_MAX 4 /* apply to manu data , or local name */
-#endif
-#ifndef BTM_BLE_PF_STR_LEN_MAX
 #define BTM_BLE_PF_STR_LEN_MAX 29 /* match for first 29 bytes */
-#endif
 
 typedef uint8_t tBTM_BLE_PF_COND_TYPE;
 
@@ -411,10 +359,6 @@ using tBTM_BLE_PF_STATUS_CBACK =
 /* BLE adv payload filtering param setup complete callback */
 using tBTM_BLE_PF_PARAM_CB = base::Callback<void(
     uint8_t /* avbl_space */, uint8_t /* action */, uint8_t /* status */)>;
-
-#ifndef BTM_CS_IRK_LIST_MAX
-#define BTM_CS_IRK_LIST_MAX 0x20
-#endif
 
 typedef struct {
   bool in_use;
