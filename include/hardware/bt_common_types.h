@@ -105,6 +105,7 @@ struct ApcfCommand {
   uint8_t org_id;
   uint8_t tds_flags;
   uint8_t tds_flags_mask;
+  bool group_filter_enabled;
 };
 
 #endif /* ANDROID_INCLUDE_BT_COMMON_TYPES_H */
