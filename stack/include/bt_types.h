@@ -21,6 +21,9 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#ifdef __cplusplus
+#include <string>
+#endif  // __cplusplus
 
 #ifndef FALSE
 #define FALSE false
@@ -802,6 +805,21 @@ struct tBLE_BD_ADDR {
 #define BT_DEVICE_TYPE_BLE 0x02
 #define BT_DEVICE_TYPE_DUMO 0x03
 typedef uint8_t tBT_DEVICE_TYPE;
+#ifdef __cplusplus
+inline std::string DeviceTypeText(tBT_DEVICE_TYPE type) {
+  switch (type) {
+    case BT_DEVICE_TYPE_BREDR:
+      return std::string("BR_EDR");
+    case BT_DEVICE_TYPE_BLE:
+      return std::string("BLE");
+    case BT_DEVICE_TYPE_DUMO:
+      return std::string("BR_EDR and BLE");
+    default:
+      return std::string("Unknown");
+  }
+}
+#endif  // __cplusplus
+
 /*****************************************************************************/
 
 /* Define trace levels */
