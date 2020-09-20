@@ -83,7 +83,6 @@ typedef uint8_t tBTM_BLE_SEC_REQ_ACT;
 #define BTM_LE_OBSERVE_ACTIVE 0x80
 
 /* BLE scan activity mask checking */
-#define BTM_BLE_IS_SCAN_ACTIVE(x) ((x)&BTM_BLE_SCAN_ACTIVE_MASK)
 #define BTM_BLE_IS_INQ_ACTIVE(x) ((x)&BTM_BLE_INQUIRY_MASK)
 #define BTM_BLE_IS_OBS_ACTIVE(x) ((x)&BTM_LE_OBSERVE_ACTIVE)
 
