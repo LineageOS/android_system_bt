@@ -487,23 +487,29 @@ cc_test {
     host_supported: true,
     include_dirs: [
         "system/bt",
+        "system/bt/stack/btm",
         "system/bt/stack/include",
+        "system/bt/utils/include",
     ],
     srcs: crypto_toolbox_srcs + [
-        "test/stack_gatt_sr_hash_test.cc",
+        "gatt/gatt_db.cc",
         "gatt/gatt_sr_hash.cc",
+        "gatt/gatt_utils.cc",
+        "test/gatt/mock_gatt_utils_ref.cc",
+        "test/stack_gatt_sr_hash_test.cc",
     ],
     shared_libs: [
         "libcutils",
         "libcrypto",
+        "libprotobuf-cpp-lite",
     ],
     static_libs: [
+        "libbt-common",
+        "libbt-protos-lite",
         "liblog",
         "libosi",
-        "libbt-common",
     ],
 }
-
 
 // Iso manager unit tests
 cc_test {
