@@ -294,7 +294,7 @@ Octet16 Database::Hash() const {
         } else if (value == GATT_UUID_CHAR_EXT_PROP) {
           UINT16_TO_STREAM(p, d.handle);
           UINT16_TO_STREAM(p, d.uuid.As16Bit());
-          UINT16_TO_STREAM(p, 0x0000);  // STORE!!!!! USE PROPER VALUE !!!
+          UINT16_TO_STREAM(p, d.characteristic_extended_properties);
         }
       }
     }
