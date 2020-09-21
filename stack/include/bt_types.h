@@ -569,17 +569,8 @@ inline void STREAM_TO_BDADDR(RawAddress& a, uint8_t*& p) {
 
 #endif
 
-#define AMP_KEY_TYPE_GAMP 0
-#define AMP_KEY_TYPE_WIFI 1
-#define AMP_KEY_TYPE_UWB 2
-typedef uint8_t tAMP_KEY_TYPE;
-
 #define BT_OCTET8_LEN 8
 typedef uint8_t BT_OCTET8[BT_OCTET8_LEN]; /* octet array: size 16 */
-
-#define AMP_LINK_KEY_LEN 32
-typedef uint8_t
-    AMP_LINK_KEY[AMP_LINK_KEY_LEN]; /* Dedicated AMP and GAMP Link Keys */
 
 /* Some C files include this header file */
 #ifdef __cplusplus
@@ -602,22 +593,18 @@ inline bool is_sample_ltk(const Octet16& ltk) { return ltk == SAMPLE_LTK; }
 
 #define PIN_CODE_LEN 16
 typedef uint8_t PIN_CODE[PIN_CODE_LEN]; /* Pin Code (upto 128 bits) MSB is 0 */
-typedef uint8_t* PIN_CODE_PTR;          /* Pointer to Pin Code */
 
 #define BT_OCTET32_LEN 32
 typedef uint8_t BT_OCTET32[BT_OCTET32_LEN]; /* octet array: size 32 */
 
 #define DEV_CLASS_LEN 3
 typedef uint8_t DEV_CLASS[DEV_CLASS_LEN]; /* Device class */
-typedef uint8_t* DEV_CLASS_PTR;           /* Pointer to Device class */
 
 #define EXT_INQ_RESP_LEN 3
 typedef uint8_t EXT_INQ_RESP[EXT_INQ_RESP_LEN]; /* Extended Inquiry Response */
-typedef uint8_t* EXT_INQ_RESP_PTR; /* Pointer to Extended Inquiry Response */
 
 #define BD_NAME_LEN 248
 typedef uint8_t BD_NAME[BD_NAME_LEN + 1]; /* Device name */
-typedef uint8_t* BD_NAME_PTR;             /* Pointer to Device name */
 
 #define BD_FEATURES_LEN 8
 typedef uint8_t
@@ -629,12 +616,6 @@ typedef uint8_t BT_EVENT_MASK[BT_EVENT_MASK_LEN]; /* Event Mask */
 #define LAP_LEN 3
 typedef uint8_t LAP[LAP_LEN];     /* IAC as passed to Inquiry (LAP) */
 typedef uint8_t INQ_LAP[LAP_LEN]; /* IAC as passed to Inquiry (LAP) */
-
-#define RAND_NUM_LEN 16
-typedef uint8_t RAND_NUM[RAND_NUM_LEN];
-
-#define ACO_LEN 12
-typedef uint8_t ACO[ACO_LEN]; /* Authenticated ciphering offset */
 
 #define COF_LEN 12
 typedef uint8_t COF[COF_LEN]; /* ciphering offset number */
@@ -650,33 +631,8 @@ typedef struct {
 } FLOW_SPEC;
 
 /* Values for service_type */
-#define SVC_TYPE_NO_TRAFFIC 0
 #define SVC_TYPE_BEST_EFFORT 1
 #define SVC_TYPE_GUARANTEED 2
-
-/* Service class of the CoD */
-#define SERV_CLASS_NETWORKING (1 << 1)
-#define SERV_CLASS_RENDERING (1 << 2)
-#define SERV_CLASS_CAPTURING (1 << 3)
-#define SERV_CLASS_OBJECT_TRANSFER (1 << 4)
-#define SERV_CLASS_OBJECT_AUDIO (1 << 5)
-#define SERV_CLASS_OBJECT_TELEPHONY (1 << 6)
-#define SERV_CLASS_OBJECT_INFORMATION (1 << 7)
-
-/* Second byte */
-#define SERV_CLASS_LIMITED_DISC_MODE (0x20)
-
-/* Field size definitions. Note that byte lengths are rounded up. */
-#define ACCESS_CODE_BIT_LEN 72
-#define ACCESS_CODE_BYTE_LEN 9
-#define SHORTENED_ACCESS_CODE_BIT_LEN 68
-
-typedef uint8_t ACCESS_CODE[ACCESS_CODE_BYTE_LEN];
-
-#define SYNTH_TX 1 /* want synth code to TRANSMIT at this freq */
-#define SYNTH_RX 2 /* want synth code to RECEIVE at this freq */
-
-#define SYNC_REPS 1 /* repeats of sync word transmitted to start of burst */
 
 #define BT_1SEC_TIMEOUT_MS (1 * 1000) /* 1 second */
 
@@ -700,48 +656,10 @@ typedef uint8_t ACCESS_CODE[ACCESS_CODE_BYTE_LEN];
 #define BT_EIR_SERVICE_DATA_128BITS_UUID_TYPE 0x21
 #define BT_EIR_MANUFACTURER_SPECIFIC_TYPE 0xFF
 
-#define BT_OOB_COD_SIZE 3
-#define BT_OOB_HASH_C_SIZE 16
-#define BT_OOB_RAND_R_SIZE 16
-
-/* Broadcom proprietary UUIDs and reserved PSMs
- *
- * The lowest 4 bytes byte of the UUID or GUID depend on the feature. Typically,
- * the value of those bytes will be the PSM or SCN.
- */
-#define BRCM_PROPRIETARY_UUID_BASE \
-  0xDA, 0x23, 0x41, 0x02, 0xA3, 0xBB, 0xC1, 0x71, 0xBA, 0x09, 0x6f, 0x21
-#define BRCM_PROPRIETARY_GUID_BASE \
-  0xda23, 0x4102, 0xa3, 0xbb, 0xc1, 0x71, 0xba, 0x09, 0x6f, 0x21
-
 /* We will not allocate a PSM in the reserved range to 3rd party apps
  */
 #define BRCM_RESERVED_PSM_START 0x5AE1
 #define BRCM_RESERVED_PSM_END 0x5AFF
-
-#define BRCM_UTILITY_SERVICE_PSM 0x5AE1
-#define BRCM_MATCHER_PSM 0x5AE3
-
-/* Connection statistics
- */
-
-/* Structure to hold connection stats */
-#ifndef BT_CONN_STATS_DEFINED
-#define BT_CONN_STATS_DEFINED
-
-/* These bits are used in the bIsConnected field */
-#define BT_CONNECTED_USING_BREDR 1
-#define BT_CONNECTED_USING_AMP 2
-
-typedef struct {
-  uint32_t is_connected;
-  int32_t rssi;
-  uint32_t bytes_sent;
-  uint32_t bytes_rcvd;
-  uint32_t duration;
-} tBT_CONN_STATS;
-
-#endif
 
 /*****************************************************************************
  *                          Low Energy definitions
