@@ -27,24 +27,36 @@ namespace pairing {
 void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, numeric_value);
+  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
+  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
+  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayConfirmValue, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo() {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
+  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
+  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
+  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayYesNoDialog, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, passkey);
+  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
+  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
+  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayPasskey, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
+  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
+  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
+  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayEnterPasskeyDialog, data);
 }
 
@@ -54,7 +66,8 @@ void ClassicPairingHandler::NotifyUiDisplayCancel() {
 }
 
 void ClassicPairingHandler::OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) {
-  LOG_WARN("TODO Not Implemented!");
+  // NOTE: This is not used by Classic, only by LE
+  LOG_ALWAYS_FATAL("This is not supported by Classic Pairing Handler, only LE");
 }
 
 void ClassicPairingHandler::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
@@ -179,7 +192,6 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
 
-  // Using local variable until device database pointer is ready
   remote_io_capability_ = packet.GetIoCapability();
   remote_authentication_requirements_ = packet.GetAuthenticationRequirements();
   remote_oob_present_ = packet.GetOobDataPresent();

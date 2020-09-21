@@ -239,6 +239,45 @@ void btm_api_process_extended_inquiry_result(RawAddress raw_address,
 namespace {
 std::unordered_map<bluetooth::hci::AddressWithType, bt_bdname_t>
     address_name_map_;
+
+std::unordered_map<std::string, int> gd_legacy_io_caps_map_ = {
+    {bluetooth::hci::IoCapabilityText(
+         bluetooth::hci::IoCapability::DISPLAY_ONLY),
+     BTM_IO_CAP_OUT},
+    {bluetooth::hci::IoCapabilityText(
+         bluetooth::hci::IoCapability::DISPLAY_YES_NO),
+     BTM_IO_CAP_IO},
+    {bluetooth::hci::IoCapabilityText(
+         bluetooth::hci::IoCapability::KEYBOARD_ONLY),
+     BTM_IO_CAP_IN},
+    {bluetooth::hci::IoCapabilityText(
+         bluetooth::hci::IoCapability::NO_INPUT_NO_OUTPUT),
+     BTM_IO_CAP_NONE},
+};
+
+std::unordered_map<std::string, int> gd_legacy_auth_reqs_map_ = {
+    {bluetooth::hci::AuthenticationRequirementsText(
+         bluetooth::hci::AuthenticationRequirements::NO_BONDING),
+     BTM_AUTH_SP_NO},
+    {bluetooth::hci::AuthenticationRequirementsText(
+         bluetooth::hci::AuthenticationRequirements::
+             NO_BONDING_MITM_PROTECTION),
+     BTM_AUTH_SP_YES},
+    {bluetooth::hci::AuthenticationRequirementsText(
+         bluetooth::hci::AuthenticationRequirements::DEDICATED_BONDING),
+     BTM_AUTH_AP_NO},
+    {bluetooth::hci::AuthenticationRequirementsText(
+         bluetooth::hci::AuthenticationRequirements::
+             DEDICATED_BONDING_MITM_PROTECTION),
+     BTM_AUTH_AP_YES},
+    {bluetooth::hci::AuthenticationRequirementsText(
+         bluetooth::hci::AuthenticationRequirements::GENERAL_BONDING),
+     BTM_AUTH_SPGB_NO},
+    {bluetooth::hci::AuthenticationRequirementsText(
+         bluetooth::hci::AuthenticationRequirements::
+             GENERAL_BONDING_MITM_PROTECTION),
+     BTM_AUTH_SPGB_YES},
+};
 }
 
 class ShimUi : public bluetooth::security::UI {
@@ -302,7 +341,8 @@ class ShimUi : public bluetooth::security::UI {
       io_req_evt_data.bd_addr = bluetooth::ToRawAddress(address.GetAddress());
       // Local IO Caps (Phone is always DisplayYesNo)
       io_req_evt_data.io_cap = BTM_IO_CAP_IO;
-      io_req_evt_data.auth_req = BTM_AUTH_AP_YES;
+      // Local Auth Reqs (Phone is always DEDICATED_BONDING)
+      io_req_evt_data.auth_req = BTM_AUTH_AP_NO;
       io_req_evt_data.oob_data = BTM_OOB_NONE;
       (*bta_callbacks_->p_sp_callback)(BTM_SP_IO_REQ_EVT,
                                        (tBTM_SP_EVT_DATA*)&io_req_evt_data);
@@ -310,9 +350,10 @@ class ShimUi : public bluetooth::security::UI {
       // Call sp_cback for IO_RSP
       tBTM_SP_IO_RSP io_rsp_evt_data;
       io_rsp_evt_data.bd_addr = bluetooth::ToRawAddress(address.GetAddress());
-      // TODO(optedoblivion): Get remote IO Cap to set here
-      io_rsp_evt_data.io_cap = BTM_IO_CAP_IO;
-      // TODO(optedoblivion): Get remote AUTH REQ to set here
+      io_rsp_evt_data.io_cap =
+          gd_legacy_io_caps_map_[data.GetExtraData("remote_io_caps")];
+      io_rsp_evt_data.auth_req =
+          gd_legacy_auth_reqs_map_[data.GetExtraData("remote_auth_reqs")];
       io_rsp_evt_data.auth_req = BTM_AUTH_AP_YES;
       io_rsp_evt_data.oob_data = BTM_OOB_NONE;
       (*bta_callbacks_->p_sp_callback)(BTM_SP_IO_RSP_EVT,
