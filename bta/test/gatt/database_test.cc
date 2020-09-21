@@ -239,6 +239,10 @@ TEST(GattDatabaseTest, hash_test) {
 
   builder.AddCharacteristic(0x0015, 0x0016, Uuid::From16Bit(0x2A19), 0x02);
 
+  // set characteristic extended properties descriptor values
+  std::vector<uint16_t> descriptorValues = {0x0000};
+  builder.SetValueOfDescriptors(descriptorValues);
+
   Database db = builder.Build();
 
   // Big endian example from Bluetooth SPEC V5.2, Vol 3, Part G, APPENDIX B
