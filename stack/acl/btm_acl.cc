@@ -2329,30 +2329,22 @@ void btm_acl_reset_paging(void) {
 void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
   tBTM_SEC_DEV_REC* p_dev_rec;
 
-  VLOG(2) << __func__ << ":" << btm_cb.discing << " , paging:" << btm_cb.paging
-          << " BDA: " << bda;
+  if (!BTM_IsAclConnectionUp(bda, BT_TRANSPORT_BR_EDR)) {
+    VLOG(1) << "connecting_bda: " << btm_cb.connecting_bda;
+    if (btm_cb.paging && bda == btm_cb.connecting_bda) {
+      fixed_queue_enqueue(btm_cb.page_queue, p);
+    } else {
+      p_dev_rec = btm_find_or_alloc_dev(bda);
+      btm_cb.connecting_bda = p_dev_rec->bd_addr;
+      memcpy(btm_cb.connecting_dc, p_dev_rec->dev_class, DEV_CLASS_LEN);
 
-  if (btm_cb.discing) {
-    btm_cb.paging = true;
-    fixed_queue_enqueue(btm_cb.page_queue, p);
-  } else {
-    if (!BTM_IsAclConnectionUp(bda, BT_TRANSPORT_BR_EDR)) {
-      VLOG(1) << "connecting_bda: " << btm_cb.connecting_bda;
-      if (btm_cb.paging && bda == btm_cb.connecting_bda) {
-        fixed_queue_enqueue(btm_cb.page_queue, p);
-      } else {
-        p_dev_rec = btm_find_or_alloc_dev(bda);
-        btm_cb.connecting_bda = p_dev_rec->bd_addr;
-        memcpy(btm_cb.connecting_dc, p_dev_rec->dev_class, DEV_CLASS_LEN);
-
-        btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-      }
-
-      btm_cb.paging = true;
-    } else /* ACL is already up */
-    {
       btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
     }
+
+    btm_cb.paging = true;
+  } else /* ACL is already up */
+  {
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
   }
 }
 
