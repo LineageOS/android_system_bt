@@ -272,7 +272,7 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
   bool is_link_key_known = false;
   bool is_key_mitm = false;
   uint8_t key_type;
-  tBTM_BLE_SEC_REQ_ACT sec_act = BTM_LE_SEC_NONE;
+  tBTM_BLE_SEC_REQ_ACT sec_act = BTM_BLE_SEC_REQ_ACT_NONE;
 
   if (auth_req == GATT_AUTH_REQ_NONE) return act;
 
