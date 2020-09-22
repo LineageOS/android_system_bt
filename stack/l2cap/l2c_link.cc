@@ -163,7 +163,7 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
   }
 
   /* Save the handle */
-  p_lcb->SetHandle(handle);
+  l2cu_set_lcb_handle(*p_lcb, handle);
 
   if (ci.status == HCI_SUCCESS) {
     /* Connected OK. Change state to connected */
