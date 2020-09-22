@@ -366,22 +366,14 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     return;
   }
 
-  LOG_DEBUG("Acl created handle:%hu role:%s transport:%s", hci_handle,
-            RoleText(link_role).c_str(), BtTransportText(transport).c_str());
-
-  /* Allocate acl_db entry */
-  uint8_t xx = 0;
-  for (xx = 0, p_acl = &btm_cb.acl_cb_.acl_db[0]; xx < MAX_L2CAP_LINKS;
-       xx++, p_acl++) {
-    if (!p_acl->in_use) {
-      break;
-    }
-  }
-
-  if (xx == MAX_L2CAP_LINKS) {
-    LOG_ERROR("Unable to allocate acl resources handle:%hu", hci_handle);
+  p_acl = internal_.acl_allocate_connection();
+  if (p_acl == nullptr) {
+    LOG_ERROR("Unable to find available acl resource to continue");
     return;
   }
+
+  LOG_DEBUG("Acl allocated handle:%hu role:%s transport:%s", hci_handle,
+            RoleText(link_role).c_str(), BtTransportText(transport).c_str());
 
   p_acl->in_use = true;
   p_acl->hci_handle = hci_handle;
@@ -399,9 +391,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   p_acl->switch_role_failed_attempts = 0;
   p_acl->reset_switch_role();
 
-  tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[xx]; /* per ACL link */
-  memset(p_db, 0, sizeof(tBTM_PM_MCB));
-  p_db->state = BTM_PM_ST_ACTIVE;
+  acl_initialize_power_mode(*p_acl);
 
   /* if BR/EDR do something more */
   if (transport == BT_TRANSPORT_BR_EDR) {
