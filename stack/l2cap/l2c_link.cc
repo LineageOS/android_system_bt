@@ -814,32 +814,31 @@ void l2c_pin_code_request(const RawAddress& bd_addr) {
  *                  false if nothing to send or not in park mode
  *
  ******************************************************************************/
-bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
-  tBTM_PM_MODE mode;
-  tL2C_CCB* p_ccb;
+static bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
   bool need_to_active = false;
 
   /*
    * We only switch park to active only if we have unsent packets
    */
   if (list_is_empty(p_lcb->link_xmit_data_q)) {
-    for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
+    for (tL2C_CCB* p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
          p_ccb = p_ccb->p_next_ccb) {
       if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
         need_to_active = true;
         break;
       }
     }
-  } else
+  } else {
     need_to_active = true;
+  }
 
   /* if we have packets to send */
-  if (need_to_active) {
+  if (need_to_active && !p_lcb->is_transport_ble()) {
     /* check power mode */
+    tBTM_PM_MODE mode;
     if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode)) {
       if (mode == BTM_PM_STS_PENDING) {
         L2CAP_TRACE_DEBUG("LCB(0x%x) is in PM pending state", p_lcb->Handle());
-
         return true;
       }
     }
@@ -912,7 +911,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
 
       if ((!p_lcb->in_use) || (p_lcb->partial_segment_being_sent) ||
           (p_lcb->link_state != LST_CONNECTED) ||
-          (p_lcb->link_xmit_quota != 0) || (L2C_LINK_CHECK_POWER_MODE(p_lcb)))
+          (p_lcb->link_xmit_quota != 0) || (l2c_link_check_power_mode(p_lcb)))
         continue;
 
       /* See if we can send anything from the Link Queue */
@@ -949,7 +948,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
     /* If a partial segment is being sent, can't send anything else */
     if ((p_lcb->partial_segment_being_sent) ||
         (p_lcb->link_state != LST_CONNECTED) ||
-        (L2C_LINK_CHECK_POWER_MODE(p_lcb)))
+        (l2c_link_check_power_mode(p_lcb)))
       return;
 
     /* See if we can send anything from the link queue */
