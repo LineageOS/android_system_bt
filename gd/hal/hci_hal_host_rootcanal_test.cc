@@ -241,7 +241,7 @@ size_t read_with_retry(int socket, uint8_t* data, size_t length) {
   size_t bytes_read = 0;
   ssize_t bytes_read_current = 0;
   do {
-    RUN_NO_INTR(bytes_read_current = read(socket, data + bytes_read, length - bytes_read));
+    bytes_read_current = read(socket, data + bytes_read, length - bytes_read);
     bytes_read += bytes_read_current;
   } while (length > bytes_read && bytes_read_current > 0);
   return bytes_read;
