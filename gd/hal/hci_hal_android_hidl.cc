@@ -22,6 +22,8 @@
 #include <future>
 #include <vector>
 
+#include "common/stop_watch.h"
+#include "common/strings.h"
 #include "hal/hci_hal.h"
 #include "hal/snoop_logger.h"
 #include "os/log.h"
@@ -46,6 +48,15 @@ class HciDeathRecipient : public ::android::hardware::hidl_death_recipient {
 };
 
 android::sp<HciDeathRecipient> hci_death_recipient_ = new HciDeathRecipient();
+
+template <class VecType>
+std::string GetTimerText(const char* func_name, VecType vec) {
+  return common::StringFormat(
+      "%s: len %zu, 1st 5 bytes '%s'",
+      func_name,
+      vec.size(),
+      common::ToHexString(vec.begin(), std::min(vec.end(), vec.begin() + 5)).c_str());
+}
 
 class InternalHciCallbacks : public IBluetoothHciCallbacks {
  public:
@@ -73,6 +84,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
   }
 
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& event) {
+    common::StopWatch(GetTimerText(__func__, event));
     std::vector<uint8_t> received_hci_packet(event.begin(), event.end());
     btsnoop_logger_->Capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
     if (callback_ != nullptr) {
@@ -82,6 +94,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
   }
 
   Return<void> aclDataReceived(const hidl_vec<uint8_t>& data) {
+    common::StopWatch(GetTimerText(__func__, data));
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
     btsnoop_logger_->Capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
     if (callback_ != nullptr) {
@@ -91,6 +104,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
   }
 
   Return<void> scoDataReceived(const hidl_vec<uint8_t>& data) {
+    common::StopWatch(GetTimerText(__func__, data));
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
     btsnoop_logger_->Capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::SCO);
     if (callback_ != nullptr) {
@@ -118,16 +132,19 @@ class HciHalHidl : public HciHal {
   }
 
   void sendHciCommand(HciPacket command) override {
+    common::StopWatch(GetTimerText(__func__, command));
     btsnoop_logger_->Capture(command, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
     bt_hci_->sendHciCommand(command);
   }
 
   void sendAclData(HciPacket packet) override {
+    common::StopWatch(GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
     bt_hci_->sendAclData(packet);
   }
 
   void sendScoData(HciPacket packet) override {
+    common::StopWatch(GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
     bt_hci_->sendScoData(packet);
   }

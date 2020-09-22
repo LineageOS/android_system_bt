@@ -3,6 +3,7 @@ filegroup {
     srcs: [
         "init_flags.cc",
         "strings.cc",
+        "stop_watch.cc",
     ],
 }
 
