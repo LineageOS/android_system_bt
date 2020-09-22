@@ -104,8 +104,9 @@ static void fill_database_info(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr, uint8_t*
         // Descriptor
         UINT16_TO_STREAM(p_data, attr_it->handle);
         UINT16_TO_STREAM(p_data, attr_it->uuid.As16Bit());
-        // TODO: Store correct data for extended properties
-        UINT16_TO_STREAM(p_data, 0x0000);
+        UINT16_TO_STREAM(p_data, attr_it->p_value
+                                     ? attr_it->p_value->char_ext_prop
+                                     : 0x0000);
       }
     }
   }
