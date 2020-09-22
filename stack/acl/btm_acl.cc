@@ -60,6 +60,7 @@
 #include "types/raw_address.h"
 
 struct StackAclBtmAcl {
+  tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
   tACL_CONN* btm_bda_to_acl(const RawAddress& bda, tBT_TRANSPORT transport);
   tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
@@ -331,6 +332,23 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
  * Returns          void
  *
  ******************************************************************************/
+void acl_initialize_power_mode(const tACL_CONN& p_acl) {
+  tBTM_PM_MCB* p_db =
+      &btm_cb.acl_cb_.pm_mode_db[btm_handle_to_acl_index(p_acl.hci_handle)];
+  memset(p_db, 0, sizeof(tBTM_PM_MCB));
+  p_db->state = BTM_PM_ST_ACTIVE;
+}
+
+tACL_CONN* StackAclBtmAcl::acl_allocate_connection() {
+  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
+  for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl++) {
+    if (!p_acl->in_use) {
+      return p_acl;
+    }
+  }
+  return nullptr;
+}
+
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                      uint8_t link_role, tBT_TRANSPORT transport) {
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
