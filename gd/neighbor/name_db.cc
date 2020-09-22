@@ -49,7 +49,7 @@ struct NameDbModule::impl {
   void Stop();
 
  private:
-  std::unordered_map<hci::Address, PendingRemoteNameRead> address_to_pending_read_map_;
+  std::unordered_map<hci::Address, std::list<PendingRemoteNameRead>> address_to_pending_read_map_;
   std::unordered_map<hci::Address, RemoteName> address_to_name_map_;
 
   void OnRemoteNameResponse(hci::ErrorCode status, hci::Address address, RemoteName name);
@@ -67,11 +67,14 @@ neighbor::NameDbModule::impl::impl(const neighbor::NameDbModule& module) : modul
 void neighbor::NameDbModule::impl::ReadRemoteNameRequest(
     hci::Address address, ReadRemoteNameDbCallback callback, os::Handler* handler) {
   if (address_to_pending_read_map_.find(address) != address_to_pending_read_map_.end()) {
-    LOG_WARN("Already have remote read db in progress and currently can only have one outstanding");
+    LOG_WARN("Already have remote read db in progress; adding callback to callback list");
+    address_to_pending_read_map_[address].push_back({std::move(callback), handler});
     return;
   }
 
-  address_to_pending_read_map_[address] = {std::move(callback), std::move(handler)};
+  std::list<PendingRemoteNameRead> tmp;
+  address_to_pending_read_map_[address] = std::move(tmp);
+  address_to_pending_read_map_[address].push_back({std::move(callback), handler});
 
   // TODO(cmanton) Use remote name request defaults for now
   hci::PageScanRepetitionMode page_scan_repetition_mode = hci::PageScanRepetitionMode::R1;
@@ -88,13 +91,14 @@ void neighbor::NameDbModule::impl::ReadRemoteNameRequest(
 
 void neighbor::NameDbModule::impl::OnRemoteNameResponse(hci::ErrorCode status, hci::Address address, RemoteName name) {
   ASSERT(address_to_pending_read_map_.find(address) != address_to_pending_read_map_.end());
-  PendingRemoteNameRead callback_handler = std::move(address_to_pending_read_map_.at(address));
-
   if (status == hci::ErrorCode::SUCCESS) {
     address_to_name_map_[address] = name;
   }
-  callback_handler.handler_->Post(
-      common::BindOnce(std::move(callback_handler.callback_), address, status == hci::ErrorCode::SUCCESS));
+  auto& callback_list = address_to_pending_read_map_.at(address);
+  for (auto& it : callback_list) {
+    it.handler_->Call(std::move(it.callback_), address, status == hci::ErrorCode::SUCCESS);
+  }
+  address_to_pending_read_map_.erase(address);
 }
 
 bool neighbor::NameDbModule::impl::IsNameCached(hci::Address address) const {
