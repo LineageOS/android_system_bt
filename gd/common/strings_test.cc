@@ -27,6 +27,7 @@ namespace testing {
 using bluetooth::common::BoolFromString;
 using bluetooth::common::FromHexString;
 using bluetooth::common::Int64FromString;
+using bluetooth::common::StringFormat;
 using bluetooth::common::StringJoin;
 using bluetooth::common::StringSplit;
 using bluetooth::common::StringTrim;
@@ -164,6 +165,13 @@ TEST(StringsTest, bool_from_and_to_string_test) {
   ASSERT_FALSE(BoolFromString(""));
   ASSERT_THAT(ToString(true), StrEq("true"));
   ASSERT_THAT(ToString(false), StrEq("false"));
+}
+
+TEST(StringsTest, string_format_test) {
+  ASSERT_THAT(StringFormat("%s", "hello"), StrEq("hello"));
+  ASSERT_THAT(StringFormat("%d", 42), StrEq("42"));
+  ASSERT_THAT(StringFormat("%s world", "hello"), StrEq("hello world"));
+  ASSERT_THAT(StringFormat("%d %.1f 0x%02x", 42, 43.123, 0x8), StrEq("42 43.1 0x08"));
 }
 
 }  // namespace testing
