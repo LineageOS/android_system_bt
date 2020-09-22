@@ -342,6 +342,7 @@ typedef struct t_l2c_linkcb {
                                uint16_t conn_timeout);
   friend void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                                      const RawAddress& p_bda);
+  friend void l2cu_set_lcb_handle(struct t_l2c_linkcb& p_lcb, uint16_t handle);
   void SetHandle(uint16_t handle) { handle_ = handle; }
 
  public:
