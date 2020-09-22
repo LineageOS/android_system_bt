@@ -425,6 +425,18 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
           btm_acl_process_sca_cmpl_pkt(ble_evt_len, p);
           break;
 
+        case HCI_BLE_PERIODIC_ADV_SYNC_EST_EVT:
+          btm_ble_process_periodic_adv_sync_est_evt(ble_evt_len, p);
+          break;
+
+        case HCI_BLE_PERIODIC_ADV_REPORT_EVT:
+          btm_ble_process_periodic_adv_pkt(ble_evt_len, p);
+          break;
+
+        case HCI_BLE_PERIODIC_ADV_SYNC_LOST_EVT:
+          btm_ble_process_periodic_adv_sync_lost_evt(ble_evt_len, p);
+          break;
+
         case HCI_BLE_CIS_EST_EVT:
         case HCI_BLE_CREATE_BIG_CPL_EVT:
         case HCI_BLE_TERM_BIG_CPL_EVT:
