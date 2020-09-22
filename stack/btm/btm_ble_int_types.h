@@ -96,15 +96,6 @@ typedef struct {
   uint8_t* p_pad;
 } tBTM_BLE_LOCAL_ADV_DATA;
 
-typedef struct {
-  /* Used for determining if a response has already been received for the
-   * current inquiry operation. (We do not want to flood the caller with
-   * multiple responses from the same device. */
-  uint32_t inq_count;
-  bool scan_rsp;
-  tBLE_BD_ADDR le_bda;
-} tINQ_LE_BDADDR;
-
 #define BTM_BLE_ISVALID_PARAM(x, min, max) \
   (((x) >= (min) && (x) <= (max)) || ((x) == BTM_BLE_CONN_PARAM_UNDEF))
 
@@ -114,30 +105,32 @@ typedef struct {
   uint32_t scan_window;
   uint32_t scan_interval;
   uint8_t scan_type;             /* current scan type: active or passive */
-  uint8_t scan_duplicate_filter; /* duplicate filter enabled for scan */
-  uint16_t adv_interval_min;
-  uint16_t adv_interval_max;
+
   tBTM_BLE_AFP afp; /* advertising filter policy */
   tBTM_BLE_SFP sfp; /* scanning filter policy */
 
   tBLE_ADDR_TYPE adv_addr_type;
   uint8_t evt_type;
+
   uint8_t adv_mode;
+  void enable_advertising_mode() { adv_mode = BTM_BLE_ADV_ENABLE; }
+  void disable_advertising_mode() { adv_mode = BTM_BLE_ADV_DISABLE; }
+  bool is_advertising_mode_enabled() const {
+    return (adv_mode == BTM_BLE_ADV_ENABLE);
+  }
+
   tBLE_BD_ADDR direct_bda;
   tBTM_BLE_EVT directed_conn;
   bool fast_adv_on;
   alarm_t* fast_adv_timer;
 
   /* inquiry BD addr database */
-  uint8_t num_bd_entries;
-  uint8_t max_bd_entries;
   tBTM_BLE_LOCAL_ADV_DATA adv_data;
   tBTM_BLE_ADV_CHNL_MAP adv_chnl_map;
 
   alarm_t* inquiry_timer;
   bool scan_rsp;
   uint8_t state; /* Current state that the inquiry process is in */
-  int8_t tx_power;
 } tBTM_BLE_INQ_CB;
 
 /* random address resolving complete callback */
@@ -149,9 +142,6 @@ typedef void(tBTM_BLE_ADDR_CBACK)(const RawAddress& static_random, void* p);
 typedef struct {
   tBLE_ADDR_TYPE own_addr_type; /* local device LE address type */
   RawAddress private_addr;
-  RawAddress random_bda;
-  tBTM_BLE_ADDR_CBACK* p_generate_cback;
-  void* p;
   alarm_t* refresh_raddr_timer;
 } tBTM_LE_RANDOM_CB;
 
@@ -224,6 +214,7 @@ typedef uint8_t tBTM_PRIVACY_MODE;
 */
 constexpr uint8_t kBTM_BLE_INQUIRY_ACTIVE = 0x10;
 constexpr uint8_t kBTM_BLE_OBSERVE_ACTIVE = 0x80;
+constexpr size_t kMasterAndSlaveCount = 2;
 
 typedef struct {
  private:
@@ -289,9 +280,6 @@ typedef struct {
   /* random address management control block */
   tBTM_LE_RANDOM_CB addr_mgnt_cb;
 
-  bool enabled;
-
-  bool mixed_mode;                   /* privacy 1.2 mixed mode is on or not */
   tBTM_PRIVACY_MODE privacy_mode;    /* privacy mode */
   uint8_t resolving_list_avail_size; /* resolving list available size */
   tBTM_BLE_RESOLVE_Q resolving_list_pend_q; /* Resolving list queue */
@@ -301,7 +289,9 @@ typedef struct {
 
   /* current BLE link state */
   tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
-  uint8_t link_count[2];          /* total link count master and slave*/
+
+  uint8_t
+      link_count[kMasterAndSlaveCount]; /* total link count master and slave*/
 } tBTM_BLE_CB;
 
 #endif  // BTM_BLE_INT_TYPES_H

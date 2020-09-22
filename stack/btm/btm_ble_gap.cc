@@ -420,7 +420,6 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
           p_inq->scan_type, (uint16_t)scan_interval, (uint16_t)scan_window,
           btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, BTM_BLE_DEFAULT_SFP);
 
-      p_inq->scan_duplicate_filter = BTM_BLE_DUPLICATE_DISABLE;
       status = btm_ble_start_scan();
     }
 
@@ -603,9 +602,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
      * address in controller */
     if (controller_get_interface()->supports_ble_privacy()) {
       gap_ble_attr_value.addr_resolution = 1;
-      /* check vendor specific capability */
-      p_cb->privacy_mode =
-          btm_cb.ble_ctr_cb.mixed_mode ? BTM_PRIVACY_MIXED : BTM_PRIVACY_1_2;
+      p_cb->privacy_mode = BTM_PRIVACY_1_2;
     } else /* 4.1/4.0 controller */
       p_cb->privacy_mode = BTM_PRIVACY_1_1;
   }
@@ -675,10 +672,15 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
   uint8_t evt_type;
   tBTM_SEC_DEV_REC* p_dev_rec;
 
-  evt_type =
-      (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE)
-          ? ((p_cb->scan_rsp) ? BTM_BLE_DISCOVER_EVT : BTM_BLE_NON_CONNECT_EVT)
-          : BTM_BLE_CONNECT_EVT;
+  if (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE) {
+    if (p_cb->scan_rsp) {
+      evt_type = BTM_BLE_DISCOVER_EVT;
+    } else {
+      evt_type = BTM_BLE_NON_CONNECT_EVT;
+    }
+  } else {
+    evt_type = BTM_BLE_CONNECT_EVT;
+  }
 
   if (evt_type == BTM_BLE_CONNECT_EVT) {
     evt_type = p_cb->directed_conn;
@@ -833,34 +835,27 @@ uint16_t BTM_BleReadConnectability() {
 static void btm_ble_select_adv_interval(uint8_t evt_type,
                                         uint16_t* p_adv_int_min,
                                         uint16_t* p_adv_int_max) {
-  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
-  if (p_cb->adv_interval_min && p_cb->adv_interval_max) {
-    *p_adv_int_min = p_cb->adv_interval_min;
-    *p_adv_int_max = p_cb->adv_interval_max;
-  } else {
-    switch (evt_type) {
-      case BTM_BLE_CONNECT_EVT:
-      case BTM_BLE_CONNECT_LO_DUTY_DIR_EVT:
-        *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_1;
-        break;
+  switch (evt_type) {
+    case BTM_BLE_CONNECT_EVT:
+    case BTM_BLE_CONNECT_LO_DUTY_DIR_EVT:
+      *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_1;
+      break;
 
-      case BTM_BLE_NON_CONNECT_EVT:
-      case BTM_BLE_DISCOVER_EVT:
-        *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_2;
-        break;
+    case BTM_BLE_NON_CONNECT_EVT:
+    case BTM_BLE_DISCOVER_EVT:
+      *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_FAST_INT_2;
+      break;
 
       /* connectable directed event */
-      case BTM_BLE_CONNECT_DIR_EVT:
-        *p_adv_int_min = BTM_BLE_GAP_ADV_DIR_MIN_INT;
-        *p_adv_int_max = BTM_BLE_GAP_ADV_DIR_MAX_INT;
-        break;
+    case BTM_BLE_CONNECT_DIR_EVT:
+      *p_adv_int_min = BTM_BLE_GAP_ADV_DIR_MIN_INT;
+      *p_adv_int_max = BTM_BLE_GAP_ADV_DIR_MAX_INT;
+      break;
 
-      default:
-        *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_SLOW_INT;
-        break;
-    }
+    default:
+      *p_adv_int_min = *p_adv_int_max = BTM_BLE_GAP_ADV_SLOW_INT;
+      break;
   }
-  return;
 }
 
 /*******************************************************************************
@@ -1170,7 +1165,6 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
     /* enable IRK list */
     btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
     p_ble_cb->inq_var.scan_type = BTM_BLE_SCAN_MODE_ACTI;
-    p_ble_cb->inq_var.scan_duplicate_filter = BTM_BLE_DUPLICATE_DISABLE;
     status = btm_ble_start_scan();
   } else if ((p_ble_cb->inq_var.scan_interval !=
               BTM_BLE_LOW_LATENCY_SCAN_INT) ||
@@ -1924,7 +1918,7 @@ void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* data) {
 tBTM_STATUS btm_ble_start_scan(void) {
   tBTM_BLE_INQ_CB* p_inq = &btm_cb.ble_ctr_cb.inq_var;
   /* start scan, disable duplicate filtering */
-  btm_send_hci_scan_enable(BTM_BLE_SCAN_ENABLE, p_inq->scan_duplicate_filter);
+  btm_send_hci_scan_enable(BTM_BLE_SCAN_ENABLE, BTM_BLE_DUPLICATE_DISABLE);
 
   if (p_inq->scan_type == BTM_BLE_SCAN_MODE_ACTI)
     btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
