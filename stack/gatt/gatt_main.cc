@@ -725,11 +725,6 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;
 
-  if (ack_needed) {
-    /* send L2CAP disconnect response */
-    L2CA_DisconnectRsp(lcid);
-  }
-
   if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
     if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
       gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
