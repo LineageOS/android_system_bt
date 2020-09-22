@@ -70,5 +70,25 @@ std::string ToString(uint64_t value);
 std::optional<bool> BoolFromString(const std::string& str);
 std::string ToString(bool value);
 
+// printf like formatting to std::string
+// format must contains format information, to print a string use StringFormat("%s", str)
+template <typename... Args>
+std::string StringFormat(const std::string& format, Args... args) {
+  auto size = std::snprintf(nullptr, 0, format.c_str(), args...);
+  ASSERT_LOG(size >= 0, "return value %d, error %d, text '%s'", size, errno, strerror(errno));
+  // Add 1 for terminating null byte
+  char buffer[size + 1];
+  auto actual_size = std::snprintf(buffer, sizeof(buffer), format.c_str(), args...);
+  ASSERT_LOG(
+      size == actual_size,
+      "asked size %d, actual size %d, error %d, text '%s'",
+      size,
+      actual_size,
+      errno,
+      strerror(errno));
+  // Exclude the terminating null byte
+  return std::string(buffer, size);
+}
+
 }  // namespace common
 }  // namespace bluetooth
