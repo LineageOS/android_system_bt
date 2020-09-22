@@ -95,7 +95,9 @@ struct HciLayer::impl {
     command_queue_.clear();
   }
 
-  void drop(EventPacketView) {}
+  void drop(EventPacketView event) {
+    LOG_INFO("Dropping event %s", EventCodeText(event.GetEventCode()).c_str());
+  }
 
   void on_outbound_acl_ready() {
     auto packet = acl_queue_.GetDownEnd()->TryDequeue();
