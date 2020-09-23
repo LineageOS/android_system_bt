@@ -851,8 +851,6 @@ static void gap_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   p_ccb = gap_find_ccb_by_cid(l2cap_cid);
   if (p_ccb == NULL) return;
 
-  if (ack_needed) L2CA_DisconnectRsp(l2cap_cid);
-
   p_ccb->p_callback(p_ccb->gap_handle, GAP_EVT_CONN_CLOSED, nullptr);
   gap_release_ccb(p_ccb);
 }

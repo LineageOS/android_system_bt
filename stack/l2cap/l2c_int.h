@@ -645,6 +645,7 @@ extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
 extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
+extern bool L2CA_DisconnectRsp(uint16_t cid);
 
 /* Functions provided by l2c_link.cc
  ***********************************
