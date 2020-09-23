@@ -618,11 +618,6 @@ extern bool l2cu_is_ccb_active(tL2C_CCB* p_ccb);
 /* Functions provided for Broadcom Aware
  ***************************************
 */
-extern bool l2cu_check_feature_req(tL2C_LCB* p_lcb, uint8_t id, uint8_t* p_data,
-                                   uint16_t data_len);
-extern void l2cu_check_feature_rsp(tL2C_LCB* p_lcb, uint8_t id, uint8_t* p_data,
-                                   uint16_t data_len);
-extern void l2cu_send_feature_req(tL2C_CCB* p_ccb);
 
 extern tL2C_RCB* l2cu_allocate_rcb(uint16_t psm);
 extern tL2C_RCB* l2cu_find_rcb_by_psm(uint16_t psm);
