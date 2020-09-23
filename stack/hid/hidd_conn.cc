@@ -52,19 +52,14 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result);
 static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
 static void hidd_l2cif_config_cfm(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
 static void hidd_l2cif_disconnect_ind(uint16_t cid, bool ack_needed);
-static void hidd_l2cif_disconnect_cfm(uint16_t cid, uint16_t result);
+static void hidd_l2cif_disconnect(uint16_t cid);
 static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg);
 static void hidd_l2cif_cong_ind(uint16_t cid, bool congested);
 
-static const tL2CAP_APPL_INFO dev_reg_info = {hidd_l2cif_connect_ind,
-                                              hidd_l2cif_connect_cfm,
-                                              hidd_l2cif_config_ind,
-                                              hidd_l2cif_config_cfm,
-                                              hidd_l2cif_disconnect_ind,
-                                              hidd_l2cif_disconnect_cfm,
-                                              hidd_l2cif_data_ind,
-                                              hidd_l2cif_cong_ind,
-                                              NULL};
+static const tL2CAP_APPL_INFO dev_reg_info = {
+    hidd_l2cif_connect_ind, hidd_l2cif_connect_cfm,    hidd_l2cif_config_ind,
+    hidd_l2cif_config_cfm,  hidd_l2cif_disconnect_ind, NULL,
+    hidd_l2cif_data_ind,    hidd_l2cif_cong_ind,       NULL};
 
 /*******************************************************************************
  *
@@ -515,19 +510,12 @@ static void hidd_l2cif_disconnect_ind(uint16_t cid, bool ack_needed) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         hidd_l2cif_disconnect_cfm
- *
- * Description      Handles L2CAP disconection response
- *
- * Returns          void
- *
- ******************************************************************************/
-static void hidd_l2cif_disconnect_cfm(uint16_t cid, uint16_t result) {
+static void hidd_l2cif_disconnect(uint16_t cid) {
+  L2CA_DisconnectReq(cid);
+
   tHID_CONN* p_hcon;
 
-  HIDD_TRACE_EVENT("%s: cid=%04x result=%d", __func__, cid, result);
+  HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
 
   p_hcon = &hd_cb.device.conn;
 
@@ -865,9 +853,9 @@ tHID_STATUS hidd_conn_disconnect(void) {
     L2CA_SetIdleTimeoutByBdAddr(hd_cb.device.addr, 0, BT_TRANSPORT_BR_EDR);
 
     if (p_hcon->intr_cid) {
-      L2CA_DisconnectReq(p_hcon->intr_cid);
+      hidd_l2cif_disconnect(p_hcon->intr_cid);
     } else if (p_hcon->ctrl_cid) {
-      L2CA_DisconnectReq(p_hcon->ctrl_cid);
+      hidd_l2cif_disconnect(p_hcon->ctrl_cid);
     }
   } else {
     HIDD_TRACE_WARNING("%s: already disconnected", __func__);
