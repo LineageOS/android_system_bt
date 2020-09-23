@@ -66,7 +66,6 @@ void rfcomm_l2cap_if_init(void) {
   p_l2c->pL2CA_ConfigInd_Cb = RFCOMM_ConfigInd;
   p_l2c->pL2CA_ConfigCfm_Cb = RFCOMM_ConfigCnf;
   p_l2c->pL2CA_DisconnectInd_Cb = RFCOMM_DisconnectInd;
-  p_l2c->pL2CA_DisconnectCfm_Cb = NULL;
   p_l2c->pL2CA_DataInd_Cb = RFCOMM_BufDataInd;
   p_l2c->pL2CA_CongestionStatus_Cb = RFCOMM_CongestionStatusInd;
   p_l2c->pL2CA_TxComplete_Cb = NULL;
