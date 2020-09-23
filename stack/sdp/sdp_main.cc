@@ -125,10 +125,7 @@ void sdp_free(void) {
  ******************************************************************************/
 static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             UNUSED_ATTR uint16_t psm, uint8_t l2cap_id) {
-  tCONN_CB* p_ccb;
-
-  /* Allocate a new CCB. Return if none available. */
-  p_ccb = sdpu_allocate_ccb();
+  tCONN_CB* p_ccb = sdpu_allocate_ccb();
   if (p_ccb == NULL) return;
 
   /* Transition to the next appropriate state, waiting for config setup. */
@@ -140,25 +137,8 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   /* Send response to the L2CAP layer. */
   L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
-  {
-    tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
-
-    if (cfg.fcr_present) {
-      SDP_TRACE_DEBUG(
-          "sdp_connect_ind:  mode %u, txwinsz %u, max_trans %u, rtrans_tout "
-          "%u, mon_tout %u, mps %u",
-          cfg.fcr.mode, cfg.fcr.tx_win_sz, cfg.fcr.max_transmit,
-          cfg.fcr.rtrans_tout, cfg.fcr.mon_tout, cfg.fcr.mps);
-    }
-
-    if ((!L2CA_ConfigReq(l2cap_cid, &cfg)) && cfg.fcr_present &&
-        cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      /* FCR not desired; try again in basic mode */
-      cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-      cfg.fcr_present = false;
-      L2CA_ConfigReq(l2cap_cid, &cfg);
-    }
-  }
+  tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
+  L2CA_ConfigReq(l2cap_cid, &cfg);
 
   SDP_TRACE_EVENT("SDP - Rcvd L2CAP conn ind, sent config req, CID 0x%x",
                   p_ccb->connection_id);
@@ -192,22 +172,7 @@ static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
     p_ccb->con_state = SDP_STATE_CFG_SETUP;
 
     cfg = sdp_cb.l2cap_my_cfg;
-
-    if (cfg.fcr_present) {
-      SDP_TRACE_DEBUG(
-          "sdp_connect_cfm:  mode %u, txwinsz %u, max_trans %u, rtrans_tout "
-          "%u, mon_tout %u, mps %u",
-          cfg.fcr.mode, cfg.fcr.tx_win_sz, cfg.fcr.max_transmit,
-          cfg.fcr.rtrans_tout, cfg.fcr.mon_tout, cfg.fcr.mps);
-    }
-
-    if ((!L2CA_ConfigReq(l2cap_cid, &cfg)) && cfg.fcr_present &&
-        cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      /* FCR not desired; try again in basic mode */
-      cfg.fcr_present = false;
-      cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-      L2CA_ConfigReq(l2cap_cid, &cfg);
-    }
+    L2CA_ConfigReq(l2cap_cid, &cfg);
 
     SDP_TRACE_EVENT("SDP - got conn cnf, sent cfg req, CID: 0x%x",
                     p_ccb->connection_id);
@@ -275,38 +240,16 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   p_cfg->result = L2CAP_CFG_OK;
 
   /* Check peer config request against our rfcomm configuration */
-  if (p_cfg->fcr_present) {
-    /* Reject the window size if it is bigger than we want it to be */
-    if (p_cfg->fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      if (sdp_cb.l2cap_my_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE &&
-          p_cfg->fcr.tx_win_sz > sdp_cb.l2cap_my_cfg.fcr.tx_win_sz) {
-        p_cfg->fcr.tx_win_sz = sdp_cb.l2cap_my_cfg.fcr.tx_win_sz;
-        p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
-        SDP_TRACE_DEBUG(
-            "sdp_config_ind(CONFIG) -> Please try again with SMALLER TX "
-            "WINDOW");
-      }
-
-      /* Reject if locally we want basic and they don't */
-      if (sdp_cb.l2cap_my_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
-        /* Ask for a new setup */
-        p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
-        p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
-        SDP_TRACE_DEBUG(
-            "sdp_config_ind(CONFIG) -> Please try again with BASIC mode");
-      }
-      /* Remain in configure state and give the peer our desired configuration
-       */
-      if (p_cfg->result != L2CAP_CFG_OK) {
-        SDP_TRACE_WARNING(
-            "SDP - Rcvd cfg ind, Unacceptable Parameters sent cfg cfm, CID: "
-            "0x%x",
-            l2cap_cid);
-        L2CA_ConfigRsp(l2cap_cid, p_cfg);
-        return;
-      }
-    } else /* We agree with peer's request */
-      p_cfg->fcr_present = false;
+  if (p_cfg->fcr_present && p_cfg->fcr.mode != L2CAP_FCR_BASIC_MODE) {
+    /* Reject if locally we want basic and they don't */
+    p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
+    p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
+    SDP_TRACE_DEBUG(
+        "sdp_config_ind(CONFIG) -> Please try again with BASIC mode");
+    /* Remain in configure state and give the peer our desired configuration
+     */
+    L2CA_ConfigRsp(l2cap_cid, p_cfg);
+    return;
   }
 
   L2CA_ConfigRsp(l2cap_cid, p_cfg);
