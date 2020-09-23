@@ -443,18 +443,6 @@ static int process_cmd_sock(int h) {
   return true;
 }
 
-static void print_events(short events) {
-  std::string flags("");
-  if ((events)&POLLIN) flags += " POLLIN";
-  if ((events)&POLLPRI) flags += " POLLPRI";
-  if ((events)&POLLOUT) flags += " POLLOUT";
-  if ((events)&POLLERR) flags += " POLLERR";
-  if ((events)&POLLHUP) flags += " POLLHUP ";
-  if ((events)&POLLNVAL) flags += " POLLNVAL";
-  if ((events)&POLLRDHUP) flags += " POLLRDHUP";
-  LOG_DEBUG("print poll event:%x = %s", (events), flags.c_str());
-}
-
 static void process_data_sock(int h, struct pollfd* pfds, int count) {
   asrt(count <= ts[h].poll_count);
   int i;
@@ -465,7 +453,6 @@ static void process_data_sock(int h, struct pollfd* pfds, int count) {
       uint32_t user_id = ts[h].ps[ps_i].user_id;
       int type = ts[h].ps[ps_i].type;
       int flags = 0;
-      print_events(pfds[i].revents);
       if (IS_READ(pfds[i].revents)) {
         flags |= SOCK_THREAD_FD_RD;
       }

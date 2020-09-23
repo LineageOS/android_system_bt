@@ -31,15 +31,7 @@
 #define BTM_BLE_ADV_ENABLE 0x01
 #define BTM_BLE_ADV_DISABLE 0x00
 
-/* use the high 4 bits unused by inquiry mode */
-#define BTM_BLE_SELECT_SCAN 0x20
-#define BTM_BLE_NAME_REQUEST 0x40
-#define BTM_BLE_OBSERVE 0x80
-
-#define BTM_BLE_MAX_WL_ENTRY 1
 #define BTM_BLE_AD_DATA_LEN 31
-
-#define BTM_BLE_ENC_MASK 0x03
 
 #define BTM_BLE_DUPLICATE_ENABLE 1
 #define BTM_BLE_DUPLICATE_DISABLE 0
@@ -78,14 +70,6 @@ typedef enum : uint8_t {
   /* discard the sec request while encryption is started but not completed */
   BTM_BLE_SEC_REQ_ACT_DISCARD = 3,
 } tBTM_BLE_SEC_REQ_ACT;
-
-/* LE scan activity bit mask, continue with LE inquiry bits */
-/* observe is in progress */
-#define BTM_LE_OBSERVE_ACTIVE 0x80
-
-/* BLE scan activity mask checking */
-#define BTM_BLE_IS_INQ_ACTIVE(x) ((x)&BTM_BLE_INQUIRY_MASK)
-#define BTM_BLE_IS_OBS_ACTIVE(x) ((x)&BTM_LE_OBSERVE_ACTIVE)
 
 #define BTM_VSC_CHIP_CAPABILITY_L_VERSION 55
 #define BTM_VSC_CHIP_CAPABILITY_M_VERSION 95
@@ -185,23 +169,12 @@ typedef uint16_t tBTM_BLE_STATE_MASK;
 #define BTM_BLE_STATE_ALL_CONN_MASK \
   (BTM_BLE_STATE_MASTER_BIT | BTM_BLE_STATE_SLAVE_BIT)
 
-#ifndef BTM_LE_RESOLVING_LIST_MAX
-#define BTM_LE_RESOLVING_LIST_MAX 0x20
-#endif
-
 typedef struct {
   RawAddress* resolve_q_random_pseudo;
   uint8_t* resolve_q_action;
   uint8_t q_next;
   uint8_t q_pending;
 } tBTM_BLE_RESOLVE_Q;
-
-typedef struct {
-  bool in_use;
-  bool to_add;
-  RawAddress bd_addr;
-  uint8_t attr;
-} tBTM_BLE_WL_OP;
 
 /* BLE privacy mode */
 #define BTM_PRIVACY_NONE 0 /* BLE no privacy */
