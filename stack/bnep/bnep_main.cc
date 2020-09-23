@@ -328,8 +328,6 @@ static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
 static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   tBNEP_CONN* p_bcb;
 
-  if (ack_needed) L2CA_DisconnectRsp(l2cap_cid);
-
   /* Find CCB based on CID */
   p_bcb = bnepu_find_bcb_by_cid(l2cap_cid);
   if (p_bcb == NULL) {

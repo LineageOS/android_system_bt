@@ -627,8 +627,6 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
     return;
   }
 
-  if (ack_needed) L2CA_DisconnectRsp(l2cap_cid);
-
   HIDH_TRACE_EVENT("HID-Host Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
 
   p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
