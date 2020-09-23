@@ -457,45 +457,6 @@ tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr) {
  *
  ******************************************************************************/
 void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason) {
-#if (SDP_BROWSE_PLUS == TRUE)
-
-  /* If we are browsing for multiple UUIDs ... */
-  if ((p_ccb->con_state == SDP_STATE_CONNECTED) &&
-      (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) &&
-      ((reason == SDP_SUCCESS) || (reason == SDP_NO_RECS_MATCH))) {
-    /* If the browse found something, do no more searching */
-    if ((p_ccb->cur_uuid_idx == 0) && (p_ccb->p_db->p_first_rec))
-      p_ccb->cur_uuid_idx = p_ccb->p_db->num_uuid_filters;
-
-    while (++p_ccb->cur_uuid_idx < p_ccb->p_db->num_uuid_filters) {
-      /* Check we have not already found the UUID (maybe through browse) */
-      if ((p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx].len == 2) &&
-          (SDP_FindServiceInDb(
-              p_ccb->p_db,
-              p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx].uu.uuid16, NULL)))
-        continue;
-
-      if ((p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx].len > 2) &&
-          (SDP_FindServiceUUIDInDb(
-              p_ccb->p_db, &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx],
-              NULL)))
-        continue;
-
-      p_ccb->cur_handle = 0;
-
-      SDP_TRACE_EVENT("SDP - looking for for more,  CID: 0x%x",
-                      p_ccb->connection_id);
-
-      sdp_disc_connected(p_ccb);
-      return;
-    }
-  }
-
-  if ((reason == SDP_NO_RECS_MATCH) && (p_ccb->p_db->p_first_rec))
-    reason = SDP_SUCCESS;
-
-#endif
-
   SDP_TRACE_EVENT("SDP - disconnect  CID: 0x%x", p_ccb->connection_id);
 
   /* Check if we have a connection ID */
