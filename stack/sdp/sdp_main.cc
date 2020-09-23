@@ -54,7 +54,6 @@ static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 
 static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result);
-static void sdp_disconnect_cfm(uint16_t l2cap_cid, uint16_t result);
 
 /*******************************************************************************
  *
@@ -93,10 +92,7 @@ void sdp_init(void) {
   sdp_cb.reg_info.pL2CA_ConfigInd_Cb = sdp_config_ind;
   sdp_cb.reg_info.pL2CA_ConfigCfm_Cb = sdp_config_cfm;
   sdp_cb.reg_info.pL2CA_DisconnectInd_Cb = sdp_disconnect_ind;
-  sdp_cb.reg_info.pL2CA_DisconnectCfm_Cb = sdp_disconnect_cfm;
   sdp_cb.reg_info.pL2CA_DataInd_Cb = sdp_data_ind;
-  sdp_cb.reg_info.pL2CA_CongestionStatus_Cb = NULL;
-  sdp_cb.reg_info.pL2CA_TxComplete_Cb = NULL;
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(SDP_PSM, sdp_cb.reg_info, true /* enable_snoop */,
@@ -463,47 +459,11 @@ void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason) {
     p_ccb->disconnect_reason = reason;
   }
 
-  /* If at setup state, we may not get callback ind from L2CAP */
-  /* Call user callback immediately */
-  if (p_ccb->con_state == SDP_STATE_CONN_SETUP) {
-    /* Tell the user if there is a callback */
-    if (p_ccb->p_cb)
-      (*p_ccb->p_cb)(reason);
-    else if (p_ccb->p_cb2)
-      (*p_ccb->p_cb2)(reason, p_ccb->user_data);
-
-    sdpu_release_ccb(p_ccb);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         sdp_disconnect_cfm
- *
- * Description      This function handles a disconnect confirm event from L2CAP.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void sdp_disconnect_cfm(uint16_t l2cap_cid,
-                               UNUSED_ATTR uint16_t result) {
-  tCONN_CB* p_ccb;
-
-  /* Find CCB based on CID */
-  p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
-  if (p_ccb == NULL) {
-    SDP_TRACE_WARNING("SDP - Rcvd L2CAP disc cfm, unknown CID: 0x%x",
-                      l2cap_cid);
-    return;
-  }
-
-  SDP_TRACE_EVENT("SDP - Rcvd L2CAP disc cfm, CID: 0x%x", l2cap_cid);
-
   /* Tell the user if there is a callback */
   if (p_ccb->p_cb)
-    (*p_ccb->p_cb)(p_ccb->disconnect_reason);
+    (*p_ccb->p_cb)(reason);
   else if (p_ccb->p_cb2)
-    (*p_ccb->p_cb2)(p_ccb->disconnect_reason, p_ccb->user_data);
+    (*p_ccb->p_cb2)(reason, p_ccb->user_data);
 
   sdpu_release_ccb(p_ccb);
 }
