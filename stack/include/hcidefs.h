@@ -848,6 +848,16 @@ enum : uint8_t {
   HCI_ROLE_UNKNOWN = 0xff,
 };
 typedef uint8_t hci_role_t;
+inline std::string RoleText(hci_role_t role) {
+  switch (role) {
+    case HCI_ROLE_MASTER:
+      return std::string("master");
+    case HCI_ROLE_SLAVE:
+      return std::string("slave");
+    default:
+      return std::string("unknown");
+  }
+}
 
 /* HCI mode defenitions */
 #define HCI_MODE_ACTIVE 0x00
