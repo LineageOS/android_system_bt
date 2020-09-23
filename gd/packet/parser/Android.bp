@@ -37,14 +37,6 @@ cc_binary_host {
     static_libs: [
         "libc++fs",
     ],
-    cppflags: [
-        "-fno-exceptions",
-        "-O0",
-    ],
-    ldflags: [
-        "-fuse-ld=ld",
-        "-O0",
-    ],
     yacc: {
         gen_location_hh: true,
         gen_position_hh: true,
