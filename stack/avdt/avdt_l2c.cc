@@ -106,7 +106,7 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
   } else {
     L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
                     L2CAP_CONN_OK);
-    avdt_ad_tc_close_ind(p_tbl, L2CAP_CONN_SECURITY_BLOCK);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 
@@ -146,7 +146,7 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     L2CA_DisconnectReq(p_tbl->lcid);
-    avdt_ad_tc_close_ind(p_tbl, L2CAP_CONN_SECURITY_BLOCK);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 /*******************************************************************************
@@ -320,7 +320,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 
       /* failure; notify adaption that channel closed */
       if (result != L2CAP_CONN_OK) {
-        avdt_ad_tc_close_ind(p_tbl, result);
+        avdt_ad_tc_close_ind(p_tbl);
       }
     }
   }
@@ -430,7 +430,7 @@ void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   /* look up info for this channel */
   p_tbl = avdt_ad_tc_tbl_by_lcid(lcid);
   if (p_tbl != NULL) {
-    avdt_ad_tc_close_ind(p_tbl, 0);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 
@@ -452,7 +452,7 @@ void avdt_l2c_disconnect_cfm_cback(uint16_t lcid, uint16_t result) {
   /* look up info for this channel */
   p_tbl = avdt_ad_tc_tbl_by_lcid(lcid);
   if (p_tbl != NULL) {
-    avdt_ad_tc_close_ind(p_tbl, result);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 
