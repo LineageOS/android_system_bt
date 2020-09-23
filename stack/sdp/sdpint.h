@@ -150,9 +150,6 @@ typedef struct {
   uint16_t cur_handle;                   /* Current handle being processed */
   uint16_t transaction_id;
   uint16_t disconnect_reason; /* Disconnect reason            */
-#if (SDP_BROWSE_PLUS == TRUE)
-  uint16_t cur_uuid_idx;
-#endif
 
 #define SDP_DISC_WAIT_CONN 0
 #define SDP_DISC_WAIT_HANDLES 1
