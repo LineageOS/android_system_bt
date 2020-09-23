@@ -28,6 +28,20 @@ class FakeNameDbModule : public neighbor::NameDbModule {
   void ListDependencies(ModuleList* list) override {}
   void Start() override {}
   void Stop() override {}
+
+  void ReadRemoteNameRequest(
+      hci::Address address, neighbor::ReadRemoteNameDbCallback callback, os::Handler* handler) override {
+    handler->Call(std::move(callback), address, true);
+  }
+
+  bool IsNameCached(hci::Address address) const {
+    return true;
+  }
+
+  neighbor::RemoteName ReadCachedRemoteName(hci::Address address) const {
+    neighbor::RemoteName name = {'t', 'e', 's', 't'};
+    return name;
+  }
 };
 
 }  // namespace security
