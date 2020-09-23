@@ -62,19 +62,14 @@ static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
 static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void hidh_l2cif_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
-static void hidh_l2cif_disconnect_cfm(uint16_t l2cap_cid, uint16_t result);
+static void hidh_l2cif_disconnect(uint16_t l2cap_cid);
 static void hidh_l2cif_cong_ind(uint16_t l2cap_cid, bool congested);
 
-static const tL2CAP_APPL_INFO hst_reg_info = {hidh_l2cif_connect_ind,
-                                              hidh_l2cif_connect_cfm,
-                                              hidh_l2cif_config_ind,
-                                              hidh_l2cif_config_cfm,
-                                              hidh_l2cif_disconnect_ind,
-                                              hidh_l2cif_disconnect_cfm,
-                                              hidh_l2cif_data_ind,
-                                              hidh_l2cif_cong_ind,
-                                              NULL,
-                                              /* tL2CA_TX_COMPLETE_CB */};
+static const tL2CAP_APPL_INFO hst_reg_info = {
+    hidh_l2cif_connect_ind, hidh_l2cif_connect_cfm,    hidh_l2cif_config_ind,
+    hidh_l2cif_config_cfm,  hidh_l2cif_disconnect_ind, NULL,
+    hidh_l2cif_data_ind,    hidh_l2cif_cong_ind,       NULL,
+    /* tL2CA_TX_COMPLETE_CB */};
 
 /*******************************************************************************
  *
@@ -136,9 +131,9 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
                                 BT_TRANSPORT_BR_EDR);
     /* Disconnect both interrupt and control channels */
     if (p_hcon->intr_cid)
-      L2CA_DisconnectReq(p_hcon->intr_cid);
+      hidh_l2cif_disconnect(p_hcon->intr_cid);
     else if (p_hcon->ctrl_cid)
-      L2CA_DisconnectReq(p_hcon->ctrl_cid);
+      hidh_l2cif_disconnect(p_hcon->ctrl_cid);
   } else {
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
   }
@@ -679,17 +674,9 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         hidh_l2cif_disconnect_cfm
- *
- * Description      This function handles a disconnect confirm event from L2CAP.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void hidh_l2cif_disconnect_cfm(uint16_t l2cap_cid,
-                                      UNUSED_ATTR uint16_t result) {
+static void hidh_l2cif_disconnect(uint16_t l2cap_cid) {
+  L2CA_DisconnectReq(l2cap_cid);
+
   uint8_t dhandle;
   tHID_CONN* p_hcon = NULL;
 
