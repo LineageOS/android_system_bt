@@ -623,11 +623,10 @@ std::vector<RawAddress> btif_config_get_paired_devices() {
   result.reserve(names.size());
   for (const auto& name : names) {
     RawAddress addr = {};
-    if (!RawAddress::FromString(name, addr)) {
-      LOG(WARNING) << __func__ << ": " << name << " is not a valid address";
-      continue;
+    // Gather up known devices from configuration section names
+    if (RawAddress::FromString(name, addr)) {
+      result.emplace_back(addr);
     }
-    result.emplace_back(addr);
   }
   return result;
 }
