@@ -304,10 +304,7 @@ tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
  ******************************************************************************/
 tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
                              uint16_t min_rmt_to, uint16_t min_loc_to) {
-  int acl_ind;
-  tBTM_PM_MCB* p_cb;
-
-  acl_ind = btm_pm_find_acl_ind(remote_bda);
+  int acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
 
   if (BTM_PM_STS_ACTIVE == btm_cb.acl_cb_.pm_mode_db[acl_ind].state ||
@@ -317,7 +314,7 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
     return BTM_SUCCESS;
   }
   LOG_DEBUG("pm_mode_db state: %d", btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
-  p_cb = &btm_cb.acl_cb_.pm_mode_db[acl_ind];
+  tBTM_PM_MCB* p_cb = &btm_cb.acl_cb_.pm_mode_db[acl_ind];
   p_cb->max_lat = max_lat;
   p_cb->min_rmt_to = min_rmt_to;
   p_cb->min_loc_to = min_loc_to;
