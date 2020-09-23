@@ -430,11 +430,6 @@ void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   /* look up info for this channel */
   p_tbl = avdt_ad_tc_tbl_by_lcid(lcid);
   if (p_tbl != NULL) {
-    if (ack_needed) {
-      /* send L2CAP disconnect response */
-      L2CA_DisconnectRsp(lcid);
-    }
-
     avdt_ad_tc_close_ind(p_tbl, 0);
   }
 }

@@ -523,18 +523,6 @@ extern bool L2CA_DisconnectReq(uint16_t cid);
 
 /*******************************************************************************
  *
- * Function         L2CA_DisconnectRsp
- *
- * Description      Higher layers call this function to acknowledge the
- *                  disconnection of a channel.
- *
- * Returns          void
- *
- ******************************************************************************/
-extern bool L2CA_DisconnectRsp(uint16_t cid);
-
-/*******************************************************************************
- *
  * Function         L2CA_DataWrite
  *
  * Description      Higher layers call this function to write data.

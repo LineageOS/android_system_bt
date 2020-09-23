@@ -344,8 +344,6 @@ static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
     return;
   }
 
-  if (ack_needed) L2CA_DisconnectRsp(l2cap_cid);
-
   SDP_TRACE_EVENT("SDP - Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
   /* Tell the user if there is a callback */
   if (p_ccb->p_cb)

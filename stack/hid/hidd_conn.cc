@@ -491,8 +491,6 @@ static void hidd_l2cif_disconnect_ind(uint16_t cid, bool ack_needed) {
     return;
   }
 
-  if (ack_needed) L2CA_DisconnectRsp(cid);
-
   p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
 
   if (cid == p_hcon->ctrl_cid)
