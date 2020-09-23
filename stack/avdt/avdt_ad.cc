@@ -603,6 +603,7 @@ void avdt_ad_close_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb) {
       tcid = avdt_ad_type_to_tcid(type, p_scb);
 
       /* call l2cap disconnect req */
-      L2CA_DisconnectReq(avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid);
+      avdt_l2c_disconnect(
+          avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid);
   }
 }
