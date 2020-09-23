@@ -35,7 +35,6 @@ constexpr uint16_t kConnectionFail = 1;
 constexpr uint16_t kConnectionSuccess = 0;
 constexpr uint16_t kInvalidConnectionInterfaceDescriptor = 0;
 constexpr uint8_t kUnusedId = 0;
-constexpr uint16_t kUnusedResult = 0;
 }  // namespace
 
 bool bluetooth::shim::legacy::PsmManager::IsPsmRegistered(uint16_t psm) const {
@@ -336,12 +335,6 @@ void bluetooth::shim::legacy::L2cap::SetDownstreamCallbacks(uint16_t cid) {
         }
         if (cid_closing_set_.count(cid) == 1) {
           cid_closing_set_.erase(cid);
-          do_in_main_thread(
-              FROM_HERE,
-              base::Bind(
-                  classic_.Callbacks(CidToPsm(cid)).pL2CA_DisconnectCfm_Cb, cid,
-                  kUnusedResult));
-
         } else {
           do_in_main_thread(
               FROM_HERE,

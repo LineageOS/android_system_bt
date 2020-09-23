@@ -66,9 +66,10 @@ static void hidh_l2cif_disconnect(uint16_t l2cap_cid);
 static void hidh_l2cif_cong_ind(uint16_t l2cap_cid, bool congested);
 
 static const tL2CAP_APPL_INFO hst_reg_info = {
-    hidh_l2cif_connect_ind, hidh_l2cif_connect_cfm,    hidh_l2cif_config_ind,
-    hidh_l2cif_config_cfm,  hidh_l2cif_disconnect_ind, NULL,
-    hidh_l2cif_data_ind,    hidh_l2cif_cong_ind,       NULL,
+    hidh_l2cif_connect_ind,    hidh_l2cif_connect_cfm,
+    hidh_l2cif_config_ind,     hidh_l2cif_config_cfm,
+    hidh_l2cif_disconnect_ind, hidh_l2cif_data_ind,
+    hidh_l2cif_cong_ind,       NULL,
     /* tL2CA_TX_COMPLETE_CB */};
 
 /*******************************************************************************
