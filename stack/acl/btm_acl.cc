@@ -336,20 +336,22 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
   uint8_t xx;
 
-  BTM_TRACE_DEBUG("%s: peer %s hci_handle=%d link_role=%d  transport=%d",
-                  __func__, bda.ToString().c_str(), hci_handle, link_role,
-                  transport);
-
-  /* Ensure we don't have duplicates */
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
   if (p_acl != (tACL_CONN*)NULL) {
     p_acl->hci_handle = hci_handle;
     p_acl->link_role = link_role;
     p_acl->transport = transport;
     btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
-    VLOG(1) << "Duplicate btm_acl_created: RemBdAddr: " << bda;
+    LOG_WARN(
+        "Unable to create duplicate acl when one already exists handle:%hu"
+        " role:%s transport:%s",
+        hci_handle, RoleText(link_role).c_str(),
+        BtTransportText(transport).c_str());
     return;
   }
+
+  LOG_DEBUG("Acl created handle:%hu role:%s transport:%s", hci_handle,
+            RoleText(link_role).c_str(), BtTransportText(transport).c_str());
 
   /* Allocate acl_db entry */
   for (xx = 0, p_acl = &btm_cb.acl_cb_.acl_db[0]; xx < MAX_L2CAP_LINKS;
@@ -370,20 +372,9 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
       p_acl->switch_role_failed_attempts = 0;
       p_acl->reset_switch_role();
 
-      /*******************************************************************************
-       *
-       * Function         btm_pm_sm_alloc
-       *
-       * Description      This function initializes the control block of an ACL
-       *link. It is called when an ACL connection is created.
-       *
-       * Returns          void
-       *
-       ******************************************************************************/
       tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[xx]; /* per ACL link */
       memset(p_db, 0, sizeof(tBTM_PM_MCB));
       p_db->state = BTM_PM_ST_ACTIVE;
-      LOG_VERBOSE("btm_pm_sm_alloc ind:%d st:%d", xx, p_db->state);
 
       /* if BR/EDR do something more */
       if (transport == BT_TRANSPORT_BR_EDR) {
@@ -391,11 +382,6 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
         btsnd_hcic_rmt_ver_req(p_acl->hci_handle);
       }
       p_dev_rec = btm_find_dev_by_handle(hci_handle);
-
-      if (p_dev_rec) {
-        BTM_TRACE_DEBUG("%s: peer %s device_type=0x%x", __func__,
-                        bda.ToString().c_str(), p_dev_rec->device_type);
-      }
 
       if (p_dev_rec && !(transport == BT_TRANSPORT_LE)) {
         /* If remote features already known, copy them and continue connection
@@ -411,7 +397,6 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
           /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
           btm_sec_set_peer_sec_caps(p_acl, p_dev_rec);
 
-          BTM_TRACE_API("%s: pend:%d", __func__, req_pend);
           if (req_pend) {
             /* Request for remaining Security Features (if any) */
             l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
