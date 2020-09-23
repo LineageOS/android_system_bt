@@ -326,11 +326,6 @@ void avct_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   if (p_lcb != NULL) {
     AVCT_TRACE_DEBUG("avct_l2c_disconnect_ind_cback: 0x%x, ch_state: %d", lcid,
                      p_lcb->ch_state);
-    if (ack_needed) {
-      /* send L2CAP disconnect response */
-      L2CA_DisconnectRsp(lcid);
-    }
-
     tAVCT_LCB_EVT avct_lcb_evt;
     avct_lcb_evt.result = result;
     avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
