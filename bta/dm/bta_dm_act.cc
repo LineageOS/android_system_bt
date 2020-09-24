@@ -2254,8 +2254,7 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
 static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   auto device = allocate_device_for(bd_addr, transport);
   if (device == nullptr) {
-    APPL_TRACE_ERROR("%s max active connection reached, no resources",
-                     __func__);
+    LOG_WARN("Unable to allocate device resources for new connection");
     return;
   }
   device->conn_state = BTA_DM_CONNECTED;
@@ -2274,6 +2273,7 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
     conn.link_up.bd_addr = bd_addr;
 
     bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
+    LOG_DEBUG("Executed security callback for new connection available");
   }
   bta_dm_adjust_roles(true);
 }
