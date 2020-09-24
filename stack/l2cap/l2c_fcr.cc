@@ -1970,13 +1970,6 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
           p_ccb->our_cfg.fcr.mps = 0;
       fcr_ok = L2CAP_PEER_CFG_UNACCEPTABLE;
     }
-
-    /* Only other valid case is if they want BASIC and we wanted ERTM
-     */
-    else if ((p_cfg->fcr.mode != L2CAP_FCR_ERTM_MODE) ||
-             (p_ccb->ertm_info.preferred_mode != L2CAP_FCR_ERTM_MODE)) {
-      fcr_ok = L2CAP_PEER_CFG_DISCONNECT;
-    }
   }
 
   /* Configuration for FCR channels so make any adjustments and fwd to upper
