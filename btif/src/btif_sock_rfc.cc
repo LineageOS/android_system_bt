@@ -285,10 +285,6 @@ bt_status_t btsock_rfc_listen(const char* service_name,
 
   if ((flags & BTSOCK_FLAG_NO_SDP) == 0) {
     if (!service_uuid || service_uuid->IsEmpty()) {
-      APPL_TRACE_DEBUG(
-          "%s: service_uuid not set AND BTSOCK_FLAG_NO_SDP is not set - "
-          "changing to SPP",
-          __func__);
       // Use serial port profile to listen to specified channel
       service_uuid = &UUID_SPP;
     } else {
@@ -305,11 +301,11 @@ bt_status_t btsock_rfc_listen(const char* service_name,
   rfc_slot_t* slot =
       alloc_rfc_slot(NULL, service_name, *service_uuid, channel, flags, true);
   if (!slot) {
-    LOG_ERROR("%s unable to allocate RFCOMM slot.", __func__);
+    LOG_ERROR("unable to allocate RFCOMM slot");
     return BT_STATUS_FAIL;
   }
-  APPL_TRACE_DEBUG("BTA_JvGetChannelId: service_name: %s - channel: %d",
-                   service_name, channel);
+  LOG_DEBUG("Adding listening socket service_name: %s - channel: %d",
+            service_name, channel);
   BTA_JvGetChannelId(BTA_JV_CONN_TYPE_RFCOMM, slot->id, channel);
   *sock_fd = slot->app_fd;  // Transfer ownership of fd to caller.
   /*TODO:
