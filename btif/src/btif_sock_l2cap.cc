@@ -672,7 +672,6 @@ const tL2CAP_FCR_OPTS obex_l2c_fcr_opts_def = {
 };
 const tL2CAP_ERTM_INFO obex_l2c_etm_opt = {
     L2CAP_FCR_ERTM_MODE,     /* Mandatory for OBEX over l2cap */
-    L2CAP_FCR_CHAN_OPT_ERTM, /* Mandatory for OBEX over l2cap */
     OBX_USER_RX_BUF_SIZE,    OBX_USER_TX_BUF_SIZE,
     OBX_FCR_RX_BUF_SIZE,     OBX_FCR_TX_BUF_SIZE};
 
