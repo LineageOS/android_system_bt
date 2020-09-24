@@ -67,8 +67,7 @@ static void gatt_l2cif_config_cfm_cback(uint16_t l2cap_cid,
                                         tL2CAP_CFG_INFO* p_cfg);
 static void gatt_l2cif_disconnect_ind_cback(uint16_t l2cap_cid,
                                             bool ack_needed);
-static void gatt_l2cif_disconnect_cfm_cback(uint16_t l2cap_cid,
-                                            uint16_t result);
+static void gatt_l2cif_disconnect(uint16_t l2cap_cid);
 static void gatt_l2cif_data_ind_cback(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void gatt_send_conn_cback(tGATT_TCB* p_tcb);
 static void gatt_l2cif_congest_cback(uint16_t cid, bool congested);
@@ -78,7 +77,6 @@ static const tL2CAP_APPL_INFO dyn_info = {gatt_l2cif_connect_ind_cback,
                                           gatt_l2cif_config_ind_cback,
                                           gatt_l2cif_config_cfm_cback,
                                           gatt_l2cif_disconnect_ind_cback,
-                                          gatt_l2cif_disconnect_cfm_cback,
                                           gatt_l2cif_data_ind_cback,
                                           gatt_l2cif_congest_cback,
                                           NULL};
@@ -237,10 +235,12 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
     }
     gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
   } else {
-    if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG))
-      ret = L2CA_DisconnectReq(p_tcb->att_lcid);
-    else
+    if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG)) {
+      gatt_l2cif_disconnect(p_tcb->att_lcid);
+      return true;
+    } else {
       VLOG(1) << __func__ << " gatt_disconnect channel not opened";
+    }
   }
 
   return ret;
@@ -634,7 +634,7 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
     if (result == L2CAP_CONN_OK) {
       /* just in case the peer also accepts our connection - Send L2CAP
        * disconnect req */
-      L2CA_DisconnectReq(lcid);
+      gatt_l2cif_disconnect(lcid);
     }
   }
 }
@@ -652,7 +652,7 @@ void gatt_l2cif_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   /* if result not successful */
   if (p_cfg->result != L2CAP_CFG_OK) {
     /* Send L2CAP disconnect req */
-    L2CA_DisconnectReq(lcid);
+    gatt_l2cif_disconnect(lcid);
     return;
   }
 
@@ -725,11 +725,6 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;
 
-  if (ack_needed) {
-    /* send L2CAP disconnect response */
-    L2CA_DisconnectRsp(lcid);
-  }
-
   if (gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda) == NULL) {
     if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
       gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
@@ -743,9 +738,8 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, BT_TRANSPORT_BR_EDR);
 }
 
-/** This is the L2CAP disconnect confirm callback function */
-static void gatt_l2cif_disconnect_cfm_cback(uint16_t lcid,
-                                            UNUSED_ATTR uint16_t result) {
+static void gatt_l2cif_disconnect(uint16_t lcid) {
+  L2CA_DisconnectReq(lcid);
 
   /* look up clcb for this channel */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);

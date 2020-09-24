@@ -324,6 +324,17 @@ typedef struct {
   uint8_t quota;         /* burst transmission quota */
 } tL2C_RR_SERV;
 
+typedef enum : uint8_t {
+  /* disable update connection parameters */
+  L2C_BLE_CONN_UPDATE_DISABLE = (1u << 0),
+  /* new connection parameter to be set */
+  L2C_BLE_NEW_CONN_PARAM = (1u << 1),
+  /* waiting for connection update finished */
+  L2C_BLE_UPDATE_PENDING = (1u << 2),
+  /* not using default connection parameters */
+  L2C_BLE_NOT_DEFAULT_PARAM = (1u << 3),
+} tCONN_UPDATE_MASK;
+
 /* Define a link control block. There is one link control block between
  * this device and any other device (i.e. BD ADDR).
 */
@@ -402,20 +413,19 @@ typedef struct t_l2c_linkcb {
   void SetDisconnectReason(uint16_t disc_reason) { disc_reason_ = disc_reason; }
 
   tBT_TRANSPORT transport;
+  bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
+  bool is_transport_ble() const { return transport == BT_TRANSPORT_LE; }
+  bool is_transport_valid() const {
+    return is_transport_ble() || is_transport_br_edr();
+  }
+
   uint8_t initiating_phys;  // LE PHY used for connection initiation
   tBLE_ADDR_TYPE ble_addr_type;
   uint16_t tx_data_len; /* tx data length used in data length extension */
   fixed_queue_t* le_sec_pending_q; /* LE coc channels waiting for security check
                                       completion */
   uint8_t sec_act;
-#define L2C_BLE_CONN_UPDATE_DISABLE \
-  0x1                              /* disable update connection parameters */
-#define L2C_BLE_NEW_CONN_PARAM 0x2 /* new connection parameter to be set */
-#define L2C_BLE_UPDATE_PENDING                  \
-  0x4 /* waiting for connection update finished \
-         */
-#define L2C_BLE_NOT_DEFAULT_PARAM \
-  0x8 /* not using default connection parameters */
+
   uint8_t conn_update_mask;
 
   uint16_t min_interval; /* parameters as requested by peripheral */
@@ -608,11 +618,6 @@ extern bool l2cu_is_ccb_active(tL2C_CCB* p_ccb);
 /* Functions provided for Broadcom Aware
  ***************************************
 */
-extern bool l2cu_check_feature_req(tL2C_LCB* p_lcb, uint8_t id, uint8_t* p_data,
-                                   uint16_t data_len);
-extern void l2cu_check_feature_rsp(tL2C_LCB* p_lcb, uint8_t id, uint8_t* p_data,
-                                   uint16_t data_len);
-extern void l2cu_send_feature_req(tL2C_CCB* p_ccb);
 
 extern tL2C_RCB* l2cu_allocate_rcb(uint16_t psm);
 extern tL2C_RCB* l2cu_find_rcb_by_psm(uint16_t psm);
@@ -635,6 +640,7 @@ extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
 extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
+extern bool L2CA_DisconnectRsp(uint16_t cid);
 
 /* Functions provided by l2c_link.cc
  ***********************************
@@ -650,9 +656,6 @@ extern void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
 extern void l2c_link_sec_comp2(const RawAddress& p_bda, tBT_TRANSPORT trasnport,
                                void* p_ref_data, uint8_t status);
 extern void l2c_link_adjust_chnl_allocation(void);
-
-extern bool l2c_link_check_power_mode(tL2C_LCB* p_lcb);
-#define L2C_LINK_CHECK_POWER_MODE(x) l2c_link_check_power_mode((x))
 
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
 /* Used only for conformance testing */

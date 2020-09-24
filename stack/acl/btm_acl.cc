@@ -334,104 +334,89 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                      uint8_t link_role, tBT_TRANSPORT transport) {
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
-  tACL_CONN* p;
   uint8_t xx;
 
-  BTM_TRACE_DEBUG("%s: peer %s hci_handle=%d link_role=%d  transport=%d",
-                  __func__, bda.ToString().c_str(), hci_handle, link_role,
-                  transport);
-
-  /* Ensure we don't have duplicates */
-  p = internal_.btm_bda_to_acl(bda, transport);
-  if (p != (tACL_CONN*)NULL) {
-    p->hci_handle = hci_handle;
-    p->link_role = link_role;
-    p->transport = transport;
-    btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
-    VLOG(1) << "Duplicate btm_acl_created: RemBdAddr: " << bda;
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
+  if (p_acl != (tACL_CONN*)NULL) {
+    p_acl->hci_handle = hci_handle;
+    p_acl->link_role = link_role;
+    p_acl->transport = transport;
+    btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
+    LOG_WARN(
+        "Unable to create duplicate acl when one already exists handle:%hu"
+        " role:%s transport:%s",
+        hci_handle, RoleText(link_role).c_str(),
+        BtTransportText(transport).c_str());
     return;
   }
 
-  /* Allocate acl_db entry */
-  for (xx = 0, p = &btm_cb.acl_cb_.acl_db[0]; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if (!p->in_use) {
-      p->in_use = true;
-      p->hci_handle = hci_handle;
-      p->link_role = link_role;
-      p->link_up_issued = false;
-      p->remote_addr = bda;
-      p->sca = 0xFF;
-      btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
+  LOG_DEBUG("Acl created handle:%hu role:%s transport:%s", hci_handle,
+            RoleText(link_role).c_str(), BtTransportText(transport).c_str());
 
-      p->transport = transport;
+  /* Allocate acl_db entry */
+  for (xx = 0, p_acl = &btm_cb.acl_cb_.acl_db[0]; xx < MAX_L2CAP_LINKS;
+       xx++, p_acl++) {
+    if (!p_acl->in_use) {
+      p_acl->in_use = true;
+      p_acl->hci_handle = hci_handle;
+      p_acl->link_role = link_role;
+      p_acl->link_up_issued = false;
+      p_acl->remote_addr = bda;
+      p_acl->sca = 0xFF;
+      btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
+
+      p_acl->transport = transport;
       if (transport == BT_TRANSPORT_LE)
         btm_ble_refresh_local_resolvable_private_addr(
             bda, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
-      p->switch_role_failed_attempts = 0;
-      p->reset_switch_role();
+      p_acl->switch_role_failed_attempts = 0;
+      p_acl->reset_switch_role();
 
-      /*******************************************************************************
-       *
-       * Function         btm_pm_sm_alloc
-       *
-       * Description      This function initializes the control block of an ACL
-       *link. It is called when an ACL connection is created.
-       *
-       * Returns          void
-       *
-       ******************************************************************************/
       tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[xx]; /* per ACL link */
       memset(p_db, 0, sizeof(tBTM_PM_MCB));
       p_db->state = BTM_PM_ST_ACTIVE;
-      LOG_VERBOSE("btm_pm_sm_alloc ind:%d st:%d", xx, p_db->state);
 
       /* if BR/EDR do something more */
       if (transport == BT_TRANSPORT_BR_EDR) {
-        btsnd_hcic_read_rmt_clk_offset(p->hci_handle);
-        btsnd_hcic_rmt_ver_req(p->hci_handle);
+        btsnd_hcic_read_rmt_clk_offset(p_acl->hci_handle);
+        btsnd_hcic_rmt_ver_req(p_acl->hci_handle);
       }
       p_dev_rec = btm_find_dev_by_handle(hci_handle);
-
-      if (p_dev_rec) {
-        BTM_TRACE_DEBUG("%s: peer %s device_type=0x%x", __func__,
-                        bda.ToString().c_str(), p_dev_rec->device_type);
-      }
 
       if (p_dev_rec && !(transport == BT_TRANSPORT_LE)) {
         /* If remote features already known, copy them and continue connection
          * setup */
         if ((p_dev_rec->num_read_pages) &&
             (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
-          memcpy(p->peer_lmp_feature_pages, p_dev_rec->feature_pages,
+          memcpy(p_acl->peer_lmp_feature_pages, p_dev_rec->feature_pages,
                  (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
-          p->num_read_pages = p_dev_rec->num_read_pages;
+          p_acl->num_read_pages = p_dev_rec->num_read_pages;
 
           const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
           /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
-          btm_sec_set_peer_sec_caps(p, p_dev_rec);
+          btm_sec_set_peer_sec_caps(p_acl, p_dev_rec);
 
-          BTM_TRACE_API("%s: pend:%d", __func__, req_pend);
           if (req_pend) {
             /* Request for remaining Security Features (if any) */
             l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
           }
-          internal_.btm_establish_continue(p);
+          internal_.btm_establish_continue(p_acl);
           return;
         }
       }
 
       /* If here, features are not known yet */
       if (p_dev_rec && transport == BT_TRANSPORT_LE) {
-        btm_ble_get_acl_remote_addr(p_dev_rec, p->active_remote_addr,
-                                    &p->active_remote_addr_type);
+        btm_ble_get_acl_remote_addr(p_dev_rec, p_acl->active_remote_addr,
+                                    &p_acl->active_remote_addr_type);
 
         if (controller_get_interface()
                 ->supports_ble_peripheral_initiated_feature_exchange() ||
             link_role == HCI_ROLE_MASTER) {
-          btsnd_hcic_ble_read_remote_feat(p->hci_handle);
+          btsnd_hcic_ble_read_remote_feat(p_acl->hci_handle);
         } else {
-          internal_.btm_establish_continue(p);
+          internal_.btm_establish_continue(p_acl);
         }
       }
 

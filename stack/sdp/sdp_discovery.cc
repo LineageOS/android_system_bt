@@ -135,13 +135,8 @@ static void sdp_snd_service_search_req(tCONN_CB* p_ccb, uint8_t cont_len,
   p += 2;
 
 /* Build the UID sequence. */
-#if (SDP_BROWSE_PLUS == TRUE)
-  p = sdpu_build_uuid_seq(p, 1,
-                          &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx]);
-#else
   p = sdpu_build_uuid_seq(p, p_ccb->p_db->num_uuid_filters,
                           p_ccb->p_db->uuid_filters);
-#endif
 
   /* Set max service record count */
   UINT16_TO_BE_STREAM(p, sdp_cb.max_recs_per_search);
@@ -589,13 +584,8 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
     p += 2;
 
 /* Build the UID sequence. */
-#if (SDP_BROWSE_PLUS == TRUE)
-    p = sdpu_build_uuid_seq(p, 1,
-                            &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx]);
-#else
     p = sdpu_build_uuid_seq(p, p_ccb->p_db->num_uuid_filters,
                             p_ccb->p_db->uuid_filters);
-#endif
 
     /* Max attribute byte count */
     UINT16_TO_BE_STREAM(p, sdp_cb.max_attr_list_size);

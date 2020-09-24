@@ -220,4 +220,7 @@ extern tAVCT_CB avct_cb;
 extern const tL2CAP_APPL_INFO avct_l2c_appl;
 extern const tL2CAP_APPL_INFO avct_l2c_br_appl;
 
+void avct_l2c_disconnect(uint16_t lcid, uint16_t result);
+void avct_l2c_br_disconnect(uint16_t lcid, uint16_t result);
+
 #endif /* AVCT_INT_H */

@@ -43,7 +43,6 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
 void avdt_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
-void avdt_l2c_disconnect_cfm_cback(uint16_t lcid, uint16_t result);
 void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
 void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
 
@@ -53,7 +52,6 @@ const tL2CAP_APPL_INFO avdt_l2c_appl = {avdt_l2c_connect_ind_cback,
                                         avdt_l2c_config_ind_cback,
                                         avdt_l2c_config_cfm_cback,
                                         avdt_l2c_disconnect_ind_cback,
-                                        avdt_l2c_disconnect_cfm_cback,
                                         avdt_l2c_data_ind_cback,
                                         avdt_l2c_congestion_ind_cback,
                                         NULL,
@@ -106,7 +104,7 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
   } else {
     L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
                     L2CAP_CONN_OK);
-    avdt_ad_tc_close_ind(p_tbl, L2CAP_CONN_SECURITY_BLOCK);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 
@@ -145,8 +143,8 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
     cfg.flush_to = p_tbl->my_flush_to;
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
-    L2CA_DisconnectReq(p_tbl->lcid);
-    avdt_ad_tc_close_ind(p_tbl, L2CAP_CONN_SECURITY_BLOCK);
+    avdt_l2c_disconnect(p_tbl->lcid);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 /*******************************************************************************
@@ -320,7 +318,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 
       /* failure; notify adaption that channel closed */
       if (result != L2CAP_CONN_OK) {
-        avdt_ad_tc_close_ind(p_tbl, result);
+        avdt_ad_tc_close_ind(p_tbl);
       }
     }
   }
@@ -361,7 +359,7 @@ void avdt_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
       /* else failure */
       else {
         /* Send L2CAP disconnect req */
-        L2CA_DisconnectReq(lcid);
+        avdt_l2c_disconnect(lcid);
       }
     }
   }
@@ -430,34 +428,19 @@ void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   /* look up info for this channel */
   p_tbl = avdt_ad_tc_tbl_by_lcid(lcid);
   if (p_tbl != NULL) {
-    if (ack_needed) {
-      /* send L2CAP disconnect response */
-      L2CA_DisconnectRsp(lcid);
-    }
-
-    avdt_ad_tc_close_ind(p_tbl, 0);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 
-/*******************************************************************************
- *
- * Function         avdt_l2c_disconnect_cfm_cback
- *
- * Description      This is the L2CAP disconnect confirm callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void avdt_l2c_disconnect_cfm_cback(uint16_t lcid, uint16_t result) {
+void avdt_l2c_disconnect(uint16_t lcid) {
+  L2CA_DisconnectReq(lcid);
   AvdtpTransportChannel* p_tbl;
 
-  AVDT_TRACE_DEBUG("avdt_l2c_disconnect_cfm_cback lcid: %d, result: %d", lcid,
-                   result);
+  AVDT_TRACE_DEBUG("avdt_l2c_disconnect_cfm_cback lcid: %d", lcid);
   /* look up info for this channel */
   p_tbl = avdt_ad_tc_tbl_by_lcid(lcid);
   if (p_tbl != NULL) {
-    avdt_ad_tc_close_ind(p_tbl, result);
+    avdt_ad_tc_close_ind(p_tbl);
   }
 }
 

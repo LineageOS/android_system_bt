@@ -54,7 +54,6 @@ static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 
 static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result);
-static void sdp_disconnect_cfm(uint16_t l2cap_cid, uint16_t result);
 
 /*******************************************************************************
  *
@@ -82,21 +81,14 @@ void sdp_init(void) {
   sdp_cb.max_attr_list_size = SDP_MTU_SIZE - 16;
   sdp_cb.max_recs_per_search = SDP_MAX_DISC_SERVER_RECS;
 
-#if defined(SDP_INITIAL_TRACE_LEVEL)
-  sdp_cb.trace_level = SDP_INITIAL_TRACE_LEVEL;
-#else
-  sdp_cb.trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
-#endif
+  sdp_cb.trace_level = BT_TRACE_LEVEL_WARNING;
 
   sdp_cb.reg_info.pL2CA_ConnectInd_Cb = sdp_connect_ind;
   sdp_cb.reg_info.pL2CA_ConnectCfm_Cb = sdp_connect_cfm;
   sdp_cb.reg_info.pL2CA_ConfigInd_Cb = sdp_config_ind;
   sdp_cb.reg_info.pL2CA_ConfigCfm_Cb = sdp_config_cfm;
   sdp_cb.reg_info.pL2CA_DisconnectInd_Cb = sdp_disconnect_ind;
-  sdp_cb.reg_info.pL2CA_DisconnectCfm_Cb = sdp_disconnect_cfm;
   sdp_cb.reg_info.pL2CA_DataInd_Cb = sdp_data_ind;
-  sdp_cb.reg_info.pL2CA_CongestionStatus_Cb = NULL;
-  sdp_cb.reg_info.pL2CA_TxComplete_Cb = NULL;
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(SDP_PSM, sdp_cb.reg_info, true /* enable_snoop */,
@@ -125,10 +117,7 @@ void sdp_free(void) {
  ******************************************************************************/
 static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             UNUSED_ATTR uint16_t psm, uint8_t l2cap_id) {
-  tCONN_CB* p_ccb;
-
-  /* Allocate a new CCB. Return if none available. */
-  p_ccb = sdpu_allocate_ccb();
+  tCONN_CB* p_ccb = sdpu_allocate_ccb();
   if (p_ccb == NULL) return;
 
   /* Transition to the next appropriate state, waiting for config setup. */
@@ -140,25 +129,8 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   /* Send response to the L2CAP layer. */
   L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
-  {
-    tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
-
-    if (cfg.fcr_present) {
-      SDP_TRACE_DEBUG(
-          "sdp_connect_ind:  mode %u, txwinsz %u, max_trans %u, rtrans_tout "
-          "%u, mon_tout %u, mps %u",
-          cfg.fcr.mode, cfg.fcr.tx_win_sz, cfg.fcr.max_transmit,
-          cfg.fcr.rtrans_tout, cfg.fcr.mon_tout, cfg.fcr.mps);
-    }
-
-    if ((!L2CA_ConfigReq(l2cap_cid, &cfg)) && cfg.fcr_present &&
-        cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      /* FCR not desired; try again in basic mode */
-      cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-      cfg.fcr_present = false;
-      L2CA_ConfigReq(l2cap_cid, &cfg);
-    }
-  }
+  tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
+  L2CA_ConfigReq(l2cap_cid, &cfg);
 
   SDP_TRACE_EVENT("SDP - Rcvd L2CAP conn ind, sent config req, CID 0x%x",
                   p_ccb->connection_id);
@@ -192,22 +164,7 @@ static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
     p_ccb->con_state = SDP_STATE_CFG_SETUP;
 
     cfg = sdp_cb.l2cap_my_cfg;
-
-    if (cfg.fcr_present) {
-      SDP_TRACE_DEBUG(
-          "sdp_connect_cfm:  mode %u, txwinsz %u, max_trans %u, rtrans_tout "
-          "%u, mon_tout %u, mps %u",
-          cfg.fcr.mode, cfg.fcr.tx_win_sz, cfg.fcr.max_transmit,
-          cfg.fcr.rtrans_tout, cfg.fcr.mon_tout, cfg.fcr.mps);
-    }
-
-    if ((!L2CA_ConfigReq(l2cap_cid, &cfg)) && cfg.fcr_present &&
-        cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      /* FCR not desired; try again in basic mode */
-      cfg.fcr_present = false;
-      cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-      L2CA_ConfigReq(l2cap_cid, &cfg);
-    }
+    L2CA_ConfigReq(l2cap_cid, &cfg);
 
     SDP_TRACE_EVENT("SDP - got conn cnf, sent cfg req, CID: 0x%x",
                     p_ccb->connection_id);
@@ -275,38 +232,16 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   p_cfg->result = L2CAP_CFG_OK;
 
   /* Check peer config request against our rfcomm configuration */
-  if (p_cfg->fcr_present) {
-    /* Reject the window size if it is bigger than we want it to be */
-    if (p_cfg->fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      if (sdp_cb.l2cap_my_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE &&
-          p_cfg->fcr.tx_win_sz > sdp_cb.l2cap_my_cfg.fcr.tx_win_sz) {
-        p_cfg->fcr.tx_win_sz = sdp_cb.l2cap_my_cfg.fcr.tx_win_sz;
-        p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
-        SDP_TRACE_DEBUG(
-            "sdp_config_ind(CONFIG) -> Please try again with SMALLER TX "
-            "WINDOW");
-      }
-
-      /* Reject if locally we want basic and they don't */
-      if (sdp_cb.l2cap_my_cfg.fcr.mode == L2CAP_FCR_BASIC_MODE) {
-        /* Ask for a new setup */
-        p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
-        p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
-        SDP_TRACE_DEBUG(
-            "sdp_config_ind(CONFIG) -> Please try again with BASIC mode");
-      }
-      /* Remain in configure state and give the peer our desired configuration
-       */
-      if (p_cfg->result != L2CAP_CFG_OK) {
-        SDP_TRACE_WARNING(
-            "SDP - Rcvd cfg ind, Unacceptable Parameters sent cfg cfm, CID: "
-            "0x%x",
-            l2cap_cid);
-        L2CA_ConfigRsp(l2cap_cid, p_cfg);
-        return;
-      }
-    } else /* We agree with peer's request */
-      p_cfg->fcr_present = false;
+  if (p_cfg->fcr_present && p_cfg->fcr.mode != L2CAP_FCR_BASIC_MODE) {
+    /* Reject if locally we want basic and they don't */
+    p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
+    p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
+    SDP_TRACE_DEBUG(
+        "sdp_config_ind(CONFIG) -> Please try again with BASIC mode");
+    /* Remain in configure state and give the peer our desired configuration
+     */
+    L2CA_ConfigRsp(l2cap_cid, p_cfg);
+    return;
   }
 
   L2CA_ConfigRsp(l2cap_cid, p_cfg);
@@ -400,8 +335,6 @@ static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
     SDP_TRACE_WARNING("SDP - Rcvd L2CAP disc, unknown CID: 0x%x", l2cap_cid);
     return;
   }
-
-  if (ack_needed) L2CA_DisconnectRsp(l2cap_cid);
 
   SDP_TRACE_EVENT("SDP - Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
   /* Tell the user if there is a callback */
@@ -514,45 +447,6 @@ tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr) {
  *
  ******************************************************************************/
 void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason) {
-#if (SDP_BROWSE_PLUS == TRUE)
-
-  /* If we are browsing for multiple UUIDs ... */
-  if ((p_ccb->con_state == SDP_STATE_CONNECTED) &&
-      (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) &&
-      ((reason == SDP_SUCCESS) || (reason == SDP_NO_RECS_MATCH))) {
-    /* If the browse found something, do no more searching */
-    if ((p_ccb->cur_uuid_idx == 0) && (p_ccb->p_db->p_first_rec))
-      p_ccb->cur_uuid_idx = p_ccb->p_db->num_uuid_filters;
-
-    while (++p_ccb->cur_uuid_idx < p_ccb->p_db->num_uuid_filters) {
-      /* Check we have not already found the UUID (maybe through browse) */
-      if ((p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx].len == 2) &&
-          (SDP_FindServiceInDb(
-              p_ccb->p_db,
-              p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx].uu.uuid16, NULL)))
-        continue;
-
-      if ((p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx].len > 2) &&
-          (SDP_FindServiceUUIDInDb(
-              p_ccb->p_db, &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx],
-              NULL)))
-        continue;
-
-      p_ccb->cur_handle = 0;
-
-      SDP_TRACE_EVENT("SDP - looking for for more,  CID: 0x%x",
-                      p_ccb->connection_id);
-
-      sdp_disc_connected(p_ccb);
-      return;
-    }
-  }
-
-  if ((reason == SDP_NO_RECS_MATCH) && (p_ccb->p_db->p_first_rec))
-    reason = SDP_SUCCESS;
-
-#endif
-
   SDP_TRACE_EVENT("SDP - disconnect  CID: 0x%x", p_ccb->connection_id);
 
   /* Check if we have a connection ID */
@@ -561,47 +455,11 @@ void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason) {
     p_ccb->disconnect_reason = reason;
   }
 
-  /* If at setup state, we may not get callback ind from L2CAP */
-  /* Call user callback immediately */
-  if (p_ccb->con_state == SDP_STATE_CONN_SETUP) {
-    /* Tell the user if there is a callback */
-    if (p_ccb->p_cb)
-      (*p_ccb->p_cb)(reason);
-    else if (p_ccb->p_cb2)
-      (*p_ccb->p_cb2)(reason, p_ccb->user_data);
-
-    sdpu_release_ccb(p_ccb);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         sdp_disconnect_cfm
- *
- * Description      This function handles a disconnect confirm event from L2CAP.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void sdp_disconnect_cfm(uint16_t l2cap_cid,
-                               UNUSED_ATTR uint16_t result) {
-  tCONN_CB* p_ccb;
-
-  /* Find CCB based on CID */
-  p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
-  if (p_ccb == NULL) {
-    SDP_TRACE_WARNING("SDP - Rcvd L2CAP disc cfm, unknown CID: 0x%x",
-                      l2cap_cid);
-    return;
-  }
-
-  SDP_TRACE_EVENT("SDP - Rcvd L2CAP disc cfm, CID: 0x%x", l2cap_cid);
-
   /* Tell the user if there is a callback */
   if (p_ccb->p_cb)
-    (*p_ccb->p_cb)(p_ccb->disconnect_reason);
+    (*p_ccb->p_cb)(reason);
   else if (p_ccb->p_cb2)
-    (*p_ccb->p_cb2)(p_ccb->disconnect_reason, p_ccb->user_data);
+    (*p_ccb->p_cb2)(reason, p_ccb->user_data);
 
   sdpu_release_ccb(p_ccb);
 }

@@ -16,23 +16,22 @@
 
 #pragma once
 
+#include <chrono>
 #include <string>
 
-#define BT_TRANSPORT_INVALID 0
-#define BT_TRANSPORT_UNKNOWN BT_TRANSPORT_INVALID
-#define BT_TRANSPORT_AUTO BT_TRANSPORT_INVALID
+namespace bluetooth {
+namespace common {
 
-#define BT_TRANSPORT_BR_EDR 1
-#define BT_TRANSPORT_LE 2
-typedef uint8_t tBT_TRANSPORT;
+class StopWatch {
+ public:
+  StopWatch(std::string text);
+  ~StopWatch();
 
-inline std::string BtTransportText(tBT_TRANSPORT transport) {
-  switch (transport) {
-    case BT_TRANSPORT_BR_EDR:
-      return std::string("br_edr");
-    case BT_TRANSPORT_LE:
-      return std::string("le");
-    default:
-      return std::string("unknown");
-  }
-}
+ private:
+  std::string text_;
+  std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
+  std::string start_timestamp_;
+};
+
+}  // namespace common
+}  // namespace bluetooth
