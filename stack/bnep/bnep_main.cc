@@ -220,11 +220,11 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   BNEP_TRACE_EVENT("BNEP - Rcvd cfg ind, CID: 0x%x", l2cap_cid);
 
   /* Remember the remote MTU size */
-  if ((!p_cfg->mtu_present) || (p_cfg->mtu < BNEP_MIN_MTU_SIZE)) {
+  if ((!p_cfg->mtu_present) || (p_cfg->mtu < BNEP_MTU_SIZE)) {
     mtu = p_cfg->mtu;
     p_cfg->flush_to_present = false;
     p_cfg->mtu_present = true;
-    p_cfg->mtu = BNEP_MIN_MTU_SIZE;
+    p_cfg->mtu = BNEP_MTU_SIZE;
     p_cfg->result = result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
   } else {
     if (p_cfg->mtu > BNEP_MTU_SIZE)
