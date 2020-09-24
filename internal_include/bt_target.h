@@ -707,11 +707,6 @@
 #define SDP_MTU_SIZE 1024
 #endif
 
-/* The flush timeout for the L2CAP configuration. */
-#ifndef SDP_FLUSH_TO
-#define SDP_FLUSH_TO 0xFFFF
-#endif
-
 /* The name for security authorization. */
 #ifndef SDP_SERVICE_NAME
 #define SDP_SERVICE_NAME "Service Discovery"
