@@ -252,40 +252,6 @@ bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
 
 /*******************************************************************************
  *
- * Function         btm_read_power_mode_state
- *
- * Description      This returns the current pm state for a specific
- *                  ACL connection.
- *
- * Input Param      remote_bda - device address of desired ACL connection
- *
- * Output Param     pmState - address where the current pm state is copied.
- *                          BTM_PM_ST_ACTIVE
- *                          BTM_PM_ST_HOLD
- *                          BTM_PM_ST_SNIFF
- *                          BTM_PM_ST_PARK
- *                          BTM_PM_ST_PENDING
- *                          (valid only if return code is BTM_SUCCESS)
- *
- * Returns          BTM_SUCCESS if successful,
- *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
- *
- ******************************************************************************/
-tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
-                                      tBTM_PM_STATE* pmState) {
-  int acl_ind = btm_pm_find_acl_ind(remote_bda);
-
-  if (acl_ind == MAX_L2CAP_LINKS) {
-    LOG_WARN("unknown bda: %s", remote_bda.ToString().c_str());
-    return BTM_UNKNOWN_ADDR;
-  }
-
-  *pmState = btm_cb.acl_cb_.pm_mode_db[acl_ind].state;
-  return BTM_SUCCESS;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_SetSsrParams
  *
  * Description      This sends the given SSR parameters for the given ACL
