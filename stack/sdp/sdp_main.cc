@@ -72,11 +72,9 @@ void sdp_init(void) {
     sdp_cb.ccb[i].sdp_conn_timer = alarm_new("sdp.sdp_conn_timer");
   }
 
-  /* Initialize the L2CAP configuration. We only care about MTU and flush */
+  /* Initialize the L2CAP configuration. We only care about MTU */
   sdp_cb.l2cap_my_cfg.mtu_present = true;
   sdp_cb.l2cap_my_cfg.mtu = SDP_MTU_SIZE;
-  sdp_cb.l2cap_my_cfg.flush_to_present = true;
-  sdp_cb.l2cap_my_cfg.flush_to = SDP_FLUSH_TO;
 
   sdp_cb.max_attr_list_size = SDP_MTU_SIZE - 16;
   sdp_cb.max_recs_per_search = SDP_MAX_DISC_SERVER_RECS;
