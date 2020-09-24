@@ -15,34 +15,24 @@
  * limitations under the License.
  */
 
-#include "btif_sock_l2cap.h"
-
-#include <base/logging.h>
-#include <errno.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h>
-#include <vector>
+#include <cstdint>
+#include <cstring>
 
-#include <mutex>
-
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
-#include <hardware/bt_sock.h>
-
-#include "osi/include/allocator.h"
-
-#include "bt_target.h"
-#include "bta_jv_api.h"
-#include "btif_sock_thread.h"
-#include "btif_sock_util.h"
-#include "btif_uid.h"
-#include "btif_util.h"
-#include "btm_api.h"
+#include "bta/include/bta_jv_api.h"
+#include "btif/include/btif_sock_thread.h"
+#include "btif/include/btif_sock_util.h"
+#include "btif/include/btif_uid.h"
 #include "common/metrics.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
+#include "include/hardware/bluetooth.h"
+#include "internal_include/bt_target.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/btm/security_device_record.h"
+#include "stack/include/bt_types.h"
+#include "types/raw_address.h"
 
 struct packet {
   struct packet *next, *prev;
