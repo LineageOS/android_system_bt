@@ -1806,7 +1806,7 @@ void btif_dm_start_discovery(void) {
  *
  ******************************************************************************/
 void btif_dm_cancel_discovery(void) {
-  BTIF_TRACE_EVENT("%s", __func__);
+  LOG_DEBUG("Cancel search");
   BTA_DmSearchCancel();
 }
 
