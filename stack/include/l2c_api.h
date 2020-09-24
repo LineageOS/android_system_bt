@@ -259,7 +259,6 @@ typedef struct {
  */
 typedef struct {
   uint8_t preferred_mode;
-  uint8_t allowed_modes;
   uint16_t user_rx_buf_size;
   uint16_t user_tx_buf_size;
   uint16_t fcr_rx_buf_size;
