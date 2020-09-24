@@ -60,6 +60,7 @@
 #include "types/raw_address.h"
 
 struct StackAclBtmAcl {
+  tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
   tACL_CONN* btm_bda_to_acl(const RawAddress& bda, tBT_TRANSPORT transport);
   tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
@@ -331,10 +332,25 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
  * Returns          void
  *
  ******************************************************************************/
+void acl_initialize_power_mode(const tACL_CONN& p_acl) {
+  tBTM_PM_MCB* p_db =
+      &btm_cb.acl_cb_.pm_mode_db[btm_handle_to_acl_index(p_acl.hci_handle)];
+  memset(p_db, 0, sizeof(tBTM_PM_MCB));
+  p_db->state = BTM_PM_ST_ACTIVE;
+}
+
+tACL_CONN* StackAclBtmAcl::acl_allocate_connection() {
+  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
+  for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl++) {
+    if (!p_acl->in_use) {
+      return p_acl;
+    }
+  }
+  return nullptr;
+}
+
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                      uint8_t link_role, tBT_TRANSPORT transport) {
-  tBTM_SEC_DEV_REC* p_dev_rec = NULL;
-  uint8_t xx;
 
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
   if (p_acl != (tACL_CONN*)NULL) {
@@ -350,78 +366,81 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     return;
   }
 
-  LOG_DEBUG("Acl created handle:%hu role:%s transport:%s", hci_handle,
+  p_acl = internal_.acl_allocate_connection();
+  if (p_acl == nullptr) {
+    LOG_ERROR("Unable to find available acl resource to continue");
+    return;
+  }
+
+  LOG_DEBUG("Acl allocated handle:%hu role:%s transport:%s", hci_handle,
             RoleText(link_role).c_str(), BtTransportText(transport).c_str());
 
-  /* Allocate acl_db entry */
-  for (xx = 0, p_acl = &btm_cb.acl_cb_.acl_db[0]; xx < MAX_L2CAP_LINKS;
-       xx++, p_acl++) {
-    if (!p_acl->in_use) {
-      p_acl->in_use = true;
-      p_acl->hci_handle = hci_handle;
-      p_acl->link_role = link_role;
-      p_acl->link_up_issued = false;
-      p_acl->remote_addr = bda;
-      p_acl->sca = 0xFF;
-      btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
+  p_acl->in_use = true;
+  p_acl->hci_handle = hci_handle;
+  p_acl->link_role = link_role;
+  p_acl->link_up_issued = false;
+  p_acl->remote_addr = bda;
+  p_acl->sca = 0xFF;
+  btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
 
-      p_acl->transport = transport;
-      if (transport == BT_TRANSPORT_LE)
-        btm_ble_refresh_local_resolvable_private_addr(
-            bda, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
-      p_acl->switch_role_failed_attempts = 0;
-      p_acl->reset_switch_role();
+  p_acl->transport = transport;
+  if (transport == BT_TRANSPORT_LE) {
+    btm_ble_refresh_local_resolvable_private_addr(
+        bda, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
+  }
+  p_acl->switch_role_failed_attempts = 0;
+  p_acl->reset_switch_role();
 
-      tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[xx]; /* per ACL link */
-      memset(p_db, 0, sizeof(tBTM_PM_MCB));
-      p_db->state = BTM_PM_ST_ACTIVE;
+  acl_initialize_power_mode(*p_acl);
 
-      /* if BR/EDR do something more */
-      if (transport == BT_TRANSPORT_BR_EDR) {
-        btsnd_hcic_read_rmt_clk_offset(p_acl->hci_handle);
-        btsnd_hcic_rmt_ver_req(p_acl->hci_handle);
+  /* if BR/EDR do something more */
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    btsnd_hcic_read_rmt_clk_offset(hci_handle);
+    btsnd_hcic_rmt_ver_req(hci_handle);
+  }
+
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) {
+    LOG_ERROR("Unable to find security device record hci_handle:%hu",
+              hci_handle);
+    // TODO Release acl resource
+    return;
+  }
+
+  if (transport != BT_TRANSPORT_LE) {
+    /* If remote features already known, copy them and continue connection
+     * setup */
+    if ((p_dev_rec->num_read_pages) &&
+        (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
+      memcpy(p_acl->peer_lmp_feature_pages, p_dev_rec->feature_pages,
+             (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
+      // TODO We do not need to store the pages read here
+      p_acl->num_read_pages = p_dev_rec->num_read_pages;
+
+      const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
+
+      /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+      btm_sec_set_peer_sec_caps(p_acl, p_dev_rec);
+
+      if (req_pend) {
+        /* Request for remaining Security Features (if any) */
+        l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
       }
-      p_dev_rec = btm_find_dev_by_handle(hci_handle);
-
-      if (p_dev_rec && !(transport == BT_TRANSPORT_LE)) {
-        /* If remote features already known, copy them and continue connection
-         * setup */
-        if ((p_dev_rec->num_read_pages) &&
-            (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
-          memcpy(p_acl->peer_lmp_feature_pages, p_dev_rec->feature_pages,
-                 (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
-          p_acl->num_read_pages = p_dev_rec->num_read_pages;
-
-          const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
-          /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
-          btm_sec_set_peer_sec_caps(p_acl, p_dev_rec);
-
-          if (req_pend) {
-            /* Request for remaining Security Features (if any) */
-            l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
-          }
-          internal_.btm_establish_continue(p_acl);
-          return;
-        }
-      }
-
-      /* If here, features are not known yet */
-      if (p_dev_rec && transport == BT_TRANSPORT_LE) {
-        btm_ble_get_acl_remote_addr(p_dev_rec, p_acl->active_remote_addr,
-                                    &p_acl->active_remote_addr_type);
-
-        if (controller_get_interface()
-                ->supports_ble_peripheral_initiated_feature_exchange() ||
-            link_role == HCI_ROLE_MASTER) {
-          btsnd_hcic_ble_read_remote_feat(p_acl->hci_handle);
-        } else {
-          internal_.btm_establish_continue(p_acl);
-        }
-      }
-
-      /* read page 1 - on rmt feature event for buffer reasons */
+      internal_.btm_establish_continue(p_acl);
       return;
+    }
+  }
+
+  if (transport == BT_TRANSPORT_LE) {
+    btm_ble_get_acl_remote_addr(p_dev_rec, p_acl->active_remote_addr,
+                                &p_acl->active_remote_addr_type);
+
+    if (controller_get_interface()
+            ->supports_ble_peripheral_initiated_feature_exchange() ||
+        link_role == HCI_ROLE_MASTER) {
+      btsnd_hcic_ble_read_remote_feat(p_acl->hci_handle);
+    } else {
+      internal_.btm_establish_continue(p_acl);
     }
   }
 }
@@ -543,53 +562,56 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
-
-  LOG_INFO("%s: peer %s new_role=0x%x", __func__,
-           remote_bd_addr.ToString().c_str(), new_role);
-
-  /* Make sure the local device supports switching */
-  if (!controller_get_interface()->supports_master_slave_role_switch())
-    return (BTM_MODE_UNSUPPORTED);
+  if (!controller_get_interface()->supports_master_slave_role_switch()) {
+    LOG_INFO("Local controller does not support role switching");
+    return BTM_MODE_UNSUPPORTED;
+  }
 
   tACL_CONN* p_acl =
       internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_acl == NULL) return (BTM_UNKNOWN_ADDR);
-
-  /* Finished if already in desired role */
-  if (p_acl->link_role == new_role) return (BTM_SUCCESS);
-
-  if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr))
-    return BTM_DEV_BLACKLISTED;
-
-  /* Check if there is any SCO Active on this BD Address */
-  if (BTM_IsScoActiveByBdaddr(remote_bd_addr)) return (BTM_NO_RESOURCES);
-
-  /* Ignore role switch request if the previous request was not completed */
-  if (!p_acl->is_switch_role_idle()) {
-    LOG_DEBUG("%s switch role in progress", __func__);
-    return BTM_BUSY;
+  if (p_acl == nullptr) {
+    LOG_INFO("Unable to find device for classic role switch");
+    return BTM_UNKNOWN_ADDR;
   }
 
-  if (interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &remote_bd_addr)) {
-    BTM_TRACE_DEBUG("%s, Device blacklisted under INTEROP_DYNAMIC_ROLE_SWITCH.",
-                    __func__);
+  if (p_acl->link_role == new_role) {
+    LOG_INFO("Requested role is already in effect");
+    return BTM_SUCCESS;
+  }
+
+  if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr)) {
+    LOG_INFO("Remote device is on list preventing role switch");
     return BTM_DEV_BLACKLISTED;
+  }
+
+  if (BTM_IsScoActiveByBdaddr(remote_bd_addr)) {
+    LOG_INFO("An active SCO to device prevents role switch at this time");
+    return BTM_NO_RESOURCES;
+  }
+
+  if (!p_acl->is_switch_role_idle()) {
+    LOG_DEBUG("Role switch is already progress");
+    return BTM_BUSY;
   }
 
   tBTM_PM_MODE pwr_mode;
   if (!BTM_ReadPowerMode(p_acl->remote_addr, &pwr_mode)) {
+    LOG_WARN(
+        "Unable to find device to read current power mode prior to role "
+        "switch");
     return BTM_UNKNOWN_ADDR;
   };
 
-  /* Wake up the link if in sniff or park before attempting switch */
   if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
     tBTM_PM_PWR_MD settings;
     memset((void*)&settings, 0, sizeof(settings));
     settings.mode = BTM_PM_MD_ACTIVE;
     tBTM_STATUS status =
         BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_acl->remote_addr, &settings);
-    if (status != BTM_CMD_STARTED) return (BTM_WRONG_MODE);
-
+    if (status != BTM_CMD_STARTED) {
+      LOG_WARN("Unable to set power mode before attempting switch");
+      return BTM_WRONG_MODE;
+    }
     p_acl->set_switch_role_changing();
   }
   /* some devices do not support switch while encryption is on */
@@ -608,7 +630,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
     }
   }
 
-  return (BTM_CMD_STARTED);
+  return BTM_CMD_STARTED;
 }
 
 /*******************************************************************************

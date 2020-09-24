@@ -45,7 +45,6 @@ extern bool btm_ble_cancel_remote_name(const RawAddress& remote_bda);
 
 extern tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode);
 extern tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode);
-extern void btm_send_hci_scan_enable(uint8_t enable, uint8_t filter_duplicates);
 extern void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int,
                                          uint16_t scan_win,
                                          uint8_t addr_type_own,
