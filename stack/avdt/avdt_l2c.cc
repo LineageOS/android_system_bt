@@ -97,7 +97,7 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
     /* Send L2CAP config req */
     memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
     cfg.mtu_present = true;
-    cfg.mtu = kSignalMtu;
+    cfg.mtu = kAvdtpMtu;
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
@@ -136,7 +136,7 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
     /* Send L2CAP config req */
     memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
     cfg.mtu_present = true;
-    cfg.mtu = kSignalMtu;
+    cfg.mtu = kAvdtpMtu;
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     avdt_l2c_disconnect(p_tbl->lcid);
@@ -177,7 +177,7 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     } else {
       /* allocate and set up entry; first channel is always signaling */
       p_tbl = avdt_ad_tc_tbl_alloc(p_ccb);
-      p_tbl->my_mtu = kSignalMtu;
+      p_tbl->my_mtu = kAvdtpMtu;
       p_tbl->tcid = AVDT_CHAN_SIG;
       p_tbl->lcid = lcid;
       p_tbl->id = id;

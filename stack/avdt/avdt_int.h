@@ -1002,7 +1002,6 @@ extern const uint8_t avdt_msg_rej_2_evt[];
 
 void avdt_l2c_disconnect(uint16_t lcid);
 
-constexpr uint16_t kSignalMtu = 672;
-constexpr uint16_t kAudioMtu = MAX_3MBPS_AVDTP_MTU;
+constexpr uint16_t kAvdtpMtu = 1024;
 
 #endif /* AVDT_INT_H */
