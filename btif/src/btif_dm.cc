@@ -445,8 +445,10 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
 
   if (pairing_cb.bond_type == BOND_TYPE_TEMPORARY) state = BT_BOND_STATE_NONE;
 
-  BTIF_TRACE_DEBUG("%s: state=%d, prev_state=%d, sdp_attempts = %d", __func__,
-                   state, pairing_cb.state, pairing_cb.sdp_attempts);
+  LOG_DEBUG(
+      "Bond state changed to state=%d [0:none, 1:bonding, 2:bonded],"
+      " prev_state=%d, sdp_attempts = %d",
+      state, pairing_cb.state, pairing_cb.sdp_attempts);
 
   if (state == BT_BOND_STATE_NONE) {
     MetricIdAllocator::GetInstance().ForgetDevice(bd_addr);
