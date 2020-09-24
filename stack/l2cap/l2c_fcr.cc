@@ -1793,16 +1793,10 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
      * Override mode from available mode options based on preference, if needed
      */
     else {
-      /* There is no STREAMING use case, try ERTM */
-      if (p_fcr->mode == L2CAP_FCR_STREAM_MODE) {
-        L2CAP_TRACE_DEBUG("L2C CFG: mode is STREAM, but use case; Try ERTM");
-        p_fcr->mode = L2CAP_FCR_ERTM_MODE;
-      }
-
       /* If peer does not support ERTM, try BASIC (will support this if made it
        * here in the code) */
       if (p_fcr->mode == L2CAP_FCR_ERTM_MODE &&
-          !(p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM)) {
+          !(p_ccb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE)) {
         L2CAP_TRACE_DEBUG(
             "L2C CFG: mode is ERTM, but peer does not support; Try BASIC");
         p_fcr->mode = L2CAP_FCR_BASIC_MODE;
@@ -1962,22 +1956,6 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       /* Try another supported mode if available based on our last attempted
        * channel */
       switch (p_ccb->our_cfg.fcr.mode) {
-        /* Our Streaming mode request was unnacceptable; try ERTM or Basic */
-        case L2CAP_FCR_STREAM_MODE:
-          /* Peer wants ERTM and we support it */
-          if ((peer_mode == L2CAP_FCR_ERTM_MODE) &&
-              (p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM)) {
-            L2CAP_TRACE_DEBUG("%s(Trying ERTM)", __func__);
-            p_ccb->our_cfg.fcr.mode = L2CAP_FCR_ERTM_MODE;
-            can_renegotiate = true;
-          } else if (p_ccb->ertm_info.allowed_modes &
-                     L2CAP_FCR_CHAN_OPT_BASIC) {
-            /* We can try basic for any other peer mode if we support it */
-            L2CAP_TRACE_DEBUG("%s(Trying Basic)", __func__);
-            can_renegotiate = true;
-            p_ccb->our_cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-          }
-          break;
         case L2CAP_FCR_ERTM_MODE:
           /* We can try basic for any other peer mode if we support it */
           if (p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_BASIC) {
@@ -2130,8 +2108,7 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         p_ccb->out_cfg_fcr_present = true;
       }
 
-      if (p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE ||
-          p_cfg->fcr.mode == L2CAP_FCR_STREAM_MODE) {
+      if (p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE) {
         /* Always respond with FCR ERTM parameters */
         p_ccb->out_cfg_fcr_present = true;
       }
