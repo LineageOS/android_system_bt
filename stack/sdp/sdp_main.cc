@@ -302,16 +302,6 @@ static void sdp_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
       }
     }
   } else {
-    /* If peer has rejected FCR and suggested basic then try basic */
-    if (p_cfg->fcr_present) {
-      tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
-      cfg.fcr_present = false;
-      L2CA_ConfigReq(l2cap_cid, &cfg);
-
-      /* Remain in configure state */
-      return;
-    }
-
     sdp_disconnect(p_ccb, SDP_CFG_FAILED);
   }
 }
