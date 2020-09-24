@@ -229,19 +229,6 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   p_cfg->mtu_present = false;
   p_cfg->result = L2CAP_CFG_OK;
 
-  /* Check peer config request against our rfcomm configuration */
-  if (p_cfg->fcr_present && p_cfg->fcr.mode != L2CAP_FCR_BASIC_MODE) {
-    /* Reject if locally we want basic and they don't */
-    p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
-    p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
-    SDP_TRACE_DEBUG(
-        "sdp_config_ind(CONFIG) -> Please try again with BASIC mode");
-    /* Remain in configure state and give the peer our desired configuration
-     */
-    L2CA_ConfigRsp(l2cap_cid, p_cfg);
-    return;
-  }
-
   L2CA_ConfigRsp(l2cap_cid, p_cfg);
 
   SDP_TRACE_EVENT("SDP - Rcvd cfg ind, sent cfg cfm, CID: 0x%x", l2cap_cid);
