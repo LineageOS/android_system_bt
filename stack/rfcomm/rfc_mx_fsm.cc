@@ -138,13 +138,6 @@ void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
       return;
     }
 
-    case RFC_MX_EVENT_START_RSP:
-    case RFC_MX_EVENT_CONN_CNF:
-    case RFC_MX_EVENT_CONF_IND:
-    case RFC_MX_EVENT_CONF_CNF:
-      RFCOMM_TRACE_ERROR("Mx error state %d event %d", p_mcb->state, event);
-      return;
-
     case RFC_MX_EVENT_CONN_IND:
 
       rfc_timer_start(p_mcb, RFCOMM_CONN_TIMEOUT);
@@ -169,6 +162,10 @@ void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
 
     case RFC_EVENT_UIH:
       rfc_send_dm(p_mcb, RFCOMM_MX_DLCI, false);
+      return;
+
+    default:
+      RFCOMM_TRACE_ERROR("Mx error state %d event %d", p_mcb->state, event);
       return;
   }
   RFCOMM_TRACE_EVENT("RFCOMM MX ignored - evt:%d in state:%d", event,
