@@ -1250,7 +1250,6 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
  ******************************************************************************/
 static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
                                         tBTA_DM_SEARCH* p_data) {
-  BTIF_TRACE_EVENT("%s:  event = %d", __func__, event);
   switch (event) {
     case BTA_DM_DISC_RES_EVT: {
       bt_property_t prop;
@@ -1259,19 +1258,17 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
 
       RawAddress& bd_addr = p_data->disc_res.bd_addr;
 
-      BTIF_TRACE_DEBUG("%s:(result=0x%x, services 0x%x)", __func__,
-                       p_data->disc_res.result, p_data->disc_res.services);
+      LOG_VERBOSE("result=0x%x, services 0x%x", p_data->disc_res.result,
+                  p_data->disc_res.services);
       if (p_data->disc_res.result != BTA_SUCCESS &&
           pairing_cb.state == BT_BOND_STATE_BONDED &&
           pairing_cb.sdp_attempts < BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING) {
         if (pairing_cb.sdp_attempts) {
-          BTIF_TRACE_WARNING("%s: SDP failed after bonding re-attempting",
-                             __func__);
+          LOG_WARN("SDP failed after bonding re-attempting");
           pairing_cb.sdp_attempts++;
           btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_UNKNOWN);
         } else {
-          BTIF_TRACE_WARNING("%s: SDP triggered by someone failed when bonding",
-                             __func__);
+          LOG_WARN("SDP triggered by someone failed when bonding");
         }
         return;
       }
@@ -1283,7 +1280,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
         prop.len = p_data->disc_res.num_uuids * Uuid::kNumBytes128;
         for (i = 0; i < p_data->disc_res.num_uuids; i++) {
           std::string temp = ((p_data->disc_res.p_uuid_list + i))->ToString();
-          LOG_INFO("%s index:%d uuid:%s", __func__, i, temp.c_str());
+          LOG_INFO("index:%d uuid:%s", i, temp.c_str());
         }
       }
 
@@ -1293,8 +1290,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
       if (pairing_cb.state == BT_BOND_STATE_BONDED && pairing_cb.sdp_attempts &&
           (p_data->disc_res.bd_addr == pairing_cb.bd_addr ||
            p_data->disc_res.bd_addr == pairing_cb.static_bdaddr)) {
-        LOG_INFO("%s: SDP search done for %s", __func__,
-                 bd_addr.ToString().c_str());
+        LOG_INFO("SDP search done for %s", bd_addr.ToString().c_str());
         pairing_cb.sdp_attempts = 0;
 
         // Both SDP and bonding are done, clear pairing control block in case
@@ -1305,8 +1301,8 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
         // or no UUID is discovered
         if (p_data->disc_res.result != BTA_SUCCESS ||
             p_data->disc_res.num_uuids == 0) {
-          LOG_INFO("%s: SDP failed, send empty UUID to unblock bonding %s",
-                   __func__, bd_addr.ToString().c_str());
+          LOG_INFO("SDP failed, send empty UUID to unblock bonding %s",
+                   bd_addr.ToString().c_str());
           bt_property_t prop;
           Uuid uuid = {};
 
@@ -1341,12 +1337,12 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
       break;
 
     case BTA_DM_DISC_BLE_RES_EVT: {
-      BTIF_TRACE_DEBUG("%s: service %s", __func__,
-                       p_data->disc_ble_res.service.ToString().c_str());
+      LOG_VERBOSE("service %s",
+                  p_data->disc_ble_res.service.ToString().c_str());
       int num_properties = 0;
       if (p_data->disc_ble_res.service.As16Bit() == UUID_SERVCLASS_LE_HID ||
           p_data->disc_ble_res.service == UUID_HEARING_AID) {
-        BTIF_TRACE_DEBUG("%s: Found HOGP or HEARING AID UUID", __func__);
+        LOG_DEBUG("Found HOGP or HEARING AID UUID");
         bt_property_t prop[2];
         bt_status_t ret;
 
