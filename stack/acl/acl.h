@@ -192,6 +192,7 @@ typedef struct {
   friend void BTM_acl_after_controller_started();
   friend void BTM_default_block_role_switch();
   friend void BTM_default_unblock_role_switch();
+  friend void acl_initialize_power_mode(const tACL_CONN& p_acl);
   friend void acl_set_disconnect_reason(uint8_t acl_disc_reason);
   friend void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                               uint8_t link_role, tBT_TRANSPORT transport);
