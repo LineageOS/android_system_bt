@@ -92,7 +92,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
 static bool retransmit_i_frames(tL2C_CCB* p_ccb, uint8_t tx_seq);
 static void prepare_I_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
                             bool is_retransmission);
-static void process_stream_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf);
 static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
                               uint16_t ctrl_word);
 
@@ -492,11 +491,6 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     L2CAP_TRACE_WARNING("Rx L2CAP PDU: CID: 0x%04x  Len too short: %u",
                         p_ccb->local_cid, p_buf->len);
     osi_free(p_buf);
-    return;
-  }
-
-  if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_STREAM_MODE) {
-    process_stream_frame(p_ccb, p_buf);
     return;
   }
 
@@ -1173,90 +1167,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
                fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q)) {
       l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
     }
-  }
-}
-
-/*******************************************************************************
- *
- * Function         process_stream_frame
- *
- * Description      This function processes frames in streaming mode
- *
- * Returns          -
- *
- ******************************************************************************/
-static void process_stream_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
-  CHECK(p_ccb != NULL);
-  CHECK(p_buf != NULL);
-
-  uint16_t ctrl_word;
-  uint16_t fcs;
-  uint8_t* p;
-  uint8_t tx_seq;
-
-  /* Verify FCS if using */
-  if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
-    p = ((uint8_t*)(p_buf + 1)) + p_buf->offset + p_buf->len - L2CAP_FCS_LEN;
-
-    /* Extract and drop the FCS from the packet */
-    STREAM_TO_UINT16(fcs, p);
-    p_buf->len -= L2CAP_FCS_LEN;
-
-    if (l2c_fcr_rx_get_fcs(p_buf) != fcs) {
-      L2CAP_TRACE_WARNING("Rx L2CAP PDU: CID: 0x%04x  BAD FCS",
-                          p_ccb->local_cid);
-      osi_free(p_buf);
-      return;
-    }
-  }
-
-  /* Get the control word */
-  p = ((uint8_t*)(p_buf + 1)) + p_buf->offset;
-
-  STREAM_TO_UINT16(ctrl_word, p);
-
-  p_buf->len -= L2CAP_FCR_OVERHEAD;
-  p_buf->offset += L2CAP_FCR_OVERHEAD;
-
-  /* Make sure it is an I-frame */
-  if (ctrl_word & L2CAP_FCR_S_FRAME_BIT) {
-    L2CAP_TRACE_WARNING(
-        "Rx L2CAP PDU: CID: 0x%04x  BAD S-frame in streaming mode  ctrl_word: "
-        "0x%04x",
-        p_ccb->local_cid, ctrl_word);
-    osi_free(p_buf);
-    return;
-  }
-
-  L2CAP_TRACE_EVENT(
-      "L2CAP eRTM Rx I-frame: cid: 0x%04x  Len: %u  SAR: %-12s  TxSeq: %u  "
-      "ReqSeq: %u  F: %u",
-      p_ccb->local_cid, p_buf->len,
-      SAR_types[(ctrl_word & L2CAP_FCR_SAR_BITS) >> L2CAP_FCR_SAR_BITS_SHIFT],
-      (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
-      (ctrl_word & L2CAP_FCR_REQ_SEQ_BITS) >> L2CAP_FCR_REQ_SEQ_BITS_SHIFT,
-      (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
-
-  /* Extract the sequence number */
-  tx_seq = (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT;
-
-  /* Check if tx-sequence is the expected one */
-  if (tx_seq != p_ccb->fcrb.next_seq_expected) {
-    L2CAP_TRACE_WARNING(
-        "Rx L2CAP PDU: CID: 0x%04x  Lost frames Exp: %u  Got: %u  p_rx_sdu: "
-        "0x%08x",
-        p_ccb->local_cid, p_ccb->fcrb.next_seq_expected, tx_seq,
-        p_ccb->fcrb.p_rx_sdu);
-
-    /* Lost one or more packets, so flush the SAR queue */
-    osi_free_and_reset((void**)&p_ccb->fcrb.p_rx_sdu);
-  }
-
-  p_ccb->fcrb.next_seq_expected = (tx_seq + 1) & L2CAP_FCR_SEQ_MODULO;
-
-  if (!do_sar_reassembly(p_ccb, p_buf, ctrl_word)) {
-    /* Some sort of SAR error, so flush the SAR queue */
-    osi_free_and_reset((void**)&p_ccb->fcrb.p_rx_sdu);
   }
 }
 
