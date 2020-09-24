@@ -76,7 +76,6 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_br_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_br_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_br_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
-void avct_l2c_br_disconnect_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_br_congestion_ind_cback(uint16_t lcid, bool is_congested);
 void avct_l2c_br_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
 
@@ -245,7 +244,7 @@ void avct_l2c_br_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     p_lcb->ch_result = p_cfg->result;
 
     /* Send L2CAP disconnect req */
-    L2CA_DisconnectReq(lcid);
+    avct_l2c_br_disconnect(lcid, 0);
   }
 }
 
@@ -341,17 +340,9 @@ void avct_l2c_br_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   avct_bcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
 }
 
-/*******************************************************************************
- *
- * Function         avct_l2c_br_disconnect_cfm_cback
- *
- * Description      This is the L2CAP disconnect confirm callback function.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void avct_l2c_br_disconnect_cfm_cback(uint16_t lcid, uint16_t result) {
+void avct_l2c_br_disconnect(uint16_t lcid, uint16_t result) {
+  L2CA_DisconnectReq(lcid);
+
   tAVCT_BCB* p_lcb;
   uint16_t res;
 
