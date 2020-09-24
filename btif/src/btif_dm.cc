@@ -532,19 +532,20 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
 
   /* class of device */
   cod = devclass2uint(dev_class);
-  BTIF_TRACE_DEBUG("%s cod is 0x%06x", __func__, cod);
   if (cod == 0) {
     /* Try to retrieve cod from storage */
-    BTIF_TRACE_DEBUG("%s cod is 0, checking cod from storage", __func__);
+    LOG_VERBOSE("class of device (cod) is unclassified, checking storage");
     BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
                                BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod);
     status = btif_storage_get_remote_device_property(
         &bdaddr, &properties[num_properties]);
-    BTIF_TRACE_DEBUG("%s cod retrieved from storage is 0x%06x", __func__, cod);
+    LOG_VERBOSE("cod retrieved from storage is 0x%06x", cod);
     if (cod == 0) {
-      BTIF_TRACE_DEBUG("%s cod is again 0, set as unclassified", __func__);
+      LOG_DEBUG("cod from storage is also unclassified");
       cod = COD_UNCLASSIFIED;
     }
+  } else {
+    LOG_DEBUG("class of device (cod) is 0x%06x", cod);
   }
 
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
