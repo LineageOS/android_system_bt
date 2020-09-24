@@ -1375,8 +1375,6 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
 
   p_ccb->ertm_info.preferred_mode =
       L2CAP_FCR_BASIC_MODE; /* Default mode for channel is basic mode */
-  p_ccb->ertm_info.allowed_modes =
-      L2CAP_FCR_CHAN_OPT_BASIC; /* Default mode for channel is basic mode */
   p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
   p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
   p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
