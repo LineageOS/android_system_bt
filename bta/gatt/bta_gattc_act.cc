@@ -1025,12 +1025,12 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
                                  tGATT_DISCONN_REASON reason,
                                  tBT_TRANSPORT transport) {
   if (connected) {
-    LOG_INFO("Connected transport:%s reason:%s",
+    LOG_INFO("Connected att_id:%hhu transport:%s reason:%s", gattc_if,
              BtTransportText(transport).c_str(),
              hci_error_code_text(reason).c_str());
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_UNKNOWN);
   } else {
-    LOG_INFO("Disconnected transport:%s reason:%s",
+    LOG_INFO("Disconnected att_id:%hhu transport:%s reason:%s", gattc_if,
              BtTransportText(transport).c_str(),
              hci_error_code_text(reason).c_str());
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, reason);
