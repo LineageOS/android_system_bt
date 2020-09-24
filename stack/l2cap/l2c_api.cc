@@ -352,8 +352,7 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
   }
 
   VLOG(1) << __func__ << "BDA " << p_bd_addr
-          << StringPrintf(" PSM: 0x%04x allowed:0x%x preferred:%d", psm,
-                          (p_ertm_info) ? p_ertm_info->allowed_modes : 0,
+          << StringPrintf(" PSM: 0x%04x preferred:%d", psm,
                           (p_ertm_info) ? p_ertm_info->preferred_mode : 0);
 
   /* Fail if we have not established communications with the controller */
