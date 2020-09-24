@@ -259,12 +259,6 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
     }
   }
 
-  /* optional FCR channel modes */
-  if (ertm_info != NULL) {
-    p_ccb->ertm_info.allowed_modes =
-        (chan_mode_mask) ? chan_mode_mask : (uint8_t)L2CAP_FCR_CHAN_OPT_BASIC;
-  }
-
   if (is_server) {
     p_ccb->con_flags |=
         GAP_CCB_FLAGS_SEC_DONE; /* assume btm/l2cap would handle it */
