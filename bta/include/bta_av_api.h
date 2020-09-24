@@ -378,8 +378,6 @@ typedef struct {
   uint32_t company_id;  /* AVRCP Company ID */
   uint16_t avrc_ct_cat; /* AVRCP controller categories */
   uint16_t avrc_tg_cat; /* AVRCP target categories */
-  uint16_t sig_mtu;     /* AVDTP signaling channel MTU at L2CAP */
-  uint16_t audio_mtu;   /* AVDTP audio transport channel MTU at L2CAP */
   const uint16_t*
       p_audio_flush_to;    /* AVDTP audio transport channel flush timeout */
   uint16_t audio_mqs;      /* AVDTP audio channel max data queue size */

@@ -97,7 +97,7 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
     /* Send L2CAP config req */
     memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
     cfg.mtu_present = true;
-    cfg.mtu = p_tbl->my_mtu;
+    cfg.mtu = kSignalMtu;
     cfg.flush_to_present = true;
     cfg.flush_to = p_tbl->my_flush_to;
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
@@ -138,7 +138,7 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
     /* Send L2CAP config req */
     memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
     cfg.mtu_present = true;
-    cfg.mtu = p_tbl->my_mtu;
+    cfg.mtu = kSignalMtu;
     cfg.flush_to_present = true;
     cfg.flush_to = p_tbl->my_flush_to;
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
@@ -181,7 +181,7 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     } else {
       /* allocate and set up entry; first channel is always signaling */
       p_tbl = avdt_ad_tc_tbl_alloc(p_ccb);
-      p_tbl->my_mtu = avdtp_cb.rcb.ctrl_mtu;
+      p_tbl->my_mtu = kSignalMtu;
       p_tbl->my_flush_to = L2CAP_DEFAULT_FLUSH_TO;
       p_tbl->tcid = AVDT_CHAN_SIG;
       p_tbl->lcid = lcid;
