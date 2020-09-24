@@ -1626,16 +1626,14 @@ uint8_t l2c_fcr_chk_chan_modes(tL2C_CCB* p_ccb) {
   CHECK(p_ccb != NULL);
 
   /* Remove nonbasic options that the peer does not support */
-  if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS))
-    p_ccb->ertm_info.allowed_modes &= ~L2CAP_FCR_CHAN_OPT_ERTM;
-
-  /* At least one type needs to be set (Basic, ERTM, STM) to continue */
-  if (!p_ccb->ertm_info.allowed_modes) {
+  if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS) &&
+      p_ccb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE) {
     L2CAP_TRACE_WARNING(
         "L2CAP - Peer does not support our desired channel types");
+    p_ccb->ertm_info.preferred_mode = 0;
+    return false;
   }
-
-  return (p_ccb->ertm_info.allowed_modes);
+  return true;
 }
 
 /*******************************************************************************
@@ -1666,7 +1664,7 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   /* If upper layer did not request eRTM mode, BASIC must be used */
-  if (p_ccb->ertm_info.allowed_modes == L2CAP_FCR_CHAN_OPT_BASIC) {
+  if (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
     if (p_cfg->fcr_present && p_fcr->mode != L2CAP_FCR_BASIC_MODE) {
       L2CAP_TRACE_WARNING(
           "l2c_fcr_adj_our_req_options (mode %d): ERROR: No FCR options set "
@@ -1690,7 +1688,7 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     }
 
     /* Basic is the only common channel mode between the two devices */
-    else if (p_ccb->ertm_info.allowed_modes == L2CAP_FCR_CHAN_OPT_BASIC) {
+    else if (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
       /* We only want to try Basic, so bypass sending the FCR options entirely
        */
       p_cfg->fcr_present = false;
@@ -1868,7 +1866,7 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       switch (p_ccb->our_cfg.fcr.mode) {
         case L2CAP_FCR_ERTM_MODE:
           /* We can try basic for any other peer mode if we support it */
-          if (p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_BASIC) {
+          if (p_ccb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE) {
             L2CAP_TRACE_DEBUG("%s(Trying Basic)", __func__);
             can_renegotiate = true;
             p_ccb->our_cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
@@ -1936,14 +1934,14 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
   L2CAP_TRACE_EVENT(
       "l2c_fcr_process_peer_cfg_req() CFG fcr_present:%d fcr.mode:%d CCB FCR "
-      "mode:%d preferred: %u allowed:%u",
+      "mode:%d preferred: %u",
       p_cfg->fcr_present, p_cfg->fcr.mode, p_ccb->our_cfg.fcr.mode,
-      p_ccb->ertm_info.preferred_mode, p_ccb->ertm_info.allowed_modes);
+      p_ccb->ertm_info.preferred_mode);
 
   /* If Peer wants basic, we are done (accept it or disconnect) */
   if (p_cfg->fcr.mode == L2CAP_FCR_BASIC_MODE) {
     /* If we do not allow basic, disconnect */
-    if (!(p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_BASIC))
+    if (p_ccb->ertm_info.preferred_mode != L2CAP_FCR_BASIC_MODE)
       fcr_ok = L2CAP_PEER_CFG_DISCONNECT;
   }
 
@@ -1973,12 +1971,10 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       fcr_ok = L2CAP_PEER_CFG_UNACCEPTABLE;
     }
 
-    /* Only other valid case is if they want ERTM and we wanted STM which should
-       be
-       accepted if we support it; otherwise the channel should be disconnected
-       */
+    /* Only other valid case is if they want BASIC and we wanted ERTM
+     */
     else if ((p_cfg->fcr.mode != L2CAP_FCR_ERTM_MODE) ||
-             !(p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM)) {
+             (p_ccb->ertm_info.preferred_mode != L2CAP_FCR_ERTM_MODE)) {
       fcr_ok = L2CAP_PEER_CFG_DISCONNECT;
     }
   }
