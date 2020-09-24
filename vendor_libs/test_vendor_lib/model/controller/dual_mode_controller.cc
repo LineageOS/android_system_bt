@@ -807,6 +807,7 @@ void DualModeController::WriteSecureConnectionsHostSupport(
 void DualModeController::SetEventMask(CommandPacketView command) {
   auto command_view = gd_hci::SetEventMaskView::Create(command);
   ASSERT(command_view.IsValid());
+  properties_.SetEventMask(command_view.GetEventMask());
   auto packet = bluetooth::hci::SetEventMaskCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
@@ -1412,10 +1413,7 @@ void DualModeController::RemoteNameRequest(CommandPacketView command) {
 void DualModeController::LeSetEventMask(CommandPacketView command) {
   auto command_view = gd_hci::LeSetEventMaskView::Create(command);
   ASSERT(command_view.IsValid());
-  /*
-  uint64_t mask = args.begin().extract<uint64_t>();
-  link_layer_controller_.SetLeEventMask(mask);
-*/
+  properties_.SetLeEventMask(command_view.GetLeEventMask());
   auto packet = bluetooth::hci::LeSetEventMaskCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
