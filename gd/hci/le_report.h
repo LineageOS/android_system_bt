@@ -24,15 +24,23 @@ namespace bluetooth::hci {
 class LeReport {
  public:
   explicit LeReport(const LeAdvertisingReport& advertisement)
-      : report_type_(ReportType::ADVERTISING_EVENT), advertising_event_type_(advertisement.event_type_),
-        address_(advertisement.address_), address_type_(advertisement.address_type_), rssi_(advertisement.rssi_),
+      : report_type_(ReportType::ADVERTISING_EVENT),
+        advertising_event_type_(advertisement.event_type_),
+        address_(advertisement.address_),
+        address_type_(static_cast<DirectAdvertisingAddressType>(advertisement.address_type_)),
+        rssi_(advertisement.rssi_),
         gap_data_(advertisement.advertising_data_) {}
   explicit LeReport(const LeDirectedAdvertisingReport& advertisement)
-      : report_type_(ReportType::DIRECTED_ADVERTISING_EVENT), address_(advertisement.address_),
+      : report_type_(ReportType::DIRECTED_ADVERTISING_EVENT),
+        address_(advertisement.address_),
+        address_type_(advertisement.address_type_),
         rssi_(advertisement.rssi_) {}
   explicit LeReport(const LeExtendedAdvertisingReport& advertisement)
-      : report_type_(ReportType::EXTENDED_ADVERTISING_EVENT), address_(advertisement.address_),
-        rssi_(advertisement.rssi_), gap_data_(advertisement.advertising_data_) {}
+      : report_type_(ReportType::EXTENDED_ADVERTISING_EVENT),
+        address_(advertisement.address_),
+        address_type_(advertisement.address_type_),
+        rssi_(advertisement.rssi_),
+        gap_data_(advertisement.advertising_data_) {}
   virtual ~LeReport() = default;
 
   enum class ReportType {
@@ -49,7 +57,7 @@ class LeReport {
   // Advertising Event
   const AdvertisingEventType advertising_event_type_{};
   const Address address_{};
-  const AddressType address_type_{};
+  const DirectAdvertisingAddressType address_type_{};
   const int8_t rssi_;
   const std::vector<GapData> gap_data_{};
 };
