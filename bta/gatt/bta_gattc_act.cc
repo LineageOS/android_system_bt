@@ -1024,16 +1024,17 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
                                  tBT_TRANSPORT transport) {
-  if (reason != 0) {
-    LOG(WARNING) << __func__ << ": cif=" << +gattc_if
-                 << " connected=" << connected << " conn_id=" << loghex(conn_id)
-                 << " reason=" << loghex(reason);
-  }
-
-  if (connected)
+  if (connected) {
+    LOG_INFO("Connected transport:%s reason:%s",
+             BtTransportText(transport).c_str(),
+             hci_error_code_text(reason).c_str());
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_UNKNOWN);
-  else
+  } else {
+    LOG_INFO("Disconnected transport:%s reason:%s",
+             BtTransportText(transport).c_str(),
+             hci_error_code_text(reason).c_str());
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, reason);
+  }
 
   tBTA_GATTC_DATA* p_buf =
       (tBTA_GATTC_DATA*)osi_calloc(sizeof(tBTA_GATTC_DATA));
