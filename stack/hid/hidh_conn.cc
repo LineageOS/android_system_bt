@@ -89,8 +89,6 @@ tHID_STATUS hidh_conn_reg(void) {
 
   hh_cb.l2cap_cfg.mtu_present = true;
   hh_cb.l2cap_cfg.mtu = HID_HOST_MTU;
-  hh_cb.l2cap_cfg.flush_to_present = true;
-  hh_cb.l2cap_cfg.flush_to = HID_HOST_FLUSH_TO;
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(HID_PSM_INTERRUPT, hst_reg_info, false /* enable_snoop */,
