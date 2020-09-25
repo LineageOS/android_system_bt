@@ -72,7 +72,7 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
           LeReportMsg le_report_msg;
           std::vector<LeAdvertisingReport> advertisements;
           LeAdvertisingReport le_advertising_report;
-          le_advertising_report.address_type_ = report->address_type_;
+          le_advertising_report.address_type_ = static_cast<AddressType>(report->address_type_);
           le_advertising_report.address_ = report->address_;
           le_advertising_report.advertising_data_ = report->gap_data_;
           le_advertising_report.event_type_ = report->advertising_event_type_;
@@ -90,6 +90,7 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
           LeReportMsg le_report_msg;
           std::vector<LeExtendedAdvertisingReport> advertisements;
           LeExtendedAdvertisingReport le_extended_advertising_report;
+          le_extended_advertising_report.address_type_ = report->address_type_;
           le_extended_advertising_report.address_ = report->address_;
           le_extended_advertising_report.advertising_data_ = report->gap_data_;
           le_extended_advertising_report.rssi_ = report->rssi_;
