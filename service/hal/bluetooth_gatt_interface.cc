@@ -403,6 +403,7 @@ const btgatt_client_callbacks_t gatt_client_callbacks = {
     ServicesAddedCallback,
     nullptr,
     nullptr,
+    nullptr,  // service_changed_cb
 };
 
 const btgatt_server_callbacks_t gatt_server_callbacks = {

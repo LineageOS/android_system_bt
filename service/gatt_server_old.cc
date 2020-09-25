@@ -446,6 +446,7 @@ const btgatt_client_callbacks_t gatt_client_callbacks = {
     nullptr, /* services_added_cb */
     nullptr, /* phy_update_cb */
     nullptr, /* conn_update_cb */
+    nullptr, /* service_changed_cb*/
 };
 
 const btgatt_scanner_callbacks_t gatt_scanner_callbacks = {

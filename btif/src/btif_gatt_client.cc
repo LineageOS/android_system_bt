@@ -190,6 +190,11 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
                 p_data->conn_update.status);
       break;
 
+    case BTA_GATTC_SRVC_CHG_EVT:
+      HAL_CBACK(bt_gatt_callbacks, client->service_changed_cb,
+                p_data->service_changed.conn_id);
+      break;
+
     default:
       LOG_ERROR("%s: Unhandled event (%d)!", __func__, event);
       break;
