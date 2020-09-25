@@ -287,20 +287,10 @@ void avct_l2c_br_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
 
   AVCT_TRACE_DEBUG("%s peer_mtu:%d use:%d", __func__, p_lcb->peer_mtu, max_mtu);
 
-  if (p_lcb->peer_mtu >= AVCT_MIN_BROWSE_MTU)
-    p_cfg->result = L2CAP_CFG_OK;
-  else {
-    p_cfg->result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
-    p_cfg->mtu_present = true;
-    p_cfg->mtu = AVCT_MIN_BROWSE_MTU;
-  }
+  p_cfg->result = L2CAP_CFG_OK;
 
   /* send L2CAP configure response */
   L2CA_ConfigRsp(lcid, p_cfg);
-
-  if (p_cfg->result != L2CAP_CFG_OK) {
-    return;
-  }
 
   /* if first config ind */
   if ((p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) == 0) {
