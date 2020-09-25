@@ -225,7 +225,6 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
     p_cfg->mtu = BNEP_MTU_SIZE;
     p_cfg->result = result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
   } else {
-    p_bcb->rem_mtu_size = BNEP_MTU_SIZE;
 
     /* For now, always accept configuration from the other side */
     p_cfg->flush_to_present = false;
