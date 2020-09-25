@@ -241,7 +241,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   if (transport == BT_TRANSPORT_BR_EDR) {
     p_ccb->psm =
         L2CA_Register2(psm, conn.reg_info, false /* enable_snoop */,
-                       &p_ccb->ertm_info, L2CAP_SDU_LENGTH_MAX, security);
+                       &p_ccb->ertm_info, L2CAP_SDU_LENGTH_MAX, 0, security);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);
