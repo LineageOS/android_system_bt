@@ -581,6 +581,15 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
   gatt_set_ch_state(p_tcb, GATT_CH_CFG);
 }
 
+static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result) {
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
+    gatt_cleanup_upon_disc(p_tcb->peer_bda, result, BT_TRANSPORT_BR_EDR);
+  } else {
+    gatt_l2cif_disconnect(lcid);
+  }
+}
+
 /** This is the L2CAP connect confirm callback function */
 static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   tGATT_TCB* p_tcb;
@@ -593,24 +602,10 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
           << StringPrintf(" result: %d ch_state: %d, lcid:0x%x", result,
                           gatt_get_ch_state(p_tcb), p_tcb->att_lcid);
 
-  /* if in correct state */
-  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-    /* if result successful */
-    if (result == L2CAP_CONN_OK) {
-      /* set channel state */
-      gatt_set_ch_state(p_tcb, GATT_CH_CFG);
-    }
-    /* else initiating connection failure */
-    else {
-      gatt_cleanup_upon_disc(p_tcb->peer_bda, result, BT_TRANSPORT_BR_EDR);
-    }
-  } else /* wrong state, disconnect it */
-  {
-    if (result == L2CAP_CONN_OK) {
-      /* just in case the peer also accepts our connection - Send L2CAP
-       * disconnect req */
-      gatt_l2cif_disconnect(lcid);
-    }
+  if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN && result == L2CAP_CONN_OK) {
+    gatt_set_ch_state(p_tcb, GATT_CH_CFG);
+  } else {
+    gatt_on_l2cap_error(lcid, result);
   }
 }
 
@@ -625,8 +620,7 @@ void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result) {
 
   /* if result not successful */
   if (result != L2CAP_CFG_OK) {
-    /* Send L2CAP disconnect req */
-    gatt_l2cif_disconnect(lcid);
+    gatt_on_l2cap_error(lcid, result);
     return;
   }
 
