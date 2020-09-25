@@ -527,10 +527,10 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
 
   if (type == AVDT_CHAN_SIG) {
     /* if signaling, get mtu from registration control block */
-    p_tbl->my_mtu = kSignalMtu;
+    p_tbl->my_mtu = kAvdtpMtu;
   } else {
     /* otherwise get mtu from scb */
-    p_tbl->my_mtu = kAudioMtu;
+    p_tbl->my_mtu = kAvdtpMtu;
 
     /* also set scb_hdl in rt_tbl */
     avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].scb_hdl =
