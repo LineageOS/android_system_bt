@@ -98,8 +98,6 @@
 #define BNEP_IFLOW_LATENCY 0
 #define BNEP_IFLOW_DELAY_VARIATION 0
 
-#define BNEP_FLUSH_TO 0xFFFF
-
 #define BNEP_MAX_RETRANSMITS 3
 
 /* Define the BNEP Connection Control Block

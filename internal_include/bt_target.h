@@ -1039,10 +1039,6 @@
 #define HID_DEV_MTU_SIZE 512
 #endif
 
-#ifndef HID_DEV_FLUSH_TO
-#define HID_DEV_FLUSH_TO 0xffff
-#endif
-
 /*************************************************************************
  * Definitions for Both HID-Host & Device
 */
@@ -1071,10 +1067,6 @@
 
 #ifndef HID_HOST_MTU
 #define HID_HOST_MTU 640
-#endif
-
-#ifndef HID_HOST_FLUSH_TO
-#define HID_HOST_FLUSH_TO 0xffff
 #endif
 
 #ifndef HID_HOST_MAX_CONN_RETRY

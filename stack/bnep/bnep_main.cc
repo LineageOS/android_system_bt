@@ -81,8 +81,6 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
 
   bnep_cb.l2cap_my_cfg.mtu_present = true;
   bnep_cb.l2cap_my_cfg.mtu = BNEP_MTU_SIZE;
-  bnep_cb.l2cap_my_cfg.flush_to_present = true;
-  bnep_cb.l2cap_my_cfg.flush_to = BNEP_FLUSH_TO;
 
   bnep_cb.reg_info.pL2CA_ConnectInd_Cb = bnep_connect_ind;
   bnep_cb.reg_info.pL2CA_ConnectCfm_Cb = bnep_connect_cfm;
