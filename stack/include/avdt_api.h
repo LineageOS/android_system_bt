@@ -78,6 +78,16 @@
 #define AVDT_TSEP_SRC 0     /* Source SEP */
 #define AVDT_TSEP_SNK 1     /* Sink SEP */
 #define AVDT_TSEP_INVALID 3 /* Invalid SEP */
+inline const std::string peer_stream_endpoint_text(int type) {
+  switch (type) {
+    case AVDT_TSEP_SRC:
+      return std::string("Source");
+    case AVDT_TSEP_SNK:
+      return std::string("Sink");
+    default:
+      return std::string("Invalid");
+  }
+}
 
 /* initiator/acceptor role for adaption */
 #define AVDT_INT 0 /* initiator */
