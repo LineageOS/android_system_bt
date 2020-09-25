@@ -1970,7 +1970,6 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       /* Peer desires to bypass FCS check, and streaming or ERTM mode */
       if (p_cfg->fcs_present) {
         p_ccb->peer_cfg.fcs = p_cfg->fcs;
-        p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_FCS;
       }
 
       max_retrans_size = p_ccb->ertm_info.fcr_tx_buf_size - sizeof(BT_HDR) -
@@ -2001,7 +2000,6 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     /* Everything ok, so save the peer's adjusted fcr options */
     p_ccb->peer_cfg.fcr = p_cfg->fcr;
 
-    if (p_cfg->fcr_present) p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_FCR;
   } else if (fcr_ok == L2CAP_PEER_CFG_UNACCEPTABLE) {
     /* Allow peer only one retry for mode */
     if (p_ccb->peer_cfg_already_rejected)
