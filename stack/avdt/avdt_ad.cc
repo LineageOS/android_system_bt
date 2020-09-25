@@ -527,11 +527,11 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
 
   if (type == AVDT_CHAN_SIG) {
     /* if signaling, get mtu from registration control block */
-    p_tbl->my_mtu = avdtp_cb.rcb.ctrl_mtu;
+    p_tbl->my_mtu = kSignalMtu;
     p_tbl->my_flush_to = L2CAP_DEFAULT_FLUSH_TO;
   } else {
     /* otherwise get mtu from scb */
-    p_tbl->my_mtu = p_scb->stream_config.mtu;
+    p_tbl->my_mtu = kAudioMtu;
     p_tbl->my_flush_to = p_scb->stream_config.flush_to;
 
     /* also set scb_hdl in rt_tbl */
