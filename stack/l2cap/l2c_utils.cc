@@ -1752,14 +1752,19 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
   bool flush_to_ok = true;
   bool fcr_ok = true;
   uint8_t fcr_status;
+  uint16_t required_remote_mtu =
+      std::max<uint16_t>(L2CAP_MIN_MTU, p_ccb->p_rcb->required_remote_mtu);
 
   /* Ignore FCR parameters for basic mode */
   if (!p_cfg->fcr_present) p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
 
-  /* Save the MTU that our peer can receive */
-  if (p_cfg->mtu_present) {
+  if (!p_cfg->mtu_present && required_remote_mtu > L2CAP_DEFAULT_MTU) {
+    // We reject if we have a MTU requirement higher than default MTU
+    p_cfg->mtu = required_remote_mtu;
+    mtu_ok = false;
+  } else if (p_cfg->mtu_present) {
     /* Make sure MTU is at least the minimum */
-    if (p_cfg->mtu >= L2CAP_MIN_MTU) {
+    if (p_cfg->mtu >= required_remote_mtu) {
       /* In basic mode, limit the MTU to our buffer size */
       if ((!p_cfg->fcr_present) && (p_cfg->mtu > L2CAP_MTU_SIZE))
         p_cfg->mtu = L2CAP_MTU_SIZE;
@@ -1769,7 +1774,7 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       p_ccb->peer_cfg.mtu_present = true;
     } else /* Illegal MTU value */
     {
-      p_cfg->mtu = L2CAP_MIN_MTU;
+      p_cfg->mtu = required_remote_mtu;
       mtu_ok = false;
     }
   }
