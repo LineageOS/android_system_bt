@@ -44,9 +44,10 @@ using base::StringPrintf;
 
 uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                        uint16_t required_mtu, uint16_t sec_level) {
-  auto ret =
-      L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, required_mtu);
+                        uint16_t my_mtu, uint16_t required_remote_mtu,
+                        uint16_t sec_level) {
+  auto ret = L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu,
+                           required_remote_mtu);
   BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
   return ret;
 }
@@ -67,10 +68,10 @@ uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
  ******************************************************************************/
 uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                       uint16_t required_mtu) {
+                       uint16_t my_mtu, uint16_t required_remote_mtu) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_Register(psm, p_cb_info, enable_snoop,
-                                          p_ertm_info, required_mtu);
+                                          p_ertm_info, my_mtu);
   }
 
   tL2C_RCB* p_rcb;
@@ -122,7 +123,9 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
   p_rcb->ertm_info = p_ertm_info == nullptr ? tL2CAP_ERTM_INFO{} : *p_ertm_info;
-  p_rcb->required_mtu = std::max<uint16_t>(required_mtu, L2CAP_DEFAULT_MTU);
+  p_rcb->my_mtu = my_mtu;
+  p_rcb->required_remote_mtu =
+      std::max<uint16_t>(required_remote_mtu, L2CAP_MIN_MTU);
 
   return (vpsm);
 }

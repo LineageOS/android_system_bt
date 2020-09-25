@@ -90,7 +90,7 @@ void sdp_init(void) {
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(SDP_PSM, sdp_cb.reg_info, true /* enable_snoop */,
-                      nullptr, SDP_MTU_SIZE, BTM_SEC_NONE)) {
+                      nullptr, SDP_MTU_SIZE, 0, BTM_SEC_NONE)) {
     SDP_TRACE_ERROR("SDP Registration failed");
   }
 }
