@@ -707,11 +707,6 @@
 #define SDP_MTU_SIZE 1024
 #endif
 
-/* The flush timeout for the L2CAP configuration. */
-#ifndef SDP_FLUSH_TO
-#define SDP_FLUSH_TO 0xFFFF
-#endif
-
 /* The name for security authorization. */
 #ifndef SDP_SERVICE_NAME
 #define SDP_SERVICE_NAME "Service Discovery"
@@ -897,14 +892,9 @@
 #define BNEP_MAX_MULTI_FILTERS 5
 #endif
 
-/* Minimum MTU size. */
-#ifndef BNEP_MIN_MTU_SIZE
-#define BNEP_MIN_MTU_SIZE L2CAP_MTU_SIZE
-#endif
-
 /* Preferred MTU size. */
 #ifndef BNEP_MTU_SIZE
-#define BNEP_MTU_SIZE BNEP_MIN_MTU_SIZE
+#define BNEP_MTU_SIZE L2CAP_MTU_SIZE
 #endif
 
 /* Maximum number of buffers allowed in transmit data queue. */

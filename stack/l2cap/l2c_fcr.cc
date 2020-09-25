@@ -92,7 +92,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
 static bool retransmit_i_frames(tL2C_CCB* p_ccb, uint8_t tx_seq);
 static void prepare_I_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
                             bool is_retransmission);
-static void process_stream_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf);
 static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
                               uint16_t ctrl_word);
 
@@ -492,11 +491,6 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     L2CAP_TRACE_WARNING("Rx L2CAP PDU: CID: 0x%04x  Len too short: %u",
                         p_ccb->local_cid, p_buf->len);
     osi_free(p_buf);
-    return;
-  }
-
-  if (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_STREAM_MODE) {
-    process_stream_frame(p_ccb, p_buf);
     return;
   }
 
@@ -1178,90 +1172,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
 
 /*******************************************************************************
  *
- * Function         process_stream_frame
- *
- * Description      This function processes frames in streaming mode
- *
- * Returns          -
- *
- ******************************************************************************/
-static void process_stream_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
-  CHECK(p_ccb != NULL);
-  CHECK(p_buf != NULL);
-
-  uint16_t ctrl_word;
-  uint16_t fcs;
-  uint8_t* p;
-  uint8_t tx_seq;
-
-  /* Verify FCS if using */
-  if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
-    p = ((uint8_t*)(p_buf + 1)) + p_buf->offset + p_buf->len - L2CAP_FCS_LEN;
-
-    /* Extract and drop the FCS from the packet */
-    STREAM_TO_UINT16(fcs, p);
-    p_buf->len -= L2CAP_FCS_LEN;
-
-    if (l2c_fcr_rx_get_fcs(p_buf) != fcs) {
-      L2CAP_TRACE_WARNING("Rx L2CAP PDU: CID: 0x%04x  BAD FCS",
-                          p_ccb->local_cid);
-      osi_free(p_buf);
-      return;
-    }
-  }
-
-  /* Get the control word */
-  p = ((uint8_t*)(p_buf + 1)) + p_buf->offset;
-
-  STREAM_TO_UINT16(ctrl_word, p);
-
-  p_buf->len -= L2CAP_FCR_OVERHEAD;
-  p_buf->offset += L2CAP_FCR_OVERHEAD;
-
-  /* Make sure it is an I-frame */
-  if (ctrl_word & L2CAP_FCR_S_FRAME_BIT) {
-    L2CAP_TRACE_WARNING(
-        "Rx L2CAP PDU: CID: 0x%04x  BAD S-frame in streaming mode  ctrl_word: "
-        "0x%04x",
-        p_ccb->local_cid, ctrl_word);
-    osi_free(p_buf);
-    return;
-  }
-
-  L2CAP_TRACE_EVENT(
-      "L2CAP eRTM Rx I-frame: cid: 0x%04x  Len: %u  SAR: %-12s  TxSeq: %u  "
-      "ReqSeq: %u  F: %u",
-      p_ccb->local_cid, p_buf->len,
-      SAR_types[(ctrl_word & L2CAP_FCR_SAR_BITS) >> L2CAP_FCR_SAR_BITS_SHIFT],
-      (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT,
-      (ctrl_word & L2CAP_FCR_REQ_SEQ_BITS) >> L2CAP_FCR_REQ_SEQ_BITS_SHIFT,
-      (ctrl_word & L2CAP_FCR_F_BIT) >> L2CAP_FCR_F_BIT_SHIFT);
-
-  /* Extract the sequence number */
-  tx_seq = (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT;
-
-  /* Check if tx-sequence is the expected one */
-  if (tx_seq != p_ccb->fcrb.next_seq_expected) {
-    L2CAP_TRACE_WARNING(
-        "Rx L2CAP PDU: CID: 0x%04x  Lost frames Exp: %u  Got: %u  p_rx_sdu: "
-        "0x%08x",
-        p_ccb->local_cid, p_ccb->fcrb.next_seq_expected, tx_seq,
-        p_ccb->fcrb.p_rx_sdu);
-
-    /* Lost one or more packets, so flush the SAR queue */
-    osi_free_and_reset((void**)&p_ccb->fcrb.p_rx_sdu);
-  }
-
-  p_ccb->fcrb.next_seq_expected = (tx_seq + 1) & L2CAP_FCR_SEQ_MODULO;
-
-  if (!do_sar_reassembly(p_ccb, p_buf, ctrl_word)) {
-    /* Some sort of SAR error, so flush the SAR queue */
-    osi_free_and_reset((void**)&p_ccb->fcrb.p_rx_sdu);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         do_sar_reassembly
  *
  * Description      Process SAR bits and re-assemble frame
@@ -1716,16 +1626,14 @@ uint8_t l2c_fcr_chk_chan_modes(tL2C_CCB* p_ccb) {
   CHECK(p_ccb != NULL);
 
   /* Remove nonbasic options that the peer does not support */
-  if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS))
-    p_ccb->ertm_info.allowed_modes &= ~L2CAP_FCR_CHAN_OPT_ERTM;
-
-  /* At least one type needs to be set (Basic, ERTM, STM) to continue */
-  if (!p_ccb->ertm_info.allowed_modes) {
+  if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS) &&
+      p_ccb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE) {
     L2CAP_TRACE_WARNING(
         "L2CAP - Peer does not support our desired channel types");
+    p_ccb->ertm_info.preferred_mode = 0;
+    return false;
   }
-
-  return (p_ccb->ertm_info.allowed_modes);
+  return true;
 }
 
 /*******************************************************************************
@@ -1756,7 +1664,7 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   /* If upper layer did not request eRTM mode, BASIC must be used */
-  if (p_ccb->ertm_info.allowed_modes == L2CAP_FCR_CHAN_OPT_BASIC) {
+  if (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
     if (p_cfg->fcr_present && p_fcr->mode != L2CAP_FCR_BASIC_MODE) {
       L2CAP_TRACE_WARNING(
           "l2c_fcr_adj_our_req_options (mode %d): ERROR: No FCR options set "
@@ -1780,7 +1688,7 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     }
 
     /* Basic is the only common channel mode between the two devices */
-    else if (p_ccb->ertm_info.allowed_modes == L2CAP_FCR_CHAN_OPT_BASIC) {
+    else if (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
       /* We only want to try Basic, so bypass sending the FCR options entirely
        */
       p_cfg->fcr_present = false;
@@ -1793,16 +1701,10 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
      * Override mode from available mode options based on preference, if needed
      */
     else {
-      /* There is no STREAMING use case, try ERTM */
-      if (p_fcr->mode == L2CAP_FCR_STREAM_MODE) {
-        L2CAP_TRACE_DEBUG("L2C CFG: mode is STREAM, but use case; Try ERTM");
-        p_fcr->mode = L2CAP_FCR_ERTM_MODE;
-      }
-
       /* If peer does not support ERTM, try BASIC (will support this if made it
        * here in the code) */
       if (p_fcr->mode == L2CAP_FCR_ERTM_MODE &&
-          !(p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM)) {
+          !(p_ccb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE)) {
         L2CAP_TRACE_DEBUG(
             "L2C CFG: mode is ERTM, but peer does not support; Try BASIC");
         p_fcr->mode = L2CAP_FCR_BASIC_MODE;
@@ -1962,25 +1864,9 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       /* Try another supported mode if available based on our last attempted
        * channel */
       switch (p_ccb->our_cfg.fcr.mode) {
-        /* Our Streaming mode request was unnacceptable; try ERTM or Basic */
-        case L2CAP_FCR_STREAM_MODE:
-          /* Peer wants ERTM and we support it */
-          if ((peer_mode == L2CAP_FCR_ERTM_MODE) &&
-              (p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM)) {
-            L2CAP_TRACE_DEBUG("%s(Trying ERTM)", __func__);
-            p_ccb->our_cfg.fcr.mode = L2CAP_FCR_ERTM_MODE;
-            can_renegotiate = true;
-          } else if (p_ccb->ertm_info.allowed_modes &
-                     L2CAP_FCR_CHAN_OPT_BASIC) {
-            /* We can try basic for any other peer mode if we support it */
-            L2CAP_TRACE_DEBUG("%s(Trying Basic)", __func__);
-            can_renegotiate = true;
-            p_ccb->our_cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
-          }
-          break;
         case L2CAP_FCR_ERTM_MODE:
           /* We can try basic for any other peer mode if we support it */
-          if (p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_BASIC) {
+          if (p_ccb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE) {
             L2CAP_TRACE_DEBUG("%s(Trying Basic)", __func__);
             can_renegotiate = true;
             p_ccb->our_cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
@@ -2048,14 +1934,14 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
   L2CAP_TRACE_EVENT(
       "l2c_fcr_process_peer_cfg_req() CFG fcr_present:%d fcr.mode:%d CCB FCR "
-      "mode:%d preferred: %u allowed:%u",
+      "mode:%d preferred: %u",
       p_cfg->fcr_present, p_cfg->fcr.mode, p_ccb->our_cfg.fcr.mode,
-      p_ccb->ertm_info.preferred_mode, p_ccb->ertm_info.allowed_modes);
+      p_ccb->ertm_info.preferred_mode);
 
   /* If Peer wants basic, we are done (accept it or disconnect) */
   if (p_cfg->fcr.mode == L2CAP_FCR_BASIC_MODE) {
     /* If we do not allow basic, disconnect */
-    if (!(p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_BASIC))
+    if (p_ccb->ertm_info.preferred_mode != L2CAP_FCR_BASIC_MODE)
       fcr_ok = L2CAP_PEER_CFG_DISCONNECT;
   }
 
@@ -2083,15 +1969,6 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       p_ccb->our_cfg.fcr.rtrans_tout = p_ccb->our_cfg.fcr.mon_tout =
           p_ccb->our_cfg.fcr.mps = 0;
       fcr_ok = L2CAP_PEER_CFG_UNACCEPTABLE;
-    }
-
-    /* Only other valid case is if they want ERTM and we wanted STM which should
-       be
-       accepted if we support it; otherwise the channel should be disconnected
-       */
-    else if ((p_cfg->fcr.mode != L2CAP_FCR_ERTM_MODE) ||
-             !(p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_ERTM)) {
-      fcr_ok = L2CAP_PEER_CFG_DISCONNECT;
     }
   }
 
@@ -2130,8 +2007,7 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         p_ccb->out_cfg_fcr_present = true;
       }
 
-      if (p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE ||
-          p_cfg->fcr.mode == L2CAP_FCR_STREAM_MODE) {
+      if (p_cfg->fcr.mode == L2CAP_FCR_ERTM_MODE) {
         /* Always respond with FCR ERTM parameters */
         p_ccb->out_cfg_fcr_present = true;
       }

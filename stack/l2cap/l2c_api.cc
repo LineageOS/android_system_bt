@@ -121,6 +121,8 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   p_rcb->log_packets = enable_snoop;
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
+  p_rcb->ertm_info = p_ertm_info == nullptr ? tL2CAP_ERTM_INFO{} : *p_ertm_info;
+  p_rcb->required_mtu = std::max<uint16_t>(required_mtu, L2CAP_DEFAULT_MTU);
 
   return (vpsm);
 }
@@ -350,8 +352,7 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
   }
 
   VLOG(1) << __func__ << "BDA " << p_bd_addr
-          << StringPrintf(" PSM: 0x%04x allowed:0x%x preferred:%d", psm,
-                          (p_ertm_info) ? p_ertm_info->allowed_modes : 0,
+          << StringPrintf(" PSM: 0x%04x preferred:%d", psm,
                           (p_ertm_info) ? p_ertm_info->preferred_mode : 0);
 
   /* Fail if we have not established communications with the controller */
