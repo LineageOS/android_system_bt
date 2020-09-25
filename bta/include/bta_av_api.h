@@ -373,10 +373,11 @@ struct tBTA_AV_SCB;
 union tBTA_AV_DATA;
 typedef void (*tBTA_AV_ACT)(tBTA_AV_SCB* p_cb, tBTA_AV_DATA* p_data);
 
+constexpr uint16_t kAvrcMtu = 512; /* AVRCP MTU at L2CAP for control channel */
+
 /* AV configuration structure */
 typedef struct {
   uint32_t company_id;  /* AVRCP Company ID */
-  uint16_t avrc_mtu;    /* AVRCP MTU at L2CAP for control channel */
   uint16_t avrc_br_mtu; /* AVRCP MTU at L2CAP for browsing channel */
   uint16_t avrc_ct_cat; /* AVRCP controller categories */
   uint16_t avrc_tg_cat; /* AVRCP target categories */
