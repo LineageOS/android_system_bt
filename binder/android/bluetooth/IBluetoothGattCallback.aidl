@@ -39,4 +39,5 @@ oneway interface IBluetoothGattCallback {
     void onConfigureMTU(in String address, in int mtu, in int status);
     void onConnectionUpdated(in String address, in int interval, in int latency,
                              in int timeout, in int status);
+    void onServiceChanged(in String address);
 }
