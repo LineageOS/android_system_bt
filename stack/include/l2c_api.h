@@ -209,17 +209,7 @@ typedef void(tL2CA_DISCONNECT_IND_CB)(uint16_t, bool);
  *              Local CID
  *              Result
  */
-typedef void(tL2CA_DISCONNECT_CFM_CB)(uint16_t, uint16_t);
-
-/* Data received indication callback prototype. Parameters are
- *              Local CID
- *              Address of buffer
- */
 typedef void(tL2CA_DATA_IND_CB)(uint16_t, BT_HDR*);
-
-/* Callback function prototype to pass broadcom specific echo response  */
-/* to the upper layer                                                   */
-typedef void(tL2CA_ECHO_DATA_CB)(const RawAddress&, uint16_t, uint8_t*);
 
 /* Congestion status callback protype. This callback is optional. If
  * an application tries to send data when the transmit queue is full,
