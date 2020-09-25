@@ -92,7 +92,7 @@ tHID_STATUS hidh_conn_reg(void) {
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(HID_PSM_INTERRUPT, hst_reg_info, false /* enable_snoop */,
-                      nullptr, hh_cb.l2cap_cfg.mtu,
+                      nullptr, HID_HOST_MTU,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDH_TRACE_ERROR("HID-Host Interrupt Registration failed");

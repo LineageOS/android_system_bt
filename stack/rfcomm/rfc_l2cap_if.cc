@@ -71,7 +71,7 @@ void rfcomm_l2cap_if_init(void) {
   p_l2c->pL2CA_TxComplete_Cb = NULL;
 
   L2CA_Register(BT_PSM_RFCOMM, rfc_cb.rfc.reg_info, true /* enable_snoop */,
-                nullptr, RFCOMM_DEFAULT_MTU);
+                nullptr, L2CAP_MTU_SIZE);
 }
 
 /*******************************************************************************
