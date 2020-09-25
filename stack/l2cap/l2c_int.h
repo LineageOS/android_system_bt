@@ -282,11 +282,6 @@ typedef struct t_l2c_ccb {
   bool out_cfg_fcr_present; /* true if cfg response shoulkd include fcr options
                                */
 
-#define L2CAP_CFG_FCS_OUR 0x01  /* Our desired config FCS option */
-#define L2CAP_CFG_FCS_PEER 0x02 /* Peer's desired config FCS option */
-#define L2CAP_BYPASS_FCS (L2CAP_CFG_FCS_OUR | L2CAP_CFG_FCS_PEER)
-  uint8_t bypass_fcs;
-
   bool is_flushable; /* true if channel is flushable */
 
   uint16_t fixed_chnl_idle_tout; /* Idle timeout to use for the fixed channel */

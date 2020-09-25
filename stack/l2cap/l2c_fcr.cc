@@ -1971,8 +1971,6 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       if (p_cfg->fcs_present) {
         p_ccb->peer_cfg.fcs = p_cfg->fcs;
         p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_FCS;
-        if (p_cfg->fcs == L2CAP_CFG_FCS_BYPASS)
-          p_ccb->bypass_fcs |= L2CAP_CFG_FCS_PEER;
       }
 
       max_retrans_size = p_ccb->ertm_info.fcr_tx_buf_size - sizeof(BT_HDR) -
