@@ -262,7 +262,6 @@ typedef struct t_l2c_ccb {
   uint8_t flags;
 
   tL2CAP_CFG_INFO our_cfg;          /* Our saved configuration options */
-  tL2CAP_CH_CFG_BITS peer_cfg_bits; /* Store what peer wants to configure */
   tL2CAP_CFG_INFO peer_cfg;         /* Peer's saved configuration options */
 
   fixed_queue_t* xmit_hold_q; /* Transmit data hold queue */

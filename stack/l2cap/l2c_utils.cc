@@ -1335,9 +1335,6 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
 
   if (p_lcb) l2cu_enqueue_ccb(p_ccb);
 
-  /* clear what peer wants to configure */
-  p_ccb->peer_cfg_bits = 0;
-
   /* Put in default values for configuration */
   memset(&p_ccb->our_cfg, 0, sizeof(tL2CAP_CFG_INFO));
   memset(&p_ccb->peer_cfg, 0, sizeof(tL2CAP_CFG_INFO));
@@ -1770,7 +1767,6 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       /* Save the accepted value in case of renegotiation */
       p_ccb->peer_cfg.mtu = p_cfg->mtu;
       p_ccb->peer_cfg.mtu_present = true;
-      p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_MTU;
     } else /* Illegal MTU value */
     {
       p_cfg->mtu = L2CAP_MIN_MTU;
@@ -1792,7 +1788,6 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     {
       p_ccb->peer_cfg.flush_to_present = true;
       p_ccb->peer_cfg.flush_to = p_cfg->flush_to;
-      p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_FLUSH_TO;
     }
   }
   /* Reload flush_to from a previously accepted config request */
@@ -1809,7 +1804,6 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     if (p_cfg->qos.service_type <= SVC_TYPE_GUARANTEED) {
       p_ccb->peer_cfg.qos = p_cfg->qos;
       p_ccb->peer_cfg.qos_present = true;
-      p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_QOS;
     } else /* Illegal service type value */
     {
       p_cfg->qos.service_type = SVC_TYPE_BEST_EFFORT;
