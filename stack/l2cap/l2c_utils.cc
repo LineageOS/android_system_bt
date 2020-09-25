@@ -1927,12 +1927,9 @@ void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     p_ccb->fcrb.max_held_acks = p_cfg->fcr.tx_win_sz / 3;
 
     /* Include FCS option only if peer can handle it */
-    if (p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_NO_CRC) {
-      /* FCS check can be bypassed if peer also desires to bypass */
-      if (p_cfg->fcs_present && p_cfg->fcs == L2CAP_CFG_FCS_BYPASS)
-        p_ccb->bypass_fcs |= L2CAP_CFG_FCS_OUR;
-    } else
+    if ((p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_NO_CRC) == 0) {
       p_cfg->fcs_present = false;
+    }
   } else {
     p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
   }
