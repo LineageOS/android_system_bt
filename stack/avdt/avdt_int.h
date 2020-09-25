@@ -647,7 +647,6 @@ class AvdtpTransportChannel {
   AvdtpTransportChannel()
       : peer_mtu(0),
         my_mtu(0),
-        my_flush_to(0),
         lcid(0),
         tcid(0),
         ccb_idx(0),
@@ -658,7 +657,6 @@ class AvdtpTransportChannel {
   void Reset() {
     peer_mtu = 0;
     my_mtu = 0;
-    my_flush_to = 0;
     lcid = 0;
     tcid = 0;
     ccb_idx = 0;
@@ -669,7 +667,6 @@ class AvdtpTransportChannel {
 
   uint16_t peer_mtu;     // L2CAP MTU of the peer device
   uint16_t my_mtu;       // Our MTU for this channel
-  uint16_t my_flush_to;  // Our flush timeout for this channel
   uint16_t lcid;
   uint8_t tcid;       // Transport channel ID
   uint8_t ccb_idx;    // Channel control block for with this transport channel
