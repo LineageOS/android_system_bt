@@ -202,6 +202,11 @@ typedef struct {
   tGATT_STATUS status;
 } tBTA_GATTC_CONN_UPDATE;
 
+typedef struct {
+  RawAddress remote_bda;
+  uint16_t conn_id;
+} tBTA_GATTC_SERVICE_CHANGED;
+
 typedef union {
   tGATT_STATUS status;
 
@@ -220,6 +225,7 @@ typedef union {
   tBTA_GATTC_CONGEST congest;
   tBTA_GATTC_PHY_UPDATE phy_update;
   tBTA_GATTC_CONN_UPDATE conn_update;
+  tBTA_GATTC_SERVICE_CHANGED service_changed;
 } tBTA_GATTC;
 
 /* GATTC enable callback function */
