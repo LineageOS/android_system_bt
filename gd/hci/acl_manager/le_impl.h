@@ -90,6 +90,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       case SubeventCode::DATA_LENGTH_CHANGE:
         on_data_length_change(event_packet);
         break;
+      case SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
+        on_remote_connection_parameter_request(event_packet);
+        break;
       default:
         LOG_ALWAYS_FATAL("Unhandled event code %s", SubeventCodeText(code).c_str());
     }
@@ -273,6 +276,27 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         data_length_view.GetMaxTxTime(),
         data_length_view.GetMaxRxOctets(),
         data_length_view.GetMaxRxTime());
+  }
+
+  void on_remote_connection_parameter_request(LeMetaEventView view) {
+    auto request_view = LeRemoteConnectionParameterRequestView::Create(view);
+    if (!request_view.IsValid()) {
+      LOG_ERROR("Invalid packet");
+      return;
+    }
+
+    // TODO: this is blindly accepting any parameters, just so we don't hang connection
+    // have proper parameter negotiation
+    le_acl_connection_interface_->EnqueueCommand(
+        LeRemoteConnectionParameterRequestReplyBuilder::Create(
+            request_view.GetConnectionHandle(),
+            request_view.GetIntervalMin(),
+            request_view.GetIntervalMax(),
+            request_view.GetLatency(),
+            request_view.GetTimeout(),
+            0,
+            0),
+        handler_->BindOnce([](CommandCompleteView status) {}));
   }
 
   void add_device_to_connect_list(AddressWithType address_with_type) {
