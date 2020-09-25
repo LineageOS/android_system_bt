@@ -66,10 +66,6 @@ void AVCT_Register() {
   /* Include the browsing channel which uses eFCR */
   tL2CAP_ERTM_INFO ertm_info;
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
-  ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.fcr_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.fcr_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
 
   L2CA_Register2(AVCT_BR_PSM, avct_l2c_br_appl, true /*enable_snoop*/,
                  &ertm_info, kAvrcBrMtu, AVCT_MIN_BROWSE_MTU,

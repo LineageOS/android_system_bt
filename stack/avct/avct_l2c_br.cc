@@ -145,10 +145,6 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
   /* Set the FCR options: Browsing channel mandates ERTM */
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
-  ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.fcr_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.fcr_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
 
   /* Send L2CAP connect rsp */
   L2CA_ErtmConnectRsp(bd_addr, id, lcid, result, 0, &ertm_info);

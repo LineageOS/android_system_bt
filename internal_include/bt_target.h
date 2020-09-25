@@ -168,16 +168,6 @@
 #define L2CAP_CMD_BUF_SIZE BT_SMALL_BUFFER_SIZE
 #endif
 
-/* Sends L2CAP segmented packets in ERTM mode */
-#ifndef L2CAP_FCR_TX_BUF_SIZE
-#define L2CAP_FCR_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/* Receives L2CAP segmented packets in ERTM mode */
-#ifndef L2CAP_FCR_RX_BUF_SIZE
-#define L2CAP_FCR_RX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
 #ifndef L2CAP_FCR_ERTM_BUF_SIZE
 #define L2CAP_FCR_ERTM_BUF_SIZE (10240 + 24)
 #endif
