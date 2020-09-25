@@ -99,7 +99,7 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
     cfg.mtu_present = true;
     cfg.mtu = kSignalMtu;
     cfg.flush_to_present = true;
-    cfg.flush_to = p_tbl->my_flush_to;
+    cfg.flush_to = L2CAP_DEFAULT_FLUSH_TO;
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
@@ -140,7 +140,7 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
     cfg.mtu_present = true;
     cfg.mtu = kSignalMtu;
     cfg.flush_to_present = true;
-    cfg.flush_to = p_tbl->my_flush_to;
+    cfg.flush_to = L2CAP_DEFAULT_FLUSH_TO;
     L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     avdt_l2c_disconnect(p_tbl->lcid);
@@ -182,7 +182,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       /* allocate and set up entry; first channel is always signaling */
       p_tbl = avdt_ad_tc_tbl_alloc(p_ccb);
       p_tbl->my_mtu = kSignalMtu;
-      p_tbl->my_flush_to = L2CAP_DEFAULT_FLUSH_TO;
       p_tbl->tcid = AVDT_CHAN_SIG;
       p_tbl->lcid = lcid;
       p_tbl->id = id;
@@ -249,7 +248,7 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     cfg.mtu_present = true;
     cfg.mtu = p_tbl->my_mtu;
     cfg.flush_to_present = true;
-    cfg.flush_to = p_tbl->my_flush_to;
+    cfg.flush_to = L2CAP_DEFAULT_FLUSH_TO;
     L2CA_ConfigReq(lcid, &cfg);
   }
 }
@@ -287,7 +286,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
           cfg.mtu_present = true;
           cfg.mtu = p_tbl->my_mtu;
           cfg.flush_to_present = true;
-          cfg.flush_to = p_tbl->my_flush_to;
+          cfg.flush_to = L2CAP_DEFAULT_FLUSH_TO;
           L2CA_ConfigReq(lcid, &cfg);
         } else {
           p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx);
