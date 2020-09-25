@@ -448,22 +448,6 @@ extern bool L2CA_GetPeerLECocConfig(uint16_t lcid,
 
 /*******************************************************************************
  *
- * Function         L2CA_ErtmConnectRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP connection, for which they had gotten an connect
- *                  indication callback, and for which the higher layer wants
- *                  to use Enhanced Retransmission Mode.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-extern bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
-                                uint16_t lcid, uint16_t result, uint16_t status,
-                                tL2CAP_ERTM_INFO* p_ertm_info);
-
-/*******************************************************************************
- *
  * Function         L2CA_DisconnectReq
  *
  * Description      Higher layers call this function to disconnect a channel.
