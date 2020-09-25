@@ -1358,7 +1358,6 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
   p_ccb->our_cfg.qos.delay_variation = p_ccb->peer_cfg.qos.delay_variation =
       L2CAP_DEFAULT_DELAY;
 
-  p_ccb->bypass_fcs = 0;
   memset(&p_ccb->ertm_info, 0, sizeof(tL2CAP_ERTM_INFO));
   p_ccb->peer_cfg_already_rejected = false;
   p_ccb->fcr_cfg_tries = L2CAP_MAX_FCR_CFG_TRIES;
