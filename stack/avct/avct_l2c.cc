@@ -142,7 +142,7 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     /* Send L2CAP config req */
     memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
     cfg.mtu_present = true;
-    cfg.mtu = avct_cb.mtu;
+    cfg.mtu = kAvrcMtu;
     L2CA_ConfigReq(lcid, &cfg);
     AVCT_TRACE_DEBUG("avct_l2c snd Cfg Req");
   }
@@ -181,7 +181,7 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
         /* Send L2CAP config req */
         memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
         cfg.mtu_present = true;
-        cfg.mtu = avct_cb.mtu;
+        cfg.mtu = kAvrcMtu;
         L2CA_ConfigReq(lcid, &cfg);
         AVCT_TRACE_DEBUG("avct_l2c snd Cfg Req");
       }
