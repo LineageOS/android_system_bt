@@ -463,13 +463,6 @@ static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   else
     p_hcon->rem_mtu_size = p_cfg->mtu;
 
-  /* For now, always accept configuration from the other side */
-  p_cfg->flush_to_present = false;
-  p_cfg->mtu_present = false;
-  p_cfg->result = L2CAP_CFG_OK;
-
-  L2CA_ConfigRsp(l2cap_cid, p_cfg);
-
   if (l2cap_cid == p_hcon->ctrl_cid) {
     p_hcon->conn_flags |= HID_CONN_FLAGS_HIS_CTRL_CFG_DONE;
     if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) &&

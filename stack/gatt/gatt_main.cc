@@ -690,11 +690,6 @@ void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   else
     p_tcb->payload_size = L2CAP_DEFAULT_MTU;
 
-  /* send L2CAP configure response */
-  memset(p_cfg, 0, sizeof(tL2CAP_CFG_INFO));
-  p_cfg->result = L2CAP_CFG_OK;
-  L2CA_ConfigRsp(lcid, p_cfg);
-
   /* if not first config ind */
   if ((p_tcb->ch_flags & GATT_L2C_CFG_IND_DONE)) return;
 

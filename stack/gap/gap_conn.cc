@@ -781,14 +781,6 @@ static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   } else
     p_ccb->rem_mtu_size = p_cfg->mtu;
 
-  /* For now, always accept configuration from the other side */
-  p_cfg->flush_to_present = false;
-  p_cfg->mtu_present = false;
-  p_cfg->result = L2CAP_CFG_OK;
-  p_cfg->fcs_present = false;
-
-  L2CA_ConfigRsp(l2cap_cid, p_cfg);
-
   p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
 
   gap_checks_con_flags(p_ccb);
