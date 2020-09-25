@@ -135,7 +135,7 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       p_bcb->allocated = p_lcb->allocated; /* copy the index from lcb */
 
       result = L2CAP_CONN_OK;
-      cfg.mtu = avct_cb.mtu_br;
+      cfg.mtu = kAvrcBrMtu;
 
       cfg.fcr_present = true;
       cfg.fcr = avct_l2c_br_fcr_opts_def;
@@ -200,7 +200,7 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
 
   cfg.mtu_present = true;
-  cfg.mtu = avct_cb.mtu_br;
+  cfg.mtu = kAvrcBrMtu;
 
   cfg.fcr_present = true;
   cfg.fcr = avct_l2c_br_fcr_opts_def;
