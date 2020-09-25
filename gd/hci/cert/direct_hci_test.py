@@ -182,6 +182,8 @@ class DirectHciTest(GdBaseTestClass):
 
     def test_le_connection_dut_advertises(self):
         self.dut_hci.register_for_le_events(hci_packets.SubeventCode.CONNECTION_COMPLETE)
+        self.dut_hci.register_for_le_events(hci_packets.SubeventCode.ADVERTISING_SET_TERMINATED)
+        self.dut_hci.register_for_le_events(hci_packets.SubeventCode.ENHANCED_CONNECTION_COMPLETE)
         # Cert Connects
         self.send_hal_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
         phy_scan_params = DirectHciTest._create_phy_scan_params()
@@ -213,7 +215,7 @@ class DirectHciTest(GdBaseTestClass):
 
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-        gap_name.data = list(bytes(b'Im_The_DUT!'))  # TODO: Fix and remove !
+        gap_name.data = list(bytes(b'Im_The_DUT'))
 
         self.dut_hci.send_command_with_complete(
             hci_packets.LeSetExtendedAdvertisingDataBuilder(
@@ -255,6 +257,7 @@ class DirectHciTest(GdBaseTestClass):
 
     def test_le_connect_list_connection_cert_advertises(self):
         self.dut_hci.register_for_le_events(hci_packets.SubeventCode.CONNECTION_COMPLETE)
+        self.dut_hci.register_for_le_events(hci_packets.SubeventCode.ENHANCED_CONNECTION_COMPLETE)
         # DUT Connects
         self.dut_hci.send_command_with_complete(hci_packets.LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
         self.dut_hci.send_command_with_complete(
