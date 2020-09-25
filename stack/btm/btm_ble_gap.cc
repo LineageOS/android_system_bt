@@ -55,6 +55,12 @@ extern tBTM_CB btm_cb;
 extern void btm_inq_remote_name_timer_timeout(void* data);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
+extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
+                                               uint8_t* p_addr_type,
+                                               bool refresh);
+extern void btm_ble_batchscan_init(void);
+extern void btm_ble_adv_filter_init(void);
+extern void btm_clear_all_pending_le_entry(void);
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
 #define MIN_ADV_LENGTH 2
@@ -2161,13 +2167,6 @@ static void btm_ble_inquiry_timer_timeout(UNUSED_ATTR void* data) {
 
 static void btm_ble_observer_timer_timeout(UNUSED_ATTR void* data) {
   btm_ble_stop_observe();
-}
-
-void btm_ble_refresh_raddr_timer_timeout(UNUSED_ATTR void* data) {
-  if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
-    /* refresh the random addr */
-    btm_gen_resolvable_private_addr(base::Bind(&btm_gen_resolve_paddr_low));
-  }
 }
 
 /*******************************************************************************
