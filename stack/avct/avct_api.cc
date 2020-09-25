@@ -53,19 +53,15 @@ tAVCT_CB avct_cb;
  * Returns          void
  *
  ******************************************************************************/
-void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br) {
+void AVCT_Register(uint16_t mtu_br) {
   AVCT_TRACE_API("AVCT_Register");
 
   /* initialize AVCTP data structures */
   memset(&avct_cb, 0, sizeof(tAVCT_CB));
 
-  if (mtu < AVCT_MIN_CONTROL_MTU) mtu = AVCT_MIN_CONTROL_MTU;
-  /* store mtu */
-  avct_cb.mtu = mtu;
-
   /* register PSM with L2CAP */
   L2CA_Register2(AVCT_PSM, avct_l2c_appl, true /* enable_snoop */, nullptr,
-                 avct_cb.mtu, BTA_SEC_AUTHENTICATE);
+                 kAvrcMtu, BTA_SEC_AUTHENTICATE);
 
   /* Include the browsing channel which uses eFCR */
   tL2CAP_ERTM_INFO ertm_info;
