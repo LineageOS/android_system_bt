@@ -107,7 +107,6 @@ typedef struct {
 
   uint16_t l2cap_cid;
   RawAddress rem_bda;
-  uint16_t rem_mtu_size;
   alarm_t* conn_timer;
   fixed_queue_t* xmit_q;
 
