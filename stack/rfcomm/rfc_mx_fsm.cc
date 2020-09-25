@@ -629,14 +629,6 @@ static void rfc_mx_conf_ind(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg) {
     p_mcb->peer_l2cap_mtu = L2CAP_DEFAULT_MTU - RFCOMM_MIN_OFFSET - 1;
   }
 
-  p_cfg->mtu_present = false;
-  p_cfg->flush_to_present = false;
-  p_cfg->qos_present = false;
-
-  p_cfg->result = L2CAP_CFG_OK;
-
-  L2CA_ConfigRsp(p_mcb->lcid, p_cfg);
-
   p_mcb->peer_cfg_rcvd = true;
   if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->local_cfg_sent) {
     if (p_mcb->is_initiator) {
