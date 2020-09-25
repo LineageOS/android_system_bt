@@ -766,6 +766,10 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             p_ccb->local_cid, (p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT));
         (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
         l2c_csm_send_config_rsp_ok(p_ccb);
+        if (p_ccb->config_done & OB_CFG_DONE) {
+          (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(
+              p_ccb->local_cid, p_ccb->remote_config_rsp_result);
+        }
       } else if (cfg_result == L2CAP_PEER_CFG_DISCONNECT) {
         /* Disconnect if channels are incompatible */
         L2CAP_TRACE_EVENT("L2CAP - incompatible configurations disconnect");
@@ -832,7 +836,11 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
       L2CAP_TRACE_API("L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x",
                       p_ccb->local_cid);
-      (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg->result);
+      p_ccb->remote_config_rsp_result = p_cfg->result;
+      if (p_ccb->config_done & IB_CFG_DONE) {
+        (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
+                                                p_cfg->result);
+      }
       break;
 
     case L2CEVT_L2CAP_CONFIG_RSP_NEG: /* Peer config error rsp */
