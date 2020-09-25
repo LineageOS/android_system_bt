@@ -60,6 +60,12 @@ typedef struct {
   bool in_use;
   bool link_up_issued;
   tBT_TRANSPORT transport;
+  bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
+  bool is_transport_ble() const { return transport == BT_TRANSPORT_LE; }
+  bool is_transport_valid() const {
+    return is_transport_ble() || is_transport_br_edr();
+  }
+
   uint16_t clock_offset;
   uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
