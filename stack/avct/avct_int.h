@@ -134,7 +134,6 @@ typedef struct {
   tAVCT_LCB lcb[AVCT_NUM_LINKS]; /* link control blocks */
   tAVCT_BCB bcb[AVCT_NUM_LINKS]; /* browse control blocks */
   tAVCT_CCB ccb[AVCT_NUM_CONN];  /* connection control blocks */
-  uint16_t mtu_br;               /* our L2CAP MTU for the Browsing channel */
   uint8_t trace_level;           /* trace level */
 } tAVCT_CB;
 
@@ -223,4 +222,6 @@ void avct_l2c_disconnect(uint16_t lcid, uint16_t result);
 void avct_l2c_br_disconnect(uint16_t lcid, uint16_t result);
 
 constexpr uint16_t kAvrcMtu = 512;
+constexpr uint16_t kAvrcBrMtu = 1008;
+
 #endif /* AVCT_INT_H */
