@@ -1054,12 +1054,9 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       break;
 
     case L2CEVT_L2CA_CONFIG_REQ: /* Upper layer config req   */
-      p_ccb->chnl_state = CST_CONFIG;
-      p_ccb->config_done &= ~CFG_DONE_MASK;
-      l2cu_process_our_cfg_req(p_ccb, (tL2CAP_CFG_INFO*)p_data);
-      l2cu_send_peer_config_req(p_ccb, (tL2CAP_CFG_INFO*)p_data);
-      alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
-                         l2c_ccb_timer_timeout, p_ccb);
+      L2CAP_TRACE_ERROR(
+          "Dropping L2CAP re-config request because there is no usage and "
+          "should not be invoked");
       break;
 
     case L2CEVT_TIMEOUT:
