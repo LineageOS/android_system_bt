@@ -376,7 +376,6 @@ typedef void (*tBTA_AV_ACT)(tBTA_AV_SCB* p_cb, tBTA_AV_DATA* p_data);
 /* AV configuration structure */
 typedef struct {
   uint32_t company_id;  /* AVRCP Company ID */
-  uint16_t avrc_br_mtu; /* AVRCP MTU at L2CAP for browsing channel */
   uint16_t avrc_ct_cat; /* AVRCP controller categories */
   uint16_t avrc_tg_cat; /* AVRCP target categories */
   uint16_t sig_mtu;     /* AVDTP signaling channel MTU at L2CAP */
