@@ -64,7 +64,7 @@ static void l2c_csm_send_config_req(uint16_t local_cid, uint16_t mtu,
     config.fcr_present = true;
     config.fcr = kDefaultErtmOptions;
   }
-  L2CA_ConfigReq2(local_cid, &config);
+  L2CA_ConfigReq(local_cid, &config);
 }
 
 /*******************************************************************************
