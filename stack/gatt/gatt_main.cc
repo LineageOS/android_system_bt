@@ -102,7 +102,6 @@ void gatt_init(void) {
   connection_manager::reset(true);
   memset(&fixed_reg, 0, sizeof(tL2CAP_FIXED_CHNL_REG));
 
-  gatt_cb.def_mtu_size = GATT_DEF_BLE_MTU_SIZE;
   gatt_cb.sign_op_queue = fixed_queue_new(SIZE_MAX);
   gatt_cb.srv_chg_clt_q = fixed_queue_new(SIZE_MAX);
   /* First, register fixed L2CAP channel for ATT over BLE */
@@ -115,7 +114,7 @@ void gatt_init(void) {
 
   /* Now, register with L2CAP for ATT PSM over BR/EDR */
   if (!L2CA_Register2(BT_PSM_ATT, dyn_info, false /* enable_snoop */, nullptr,
-                      gatt_cb.def_mtu_size, BTM_SEC_NONE)) {
+                      GATT_MAX_MTU_SIZE, BTM_SEC_NONE)) {
     LOG(ERROR) << "ATT Dynamic Registration failed";
   }
 
