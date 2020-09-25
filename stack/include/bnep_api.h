@@ -176,26 +176,6 @@ typedef struct {
 
 } tBNEP_REGISTER;
 
-/* This is the structure used by profile to get the status of BNEP */
-typedef struct {
-#define BNEP_STATUS_FAILE 0
-#define BNEP_STATUS_CONNECTED 1
-  uint8_t con_status;
-
-  uint16_t l2cap_cid;
-  RawAddress rem_bda;
-  uint16_t rem_mtu_size;
-  uint16_t xmit_q_depth;
-
-  uint16_t sent_num_filters;
-  uint16_t sent_mcast_filters;
-  uint16_t rcvd_num_filters;
-  uint16_t rcvd_mcast_filters;
-  bluetooth::Uuid src_uuid;
-  bluetooth::Uuid dst_uuid;
-
-} tBNEP_STATUS;
-
 /*****************************************************************************
  *  External Function Declarations
  ****************************************************************************/
@@ -415,21 +395,5 @@ extern uint8_t BNEP_SetTraceLevel(uint8_t new_level);
  *
  ******************************************************************************/
 extern void BNEP_Init(void);
-
-/*******************************************************************************
- *
- * Function         BNEP_GetStatus
- *
- * Description      This function gets the status information for BNEP
- *                  connection
- *
- * Returns          BNEP_SUCCESS            - if the status is available
- *                  BNEP_NO_RESOURCES       - if no structure is passed for
- *                                            output
- *                  BNEP_WRONG_HANDLE       - if the handle is invalid
- *                  BNEP_WRONG_STATE        - if not in connected state
- *
- ******************************************************************************/
-extern tBNEP_RESULT BNEP_GetStatus(uint16_t handle, tBNEP_STATUS* p_status);
 
 #endif
