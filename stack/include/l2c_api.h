@@ -159,15 +159,6 @@ struct tL2CAP_LE_CFG_INFO {
   uint16_t credits = L2CAP_LE_CREDIT_DEFAULT;
 };
 
-/* L2CAP channel configured field bitmap */
-#define L2CAP_CH_CFG_MASK_MTU 0x0001
-#define L2CAP_CH_CFG_MASK_QOS 0x0002
-#define L2CAP_CH_CFG_MASK_FLUSH_TO 0x0004
-#define L2CAP_CH_CFG_MASK_FCR 0x0008
-#define L2CAP_CH_CFG_MASK_FCS 0x0010
-
-typedef uint16_t tL2CAP_CH_CFG_BITS;
-
 /*********************************
  *  Callback Functions Prototypes
  *********************************/
