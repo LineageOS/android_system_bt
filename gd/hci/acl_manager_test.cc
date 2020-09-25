@@ -499,6 +499,9 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     MOCK_METHOD1(OnMasterLinkKeyComplete, void(KeyFlag flag));
     MOCK_METHOD1(OnRoleChange, void(Role new_role));
     MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
+    MOCK_METHOD3(
+        OnReadRemoteVersionInformationComplete,
+        void(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version));
   } mock_connection_management_callbacks_;
 };
 

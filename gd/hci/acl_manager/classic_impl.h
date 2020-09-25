@@ -451,6 +451,12 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   void on_read_remote_version_information_complete(EventPacketView packet) {
     auto view = ReadRemoteVersionInformationCompleteView::Create(packet);
     ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");
+    if (view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_remote_version_information_complete with error code %s", error_code.c_str());
+      return;
+    }
     LOG_INFO("UNIMPLEMENTED called");
   }
 

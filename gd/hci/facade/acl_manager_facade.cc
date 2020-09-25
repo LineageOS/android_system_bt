@@ -494,6 +494,15 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       disconnection.set_event(builder_to_string(std::move(builder)));
       event_stream_->OnIncomingEvent(disconnection);
     }
+    void OnReadRemoteVersionInformationComplete(
+        uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {
+      LOG_DEBUG(
+          "OnReadRemoteVersionInformationComplete lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
+          lmp_version,
+          manufacturer_name,
+          sub_version);
+    }
+
     uint16_t handle_;
     std::shared_ptr<ClassicAclConnection> connection_;
     std::shared_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>> event_stream_;
