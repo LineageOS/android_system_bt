@@ -373,7 +373,6 @@ typedef struct {
   fixed_queue_t* srv_chg_clt_q; /* service change clients queue */
   tGATT_REG cl_rcb[GATT_MAX_APPS];
   tGATT_CLCB clcb[GATT_CL_MAX_LCB]; /* connection link control block*/
-  uint16_t def_mtu_size;
 
 #if (GATT_CONFORMANCE_TESTING == TRUE)
   bool enable_err_rsp;

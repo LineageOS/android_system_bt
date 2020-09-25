@@ -742,14 +742,14 @@ tHID_STATUS hidd_conn_reg(void) {
   hd_cb.l2cap_intr_cfg.mtu = HID_DEV_MTU_SIZE;
 
   if (!L2CA_Register2(HID_PSM_CONTROL, dev_reg_info, false /* enable_snoop */,
-                      nullptr, hd_cb.l2cap_cfg.mtu,
+                      nullptr, HID_DEV_MTU_SIZE,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     HIDD_TRACE_ERROR("HID Control (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
   }
 
   if (!L2CA_Register2(HID_PSM_INTERRUPT, dev_reg_info, false /* enable_snoop */,
-                      nullptr, hd_cb.l2cap_intr_cfg.mtu,
+                      nullptr, HID_DEV_MTU_SIZE,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDD_TRACE_ERROR("HID Interrupt (device) registration failed");
