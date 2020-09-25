@@ -174,6 +174,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   void OnMasterLinkKeyComplete(hci::KeyFlag key_flag) override;
   void OnRoleChange(hci::Role new_role) override;
   void OnDisconnection(hci::ErrorCode reason) override;
+  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
 
  private:
   friend class DumpsysHelper;

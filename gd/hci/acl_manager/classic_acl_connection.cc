@@ -119,6 +119,10 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   void OnDisconnection(ErrorCode reason) {
     SAVE_OR_CALL(OnDisconnection, reason);
   }
+  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+    SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, lmp_version, manufacturer_name, sub_version);
+  }
+
 #undef SAVE_OR_CALL
 
   void on_role_discovery_complete(CommandCompleteView view) {
