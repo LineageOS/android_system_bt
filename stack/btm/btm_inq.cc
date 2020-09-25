@@ -49,6 +49,14 @@
 #include "stack/include/inq_hci_link_interface.h"
 
 extern void btm_inq_remote_name_timer_timeout(void* data);
+extern tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
+                                            tBTM_CMPL_CB* p_cb);
+extern bool btm_ble_cancel_remote_name(const RawAddress& remote_bda);
+extern tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode);
+extern tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode);
+
+extern tBTM_STATUS btm_ble_start_inquiry(uint8_t duration);
+extern void btm_ble_stop_inquiry(void);
 
 using bluetooth::Uuid;
 
