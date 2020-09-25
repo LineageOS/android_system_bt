@@ -3130,7 +3130,7 @@ packet LeSetPeriodicAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_PER
   operation : Operation,
   _reserved_ : 5,
   _size_(scan_response_data) : 8,
-  scan_response_data : 8[],
+  scan_response_data : GapData[],
 }
 
 packet LeSetPeriodicAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_DATA) {
