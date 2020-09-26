@@ -76,9 +76,7 @@ static void hidd_check_config_done() {
 
   p_hcon = &hd_cb.device.conn;
 
-  if (((p_hcon->conn_flags & HID_CONN_FLAGS_ALL_CONFIGURED) ==
-       HID_CONN_FLAGS_ALL_CONFIGURED) &&
-      (p_hcon->conn_state == HID_CONN_STATE_CONFIG)) {
+  if (p_hcon->conn_state == HID_CONN_STATE_CONFIG) {
     p_hcon->conn_state = HID_CONN_STATE_CONNECTED;
 
     hd_cb.device.state = HIDD_DEV_CONNECTED;
@@ -335,34 +333,6 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
     p_hcon->rem_mtu_size = HID_DEV_MTU_SIZE;
   else
     p_hcon->rem_mtu_size = p_cfg->mtu;
-
-  // update flags
-  if (cid == p_hcon->ctrl_cid) {
-    p_hcon->conn_flags |= HID_CONN_FLAGS_HIS_CTRL_CFG_DONE;
-
-    if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) &&
-        (p_hcon->conn_flags & HID_CONN_FLAGS_MY_CTRL_CFG_DONE)) {
-      p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;
-      if ((p_hcon->intr_cid =
-               L2CA_ConnectReq2(HID_PSM_INTERRUPT, hd_cb.device.addr,
-                                BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) == 0) {
-        hidd_conn_disconnect();
-        p_hcon->conn_state = HID_CONN_STATE_UNUSED;
-
-        HIDD_TRACE_WARNING("%s: could not start L2CAP connection for INTR",
-                           __func__);
-        hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE,
-                       HID_ERR_L2CAP_FAILED, NULL);
-        return;
-      } else {
-        p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
-      }
-    }
-  } else {
-    p_hcon->conn_flags |= HID_CONN_FLAGS_HIS_INTR_CFG_DONE;
-  }
-
-  hidd_check_config_done();
 }
 
 /*******************************************************************************
@@ -399,10 +369,7 @@ static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
 
   // update flags
   if (cid == p_hcon->ctrl_cid) {
-    p_hcon->conn_flags |= HID_CONN_FLAGS_MY_CTRL_CFG_DONE;
-
-    if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) &&
-        (p_hcon->conn_flags & HID_CONN_FLAGS_HIS_CTRL_CFG_DONE)) {
+    if (p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) {
       p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;
       if ((p_hcon->intr_cid =
                L2CA_ConnectReq2(HID_PSM_INTERRUPT, hd_cb.device.addr,
@@ -419,8 +386,6 @@ static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
         p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
       }
     }
-  } else {
-    p_hcon->conn_flags |= HID_CONN_FLAGS_MY_INTR_CFG_DONE;
   }
 
   hidd_check_config_done();

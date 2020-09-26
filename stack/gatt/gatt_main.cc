@@ -638,12 +638,6 @@ void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result) {
     return;
   }
 
-  /* update flags */
-  p_tcb->ch_flags |= GATT_L2C_CFG_CFM_DONE;
-
-  /* if configuration not complete */
-  if (!(p_tcb->ch_flags & GATT_L2C_CFG_IND_DONE)) return;
-
   gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
 
   tGATTS_SRV_CHG* p_srv_chg_clt =
@@ -661,7 +655,6 @@ void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result) {
 
 /** This is the L2CAP config indication callback function */
 void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
-  tGATTS_SRV_CHG* p_srv_chg_clt = NULL;
   /* look up clcb for this channel */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;
@@ -672,27 +665,6 @@ void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     p_tcb->payload_size = p_cfg->mtu;
   else
     p_tcb->payload_size = L2CAP_DEFAULT_MTU;
-
-  /* if not first config ind */
-  if ((p_tcb->ch_flags & GATT_L2C_CFG_IND_DONE)) return;
-
-  /* update flags */
-  p_tcb->ch_flags |= GATT_L2C_CFG_IND_DONE;
-
-  /* if configuration not complete */
-  if ((p_tcb->ch_flags & GATT_L2C_CFG_CFM_DONE) == 0) return;
-
-  gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
-  p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(p_tcb->peer_bda);
-  if (p_srv_chg_clt != NULL) {
-    gatt_chk_srv_chg(p_srv_chg_clt);
-  } else {
-    if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
-      gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
-  }
-
-  /* send callback */
-  gatt_send_conn_cback(p_tcb);
 }
 
 /** This is the L2CAP disconnect indication callback function */
