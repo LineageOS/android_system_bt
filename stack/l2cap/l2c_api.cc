@@ -917,20 +917,7 @@ bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
     return (false);
   }
 
-  if ((p_cfg->result == L2CAP_CFG_OK) || (p_cfg->result == L2CAP_CFG_PENDING))
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP, p_cfg);
-  else {
-    p_cfg->fcr_present =
-        false; /* FCR options already negotiated before this point */
-
-    /* Clear out any cached options that are being returned as an error
-     * (excluding FCR) */
-    if (p_cfg->mtu_present) p_ccb->peer_cfg.mtu_present = false;
-    if (p_cfg->flush_to_present) p_ccb->peer_cfg.flush_to_present = false;
-    if (p_cfg->qos_present) p_ccb->peer_cfg.qos_present = false;
-
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP_NEG, p_cfg);
-  }
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP, p_cfg);
 
   return (true);
 }
