@@ -245,7 +245,6 @@ typedef struct t_l2c_ccb {
   alarm_t* l2c_ccb_timer; /* CCB Timer Entry */
 
   tL2C_RCB* p_rcb;      /* Registration CB for this Channel */
-  bool should_free_rcb; /* True if RCB was allocated on the heap */
 
 #define IB_CFG_DONE 0x01
 #define OB_CFG_DONE 0x02
