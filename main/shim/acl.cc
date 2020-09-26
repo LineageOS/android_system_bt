@@ -183,6 +183,14 @@ class ClassicShimAclConnection
                          static_cast<uint8_t>(reason));
   }
 
+  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version,
+                                              uint16_t manufacturer_name,
+                                              uint16_t sub_version) override {
+    LOG_DEBUG(
+        "UNIMPLEMENTED lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
+        lmp_version, manufacturer_name, sub_version);
+  }
+
  private:
   std::unique_ptr<hci::acl_manager::ClassicAclConnection> connection_;
 };

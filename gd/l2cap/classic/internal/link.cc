@@ -378,6 +378,14 @@ void Link::OnDisconnection(hci::ErrorCode reason) {
   OnAclDisconnected(reason);
   link_manager_->OnDisconnect(GetDevice().GetAddress(), reason);
 }
+void Link::OnReadRemoteVersionInformationComplete(
+    uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+  LOG_DEBUG(
+      "UNIMPLEMENTED lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
+      lmp_version,
+      manufacturer_name,
+      sub_version);
+}
 
 }  // namespace internal
 }  // namespace classic
