@@ -407,10 +407,10 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
       p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
 
     if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
+      p_ccb->ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
 
     if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
+      p_ccb->ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
 
     p_ccb->max_rx_mtu =
         p_ertm_info->user_rx_buf_size -
@@ -830,10 +830,10 @@ bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
       p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
 
     if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
+      p_ccb->ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
 
     if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
+      p_ccb->ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
 
     p_ccb->max_rx_mtu =
         p_ertm_info->user_rx_buf_size -

@@ -168,14 +168,6 @@
 #define L2CAP_CMD_BUF_SIZE BT_SMALL_BUFFER_SIZE
 #endif
 
-#ifndef L2CAP_USER_TX_BUF_SIZE
-#define L2CAP_USER_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-#ifndef L2CAP_USER_RX_BUF_SIZE
-#define L2CAP_USER_RX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
 /* Sends L2CAP segmented packets in ERTM mode */
 #ifndef L2CAP_FCR_TX_BUF_SIZE
 #define L2CAP_FCR_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
@@ -206,11 +198,6 @@
 
 #ifndef OBX_LRG_DATA_BUF_SIZE
 #define OBX_LRG_DATA_BUF_SIZE (8080 + 26)
-#endif
-
-/* Used to send data to L2CAP. */
-#ifndef GAP_DATA_BUF_SIZE
-#define GAP_DATA_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
 #endif
 
 /* BNEP data and protocol messages. */
