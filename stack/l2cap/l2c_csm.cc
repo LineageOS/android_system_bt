@@ -832,7 +832,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
       L2CAP_TRACE_API("L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x",
                       p_ccb->local_cid);
-      (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg);
+      (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg->result);
       break;
 
     case L2CEVT_L2CAP_CONFIG_RSP_NEG: /* Peer config error rsp */
@@ -844,7 +844,8 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         L2CAP_TRACE_API(
             "L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x, Failure: %d",
             p_ccb->local_cid, p_cfg->result);
-        (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg);
+        (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
+                                                p_cfg->result);
       }
       break;
 

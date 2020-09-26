@@ -59,7 +59,7 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
                                    uint8_t l2cap_id);
 static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
+static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result);
 static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void hidh_l2cif_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void hidh_l2cif_disconnect(uint16_t l2cap_cid);
@@ -504,13 +504,13 @@ static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
+static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   uint8_t dhandle;
   tHID_CONN* p_hcon = NULL;
   uint32_t reason;
 
   HIDH_TRACE_EVENT("HID-Host Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                   p_cfg->result);
+                   result);
 
   /* Find CCB based on CID */
   dhandle = find_conn_by_cid(l2cap_cid);
@@ -523,9 +523,9 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   /* If configuration failed, disconnect the channel(s) */
-  if (p_cfg->result != L2CAP_CFG_OK) {
+  if (result != L2CAP_CFG_OK) {
     hidh_conn_disconnect(dhandle);
-    reason = HID_L2CAP_CFG_FAIL | (uint32_t)p_cfg->result;
+    reason = HID_L2CAP_CFG_FAIL | (uint32_t)result;
     hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE,
                    reason, NULL);
     return;

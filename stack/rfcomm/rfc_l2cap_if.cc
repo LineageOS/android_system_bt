@@ -45,7 +45,7 @@ static void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
                               uint16_t psm, uint8_t id);
 static void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t err);
 static void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
-static void RFCOMM_ConfigCnf(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
+static void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t result);
 static void RFCOMM_DisconnectInd(uint16_t lcid, bool is_clear);
 static void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf);
 static void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested);
@@ -223,15 +223,15 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  *                  event to the FSM.
  *
  ******************************************************************************/
-void RFCOMM_ConfigCnf(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
+void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t result) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
   if (!p_mcb) {
     RFCOMM_TRACE_ERROR("RFCOMM_ConfigCnf no MCB LCID:0x%x", lcid);
     return;
   }
-
-  rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONF_CNF, (void*)p_cfg);
+  uintptr_t result_as_ptr = result;
+  rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONF_CNF, (void*)result_as_ptr);
 }
 
 /*******************************************************************************
