@@ -1040,24 +1040,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
         if ((tx_seq == next_srej) &&
             (fixed_queue_length(p_fcrb->srej_rcv_hold_q) <
              p_ccb->our_cfg.fcr.tx_win_sz)) {
-          /* If user gave us a pool for held rx buffers, use that */
-          /* TODO: Could that happen? Get rid of this code. */
-          if (p_ccb->ertm_info.fcr_rx_buf_size != L2CAP_FCR_RX_BUF_SIZE) {
-            BT_HDR* p_buf2;
-
-            /* Adjust offset and len so that control word is copied */
-            p_buf->offset -= L2CAP_FCR_OVERHEAD;
-            p_buf->len += L2CAP_FCR_OVERHEAD;
-
-            p_buf2 = l2c_fcr_clone_buf(p_buf, p_buf->offset, p_buf->len);
-
-            if (p_buf2) {
-              osi_free(p_buf);
-              p_buf = p_buf2;
-            }
-            p_buf->offset += L2CAP_FCR_OVERHEAD;
-            p_buf->len -= L2CAP_FCR_OVERHEAD;
-          }
           L2CAP_TRACE_DEBUG(
               "process_i_frame() Lost: %u  tx_seq:%u  ExpTxSeq %u  Rej: %u  "
               "SRej1",
@@ -1972,7 +1954,7 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         p_ccb->peer_cfg.fcs = p_cfg->fcs;
       }
 
-      max_retrans_size = p_ccb->ertm_info.fcr_tx_buf_size - sizeof(BT_HDR) -
+      max_retrans_size = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) -
                          L2CAP_MIN_OFFSET - L2CAP_SDU_LEN_OFFSET -
                          L2CAP_FCS_LEN;
 
