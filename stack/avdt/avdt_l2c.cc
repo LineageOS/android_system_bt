@@ -22,14 +22,11 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-#include "avdt_api.h"
 #include "avdt_int.h"
 #include "bt_target.h"
 #include "bt_types.h"
 #include "bta/include/bta_av_api.h"
 #include "btm_api.h"
-#include "btm_int.h"
 #include "device/include/interop.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
