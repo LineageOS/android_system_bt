@@ -398,14 +398,6 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
   /* Save registration info */
   p_ccb->p_rcb = p_rcb;
 
-  if (p_ertm_info) {
-    p_ccb->ertm_info = *p_ertm_info;
-
-    p_ccb->max_rx_mtu =
-        BT_DEFAULT_BUFFER_SIZE -
-        (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
-  }
-
   /* If link is up, start the L2CAP connection */
   if (p_lcb->link_state == LST_CONNECTED) {
     l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_REQ, nullptr);
@@ -806,14 +798,6 @@ bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
     L2CAP_TRACE_WARNING("L2CAP - bad id in L2CA_conn_rsp. Exp: %d  Got: %d",
                         p_ccb->remote_id, id);
     return (false);
-  }
-
-  if (p_ertm_info) {
-    p_ccb->ertm_info = *p_ertm_info;
-
-    p_ccb->max_rx_mtu =
-        BT_DEFAULT_BUFFER_SIZE -
-        (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
   }
 
   if (result == L2CAP_CONN_OK) {
