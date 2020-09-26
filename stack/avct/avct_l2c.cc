@@ -22,19 +22,13 @@
  *
  ******************************************************************************/
 
-#include <string.h>
 #include "avct_api.h"
 #include "avct_int.h"
 #include "bt_target.h"
 #include "bt_types.h"
-#include "bt_utils.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
-
-/* Configuration flags. */
-#define AVCT_L2C_CFG_IND_DONE (1 << 0)
-#define AVCT_L2C_CFG_CFM_DONE (1 << 1)
 
 /* callback function declarations */
 void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
