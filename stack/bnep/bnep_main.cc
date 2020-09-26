@@ -22,26 +22,20 @@
  *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "bt_target.h"
 
 #include "bt_common.h"
 #include "bt_types.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "log/log.h"
 
 #include "btm_api.h"
-#include "btu.h"
 
 #include "bnep_api.h"
 #include "bnep_int.h"
-#include "bt_utils.h"
 
 #include "bta/include/bta_api.h"
 #include "device/include/controller.h"

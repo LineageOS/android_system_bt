@@ -35,7 +35,6 @@ typedef struct {
 #define GAP_CCB_STATE_LISTENING 1
 #define GAP_CCB_STATE_CONN_SETUP 2
 #define GAP_CCB_STATE_CFG_SETUP 3
-#define GAP_CCB_STATE_WAIT_SEC 4
 #define GAP_CCB_STATE_CONNECTED 5
   uint8_t con_state;
 
