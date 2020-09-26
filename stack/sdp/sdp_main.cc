@@ -213,20 +213,6 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   SDP_TRACE_EVENT("SDP - Rcvd cfg ind, sent cfg cfm, CID: 0x%x", l2cap_cid);
-
-  p_ccb->con_flags |= SDP_FLAGS_HIS_CFG_DONE;
-
-  if (p_ccb->con_flags & SDP_FLAGS_MY_CFG_DONE) {
-    p_ccb->con_state = SDP_STATE_CONNECTED;
-
-    if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {
-      sdp_disc_connected(p_ccb);
-    } else {
-      /* Start inactivity timer */
-      alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                         sdp_conn_timer_timeout, p_ccb);
-    }
-  }
 }
 
 /*******************************************************************************
@@ -254,18 +240,14 @@ static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
 
   /* For now, always accept configuration from the other side */
   if (result == L2CAP_CFG_OK) {
-    p_ccb->con_flags |= SDP_FLAGS_MY_CFG_DONE;
+    p_ccb->con_state = SDP_STATE_CONNECTED;
 
-    if (p_ccb->con_flags & SDP_FLAGS_HIS_CFG_DONE) {
-      p_ccb->con_state = SDP_STATE_CONNECTED;
-
-      if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {
-        sdp_disc_connected(p_ccb);
-      } else {
-        /* Start inactivity timer */
-        alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                           sdp_conn_timer_timeout, p_ccb);
-      }
+    if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {
+      sdp_disc_connected(p_ccb);
+    } else {
+      /* Start inactivity timer */
+      alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                         sdp_conn_timer_timeout, p_ccb);
     }
   } else {
     sdp_disconnect(p_ccb, SDP_CFG_FAILED);
