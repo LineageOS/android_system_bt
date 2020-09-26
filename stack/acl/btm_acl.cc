@@ -805,41 +805,51 @@ void BTM_default_block_role_switch() {
  * Returns          void
  *
  ******************************************************************************/
+static void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
+                                                uint8_t lmp_version,
+                                                uint16_t manufacturer,
+                                                uint16_t lmp_subversion) {
+  tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl_cb == nullptr) {
+    LOG_WARN("Received remote version complete for unknown device");
+    return;
+  }
+
+  if (status == HCI_SUCCESS) {
+    p_acl_cb->lmp_version = lmp_version;
+    p_acl_cb->manufacturer = manufacturer;
+    p_acl_cb->lmp_subversion = lmp_subversion;
+
+    if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR) {
+      internal_.btm_read_remote_features(p_acl_cb->hci_handle);
+    }
+    bluetooth::common::LogRemoteVersionInfo(handle, status, lmp_version,
+                                            manufacturer, lmp_subversion);
+  } else {
+    bluetooth::common::LogRemoteVersionInfo(handle, status, 0, 0, 0);
+  }
+
+  if (p_acl_cb->transport == BT_TRANSPORT_LE) {
+    l2cble_notify_le_connection(p_acl_cb->remote_addr);
+    l2cble_use_preferred_conn_params(p_acl_cb->remote_addr);
+  }
+}
+
 void btm_read_remote_version_complete(uint8_t* p) {
-  tACL_CONN* p_acl_cb = &btm_cb.acl_cb_.acl_db[0];
   uint8_t status;
   uint16_t handle;
-  int xx;
-  BTM_TRACE_DEBUG("btm_read_remote_version_complete");
+  uint8_t lmp_version;
+  uint16_t manufacturer;
+  uint16_t lmp_subversion;
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
+  STREAM_TO_UINT8(lmp_version, p);
+  STREAM_TO_UINT16(manufacturer, p);
+  STREAM_TO_UINT16(lmp_subversion, p);
 
-  /* Look up the connection by handle and copy features */
-  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl_cb++) {
-    if ((p_acl_cb->in_use) && (p_acl_cb->hci_handle == handle)) {
-      if (status == HCI_SUCCESS) {
-        STREAM_TO_UINT8(p_acl_cb->lmp_version, p);
-        STREAM_TO_UINT16(p_acl_cb->manufacturer, p);
-        STREAM_TO_UINT16(p_acl_cb->lmp_subversion, p);
-
-        if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR) {
-          internal_.btm_read_remote_features(p_acl_cb->hci_handle);
-        }
-        bluetooth::common::LogRemoteVersionInfo(
-            handle, status, p_acl_cb->lmp_version, p_acl_cb->manufacturer,
-            p_acl_cb->lmp_subversion);
-      } else {
-        bluetooth::common::LogRemoteVersionInfo(handle, status, 0, 0, 0);
-      }
-
-      if (p_acl_cb->transport == BT_TRANSPORT_LE) {
-        l2cble_notify_le_connection(p_acl_cb->remote_addr);
-        l2cble_use_preferred_conn_params(p_acl_cb->remote_addr);
-      }
-      break;
-    }
-  }
+  btm_process_remote_version_complete(status, handle, lmp_version, manufacturer,
+                                      lmp_subversion);
 }
 
 /*******************************************************************************
