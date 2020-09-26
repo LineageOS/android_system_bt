@@ -198,7 +198,6 @@ extern void avct_bcb_dealloc(tAVCT_BCB* p_bcb, tAVCT_LCB_EVT* p_data);
 
 extern const tAVCT_BCB_ACTION avct_bcb_action[];
 extern const uint8_t avct_lcb_pkt_type_len[];
-extern const tL2CAP_FCR_OPTS avct_l2c_br_fcr_opts_def;
 
 /* CCB function declarations */
 extern tAVCT_CCB* avct_ccb_alloc(tAVCT_CC* p_cc);
