@@ -129,7 +129,7 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   if ((p_lcb == NULL) || (p_lcb->ch_state != AVCT_CH_CONN)) return;
 
   if (result != L2CAP_CONN_OK) {
-    avct_br_on_l2cap_error(lcid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 
@@ -162,7 +162,7 @@ void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t result) {
   }
   /* else failure */
   else {
-    avct_br_on_l2cap_error(lcid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
   }
 }
 
