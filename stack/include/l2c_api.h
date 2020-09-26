@@ -484,29 +484,6 @@ extern bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
 
 /*******************************************************************************
  *
- * Function         L2CA_ConfigReq
- *
- * Description      Higher layers call this function to send configuration.
- *
- * Returns          true if configuration sent, else false
- *
- ******************************************************************************/
-extern bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
- * Function         L2CA_ConfigRsp
- *
- * Description      Higher layers call this function to send a configuration
- *                  response.
- *
- * Returns          true if configuration response sent, else false
- *
- ******************************************************************************/
-extern bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
  * Function         L2CA_DisconnectReq
  *
  * Description      Higher layers call this function to disconnect a channel.
