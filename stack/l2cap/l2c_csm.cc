@@ -54,17 +54,24 @@ static void l2c_csm_w4_l2ca_disconnect_rsp(tL2C_CCB* p_ccb, uint16_t event,
 
 static const char* l2c_csm_get_event_name(uint16_t event);
 
-// Send a config request on user's behalf
-static void l2c_csm_send_config_req(uint16_t local_cid, uint16_t mtu,
-                                    tL2CAP_ERTM_INFO ertm_info) {
+// Send a config request and adjust the state machine
+static void l2c_csm_send_config_req(tL2C_CCB* p_ccb) {
   tL2CAP_CFG_INFO config{};
   config.mtu_present = true;
-  config.mtu = mtu;
-  if (ertm_info.preferred_mode != L2CAP_FCR_BASIC_MODE) {
+  config.mtu = p_ccb->p_rcb->my_mtu;
+  if (p_ccb->p_rcb->ertm_info.preferred_mode != L2CAP_FCR_BASIC_MODE) {
     config.fcr_present = true;
     config.fcr = kDefaultErtmOptions;
   }
-  L2CA_ConfigReq(local_cid, &config);
+  p_ccb->our_cfg = config;
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_REQ, &config);
+}
+
+// Send a config response with result OK and adjust the state machine
+static void l2c_csm_send_config_rsp_ok(tL2C_CCB* p_ccb) {
+  tL2CAP_CFG_INFO config{};
+  config.result = L2CAP_CFG_OK;
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP, &config);
 }
 
 /*******************************************************************************
@@ -438,8 +445,7 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
         (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
             p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
             p_ccb->remote_id);
-        l2c_csm_send_config_req(p_ccb->local_cid, p_ccb->p_rcb->my_mtu,
-                                p_ccb->p_rcb->ertm_info);
+        l2c_csm_send_config_req(p_ccb);
       } else {
         /*
         ** L2CAP Connect Response will be sent out by 3 sec timer expiration
@@ -559,8 +565,7 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
                       p_ccb->local_cid);
 
       (*p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb)(local_cid, L2CAP_CONN_OK);
-      l2c_csm_send_config_req(p_ccb->local_cid, p_ccb->p_rcb->my_mtu,
-                              p_ccb->p_rcb->ertm_info);
+      l2c_csm_send_config_req(p_ccb);
       break;
 
     case L2CEVT_L2CAP_CONNECT_RSP_PND: /* Got peer connect pending */
@@ -718,8 +723,7 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
           p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
           p_ccb->remote_id);
-      l2c_csm_send_config_req(p_ccb->local_cid, p_ccb->p_rcb->my_mtu,
-                              p_ccb->p_rcb->ertm_info);
+      l2c_csm_send_config_req(p_ccb);
       break;
   }
 }
@@ -761,9 +765,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             "L2CAP - Calling Config_Req_Cb(), CID: 0x%04x, C-bit %d",
             p_ccb->local_cid, (p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT));
         (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
-        tL2CAP_CFG_INFO response = {};
-        response.result = L2CAP_CFG_OK;
-        L2CA_ConfigRsp(p_ccb->local_cid, &response);
+        l2c_csm_send_config_rsp_ok(p_ccb);
       } else if (cfg_result == L2CAP_PEER_CFG_DISCONNECT) {
         /* Disconnect if channels are incompatible */
         L2CAP_TRACE_EVENT("L2CAP - incompatible configurations disconnect");
@@ -996,9 +998,7 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       cfg_result = l2cu_process_peer_cfg_req(p_ccb, p_cfg);
       if (cfg_result == L2CAP_PEER_CFG_OK) {
         (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
-        tL2CAP_CFG_INFO response = {};
-        response.result = L2CAP_CFG_OK;
-        L2CA_ConfigRsp(p_ccb->local_cid, &response);
+        l2c_csm_send_config_rsp_ok(p_ccb);
       }
 
       /* Error in config parameters: reset state and config flag */
