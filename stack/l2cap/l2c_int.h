@@ -250,9 +250,9 @@ typedef struct t_l2c_ccb {
 #define IB_CFG_DONE 0x01
 #define OB_CFG_DONE 0x02
 #define RECONFIG_FLAG 0x04 /* True after initial configuration */
-#define CFG_DONE_MASK (IB_CFG_DONE | OB_CFG_DONE)
 
   uint8_t config_done; /* Configuration flag word */
+  uint16_t remote_config_rsp_result; /* The config rsp result from remote */
   uint8_t local_id;    /* Transaction ID for local trans */
   uint8_t remote_id;   /* Transaction ID for local */
 
