@@ -340,18 +340,6 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
   else
     p_hcon->rem_mtu_size = p_cfg->mtu;
 
-  // accept without changes
-  p_cfg->flush_to_present = FALSE;
-  p_cfg->mtu_present = FALSE;
-  p_cfg->result = L2CAP_CFG_OK;
-
-  if (cid == p_hcon->intr_cid && hd_cb.use_in_qos && !p_cfg->qos_present) {
-    p_cfg->qos_present = TRUE;
-    memcpy(&p_cfg->qos, &hd_cb.in_qos, sizeof(FLOW_SPEC));
-  }
-
-  L2CA_ConfigRsp(cid, p_cfg);
-
   // update flags
   if (cid == p_hcon->ctrl_cid) {
     p_hcon->conn_flags |= HID_CONN_FLAGS_HIS_CTRL_CFG_DONE;
