@@ -219,14 +219,8 @@ void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
     if (p_lcb->ch_state == AVCT_CH_CFG) {
       /* if result successful */
       if (result == L2CAP_CFG_OK) {
-        /* update flags */
-        p_lcb->ch_flags |= AVCT_L2C_CFG_CFM_DONE;
-
-        /* if configuration complete */
-        if (p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) {
-          p_lcb->ch_state = AVCT_CH_OPEN;
-          avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-        }
+        p_lcb->ch_state = AVCT_CH_OPEN;
+        avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
       }
       /* else failure */
       else {
@@ -268,19 +262,6 @@ void avct_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     } else {
       p_lcb->peer_mtu = L2CAP_DEFAULT_MTU;
     }
-
-    /* if first config ind */
-    if ((p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) == 0) {
-      /* update flags */
-      p_lcb->ch_flags |= AVCT_L2C_CFG_IND_DONE;
-
-      /* if configuration complete */
-      if (p_lcb->ch_flags & AVCT_L2C_CFG_CFM_DONE) {
-        p_lcb->ch_state = AVCT_CH_OPEN;
-        avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-      }
-    }
-    AVCT_TRACE_DEBUG("ch_state cfi: %d ", p_lcb->ch_state);
   }
 }
 

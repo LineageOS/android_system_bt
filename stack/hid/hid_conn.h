@@ -41,11 +41,6 @@ typedef struct hid_conn {
   uint8_t conn_state;
 
 #define HID_CONN_FLAGS_IS_ORIG (0x01)
-#define HID_CONN_FLAGS_HIS_CTRL_CFG_DONE (0x02)
-#define HID_CONN_FLAGS_MY_CTRL_CFG_DONE (0x04)
-#define HID_CONN_FLAGS_HIS_INTR_CFG_DONE (0x08)
-#define HID_CONN_FLAGS_MY_INTR_CFG_DONE (0x10)
-#define HID_CONN_FLAGS_ALL_CONFIGURED (0x1E) /* All the config done */
 #define HID_CONN_FLAGS_CONGESTED (0x20)
 #define HID_CONN_FLAGS_INACTIVE (0x40)
 
