@@ -127,11 +127,6 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   /* Send response to the L2CAP layer. */
   L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
-  tL2CAP_CFG_INFO cfg = sdp_cb.l2cap_my_cfg;
-  L2CA_ConfigReq(l2cap_cid, &cfg);
-
-  SDP_TRACE_EVENT("SDP - Rcvd L2CAP conn ind, sent config req, CID 0x%x",
-                  p_ccb->connection_id);
 }
 
 /*******************************************************************************
@@ -147,7 +142,6 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
  ******************************************************************************/
 static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   tCONN_CB* p_ccb;
-  tL2CAP_CFG_INFO cfg;
 
   /* Find CCB based on CID */
   p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
@@ -160,12 +154,6 @@ static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   /* Transition to the next state and startup the timer.      */
   if ((result == L2CAP_CONN_OK) && (p_ccb->con_state == SDP_STATE_CONN_SETUP)) {
     p_ccb->con_state = SDP_STATE_CFG_SETUP;
-
-    cfg = sdp_cb.l2cap_my_cfg;
-    L2CA_ConfigReq(l2cap_cid, &cfg);
-
-    SDP_TRACE_EVENT("SDP - got conn cnf, sent cfg req, CID: 0x%x",
-                    p_ccb->connection_id);
   } else {
     SDP_TRACE_WARNING("SDP - Rcvd conn cnf with error: 0x%x  CID 0x%x", result,
                       p_ccb->connection_id);
