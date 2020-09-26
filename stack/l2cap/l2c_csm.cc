@@ -848,14 +848,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     case L2CEVT_L2CA_CONFIG_RSP: /* Upper layer config rsp   */
       l2cu_process_our_cfg_rsp(p_ccb, p_cfg);
 
-      /* Not finished if continuation flag is set */
-      if ((p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT) ||
-          (p_cfg->result == L2CAP_CFG_PENDING)) {
-        /* Send intermediate response; remain in cfg state */
-        l2cu_send_peer_config_rsp(p_ccb, p_cfg);
-        break;
-      }
-
       /* Local config done; clear cached configuration in case reconfig takes
        * place later */
       p_ccb->peer_cfg.mtu_present = false;
@@ -893,12 +885,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           (!fixed_queue_is_empty(p_ccb->xmit_hold_q))) {
         l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
       }
-      break;
-
-    case L2CEVT_L2CA_CONFIG_RSP_NEG: /* Upper layer config reject */
-      l2cu_send_peer_config_rsp(p_ccb, p_cfg);
-      alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
-                         l2c_ccb_timer_timeout, p_ccb);
       break;
 
     case L2CEVT_L2CA_DISCONNECT_REQ: /* Upper wants to disconnect */
@@ -1257,8 +1243,6 @@ static const char* l2c_csm_get_event_name(uint16_t event) {
       return ("UPPER_LAYER_CONFIG_REQ");
     case L2CEVT_L2CA_CONFIG_RSP: /* Upper layer config response          */
       return ("UPPER_LAYER_CONFIG_RSP");
-    case L2CEVT_L2CA_CONFIG_RSP_NEG: /* Upper layer config response (failed) */
-      return ("UPPER_LAYER_CONFIG_RSP_NEG");
     case L2CEVT_L2CA_DISCONNECT_REQ: /* Upper layer disconnect request       */
       return ("UPPER_LAYER_DISCONNECT_REQ");
     case L2CEVT_L2CA_DISCONNECT_RSP: /* Upper layer disconnect response      */
