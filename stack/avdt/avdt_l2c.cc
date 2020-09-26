@@ -72,7 +72,6 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
                                          UNUSED_ATTR void* p_ref_data,
                                          uint8_t res) {
   AvdtpCcb* p_ccb = NULL;
-  tL2CAP_CFG_INFO cfg;
   AvdtpTransportChannel* p_tbl;
 
   AVDT_TRACE_DEBUG("avdt_sec_check_complete_term res: %d", res);
@@ -93,12 +92,6 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
 
     /* transition to configuration state */
     p_tbl->state = AVDT_AD_ST_CFG;
-
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = kAvdtpMtu;
-    L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
                     L2CAP_CONN_OK);
@@ -121,7 +114,6 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
                                          UNUSED_ATTR void* p_ref_data,
                                          uint8_t res) {
   AvdtpCcb* p_ccb = NULL;
-  tL2CAP_CFG_INFO cfg;
   AvdtpTransportChannel* p_tbl;
 
   AVDT_TRACE_DEBUG("avdt_sec_check_complete_orig res: %d", res);
@@ -132,12 +124,6 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
   if (res == BTM_SUCCESS) {
     /* set channel state */
     p_tbl->state = AVDT_AD_ST_CFG;
-
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = kAvdtpMtu;
-    L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     avdt_l2c_disconnect(p_tbl->lcid);
     avdt_ad_tc_close_ind(p_tbl);
@@ -158,7 +144,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   AvdtpCcb* p_ccb;
   AvdtpTransportChannel* p_tbl = NULL;
   uint16_t result;
-  tL2CAP_CFG_INFO cfg;
 
   /* do we already have a control channel for this peer? */
   p_ccb = avdt_ccb_by_bd(bd_addr);
@@ -238,12 +223,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
     /* transition to configuration state */
     p_tbl->state = AVDT_AD_ST_CFG;
-
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = p_tbl->my_mtu;
-    L2CA_ConfigReq(lcid, &cfg);
   }
 }
 
@@ -259,7 +238,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
  ******************************************************************************/
 void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   AvdtpTransportChannel* p_tbl;
-  tL2CAP_CFG_INFO cfg;
   AvdtpCcb* p_ccb;
 
   AVDT_TRACE_DEBUG("avdt_l2c_connect_cfm_cback lcid: %d, result: %d", lcid,
@@ -274,12 +252,6 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
         if (p_tbl->tcid != AVDT_CHAN_SIG) {
           /* set channel state */
           p_tbl->state = AVDT_AD_ST_CFG;
-
-          /* Send L2CAP config req */
-          memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-          cfg.mtu_present = true;
-          cfg.mtu = p_tbl->my_mtu;
-          L2CA_ConfigReq(lcid, &cfg);
         } else {
           p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx);
           if (p_ccb == NULL) {
