@@ -845,6 +845,11 @@ bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
  *
  ******************************************************************************/
 bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
+  // Client code should no longer send config req. L2CAP will do it for you.
+  return false;
+}
+
+bool L2CA_ConfigReq2(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_ConfigReq(cid, p_cfg);
   }
