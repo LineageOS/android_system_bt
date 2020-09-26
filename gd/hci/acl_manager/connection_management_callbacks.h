@@ -76,6 +76,9 @@ class ConnectionManagementCallbacks {
   virtual void OnRoleChange(Role new_role) = 0;
   // Invoked when controller sends DisconnectComplete
   virtual void OnDisconnection(ErrorCode reason) = 0;
+  // Invoked when controller sends Read Remote Version Information Complete
+  virtual void OnReadRemoteVersionInformationComplete(
+      uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) = 0;
 };
 
 }  // namespace acl_manager
