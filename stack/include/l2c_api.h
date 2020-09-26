@@ -100,7 +100,6 @@ typedef uint8_t tL2CAP_CHNL_DATA_RATE;
 typedef struct {
 #define L2CAP_FCR_BASIC_MODE 0x00
 #define L2CAP_FCR_ERTM_MODE 0x03
-#define L2CAP_FCR_STREAM_MODE 0x04
 #define L2CAP_FCR_LE_COC_MODE 0x05
 
   uint8_t mode;
@@ -111,6 +110,16 @@ typedef struct {
   uint16_t mon_tout;
   uint16_t mps;
 } tL2CAP_FCR_OPTS;
+
+/* default options for ERTM mode */
+constexpr tL2CAP_FCR_OPTS kDefaultErtmOptions = {
+    L2CAP_FCR_ERTM_MODE,
+    10,    /* Tx window size */
+    20,    /* Maximum transmissions before disconnecting */
+    2000,  /* Retransmission timeout (2 secs) */
+    12000, /* Monitor timeout (12 secs) */
+    1010   /* MPS segment size */
+};
 
 /* Define a structure to hold the configuration parameters. Since the
  * parameters are optional, for each parameter there is a boolean to

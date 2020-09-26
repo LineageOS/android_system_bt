@@ -37,38 +37,6 @@
 #define AVCT_L2C_CFG_IND_DONE (1 << 0)
 #define AVCT_L2C_CFG_CFM_DONE (1 << 1)
 
-/* AVCTP Browsing channel FCR Option:
- * Size of the transmission window when using enhanced retransmission mode. Not
- * used in basic and streaming modes. Range: 1 - 63
- */
-#define AVCT_BR_FCR_OPT_TX_WINDOW_SIZE 10
-
-/* AVCTP Browsing channel FCR Option:
- * Number of transmission attempts for a single I-Frame before taking
- * Down the connection. Used In ERTM mode only. Value is Ignored in basic and
- * Streaming modes.
- * Range: 0, 1-0xFF
- *     0 - infinite retransmissions
- *     1 - single transmission
- */
-#define AVCT_BR_FCR_OPT_MAX_TX_B4_DISCNT 20
-
-/* AVCTP Browsing channel FCR Option: Retransmission Timeout
- * The AVRCP specification set a value in the range of 300 - 2000 ms
- * Timeout (in msecs) to detect Lost I-Frames. Only used in Enhanced
- * retransmission mode.
- * Range: Minimum 2000 (2 secs) when supporting PBF.
- */
-#define AVCT_BR_FCR_OPT_RETX_TOUT 2000
-
-/* AVCTP Browsing channel FCR Option: Monitor Timeout
- * The AVRCP specification set a value in the range of 300 - 2000 ms
- * Timeout (in msecs) to detect Lost S-Frames. Only used in Enhanced
- * retransmission mode.
- * Range: Minimum 12000 (12 secs) when supporting PBF.
- */
-#define AVCT_BR_FCR_OPT_MONITOR_TOUT 12000
-
 /* callback function declarations */
 void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                    uint16_t psm, uint8_t id);
@@ -89,17 +57,6 @@ const tL2CAP_APPL_INFO avct_l2c_br_appl = {avct_l2c_br_connect_ind_cback,
                                            avct_l2c_br_congestion_ind_cback,
                                            NULL,
                                            /* tL2CA_TX_COMPLETE_CB */};
-
-/* Browsing channel eL2CAP default options */
-const tL2CAP_FCR_OPTS avct_l2c_br_fcr_opts_def = {
-    L2CAP_FCR_ERTM_MODE,              /* Mandatory for Browsing channel */
-    AVCT_BR_FCR_OPT_TX_WINDOW_SIZE,   /* Tx window size */
-    AVCT_BR_FCR_OPT_MAX_TX_B4_DISCNT, /* Maximum transmissions before
-                                         disconnecting */
-    AVCT_BR_FCR_OPT_RETX_TOUT,        /* Retransmission timeout (2 secs) */
-    AVCT_BR_FCR_OPT_MONITOR_TOUT,     /* Monitor timeout (12 secs) */
-    L2CAP_DEFAULT_ERM_MPS             /* MPS segment size */
-};
 
 /*******************************************************************************
  *
@@ -138,7 +95,7 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       cfg.mtu = kAvrcBrMtu;
 
       cfg.fcr_present = true;
-      cfg.fcr = avct_l2c_br_fcr_opts_def;
+      cfg.fcr = kDefaultErtmOptions;
     }
   }
   /* else no control channel yet, reject */
@@ -199,7 +156,7 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   cfg.mtu = kAvrcBrMtu;
 
   cfg.fcr_present = true;
-  cfg.fcr = avct_l2c_br_fcr_opts_def;
+  cfg.fcr = kDefaultErtmOptions;
 
   L2CA_ConfigReq(lcid, &cfg);
 }
