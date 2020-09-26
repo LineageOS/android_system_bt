@@ -123,7 +123,6 @@ typedef enum {
 #define L2CEVT_L2CA_CONNECT_RSP_NEG 23 /* connect response (failed)*/
 #define L2CEVT_L2CA_CONFIG_REQ 24      /* config request */
 #define L2CEVT_L2CA_CONFIG_RSP 25      /* config response */
-#define L2CEVT_L2CA_CONFIG_RSP_NEG 26  /* config response (failed) */
 #define L2CEVT_L2CA_DISCONNECT_REQ 27  /* disconnect request */
 #define L2CEVT_L2CA_DISCONNECT_RSP 28  /* disconnect response */
 #define L2CEVT_L2CA_DATA_READ 29       /* data read */
