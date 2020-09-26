@@ -44,9 +44,6 @@
 #define SDP_CFG_FAILED 0xFFF2
 #define SDP_GENERIC_ERROR 0xFFF3
 #define SDP_DB_FULL 0xFFF4
-#define SDP_INVALID_PDU 0xFFF5
-#define SDP_SECURITY_ERR 0xFFF6
-#define SDP_CONN_REJECTED 0xFFF7
 #define SDP_CANCEL 0xFFF8
 
 /* Define the PSM that SDP uses */
