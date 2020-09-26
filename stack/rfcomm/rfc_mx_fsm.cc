@@ -507,8 +507,6 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
 
         p_mcb->is_initiator = true;
         p_mcb->restart_required = false;
-        p_mcb->local_cfg_sent = false;
-        p_mcb->peer_cfg_rcvd = false;
 
         p_mcb->state = RFC_MX_STATE_WAIT_CONN_CNF;
         return;
@@ -582,8 +580,7 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result) {
     return;
   }
 
-  p_mcb->local_cfg_sent = true;
-  if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->peer_cfg_rcvd) {
+  if (p_mcb->state == RFC_MX_STATE_CONFIGURE) {
     if (p_mcb->is_initiator) {
       p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;
       rfc_send_sabme(p_mcb, RFCOMM_MX_DLCI);
@@ -613,20 +610,5 @@ static void rfc_mx_conf_ind(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg) {
     p_mcb->peer_l2cap_mtu = p_cfg->mtu - RFCOMM_MIN_OFFSET - 1;
   } else {
     p_mcb->peer_l2cap_mtu = L2CAP_DEFAULT_MTU - RFCOMM_MIN_OFFSET - 1;
-  }
-
-  p_mcb->peer_cfg_rcvd = true;
-  if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->local_cfg_sent) {
-    if (p_mcb->is_initiator) {
-      p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;
-      rfc_send_sabme(p_mcb, RFCOMM_MX_DLCI);
-      rfc_timer_start(p_mcb, RFC_T1_TIMEOUT);
-    } else {
-      p_mcb->state = RFC_MX_STATE_WAIT_SABME;
-      rfc_timer_start(
-          p_mcb, RFCOMM_CONN_TIMEOUT); /* - increased from T2=20 to CONN=120
-                             to allow the user more than 10 sec to type in the
-                             pin which can be e.g. 16 digits */
-    }
   }
 }
