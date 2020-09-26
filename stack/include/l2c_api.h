@@ -195,9 +195,9 @@ typedef void(tL2CA_CONFIG_IND_CB)(uint16_t, tL2CAP_CFG_INFO*);
 
 /* Configuration confirm callback prototype. Parameters are
  *              Local CID assigned to the connection
- *              Pointer to configuration info
+ *              Config result (L2CA_CONN_OK, ...)
  */
-typedef void(tL2CA_CONFIG_CFM_CB)(uint16_t, tL2CAP_CFG_INFO*);
+typedef void(tL2CA_CONFIG_CFM_CB)(uint16_t, uint16_t);
 
 /* Disconnect indication callback prototype. Parameters are
  *              Local CID

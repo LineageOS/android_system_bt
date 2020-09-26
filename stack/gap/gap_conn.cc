@@ -86,7 +86,7 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             uint16_t psm, uint8_t l2cap_id);
 static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void gap_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
+static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result);
 static void gap_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void gap_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void gap_congestion_ind(uint16_t lcid, bool is_congested);
@@ -784,20 +784,15 @@ static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void gap_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
+static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   tGAP_CCB* p_ccb;
 
   /* Find CCB based on CID */
   p_ccb = gap_find_ccb_by_cid(l2cap_cid);
   if (p_ccb == NULL) return;
 
-  if (p_cfg->result == L2CAP_CFG_OK) {
+  if (result == L2CAP_CFG_OK) {
     p_ccb->con_flags |= GAP_CCB_FLAGS_MY_CFG_DONE;
-
-    if (p_ccb->cfg.fcr_present)
-      p_ccb->cfg.fcr.mode = p_cfg->fcr.mode;
-    else
-      p_ccb->cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
 
     gap_checks_con_flags(p_ccb);
   } else {
