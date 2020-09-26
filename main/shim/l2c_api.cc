@@ -98,12 +98,6 @@ void bluetooth::shim::L2CA_FreeLePSM(uint16_t psm) {
 /**
  * Classic Connection Oriented Channel APIS
  */
-uint16_t bluetooth::shim::L2CA_ErtmConnectReq(uint16_t psm,
-                                              const RawAddress& raw_address,
-                                              tL2CAP_ERTM_INFO* p_ertm_info) {
-  return shim_l2cap.CreateConnection(psm, raw_address);
-}
-
 uint16_t bluetooth::shim::L2CA_ConnectReq(uint16_t psm,
                                           const RawAddress& raw_address) {
   return shim_l2cap.CreateConnection(psm, raw_address);

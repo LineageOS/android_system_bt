@@ -310,10 +310,10 @@ uint16_t L2CA_ConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
  * Function         L2CA_ConnectReq
  *
  * Description      Higher layers call this function to create an L2CAP
- *                  connection. Note that the connection is not established at
- *                  this time, but connection establishment gets started. The
- *                  callback function will be invoked when connection
- *                  establishes or fails.
+ *                  connection.
+ *                  Note that the connection is not established at this time,
+ *                  but connection establishment gets started. The callback
+ *                  will be invoked when connection establishes or fails.
  *
  * Returns          the CID of the connection, or 0 if it failed to start
  *
@@ -323,42 +323,8 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
     return bluetooth::shim::L2CA_ConnectReq(psm, p_bd_addr);
   }
 
-  return L2CA_ErtmConnectReq(psm, p_bd_addr, nullptr);
-}
-
-uint16_t L2CA_ErtmConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
-                              tL2CAP_ERTM_INFO* p_ertm_info,
-                              uint16_t sec_level) {
-  BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
-  return L2CA_ErtmConnectReq(psm, p_bd_addr, p_ertm_info);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_ErtmConnectReq
- *
- * Description      Higher layers call this function to create an L2CAP
- *                  connection. Note that the connection is not established at
- *                  this time, but connection establishment gets started. The
- *                  callback function will be invoked when connection
- *                  establishes or fails.
- *
- *  Parameters:       PSM: L2CAP PSM for the connection
- *                    BD address of the peer
- *                   Enhaced retransmission mode configurations
-
- * Returns          the CID of the connection, or 0 if it failed to start
- *
- ******************************************************************************/
-uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
-                             tL2CAP_ERTM_INFO* p_ertm_info) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ErtmConnectReq(psm, p_bd_addr, p_ertm_info);
-  }
-
   VLOG(1) << __func__ << "BDA " << p_bd_addr
-          << StringPrintf(" PSM: 0x%04x preferred:%d", psm,
-                          (p_ertm_info) ? p_ertm_info->preferred_mode : 0);
+          << StringPrintf(" PSM: 0x%04x", psm);
 
   /* Fail if we have not established communications with the controller */
   if (!BTM_IsDeviceUp()) {
