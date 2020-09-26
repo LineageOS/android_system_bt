@@ -61,7 +61,7 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                              uint16_t psm, uint8_t l2cap_id);
 static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
+static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void bnep_congestion_ind(uint16_t lcid, bool is_congested);
@@ -236,11 +236,11 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
+static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   tBNEP_CONN* p_bcb;
 
   BNEP_TRACE_EVENT("BNEP - Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                   p_cfg->result);
+                   result);
 
   /* Find CCB based on CID */
   p_bcb = bnepu_find_bcb_by_cid(l2cap_cid);
@@ -251,7 +251,7 @@ static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   /* For now, always accept configuration from the other side */
-  if (p_cfg->result == L2CAP_CFG_OK) {
+  if (result == L2CAP_CFG_OK) {
     p_bcb->con_flags |= BNEP_FLAGS_MY_CFG_DONE;
 
     if (p_bcb->con_flags & BNEP_FLAGS_HIS_CFG_DONE) {

@@ -56,7 +56,7 @@ static void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
 
 static void rfc_mx_send_config_req(tRFC_MCB* p_mcb);
 static void rfc_mx_conf_ind(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg);
-static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg);
+static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result);
 
 /*******************************************************************************
  *
@@ -279,7 +279,7 @@ void rfc_mx_sm_state_configure(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
       return;
 
     case RFC_MX_EVENT_CONF_CNF:
-      rfc_mx_conf_cnf(p_mcb, (tL2CAP_CFG_INFO*)p_data);
+      rfc_mx_conf_cnf(p_mcb, (uintptr_t)p_data);
       return;
 
     case RFC_MX_EVENT_DISC_IND:
@@ -566,17 +566,16 @@ static void rfc_mx_send_config_req(tRFC_MCB* p_mcb) {
  *                  on DLCI 0.  T1 is still running.
  *
  ******************************************************************************/
-static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg) {
-  RFCOMM_TRACE_EVENT("rfc_mx_conf_cnf p_cfg:%08x result:%d ", p_cfg,
-                     (p_cfg) ? p_cfg->result : 0);
+static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result) {
+  RFCOMM_TRACE_EVENT("rfc_mx_conf_cnf result:%d ", result);
 
-  if (p_cfg->result != L2CAP_CFG_OK) {
+  if (result != L2CAP_CFG_OK) {
     LOG(ERROR) << __func__ << ": failed to configure L2CAP for "
                << p_mcb->bd_addr;
     if (p_mcb->is_initiator) {
       LOG(ERROR) << __func__ << ": disconnect L2CAP due to config failure for "
                  << p_mcb->bd_addr;
-      PORT_StartCnf(p_mcb, p_cfg->result);
+      PORT_StartCnf(p_mcb, result);
       L2CA_DisconnectReq(p_mcb->lcid);
     }
     rfc_release_multiplexer_channel(p_mcb);
