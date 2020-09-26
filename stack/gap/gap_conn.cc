@@ -615,8 +615,7 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   /* Send response to the L2CAP layer. */
   if (p_ccb->transport == BT_TRANSPORT_BR_EDR)
-    L2CA_ErtmConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK,
-                        L2CAP_CONN_OK, &p_ccb->ertm_info);
+    L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
   if (p_ccb->transport == BT_TRANSPORT_LE) {
     L2CA_ConnectLECocRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK,
