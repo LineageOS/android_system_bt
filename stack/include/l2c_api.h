@@ -492,7 +492,6 @@ extern bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
  *
  ******************************************************************************/
 extern bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-extern bool L2CA_ConfigReq2(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
 
 /*******************************************************************************
  *

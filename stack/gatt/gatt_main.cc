@@ -588,20 +588,11 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
 
   /* transition to configuration state */
   gatt_set_ch_state(p_tcb, GATT_CH_CFG);
-
-  /* Send L2CAP config req */
-  tL2CAP_CFG_INFO cfg;
-  memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-  cfg.mtu_present = true;
-  cfg.mtu = GATT_MAX_MTU_SIZE;
-
-  L2CA_ConfigReq(lcid, &cfg);
 }
 
 /** This is the L2CAP connect confirm callback function */
 static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   tGATT_TCB* p_tcb;
-  tL2CAP_CFG_INFO cfg;
 
   /* look up clcb for this channel */
   p_tcb = gatt_find_tcb_by_cid(lcid);
@@ -617,12 +608,6 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
     if (result == L2CAP_CONN_OK) {
       /* set channel state */
       gatt_set_ch_state(p_tcb, GATT_CH_CFG);
-
-      /* Send L2CAP config req */
-      memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-      cfg.mtu_present = true;
-      cfg.mtu = GATT_MAX_MTU_SIZE;
-      L2CA_ConfigReq(lcid, &cfg);
     }
     /* else initiating connection failure */
     else {

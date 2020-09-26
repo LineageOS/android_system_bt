@@ -636,10 +636,6 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   DVLOG(1) << StringPrintf("GAP_CONN - Rcvd L2CAP conn ind, CID: 0x%x",
                            p_ccb->connection_id);
-
-  /* Send a Configuration Request. */
-  if (p_ccb->transport == BT_TRANSPORT_BR_EDR)
-    L2CA_ConfigReq(l2cap_cid, &p_ccb->cfg);
 }
 
 /*******************************************************************************
@@ -721,9 +717,6 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
       (p_ccb->con_state == GAP_CCB_STATE_CONN_SETUP)) {
     if (p_ccb->transport == BT_TRANSPORT_BR_EDR) {
       p_ccb->con_state = GAP_CCB_STATE_CFG_SETUP;
-
-      /* Send a Configuration Request. */
-      L2CA_ConfigReq(l2cap_cid, &p_ccb->cfg);
     }
 
     if (p_ccb->transport == BT_TRANSPORT_LE) {
