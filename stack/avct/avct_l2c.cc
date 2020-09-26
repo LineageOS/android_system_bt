@@ -285,11 +285,6 @@ void avct_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
       p_lcb->peer_mtu = L2CAP_DEFAULT_MTU;
     }
 
-    /* send L2CAP configure response */
-    memset(p_cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    p_cfg->result = L2CAP_CFG_OK;
-    L2CA_ConfigRsp(lcid, p_cfg);
-
     /* if first config ind */
     if ((p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) == 0) {
       /* update flags */
