@@ -59,7 +59,7 @@ static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void bnep_congestion_ind(uint16_t lcid, bool is_congested);
-
+static void bnep_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
 /*******************************************************************************
  *
  * Function         bnep_register_with_l2cap
@@ -83,6 +83,7 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
   bnep_cb.reg_info.pL2CA_DisconnectInd_Cb = bnep_disconnect_ind;
   bnep_cb.reg_info.pL2CA_DataInd_Cb = bnep_data_ind;
   bnep_cb.reg_info.pL2CA_CongestionStatus_Cb = bnep_congestion_ind;
+  bnep_cb.reg_info.pL2CA_Error_Cb = bnep_on_l2cap_error;
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(BT_PSM_BNEP, bnep_cb.reg_info, false /* enable_snoop */,
