@@ -1211,9 +1211,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     }
   } else {
     /* conn failed. No need for timer */
-    if (p_data->sdp_event.sdp_result == SDP_CONN_FAILED ||
-        p_data->sdp_event.sdp_result == SDP_CONN_REJECTED ||
-        p_data->sdp_event.sdp_result == SDP_SECURITY_ERR)
+    if (p_data->sdp_event.sdp_result == SDP_CONN_FAILED)
       bta_dm_search_cb.wait_disc = false;
 
     /* not able to connect go to next device */
