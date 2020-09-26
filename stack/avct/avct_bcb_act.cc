@@ -110,8 +110,8 @@ void avct_bcb_chnl_open(tAVCT_BCB* p_bcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
 
   /* call l2cap connect req */
   p_bcb->ch_state = AVCT_CH_CONN;
-  p_bcb->ch_lcid = L2CA_ErtmConnectReq2(AVCT_BR_PSM, p_lcb->peer_addr,
-                                        &ertm_info, BTA_SEC_AUTHENTICATE);
+  p_bcb->ch_lcid =
+      L2CA_ConnectReq2(AVCT_BR_PSM, p_lcb->peer_addr, BTA_SEC_AUTHENTICATE);
   if (p_bcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
     tAVCT_LCB_EVT avct_lcb_evt;

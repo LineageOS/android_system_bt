@@ -120,22 +120,6 @@ bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
 
 /*******************************************************************************
  *
- * Function         L2CA_ErtmConnectReq
- *
- * Description      Higher layers call this function to create an L2CAP
- *                  connection that needs to use Enhanced Retransmission Mode.
- *                  Note that the connection is not established at this time,
- *                  but connection establishment gets started. The callback
- *                  will be invoked when connection establishes or fails.
- *
- * Returns          the CID of the connection, or 0 if it failed to start
- *
- ******************************************************************************/
-uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
-                             tL2CAP_ERTM_INFO* p_ertm_info);
-
-/*******************************************************************************
- *
  * Function         L2CA_RegisterLECoc
  *
  * Description      Other layers call this function to register for L2CAP
