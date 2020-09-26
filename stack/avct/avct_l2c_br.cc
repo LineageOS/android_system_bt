@@ -72,12 +72,8 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                    UNUSED_ATTR uint16_t psm, uint8_t id) {
   tAVCT_LCB* p_lcb;
   uint16_t result = L2CAP_CONN_NO_RESOURCES;
-  tL2CAP_CFG_INFO cfg;
   tAVCT_BCB* p_bcb;
   tL2CAP_ERTM_INFO ertm_info;
-
-  memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-  cfg.mtu_present = true;
 
   p_lcb = avct_lcb_by_bd(bd_addr);
   if (p_lcb != NULL) {
@@ -92,10 +88,6 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       p_bcb->allocated = p_lcb->allocated; /* copy the index from lcb */
 
       result = L2CAP_CONN_OK;
-      cfg.mtu = kAvrcBrMtu;
-
-      cfg.fcr_present = true;
-      cfg.fcr = kDefaultErtmOptions;
     }
   }
   /* else no control channel yet, reject */
@@ -113,9 +105,6 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
     /* transition to configuration state */
     p_bcb->ch_state = AVCT_CH_CFG;
-
-    /* Send L2CAP config req */
-    L2CA_ConfigReq(lcid, &cfg);
   }
 }
 
@@ -131,7 +120,6 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
  ******************************************************************************/
 void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   tAVCT_BCB* p_lcb;
-  tL2CAP_CFG_INFO cfg;
 
   /* look up lcb for this channel */
   p_lcb = avct_bcb_by_lcid(lcid);
@@ -148,17 +136,6 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   /* result is successful */
   /* set channel state */
   p_lcb->ch_state = AVCT_CH_CFG;
-
-  /* Send L2CAP config req */
-  memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-
-  cfg.mtu_present = true;
-  cfg.mtu = kAvrcBrMtu;
-
-  cfg.fcr_present = true;
-  cfg.fcr = kDefaultErtmOptions;
-
-  L2CA_ConfigReq(lcid, &cfg);
 }
 
 /*******************************************************************************
