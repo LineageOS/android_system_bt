@@ -388,17 +388,7 @@ static void hidd_l2cif_config_cfm(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
     return;
   }
 
-  if (p_hcon->intr_cid == cid &&
-      p_cfg->result == L2CAP_CFG_UNACCEPTABLE_PARAMS && p_cfg->qos_present) {
-    // TODO: QoS parameters not accepted for intr, try again with host proposal
-    // So far we just disconnect
-
-    hidd_conn_disconnect();
-    reason = HID_L2CAP_CFG_FAIL | (uint32_t)p_cfg->result;
-
-    hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, reason, NULL);
-    return;
-  } else if (p_cfg->result != L2CAP_CFG_OK) {
+  if (p_cfg->result != L2CAP_CFG_OK) {
     HIDD_TRACE_WARNING("%s: config failed, disconnecting", __func__);
 
     hidd_conn_disconnect();
