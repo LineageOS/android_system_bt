@@ -553,20 +553,7 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
  *
  ******************************************************************************/
 static void rfc_mx_send_config_req(tRFC_MCB* p_mcb) {
-  RFCOMM_TRACE_EVENT("rfc_mx_send_config_req");
-  tL2CAP_CFG_INFO cfg = {};
-  cfg.mtu_present = true;
-  cfg.mtu = L2CAP_MTU_SIZE;
-
-  /* Defaults set by memset
-      cfg.flush_to_present = false;
-      cfg.qos_present      = false;
-      cfg.fcr_present      = false;
-      cfg.fcr.mode         = L2CAP_FCR_BASIC_MODE;
-      cfg.fcs_present      = false;
-      cfg.fcs              = N/A when fcs_present is false;
-  */
-  L2CA_ConfigReq(p_mcb->lcid, &cfg);
+  // Not needed. L2CAP sends config req for us
 }
 
 /*******************************************************************************

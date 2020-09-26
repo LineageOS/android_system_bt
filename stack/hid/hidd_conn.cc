@@ -114,7 +114,6 @@ static void hidd_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
 
     L2CA_ConnectRsp(p_dev->addr, p_dev->conn.ctrl_id, p_dev->conn.ctrl_cid,
                     L2CAP_CONN_OK, L2CAP_CONN_OK);
-    L2CA_ConfigReq(p_dev->conn.ctrl_cid, &hd_cb.l2cap_cfg);
   } else if (res != BTM_SUCCESS) {
     HIDD_TRACE_WARNING("%s: connection rejected by security", __func__);
 
@@ -152,7 +151,6 @@ void hidd_sec_check_complete_orig(UNUSED_ATTR const RawAddress* bd_addr,
     p_dev->conn.disc_reason = HID_SUCCESS;
 
     p_dev->conn.conn_state = HID_CONN_STATE_CONFIG;
-    L2CA_ConfigReq(p_dev->conn.ctrl_cid, &hd_cb.l2cap_cfg);
   } else {
     HIDD_TRACE_WARNING("%s: security check failed (%02x)", __func__, res);
     p_dev->conn.disc_reason = HID_ERR_AUTH_FAILED;
@@ -249,7 +247,6 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
   p_hcon->intr_cid = cid;
 
   L2CA_ConnectRsp(bd_addr, id, cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
-  L2CA_ConfigReq(cid, &hd_cb.l2cap_intr_cfg);
 }
 
 /*******************************************************************************
@@ -308,7 +305,6 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result) {
 
   } else {
     p_hcon->conn_state = HID_CONN_STATE_CONFIG;
-    L2CA_ConfigReq(cid, &hd_cb.l2cap_intr_cfg);
   }
 
   return;
@@ -394,25 +390,13 @@ static void hidd_l2cif_config_cfm(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
 
   if (p_hcon->intr_cid == cid &&
       p_cfg->result == L2CAP_CFG_UNACCEPTABLE_PARAMS && p_cfg->qos_present) {
-    tL2CAP_CFG_INFO new_qos;
+    // TODO: QoS parameters not accepted for intr, try again with host proposal
+    // So far we just disconnect
 
-    // QoS parameters not accepted for intr, try again with host proposal
+    hidd_conn_disconnect();
+    reason = HID_L2CAP_CFG_FAIL | (uint32_t)p_cfg->result;
 
-    memcpy(&new_qos, &hd_cb.l2cap_intr_cfg, sizeof(new_qos));
-    memcpy(&new_qos.qos, &p_cfg->qos, sizeof(FLOW_SPEC));
-    new_qos.qos_present = TRUE;
-
-    HIDD_TRACE_WARNING("%s: config failed, retry", __func__);
-
-    L2CA_ConfigReq(cid, &new_qos);
-    return;
-  } else if (p_hcon->intr_cid == cid &&
-             p_cfg->result == L2CAP_CFG_UNKNOWN_OPTIONS) {
-    // QoS not understood by remote device, try configuring without QoS
-
-    HIDD_TRACE_WARNING("%s: config failed, retry without QoS", __func__);
-
-    L2CA_ConfigReq(cid, &hd_cb.l2cap_cfg);
+    hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, reason, NULL);
     return;
   } else if (p_cfg->result != L2CAP_CFG_OK) {
     HIDD_TRACE_WARNING("%s: config failed, disconnecting", __func__);
