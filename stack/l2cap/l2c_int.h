@@ -487,8 +487,6 @@ typedef struct {
   bool ble_check_round_robin;       /* Do a round robin check */
   tL2C_RCB ble_rcb_pool[BLE_MAX_L2CAP_CLIENTS]; /* Registration info pool */
 
-  tL2CA_ECHO_DATA_CB* p_echo_data_cb; /* Echo data callback */
-
   uint16_t dyn_psm;
 
   uint16_t le_dyn_psm; /* Next LE dynamic PSM value to try to assign */
