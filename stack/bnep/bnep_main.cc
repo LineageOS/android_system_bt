@@ -216,13 +216,6 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
 
   BNEP_TRACE_EVENT("BNEP - Rcvd cfg ind, CID: 0x%x", l2cap_cid);
 
-  /* For now, always accept configuration from the other side */
-  p_cfg->flush_to_present = false;
-  p_cfg->mtu_present = false;
-  p_cfg->result = L2CAP_CFG_OK;
-
-  L2CA_ConfigRsp(l2cap_cid, p_cfg);
-
   p_bcb->con_flags |= BNEP_FLAGS_HIS_CFG_DONE;
 
   if (p_bcb->con_flags & BNEP_FLAGS_MY_CFG_DONE) {

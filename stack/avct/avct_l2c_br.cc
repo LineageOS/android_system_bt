@@ -260,13 +260,6 @@ void avct_l2c_br_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   tAVCT_BCB* p_lcb;
   uint16_t max_mtu = BT_DEFAULT_BUFFER_SIZE - L2CAP_MIN_OFFSET - BT_HDR_SIZE;
 
-  /* Don't include QoS nor flush timeout in the response since we
-     currently always accept these values.  Note: fcr_present is left
-     untouched since l2cap negotiates this internally
-  */
-  p_cfg->flush_to_present = false;
-  p_cfg->qos_present = false;
-
   /* look up lcb for this channel */
   p_lcb = avct_bcb_by_lcid(lcid);
   if (p_lcb == NULL) return;
@@ -278,19 +271,10 @@ void avct_l2c_br_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   if (p_lcb->peer_mtu > max_mtu) {
-    p_lcb->peer_mtu = p_cfg->mtu = max_mtu;
-
-    /* Must tell the peer what the adjusted value is */
-    p_cfg->mtu_present = true;
-  } else /* Don't include in the response */
-    p_cfg->mtu_present = false;
+    p_lcb->peer_mtu = max_mtu;
+  }
 
   AVCT_TRACE_DEBUG("%s peer_mtu:%d use:%d", __func__, p_lcb->peer_mtu, max_mtu);
-
-  p_cfg->result = L2CAP_CFG_OK;
-
-  /* send L2CAP configure response */
-  L2CA_ConfigRsp(lcid, p_cfg);
 
   /* if first config ind */
   if ((p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) == 0) {

@@ -742,6 +742,9 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             "L2CAP - Calling Config_Req_Cb(), CID: 0x%04x, C-bit %d",
             p_ccb->local_cid, (p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT));
         (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
+        tL2CAP_CFG_INFO response = {};
+        response.result = L2CAP_CFG_OK;
+        L2CA_ConfigRsp(p_ccb->local_cid, &response);
       } else if (cfg_result == L2CAP_PEER_CFG_DISCONNECT) {
         /* Disconnect if channels are incompatible */
         L2CAP_TRACE_EVENT("L2CAP - incompatible configurations disconnect");
@@ -988,6 +991,9 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       cfg_result = l2cu_process_peer_cfg_req(p_ccb, p_cfg);
       if (cfg_result == L2CAP_PEER_CFG_OK) {
         (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
+        tL2CAP_CFG_INFO response = {};
+        response.result = L2CAP_CFG_OK;
+        L2CA_ConfigRsp(p_ccb->local_cid, &response);
       }
 
       /* Error in config parameters: reset state and config flag */
