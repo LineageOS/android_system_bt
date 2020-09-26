@@ -49,7 +49,7 @@ tSDP_CB sdp_cb;
 static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             UNUSED_ATTR uint16_t psm, uint8_t l2cap_id);
 static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void sdp_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
+static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result);
 static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 
@@ -239,11 +239,11 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void sdp_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
+static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   tCONN_CB* p_ccb;
 
   SDP_TRACE_EVENT("SDP - Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                  p_cfg->result);
+                  result);
 
   /* Find CCB based on CID */
   p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
@@ -253,7 +253,7 @@ static void sdp_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   /* For now, always accept configuration from the other side */
-  if (p_cfg->result == L2CAP_CFG_OK) {
+  if (result == L2CAP_CFG_OK) {
     p_ccb->con_flags |= SDP_FLAGS_MY_CFG_DONE;
 
     if (p_ccb->con_flags & SDP_FLAGS_HIS_CFG_DONE) {

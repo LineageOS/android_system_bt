@@ -40,7 +40,7 @@
 void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 uint16_t psm, uint8_t id);
 void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
-void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
+void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
 void avct_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
@@ -207,18 +207,18 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
+void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
   tAVCT_LCB* p_lcb;
 
   /* look up lcb for this channel */
   p_lcb = avct_lcb_by_lcid(lcid);
   if (p_lcb != NULL) {
     AVCT_TRACE_DEBUG("avct_l2c_config_cfm_cback: 0x%x, ch_state: %d, res: %d",
-                     lcid, p_lcb->ch_state, p_cfg->result);
+                     lcid, p_lcb->ch_state, result);
     /* if in correct state */
     if (p_lcb->ch_state == AVCT_CH_CFG) {
       /* if result successful */
-      if (p_cfg->result == L2CAP_CFG_OK) {
+      if (result == L2CAP_CFG_OK) {
         /* update flags */
         p_lcb->ch_flags |= AVCT_L2C_CFG_CFM_DONE;
 
@@ -234,7 +234,7 @@ void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
             "ERROR avct_l2c_config_cfm_cback L2CA_DisconnectReq %d ",
             p_lcb->ch_state);
         /* store result value */
-        p_lcb->ch_result = p_cfg->result;
+        p_lcb->ch_result = result;
 
         /* Send L2CAP disconnect req */
         L2CA_DisconnectReq(lcid);
