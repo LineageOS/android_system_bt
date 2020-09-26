@@ -768,10 +768,6 @@ static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
     p_ccb->rem_mtu_size = local_mtu_size;
   } else
     p_ccb->rem_mtu_size = p_cfg->mtu;
-
-  p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
-
-  gap_checks_con_flags(p_ccb);
 }
 
 /*******************************************************************************
@@ -793,7 +789,7 @@ static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result) {
 
   if (result == L2CAP_CFG_OK) {
     p_ccb->con_flags |= GAP_CCB_FLAGS_MY_CFG_DONE;
-
+    p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
     gap_checks_con_flags(p_ccb);
   } else {
     p_ccb->p_callback(p_ccb->gap_handle, GAP_EVT_CONN_CLOSED, nullptr);

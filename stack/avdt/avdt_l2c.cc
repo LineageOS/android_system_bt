@@ -311,13 +311,7 @@ void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
     if (p_tbl->state == AVDT_AD_ST_CFG) {
       /* if result successful */
       if (result == L2CAP_CONN_OK) {
-        /* update cfg_flags */
-        p_tbl->cfg_flags |= AVDT_L2C_CFG_CFM_DONE;
-
-        /* if configuration complete */
-        if (p_tbl->cfg_flags & AVDT_L2C_CFG_IND_DONE) {
-          avdt_ad_tc_open_ind(p_tbl);
-        }
+        avdt_ad_tc_open_ind(p_tbl);
       }
       /* else failure */
       else {
@@ -354,17 +348,6 @@ void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     }
     AVDT_TRACE_DEBUG("%s: peer_mtu: %d, lcid: %d", __func__, p_tbl->peer_mtu,
                      lcid);
-
-    /* if first config ind */
-    if ((p_tbl->cfg_flags & AVDT_L2C_CFG_IND_DONE) == 0) {
-      /* update cfg_flags */
-      p_tbl->cfg_flags |= AVDT_L2C_CFG_IND_DONE;
-
-      /* if configuration complete */
-      if (p_tbl->cfg_flags & AVDT_L2C_CFG_CFM_DONE) {
-        avdt_ad_tc_open_ind(p_tbl);
-      }
-    }
   }
 }
 
