@@ -250,10 +250,6 @@ typedef struct {
  */
 typedef struct {
   uint8_t preferred_mode;
-  uint16_t user_rx_buf_size;
-  uint16_t user_tx_buf_size;
-  uint16_t fcr_rx_buf_size;
-  uint16_t fcr_tx_buf_size;
 } tL2CAP_ERTM_INFO;
 
 /**
