@@ -281,6 +281,15 @@ Return<void> BluetoothHci::initialize_impl(
     ALOGE("cb == nullptr! -> Unable to call initializationComplete(ERR)");
     return Void();
   }
+  if (hci_handle_ != nullptr) {
+    ALOGE("hci_handle != nullptr! -> Double attempt to initialize the HAL");
+    auto hidl_status =
+        cb->initializationComplete(V1_0::Status::INITIALIZATION_ERROR);
+    if (!hidl_status.isOk()) {
+      ALOGE("VendorInterface -> Unable to call initializationComplete(ERR)");
+    }
+    return Void();
+  }
 
   death_recipient_->setHasDied(false);
   cb->linkToDeath(death_recipient_, 0);
