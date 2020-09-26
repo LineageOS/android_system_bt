@@ -122,7 +122,9 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   p_rcb->log_packets = enable_snoop;
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
-  p_rcb->ertm_info = p_ertm_info == nullptr ? tL2CAP_ERTM_INFO{} : *p_ertm_info;
+  p_rcb->ertm_info = p_ertm_info == nullptr
+                         ? tL2CAP_ERTM_INFO{L2CAP_FCR_BASIC_MODE}
+                         : *p_ertm_info;
   p_rcb->my_mtu = my_mtu;
   p_rcb->required_remote_mtu =
       std::max<uint16_t>(required_remote_mtu, L2CAP_MIN_MTU);
@@ -399,21 +401,8 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
   if (p_ertm_info) {
     p_ccb->ertm_info = *p_ertm_info;
 
-    /* Replace default indicators with the actual default pool */
-    if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-
-    if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-
     p_ccb->max_rx_mtu =
-        p_ertm_info->user_rx_buf_size -
+        BT_DEFAULT_BUFFER_SIZE -
         (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
   }
 
@@ -822,21 +811,8 @@ bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
   if (p_ertm_info) {
     p_ccb->ertm_info = *p_ertm_info;
 
-    /* Replace default indicators with the actual default pool */
-    if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-
-    if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-
     p_ccb->max_rx_mtu =
-        p_ertm_info->user_rx_buf_size -
+        BT_DEFAULT_BUFFER_SIZE -
         (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
   }
 
