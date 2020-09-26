@@ -228,8 +228,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   if (p_ccb->cfg.fcr_present) {
     if (ertm_info == NULL) {
       p_ccb->ertm_info.preferred_mode = p_ccb->cfg.fcr.mode;
-      p_ccb->ertm_info.user_rx_buf_size = GAP_DATA_BUF_SIZE;
-      p_ccb->ertm_info.user_tx_buf_size = GAP_DATA_BUF_SIZE;
+      p_ccb->ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
+      p_ccb->ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
       p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
       p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
     } else {
