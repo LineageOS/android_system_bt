@@ -383,7 +383,7 @@ bool bluetooth::shim::legacy::L2cap::ConfigRequest(
     do_in_main_thread(
         FROM_HERE,
         base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConfigCfm_Cb, cid,
-                   base::Unretained(&cfg_info)));
+                   L2CAP_CFG_OK));
   });
   return true;
 }
