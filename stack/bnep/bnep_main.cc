@@ -133,9 +133,6 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   /* Send response to the L2CAP layer. */
   L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
-  /* Send a Configuration Request. */
-  L2CA_ConfigReq(l2cap_cid, &bnep_cb.l2cap_my_cfg);
-
   /* Start timer waiting for config setup */
   alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
                      bnep_conn_timer_timeout, p_bcb);
@@ -169,9 +166,6 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   if ((result == L2CAP_CONN_OK) &&
       (p_bcb->con_state == BNEP_STATE_CONN_START)) {
     p_bcb->con_state = BNEP_STATE_CFG_SETUP;
-
-    /* Send a Configuration Request. */
-    L2CA_ConfigReq(l2cap_cid, &bnep_cb.l2cap_my_cfg);
 
     /* Start timer waiting for config results */
     alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,

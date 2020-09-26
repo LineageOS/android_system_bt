@@ -166,9 +166,6 @@ void hidh_sec_check_complete_term(UNUSED_ATTR const RawAddress* bd_addr,
     L2CA_ConnectRsp(p_dev->addr, p_dev->conn.ctrl_id, p_dev->conn.ctrl_cid,
                     L2CAP_CONN_OK, L2CAP_CONN_OK);
 
-    /* Send a Configuration Request. */
-    L2CA_ConfigReq(p_dev->conn.ctrl_cid, &hh_cb.l2cap_cfg);
-
   }
   /* security check fail */
   else if (res != BTM_SUCCESS) {
@@ -265,9 +262,6 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
   /* Send response to the L2CAP layer. */
   L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
-  /* Send a Configuration Request. */
-  L2CA_ConfigReq(l2cap_cid, &hh_cb.l2cap_cfg);
-
   HIDH_TRACE_EVENT(
       "HID-Host Rcvd L2CAP conn ind, sent config req, PSM: 0x%04x  CID 0x%x",
       psm, l2cap_cid);
@@ -327,9 +321,6 @@ void hidh_sec_check_complete_orig(UNUSED_ATTR const RawAddress* bd_addr,
 
     /* Transition to the next appropriate state, configuration */
     p_dev->conn.conn_state = HID_CONN_STATE_CONFIG;
-    L2CA_ConfigReq(p_dev->conn.ctrl_cid, &hh_cb.l2cap_cfg);
-    HIDH_TRACE_EVENT("HID-Host Got Control conn cnf, sent cfg req, CID: 0x%x",
-                     p_dev->conn.ctrl_cid);
   }
 
   if (res != BTM_SUCCESS && p_dev->conn.conn_state == HID_CONN_STATE_SECURITY) {
@@ -419,10 +410,6 @@ static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
                                  BTM_SUCCESS);
   } else {
     p_hcon->conn_state = HID_CONN_STATE_CONFIG;
-    /* Send a Configuration Request. */
-    L2CA_ConfigReq(l2cap_cid, &hh_cb.l2cap_cfg);
-    HIDH_TRACE_EVENT("HID-Host got Interrupt conn cnf, sent cfg req, CID: 0x%x",
-                     l2cap_cid);
   }
 
   return;
