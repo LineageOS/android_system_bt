@@ -39,14 +39,6 @@
 
 using base::StringPrintf;
 
-/* Configuration flags. */
-#define GATT_L2C_CFG_IND_DONE (1 << 0)
-#define GATT_L2C_CFG_CFM_DONE (1 << 1)
-
-/* minimum GATT MTU size over BR/EDR link
- */
-#define GATT_MIN_BR_MTU_SIZE 48
-
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
@@ -660,8 +652,7 @@ void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
   if (!p_tcb) return;
 
   /* GATT uses the smaller of our MTU and peer's MTU  */
-  if (p_cfg->mtu_present &&
-      (p_cfg->mtu >= GATT_MIN_BR_MTU_SIZE && p_cfg->mtu < L2CAP_DEFAULT_MTU))
+  if (p_cfg->mtu_present && p_cfg->mtu < L2CAP_DEFAULT_MTU)
     p_tcb->payload_size = p_cfg->mtu;
   else
     p_tcb->payload_size = L2CAP_DEFAULT_MTU;

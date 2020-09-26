@@ -23,8 +23,6 @@
  *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bt_types.h"
@@ -32,13 +30,8 @@
 #include "l2c_api.h"
 #include "l2cdefs.h"
 
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
-
 #include "hiddefs.h"
 
-#include "bt_utils.h"
 #include "hidd_api.h"
 #include "hidd_int.h"
 

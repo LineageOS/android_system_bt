@@ -32,8 +32,6 @@
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
 
-#include "btm_api.h"
-
 #include "sdp_api.h"
 #include "sdpint.h"
 #include "stack/btm/btm_sec.h"
