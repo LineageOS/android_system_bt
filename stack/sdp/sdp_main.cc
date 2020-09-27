@@ -136,17 +136,7 @@ static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
 
     /* Tell the user if there is a callback */
     if (p_ccb->p_cb || p_ccb->p_cb2) {
-      uint16_t err = -1;
-      if ((result == HCI_ERR_HOST_REJECT_SECURITY) ||
-          (result == HCI_ERR_AUTH_FAILURE) ||
-          (result == HCI_ERR_PAIRING_NOT_ALLOWED) ||
-          (result == HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED) ||
-          (result == HCI_ERR_KEY_MISSING))
-        err = SDP_SECURITY_ERR;
-      else if (result == HCI_ERR_HOST_REJECT_DEVICE)
-        err = SDP_CONN_REJECTED;
-      else
-        err = SDP_CONN_FAILED;
+      uint16_t err = SDP_CONN_FAILED;
       if (p_ccb->p_cb)
         (*p_ccb->p_cb)(err);
       else if (p_ccb->p_cb2)
