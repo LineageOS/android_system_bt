@@ -90,7 +90,7 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
 
   /* Send L2CAP connect rsp */
-  L2CA_ErtmConnectRsp(bd_addr, id, lcid, result, 0, &ertm_info);
+  L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
 
   /* if result ok, proceed with connection */
   if (result == L2CAP_CONN_OK) {
