@@ -115,7 +115,7 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   /* no more resources to handle the connection, reject the connection.    */
   if (!(bnep_cb.profile_registered) || (p_bcb) ||
       ((p_bcb = bnepu_allocate_bcb(bd_addr)) == NULL)) {
-    L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_NO_PSM, 0);
+    L2CA_DisconnectReq(l2cap_cid);
     return;
   }
 
@@ -124,9 +124,6 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   /* Save the L2CAP Channel ID. */
   p_bcb->l2cap_cid = l2cap_cid;
-
-  /* Send response to the L2CAP layer. */
-  L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
   /* Start timer waiting for config setup */
   alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
