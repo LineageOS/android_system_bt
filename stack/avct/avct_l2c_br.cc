@@ -102,6 +102,16 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   }
 }
 
+void avct_br_on_l2cap_error(uint16_t lcid, uint16_t result) {
+  tAVCT_BCB* p_lcb = avct_bcb_by_lcid(lcid);
+
+  /* store result value */
+  p_lcb->ch_result = result;
+
+  /* Send L2CAP disconnect req */
+  avct_l2c_br_disconnect(lcid, 0);
+}
+
 /*******************************************************************************
  *
  * Function         avct_l2c_br_connect_cfm_cback
@@ -120,10 +130,7 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   if ((p_lcb == NULL) || (p_lcb->ch_state != AVCT_CH_CONN)) return;
 
   if (result != L2CAP_CONN_OK) {
-    /* failure */
-    tAVCT_LCB_EVT avct_lcb_evt;
-    avct_lcb_evt.result = result;
-    avct_bcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
+    avct_br_on_l2cap_error(lcid, result);
     return;
   }
 
@@ -156,11 +163,7 @@ void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t result) {
   }
   /* else failure */
   else {
-    /* store result value */
-    p_lcb->ch_result = result;
-
-    /* Send L2CAP disconnect req */
-    avct_l2c_br_disconnect(lcid, 0);
+    avct_br_on_l2cap_error(lcid, result);
   }
 }
 
