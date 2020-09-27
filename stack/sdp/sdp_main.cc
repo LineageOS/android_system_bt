@@ -131,6 +131,7 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
 static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
   tCONN_CB* p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
+  if (p_ccb == nullptr) return;
   sdp_disconnect(p_ccb, SDP_CFG_FAILED);
 }
 
