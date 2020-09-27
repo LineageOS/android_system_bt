@@ -37,6 +37,8 @@
 #include "stack/crypto_toolbox/crypto_toolbox.h"
 #include "stack/include/acl_api.h"
 
+void btm_ble_set_random_address(const RawAddress& random_bda);
+
 /* This function generates Resolvable Private Address (RPA) from Identity
  * Resolving Key |irk| and |random|*/
 RawAddress generate_rpa_from_irk_and_rand(const Octet16& irk,
@@ -57,6 +59,13 @@ RawAddress generate_rpa_from_irk_and_rand(const Octet16& irk,
   address.address[4] = p[1];
   address.address[3] = p[2];
   return address;
+}
+
+static void btm_ble_refresh_raddr_timer_timeout(UNUSED_ATTR void* data) {
+  if (btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type == BLE_ADDR_RANDOM) {
+    /* refresh the random addr */
+    btm_gen_resolvable_private_addr(base::Bind(&btm_gen_resolve_paddr_low));
+  }
 }
 
 /** This function is called when random address for local controller was

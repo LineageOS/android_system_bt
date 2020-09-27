@@ -168,24 +168,6 @@
 #define L2CAP_CMD_BUF_SIZE BT_SMALL_BUFFER_SIZE
 #endif
 
-#ifndef L2CAP_USER_TX_BUF_SIZE
-#define L2CAP_USER_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-#ifndef L2CAP_USER_RX_BUF_SIZE
-#define L2CAP_USER_RX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/* Sends L2CAP segmented packets in ERTM mode */
-#ifndef L2CAP_FCR_TX_BUF_SIZE
-#define L2CAP_FCR_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/* Receives L2CAP segmented packets in ERTM mode */
-#ifndef L2CAP_FCR_RX_BUF_SIZE
-#define L2CAP_FCR_RX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
 #ifndef L2CAP_FCR_ERTM_BUF_SIZE
 #define L2CAP_FCR_ERTM_BUF_SIZE (10240 + 24)
 #endif
@@ -206,11 +188,6 @@
 
 #ifndef OBX_LRG_DATA_BUF_SIZE
 #define OBX_LRG_DATA_BUF_SIZE (8080 + 26)
-#endif
-
-/* Used to send data to L2CAP. */
-#ifndef GAP_DATA_BUF_SIZE
-#define GAP_DATA_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
 #endif
 
 /* BNEP data and protocol messages. */
@@ -787,88 +764,6 @@
 
 /******************************************************************************
  *
- * OBEX
- *
- *****************************************************************************/
-
-/*
- * Buffer size to reassemble the SDU.
- * It will allow buffers to be used that are larger than the L2CAP_MAX_MTU.
- */
-#ifndef OBX_USER_RX_BUF_SIZE
-#define OBX_USER_RX_BUF_SIZE OBX_LRG_DATA_BUF_SIZE
-#endif
-
-/*
- * Buffer size to hold the SDU.
- * It will allow buffers to be used that are larger than the L2CAP_MAX_MTU.
- */
-#ifndef OBX_USER_TX_BUF_SIZE
-#define OBX_USER_TX_BUF_SIZE OBX_LRG_DATA_BUF_SIZE
-#endif
-
-/* Buffer size used to hold MPS segments during SDU reassembly. */
-#ifndef OBX_FCR_RX_BUF_SIZE
-#define OBX_FCR_RX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/*
- * Buffer size used to hold MPS segments used in (re)transmissions.
- * The size of each buffer must be able to hold the maximum MPS segment size
- * passed in L2CA_SetFCROptions plus BT_HDR (8) + HCI preamble (4) +
- * L2CAP_MIN_OFFSET (11 - as of BT 2.1 + EDR Spec).
- */
-#ifndef OBX_FCR_TX_BUF_SIZE
-#define OBX_FCR_TX_BUF_SIZE BT_DEFAULT_BUFFER_SIZE
-#endif
-
-/*
- * Size of the transmission window when using enhanced retransmission mode.
- * Not used in basic and streaming modes. Range: 1 - 63
- */
-#ifndef OBX_FCR_OPT_TX_WINDOW_SIZE_BR_EDR
-#define OBX_FCR_OPT_TX_WINDOW_SIZE_BR_EDR 20
-#endif
-
-/*
- * Number of transmission attempts for a single I-Frame before taking
- * Down the connection. Used In ERTM mode only. Value is Ignored in basic and
- * Streaming modes.
- * Range: 0, 1-0xFF
- * 0 - infinite retransmissions
- * 1 - single transmission
- */
-#ifndef OBX_FCR_OPT_MAX_TX_B4_DISCNT
-#define OBX_FCR_OPT_MAX_TX_B4_DISCNT 20
-#endif
-
-/*
- * Retransmission Timeout
- * Range: Minimum 2000 (2 secs) on BR/EDR when supporting PBF.
- */
-#ifndef OBX_FCR_OPT_RETX_TOUT
-#define OBX_FCR_OPT_RETX_TOUT 2000
-#endif
-
-/*
- * Monitor Timeout
- * Range: Minimum 12000 (12 secs) on BR/EDR when supporting PBF.
- */
-#ifndef OBX_FCR_OPT_MONITOR_TOUT
-#define OBX_FCR_OPT_MONITOR_TOUT 12000
-#endif
-
-/*
- * Maximum PDU payload size.
- * Suggestion: The maximum amount of data that will fit into a 3-DH5 packet.
- * Range: 2 octets
- */
-#ifndef OBX_FCR_OPT_MAX_PDU_SIZE
-#define OBX_FCR_OPT_MAX_PDU_SIZE L2CAP_MPS_OVER_BR_EDR
-#endif
-
-/******************************************************************************
- *
  * BNEP
  *
  *****************************************************************************/
@@ -1039,10 +934,6 @@
 #define HID_DEV_MTU_SIZE 512
 #endif
 
-#ifndef HID_DEV_FLUSH_TO
-#define HID_DEV_FLUSH_TO 0xffff
-#endif
-
 /*************************************************************************
  * Definitions for Both HID-Host & Device
 */
@@ -1071,10 +962,6 @@
 
 #ifndef HID_HOST_MTU
 #define HID_HOST_MTU 640
-#endif
-
-#ifndef HID_HOST_FLUSH_TO
-#define HID_HOST_FLUSH_TO 0xffff
 #endif
 
 #ifndef HID_HOST_MAX_CONN_RETRY

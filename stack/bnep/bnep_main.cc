@@ -22,26 +22,20 @@
  *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include "bt_target.h"
 
 #include "bt_common.h"
 #include "bt_types.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "log/log.h"
 
 #include "btm_api.h"
-#include "btu.h"
 
 #include "bnep_api.h"
 #include "bnep_int.h"
-#include "bt_utils.h"
 
 #include "bta/include/bta_api.h"
 #include "device/include/controller.h"
@@ -61,7 +55,7 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                              uint16_t psm, uint8_t l2cap_id);
 static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
+static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result);
 static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void bnep_congestion_ind(uint16_t lcid, bool is_congested);
@@ -81,8 +75,6 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
 
   bnep_cb.l2cap_my_cfg.mtu_present = true;
   bnep_cb.l2cap_my_cfg.mtu = BNEP_MTU_SIZE;
-  bnep_cb.l2cap_my_cfg.flush_to_present = true;
-  bnep_cb.l2cap_my_cfg.flush_to = BNEP_FLUSH_TO;
 
   bnep_cb.reg_info.pL2CA_ConnectInd_Cb = bnep_connect_ind;
   bnep_cb.reg_info.pL2CA_ConnectCfm_Cb = bnep_connect_cfm;
@@ -94,7 +86,7 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(BT_PSM_BNEP, bnep_cb.reg_info, false /* enable_snoop */,
-                      nullptr, bnep_cb.l2cap_my_cfg.mtu,
+                      nullptr, BNEP_MTU_SIZE, BNEP_MTU_SIZE,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     BNEP_TRACE_ERROR("BNEP - Registration failed");
     return BNEP_SECURITY_FAIL;
@@ -135,9 +127,6 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   /* Send response to the L2CAP layer. */
   L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
-  /* Send a Configuration Request. */
-  L2CA_ConfigReq(l2cap_cid, &bnep_cb.l2cap_my_cfg);
-
   /* Start timer waiting for config setup */
   alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
                      bnep_conn_timer_timeout, p_bcb);
@@ -172,9 +161,6 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
       (p_bcb->con_state == BNEP_STATE_CONN_START)) {
     p_bcb->con_state = BNEP_STATE_CFG_SETUP;
 
-    /* Send a Configuration Request. */
-    L2CA_ConfigReq(l2cap_cid, &bnep_cb.l2cap_my_cfg);
-
     /* Start timer waiting for config results */
     alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
                        bnep_conn_timer_timeout, p_bcb);
@@ -206,57 +192,7 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
  *
  ******************************************************************************/
 static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
-  tBNEP_CONN* p_bcb;
-  uint16_t result, mtu = 0;
-
-  /* Find CCB based on CID */
-  p_bcb = bnepu_find_bcb_by_cid(l2cap_cid);
-  if (p_bcb == NULL) {
-    BNEP_TRACE_WARNING("BNEP - Rcvd L2CAP cfg ind, unknown CID: 0x%x",
-                       l2cap_cid);
-    return;
-  }
-
-  BNEP_TRACE_EVENT("BNEP - Rcvd cfg ind, CID: 0x%x", l2cap_cid);
-
-  /* Remember the remote MTU size */
-  if ((!p_cfg->mtu_present) || (p_cfg->mtu < BNEP_MTU_SIZE)) {
-    mtu = p_cfg->mtu;
-    p_cfg->flush_to_present = false;
-    p_cfg->mtu_present = true;
-    p_cfg->mtu = BNEP_MTU_SIZE;
-    p_cfg->result = result = L2CAP_CFG_UNACCEPTABLE_PARAMS;
-  } else {
-    p_bcb->rem_mtu_size = BNEP_MTU_SIZE;
-
-    /* For now, always accept configuration from the other side */
-    p_cfg->flush_to_present = false;
-    p_cfg->mtu_present = false;
-    p_cfg->result = result = L2CAP_CFG_OK;
-  }
-
-  L2CA_ConfigRsp(l2cap_cid, p_cfg);
-
-  if (result != L2CAP_CFG_OK) {
-    BNEP_TRACE_EVENT("BNEP - Rcvd cfg ind with bad MTU %d, CID: 0x%x", mtu,
-                     l2cap_cid);
-    return;
-  }
-
-  p_bcb->con_flags |= BNEP_FLAGS_HIS_CFG_DONE;
-
-  if (p_bcb->con_flags & BNEP_FLAGS_MY_CFG_DONE) {
-    p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
-
-    /* Start timer waiting for setup or response */
-    alarm_set_on_mloop(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
-                       bnep_conn_timer_timeout, p_bcb);
-
-    if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
-      bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
-                              BTM_SUCCESS);
-    }
-  }
+  // No-op here. We are not interested in their MTU.
 }
 
 /*******************************************************************************
@@ -269,11 +205,11 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
+static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   tBNEP_CONN* p_bcb;
 
   BNEP_TRACE_EVENT("BNEP - Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                   p_cfg->result);
+                   result);
 
   /* Find CCB based on CID */
   p_bcb = bnepu_find_bcb_by_cid(l2cap_cid);
@@ -284,20 +220,16 @@ static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
   }
 
   /* For now, always accept configuration from the other side */
-  if (p_cfg->result == L2CAP_CFG_OK) {
-    p_bcb->con_flags |= BNEP_FLAGS_MY_CFG_DONE;
+  if (result == L2CAP_CFG_OK) {
+    p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
 
-    if (p_bcb->con_flags & BNEP_FLAGS_HIS_CFG_DONE) {
-      p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
+    /* Start timer waiting for setup or response */
+    alarm_set_on_mloop(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
+                       bnep_conn_timer_timeout, p_bcb);
 
-      /* Start timer waiting for setup or response */
-      alarm_set_on_mloop(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
-                         bnep_conn_timer_timeout, p_bcb);
-
-      if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
-        bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
-                                BTM_SUCCESS);
-      }
+    if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
+      bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
+                              BTM_SUCCESS);
     }
   } else {
     /* Tell the upper layer, if there is a callback */

@@ -1164,7 +1164,8 @@ bool bta_gattc_process_srvc_chg_ind(uint16_t conn_id, tBTA_GATTC_RCB* p_clrcb,
   /* notify applicationf or service change */
   if (p_clrcb->p_cback) {
     tBTA_GATTC bta_gattc;
-    bta_gattc.remote_bda = p_srcb->server_bda;
+    bta_gattc.service_changed.remote_bda = p_srcb->server_bda;
+    bta_gattc.service_changed.conn_id = conn_id;
     (*p_clrcb->p_cback)(BTA_GATTC_SRVC_CHG_EVT, &bta_gattc);
   }
 

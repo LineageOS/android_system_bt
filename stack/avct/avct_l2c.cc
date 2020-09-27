@@ -22,25 +22,19 @@
  *
  ******************************************************************************/
 
-#include <string.h>
 #include "avct_api.h"
 #include "avct_int.h"
 #include "bt_target.h"
 #include "bt_types.h"
-#include "bt_utils.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
-
-/* Configuration flags. */
-#define AVCT_L2C_CFG_IND_DONE (1 << 0)
-#define AVCT_L2C_CFG_CFM_DONE (1 << 1)
 
 /* callback function declarations */
 void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 uint16_t psm, uint8_t id);
 void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
-void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
+void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result);
 void avct_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
 void avct_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
@@ -98,7 +92,6 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 UNUSED_ATTR uint16_t psm, uint8_t id) {
   tAVCT_LCB* p_lcb;
   uint16_t result = L2CAP_CONN_OK;
-  tL2CAP_CFG_INFO cfg;
 
   /* do we already have a channel for this peer? */
   p_lcb = avct_lcb_by_bd(bd_addr);
@@ -138,13 +131,6 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
     /* transition to configuration state */
     p_lcb->ch_state = AVCT_CH_CFG;
-
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = avct_cb.mtu;
-    L2CA_ConfigReq(lcid, &cfg);
-    AVCT_TRACE_DEBUG("avct_l2c snd Cfg Req");
   }
 
   if (p_lcb) AVCT_TRACE_DEBUG("ch_state cni: %d ", p_lcb->ch_state);
@@ -162,7 +148,6 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
  ******************************************************************************/
 void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   tAVCT_LCB* p_lcb;
-  tL2CAP_CFG_INFO cfg;
 
   /* look up lcb for this channel */
   p_lcb = avct_lcb_by_lcid(lcid);
@@ -177,13 +162,6 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
       if (result == L2CAP_CONN_OK) {
         /* set channel state */
         p_lcb->ch_state = AVCT_CH_CFG;
-
-        /* Send L2CAP config req */
-        memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-        cfg.mtu_present = true;
-        cfg.mtu = avct_cb.mtu;
-        L2CA_ConfigReq(lcid, &cfg);
-        AVCT_TRACE_DEBUG("avct_l2c snd Cfg Req");
       }
       /* else failure */
       else {
@@ -223,26 +201,20 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
+void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
   tAVCT_LCB* p_lcb;
 
   /* look up lcb for this channel */
   p_lcb = avct_lcb_by_lcid(lcid);
   if (p_lcb != NULL) {
     AVCT_TRACE_DEBUG("avct_l2c_config_cfm_cback: 0x%x, ch_state: %d, res: %d",
-                     lcid, p_lcb->ch_state, p_cfg->result);
+                     lcid, p_lcb->ch_state, result);
     /* if in correct state */
     if (p_lcb->ch_state == AVCT_CH_CFG) {
       /* if result successful */
-      if (p_cfg->result == L2CAP_CFG_OK) {
-        /* update flags */
-        p_lcb->ch_flags |= AVCT_L2C_CFG_CFM_DONE;
-
-        /* if configuration complete */
-        if (p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) {
-          p_lcb->ch_state = AVCT_CH_OPEN;
-          avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-        }
+      if (result == L2CAP_CFG_OK) {
+        p_lcb->ch_state = AVCT_CH_OPEN;
+        avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
       }
       /* else failure */
       else {
@@ -250,7 +222,7 @@ void avct_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
             "ERROR avct_l2c_config_cfm_cback L2CA_DisconnectReq %d ",
             p_lcb->ch_state);
         /* store result value */
-        p_lcb->ch_result = p_cfg->result;
+        p_lcb->ch_result = result;
 
         /* Send L2CAP disconnect req */
         L2CA_DisconnectReq(lcid);
@@ -284,24 +256,6 @@ void avct_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     } else {
       p_lcb->peer_mtu = L2CAP_DEFAULT_MTU;
     }
-
-    /* send L2CAP configure response */
-    memset(p_cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    p_cfg->result = L2CAP_CFG_OK;
-    L2CA_ConfigRsp(lcid, p_cfg);
-
-    /* if first config ind */
-    if ((p_lcb->ch_flags & AVCT_L2C_CFG_IND_DONE) == 0) {
-      /* update flags */
-      p_lcb->ch_flags |= AVCT_L2C_CFG_IND_DONE;
-
-      /* if configuration complete */
-      if (p_lcb->ch_flags & AVCT_L2C_CFG_CFM_DONE) {
-        p_lcb->ch_state = AVCT_CH_OPEN;
-        avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-      }
-    }
-    AVCT_TRACE_DEBUG("ch_state cfi: %d ", p_lcb->ch_state);
   }
 }
 

@@ -330,25 +330,23 @@ static void prepare_I_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
   UINT16_TO_STREAM(p, ctrl_word);
 
   /* Compute the FCS and add to the end of the buffer if not bypassed */
-  if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
-    /* length field in l2cap header has to include FCS length */
-    p = ((uint8_t*)(p_buf + 1)) + p_buf->offset;
-    UINT16_TO_STREAM(p, p_buf->len + L2CAP_FCS_LEN - L2CAP_PKT_OVERHEAD);
+  /* length field in l2cap header has to include FCS length */
+  p = ((uint8_t*)(p_buf + 1)) + p_buf->offset;
+  UINT16_TO_STREAM(p, p_buf->len + L2CAP_FCS_LEN - L2CAP_PKT_OVERHEAD);
 
-    /* Calculate the FCS */
-    fcs = l2c_fcr_tx_get_fcs(p_buf);
+  /* Calculate the FCS */
+  fcs = l2c_fcr_tx_get_fcs(p_buf);
 
-    /* Point to the end of the buffer and put the FCS there */
-    /*
-     * NOTE: Here we assume the allocated buffer is large enough
-     * to include extra L2CAP_FCS_LEN octets at the end.
-     */
-    p = ((uint8_t*)(p_buf + 1)) + p_buf->offset + p_buf->len;
+  /* Point to the end of the buffer and put the FCS there */
+  /*
+   * NOTE: Here we assume the allocated buffer is large enough
+   * to include extra L2CAP_FCS_LEN octets at the end.
+   */
+  p = ((uint8_t*)(p_buf + 1)) + p_buf->offset + p_buf->len;
 
-    UINT16_TO_STREAM(p, fcs);
+  UINT16_TO_STREAM(p, fcs);
 
-    p_buf->len += L2CAP_FCS_LEN;
-  }
+  p_buf->len += L2CAP_FCS_LEN;
 
   if (is_retransmission) {
     L2CAP_TRACE_EVENT(
@@ -418,16 +416,10 @@ void l2c_fcr_send_S_frame(tL2C_CCB* p_ccb, uint16_t function_code,
   UINT16_TO_STREAM(p, ctrl_word);
 
   /* Compute the FCS and add to the end of the buffer if not bypassed */
-  if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
-    fcs = l2c_fcr_tx_get_fcs(p_buf);
+  fcs = l2c_fcr_tx_get_fcs(p_buf);
 
-    UINT16_TO_STREAM(p, fcs);
-    p_buf->len += L2CAP_FCS_LEN;
-  } else {
-    /* rewrite the length without FCS length */
-    p -= 6;
-    UINT16_TO_STREAM(p, L2CAP_FCR_OVERHEAD);
-  }
+  UINT16_TO_STREAM(p, fcs);
+  p_buf->len += L2CAP_FCS_LEN;
 
   /* Now, the HCI transport header */
   p_buf->layer_specific = L2CAP_NON_FLUSHABLE_PKT;
@@ -483,9 +475,7 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   uint16_t ctrl_word;
 
   /* Check the length */
-  min_pdu_len = (p_ccb->bypass_fcs == L2CAP_BYPASS_FCS)
-                    ? (uint16_t)L2CAP_FCR_OVERHEAD
-                    : (uint16_t)(L2CAP_FCS_LEN + L2CAP_FCR_OVERHEAD);
+  min_pdu_len = (uint16_t)(L2CAP_FCS_LEN + L2CAP_FCR_OVERHEAD);
 
   if (p_buf->len < min_pdu_len) {
     L2CAP_TRACE_WARNING("Rx L2CAP PDU: CID: 0x%04x  Len too short: %u",
@@ -539,19 +529,16 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
       fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q), p_ccb->fcrb.num_tries);
 
   /* Verify FCS if using */
-  if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
-    p = ((uint8_t*)(p_buf + 1)) + p_buf->offset + p_buf->len - L2CAP_FCS_LEN;
+  p = ((uint8_t*)(p_buf + 1)) + p_buf->offset + p_buf->len - L2CAP_FCS_LEN;
 
-    /* Extract and drop the FCS from the packet */
-    STREAM_TO_UINT16(fcs, p);
-    p_buf->len -= L2CAP_FCS_LEN;
+  /* Extract and drop the FCS from the packet */
+  STREAM_TO_UINT16(fcs, p);
+  p_buf->len -= L2CAP_FCS_LEN;
 
-    if (l2c_fcr_rx_get_fcs(p_buf) != fcs) {
-      L2CAP_TRACE_WARNING("Rx L2CAP PDU: CID: 0x%04x  BAD FCS",
-                          p_ccb->local_cid);
-      osi_free(p_buf);
-      return;
-    }
+  if (l2c_fcr_rx_get_fcs(p_buf) != fcs) {
+    L2CAP_TRACE_WARNING("Rx L2CAP PDU: CID: 0x%04x  BAD FCS", p_ccb->local_cid);
+    osi_free(p_buf);
+    return;
   }
 
   /* Get the control word */
@@ -1053,24 +1040,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
         if ((tx_seq == next_srej) &&
             (fixed_queue_length(p_fcrb->srej_rcv_hold_q) <
              p_ccb->our_cfg.fcr.tx_win_sz)) {
-          /* If user gave us a pool for held rx buffers, use that */
-          /* TODO: Could that happen? Get rid of this code. */
-          if (p_ccb->ertm_info.fcr_rx_buf_size != L2CAP_FCR_RX_BUF_SIZE) {
-            BT_HDR* p_buf2;
-
-            /* Adjust offset and len so that control word is copied */
-            p_buf->offset -= L2CAP_FCR_OVERHEAD;
-            p_buf->len += L2CAP_FCR_OVERHEAD;
-
-            p_buf2 = l2c_fcr_clone_buf(p_buf, p_buf->offset, p_buf->len);
-
-            if (p_buf2) {
-              osi_free(p_buf);
-              p_buf = p_buf2;
-            }
-            p_buf->offset += L2CAP_FCR_OVERHEAD;
-            p_buf->len -= L2CAP_FCR_OVERHEAD;
-          }
           L2CAP_TRACE_DEBUG(
               "process_i_frame() Lost: %u  tx_seq:%u  ExpTxSeq %u  Rej: %u  "
               "SRej1",
@@ -1527,14 +1496,14 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
           p_ccb->local_cid, p_xmit->len);
 
       /* We will not save the FCS in case we reconfigure and change options */
-      if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) p_xmit->len -= L2CAP_FCS_LEN;
+      p_xmit->len -= L2CAP_FCS_LEN;
 
       /* Pretend we sent it and it got lost */
       fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_xmit);
       return (NULL);
     } else {
       /* We will not save the FCS in case we reconfigure and change options */
-      if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) p_wack->len -= L2CAP_FCS_LEN;
+      p_wack->len -= L2CAP_FCS_LEN;
 
       p_wack->layer_specific = p_xmit->layer_specific;
       fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_wack);
@@ -1627,10 +1596,10 @@ uint8_t l2c_fcr_chk_chan_modes(tL2C_CCB* p_ccb) {
 
   /* Remove nonbasic options that the peer does not support */
   if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS) &&
-      p_ccb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE) {
+      p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE) {
     L2CAP_TRACE_WARNING(
         "L2CAP - Peer does not support our desired channel types");
-    p_ccb->ertm_info.preferred_mode = 0;
+    p_ccb->p_rcb->ertm_info.preferred_mode = 0;
     return false;
   }
   return true;
@@ -1652,19 +1621,19 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
   tL2CAP_FCR_OPTS* p_fcr = &p_cfg->fcr;
 
-  if (p_fcr->mode != p_ccb->ertm_info.preferred_mode) {
+  if (p_fcr->mode != p_ccb->p_rcb->ertm_info.preferred_mode) {
     L2CAP_TRACE_WARNING(
         "l2c_fcr_adj_our_req_options - preferred_mode (%d), does not match "
         "mode (%d)",
-        p_ccb->ertm_info.preferred_mode, p_fcr->mode);
+        p_ccb->p_rcb->ertm_info.preferred_mode, p_fcr->mode);
 
     /* The preferred mode is passed in through tL2CAP_ERTM_INFO, so override
      * this one */
-    p_fcr->mode = p_ccb->ertm_info.preferred_mode;
+    p_fcr->mode = p_ccb->p_rcb->ertm_info.preferred_mode;
   }
 
   /* If upper layer did not request eRTM mode, BASIC must be used */
-  if (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
+  if (p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
     if (p_cfg->fcr_present && p_fcr->mode != L2CAP_FCR_BASIC_MODE) {
       L2CAP_TRACE_WARNING(
           "l2c_fcr_adj_our_req_options (mode %d): ERROR: No FCR options set "
@@ -1688,7 +1657,7 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     }
 
     /* Basic is the only common channel mode between the two devices */
-    else if (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
+    else if (p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
       /* We only want to try Basic, so bypass sending the FCR options entirely
        */
       p_cfg->fcr_present = false;
@@ -1704,7 +1673,7 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       /* If peer does not support ERTM, try BASIC (will support this if made it
        * here in the code) */
       if (p_fcr->mode == L2CAP_FCR_ERTM_MODE &&
-          !(p_ccb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE)) {
+          !(p_ccb->p_rcb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE)) {
         L2CAP_TRACE_DEBUG(
             "L2C CFG: mode is ERTM, but peer does not support; Try BASIC");
         p_fcr->mode = L2CAP_FCR_BASIC_MODE;
@@ -1866,7 +1835,7 @@ bool l2c_fcr_renegotiate_chan(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       switch (p_ccb->our_cfg.fcr.mode) {
         case L2CAP_FCR_ERTM_MODE:
           /* We can try basic for any other peer mode if we support it */
-          if (p_ccb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE) {
+          if (p_ccb->p_rcb->ertm_info.preferred_mode & L2CAP_FCR_BASIC_MODE) {
             L2CAP_TRACE_DEBUG("%s(Trying Basic)", __func__);
             can_renegotiate = true;
             p_ccb->our_cfg.fcr.mode = L2CAP_FCR_BASIC_MODE;
@@ -1936,17 +1905,17 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       "l2c_fcr_process_peer_cfg_req() CFG fcr_present:%d fcr.mode:%d CCB FCR "
       "mode:%d preferred: %u",
       p_cfg->fcr_present, p_cfg->fcr.mode, p_ccb->our_cfg.fcr.mode,
-      p_ccb->ertm_info.preferred_mode);
+      p_ccb->p_rcb->ertm_info.preferred_mode);
 
   /* If Peer wants basic, we are done (accept it or disconnect) */
   if (p_cfg->fcr.mode == L2CAP_FCR_BASIC_MODE) {
     /* If we do not allow basic, disconnect */
-    if (p_ccb->ertm_info.preferred_mode != L2CAP_FCR_BASIC_MODE)
+    if (p_ccb->p_rcb->ertm_info.preferred_mode != L2CAP_FCR_BASIC_MODE)
       fcr_ok = L2CAP_PEER_CFG_DISCONNECT;
   }
 
   /* Need to negotiate if our modes are not the same */
-  else if (p_cfg->fcr.mode != p_ccb->ertm_info.preferred_mode) {
+  else if (p_cfg->fcr.mode != p_ccb->p_rcb->ertm_info.preferred_mode) {
     /* If peer wants a mode that we don't support then retry our mode (ex.
     *rtx/flc), OR
     ** If we want ERTM and they wanted streaming retry our mode.
@@ -1954,7 +1923,7 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     **       from their EXF mask.
     */
     if ((((1 << p_cfg->fcr.mode) & L2CAP_FCR_CHAN_OPT_ALL_MASK) == 0) ||
-        (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE)) {
+        (p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_ERTM_MODE)) {
       p_cfg->fcr.mode = p_ccb->our_cfg.fcr.mode;
       p_cfg->fcr.tx_win_sz = p_ccb->our_cfg.fcr.tx_win_sz;
       p_cfg->fcr.max_transmit = p_ccb->our_cfg.fcr.max_transmit;
@@ -1962,7 +1931,7 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     }
 
     /* If we wanted basic, then try to renegotiate it */
-    else if (p_ccb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
+    else if (p_ccb->p_rcb->ertm_info.preferred_mode == L2CAP_FCR_BASIC_MODE) {
       p_cfg->fcr.mode = L2CAP_FCR_BASIC_MODE;
       p_cfg->fcr.max_transmit = p_cfg->fcr.tx_win_sz = 0;
       p_cfg->fcr.rtrans_tout = p_cfg->fcr.mon_tout = p_cfg->fcr.mps = 0;
@@ -1983,12 +1952,9 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       /* Peer desires to bypass FCS check, and streaming or ERTM mode */
       if (p_cfg->fcs_present) {
         p_ccb->peer_cfg.fcs = p_cfg->fcs;
-        p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_FCS;
-        if (p_cfg->fcs == L2CAP_CFG_FCS_BYPASS)
-          p_ccb->bypass_fcs |= L2CAP_CFG_FCS_PEER;
       }
 
-      max_retrans_size = p_ccb->ertm_info.fcr_tx_buf_size - sizeof(BT_HDR) -
+      max_retrans_size = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR) -
                          L2CAP_MIN_OFFSET - L2CAP_SDU_LEN_OFFSET -
                          L2CAP_FCS_LEN;
 
@@ -2016,7 +1982,6 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     /* Everything ok, so save the peer's adjusted fcr options */
     p_ccb->peer_cfg.fcr = p_cfg->fcr;
 
-    if (p_cfg->fcr_present) p_ccb->peer_cfg_bits |= L2CAP_CH_CFG_MASK_FCR;
   } else if (fcr_ok == L2CAP_PEER_CFG_UNACCEPTABLE) {
     /* Allow peer only one retry for mode */
     if (p_ccb->peer_cfg_already_rejected)

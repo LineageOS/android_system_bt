@@ -100,7 +100,6 @@ typedef uint8_t tL2CAP_CHNL_DATA_RATE;
 typedef struct {
 #define L2CAP_FCR_BASIC_MODE 0x00
 #define L2CAP_FCR_ERTM_MODE 0x03
-#define L2CAP_FCR_STREAM_MODE 0x04
 #define L2CAP_FCR_LE_COC_MODE 0x05
 
   uint8_t mode;
@@ -111,6 +110,16 @@ typedef struct {
   uint16_t mon_tout;
   uint16_t mps;
 } tL2CAP_FCR_OPTS;
+
+/* default options for ERTM mode */
+constexpr tL2CAP_FCR_OPTS kDefaultErtmOptions = {
+    L2CAP_FCR_ERTM_MODE,
+    10,    /* Tx window size */
+    20,    /* Maximum transmissions before disconnecting */
+    2000,  /* Retransmission timeout (2 secs) */
+    12000, /* Monitor timeout (12 secs) */
+    1010   /* MPS segment size */
+};
 
 /* Define a structure to hold the configuration parameters. Since the
  * parameters are optional, for each parameter there is a boolean to
@@ -159,15 +168,6 @@ struct tL2CAP_LE_CFG_INFO {
   uint16_t credits = L2CAP_LE_CREDIT_DEFAULT;
 };
 
-/* L2CAP channel configured field bitmap */
-#define L2CAP_CH_CFG_MASK_MTU 0x0001
-#define L2CAP_CH_CFG_MASK_QOS 0x0002
-#define L2CAP_CH_CFG_MASK_FLUSH_TO 0x0004
-#define L2CAP_CH_CFG_MASK_FCR 0x0008
-#define L2CAP_CH_CFG_MASK_FCS 0x0010
-
-typedef uint16_t tL2CAP_CH_CFG_BITS;
-
 /*********************************
  *  Callback Functions Prototypes
  *********************************/
@@ -195,9 +195,9 @@ typedef void(tL2CA_CONFIG_IND_CB)(uint16_t, tL2CAP_CFG_INFO*);
 
 /* Configuration confirm callback prototype. Parameters are
  *              Local CID assigned to the connection
- *              Pointer to configuration info
+ *              Config result (L2CA_CONN_OK, ...)
  */
-typedef void(tL2CA_CONFIG_CFM_CB)(uint16_t, tL2CAP_CFG_INFO*);
+typedef void(tL2CA_CONFIG_CFM_CB)(uint16_t, uint16_t);
 
 /* Disconnect indication callback prototype. Parameters are
  *              Local CID
@@ -259,10 +259,6 @@ typedef struct {
  */
 typedef struct {
   uint8_t preferred_mode;
-  uint16_t user_rx_buf_size;
-  uint16_t user_tx_buf_size;
-  uint16_t fcr_rx_buf_size;
-  uint16_t fcr_tx_buf_size;
 } tL2CAP_ERTM_INFO;
 
 /**
@@ -278,7 +274,8 @@ void l2c_free();
 // Also does security for you
 uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                        uint16_t required_mtu, uint16_t sec_level);
+                        uint16_t my_mtu, uint16_t required_remote_mtu,
+                        uint16_t sec_level);
 
 /*******************************************************************************
  *
@@ -296,7 +293,7 @@ uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
  ******************************************************************************/
 extern uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                               bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                              uint16_t required_mtu);
+                              uint16_t my_mtu, uint16_t required_remote_mtu);
 
 /*******************************************************************************
  *
@@ -375,26 +372,6 @@ extern uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr);
  ******************************************************************************/
 extern bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
                             uint16_t lcid, uint16_t result, uint16_t status);
-
-uint16_t L2CA_ErtmConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
-                              tL2CAP_ERTM_INFO* p_ertm_info,
-                              uint16_t sec_level);
-
-/*******************************************************************************
- *
- * Function         L2CA_ErtmConnectReq
- *
- * Description      Higher layers call this function to create an L2CAP
- *                  connection that needs to use Enhanced Retransmission Mode.
- *                  Note that the connection is not established at this time,
- *                  but connection establishment gets started. The callback
- *                  will be invoked when connection establishes or fails.
- *
- * Returns          the CID of the connection, or 0 if it failed to start
- *
- ******************************************************************************/
-extern uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
-                                    tL2CAP_ERTM_INFO* p_ertm_info);
 
 /*******************************************************************************
  *
@@ -484,29 +461,6 @@ extern bool L2CA_GetPeerLECocConfig(uint16_t lcid,
 extern bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
                                 uint16_t lcid, uint16_t result, uint16_t status,
                                 tL2CAP_ERTM_INFO* p_ertm_info);
-
-/*******************************************************************************
- *
- * Function         L2CA_ConfigReq
- *
- * Description      Higher layers call this function to send configuration.
- *
- * Returns          true if configuration sent, else false
- *
- ******************************************************************************/
-extern bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
- * Function         L2CA_ConfigRsp
- *
- * Description      Higher layers call this function to send a configuration
- *                  response.
- *
- * Returns          true if configuration response sent, else false
- *
- ******************************************************************************/
-extern bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
 
 /*******************************************************************************
  *

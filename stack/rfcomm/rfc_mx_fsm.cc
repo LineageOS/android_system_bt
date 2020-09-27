@@ -56,7 +56,7 @@ static void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
 
 static void rfc_mx_send_config_req(tRFC_MCB* p_mcb);
 static void rfc_mx_conf_ind(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg);
-static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg);
+static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result);
 
 /*******************************************************************************
  *
@@ -279,7 +279,7 @@ void rfc_mx_sm_state_configure(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
       return;
 
     case RFC_MX_EVENT_CONF_CNF:
-      rfc_mx_conf_cnf(p_mcb, (tL2CAP_CFG_INFO*)p_data);
+      rfc_mx_conf_cnf(p_mcb, (uintptr_t)p_data);
       return;
 
     case RFC_MX_EVENT_DISC_IND:
@@ -507,8 +507,6 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
 
         p_mcb->is_initiator = true;
         p_mcb->restart_required = false;
-        p_mcb->local_cfg_sent = false;
-        p_mcb->peer_cfg_rcvd = false;
 
         p_mcb->state = RFC_MX_STATE_WAIT_CONN_CNF;
         return;
@@ -553,20 +551,7 @@ void rfc_mx_sm_state_disc_wait_ua(tRFC_MCB* p_mcb, uint16_t event,
  *
  ******************************************************************************/
 static void rfc_mx_send_config_req(tRFC_MCB* p_mcb) {
-  RFCOMM_TRACE_EVENT("rfc_mx_send_config_req");
-  tL2CAP_CFG_INFO cfg = {};
-  cfg.mtu_present = true;
-  cfg.mtu = L2CAP_MTU_SIZE;
-
-  /* Defaults set by memset
-      cfg.flush_to_present = false;
-      cfg.qos_present      = false;
-      cfg.fcr_present      = false;
-      cfg.fcr.mode         = L2CAP_FCR_BASIC_MODE;
-      cfg.fcs_present      = false;
-      cfg.fcs              = N/A when fcs_present is false;
-  */
-  L2CA_ConfigReq(p_mcb->lcid, &cfg);
+  // Not needed. L2CAP sends config req for us
 }
 
 /*******************************************************************************
@@ -579,25 +564,23 @@ static void rfc_mx_send_config_req(tRFC_MCB* p_mcb) {
  *                  on DLCI 0.  T1 is still running.
  *
  ******************************************************************************/
-static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg) {
-  RFCOMM_TRACE_EVENT("rfc_mx_conf_cnf p_cfg:%08x result:%d ", p_cfg,
-                     (p_cfg) ? p_cfg->result : 0);
+static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result) {
+  RFCOMM_TRACE_EVENT("rfc_mx_conf_cnf result:%d ", result);
 
-  if (p_cfg->result != L2CAP_CFG_OK) {
+  if (result != L2CAP_CFG_OK) {
     LOG(ERROR) << __func__ << ": failed to configure L2CAP for "
                << p_mcb->bd_addr;
     if (p_mcb->is_initiator) {
       LOG(ERROR) << __func__ << ": disconnect L2CAP due to config failure for "
                  << p_mcb->bd_addr;
-      PORT_StartCnf(p_mcb, p_cfg->result);
+      PORT_StartCnf(p_mcb, result);
       L2CA_DisconnectReq(p_mcb->lcid);
     }
     rfc_release_multiplexer_channel(p_mcb);
     return;
   }
 
-  p_mcb->local_cfg_sent = true;
-  if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->peer_cfg_rcvd) {
+  if (p_mcb->state == RFC_MX_STATE_CONFIGURE) {
     if (p_mcb->is_initiator) {
       p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;
       rfc_send_sabme(p_mcb, RFCOMM_MX_DLCI);
@@ -627,28 +610,5 @@ static void rfc_mx_conf_ind(tRFC_MCB* p_mcb, tL2CAP_CFG_INFO* p_cfg) {
     p_mcb->peer_l2cap_mtu = p_cfg->mtu - RFCOMM_MIN_OFFSET - 1;
   } else {
     p_mcb->peer_l2cap_mtu = L2CAP_DEFAULT_MTU - RFCOMM_MIN_OFFSET - 1;
-  }
-
-  p_cfg->mtu_present = false;
-  p_cfg->flush_to_present = false;
-  p_cfg->qos_present = false;
-
-  p_cfg->result = L2CAP_CFG_OK;
-
-  L2CA_ConfigRsp(p_mcb->lcid, p_cfg);
-
-  p_mcb->peer_cfg_rcvd = true;
-  if ((p_mcb->state == RFC_MX_STATE_CONFIGURE) && p_mcb->local_cfg_sent) {
-    if (p_mcb->is_initiator) {
-      p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;
-      rfc_send_sabme(p_mcb, RFCOMM_MX_DLCI);
-      rfc_timer_start(p_mcb, RFC_T1_TIMEOUT);
-    } else {
-      p_mcb->state = RFC_MX_STATE_WAIT_SABME;
-      rfc_timer_start(
-          p_mcb, RFCOMM_CONN_TIMEOUT); /* - increased from T2=20 to CONN=120
-                             to allow the user more than 10 sec to type in the
-                             pin which can be e.g. 16 digits */
-    }
   }
 }

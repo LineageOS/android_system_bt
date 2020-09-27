@@ -93,7 +93,7 @@ void avdt_scb_transport_channel_timer_timeout(void* data) {
 void AVDT_Register(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
   /* register PSM with L2CAP */
   L2CA_Register2(AVDT_PSM, avdt_l2c_appl, true /* enable_snoop */, nullptr,
-                 L2CAP_DEFAULT_MTU, BTA_SEC_AUTHENTICATE);
+                 kAvdtpMtu, 0, BTA_SEC_AUTHENTICATE);
 
   /* initialize AVDTP data structures */
   avdt_scb_init();

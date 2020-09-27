@@ -376,12 +376,8 @@ typedef void (*tBTA_AV_ACT)(tBTA_AV_SCB* p_cb, tBTA_AV_DATA* p_data);
 /* AV configuration structure */
 typedef struct {
   uint32_t company_id;  /* AVRCP Company ID */
-  uint16_t avrc_mtu;    /* AVRCP MTU at L2CAP for control channel */
-  uint16_t avrc_br_mtu; /* AVRCP MTU at L2CAP for browsing channel */
   uint16_t avrc_ct_cat; /* AVRCP controller categories */
   uint16_t avrc_tg_cat; /* AVRCP target categories */
-  uint16_t sig_mtu;     /* AVDTP signaling channel MTU at L2CAP */
-  uint16_t audio_mtu;   /* AVDTP audio transport channel MTU at L2CAP */
   const uint16_t*
       p_audio_flush_to;    /* AVDTP audio transport channel flush timeout */
   uint16_t audio_mqs;      /* AVDTP audio channel max data queue size */

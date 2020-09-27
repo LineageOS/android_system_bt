@@ -97,7 +97,7 @@ extern void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br);
+extern void bta_ar_reg_avct();
 
 /*******************************************************************************
  *

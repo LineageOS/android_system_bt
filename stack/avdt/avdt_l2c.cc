@@ -22,14 +22,11 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-#include "avdt_api.h"
 #include "avdt_int.h"
 #include "bt_target.h"
 #include "bt_types.h"
 #include "bta/include/bta_av_api.h"
 #include "btm_api.h"
-#include "btm_int.h"
 #include "device/include/interop.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
@@ -40,7 +37,7 @@
 void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 uint16_t psm, uint8_t id);
 void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
-void avdt_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
+void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result);
 void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
 void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
@@ -72,7 +69,6 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
                                          UNUSED_ATTR void* p_ref_data,
                                          uint8_t res) {
   AvdtpCcb* p_ccb = NULL;
-  tL2CAP_CFG_INFO cfg;
   AvdtpTransportChannel* p_tbl;
 
   AVDT_TRACE_DEBUG("avdt_sec_check_complete_term res: %d", res);
@@ -93,14 +89,6 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
 
     /* transition to configuration state */
     p_tbl->state = AVDT_AD_ST_CFG;
-
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = p_tbl->my_mtu;
-    cfg.flush_to_present = true;
-    cfg.flush_to = p_tbl->my_flush_to;
-    L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
                     L2CAP_CONN_OK);
@@ -123,7 +111,6 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
                                          UNUSED_ATTR void* p_ref_data,
                                          uint8_t res) {
   AvdtpCcb* p_ccb = NULL;
-  tL2CAP_CFG_INFO cfg;
   AvdtpTransportChannel* p_tbl;
 
   AVDT_TRACE_DEBUG("avdt_sec_check_complete_orig res: %d", res);
@@ -134,14 +121,6 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
   if (res == BTM_SUCCESS) {
     /* set channel state */
     p_tbl->state = AVDT_AD_ST_CFG;
-
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = p_tbl->my_mtu;
-    cfg.flush_to_present = true;
-    cfg.flush_to = p_tbl->my_flush_to;
-    L2CA_ConfigReq(p_tbl->lcid, &cfg);
   } else {
     avdt_l2c_disconnect(p_tbl->lcid);
     avdt_ad_tc_close_ind(p_tbl);
@@ -162,7 +141,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   AvdtpCcb* p_ccb;
   AvdtpTransportChannel* p_tbl = NULL;
   uint16_t result;
-  tL2CAP_CFG_INFO cfg;
 
   /* do we already have a control channel for this peer? */
   p_ccb = avdt_ccb_by_bd(bd_addr);
@@ -181,8 +159,7 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     } else {
       /* allocate and set up entry; first channel is always signaling */
       p_tbl = avdt_ad_tc_tbl_alloc(p_ccb);
-      p_tbl->my_mtu = avdtp_cb.rcb.ctrl_mtu;
-      p_tbl->my_flush_to = L2CAP_DEFAULT_FLUSH_TO;
+      p_tbl->my_mtu = kAvdtpMtu;
       p_tbl->tcid = AVDT_CHAN_SIG;
       p_tbl->lcid = lcid;
       p_tbl->id = id;
@@ -243,14 +220,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
     /* transition to configuration state */
     p_tbl->state = AVDT_AD_ST_CFG;
-
-    /* Send L2CAP config req */
-    memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    cfg.mtu_present = true;
-    cfg.mtu = p_tbl->my_mtu;
-    cfg.flush_to_present = true;
-    cfg.flush_to = p_tbl->my_flush_to;
-    L2CA_ConfigReq(lcid, &cfg);
   }
 }
 
@@ -266,7 +235,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
  ******************************************************************************/
 void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
   AvdtpTransportChannel* p_tbl;
-  tL2CAP_CFG_INFO cfg;
   AvdtpCcb* p_ccb;
 
   AVDT_TRACE_DEBUG("avdt_l2c_connect_cfm_cback lcid: %d, result: %d", lcid,
@@ -281,14 +249,6 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
         if (p_tbl->tcid != AVDT_CHAN_SIG) {
           /* set channel state */
           p_tbl->state = AVDT_AD_ST_CFG;
-
-          /* Send L2CAP config req */
-          memset(&cfg, 0, sizeof(tL2CAP_CFG_INFO));
-          cfg.mtu_present = true;
-          cfg.mtu = p_tbl->my_mtu;
-          cfg.flush_to_present = true;
-          cfg.flush_to = p_tbl->my_flush_to;
-          L2CA_ConfigReq(lcid, &cfg);
         } else {
           p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx);
           if (p_ccb == NULL) {
@@ -334,7 +294,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
+void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
   AvdtpTransportChannel* p_tbl;
 
   AVDT_TRACE_DEBUG("%s: lcid: %d", __func__, lcid);
@@ -347,14 +307,8 @@ void avdt_l2c_config_cfm_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     /* if in correct state */
     if (p_tbl->state == AVDT_AD_ST_CFG) {
       /* if result successful */
-      if (p_cfg->result == L2CAP_CONN_OK) {
-        /* update cfg_flags */
-        p_tbl->cfg_flags |= AVDT_L2C_CFG_CFM_DONE;
-
-        /* if configuration complete */
-        if (p_tbl->cfg_flags & AVDT_L2C_CFG_IND_DONE) {
-          avdt_ad_tc_open_ind(p_tbl);
-        }
+      if (result == L2CAP_CONN_OK) {
+        avdt_ad_tc_open_ind(p_tbl);
       }
       /* else failure */
       else {
@@ -391,22 +345,6 @@ void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
     }
     AVDT_TRACE_DEBUG("%s: peer_mtu: %d, lcid: %d", __func__, p_tbl->peer_mtu,
                      lcid);
-
-    /* send L2CAP configure response */
-    memset(p_cfg, 0, sizeof(tL2CAP_CFG_INFO));
-    p_cfg->result = L2CAP_CFG_OK;
-    L2CA_ConfigRsp(lcid, p_cfg);
-
-    /* if first config ind */
-    if ((p_tbl->cfg_flags & AVDT_L2C_CFG_IND_DONE) == 0) {
-      /* update cfg_flags */
-      p_tbl->cfg_flags |= AVDT_L2C_CFG_IND_DONE;
-
-      /* if configuration complete */
-      if (p_tbl->cfg_flags & AVDT_L2C_CFG_CFM_DONE) {
-        avdt_ad_tc_open_ind(p_tbl);
-      }
-    }
   }
 }
 

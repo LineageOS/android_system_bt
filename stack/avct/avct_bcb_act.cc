@@ -107,15 +107,11 @@ void avct_bcb_chnl_open(tAVCT_BCB* p_bcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
 
   /* Set the FCR options: Browsing channel mandates ERTM */
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
-  ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.fcr_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
-  ertm_info.fcr_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
 
   /* call l2cap connect req */
   p_bcb->ch_state = AVCT_CH_CONN;
-  p_bcb->ch_lcid = L2CA_ErtmConnectReq2(AVCT_BR_PSM, p_lcb->peer_addr,
-                                        &ertm_info, BTA_SEC_AUTHENTICATE);
+  p_bcb->ch_lcid =
+      L2CA_ConnectReq2(AVCT_BR_PSM, p_lcb->peer_addr, BTA_SEC_AUTHENTICATE);
   if (p_bcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
     tAVCT_LCB_EVT avct_lcb_evt;

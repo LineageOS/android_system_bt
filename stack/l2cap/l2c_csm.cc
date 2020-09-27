@@ -54,6 +54,26 @@ static void l2c_csm_w4_l2ca_disconnect_rsp(tL2C_CCB* p_ccb, uint16_t event,
 
 static const char* l2c_csm_get_event_name(uint16_t event);
 
+// Send a config request and adjust the state machine
+static void l2c_csm_send_config_req(tL2C_CCB* p_ccb) {
+  tL2CAP_CFG_INFO config{};
+  config.mtu_present = true;
+  config.mtu = p_ccb->p_rcb->my_mtu;
+  if (p_ccb->p_rcb->ertm_info.preferred_mode != L2CAP_FCR_BASIC_MODE) {
+    config.fcr_present = true;
+    config.fcr = kDefaultErtmOptions;
+  }
+  p_ccb->our_cfg = config;
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_REQ, &config);
+}
+
+// Send a config response with result OK and adjust the state machine
+static void l2c_csm_send_config_rsp_ok(tL2C_CCB* p_ccb) {
+  tL2CAP_CFG_INFO config{};
+  config.result = L2CAP_CFG_OK;
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP, &config);
+}
+
 /*******************************************************************************
  *
  * Function         l2c_csm_execute
@@ -425,6 +445,7 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
         (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
             p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
             p_ccb->remote_id);
+        l2c_csm_send_config_req(p_ccb);
       } else {
         /*
         ** L2CAP Connect Response will be sent out by 3 sec timer expiration
@@ -544,6 +565,7 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
                       p_ccb->local_cid);
 
       (*p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb)(local_cid, L2CAP_CONN_OK);
+      l2c_csm_send_config_req(p_ccb);
       break;
 
     case L2CEVT_L2CAP_CONNECT_RSP_PND: /* Got peer connect pending */
@@ -701,6 +723,7 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
           p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
           p_ccb->remote_id);
+      l2c_csm_send_config_req(p_ccb);
       break;
   }
 }
@@ -742,6 +765,11 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             "L2CAP - Calling Config_Req_Cb(), CID: 0x%04x, C-bit %d",
             p_ccb->local_cid, (p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT));
         (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
+        l2c_csm_send_config_rsp_ok(p_ccb);
+        if (p_ccb->config_done & OB_CFG_DONE) {
+          (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(
+              p_ccb->local_cid, p_ccb->remote_config_rsp_result);
+        }
       } else if (cfg_result == L2CAP_PEER_CFG_DISCONNECT) {
         /* Disconnect if channels are incompatible */
         L2CAP_TRACE_EVENT("L2CAP - incompatible configurations disconnect");
@@ -808,7 +836,11 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
       L2CAP_TRACE_API("L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x",
                       p_ccb->local_cid);
-      (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg);
+      p_ccb->remote_config_rsp_result = p_cfg->result;
+      if (p_ccb->config_done & IB_CFG_DONE) {
+        (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
+                                                p_cfg->result);
+      }
       break;
 
     case L2CEVT_L2CAP_CONFIG_RSP_NEG: /* Peer config error rsp */
@@ -820,7 +852,8 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         L2CAP_TRACE_API(
             "L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x, Failure: %d",
             p_ccb->local_cid, p_cfg->result);
-        (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid, p_cfg);
+        (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
+                                                p_cfg->result);
       }
       break;
 
@@ -844,14 +877,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
     case L2CEVT_L2CA_CONFIG_RSP: /* Upper layer config rsp   */
       l2cu_process_our_cfg_rsp(p_ccb, p_cfg);
-
-      /* Not finished if continuation flag is set */
-      if ((p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT) ||
-          (p_cfg->result == L2CAP_CFG_PENDING)) {
-        /* Send intermediate response; remain in cfg state */
-        l2cu_send_peer_config_rsp(p_ccb, p_cfg);
-        break;
-      }
 
       /* Local config done; clear cached configuration in case reconfig takes
        * place later */
@@ -890,12 +915,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           (!fixed_queue_is_empty(p_ccb->xmit_hold_q))) {
         l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
       }
-      break;
-
-    case L2CEVT_L2CA_CONFIG_RSP_NEG: /* Upper layer config reject */
-      l2cu_send_peer_config_rsp(p_ccb, p_cfg);
-      alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
-                         l2c_ccb_timer_timeout, p_ccb);
       break;
 
     case L2CEVT_L2CA_DISCONNECT_REQ: /* Upper wants to disconnect */
@@ -988,6 +1007,7 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       cfg_result = l2cu_process_peer_cfg_req(p_ccb, p_cfg);
       if (cfg_result == L2CAP_PEER_CFG_OK) {
         (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
+        l2c_csm_send_config_rsp_ok(p_ccb);
       }
 
       /* Error in config parameters: reset state and config flag */
@@ -1062,12 +1082,9 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       break;
 
     case L2CEVT_L2CA_CONFIG_REQ: /* Upper layer config req   */
-      p_ccb->chnl_state = CST_CONFIG;
-      p_ccb->config_done &= ~CFG_DONE_MASK;
-      l2cu_process_our_cfg_req(p_ccb, (tL2CAP_CFG_INFO*)p_data);
-      l2cu_send_peer_config_req(p_ccb, (tL2CAP_CFG_INFO*)p_data);
-      alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
-                         l2c_ccb_timer_timeout, p_ccb);
+      L2CAP_TRACE_ERROR(
+          "Dropping L2CAP re-config request because there is no usage and "
+          "should not be invoked");
       break;
 
     case L2CEVT_TIMEOUT:
@@ -1251,8 +1268,6 @@ static const char* l2c_csm_get_event_name(uint16_t event) {
       return ("UPPER_LAYER_CONFIG_REQ");
     case L2CEVT_L2CA_CONFIG_RSP: /* Upper layer config response          */
       return ("UPPER_LAYER_CONFIG_RSP");
-    case L2CEVT_L2CA_CONFIG_RSP_NEG: /* Upper layer config response (failed) */
-      return ("UPPER_LAYER_CONFIG_RSP_NEG");
     case L2CEVT_L2CA_DISCONNECT_REQ: /* Upper layer disconnect request       */
       return ("UPPER_LAYER_DISCONNECT_REQ");
     case L2CEVT_L2CA_DISCONNECT_RSP: /* Upper layer disconnect response      */

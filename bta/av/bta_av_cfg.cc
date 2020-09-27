@@ -124,20 +124,11 @@ const uint8_t bta_av_meta_caps_evt_ids_avrcp13[] = {
    sizeof(bta_av_meta_caps_evt_ids_avrcp13[0]))
 #endif /* BTA_AVK_NUM_RC_EVT_IDS_AVRCP13 */
 
-/* the MTU for the AVRCP browsing channel */
-#ifndef BTA_AV_MAX_RC_BR_MTU
-#define BTA_AV_MAX_RC_BR_MTU 1008
-#endif
-
 /* This configuration to be used when we are Src + TG + CT( only for abs vol) */
 const tBTA_AV_CFG bta_av_cfg = {
     BTA_AV_RC_COMP_ID,     /* AVRCP Company ID */
-    512,                   /* AVRCP MTU at L2CAP for control channel */
-    BTA_AV_MAX_RC_BR_MTU,  /* AVRCP MTU at L2CAP for browsing channel */
     BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
     BTA_AV_RC_SUPF_TG,     /* AVRCP target categories */
-    672,                   /* AVDTP signaling channel MTU at L2CAP */
-    MAX_3MBPS_AVDTP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
     bta_av_audio_flush_to, /* AVDTP audio transport channel flush
                               timeout */
     6,                     /* AVDTP audio channel max data queue size */
@@ -158,12 +149,8 @@ const tBTA_AV_CFG bta_av_cfg = {
  */
 const tBTA_AV_CFG bta_avk_cfg = {
     AVRC_CO_METADATA,      /* AVRCP Company ID */
-    512,                   /* AVRCP MTU at L2CAP for control channel */
-    BTA_AV_MAX_RC_BR_MTU,  /* AVRCP MTU at L2CAP for browsing channel */
     BTA_AVK_RC_SUPF_CT,    /* AVRCP controller categories */
     BTA_AVK_RC_SUPF_TG,    /* AVRCP target categories */
-    672,                   /* AVDTP signaling channel MTU at L2CAP */
-    MAX_3MBPS_AVDTP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
     bta_av_audio_flush_to, /* AVDTP audio transport channel flush timeout */
     6,                     /* AVDTP audio channel max data queue size */
     false, /* true, to accept AVRC 1.3 group nevigation command */
@@ -182,12 +169,8 @@ const tBTA_AV_CFG bta_avk_cfg = {
 /* This configuration to be used when we are using AVRCP1.3 */
 const tBTA_AV_CFG bta_av_cfg_compatibility = {
     BTA_AV_RC_COMP_ID,     /* AVRCP Company ID */
-    512,                   /* AVRCP MTU at L2CAP for control channel */
-    BTA_AV_MAX_RC_BR_MTU,  /* AVRCP MTU at L2CAP for browsing channel */
     BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
     AVRC_SUPF_TG_CAT1,     /* Only support CAT1 for AVRCP1.3 */
-    672,                   /* AVDTP signaling channel MTU at L2CAP */
-    MAX_3MBPS_AVDTP_MTU,   /* AVDTP audio transport channel MTU at L2CAP */
     bta_av_audio_flush_to, /* AVDTP audio transport channel flush timeout */
     6,                     /* AVDTP audio channel max data queue size */
     false, /* true, to accept AVRC 1.3 group nevigation command */

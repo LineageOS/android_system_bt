@@ -44,9 +44,10 @@ using base::StringPrintf;
 
 uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                        uint16_t required_mtu, uint16_t sec_level) {
-  auto ret =
-      L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, required_mtu);
+                        uint16_t my_mtu, uint16_t required_remote_mtu,
+                        uint16_t sec_level) {
+  auto ret = L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu,
+                           required_remote_mtu);
   BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
   return ret;
 }
@@ -67,10 +68,10 @@ uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
  ******************************************************************************/
 uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                       uint16_t required_mtu) {
+                       uint16_t my_mtu, uint16_t required_remote_mtu) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_Register(psm, p_cb_info, enable_snoop,
-                                          p_ertm_info, required_mtu);
+                                          p_ertm_info, my_mtu);
   }
 
   tL2C_RCB* p_rcb;
@@ -121,8 +122,12 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   p_rcb->log_packets = enable_snoop;
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
-  p_rcb->ertm_info = p_ertm_info == nullptr ? tL2CAP_ERTM_INFO{} : *p_ertm_info;
-  p_rcb->required_mtu = std::max<uint16_t>(required_mtu, L2CAP_DEFAULT_MTU);
+  p_rcb->ertm_info = p_ertm_info == nullptr
+                         ? tL2CAP_ERTM_INFO{L2CAP_FCR_BASIC_MODE}
+                         : *p_ertm_info;
+  p_rcb->my_mtu = my_mtu;
+  p_rcb->required_remote_mtu =
+      std::max<uint16_t>(required_remote_mtu, L2CAP_MIN_MTU);
 
   return (vpsm);
 }
@@ -305,10 +310,10 @@ uint16_t L2CA_ConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
  * Function         L2CA_ConnectReq
  *
  * Description      Higher layers call this function to create an L2CAP
- *                  connection. Note that the connection is not established at
- *                  this time, but connection establishment gets started. The
- *                  callback function will be invoked when connection
- *                  establishes or fails.
+ *                  connection.
+ *                  Note that the connection is not established at this time,
+ *                  but connection establishment gets started. The callback
+ *                  will be invoked when connection establishes or fails.
  *
  * Returns          the CID of the connection, or 0 if it failed to start
  *
@@ -318,42 +323,8 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
     return bluetooth::shim::L2CA_ConnectReq(psm, p_bd_addr);
   }
 
-  return L2CA_ErtmConnectReq(psm, p_bd_addr, nullptr);
-}
-
-uint16_t L2CA_ErtmConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
-                              tL2CAP_ERTM_INFO* p_ertm_info,
-                              uint16_t sec_level) {
-  BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
-  return L2CA_ErtmConnectReq(psm, p_bd_addr, p_ertm_info);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_ErtmConnectReq
- *
- * Description      Higher layers call this function to create an L2CAP
- *                  connection. Note that the connection is not established at
- *                  this time, but connection establishment gets started. The
- *                  callback function will be invoked when connection
- *                  establishes or fails.
- *
- *  Parameters:       PSM: L2CAP PSM for the connection
- *                    BD address of the peer
- *                   Enhaced retransmission mode configurations
-
- * Returns          the CID of the connection, or 0 if it failed to start
- *
- ******************************************************************************/
-uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
-                             tL2CAP_ERTM_INFO* p_ertm_info) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ErtmConnectReq(psm, p_bd_addr, p_ertm_info);
-  }
-
   VLOG(1) << __func__ << "BDA " << p_bd_addr
-          << StringPrintf(" PSM: 0x%04x preferred:%d", psm,
-                          (p_ertm_info) ? p_ertm_info->preferred_mode : 0);
+          << StringPrintf(" PSM: 0x%04x", psm);
 
   /* Fail if we have not established communications with the controller */
   if (!BTM_IsDeviceUp()) {
@@ -392,27 +363,6 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
 
   /* Save registration info */
   p_ccb->p_rcb = p_rcb;
-
-  if (p_ertm_info) {
-    p_ccb->ertm_info = *p_ertm_info;
-
-    /* Replace default indicators with the actual default pool */
-    if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
-
-    p_ccb->max_rx_mtu =
-        p_ertm_info->user_rx_buf_size -
-        (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
-  }
 
   /* If link is up, start the L2CAP connection */
   if (p_lcb->link_state == LST_CONNECTED) {
@@ -816,27 +766,6 @@ bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
     return (false);
   }
 
-  if (p_ertm_info) {
-    p_ccb->ertm_info = *p_ertm_info;
-
-    /* Replace default indicators with the actual default pool */
-    if (p_ccb->ertm_info.fcr_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_FCR_RX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.fcr_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_FCR_TX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.user_rx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_rx_buf_size = L2CAP_USER_RX_BUF_SIZE;
-
-    if (p_ccb->ertm_info.user_tx_buf_size == L2CAP_INVALID_ERM_BUF_SIZE)
-      p_ccb->ertm_info.user_tx_buf_size = L2CAP_USER_TX_BUF_SIZE;
-
-    p_ccb->max_rx_mtu =
-        p_ertm_info->user_rx_buf_size -
-        (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
-  }
-
   if (result == L2CAP_CONN_OK) {
     l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
   } else {
@@ -849,108 +778,6 @@ bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
       l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, &conn_info);
     else
       l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP_NEG, &conn_info);
-  }
-
-  return (true);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_ConfigReq
- *
- * Description      Higher layers call this function to send configuration.
- *
- *                  Note:  The FCR options of p_cfg are not used.
- *
- * Returns          true if configuration sent, else false
- *
- ******************************************************************************/
-bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ConfigReq(cid, p_cfg);
-  }
-
-  tL2C_CCB* p_ccb;
-
-  L2CAP_TRACE_API(
-      "L2CA_ConfigReq()  CID 0x%04x: fcr_present:%d (mode %d) mtu_present:%d "
-      "(%d)",
-      cid, p_cfg->fcr_present, p_cfg->fcr.mode, p_cfg->mtu_present, p_cfg->mtu);
-
-  /* Find the channel control block. We don't know the link it is on. */
-  p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_cfg_req, CID: %d", cid);
-    return (false);
-  }
-
-  /* We need to have at least one mode type common with the peer */
-  if (!l2c_fcr_adj_our_req_options(p_ccb, p_cfg)) return (false);
-
-  /* Don't adjust FCR options if not used */
-  if ((!p_cfg->fcr_present) || (p_cfg->fcr.mode == L2CAP_FCR_BASIC_MODE)) {
-    /* FCR and FCS options are not used in basic mode */
-    p_cfg->fcs_present = false;
-    p_cfg->ext_flow_spec_present = false;
-
-    if ((p_cfg->mtu_present) && (p_cfg->mtu > L2CAP_MTU_SIZE)) {
-      L2CAP_TRACE_WARNING("L2CAP - adjust MTU: %u too large", p_cfg->mtu);
-      p_cfg->mtu = L2CAP_MTU_SIZE;
-    }
-  }
-
-  /* Save the adjusted configuration in case it needs to be used for
-   * renegotiation */
-  p_ccb->our_cfg = *p_cfg;
-
-  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_REQ, p_cfg);
-
-  return (true);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_ConfigRsp
- *
- * Description      Higher layers call this function to send a configuration
- *                  response.
- *
- * Returns          true if configuration response sent, else false
- *
- ******************************************************************************/
-bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ConfigRsp(cid, p_cfg);
-  }
-
-  tL2C_CCB* p_ccb;
-
-  L2CAP_TRACE_API(
-      "L2CA_ConfigRsp()  CID: 0x%04x  Result: %d MTU present:%d Flush TO:%d "
-      "FCR:%d FCS:%d",
-      cid, p_cfg->result, p_cfg->mtu_present, p_cfg->flush_to_present,
-      p_cfg->fcr_present, p_cfg->fcs_present);
-
-  /* Find the channel control block. We don't know the link it is on. */
-  p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_cfg_rsp, CID: %d", cid);
-    return (false);
-  }
-
-  if ((p_cfg->result == L2CAP_CFG_OK) || (p_cfg->result == L2CAP_CFG_PENDING))
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP, p_cfg);
-  else {
-    p_cfg->fcr_present =
-        false; /* FCR options already negotiated before this point */
-
-    /* Clear out any cached options that are being returned as an error
-     * (excluding FCR) */
-    if (p_cfg->mtu_present) p_ccb->peer_cfg.mtu_present = false;
-    if (p_cfg->flush_to_present) p_ccb->peer_cfg.flush_to_present = false;
-    if (p_cfg->qos_present) p_ccb->peer_cfg.qos_present = false;
-
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP_NEG, p_cfg);
   }
 
   return (true);

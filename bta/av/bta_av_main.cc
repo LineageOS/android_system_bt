@@ -460,7 +460,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 
     if (bta_av_cb.reg_audio == 0) {
       /* the first channel registered. register to AVDTP */
-      reg.ctrl_mtu = p_bta_av_cfg->sig_mtu;
+      reg.ctrl_mtu = 672;
       reg.ret_tout = BTA_AV_RET_TOUT;
       reg.sig_tout = BTA_AV_SIG_TOUT;
       reg.idle_tout = BTA_AV_IDLE_TOUT;
@@ -472,7 +472,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       if (bta_av_cb.features & (BTA_AV_FEAT_RCTG)) {
         /* register with no authorization; let AVDTP use authorization instead
          */
-        bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu);
+        bta_ar_reg_avct();
 
         /* For the Audio Sink role we support additional TG to support
          * absolute volume.
@@ -532,7 +532,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
     p_scb->media_type = AVDT_MEDIA_TYPE_AUDIO;
     avdtp_stream_config.cfg.psc_mask = AVDT_PSC_TRANS;
     avdtp_stream_config.media_type = AVDT_MEDIA_TYPE_AUDIO;
-    avdtp_stream_config.mtu = p_bta_av_cfg->audio_mtu;
+    avdtp_stream_config.mtu = MAX_3MBPS_AVDTP_MTU;
     avdtp_stream_config.flush_to = L2CAP_DEFAULT_FLUSH_TO;
     btav_a2dp_codec_index_t codec_index_min = BTAV_A2DP_CODEC_INDEX_SOURCE_MIN;
     btav_a2dp_codec_index_t codec_index_max = BTAV_A2DP_CODEC_INDEX_SOURCE_MAX;
@@ -619,7 +619,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       if (bta_av_cb.features & (BTA_AV_FEAT_RCCT)) {
         /* if TG is not supported, we need to register to AVCT now */
         if ((bta_av_cb.features & (BTA_AV_FEAT_RCTG)) == 0) {
-          bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu);
+          bta_ar_reg_avct();
           bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
         }
         /* create an SDP record as AVRC CT. We create 1.3 for SOURCE

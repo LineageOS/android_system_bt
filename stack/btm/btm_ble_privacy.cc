@@ -63,8 +63,8 @@
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_enq_resolving_list_pending(const RawAddress& pseudo_bda,
-                                        uint8_t op_code) {
+static void btm_ble_enq_resolving_list_pending(const RawAddress& pseudo_bda,
+                                               uint8_t op_code) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
   p_q->resolve_q_random_pseudo[p_q->q_next] = pseudo_bda;
@@ -85,8 +85,8 @@ void btm_ble_enq_resolving_list_pending(const RawAddress& pseudo_bda,
  * Returns          void
  *
  ******************************************************************************/
-bool btm_ble_brcm_find_resolving_pending_entry(const RawAddress& pseudo_addr,
-                                               uint8_t action) {
+static bool btm_ble_brcm_find_resolving_pending_entry(
+    const RawAddress& pseudo_addr, uint8_t action) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
   for (uint8_t i = p_q->q_pending; i != p_q->q_next;) {
@@ -112,7 +112,7 @@ bool btm_ble_brcm_find_resolving_pending_entry(const RawAddress& pseudo_addr,
  * Returns          void
  *
  ******************************************************************************/
-bool btm_ble_deq_resolving_pending(RawAddress& pseudo_addr) {
+static bool btm_ble_deq_resolving_pending(RawAddress& pseudo_addr) {
   tBTM_BLE_RESOLVE_Q* p_q = &btm_cb.ble_ctr_cb.resolving_list_pend_q;
 
   if (p_q->q_next != p_q->q_pending) {
@@ -136,7 +136,7 @@ bool btm_ble_deq_resolving_pending(RawAddress& pseudo_addr) {
  * Returns          none
  *
  ******************************************************************************/
-void btm_ble_clear_irk_index(uint8_t index) {
+static void btm_ble_clear_irk_index(uint8_t index) {
   uint8_t byte;
   uint8_t bit;
 
@@ -156,7 +156,7 @@ void btm_ble_clear_irk_index(uint8_t index) {
  * Returns          index from 0 ~ max (127 default)
  *
  ******************************************************************************/
-uint8_t btm_ble_find_irk_index(void) {
+static uint8_t btm_ble_find_irk_index(void) {
   uint8_t i = 0;
   uint8_t byte;
   uint8_t bit;
@@ -185,7 +185,8 @@ uint8_t btm_ble_find_irk_index(void) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_update_resolving_list(const RawAddress& pseudo_bda, bool add) {
+static void btm_ble_update_resolving_list(const RawAddress& pseudo_bda,
+                                          bool add) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_bda);
   if (p_dev_rec == NULL) return;
 
@@ -203,7 +204,7 @@ void btm_ble_update_resolving_list(const RawAddress& pseudo_bda, bool add) {
   }
 }
 
-bool clear_resolving_list_bit(void* data, void* context) {
+static bool clear_resolving_list_bit(void* data, void* context) {
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
   p_dev_rec->ble.in_controller_list &= ~BTM_RESOLVING_LIST_BIT;
   return true;
@@ -378,7 +379,7 @@ void btm_ble_read_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_resolving_list_vsc_op_cmpl(tBTM_VSC_CMPL* p_params) {
+static void btm_ble_resolving_list_vsc_op_cmpl(tBTM_VSC_CMPL* p_params) {
   uint8_t *p = p_params->p_param_buf, op_subcode;
   uint16_t evt_len = p_params->param_len;
 
@@ -513,7 +514,7 @@ bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
  * Returns          true if suspended; false otherwise
  *
  ******************************************************************************/
-bool btm_ble_suspend_resolving_list_activity(void) {
+static bool btm_ble_suspend_resolving_list_activity(void) {
   tBTM_BLE_CB* p_ble_cb = &btm_cb.ble_ctr_cb;
 
   /* if resolving list is not enabled, do not need to terminate any activity */
@@ -557,7 +558,7 @@ bool btm_ble_suspend_resolving_list_activity(void) {
  * Returns          none
  *
  ******************************************************************************/
-void btm_ble_resume_resolving_list_activity(void) {
+static void btm_ble_resume_resolving_list_activity(void) {
   tBTM_BLE_CB* p_ble_cb = &btm_cb.ble_ctr_cb;
 
   if (p_ble_cb->suspended_rl_state & BTM_BLE_RL_ADV) btm_ble_start_adv();
@@ -586,7 +587,7 @@ void btm_ble_resume_resolving_list_activity(void) {
  * Parameters       enable: enable or disable the RRA offloading feature
  *
  ******************************************************************************/
-void btm_ble_vendor_enable_irk_feature(bool enable) {
+static void btm_ble_vendor_enable_irk_feature(bool enable) {
   uint8_t param[20], *p;
 
   p = param;
@@ -609,7 +610,7 @@ void btm_ble_vendor_enable_irk_feature(bool enable) {
  * Returns          none
  *
  ******************************************************************************/
-bool btm_ble_exe_disable_resolving_list(void) {
+static bool btm_ble_exe_disable_resolving_list(void) {
   if (!btm_ble_suspend_resolving_list_activity()) return false;
 
   if (!controller_get_interface()->supports_ble_privacy())
@@ -629,7 +630,7 @@ bool btm_ble_exe_disable_resolving_list(void) {
  * Returns          none
  *
  ******************************************************************************/
-void btm_ble_exe_enable_resolving_list(void) {
+static void btm_ble_exe_enable_resolving_list(void) {
   if (!btm_ble_suspend_resolving_list_activity()) return;
 
   if (!controller_get_interface()->supports_ble_privacy())
@@ -831,21 +832,7 @@ void btm_ble_enable_resolving_list(uint8_t rl_mask) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         btm_ble_resolving_list_empty
- *
- * Description      check to see if resoving list is empty or not
- *
- * Returns          true: empty; false non-empty
- *
- ******************************************************************************/
-bool btm_ble_resolving_list_empty(void) {
-  return (controller_get_interface()->get_ble_resolving_list_max_size() ==
-          btm_cb.ble_ctr_cb.resolving_list_avail_size);
-}
-
-bool is_on_resolving_list(void* data, void* context) {
+static bool is_on_resolving_list(void* data, void* context) {
   tBTM_SEC_DEV_REC* p_dev = static_cast<tBTM_SEC_DEV_REC*>(data);
   if ((p_dev->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
       (p_dev->ble.in_controller_list & BTM_WHITE_LIST_BIT))
