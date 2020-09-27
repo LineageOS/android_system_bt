@@ -278,6 +278,8 @@ extern void rfc_process_fcon(tRFC_MCB* p_rfc_mcb, bool is_command);
 extern void rfc_process_fcoff(tRFC_MCB* p_rfc_mcb, bool is_command);
 extern void rfc_process_l2cap_congestion(tRFC_MCB* p_mcb, bool is_congested);
 
+void rfc_on_l2cap_error(uint16_t lcid, uint16_t result);
+
 /*
  * Functions provided by the rfc_utils.cc
 */
