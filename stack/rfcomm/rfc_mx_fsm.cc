@@ -554,6 +554,52 @@ static void rfc_mx_send_config_req(tRFC_MCB* p_mcb) {
   // Not needed. L2CAP sends config req for us
 }
 
+void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
+  tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
+
+  if (result == L2CAP_CONN_NO_RESOURCES) {
+    RFCOMM_TRACE_DEBUG(
+        "RFCOMM_ConnectCnf retry as acceptor on pending LCID(0x%x)",
+        p_mcb->pending_lcid);
+
+    /* remove mcb from mapping table */
+    rfc_save_lcid_mcb(NULL, p_mcb->lcid);
+
+    p_mcb->lcid = p_mcb->pending_lcid;
+    p_mcb->is_initiator = false;
+    p_mcb->state = RFC_MX_STATE_IDLE;
+
+    /* store mcb into mapping table */
+    rfc_save_lcid_mcb(p_mcb, p_mcb->lcid);
+
+    /* update direction bit */
+    for (int i = 0; i < RFCOMM_MAX_DLCI; i += 2) {
+      uint8_t handle = p_mcb->port_handles[i];
+      if (handle != 0) {
+        p_mcb->port_handles[i] = 0;
+        p_mcb->port_handles[i + 1] = handle;
+        rfc_cb.port.port[handle - 1].dlci += 1;
+        RFCOMM_TRACE_DEBUG("RFCOMM MX, port_handle=%d, DLCI[%d->%d]", handle, i,
+                           rfc_cb.port.port[handle - 1].dlci);
+      }
+    }
+
+    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, &(p_mcb->pending_id));
+  }
+
+  if (result == L2CAP_CFG_FAILED_NO_REASON) {
+    LOG(ERROR) << __func__ << ": failed to configure L2CAP for "
+               << p_mcb->bd_addr;
+    if (p_mcb->is_initiator) {
+      LOG(ERROR) << __func__ << ": disconnect L2CAP due to config failure for "
+                 << p_mcb->bd_addr;
+      PORT_StartCnf(p_mcb, result);
+      L2CA_DisconnectReq(p_mcb->lcid);
+    }
+    rfc_release_multiplexer_channel(p_mcb);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         rfc_mx_conf_cnf
@@ -568,15 +614,7 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result) {
   RFCOMM_TRACE_EVENT("rfc_mx_conf_cnf result:%d ", result);
 
   if (result != L2CAP_CFG_OK) {
-    LOG(ERROR) << __func__ << ": failed to configure L2CAP for "
-               << p_mcb->bd_addr;
-    if (p_mcb->is_initiator) {
-      LOG(ERROR) << __func__ << ": disconnect L2CAP due to config failure for "
-                 << p_mcb->bd_addr;
-      PORT_StartCnf(p_mcb, result);
-      L2CA_DisconnectReq(p_mcb->lcid);
-    }
-    rfc_release_multiplexer_channel(p_mcb);
+    rfc_on_l2cap_error(p_mcb->lcid, L2CAP_CFG_FAILED_NO_REASON);
     return;
   }
 

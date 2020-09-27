@@ -147,33 +147,7 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
     /* if peer rejects our connect request but peer's connect request is pending
      */
     if (result != L2CAP_CONN_OK) {
-      RFCOMM_TRACE_DEBUG(
-          "RFCOMM_ConnectCnf retry as acceptor on pending LCID(0x%x)",
-          p_mcb->pending_lcid);
-
-      /* remove mcb from mapping table */
-      rfc_save_lcid_mcb(NULL, p_mcb->lcid);
-
-      p_mcb->lcid = p_mcb->pending_lcid;
-      p_mcb->is_initiator = false;
-      p_mcb->state = RFC_MX_STATE_IDLE;
-
-      /* store mcb into mapping table */
-      rfc_save_lcid_mcb(p_mcb, p_mcb->lcid);
-
-      /* update direction bit */
-      for (int i = 0; i < RFCOMM_MAX_DLCI; i += 2) {
-        uint8_t handle = p_mcb->port_handles[i];
-        if (handle != 0) {
-          p_mcb->port_handles[i] = 0;
-          p_mcb->port_handles[i + 1] = handle;
-          rfc_cb.port.port[handle - 1].dlci += 1;
-          RFCOMM_TRACE_DEBUG("RFCOMM MX, port_handle=%d, DLCI[%d->%d]", handle,
-                             i, rfc_cb.port.port[handle - 1].dlci);
-        }
-      }
-
-      rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, &(p_mcb->pending_id));
+      rfc_on_l2cap_error(lcid, L2CAP_CONN_NO_RESOURCES);
       return;
     } else {
       RFCOMM_TRACE_DEBUG("RFCOMM_ConnectCnf peer gave up pending LCID(0x%x)",
