@@ -174,6 +174,17 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
   L2CA_ConnectRsp(bd_addr, id, cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 }
 
+static void hidd_on_l2cap_error(uint16_t lcid, uint16_t result) {
+  HIDD_TRACE_WARNING("%s: connection of config failed, now disconnect",
+                     __func__);
+
+  hidd_conn_disconnect();
+
+  // NOTE that the client doesn't care about error code
+  hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE,
+                 HID_L2CAP_CONN_FAIL | (uint32_t)result, NULL);
+}
+
 /*******************************************************************************
  *
  * Function         hidd_l2cif_connect_cfm
@@ -203,17 +214,7 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result) {
   }
 
   if (result != L2CAP_CONN_OK) {
-    HIDD_TRACE_WARNING("%s: connection failed, now disconnect", __func__);
-
-    if (cid == p_hcon->ctrl_cid)
-      p_hcon->ctrl_cid = 0;
-    else
-      p_hcon->intr_cid = 0;
-
-    hidd_conn_disconnect();
-
-    hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE,
-                   HID_L2CAP_CONN_FAIL | (uint32_t)result, NULL);
+    hidd_on_l2cap_error(cid, result);
     return;
   }
 
@@ -266,7 +267,6 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
  ******************************************************************************/
 static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
   tHID_CONN* p_hcon;
-  uint32_t reason;
 
   HIDD_TRACE_EVENT("%s: cid=%04x pcfg->result=%d", __func__, cid, result);
 
@@ -278,12 +278,7 @@ static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
   }
 
   if (result != L2CAP_CFG_OK) {
-    HIDD_TRACE_WARNING("%s: config failed, disconnecting", __func__);
-
-    hidd_conn_disconnect();
-    reason = HID_L2CAP_CFG_FAIL | (uint32_t)result;
-
-    hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, reason, NULL);
+    hidd_on_l2cap_error(cid, result);
     return;
   }
 
