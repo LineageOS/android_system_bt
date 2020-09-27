@@ -223,6 +223,10 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   }
 }
 
+static void avdt_on_l2cap_error(uint16_t lcid, uint16_t result) {
+  avdt_l2c_disconnect(lcid);
+}
+
 /*******************************************************************************
  *
  * Function         avdt_l2c_connect_cfm_cback
@@ -278,7 +282,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 
       /* failure; notify adaption that channel closed */
       if (result != L2CAP_CONN_OK) {
-        avdt_ad_tc_close_ind(p_tbl);
+        avdt_on_l2cap_error(lcid, result);
       }
     }
   }
@@ -312,8 +316,7 @@ void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
       }
       /* else failure */
       else {
-        /* Send L2CAP disconnect req */
-        avdt_l2c_disconnect(lcid);
+        avdt_on_l2cap_error(lcid, result);
       }
     }
   }
