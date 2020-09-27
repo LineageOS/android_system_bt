@@ -715,28 +715,6 @@ bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
                                             status);
   }
 
-  return L2CA_ErtmConnectRsp(p_bd_addr, id, lcid, result, status, NULL);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_ErtmConnectRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP connection, for which they had gotten an connect
- *                  indication callback.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
-                         uint16_t result, uint16_t status,
-                         tL2CAP_ERTM_INFO* p_ertm_info) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ErtmConnectRsp(p_bd_addr, id, lcid, result,
-                                                status, p_ertm_info);
-  }
-
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
 
