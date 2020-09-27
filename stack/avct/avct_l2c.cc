@@ -136,6 +136,30 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   if (p_lcb) AVCT_TRACE_DEBUG("ch_state cni: %d ", p_lcb->ch_state);
 }
 
+static void avct_on_l2cap_error(uint16_t lcid, uint16_t result) {
+  tAVCT_LCB* p_lcb = avct_lcb_by_lcid(lcid);
+  if (p_lcb == nullptr) return;
+  if (p_lcb->ch_state == AVCT_CH_CONN) {
+    AVCT_TRACE_DEBUG("avct_l2c_connect_cfm_cback conflict_lcid:0x%x",
+                     p_lcb->conflict_lcid);
+    if (p_lcb->conflict_lcid == lcid) {
+      p_lcb->conflict_lcid = 0;
+    } else {
+      tAVCT_LCB_EVT avct_lcb_evt;
+      avct_lcb_evt.result = result;
+      avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
+    }
+  } else if (p_lcb->ch_state == AVCT_CH_CFG) {
+    AVCT_TRACE_DEBUG("ERROR avct_l2c_config_cfm_cback L2CA_DisconnectReq %d ",
+                     p_lcb->ch_state);
+    /* store result value */
+    p_lcb->ch_result = result;
+
+    /* Send L2CAP disconnect req */
+    L2CA_DisconnectReq(lcid);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         avct_l2c_connect_cfm_cback
@@ -165,15 +189,7 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
       }
       /* else failure */
       else {
-        AVCT_TRACE_DEBUG("avct_l2c_connect_cfm_cback conflict_lcid:0x%x",
-                         p_lcb->conflict_lcid);
-        if (p_lcb->conflict_lcid == lcid) {
-          p_lcb->conflict_lcid = 0;
-        } else {
-          tAVCT_LCB_EVT avct_lcb_evt;
-          avct_lcb_evt.result = result;
-          avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
-        }
+        avct_on_l2cap_error(lcid, result);
       }
     } else if (p_lcb->conflict_lcid == lcid) {
       /* we must be in AVCT_CH_CFG state for the ch_lcid channel */
@@ -218,14 +234,7 @@ void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
       }
       /* else failure */
       else {
-        AVCT_TRACE_DEBUG(
-            "ERROR avct_l2c_config_cfm_cback L2CA_DisconnectReq %d ",
-            p_lcb->ch_state);
-        /* store result value */
-        p_lcb->ch_result = result;
-
-        /* Send L2CAP disconnect req */
-        L2CA_DisconnectReq(lcid);
+        avct_on_l2cap_error(lcid, result);
       }
     }
     AVCT_TRACE_DEBUG("ch_state cfc: %d ", p_lcb->ch_state);
