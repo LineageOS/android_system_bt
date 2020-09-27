@@ -129,24 +129,7 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
 static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
   tCONN_CB* p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
-  if (p_ccb->con_state == SDP_STATE_CONN_SETUP) {
-    // If we see an error while waiting for connection response
-    SDP_TRACE_WARNING("SDP - Rcvd conn cnf with error: 0x%x  CID 0x%x", result,
-                      p_ccb->connection_id);
-
-    /* Tell the user if there is a callback */
-    if (p_ccb->p_cb || p_ccb->p_cb2) {
-      uint16_t err = SDP_CONN_FAILED;
-      if (p_ccb->p_cb)
-        (*p_ccb->p_cb)(err);
-      else if (p_ccb->p_cb2)
-        (*p_ccb->p_cb2)(err, p_ccb->user_data);
-    }
-    sdpu_release_ccb(p_ccb);
-  } else if (p_ccb->con_state == SDP_STATE_CFG_SETUP) {
-    // If we see an error while waiting for configure response
-    sdp_disconnect(p_ccb, SDP_CFG_FAILED);
-  }
+  sdp_disconnect(p_ccb, SDP_CFG_FAILED);
 }
 
 /*******************************************************************************
