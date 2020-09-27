@@ -222,19 +222,12 @@ void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
   /* look up lcb for this channel */
   p_lcb = avct_lcb_by_lcid(lcid);
   if (p_lcb != NULL) {
-    AVCT_TRACE_DEBUG("avct_l2c_config_cfm_cback: 0x%x, ch_state: %d, res: %d",
-                     lcid, p_lcb->ch_state, result);
+    AVCT_TRACE_DEBUG("avct_l2c_config_cfm_cback: 0x%x, ch_state: %d,", lcid,
+                     p_lcb->ch_state);
     /* if in correct state */
     if (p_lcb->ch_state == AVCT_CH_CFG) {
-      /* if result successful */
-      if (result == L2CAP_CFG_OK) {
-        p_lcb->ch_state = AVCT_CH_OPEN;
-        avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-      }
-      /* else failure */
-      else {
-        LOG(ERROR) << __func__ << ": invoked with non OK status";
-      }
+      p_lcb->ch_state = AVCT_CH_OPEN;
+      avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
     }
     AVCT_TRACE_DEBUG("ch_state cfc: %d ", p_lcb->ch_state);
   }
