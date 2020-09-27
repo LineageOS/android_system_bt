@@ -1368,7 +1368,8 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
   alarm_free(p_ccb->fcrb.mon_retrans_timer);
   p_ccb->fcrb.mon_retrans_timer = alarm_new("l2c_fcrb.mon_retrans_timer");
 
-  p_ccb->max_rx_mtu = L2CAP_MTU_SIZE;
+  p_ccb->max_rx_mtu = BT_DEFAULT_BUFFER_SIZE -
+                      (L2CAP_MIN_OFFSET + L2CAP_SDU_LEN_OFFSET + L2CAP_FCS_LEN);
   p_ccb->tx_mps = BT_DEFAULT_BUFFER_SIZE - 32;
 
   p_ccb->xmit_hold_q = fixed_queue_new(SIZE_MAX);
