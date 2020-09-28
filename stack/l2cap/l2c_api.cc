@@ -364,6 +364,8 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   /* Save registration info */
   p_ccb->p_rcb = p_rcb;
 
+  p_ccb->connection_initiator = L2CAP_INITIATOR_LOCAL;
+
   /* If link is up, start the L2CAP connection */
   if (p_lcb->link_state == LST_CONNECTED) {
     l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_REQ, nullptr);
@@ -567,6 +569,8 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
 
   /* Save registration info */
   p_ccb->p_rcb = p_rcb;
+
+  p_ccb->connection_initiator = L2CAP_INITIATOR_LOCAL;
 
   /* Save the configuration */
   if (p_cfg) {
