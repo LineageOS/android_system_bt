@@ -301,14 +301,7 @@ void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
 
     /* if in correct state */
     if (p_tbl->state == AVDT_AD_ST_CFG) {
-      /* if result successful */
-      if (result == L2CAP_CONN_OK) {
-        avdt_ad_tc_open_ind(p_tbl);
-      }
-      /* else failure */
-      else {
-        LOG(ERROR) << __func__ << ": invoked with non OK status";
-      }
+      avdt_ad_tc_open_ind(p_tbl);
     }
   }
 }

@@ -778,52 +778,50 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     case L2CEVT_L2CAP_CONFIG_RSP: /* Peer config response  */
       l2cu_process_peer_cfg_rsp(p_ccb, p_cfg);
 
-      if (p_cfg->result != L2CAP_CFG_PENDING) {
-        /* TBD: When config options grow beyong minimum MTU (48 bytes)
-         *      logic needs to be added to handle responses with
-         *      continuation bit set in flags field.
-         *       1. Send additional config request out until C-bit is cleared in
-         * response
+      /* TBD: When config options grow beyong minimum MTU (48 bytes)
+       *      logic needs to be added to handle responses with
+       *      continuation bit set in flags field.
+       *       1. Send additional config request out until C-bit is cleared in
+       * response
+       */
+      p_ccb->config_done |= OB_CFG_DONE;
+
+      if (p_ccb->config_done & IB_CFG_DONE) {
+        /* Verify two sides are in compatible modes before continuing */
+        if (p_ccb->our_cfg.fcr.mode != p_ccb->peer_cfg.fcr.mode) {
+          l2cu_send_peer_disc_req(p_ccb);
+          L2CAP_TRACE_WARNING(
+              "L2CAP - Calling Disconnect_Ind_Cb(Incompatible CFG), CID: "
+              "0x%04x  No Conf Needed",
+              p_ccb->local_cid);
+          l2cu_release_ccb(p_ccb);
+          (*disconnect_ind)(local_cid, false);
+          break;
+        }
+
+        p_ccb->config_done |= RECONFIG_FLAG;
+        p_ccb->chnl_state = CST_OPEN;
+        l2c_link_adjust_chnl_allocation();
+        alarm_cancel(p_ccb->l2c_ccb_timer);
+
+        /* If using eRTM and waiting for an ACK, restart the ACK timer */
+        if (p_ccb->fcrb.wait_ack) l2c_fcr_start_timer(p_ccb);
+
+        /*
+         ** check p_ccb->our_cfg.fcr.mon_tout and
+         *p_ccb->our_cfg.fcr.rtrans_tout
+         ** we may set them to zero when sending config request during
+         *renegotiation
          */
-        p_ccb->config_done |= OB_CFG_DONE;
+        if ((p_ccb->our_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) &&
+            ((p_ccb->our_cfg.fcr.mon_tout == 0) ||
+             (p_ccb->our_cfg.fcr.rtrans_tout))) {
+          l2c_fcr_adj_monitor_retran_timeout(p_ccb);
+        }
 
-        if (p_ccb->config_done & IB_CFG_DONE) {
-          /* Verify two sides are in compatible modes before continuing */
-          if (p_ccb->our_cfg.fcr.mode != p_ccb->peer_cfg.fcr.mode) {
-            l2cu_send_peer_disc_req(p_ccb);
-            L2CAP_TRACE_WARNING(
-                "L2CAP - Calling Disconnect_Ind_Cb(Incompatible CFG), CID: "
-                "0x%04x  No Conf Needed",
-                p_ccb->local_cid);
-            l2cu_release_ccb(p_ccb);
-            (*disconnect_ind)(local_cid, false);
-            break;
-          }
-
-          p_ccb->config_done |= RECONFIG_FLAG;
-          p_ccb->chnl_state = CST_OPEN;
-          l2c_link_adjust_chnl_allocation();
-          alarm_cancel(p_ccb->l2c_ccb_timer);
-
-          /* If using eRTM and waiting for an ACK, restart the ACK timer */
-          if (p_ccb->fcrb.wait_ack) l2c_fcr_start_timer(p_ccb);
-
-          /*
-          ** check p_ccb->our_cfg.fcr.mon_tout and
-          *p_ccb->our_cfg.fcr.rtrans_tout
-          ** we may set them to zero when sending config request during
-          *renegotiation
-          */
-          if ((p_ccb->our_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) &&
-              ((p_ccb->our_cfg.fcr.mon_tout == 0) ||
-               (p_ccb->our_cfg.fcr.rtrans_tout))) {
-            l2c_fcr_adj_monitor_retran_timeout(p_ccb);
-          }
-
-          /* See if we can forward anything on the hold queue */
-          if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
-            l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
-          }
+        /* See if we can forward anything on the hold queue */
+        if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
+          l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
         }
       }
 
