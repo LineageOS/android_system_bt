@@ -83,6 +83,21 @@ static void l2c_csm_send_disconnect_rsp(tL2C_CCB* p_ccb) {
   l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_RSP, NULL);
 }
 
+static void l2c_csm_indicate_connection_open(tL2C_CCB* p_ccb) {
+  if (p_ccb->connection_initiator == L2CAP_INITIATOR_LOCAL) {
+    (*p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb)(p_ccb->local_cid, L2CAP_CONN_OK);
+  } else {
+    (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
+        p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
+        p_ccb->remote_id);
+  }
+  if (p_ccb->chnl_state == CST_OPEN) {
+    (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, &p_ccb->peer_cfg);
+    (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
+                                            p_ccb->connection_initiator);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         l2c_csm_execute
@@ -437,9 +452,6 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
                         p_ccb->local_cid);
 
         l2c_csm_send_connect_rsp(p_ccb);
-        (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
-            p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
-            p_ccb->remote_id);
         l2c_csm_send_config_req(p_ccb);
       } else {
         /*
@@ -558,7 +570,6 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       L2CAP_TRACE_API("L2CAP - Calling Connect_Cfm_Cb(), CID: 0x%04x, Success",
                       p_ccb->local_cid);
 
-      (*p_ccb->p_rcb->api.pL2CA_ConnectCfm_Cb)(local_cid, L2CAP_CONN_OK);
       l2c_csm_send_config_req(p_ccb);
       break;
 
@@ -715,9 +726,6 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
                       p_ccb->local_cid);
 
       l2c_csm_send_connect_rsp(p_ccb);
-      (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
-          p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
-          p_ccb->remote_id);
       l2c_csm_send_config_req(p_ccb);
       break;
   }
@@ -759,15 +767,15 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         L2CAP_TRACE_EVENT(
             "L2CAP - Calling Config_Req_Cb(), CID: 0x%04x, C-bit %d",
             p_ccb->local_cid, (p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT));
-        (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, p_cfg);
         l2c_csm_send_config_rsp_ok(p_ccb);
         if (p_ccb->config_done & OB_CFG_DONE) {
           if (p_ccb->remote_config_rsp_result == L2CAP_CFG_OK) {
-            (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(
-                p_ccb->local_cid, p_ccb->connection_initiator);
+            l2c_csm_indicate_connection_open(p_ccb);
           } else {
-            (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(p_ccb->local_cid,
-                                                L2CAP_CFG_FAILED_NO_REASON);
+            if (p_ccb->connection_initiator == L2CAP_INITIATOR_LOCAL) {
+              (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(p_ccb->local_cid,
+                                                  L2CAP_CFG_FAILED_NO_REASON);
+            }
           }
         }
       } else if (cfg_result == L2CAP_PEER_CFG_DISCONNECT) {
@@ -836,8 +844,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
                       p_ccb->local_cid);
       p_ccb->remote_config_rsp_result = p_cfg->result;
       if (p_ccb->config_done & IB_CFG_DONE) {
-        (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
-                                                p_ccb->connection_initiator);
+        l2c_csm_indicate_connection_open(p_ccb);
       }
       break;
 
@@ -850,8 +857,10 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         L2CAP_TRACE_API(
             "L2CAP - Calling Config_Rsp_Cb(), CID: 0x%04x, Failure: %d",
             p_ccb->local_cid, p_cfg->result);
-        (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(p_ccb->local_cid,
-                                            L2CAP_CFG_FAILED_NO_REASON);
+        if (p_ccb->connection_initiator == L2CAP_INITIATOR_LOCAL) {
+          (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(p_ccb->local_cid,
+                                              L2CAP_CFG_FAILED_NO_REASON);
+        }
       }
       break;
 
