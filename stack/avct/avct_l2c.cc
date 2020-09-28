@@ -188,7 +188,7 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
       }
       /* else failure */
       else {
-        avct_on_l2cap_error(lcid, result);
+        LOG(ERROR) << __func__ << ": invoked with non OK status";
       }
     } else if (p_lcb->conflict_lcid == lcid) {
       /* we must be in AVCT_CH_CFG state for the ch_lcid channel */
@@ -233,7 +233,7 @@ void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
       }
       /* else failure */
       else {
-        avct_on_l2cap_error(lcid, result);
+        LOG(ERROR) << __func__ << ": invoked with non OK status";
       }
     }
     AVCT_TRACE_DEBUG("ch_state cfc: %d ", p_lcb->ch_state);
