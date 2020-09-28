@@ -159,7 +159,7 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
 
   /* always add incoming connection device into HID database by default */
   if (HID_HostAddDev(bd_addr, HID_SEC_REQUIRED, &i) != HID_SUCCESS) {
-    L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_SECURITY_BLOCK, 0);
+    L2CA_DisconnectReq(l2cap_cid);
     return;
   }
 
@@ -193,7 +193,7 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
   }
 
   if (!bAccept) {
-    L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_NO_RESOURCES, 0);
+    L2CA_DisconnectReq(l2cap_cid);
     return;
   }
 
@@ -205,19 +205,12 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
                                               disc_reason (from
                                               HID_ERR_AUTH_FAILED) */
     p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
-
-    /* Send response to the L2CAP layer. */
-    L2CA_ConnectRsp(p_dev->addr, p_dev->conn.ctrl_id, p_dev->conn.ctrl_cid,
-                    L2CAP_CONN_OK, L2CAP_CONN_OK);
     return;
   }
 
   /* Transition to the next appropriate state, configuration */
   p_hcon->conn_state = HID_CONN_STATE_CONFIG;
   p_hcon->intr_cid = l2cap_cid;
-
-  /* Send response to the L2CAP layer. */
-  L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
   HIDH_TRACE_EVENT(
       "HID-Host Rcvd L2CAP conn ind, sent config req, PSM: 0x%04x  CID 0x%x",

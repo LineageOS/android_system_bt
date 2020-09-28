@@ -74,10 +74,6 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
   p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_SEC_ACP);
   if (p_tbl == NULL) return;
 
-  /* Send response to the L2CAP layer. */
-  L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_OK,
-                  L2CAP_CONN_OK);
-
   /* store idx in LCID table, store LCID in routing table */
   avdtp_cb.ad.lcid_tbl[p_tbl->lcid - L2CAP_BASE_APPL_CID] =
       avdt_ad_tc_tbl_to_idx(p_tbl);
@@ -199,19 +195,20 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     }
   }
 
-  /* Send L2CAP connect rsp */
-  L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
+  /* If we reject the connection, send DisconnectReq */
+  if (result != L2CAP_CONN_OK) {
+    L2CA_DisconnectReq(lcid);
+    return;
+  }
 
   /* if result ok, proceed with connection */
-  if (result == L2CAP_CONN_OK) {
-    /* store idx in LCID table, store LCID in routing table */
-    avdtp_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] =
-        avdt_ad_tc_tbl_to_idx(p_tbl);
-    avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;
+  /* store idx in LCID table, store LCID in routing table */
+  avdtp_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] =
+      avdt_ad_tc_tbl_to_idx(p_tbl);
+  avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;
 
-    /* transition to configuration state */
-    p_tbl->state = AVDT_AD_ST_CFG;
-  }
+  /* transition to configuration state */
+  p_tbl->state = AVDT_AD_ST_CFG;
 }
 
 static void avdt_on_l2cap_error(uint16_t lcid, uint16_t result) {
