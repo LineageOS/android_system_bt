@@ -234,8 +234,7 @@ static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result) {
                        bnep_conn_timer_timeout, p_bcb);
 
     if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
-      bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
-                              BTM_SUCCESS);
+      bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb);
     }
   } else {
     LOG(ERROR) << __func__ << ": invoked with non OK status";
