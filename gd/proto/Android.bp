@@ -8,6 +8,10 @@ java_library_static {
         "bluetooth/metrics/bluetooth.proto",
         "bluetooth/bluetoothKeystore/keystore.proto",
     ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
+    ],
 }
 
 cc_library_static {
@@ -20,6 +24,10 @@ cc_library_static {
     srcs: [
         "bluetooth/metrics/bluetooth.proto",
         "bluetooth/bluetoothKeystore/keystore.proto",
+    ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
     ],
 }
 

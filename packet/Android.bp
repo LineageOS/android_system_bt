@@ -10,6 +10,10 @@ cc_library_static {
         "lib-bt-packets-base",
         "lib-bt-packets-avrcp",
     ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
+    ],
 }
 
 cc_test {
