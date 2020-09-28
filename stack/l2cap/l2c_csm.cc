@@ -74,6 +74,10 @@ static void l2c_csm_send_config_rsp_ok(tL2C_CCB* p_ccb) {
   l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONFIG_RSP, &config);
 }
 
+static void l2c_csm_send_disconnect_rsp(tL2C_CCB* p_ccb) {
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_RSP, NULL);
+}
+
 /*******************************************************************************
  *
  * Function         l2c_csm_execute
@@ -854,7 +858,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           "L2CAP - Calling Disconnect_Ind_Cb(), CID: 0x%04x  Conf Needed",
           p_ccb->local_cid);
       (*p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb)(p_ccb->local_cid, true);
-      L2CA_DisconnectRsp(p_ccb->local_cid);
+      l2c_csm_send_disconnect_rsp(p_ccb);
       break;
 
     case L2CEVT_L2CA_CONFIG_REQ: /* Upper layer config req   */
@@ -1034,7 +1038,7 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           "L2CAP - Calling Disconnect_Ind_Cb(), CID: 0x%04x  Conf Needed",
           p_ccb->local_cid);
       (*p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb)(p_ccb->local_cid, true);
-      L2CA_DisconnectRsp(p_ccb->local_cid);
+      l2c_csm_send_disconnect_rsp(p_ccb);
       break;
 
     case L2CEVT_L2CAP_DATA: /* Peer data packet rcvd    */
