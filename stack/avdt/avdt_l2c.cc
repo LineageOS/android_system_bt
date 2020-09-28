@@ -42,17 +42,16 @@ void avdt_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
 void avdt_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
 void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
+static void avdt_on_l2cap_error(uint16_t lcid, uint16_t result);
 
 /* L2CAP callback function structure */
-const tL2CAP_APPL_INFO avdt_l2c_appl = {avdt_l2c_connect_ind_cback,
-                                        avdt_l2c_connect_cfm_cback,
-                                        avdt_l2c_config_ind_cback,
-                                        avdt_l2c_config_cfm_cback,
-                                        avdt_l2c_disconnect_ind_cback,
-                                        avdt_l2c_data_ind_cback,
-                                        avdt_l2c_congestion_ind_cback,
-                                        NULL,
-                                        /* tL2CA_TX_COMPLETE_CB */};
+const tL2CAP_APPL_INFO avdt_l2c_appl = {
+    avdt_l2c_connect_ind_cback,    avdt_l2c_connect_cfm_cback,
+    avdt_l2c_config_ind_cback,     avdt_l2c_config_cfm_cback,
+    avdt_l2c_disconnect_ind_cback, avdt_l2c_data_ind_cback,
+    avdt_l2c_congestion_ind_cback, NULL,
+    avdt_on_l2cap_error,
+};
 
 /*******************************************************************************
  *

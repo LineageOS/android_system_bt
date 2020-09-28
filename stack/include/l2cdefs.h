@@ -93,6 +93,7 @@
 #define L2CAP_CONN_NO_PSM 2
 #define L2CAP_CONN_SECURITY_BLOCK 3
 #define L2CAP_CONN_NO_RESOURCES 4
+#define L2CAP_CONN_OTHER_ERROR 5
 #define L2CAP_CONN_TIMEOUT 0xEEEE
 /* Add a couple of our own for internal use */
 #define L2CAP_CONN_NO_LINK 255
@@ -156,6 +157,10 @@ typedef uint8_t tL2CAP_LE_RESULT_CODE;
 #define L2CAP_CFG_FAILED_NO_REASON 2
 #define L2CAP_CFG_UNKNOWN_OPTIONS 3
 #define L2CAP_CFG_PENDING 4
+
+static_assert(L2CAP_CONN_OTHER_ERROR != L2CAP_CFG_FAILED_NO_REASON,
+              "Different error code should be provided for Connect error and "
+              "Config error");
 
 /* Define the L2CAP configuration option types
 */
