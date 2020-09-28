@@ -1328,7 +1328,6 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
 
   p_ccb->p_lcb = p_lcb;
   p_ccb->p_rcb = NULL;
-  p_ccb->should_free_rcb = false;
 
   /* Set priority then insert ccb into LCB queue (if we have an LCB) */
   p_ccb->ccb_priority = L2CAP_CHNL_PRIORITY_LOW;
@@ -1472,12 +1471,6 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
 
   if (p_rcb && (p_rcb->psm != p_rcb->real_psm)) {
     BTM_SecClrServiceByPsm(p_rcb->psm);
-  }
-
-  if (p_ccb->should_free_rcb) {
-    osi_free(p_rcb);
-    p_ccb->p_rcb = NULL;
-    p_ccb->should_free_rcb = false;
   }
 
   /* Free the timer */
