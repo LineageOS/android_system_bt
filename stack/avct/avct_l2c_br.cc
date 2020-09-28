@@ -155,15 +155,8 @@ void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t result) {
   p_lcb = avct_bcb_by_lcid(lcid);
   if ((p_lcb == NULL) || (p_lcb->ch_state != AVCT_CH_CFG)) return;
 
-  /* if result successful */
-  if (result == L2CAP_CFG_OK) {
-    p_lcb->ch_state = AVCT_CH_OPEN;
-    avct_bcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-  }
-  /* else failure */
-  else {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
-  }
+  p_lcb->ch_state = AVCT_CH_OPEN;
+  avct_bcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
 }
 
 /*******************************************************************************
