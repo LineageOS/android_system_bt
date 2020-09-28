@@ -137,6 +137,7 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
 static void bnep_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
   tBNEP_CONN* p_bcb = bnepu_find_bcb_by_cid(l2cap_cid);
+  if (p_bcb == nullptr) return;
 
   /* Tell the upper layer, if there is a callback */
   if ((p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) && (bnep_cb.p_conn_state_cb)) {

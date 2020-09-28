@@ -556,6 +556,7 @@ static void rfc_mx_send_config_req(tRFC_MCB* p_mcb) {
 
 void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
+  if (p_mcb == nullptr) return;
 
   if (result == L2CAP_CONN_OTHER_ERROR) {
     RFCOMM_TRACE_DEBUG(
