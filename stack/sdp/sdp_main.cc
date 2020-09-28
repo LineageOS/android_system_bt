@@ -52,6 +52,7 @@ static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 
 static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result);
+static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
 
 /*******************************************************************************
  *
@@ -85,6 +86,7 @@ void sdp_init(void) {
   sdp_cb.reg_info.pL2CA_ConfigCfm_Cb = sdp_config_cfm;
   sdp_cb.reg_info.pL2CA_DisconnectInd_Cb = sdp_disconnect_ind;
   sdp_cb.reg_info.pL2CA_DataInd_Cb = sdp_data_ind;
+  sdp_cb.reg_info.pL2CA_Error_Cb = sdp_on_l2cap_error;
 
   /* Now, register with L2CAP */
   if (!L2CA_Register2(SDP_PSM, sdp_cb.reg_info, true /* enable_snoop */,
