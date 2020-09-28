@@ -739,8 +739,6 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
       p_ccb->con_flags |= GAP_CCB_FLAGS_SEC_DONE;
       gap_checks_con_flags(p_ccb);
     }
-  } else {
-    gap_on_l2cap_error(l2cap_cid, result);
   }
 }
 
@@ -796,8 +794,6 @@ static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result) {
     p_ccb->con_flags |= GAP_CCB_FLAGS_MY_CFG_DONE;
     p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
     gap_checks_con_flags(p_ccb);
-  } else {
-    gap_on_l2cap_error(l2cap_cid, result);
   }
 }
 
