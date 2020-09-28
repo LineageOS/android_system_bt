@@ -54,8 +54,8 @@ const uint16_t bnep_frame_hdr_sizes[] = {14, 1, 2, 8, 8};
 static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                              uint16_t psm, uint8_t l2cap_id);
 static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result);
-static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result);
+static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result,
+                            tL2CAP_CFG_INFO* p_cfg);
 static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void bnep_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void bnep_congestion_ind(uint16_t lcid, bool is_congested);
@@ -78,7 +78,7 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
 
   bnep_cb.reg_info.pL2CA_ConnectInd_Cb = bnep_connect_ind;
   bnep_cb.reg_info.pL2CA_ConnectCfm_Cb = bnep_connect_cfm;
-  bnep_cb.reg_info.pL2CA_ConfigInd_Cb = bnep_config_ind;
+  bnep_cb.reg_info.pL2CA_ConfigInd_Cb = nullptr;
   bnep_cb.reg_info.pL2CA_ConfigCfm_Cb = bnep_config_cfm;
   bnep_cb.reg_info.pL2CA_DisconnectInd_Cb = bnep_disconnect_ind;
   bnep_cb.reg_info.pL2CA_DataInd_Cb = bnep_data_ind;
@@ -187,20 +187,6 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
 
 /*******************************************************************************
  *
- * Function         bnep_config_ind
- *
- * Description      This function processes the L2CAP configuration indication
- *                  event.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
-  // No-op here. We are not interested in their MTU.
-}
-
-/*******************************************************************************
- *
  * Function         bnep_config_cfm
  *
  * Description      This function processes the L2CAP configuration confirmation
@@ -209,7 +195,8 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t initiator) {
+static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
+                            tL2CAP_CFG_INFO* p_cfg) {
   tBNEP_CONN* p_bcb;
 
   BNEP_TRACE_EVENT("BNEP - Rcvd cfg cfm, CID: 0x%x", l2cap_cid);

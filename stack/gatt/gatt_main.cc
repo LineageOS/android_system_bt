@@ -55,7 +55,8 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
 static void gatt_l2cif_connect_cfm_cback(uint16_t l2cap_cid, uint16_t result);
 static void gatt_l2cif_config_ind_cback(uint16_t l2cap_cid,
                                         tL2CAP_CFG_INFO* p_cfg);
-static void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result);
+static void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result,
+                                        tL2CAP_CFG_INFO* p_cfg);
 static void gatt_l2cif_disconnect_ind_cback(uint16_t l2cap_cid,
                                             bool ack_needed);
 static void gatt_l2cif_disconnect(uint16_t l2cap_cid);
@@ -615,7 +616,10 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 }
 
 /** This is the L2CAP config confirm callback function */
-void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t initiator) {
+void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t initiator,
+                                 tL2CAP_CFG_INFO* p_cfg) {
+  gatt_l2cif_config_ind_cback(lcid, p_cfg);
+
   /* look up clcb for this channel */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;
