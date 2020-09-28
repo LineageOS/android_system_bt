@@ -783,7 +783,7 @@ static void gap_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result) {
+static void gap_config_cfm(uint16_t l2cap_cid, uint16_t initiator) {
   tGAP_CCB* p_ccb;
 
   /* Find CCB based on CID */

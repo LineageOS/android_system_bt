@@ -148,7 +148,7 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t result) {
+void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t initiator) {
   tAVCT_BCB* p_lcb;
 
   /* look up lcb for this channel */
