@@ -281,7 +281,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 
       /* failure; notify adaption that channel closed */
       if (result != L2CAP_CONN_OK) {
-        avdt_on_l2cap_error(lcid, result);
+        LOG(ERROR) << __func__ << ": invoked with non OK status";
       }
     }
   }
@@ -315,7 +315,7 @@ void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
       }
       /* else failure */
       else {
-        avdt_on_l2cap_error(lcid, result);
+        LOG(ERROR) << __func__ << ": invoked with non OK status";
       }
     }
   }

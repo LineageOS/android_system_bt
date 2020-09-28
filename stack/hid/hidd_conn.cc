@@ -216,7 +216,7 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result) {
   }
 
   if (result != L2CAP_CONN_OK) {
-    hidd_on_l2cap_error(cid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 
@@ -280,7 +280,7 @@ static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
   }
 
   if (result != L2CAP_CFG_OK) {
-    hidd_on_l2cap_error(cid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 

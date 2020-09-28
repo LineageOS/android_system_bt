@@ -624,7 +624,7 @@ void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result) {
 
   /* if result not successful */
   if (result != L2CAP_CFG_OK) {
-    gatt_on_l2cap_error(lcid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 
