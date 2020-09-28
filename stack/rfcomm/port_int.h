@@ -93,8 +93,6 @@ typedef struct {
   bool is_disc_initiator; /* true if initiated disc of port */
   uint16_t
       pending_lcid; /* store LCID for incoming connection while connecting */
-  uint8_t
-      pending_id; /* store l2cap ID for incoming connection while connecting */
 } tRFC_MCB;
 
 /*
