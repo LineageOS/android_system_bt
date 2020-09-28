@@ -160,7 +160,7 @@ static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   if ((result == L2CAP_CONN_OK) && (p_ccb->con_state == SDP_STATE_CONN_SETUP)) {
     p_ccb->con_state = SDP_STATE_CFG_SETUP;
   } else {
-    sdp_on_l2cap_error(l2cap_cid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
   }
 }
 
@@ -234,7 +234,7 @@ static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
                          sdp_conn_timer_timeout, p_ccb);
     }
   } else {
-    sdp_on_l2cap_error(l2cap_cid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
   }
 }
 

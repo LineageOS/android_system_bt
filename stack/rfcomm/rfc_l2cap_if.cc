@@ -148,7 +148,6 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
     /* if peer rejects our connect request but peer's connect request is pending
      */
     if (result != L2CAP_CONN_OK) {
-      rfc_on_l2cap_error(lcid, L2CAP_CONN_NO_RESOURCES);
       return;
     } else {
       RFCOMM_TRACE_DEBUG("RFCOMM_ConnectCnf peer gave up pending LCID(0x%x)",
