@@ -209,7 +209,7 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
+static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t initiator) {
   tCONN_CB* p_ccb;
 
   SDP_TRACE_EVENT("SDP - Rcvd cfg cfm, CID: 0x%x", l2cap_cid);

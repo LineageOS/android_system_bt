@@ -614,7 +614,7 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 }
 
 /** This is the L2CAP config confirm callback function */
-void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result) {
+void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t initiator) {
   /* look up clcb for this channel */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;
