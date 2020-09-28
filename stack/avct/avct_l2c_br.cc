@@ -103,6 +103,7 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
 void avct_br_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tAVCT_BCB* p_lcb = avct_bcb_by_lcid(lcid);
+  if (p_lcb == nullptr) return;
 
   /* store result value */
   p_lcb->ch_result = result;

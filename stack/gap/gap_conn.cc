@@ -687,6 +687,7 @@ static void gap_sec_check_complete(const RawAddress*, tBT_TRANSPORT,
 
 static void gap_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
   tGAP_CCB* p_ccb = gap_find_ccb_by_cid(l2cap_cid);
+  if (p_ccb == nullptr) return;
 
   /* Tell the user if there is a callback */
   if (p_ccb->p_callback)
