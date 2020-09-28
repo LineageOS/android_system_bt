@@ -45,7 +45,8 @@ static void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
                               uint16_t psm, uint8_t id);
 static void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t err);
 static void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
-static void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t result);
+static void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t result,
+                             tL2CAP_CFG_INFO* p_cfg);
 static void RFCOMM_DisconnectInd(uint16_t lcid, bool is_clear);
 static void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf);
 static void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested);
@@ -196,7 +197,10 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  *                  event to the FSM.
  *
  ******************************************************************************/
-void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t initiator) {
+void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t initiator,
+                      tL2CAP_CFG_INFO* p_cfg) {
+  RFCOMM_ConfigInd(lcid, p_cfg);
+
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
   if (!p_mcb) {

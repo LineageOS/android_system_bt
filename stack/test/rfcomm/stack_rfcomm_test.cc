@@ -160,7 +160,7 @@ class StackRfcommTest : public Test {
     VLOG(1) << "Step 2";
     // MTU configuration is done
     cfg_req.mtu_present = false;
-    l2cap_appl_info_.pL2CA_ConfigCfm_Cb(lcid, L2CAP_CFG_OK);
+    l2cap_appl_info_.pL2CA_ConfigCfm_Cb(lcid, L2CAP_CFG_OK, {});
 
     VLOG(1) << "Step 3";
     // Remote device also ask to configure MTU size
@@ -301,7 +301,7 @@ class StackRfcommTest : public Test {
     VLOG(1) << "Step 2";
     // Remote device confirms our configuration request
     cfg_req.mtu_present = false;
-    l2cap_appl_info_.pL2CA_ConfigCfm_Cb(lcid, L2CAP_CFG_OK);
+    l2cap_appl_info_.pL2CA_ConfigCfm_Cb(lcid, L2CAP_CFG_OK, {});
 
     VLOG(1) << "Step 3";
     // Remote device also asks to configure MTU
@@ -782,7 +782,7 @@ TEST_F(StackRfcommTest, TestConnectionCollision) {
 
   VLOG(1) << "Step 6";
   // Remote device accepted our MTU size
-  l2cap_appl_info_.pL2CA_ConfigCfm_Cb(new_lcid, L2CAP_CFG_OK);
+  l2cap_appl_info_.pL2CA_ConfigCfm_Cb(new_lcid, L2CAP_CFG_OK, {});
 
   // L2CAP collision and connection setup done
 
