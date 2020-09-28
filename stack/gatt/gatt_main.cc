@@ -62,15 +62,19 @@ static void gatt_l2cif_disconnect(uint16_t l2cap_cid);
 static void gatt_l2cif_data_ind_cback(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void gatt_send_conn_cback(tGATT_TCB* p_tcb);
 static void gatt_l2cif_congest_cback(uint16_t cid, bool congested);
+static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result);
 
-static const tL2CAP_APPL_INFO dyn_info = {gatt_l2cif_connect_ind_cback,
-                                          gatt_l2cif_connect_cfm_cback,
-                                          gatt_l2cif_config_ind_cback,
-                                          gatt_l2cif_config_cfm_cback,
-                                          gatt_l2cif_disconnect_ind_cback,
-                                          gatt_l2cif_data_ind_cback,
-                                          gatt_l2cif_congest_cback,
-                                          NULL};
+static const tL2CAP_APPL_INFO dyn_info = {
+    gatt_l2cif_connect_ind_cback,
+    gatt_l2cif_connect_cfm_cback,
+    gatt_l2cif_config_ind_cback,
+    gatt_l2cif_config_cfm_cback,
+    gatt_l2cif_disconnect_ind_cback,
+    gatt_l2cif_data_ind_cback,
+    gatt_l2cif_congest_cback,
+    NULL,
+    gatt_on_l2cap_error,
+};
 
 tGATT_CB gatt_cb;
 
