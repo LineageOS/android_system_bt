@@ -791,37 +791,6 @@ bool L2CA_DisconnectReq(uint16_t cid) {
   return (true);
 }
 
-/*******************************************************************************
- *
- * Function         L2CA_DisconnectRsp
- *
- * Description      Higher layers call this function to acknowledge the
- *                  disconnection of a channel.
- *
- * Returns          void
- *
- ******************************************************************************/
-bool L2CA_DisconnectRsp(uint16_t cid) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_DisconnectRsp(cid);
-  }
-
-  tL2C_CCB* p_ccb;
-
-  L2CAP_TRACE_API("L2CA_DisconnectRsp()  CID: 0x%04x", cid);
-
-  /* Find the channel control block. We don't know the link it is on. */
-  p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_disc_rsp, CID: %d", cid);
-    return (false);
-  }
-
-  l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_RSP, NULL);
-
-  return (true);
-}
-
 bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_GetRemoteCid(lcid, rcid);
