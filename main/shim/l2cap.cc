@@ -270,12 +270,8 @@ void bluetooth::shim::legacy::L2cap::OnLocalInitiatedConnectionCreated(
     tL2CAP_CFG_INFO cfg_info{};
     do_in_main_thread(
         FROM_HERE,
-        base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConfigInd_Cb, cid,
-                   base::Unretained(&cfg_info)));
-    do_in_main_thread(
-        FROM_HERE,
         base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConfigCfm_Cb, cid,
-                   L2CAP_CFG_OK));
+                   L2CAP_INITIATOR_LOCAL, base::Unretained(&cfg_info)));
 
   } else {
     LOG_DEBUG("Connection Closed before presentation to upper layer");
@@ -310,12 +306,8 @@ void bluetooth::shim::legacy::L2cap::OnRemoteInitiatedConnectionCreated(
   tL2CAP_CFG_INFO cfg_info{};
   do_in_main_thread(
       FROM_HERE,
-      base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConfigInd_Cb, cid,
-                 base::Unretained(&cfg_info)));
-  do_in_main_thread(
-      FROM_HERE,
       base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConfigCfm_Cb, cid,
-                 L2CAP_CFG_OK));
+                 L2CAP_INITIATOR_REMOTE, base::Unretained(&cfg_info)));
 }
 
 bool bluetooth::shim::legacy::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
