@@ -8,4 +8,8 @@ cc_library_static {
         "iterator.cc",
         "packet_builder.cc",
     ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
+    ],
 }
