@@ -392,6 +392,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         p_ccb->remote_id = id;
         p_ccb->p_rcb = p_rcb;
         p_ccb->remote_cid = rcid;
+        p_ccb->connection_initiator = L2CAP_INITIATOR_REMOTE;
 
         if (p_rcb->psm == BT_PSM_RFCOMM) {
           btsnoop_get_interface()->add_rfc_l2c_channel(

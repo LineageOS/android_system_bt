@@ -643,6 +643,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       p_ccb->is_first_seg = true;
       p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
 
+      p_ccb->connection_initiator = L2CAP_INITIATOR_REMOTE;
+
       l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_REQ, &con_info);
       break;
 

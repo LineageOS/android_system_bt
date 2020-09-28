@@ -289,7 +289,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
+void avdt_l2c_config_cfm_cback(uint16_t lcid, uint16_t initiator) {
   AvdtpTransportChannel* p_tbl;
 
   AVDT_TRACE_DEBUG("%s: lcid: %d", __func__, lcid);

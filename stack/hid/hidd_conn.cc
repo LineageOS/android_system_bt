@@ -267,7 +267,7 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
+static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t initiator) {
   tHID_CONN* p_hcon;
 
   HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
