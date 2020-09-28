@@ -211,7 +211,7 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result) {
+static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t initiator) {
   tBNEP_CONN* p_bcb;
 
   BNEP_TRACE_EVENT("BNEP - Rcvd cfg cfm, CID: 0x%x", l2cap_cid);
