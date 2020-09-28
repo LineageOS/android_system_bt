@@ -214,8 +214,7 @@ static void bnep_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
 static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   tBNEP_CONN* p_bcb;
 
-  BNEP_TRACE_EVENT("BNEP - Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                   result);
+  BNEP_TRACE_EVENT("BNEP - Rcvd cfg cfm, CID: 0x%x", l2cap_cid);
 
   /* Find CCB based on CID */
   p_bcb = bnepu_find_bcb_by_cid(l2cap_cid);
@@ -226,18 +225,14 @@ static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   }
 
   /* For now, always accept configuration from the other side */
-  if (result == L2CAP_CFG_OK) {
-    p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
+  p_bcb->con_state = BNEP_STATE_SEC_CHECKING;
 
-    /* Start timer waiting for setup or response */
-    alarm_set_on_mloop(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
-                       bnep_conn_timer_timeout, p_bcb);
+  /* Start timer waiting for setup or response */
+  alarm_set_on_mloop(p_bcb->conn_timer, BNEP_HOST_TIMEOUT_MS,
+                     bnep_conn_timer_timeout, p_bcb);
 
-    if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
-      bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb);
-    }
-  } else {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
+  if (p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
+    bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb);
   }
 }
 

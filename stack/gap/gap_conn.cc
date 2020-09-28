@@ -790,11 +790,9 @@ static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   p_ccb = gap_find_ccb_by_cid(l2cap_cid);
   if (p_ccb == NULL) return;
 
-  if (result == L2CAP_CFG_OK) {
-    p_ccb->con_flags |= GAP_CCB_FLAGS_MY_CFG_DONE;
-    p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
-    gap_checks_con_flags(p_ccb);
-  }
+  p_ccb->con_flags |= GAP_CCB_FLAGS_MY_CFG_DONE;
+  p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
+  gap_checks_con_flags(p_ccb);
 }
 
 /*******************************************************************************
