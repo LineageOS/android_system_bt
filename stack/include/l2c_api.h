@@ -209,17 +209,7 @@ typedef void(tL2CA_DISCONNECT_IND_CB)(uint16_t, bool);
  *              Local CID
  *              Result
  */
-typedef void(tL2CA_DISCONNECT_CFM_CB)(uint16_t, uint16_t);
-
-/* Data received indication callback prototype. Parameters are
- *              Local CID
- *              Address of buffer
- */
 typedef void(tL2CA_DATA_IND_CB)(uint16_t, BT_HDR*);
-
-/* Callback function prototype to pass broadcom specific echo response  */
-/* to the upper layer                                                   */
-typedef void(tL2CA_ECHO_DATA_CB)(const RawAddress&, uint16_t, uint8_t*);
 
 /* Congestion status callback protype. This callback is optional. If
  * an application tries to send data when the transmit queue is full,
@@ -445,22 +435,6 @@ extern bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
  ******************************************************************************/
 extern bool L2CA_GetPeerLECocConfig(uint16_t lcid,
                                     tL2CAP_LE_CFG_INFO* peer_cfg);
-
-/*******************************************************************************
- *
- * Function         L2CA_ErtmConnectRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP connection, for which they had gotten an connect
- *                  indication callback, and for which the higher layer wants
- *                  to use Enhanced Retransmission Mode.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-extern bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
-                                uint16_t lcid, uint16_t result, uint16_t status,
-                                tL2CAP_ERTM_INFO* p_ertm_info);
 
 /*******************************************************************************
  *

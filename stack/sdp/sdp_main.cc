@@ -127,6 +127,11 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 }
 
+static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
+  tCONN_CB* p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
+  sdp_disconnect(p_ccb, SDP_CFG_FAILED);
+}
+
 /*******************************************************************************
  *
  * Function         sdp_connect_cfm
@@ -153,28 +158,7 @@ static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   if ((result == L2CAP_CONN_OK) && (p_ccb->con_state == SDP_STATE_CONN_SETUP)) {
     p_ccb->con_state = SDP_STATE_CFG_SETUP;
   } else {
-    SDP_TRACE_WARNING("SDP - Rcvd conn cnf with error: 0x%x  CID 0x%x", result,
-                      p_ccb->connection_id);
-
-    /* Tell the user if there is a callback */
-    if (p_ccb->p_cb || p_ccb->p_cb2) {
-      uint16_t err = -1;
-      if ((result == HCI_ERR_HOST_REJECT_SECURITY) ||
-          (result == HCI_ERR_AUTH_FAILURE) ||
-          (result == HCI_ERR_PAIRING_NOT_ALLOWED) ||
-          (result == HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED) ||
-          (result == HCI_ERR_KEY_MISSING))
-        err = SDP_SECURITY_ERR;
-      else if (result == HCI_ERR_HOST_REJECT_DEVICE)
-        err = SDP_CONN_REJECTED;
-      else
-        err = SDP_CONN_FAILED;
-      if (p_ccb->p_cb)
-        (*p_ccb->p_cb)(err);
-      else if (p_ccb->p_cb2)
-        (*p_ccb->p_cb2)(err, p_ccb->user_data);
-    }
-    sdpu_release_ccb(p_ccb);
+    sdp_on_l2cap_error(l2cap_cid, result);
   }
 }
 
@@ -248,7 +232,7 @@ static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
                          sdp_conn_timer_timeout, p_ccb);
     }
   } else {
-    sdp_disconnect(p_ccb, SDP_CFG_FAILED);
+    sdp_on_l2cap_error(l2cap_cid, result);
   }
 }
 

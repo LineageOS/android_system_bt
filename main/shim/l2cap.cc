@@ -349,7 +349,7 @@ void bluetooth::shim::legacy::L2cap::SetDownstreamCallbacks(uint16_t cid) {
 
 bool bluetooth::shim::legacy::L2cap::ConnectResponse(
     const RawAddress& raw_address, uint8_t signal_id, uint16_t cid,
-    uint16_t result, uint16_t status, tL2CAP_ERTM_INFO* ertm_info) {
+    uint16_t result, uint16_t status) {
   CHECK(ConnectionExists(cid));
   LOG_DEBUG(
       "%s Silently dropping client connect response as channel is "

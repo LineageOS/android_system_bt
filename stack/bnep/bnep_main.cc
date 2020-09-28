@@ -134,6 +134,20 @@ static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   BNEP_TRACE_EVENT("BNEP - Rcvd L2CAP conn ind, CID: 0x%x", p_bcb->l2cap_cid);
 }
 
+static void bnep_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
+  tBNEP_CONN* p_bcb = bnepu_find_bcb_by_cid(l2cap_cid);
+
+  /* Tell the upper layer, if there is a callback */
+  if ((p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) && (bnep_cb.p_conn_state_cb)) {
+    (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda, BNEP_CONN_FAILED,
+                               false);
+  }
+
+  L2CA_DisconnectReq(p_bcb->l2cap_cid);
+
+  bnepu_release_bcb(p_bcb);
+}
+
 /*******************************************************************************
  *
  * Function         bnep_connect_cfm
@@ -168,16 +182,7 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
     BNEP_TRACE_EVENT("BNEP - got conn cnf, sent cfg req, CID: 0x%x",
                      p_bcb->l2cap_cid);
   } else {
-    BNEP_TRACE_WARNING("BNEP - Rcvd conn cnf with error: 0x%x  CID 0x%x",
-                       result, p_bcb->l2cap_cid);
-
-    /* Tell the upper layer, if there is a callback */
-    if (bnep_cb.p_conn_state_cb && p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
-      (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
-                                 BNEP_CONN_FAILED, false);
-    }
-
-    bnepu_release_bcb(p_bcb);
+    bnep_on_l2cap_error(l2cap_cid, result);
   }
 }
 
@@ -232,15 +237,7 @@ static void bnep_config_cfm(uint16_t l2cap_cid, uint16_t result) {
                               BTM_SUCCESS);
     }
   } else {
-    /* Tell the upper layer, if there is a callback */
-    if ((p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) && (bnep_cb.p_conn_state_cb)) {
-      (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
-                                 BNEP_CONN_FAILED_CFG, false);
-    }
-
-    L2CA_DisconnectReq(p_bcb->l2cap_cid);
-
-    bnepu_release_bcb(p_bcb);
+    bnep_on_l2cap_error(l2cap_cid, result);
   }
 }
 

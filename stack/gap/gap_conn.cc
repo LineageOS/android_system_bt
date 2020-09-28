@@ -615,8 +615,7 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   /* Send response to the L2CAP layer. */
   if (p_ccb->transport == BT_TRANSPORT_BR_EDR)
-    L2CA_ErtmConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK,
-                        L2CAP_CONN_OK, &p_ccb->ertm_info);
+    L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 
   if (p_ccb->transport == BT_TRANSPORT_LE) {
     L2CA_ConnectLECocRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK,
@@ -684,6 +683,16 @@ static void gap_sec_check_complete(const RawAddress*, tBT_TRANSPORT,
   }
 }
 
+static void gap_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
+  tGAP_CCB* p_ccb = gap_find_ccb_by_cid(l2cap_cid);
+
+  /* Tell the user if there is a callback */
+  if (p_ccb->p_callback)
+    (*p_ccb->p_callback)(p_ccb->gap_handle, GAP_EVT_CONN_CLOSED, nullptr);
+
+  gap_release_ccb(p_ccb);
+}
+
 /*******************************************************************************
  *
  * Function         gap_connect_cfm
@@ -729,11 +738,7 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
       gap_checks_con_flags(p_ccb);
     }
   } else {
-    /* Tell the user if there is a callback */
-    if (p_ccb->p_callback)
-      (*p_ccb->p_callback)(p_ccb->gap_handle, GAP_EVT_CONN_CLOSED, nullptr);
-
-    gap_release_ccb(p_ccb);
+    gap_on_l2cap_error(l2cap_cid, result);
   }
 }
 
@@ -790,8 +795,7 @@ static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result) {
     p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
     gap_checks_con_flags(p_ccb);
   } else {
-    p_ccb->p_callback(p_ccb->gap_handle, GAP_EVT_CONN_CLOSED, nullptr);
-    gap_release_ccb(p_ccb);
+    gap_on_l2cap_error(l2cap_cid, result);
   }
 }
 
