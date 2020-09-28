@@ -54,6 +54,11 @@ static void l2c_csm_w4_l2ca_disconnect_rsp(tL2C_CCB* p_ccb, uint16_t event,
 
 static const char* l2c_csm_get_event_name(uint16_t event);
 
+// Send a connect response with result OK and adjust the state machine
+static void l2c_csm_send_connect_rsp(tL2C_CCB* p_ccb) {
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
+}
+
 // Send a config request and adjust the state machine
 static void l2c_csm_send_config_req(tL2C_CCB* p_ccb) {
   tL2CAP_CFG_INFO config{};
@@ -431,6 +436,7 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
         L2CAP_TRACE_API("L2CAP - Calling Connect_Ind_Cb(), CID: 0x%04x",
                         p_ccb->local_cid);
 
+        l2c_csm_send_connect_rsp(p_ccb);
         (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
             p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
             p_ccb->remote_id);
@@ -708,6 +714,7 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       L2CAP_TRACE_API("L2CAP - Calling Connect_Ind_Cb(), CID: 0x%04x",
                       p_ccb->local_cid);
 
+      l2c_csm_send_connect_rsp(p_ccb);
       (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
           p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
           p_ccb->remote_id);

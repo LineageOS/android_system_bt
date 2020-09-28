@@ -108,7 +108,8 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
   if (!hd_cb.allow_incoming) {
     HIDD_TRACE_WARNING("%s: incoming connections not allowed, rejecting",
                        __func__);
-    L2CA_ConnectRsp(bd_addr, id, cid, L2CAP_CONN_NO_RESOURCES, 0);
+    L2CA_DisconnectReq(cid);
+
     return;
   }
 
@@ -146,7 +147,7 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
   }
 
   if (!accept) {
-    L2CA_ConnectRsp(bd_addr, id, cid, L2CAP_CONN_NO_RESOURCES, 0);
+    L2CA_DisconnectReq(cid);
     return;
   }
 
@@ -163,17 +164,12 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
     p_hcon->ctrl_id = id;
     p_hcon->disc_reason = HID_SUCCESS;
     p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
-
-    L2CA_ConnectRsp(p_dev->addr, p_dev->conn.ctrl_id, p_dev->conn.ctrl_cid,
-                    L2CAP_CONN_OK, L2CAP_CONN_OK);
     return;
   }
 
   // for INTR we go directly to config state
   p_hcon->conn_state = HID_CONN_STATE_CONFIG;
   p_hcon->intr_cid = cid;
-
-  L2CA_ConnectRsp(bd_addr, id, cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 }
 
 static void hidd_on_l2cap_error(uint16_t lcid, uint16_t result) {
