@@ -189,29 +189,6 @@ bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg);
 
 /*******************************************************************************
  *
- * Function         L2CA_ConfigReq
- *
- * Description      Higher layers call this function to send configuration.
- *
- * Returns          true if configuration sent, else false
- *
- ******************************************************************************/
-bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
- * Function         L2CA_ConfigRsp
- *
- * Description      Higher layers call this function to send a configuration
- *                  response.
- *
- * Returns          true if configuration response sent, else false
- *
- ******************************************************************************/
-bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
  * Function         L2CA_DisconnectReq
  *
  * Description      Higher layers call this function to disconnect a channel.
@@ -220,18 +197,6 @@ bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
  *
  ******************************************************************************/
 bool L2CA_DisconnectReq(uint16_t cid);
-
-/*******************************************************************************
- *
- * Function         L2CA_DisconnectRsp
- *
- * Description      Higher layers call this function to acknowledge the
- *                  disconnection of a channel.
- *
- * Returns          void
- *
- ******************************************************************************/
-bool L2CA_DisconnectRsp(uint16_t cid);
 
 /*******************************************************************************
  *
