@@ -65,34 +65,26 @@ const tL2CAP_APPL_INFO avdt_l2c_appl = {
  ******************************************************************************/
 static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
                                          tBT_TRANSPORT transport,
-                                         UNUSED_ATTR void* p_ref_data,
-                                         uint8_t res) {
+                                         void* p_ref_data) {
   AvdtpCcb* p_ccb = NULL;
   AvdtpTransportChannel* p_tbl;
 
-  AVDT_TRACE_DEBUG("avdt_sec_check_complete_term res: %d", res);
   p_ccb = avdt_ccb_by_bd(*bd_addr);
 
   p_tbl = avdt_ad_tc_tbl_by_st(AVDT_CHAN_SIG, p_ccb, AVDT_AD_ST_SEC_ACP);
   if (p_tbl == NULL) return;
 
-  if (res == BTM_SUCCESS) {
-    /* Send response to the L2CAP layer. */
-    L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_OK,
-                    L2CAP_CONN_OK);
+  /* Send response to the L2CAP layer. */
+  L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_OK,
+                  L2CAP_CONN_OK);
 
-    /* store idx in LCID table, store LCID in routing table */
-    avdtp_cb.ad.lcid_tbl[p_tbl->lcid - L2CAP_BASE_APPL_CID] =
-        avdt_ad_tc_tbl_to_idx(p_tbl);
-    avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = p_tbl->lcid;
+  /* store idx in LCID table, store LCID in routing table */
+  avdtp_cb.ad.lcid_tbl[p_tbl->lcid - L2CAP_BASE_APPL_CID] =
+      avdt_ad_tc_tbl_to_idx(p_tbl);
+  avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = p_tbl->lcid;
 
-    /* transition to configuration state */
-    p_tbl->state = AVDT_AD_ST_CFG;
-  } else {
-    L2CA_ConnectRsp(*bd_addr, p_tbl->id, p_tbl->lcid, L2CAP_CONN_SECURITY_BLOCK,
-                    L2CAP_CONN_OK);
-    avdt_ad_tc_close_ind(p_tbl);
-  }
+  /* transition to configuration state */
+  p_tbl->state = AVDT_AD_ST_CFG;
 }
 
 /*******************************************************************************
@@ -174,7 +166,7 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       }
       /* Assume security check is complete */
       avdt_sec_check_complete_term(&p_ccb->peer_addr, BT_TRANSPORT_BR_EDR,
-                                   nullptr, BTM_SUCCESS);
+                                   nullptr);
       return;
     }
   } else {
