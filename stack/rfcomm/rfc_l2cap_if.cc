@@ -197,14 +197,14 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
  *                  event to the FSM.
  *
  ******************************************************************************/
-void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t result) {
+void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t initiator) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
   if (!p_mcb) {
     RFCOMM_TRACE_ERROR("RFCOMM_ConfigCnf no MCB LCID:0x%x", lcid);
     return;
   }
-  uintptr_t result_as_ptr = result;
+  uintptr_t result_as_ptr = L2CAP_CFG_OK;
   rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONF_CNF, (void*)result_as_ptr);
 }
 

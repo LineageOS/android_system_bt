@@ -757,7 +757,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         if (p_ccb->config_done & OB_CFG_DONE) {
           if (p_ccb->remote_config_rsp_result == L2CAP_CFG_OK) {
             (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(
-                p_ccb->local_cid, p_ccb->remote_config_rsp_result);
+                p_ccb->local_cid, p_ccb->connection_initiator);
           } else {
             (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(p_ccb->local_cid,
                                                 L2CAP_CFG_FAILED_NO_REASON);
@@ -830,7 +830,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       p_ccb->remote_config_rsp_result = p_cfg->result;
       if (p_ccb->config_done & IB_CFG_DONE) {
         (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
-                                                p_cfg->result);
+                                                p_ccb->connection_initiator);
       }
       break;
 
