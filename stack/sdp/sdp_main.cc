@@ -124,9 +124,6 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   /* Save the BD Address and Channel ID. */
   p_ccb->device_address = bd_addr;
   p_ccb->connection_id = l2cap_cid;
-
-  /* Send response to the L2CAP layer. */
-  L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 }
 
 static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {

@@ -141,8 +141,6 @@ void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
     case RFC_MX_EVENT_CONN_IND:
 
       rfc_timer_start(p_mcb, RFCOMM_CONN_TIMEOUT);
-      L2CA_ConnectRsp(p_mcb->bd_addr, *((uint8_t*)p_data), p_mcb->lcid,
-                      L2CAP_CONN_OK, 0);
 
       rfc_mx_send_config_req(p_mcb);
 
