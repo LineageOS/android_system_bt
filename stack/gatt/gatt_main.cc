@@ -575,11 +575,11 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
     result = L2CAP_CONN_NO_RESOURCES;
   }
 
-  /* Send L2CAP connect rsp */
-  L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
-
-  /* if result ok, proceed with connection */
-  if (result != L2CAP_CONN_OK) return;
+  /* If we reject the connection, send DisconnectReq */
+  if (result != L2CAP_CONN_OK) {
+    L2CA_DisconnectReq(lcid);
+    return;
+  }
 
   /* transition to configuration state */
   gatt_set_ch_state(p_tcb, GATT_CH_CFG);

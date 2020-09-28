@@ -120,8 +120,11 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     AVCT_TRACE_DEBUG("avct_l2c_connect_ind_cback: 0x%x, res: %d, ch_state: %d",
                      lcid, result, p_lcb->ch_state);
   }
-  /* Send L2CAP connect rsp */
-  L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
+
+  /* If we reject the connection, send DisconnectReq */
+  if (result != L2CAP_CONN_OK) {
+    L2CA_DisconnectReq(lcid);
+  }
 
   /* if result ok, proceed with connection */
   if (result == L2CAP_CONN_OK) {
