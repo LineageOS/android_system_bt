@@ -162,8 +162,7 @@ tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda, const Uuid& src_uuid,
     BNEP_TRACE_API("BNEP initiating security procedures for src uuid %s",
                    p_bcb->src_uuid.ToString().c_str());
 
-    bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
-                            BTM_SUCCESS);
+    bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb);
   } else {
     /* Transition to the next appropriate state, waiting for connection confirm.
      */
