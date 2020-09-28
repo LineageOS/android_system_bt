@@ -270,17 +270,12 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
 static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
   tHID_CONN* p_hcon;
 
-  HIDD_TRACE_EVENT("%s: cid=%04x pcfg->result=%d", __func__, cid, result);
+  HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
 
   p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid) {
     HIDD_TRACE_WARNING("%s: unknown cid", __func__);
-    return;
-  }
-
-  if (result != L2CAP_CFG_OK) {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 

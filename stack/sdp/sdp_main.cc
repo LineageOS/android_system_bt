@@ -212,8 +212,7 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
 static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   tCONN_CB* p_ccb;
 
-  SDP_TRACE_EVENT("SDP - Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                  result);
+  SDP_TRACE_EVENT("SDP - Rcvd cfg cfm, CID: 0x%x", l2cap_cid);
 
   /* Find CCB based on CID */
   p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
@@ -223,18 +222,14 @@ static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   }
 
   /* For now, always accept configuration from the other side */
-  if (result == L2CAP_CFG_OK) {
-    p_ccb->con_state = SDP_STATE_CONNECTED;
+  p_ccb->con_state = SDP_STATE_CONNECTED;
 
-    if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {
-      sdp_disc_connected(p_ccb);
-    } else {
-      /* Start inactivity timer */
-      alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                         sdp_conn_timer_timeout, p_ccb);
-    }
+  if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {
+    sdp_disc_connected(p_ccb);
   } else {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
+    /* Start inactivity timer */
+    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                       sdp_conn_timer_timeout, p_ccb);
   }
 }
 
