@@ -119,7 +119,7 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
   }
 
   if (p_mcb == nullptr) {
-    L2CA_ConnectRsp(bd_addr, id, lcid, L2CAP_CONN_NO_RESOURCES, 0);
+    L2CA_DisconnectReq(lcid);
     return;
   }
   p_mcb->lcid = lcid;
@@ -155,8 +155,7 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
 
       /* Peer gave up its connection request, make sure cleaning up L2CAP
        * channel */
-      L2CA_ConnectRsp(p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid,
-                      L2CAP_CONN_NO_RESOURCES, 0);
+      L2CA_DisconnectReq(p_mcb->pending_lcid);
 
       p_mcb->pending_lcid = 0;
     }
