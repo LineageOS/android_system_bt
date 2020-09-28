@@ -52,7 +52,8 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
                                    uint8_t l2cap_id);
 static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result);
 static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result);
+static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result,
+                                  tL2CAP_CFG_INFO* p_cfg);
 static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void hidh_l2cif_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void hidh_l2cif_disconnect(uint16_t l2cap_cid);
@@ -369,7 +370,10 @@ static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t initiator) {
+static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
+                                  tL2CAP_CFG_INFO* p_cfg) {
+  hidh_l2cif_config_ind(l2cap_cid, p_cfg);
+
   uint8_t dhandle;
   tHID_CONN* p_hcon = NULL;
   uint32_t reason;
