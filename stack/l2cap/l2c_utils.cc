@@ -2948,11 +2948,9 @@ void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb) {
       UINT16_TO_STREAM(p, p_buf->len);
     }
   } else {
-    if ((((p_buf->layer_specific & L2CAP_FLUSHABLE_MASK) ==
-          L2CAP_FLUSHABLE_CH_BASED) &&
-         (p_ccb->is_flushable)) ||
-        ((p_buf->layer_specific & L2CAP_FLUSHABLE_MASK) ==
-         L2CAP_FLUSHABLE_PKT)) {
+    if (((p_buf->layer_specific & L2CAP_FLUSHABLE_MASK) ==
+         L2CAP_FLUSHABLE_CH_BASED) &&
+        (p_ccb->is_flushable)) {
       UINT16_TO_STREAM(p, p_ccb->p_lcb->Handle() |
                               (L2CAP_PKT_START << L2CAP_PKT_TYPE_SHIFT));
     } else {
