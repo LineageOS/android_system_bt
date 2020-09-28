@@ -102,7 +102,7 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
   tHID_DEV_DEV_CTB* p_dev;
   bool accept = TRUE;  // accept by default
 
-  HIDD_TRACE_EVENT("%s: psm=%04x cid=%04x id=%02x", __func__, psm, cid, id);
+  HIDD_TRACE_EVENT("%s: psm=%04x cid=%04x", __func__, psm, cid);
 
   p_dev = &hd_cb.device;
 
@@ -162,7 +162,6 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
 
     p_hcon->conn_flags = 0;
     p_hcon->ctrl_cid = cid;
-    p_hcon->ctrl_id = id;
     p_hcon->disc_reason = HID_SUCCESS;
     p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
     return;
