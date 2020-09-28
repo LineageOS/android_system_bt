@@ -680,8 +680,6 @@ extern bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
  ******************************************************************************/
 extern bool L2CA_ConnectFixedChnl(uint16_t fixed_cid,
                                   const RawAddress& bd_addr);
-extern bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& bd_addr,
-                                  uint8_t initiating_phys);
 
 /*******************************************************************************
  *

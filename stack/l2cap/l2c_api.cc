@@ -947,7 +947,7 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
  * NOTE             This flush timeout applies to all logical channels active on
  *                  the ACL link.
  ******************************************************************************/
-inline uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
+constexpr uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
   return ((milliseconds * 8) + 3) / 5;
 }
 
@@ -1098,16 +1098,8 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda);
   }
-  uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
-  return L2CA_ConnectFixedChnl(fixed_cid, rem_bda, phy);
-}
-
-bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
-                           uint8_t initiating_phys) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda,
-                                                  initiating_phys);
-  }
+  uint8_t initiating_phys =
+      controller_get_interface()->get_le_all_initiating_phys();
 
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
