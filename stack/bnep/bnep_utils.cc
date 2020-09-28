@@ -607,8 +607,7 @@ void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
   BNEP_TRACE_EVENT(
       "BNEP initiating security check for incoming call for uuid %s",
       p_bcb->src_uuid.ToString().c_str());
-  bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
-                          BTM_SUCCESS);
+  bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb);
 }
 
 /*******************************************************************************
@@ -1148,14 +1147,12 @@ void bnepu_send_peer_multicast_filter_rsp(tBNEP_CONN* p_bcb,
  * Returns          void
  *
  ******************************************************************************/
-void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
-                             UNUSED_ATTR tBT_TRANSPORT trasnport,
-                             void* p_ref_data, uint8_t result) {
+void bnep_sec_check_complete(const RawAddress* bd_addr, tBT_TRANSPORT trasnport,
+                             void* p_ref_data) {
   tBNEP_CONN* p_bcb = (tBNEP_CONN*)p_ref_data;
   uint16_t resp_code = BNEP_SETUP_CONN_OK;
   bool is_role_change;
 
-  BNEP_TRACE_EVENT("BNEP security callback returned result %d", result);
   if (p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED)
     is_role_change = true;
   else
@@ -1171,30 +1168,6 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
 
   /* if it is outgoing call and result is FAILURE return security fail error */
   if (!(p_bcb->con_flags & BNEP_FLAGS_SETUP_RCVD)) {
-    if (result != BTM_SUCCESS) {
-      if (p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED) {
-        /* Tell the user that role change is failed because of security */
-        if (bnep_cb.p_conn_state_cb)
-          (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
-                                     BNEP_SECURITY_FAIL, is_role_change);
-
-        p_bcb->con_state = BNEP_STATE_CONNECTED;
-        p_bcb->src_uuid = p_bcb->prv_src_uuid;
-        p_bcb->dst_uuid = p_bcb->prv_dst_uuid;
-        return;
-      }
-
-      L2CA_DisconnectReq(p_bcb->l2cap_cid);
-
-      /* Tell the user if there is a callback */
-      if (bnep_cb.p_conn_state_cb)
-        (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
-                                   BNEP_SECURITY_FAIL, is_role_change);
-
-      bnepu_release_bcb(p_bcb);
-      return;
-    }
-
     /* Transition to the next appropriate state, waiting for connection confirm.
      */
     p_bcb->con_state = BNEP_STATE_CONN_SETUP;
@@ -1202,25 +1175,6 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
     bnep_send_conn_req(p_bcb);
     alarm_set_on_mloop(p_bcb->conn_timer, BNEP_CONN_TIMEOUT_MS,
                        bnep_conn_timer_timeout, p_bcb);
-    return;
-  }
-
-  /* it is an incoming call respond appropriately */
-  if (result != BTM_SUCCESS) {
-    bnep_send_conn_responce(p_bcb, BNEP_SETUP_CONN_NOT_ALLOWED);
-    if (p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED) {
-      /* Role change is failed because of security. Revert back to connected
-       * state */
-      p_bcb->con_state = BNEP_STATE_CONNECTED;
-      p_bcb->con_flags &= (~BNEP_FLAGS_SETUP_RCVD);
-      p_bcb->src_uuid = p_bcb->prv_src_uuid;
-      p_bcb->dst_uuid = p_bcb->prv_dst_uuid;
-      return;
-    }
-
-    L2CA_DisconnectReq(p_bcb->l2cap_cid);
-
-    bnepu_release_bcb(p_bcb);
     return;
   }
 
@@ -1233,8 +1187,6 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
     bnep_send_conn_responce(p_bcb, resp_code);
     bnep_connected(p_bcb);
   }
-
-  return;
 }
 
 /*******************************************************************************
