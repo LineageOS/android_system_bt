@@ -651,8 +651,7 @@ class AvdtpTransportChannel {
         tcid(0),
         ccb_idx(0),
         state(0),
-        cfg_flags(0),
-        id(0) {}
+        cfg_flags(0) {}
 
   void Reset() {
     peer_mtu = 0;
@@ -662,7 +661,6 @@ class AvdtpTransportChannel {
     ccb_idx = 0;
     state = 0;
     cfg_flags = 0;
-    id = 0;
   }
 
   uint16_t peer_mtu;     // L2CAP MTU of the peer device
@@ -672,7 +670,6 @@ class AvdtpTransportChannel {
   uint8_t ccb_idx;    // Channel control block for with this transport channel
   uint8_t state;      // Transport channel state
   uint8_t cfg_flags;  // L2CAP configuration flags
-  uint8_t id;
 };
 
 /**

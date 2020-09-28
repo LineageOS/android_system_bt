@@ -201,7 +201,6 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
   if (psm == HID_PSM_CONTROL) {
     p_hcon->conn_flags = 0;
     p_hcon->ctrl_cid = l2cap_cid;
-    p_hcon->ctrl_id = l2cap_id;
     p_hcon->disc_reason = HID_SUCCESS; /* Authentication passed. Reset
                                               disc_reason (from
                                               HID_ERR_AUTH_FAILED) */

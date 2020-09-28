@@ -46,7 +46,6 @@ typedef struct hid_conn {
 
   uint8_t conn_flags;
 
-  uint8_t ctrl_id;
   uint16_t ctrl_cid;
   uint16_t intr_cid;
   uint16_t rem_mtu_size;
