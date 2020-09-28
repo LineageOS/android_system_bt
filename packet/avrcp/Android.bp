@@ -32,4 +32,8 @@ cc_library_static {
     static_libs: [
         "lib-bt-packets-base",
     ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
+    ],
 }
