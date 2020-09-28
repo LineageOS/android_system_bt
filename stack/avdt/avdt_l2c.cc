@@ -150,7 +150,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
       p_tbl->my_mtu = kAvdtpMtu;
       p_tbl->tcid = AVDT_CHAN_SIG;
       p_tbl->lcid = lcid;
-      p_tbl->id = id;
       p_tbl->state = AVDT_AD_ST_SEC_ACP;
       p_tbl->cfg_flags = AVDT_L2C_CFG_CONN_ACP;
 
