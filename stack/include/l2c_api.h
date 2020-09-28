@@ -366,20 +366,6 @@ extern uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr);
 
 /*******************************************************************************
  *
- * Function         L2CA_ConnectRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP connection, for which they had gotten an connect
- *                  indication callback.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-extern bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
-                            uint16_t lcid, uint16_t result, uint16_t status);
-
-/*******************************************************************************
- *
  * Function         L2CA_RegisterLECoc
  *
  * Description      Other layers call this function to register for L2CAP
