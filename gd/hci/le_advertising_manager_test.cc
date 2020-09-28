@@ -507,9 +507,9 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   le_advertising_manager_->RemoveAdvertiser(id);
   result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
-  test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
   EXPECT_CALL(
       mock_advertising_callback_, onAdvertisingEnabled(id, false, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+  test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
   sync_client_handler();
 }
 }  // namespace
