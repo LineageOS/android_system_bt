@@ -611,12 +611,6 @@ void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
  *
  ******************************************************************************/
 static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result) {
-  RFCOMM_TRACE_EVENT("rfc_mx_conf_cnf result:%d ", result);
-
-  if (result != L2CAP_CFG_OK) {
-    return;
-  }
-
   if (p_mcb->state == RFC_MX_STATE_CONFIGURE) {
     if (p_mcb->is_initiator) {
       p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;

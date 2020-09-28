@@ -381,8 +381,7 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   tHID_CONN* p_hcon = NULL;
   uint32_t reason;
 
-  HIDH_TRACE_EVENT("HID-Host Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                   result);
+  HIDH_TRACE_EVENT("HID-Host Rcvd cfg cfm, CID: 0x%x", l2cap_cid);
 
   /* Find CCB based on CID */
   dhandle = find_conn_by_cid(l2cap_cid);
@@ -391,12 +390,6 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   if (p_hcon == NULL) {
     HIDH_TRACE_WARNING("HID-Host Rcvd L2CAP cfg ind, unknown CID: 0x%x",
                        l2cap_cid);
-    return;
-  }
-
-  /* If configuration failed, disconnect the channel(s) */
-  if (result != L2CAP_CFG_OK) {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 
