@@ -1035,6 +1035,44 @@ TEST_F(AvrcpDeviceTest, setAddressedPlayerTest) {
   SendMessage(1, request);
 }
 
+TEST_F(AvrcpDeviceTest, setBrowsedPlayerTest) {
+  MockMediaInterface interface;
+  NiceMock<MockA2dpInterface> a2dp_interface;
+
+  test_device->RegisterInterfaces(&interface, &a2dp_interface, nullptr);
+
+  EXPECT_CALL(interface, SetBrowsedPlayer(_, _))
+      .Times(3)
+      .WillOnce(InvokeCb<1>(true, "", 0))
+      .WillOnce(InvokeCb<1>(false, "", 0))
+      .WillOnce(InvokeCb<1>(true, "", 2));
+
+  auto not_browsable_rsp = SetBrowsedPlayerResponseBuilder::MakeBuilder(
+      Status::PLAYER_NOT_BROWSABLE, 0x0000, 0, 0, "");
+  EXPECT_CALL(response_cb,
+              Call(1, true, matchPacket(std::move(not_browsable_rsp))))
+      .Times(1);
+
+  auto player_id_0_request =
+      TestBrowsePacket::Make(set_browsed_player_id_0_request);
+  SendBrowseMessage(1, player_id_0_request);
+
+  auto invalid_id_rsp = SetBrowsedPlayerResponseBuilder::MakeBuilder(
+      Status::INVALID_PLAYER_ID, 0x0000, 0, 0, "");
+  EXPECT_CALL(response_cb,
+              Call(2, true, matchPacket(std::move(invalid_id_rsp))))
+      .Times(1);
+
+  SendBrowseMessage(2, player_id_0_request);
+
+  auto response = SetBrowsedPlayerResponseBuilder::MakeBuilder(
+      Status::NO_ERROR, 0x0000, 2, 0, "");
+  EXPECT_CALL(response_cb, Call(3, true, matchPacket(std::move(response))))
+      .Times(1);
+
+  SendBrowseMessage(3, player_id_0_request);
+}
+
 TEST_F(AvrcpDeviceTest, volumeChangedTest) {
   MockMediaInterface interface;
   NiceMock<MockA2dpInterface> a2dp_interface;
