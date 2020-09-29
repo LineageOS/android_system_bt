@@ -266,7 +266,8 @@ void ConfigureBqr(const BqrConfiguration& bqr_config) {
     return;
   }
 
-  LOG(INFO) << __func__ << ": Action: " << bqr_config.report_action
+  LOG(INFO) << __func__ << ": Action: "
+            << loghex(static_cast<uint8_t>(bqr_config.report_action))
             << ", Mask: " << loghex(bqr_config.quality_event_mask)
             << ", Interval: " << bqr_config.minimum_report_interval_ms;
 
