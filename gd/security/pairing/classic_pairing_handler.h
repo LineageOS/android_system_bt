@@ -84,6 +84,8 @@ class ClassicPairingHandler : public PairingHandler {
   void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
   void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
 
+  void OnNameRequestComplete(hci::Address address, bool success);
+
  private:
   void OnUserInput(bool user_input);
   void OnPasskeyInput(uint32_t passkey);
@@ -109,6 +111,7 @@ class ClassicPairingHandler : public PairingHandler {
   bool is_cancelled_ = false;
 
   bool has_gotten_io_cap_response_ = false;
+  bool has_gotten_name_response_ = false;
   std::optional<hci::UserConfirmationRequestView> user_confirmation_request_ = std::nullopt;
 
   hci::ErrorCode last_status_ = hci::ErrorCode::UNKNOWN_HCI_COMMAND;
