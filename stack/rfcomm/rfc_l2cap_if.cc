@@ -93,7 +93,6 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
     /* if this is collision case */
     if ((p_mcb->is_initiator) && (p_mcb->state == RFC_MX_STATE_WAIT_CONN_CNF)) {
       p_mcb->pending_lcid = lcid;
-      p_mcb->pending_id = id;
 
       /* wait random timeout (2 - 12) to resolve collision */
       /* if peer gives up then local device rejects incoming connection and
