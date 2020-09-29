@@ -292,21 +292,21 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
   ConfigurationResponseResult result = ConfigurationResponseResult::SUCCESS;
   auto remote_rfc_mode = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
 
+  auto initial_config_option = dynamic_service_manager_->GetService(channel->GetPsm())->GetConfigOption();
+
   for (auto& option : options) {
     switch (option->type_) {
       case ConfigurationOptionType::MTU: {
         auto* config = MtuConfigurationOption::Specialize(option.get());
-        if (config->mtu_ < kMinimumClassicMtu) {
-          LOG_WARN("Configuration request with Invalid MTU");
-          config->mtu_ = kDefaultClassicMtu;
+        if (config->mtu_ < initial_config_option.minimal_remote_mtu) {
+          LOG_WARN("Configuration request with unacceptable MTU");
+          config->mtu_ = initial_config_option.minimal_remote_mtu;
           rsp_options.emplace_back(std::make_unique<MtuConfigurationOption>(*config));
           result = ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS;
         }
-        configuration_state.outgoing_mtu_ = config->mtu_;
         break;
       }
       case ConfigurationOptionType::FLUSH_TIMEOUT: {
-        // TODO: Handle this configuration option
         break;
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
@@ -341,8 +341,6 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
         break;
     }
   }
-
-  auto initial_config_option = dynamic_service_manager_->GetService(channel->GetPsm())->GetConfigOption();
 
   if (remote_rfc_mode == RetransmissionAndFlowControlModeOption::L2CAP_BASIC &&
       initial_config_option.channel_mode ==
@@ -380,7 +378,6 @@ void ClassicSignallingManager::SendInitialConfigRequest(Cid local_cid) {
 
   auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
   mtu_configuration->mtu_ = initial_config.incoming_mtu;
-  configuration_state.incoming_mtu_ = initial_config.incoming_mtu;
 
   auto fcs_option = std::make_unique<FrameCheckSequenceOption>();
   fcs_option->fcs_type_ = FcsType::NO_FCS;
@@ -433,7 +430,6 @@ void ClassicSignallingManager::negotiate_configuration(Cid cid, Continuation is_
         // MTU is non-negotiable option. Use default mtu size
         auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
         mtu_configuration->mtu_ = kDefaultClassicMtu;
-        configuration_state.incoming_mtu_ = kDefaultClassicMtu;
         negotiation_config.emplace_back(std::move(mtu_configuration));
         can_negotiate = true;
         break;
@@ -530,12 +526,10 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
   for (auto& option : options) {
     switch (option->type_) {
       case ConfigurationOptionType::MTU: {
-        auto config = MtuConfigurationOption::Specialize(option.get());
-        configuration_state.incoming_mtu_ = config->mtu_;
+        // Since they accepted our MTU, no need to read the new value.
         break;
       }
       case ConfigurationOptionType::FLUSH_TIMEOUT: {
-        // TODO: Handle this configuration option
         break;
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
