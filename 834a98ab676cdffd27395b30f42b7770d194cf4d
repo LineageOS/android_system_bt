@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2b111c91_3a68b79c",
+        "filename": "main/shim/controller.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 16208
+      },
+      "writtenOn": "2020-09-29T14:57:08Z",
+      "side": 1,
+      "message": "?",
+      "revId": "834a98ab676cdffd27395b30f42b7770d194cf4d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6c813244_1c6e69dd",
+        "filename": "main/shim/controller.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 16208
+      },
+      "writtenOn": "2020-09-29T14:57:08Z",
+      "side": 1,
+      "message": "Are you sure about this? IMO this should be\n\n  return GetController()-\u003eIsSupported(\n      (bluetooth::hci::OpCode)0xfd53);",
+      "revId": "834a98ab676cdffd27395b30f42b7770d194cf4d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
