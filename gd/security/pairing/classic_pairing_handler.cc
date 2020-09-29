@@ -85,6 +85,22 @@ void ClassicPairingHandler::Initiate(bool locally_initiated, hci::IoCapability i
   GetChannel()->Connect(GetRecord()->GetPseudoAddress()->GetAddress());
 }
 
+void ClassicPairingHandler::OnNameRequestComplete(hci::Address address, bool success) {
+  if (GetNameDbModule()->IsNameCached(address)) {
+    auto remote_name = GetNameDbModule()->ReadCachedRemoteName(address);
+    std::string tmp_name;
+    for (uint8_t i : remote_name) {
+      tmp_name += i;
+    }
+    device_name_ = tmp_name;
+  }
+  has_gotten_name_response_ = true;
+  if (user_confirmation_request_) {
+    this->OnReceive(*user_confirmation_request_);
+    user_confirmation_request_ = std::nullopt;
+  }
+}
+
 void ClassicPairingHandler::Cancel() {
   if (is_cancelled_) return;
   is_cancelled_ = true;
@@ -152,6 +168,10 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
   auto reply_packet = hci::IoCapabilityRequestReplyBuilder::Create(
       GetRecord()->GetPseudoAddress()->GetAddress(), io_capability, oob_present, authentication_requirements);
   this->GetChannel()->SendCommand(std::move(reply_packet));
+  GetNameDbModule()->ReadRemoteNameRequest(
+      GetRecord()->GetPseudoAddress()->GetAddress(),
+      common::BindOnce(&ClassicPairingHandler::OnNameRequestComplete, common::Unretained(this)),
+      security_handler_);
 }
 
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
@@ -290,7 +310,7 @@ void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
 
 void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
   // Ensure we have io cap response otherwise checks will be wrong if it comes late
-  if (!has_gotten_io_cap_response_) {
+  if (!has_gotten_io_cap_response_ || !has_gotten_name_response_) {
     user_confirmation_request_ = std::make_optional<hci::UserConfirmationRequestView>(packet);
     return;
   }
