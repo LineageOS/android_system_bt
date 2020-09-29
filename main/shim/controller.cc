@@ -220,6 +220,10 @@ static bool supports_ble_periodic_advertising(void) {
   return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(13);
 }
 
+static bool supports_ble_offload_features(void) {
+  return GetController()->GetControllerLocalExtendedFeatures(kPageOne) & BIT(1);
+}
+
 static uint16_t get_acl_data_size_classic(void) {
   return GetController()->GetControllerAclPacketLength();
 }
@@ -334,6 +338,7 @@ static const controller_t interface = {
     get_ble_resolving_list_max_size,
     set_ble_resolving_list_max_size,
     get_local_supported_codecs,
+    supports_ble_offload_features,
     get_le_all_initiating_phys};
 
 const controller_t* bluetooth::shim::controller_get_interface() {
