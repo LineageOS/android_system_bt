@@ -70,8 +70,8 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                        uint16_t my_mtu, uint16_t required_remote_mtu) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_Register(psm, p_cb_info, enable_snoop,
-                                          p_ertm_info, my_mtu);
+    return bluetooth::shim::L2CA_Register(
+        psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu, required_remote_mtu);
   }
 
   tL2C_RCB* p_rcb;
