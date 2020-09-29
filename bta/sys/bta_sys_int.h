@@ -56,6 +56,7 @@ typedef struct {
   tBTA_SYS_COLLISION colli_reg;   /* collision handling module */
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
   tBTA_SYS_EIR_CBACK* eir_cb; /* add/remove UUID into EIR */
+  tBTA_SYS_CUST_EIR_CBACK* cust_eir_cb; /* add/remove customer UUID into EIR */
 #endif
 #if (BTM_SSR_INCLUDED == TRUE)
   tBTA_SYS_SSR_CFG_CBACK* p_ssr_cb;

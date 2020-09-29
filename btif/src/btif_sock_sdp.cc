@@ -184,6 +184,13 @@ static int add_sdp_by_uuid(const char* name, const Uuid& uuid,
   APPL_TRACE_DEBUG(
       "%s: service registered successfully, service_name: %s, handle: 0x%08x",
       __func__, name, handle);
+
+  {
+    // Write the custom 128-bit UUID to EIR
+    tBTA_CUSTOM_UUID curr = {uuid, handle};
+    bta_sys_add_cust_uuid(curr);
+  }
+
   return handle;
 
 error:
@@ -459,5 +466,11 @@ int add_rfc_sdp_rec(const char* name, Uuid uuid, const int channel) {
 void del_rfc_sdp_rec(int handle) {
   APPL_TRACE_DEBUG("del_rfc_sdp_rec: handle:0x%x", handle);
 
-  if ((handle != -1) && (handle != 0)) BTA_JvDeleteRecord(handle);
+  if ((handle != -1) && (handle != 0)) {
+    // Remove the custom 128-bit UUID from EIR
+    const tBTA_CUSTOM_UUID curr = {Uuid::kEmpty, (uint32_t)handle};
+    bta_sys_remove_cust_uuid(curr);
+
+    BTA_JvDeleteRecord(handle);
+  }
 }

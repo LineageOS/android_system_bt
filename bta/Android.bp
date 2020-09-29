@@ -117,8 +117,10 @@ cc_library_static {
 cc_test {
     name: "net_test_bta",
     defaults: ["fluoride_bta_defaults"],
+    test_suites: ["device-tests"],
     srcs: [
         "test/bta_hf_client_test.cc",
+        "test/bta_dm_cust_uuid_test.cc",
         "test/gatt/database_builder_test.cc",
         "test/gatt/database_builder_sample_device_test.cc",
         "test/gatt/database_test.cc",
