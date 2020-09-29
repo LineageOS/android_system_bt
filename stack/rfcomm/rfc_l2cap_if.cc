@@ -69,6 +69,7 @@ void rfcomm_l2cap_if_init(void) {
   p_l2c->pL2CA_DataInd_Cb = RFCOMM_BufDataInd;
   p_l2c->pL2CA_CongestionStatus_Cb = RFCOMM_CongestionStatusInd;
   p_l2c->pL2CA_TxComplete_Cb = NULL;
+  p_l2c->pL2CA_Error_Cb = rfc_on_l2cap_error;
 
   L2CA_Register(BT_PSM_RFCOMM, rfc_cb.rfc.reg_info, true /* enable_snoop */,
                 nullptr, L2CAP_MTU_SIZE, 0);
@@ -147,7 +148,6 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
     /* if peer rejects our connect request but peer's connect request is pending
      */
     if (result != L2CAP_CONN_OK) {
-      rfc_on_l2cap_error(lcid, L2CAP_CONN_NO_RESOURCES);
       return;
     } else {
       RFCOMM_TRACE_DEBUG("RFCOMM_ConnectCnf peer gave up pending LCID(0x%x)",

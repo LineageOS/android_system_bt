@@ -48,12 +48,14 @@ static void hidd_l2cif_disconnect_ind(uint16_t cid, bool ack_needed);
 static void hidd_l2cif_disconnect(uint16_t cid);
 static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg);
 static void hidd_l2cif_cong_ind(uint16_t cid, bool congested);
-
+static void hidd_on_l2cap_error(uint16_t lcid, uint16_t result);
 static const tL2CAP_APPL_INFO dev_reg_info = {
     hidd_l2cif_connect_ind,    hidd_l2cif_connect_cfm,
     hidd_l2cif_config_ind,     hidd_l2cif_config_cfm,
     hidd_l2cif_disconnect_ind, hidd_l2cif_data_ind,
-    hidd_l2cif_cong_ind,       NULL};
+    hidd_l2cif_cong_ind,       NULL,
+    hidd_on_l2cap_error,
+};
 
 /*******************************************************************************
  *
@@ -214,7 +216,7 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result) {
   }
 
   if (result != L2CAP_CONN_OK) {
-    hidd_on_l2cap_error(cid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 
@@ -278,7 +280,7 @@ static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result) {
   }
 
   if (result != L2CAP_CFG_OK) {
-    hidd_on_l2cap_error(cid, result);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 

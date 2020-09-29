@@ -57,13 +57,15 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void hidh_l2cif_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void hidh_l2cif_disconnect(uint16_t l2cap_cid);
 static void hidh_l2cif_cong_ind(uint16_t l2cap_cid, bool congested);
+static void hidh_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
 
 static const tL2CAP_APPL_INFO hst_reg_info = {
     hidh_l2cif_connect_ind,    hidh_l2cif_connect_cfm,
     hidh_l2cif_config_ind,     hidh_l2cif_config_cfm,
     hidh_l2cif_disconnect_ind, hidh_l2cif_data_ind,
     hidh_l2cif_cong_ind,       NULL,
-    /* tL2CA_TX_COMPLETE_CB */};
+    hidh_on_l2cap_error,
+};
 
 /*******************************************************************************
  *
@@ -309,7 +311,8 @@ static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   }
 
   if (result != L2CAP_CONN_OK) {
-    hidh_on_l2cap_error(l2cap_cid, result);
+    // TODO: We need to provide the real HCI status if we want to retry.
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
   /* receive Control Channel connect confirmation */
@@ -393,7 +396,7 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t result) {
 
   /* If configuration failed, disconnect the channel(s) */
   if (result != L2CAP_CFG_OK) {
-    hidh_on_l2cap_error(l2cap_cid, L2CAP_CFG_FAILED_NO_REASON);
+    LOG(ERROR) << __func__ << ": invoked with non OK status";
     return;
   }
 

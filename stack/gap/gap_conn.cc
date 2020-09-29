@@ -90,6 +90,7 @@ static void gap_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void gap_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void gap_congestion_ind(uint16_t lcid, bool is_congested);
 static void gap_tx_complete_ind(uint16_t l2cap_cid, uint16_t sdu_sent);
+static void gap_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
 static tGAP_CCB* gap_find_ccb_by_cid(uint16_t cid);
 static tGAP_CCB* gap_find_ccb_by_handle(uint16_t handle);
 static tGAP_CCB* gap_allocate_ccb(void);
@@ -116,6 +117,7 @@ void gap_conn_init(void) {
   conn.reg_info.pL2CA_DataInd_Cb = gap_data_ind;
   conn.reg_info.pL2CA_CongestionStatus_Cb = gap_congestion_ind;
   conn.reg_info.pL2CA_TxComplete_Cb = gap_tx_complete_ind;
+  conn.reg_info.pL2CA_Error_Cb = gap_on_l2cap_error;
 }
 
 /*******************************************************************************
@@ -737,8 +739,6 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
       p_ccb->con_flags |= GAP_CCB_FLAGS_SEC_DONE;
       gap_checks_con_flags(p_ccb);
     }
-  } else {
-    gap_on_l2cap_error(l2cap_cid, result);
   }
 }
 
@@ -794,8 +794,6 @@ static void gap_config_cfm(uint16_t l2cap_cid, uint16_t result) {
     p_ccb->con_flags |= GAP_CCB_FLAGS_MY_CFG_DONE;
     p_ccb->con_flags |= GAP_CCB_FLAGS_HIS_CFG_DONE;
     gap_checks_con_flags(p_ccb);
-  } else {
-    gap_on_l2cap_error(l2cap_cid, result);
   }
 }
 

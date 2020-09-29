@@ -24,6 +24,10 @@ cc_library_static {
     shared_libs: [
         "libchrome",
     ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
+    ],
 }
 
 cc_test {
