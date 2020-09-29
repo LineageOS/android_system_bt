@@ -44,10 +44,6 @@
 #define GAP_EVT_CONN_UNCONGESTED 0x0104
 #define GAP_EVT_TX_EMPTY 0x0105
 
-/* Values for 'chan_mode_mask' field */
-/* GAP_ConnOpen() - optional channels to negotiate */
-#define GAP_FCR_CHAN_OPT_BASIC L2CAP_FCR_CHAN_OPT_BASIC
-#define GAP_FCR_CHAN_OPT_ERTM L2CAP_FCR_CHAN_OPT_ERTM
 /*** used in connection variables and functions ***/
 #define GAP_INVALID_HANDLE 0xFFFF
 
@@ -125,8 +121,7 @@ extern uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
                              uint16_t psm, uint16_t le_mps,
                              tL2CAP_CFG_INFO* p_cfg,
                              tL2CAP_ERTM_INFO* ertm_info, uint16_t security,
-                             uint8_t chan_mode_mask, tGAP_CONN_CALLBACK* p_cb,
-                             tBT_TRANSPORT transport);
+                             tGAP_CONN_CALLBACK* p_cb, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *
