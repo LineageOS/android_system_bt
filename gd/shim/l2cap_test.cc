@@ -401,6 +401,7 @@ TEST_F(ShimL2capTest, RegisterService_Success) {
       kPsm,
       kNoUseErtm,
       kMtu,
+      kMtu,
       std::bind(
           &bluetooth::shim::ShimL2capTest::OnConnectionComplete,
           this,
@@ -431,6 +432,7 @@ TEST_F(ShimL2capTest, RegisterService_Duplicate) {
   shim_l2cap_->RegisterClassicService(
       kPsm,
       kNoUseErtm,
+      kMtu,
       kMtu,
       std::bind(
           &bluetooth::shim::ShimL2capTest::OnConnectionComplete,
@@ -463,6 +465,7 @@ TEST_F(ShimL2capTest, RegisterService_Invalid) {
   shim_l2cap_->RegisterClassicService(
       kPsm,
       kNoUseErtm,
+      kMtu,
       kMtu,
       std::bind(
           &bluetooth::shim::ShimL2capTest::OnConnectionComplete,

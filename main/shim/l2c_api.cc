@@ -35,7 +35,8 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
                                         const tL2CAP_APPL_INFO& callbacks,
                                         bool enable_snoop,
                                         tL2CAP_ERTM_INFO* p_ertm_info,
-                                        uint16_t required_mtu) {
+                                        uint16_t my_mtu,
+                                        uint16_t required_remote_mtu) {
   if (L2C_INVALID_PSM(client_psm)) {
     LOG_ERROR("%s Invalid classic psm:%hd", __func__, client_psm);
     return 0;
@@ -63,9 +64,10 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
     return 0;
   }
   LOG_INFO("%s classic client_psm:%hd psm:%hd", __func__, client_psm, psm);
-
+  // Minimum acceptable MTU is 48 bytes
+  required_remote_mtu = std::max<uint16_t>(required_remote_mtu, 48);
   return shim_l2cap.RegisterService(psm, callbacks, enable_snoop, p_ertm_info,
-                                    required_mtu);
+                                    my_mtu, required_remote_mtu);
 }
 
 void bluetooth::shim::L2CA_Deregister(uint16_t client_psm) {
