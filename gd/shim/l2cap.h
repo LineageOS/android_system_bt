@@ -41,6 +41,7 @@ class L2cap : public bluetooth::Module {
       uint16_t psm,
       bool use_ertm,
       uint16_t mtu,
+      uint16_t required_remote_mtu,
       ConnectionCompleteCallback on_complete,
       RegisterServicePromise register_promise);
   void UnregisterClassicService(uint16_t psm, UnregisterServicePromise unregister_promise);

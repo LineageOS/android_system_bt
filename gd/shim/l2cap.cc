@@ -611,6 +611,7 @@ void L2cap::RegisterClassicService(
     uint16_t raw_psm,
     bool use_ertm,
     uint16_t mtu,
+    uint16_t required_remote_mtu,
     ConnectionCompleteCallback on_complete,
     RegisterServicePromise register_promise) {
   l2cap::Psm psm{raw_psm};
@@ -620,6 +621,7 @@ void L2cap::RegisterClassicService(
         l2cap::classic::DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION;
   }
   option.incoming_mtu = mtu;
+  option.minimal_remote_mtu = required_remote_mtu;
   GetHandler()->Post(common::BindOnce(
       &L2cap::impl::RegisterService,
       common::Unretained(pimpl_.get()),
