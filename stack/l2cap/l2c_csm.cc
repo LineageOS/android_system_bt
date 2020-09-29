@@ -450,8 +450,10 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
         L2CAP_TRACE_API("L2CAP - Calling Connect_Ind_Cb(), CID: 0x%04x",
                         p_ccb->local_cid);
 
-        l2c_csm_send_connect_rsp(p_ccb);
-        l2c_csm_send_config_req(p_ccb);
+        if (p_ccb->p_lcb->transport != BT_TRANSPORT_LE) {
+          l2c_csm_send_connect_rsp(p_ccb);
+          l2c_csm_send_config_req(p_ccb);
+        }
       } else {
         /*
         ** L2CAP Connect Response will be sent out by 3 sec timer expiration
@@ -561,6 +563,9 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
         /* Connection is completed */
         alarm_cancel(p_ccb->l2c_ccb_timer);
         p_ccb->chnl_state = CST_OPEN;
+        (*p_ccb->p_rcb->api.pL2CA_ConnectInd_Cb)(
+            p_ccb->p_lcb->remote_bd_addr, p_ccb->local_cid, p_ccb->p_rcb->psm,
+            p_ccb->remote_id);
       } else {
         p_ccb->chnl_state = CST_CONFIG;
         alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
