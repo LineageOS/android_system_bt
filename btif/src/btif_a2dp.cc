@@ -37,8 +37,8 @@
 #include "osi/include/log.h"
 
 void btif_a2dp_on_idle(void) {
-  LOG_INFO("%s: ## ON A2DP IDLE ## peer_sep = %d", __func__,
-           btif_av_get_peer_sep());
+  LOG_VERBOSE("Peer stream endpoint type:%s",
+              peer_stream_endpoint_text(btif_av_get_peer_sep()).c_str());
   if (btif_av_get_peer_sep() == AVDT_TSEP_SNK) {
     btif_a2dp_source_on_idle();
   } else if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
