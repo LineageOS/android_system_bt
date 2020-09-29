@@ -92,9 +92,8 @@ static void l2c_csm_indicate_connection_open(tL2C_CCB* p_ccb) {
         p_ccb->remote_id);
   }
   if (p_ccb->chnl_state == CST_OPEN) {
-    (*p_ccb->p_rcb->api.pL2CA_ConfigInd_Cb)(p_ccb->local_cid, &p_ccb->peer_cfg);
-    (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(p_ccb->local_cid,
-                                            p_ccb->connection_initiator);
+    (*p_ccb->p_rcb->api.pL2CA_ConfigCfm_Cb)(
+        p_ccb->local_cid, p_ccb->connection_initiator, &p_ccb->peer_cfg);
   }
 }
 

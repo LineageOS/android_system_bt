@@ -199,9 +199,10 @@ constexpr uint16_t L2CAP_INITIATOR_REMOTE = 0;
 /* Configuration confirm callback prototype. Parameters are
  *              Local CID assigned to the connection
  *              Initiator (1 for local, 0 for remote)
+ *              Initial config from remote
  * If there is an error, tL2CA_ERROR_CB is invoked
  */
-typedef void(tL2CA_CONFIG_CFM_CB)(uint16_t, uint16_t);
+typedef void(tL2CA_CONFIG_CFM_CB)(uint16_t, uint16_t, tL2CAP_CFG_INFO*);
 
 /* Disconnect indication callback prototype. Parameters are
  *              Local CID

@@ -43,7 +43,8 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
                                    uint16_t psm, uint8_t id);
 static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result);
 static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result);
+static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t result,
+                                  tL2CAP_CFG_INFO* p_cfg);
 static void hidd_l2cif_disconnect_ind(uint16_t cid, bool ack_needed);
 static void hidd_l2cif_disconnect(uint16_t cid);
 static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg);
@@ -263,7 +264,10 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t initiator) {
+static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t initiator,
+                                  tL2CAP_CFG_INFO* p_cfg) {
+  hidd_l2cif_config_ind(cid, p_cfg);
+
   tHID_CONN* p_hcon;
 
   HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
