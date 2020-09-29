@@ -279,7 +279,7 @@ typedef struct {
   /* store UUID list for EIR */
   uint32_t eir_uuid[BTM_EIR_SERVICE_ARRAY_SIZE];
 #if (BTA_EIR_SERVER_NUM_CUSTOM_UUID > 0)
-  bluetooth::Uuid custom_uuid[BTA_EIR_SERVER_NUM_CUSTOM_UUID];
+  tBTA_CUSTOM_UUID bta_custom_uuid[BTA_EIR_SERVER_NUM_CUSTOM_UUID];
 #endif
 
 #endif
@@ -488,4 +488,5 @@ uint8_t bta_dm_search_get_state();
 void bta_dm_search_set_state(uint8_t state);
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
+void bta_dm_eir_update_cust_uuid(const tBTA_CUSTOM_UUID &curr, bool adding);
 #endif /* BTA_DM_INT_H */

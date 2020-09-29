@@ -109,9 +109,15 @@ typedef void(tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, uint8_t id,
 typedef void(tBTA_SYS_SSR_CFG_CBACK)(uint8_t id, uint8_t app_id,
                                      uint16_t latency, uint16_t tout);
 
+typedef struct {
+  bluetooth::Uuid custom_uuid;
+  uint32_t handle;
+} tBTA_CUSTOM_UUID;
+
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
 /* eir callback for adding/removeing UUID */
 typedef void(tBTA_SYS_EIR_CBACK)(uint16_t uuid16, bool adding);
+typedef void(tBTA_SYS_CUST_EIR_CBACK)(const tBTA_CUSTOM_UUID &curr, bool adding);
 #endif
 
 /* registration structure */
@@ -193,10 +199,16 @@ extern void bta_sys_notify_collision(const RawAddress& peer_addr);
 extern void bta_sys_eir_register(tBTA_SYS_EIR_CBACK* p_cback);
 extern void bta_sys_add_uuid(uint16_t uuid16);
 extern void bta_sys_remove_uuid(uint16_t uuid16);
+extern void bta_sys_cust_eir_register(tBTA_SYS_CUST_EIR_CBACK* p_cback);
+extern void bta_sys_add_cust_uuid(const tBTA_CUSTOM_UUID& curr);
+extern void bta_sys_remove_cust_uuid(const tBTA_CUSTOM_UUID& curr);
 #else
 #define bta_sys_eir_register(ut)
 #define bta_sys_add_uuid(ut)
 #define bta_sys_remove_uuid(ut)
+#define bta_sys_cust_eir_register(ut)
+#define bta_sys_add_cust_uuid(ut)
+#define bta_sys_remove_cust_uuid(ut)
 #endif
 
 #endif /* BTA_SYS_H */
