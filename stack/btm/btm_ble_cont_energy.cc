@@ -40,7 +40,7 @@ tBTM_BLE_ENERGY_INFO_CB ble_energy_info_cb;
  * Returns          void
  *
  ******************************************************************************/
-void btm_ble_cont_energy_cmpl_cback(tBTM_VSC_CMPL* p_params) {
+static void btm_ble_cont_energy_cmpl_cback(tBTM_VSC_CMPL* p_params) {
   uint8_t* p = p_params->p_param_buf;
   uint16_t len = p_params->param_len;
   uint8_t status = 0;
