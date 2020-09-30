@@ -57,9 +57,5 @@ typedef struct {
   esco_data_path_t sco_route; /* HCI, PCM, or TEST */
 } tSCO_CB;
 
-extern void btm_set_sco_ind_cback(tBTM_SCO_IND_CBACK* sco_ind_cb);
-extern void btm_accept_sco_link(uint16_t sco_inx, enh_esco_params_t* p_setup,
-                                tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb);
-extern void btm_reject_sco_link(uint16_t sco_inx);
 extern void btm_sco_chk_pend_rolechange(uint16_t hci_handle);
 extern void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle);
