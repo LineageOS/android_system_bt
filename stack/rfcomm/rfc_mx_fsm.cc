@@ -141,8 +141,6 @@ void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
     case RFC_MX_EVENT_CONN_IND:
 
       rfc_timer_start(p_mcb, RFCOMM_CONN_TIMEOUT);
-      L2CA_ConnectRsp(p_mcb->bd_addr, *((uint8_t*)p_data), p_mcb->lcid,
-                      L2CAP_CONN_OK, 0);
 
       rfc_mx_send_config_req(p_mcb);
 
@@ -245,7 +243,7 @@ void rfc_mx_sm_state_wait_conn_cnf(tRFC_MCB* p_mcb, uint16_t event,
           }
         }
 
-        rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, &(p_mcb->pending_id));
+        rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, nullptr);
       } else {
         PORT_CloseInd(p_mcb);
       }
@@ -556,6 +554,7 @@ static void rfc_mx_send_config_req(tRFC_MCB* p_mcb) {
 
 void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
+  if (p_mcb == nullptr) return;
 
   if (result == L2CAP_CONN_OTHER_ERROR) {
     RFCOMM_TRACE_DEBUG(
@@ -584,7 +583,7 @@ void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
       }
     }
 
-    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, &(p_mcb->pending_id));
+    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, nullptr);
   }
 
   if (result == L2CAP_CFG_FAILED_NO_REASON) {
@@ -611,12 +610,6 @@ void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
  *
  ******************************************************************************/
 static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result) {
-  RFCOMM_TRACE_EVENT("rfc_mx_conf_cnf result:%d ", result);
-
-  if (result != L2CAP_CFG_OK) {
-    return;
-  }
-
   if (p_mcb->state == RFC_MX_STATE_CONFIGURE) {
     if (p_mcb->is_initiator) {
       p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;

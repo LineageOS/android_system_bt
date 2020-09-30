@@ -55,7 +55,8 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
 static void gatt_l2cif_connect_cfm_cback(uint16_t l2cap_cid, uint16_t result);
 static void gatt_l2cif_config_ind_cback(uint16_t l2cap_cid,
                                         tL2CAP_CFG_INFO* p_cfg);
-static void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result);
+static void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result,
+                                        tL2CAP_CFG_INFO* p_cfg);
 static void gatt_l2cif_disconnect_ind_cback(uint16_t l2cap_cid,
                                             bool ack_needed);
 static void gatt_l2cif_disconnect(uint16_t l2cap_cid);
@@ -575,11 +576,11 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
     result = L2CAP_CONN_NO_RESOURCES;
   }
 
-  /* Send L2CAP connect rsp */
-  L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
-
-  /* if result ok, proceed with connection */
-  if (result != L2CAP_CONN_OK) return;
+  /* If we reject the connection, send DisconnectReq */
+  if (result != L2CAP_CONN_OK) {
+    L2CA_DisconnectReq(lcid);
+    return;
+  }
 
   /* transition to configuration state */
   gatt_set_ch_state(p_tcb, GATT_CH_CFG);
@@ -587,6 +588,7 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
 
 static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
+  if (p_tcb == nullptr) return;
   if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
     gatt_cleanup_upon_disc(p_tcb->peer_bda, result, BT_TRANSPORT_BR_EDR);
   } else {
@@ -614,19 +616,16 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 }
 
 /** This is the L2CAP config confirm callback function */
-void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t result) {
+void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t initiator,
+                                 tL2CAP_CFG_INFO* p_cfg) {
+  gatt_l2cif_config_ind_cback(lcid, p_cfg);
+
   /* look up clcb for this channel */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;
 
   /* if in incorrect state */
   if (gatt_get_ch_state(p_tcb) != GATT_CH_CFG) return;
-
-  /* if result not successful */
-  if (result != L2CAP_CFG_OK) {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
-    return;
-  }
 
   gatt_set_ch_state(p_tcb, GATT_CH_OPEN);
 

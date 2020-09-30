@@ -805,7 +805,7 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
     return bluetooth::shim::BTM_BleSetPhy(bd_addr, tx_phys, rx_phys,
                                           phy_options);
   }
-  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
     BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
                     __func__);
     return;
@@ -820,7 +820,7 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
       "= 0x%04x",
       __func__, all_phys, tx_phys, rx_phys, phy_options);
 
-  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_BR_EDR);
+  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
 
   // checking if local controller supports it!
   if (!controller_get_interface()->supports_ble_2m_phy() &&

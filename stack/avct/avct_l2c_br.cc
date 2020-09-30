@@ -35,7 +35,8 @@
 void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                    uint16_t psm, uint8_t id);
 void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result);
-void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t result);
+void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t result,
+                                  tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_br_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_br_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
 void avct_l2c_br_congestion_ind_cback(uint16_t lcid, bool is_congested);
@@ -88,8 +89,10 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   /* Set the FCR options: Browsing channel mandates ERTM */
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
 
-  /* Send L2CAP connect rsp */
-  L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
+  /* If we reject the connection, send DisconnectReq */
+  if (result != L2CAP_CONN_OK) {
+    L2CA_DisconnectReq(lcid);
+  }
 
   /* if result ok, proceed with connection */
   if (result == L2CAP_CONN_OK) {
@@ -103,6 +106,7 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
 void avct_br_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tAVCT_BCB* p_lcb = avct_bcb_by_lcid(lcid);
+  if (p_lcb == nullptr) return;
 
   /* store result value */
   p_lcb->ch_result = result;
@@ -148,22 +152,18 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t result) {
+void avct_l2c_br_config_cfm_cback(uint16_t lcid, uint16_t initiator,
+                                  tL2CAP_CFG_INFO* p_cfg) {
+  avct_l2c_br_config_ind_cback(lcid, p_cfg);
+
   tAVCT_BCB* p_lcb;
 
   /* look up lcb for this channel */
   p_lcb = avct_bcb_by_lcid(lcid);
   if ((p_lcb == NULL) || (p_lcb->ch_state != AVCT_CH_CFG)) return;
 
-  /* if result successful */
-  if (result == L2CAP_CFG_OK) {
-    p_lcb->ch_state = AVCT_CH_OPEN;
-    avct_bcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-  }
-  /* else failure */
-  else {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
-  }
+  p_lcb->ch_state = AVCT_CH_OPEN;
+  avct_bcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
 }
 
 /*******************************************************************************

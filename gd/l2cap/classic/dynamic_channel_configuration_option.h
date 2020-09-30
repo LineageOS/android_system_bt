@@ -42,6 +42,11 @@ struct DynamicChannelConfigurationOption {
    * Maximum SDU size that the L2CAP Channel user is able to process.
    */
   Mtu incoming_mtu = kDefaultClassicMtu;
+
+  /**
+   * Minimum MTU that we enforce the remote channel to have
+   */
+  Mtu minimal_remote_mtu = kMinimumClassicMtu;
 };
 
 }  // namespace classic

@@ -49,8 +49,6 @@ struct ChannelConfigurationState {
   };
   State state_ = State::WAIT_CONFIG_REQ_RSP;
 
-  Mtu incoming_mtu_ = kDefaultClassicMtu;
-  Mtu outgoing_mtu_ = kDefaultClassicMtu;
   RetransmissionAndFlowControlModeOption retransmission_and_flow_control_mode_;
   RetransmissionAndFlowControlConfigurationOption local_retransmission_and_flow_control_;
   RetransmissionAndFlowControlConfigurationOption remote_retransmission_and_flow_control_;

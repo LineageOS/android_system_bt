@@ -34,7 +34,8 @@
 void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
                                 uint16_t psm, uint8_t id);
 void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result);
-void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result);
+void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result,
+                               tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg);
 void avct_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed);
 void avct_l2c_congestion_ind_cback(uint16_t lcid, bool is_congested);
@@ -120,8 +121,11 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     AVCT_TRACE_DEBUG("avct_l2c_connect_ind_cback: 0x%x, res: %d, ch_state: %d",
                      lcid, result, p_lcb->ch_state);
   }
-  /* Send L2CAP connect rsp */
-  L2CA_ConnectRsp(bd_addr, id, lcid, result, 0);
+
+  /* If we reject the connection, send DisconnectReq */
+  if (result != L2CAP_CONN_OK) {
+    L2CA_DisconnectReq(lcid);
+  }
 
   /* if result ok, proceed with connection */
   if (result == L2CAP_CONN_OK) {
@@ -216,25 +220,21 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
  * Returns          void
  *
  ******************************************************************************/
-void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t result) {
+void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t initiator,
+                               tL2CAP_CFG_INFO* p_cfg) {
+  avct_l2c_config_ind_cback(lcid, p_cfg);
+
   tAVCT_LCB* p_lcb;
 
   /* look up lcb for this channel */
   p_lcb = avct_lcb_by_lcid(lcid);
   if (p_lcb != NULL) {
-    AVCT_TRACE_DEBUG("avct_l2c_config_cfm_cback: 0x%x, ch_state: %d, res: %d",
-                     lcid, p_lcb->ch_state, result);
+    AVCT_TRACE_DEBUG("avct_l2c_config_cfm_cback: 0x%x, ch_state: %d,", lcid,
+                     p_lcb->ch_state);
     /* if in correct state */
     if (p_lcb->ch_state == AVCT_CH_CFG) {
-      /* if result successful */
-      if (result == L2CAP_CFG_OK) {
-        p_lcb->ch_state = AVCT_CH_OPEN;
-        avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
-      }
-      /* else failure */
-      else {
-        LOG(ERROR) << __func__ << ": invoked with non OK status";
-      }
+      p_lcb->ch_state = AVCT_CH_OPEN;
+      avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
     }
     AVCT_TRACE_DEBUG("ch_state cfc: %d ", p_lcb->ch_state);
   }

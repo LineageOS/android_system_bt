@@ -40,7 +40,7 @@ namespace shim {
  ******************************************************************************/
 uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                       uint16_t required_mtu);
+                       uint16_t my_mtu, uint16_t required_remote_mtu);
 
 /*******************************************************************************
  *
@@ -103,20 +103,6 @@ void L2CA_FreeLePSM(uint16_t psm);
  *
  ******************************************************************************/
 uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr);
-
-/*******************************************************************************
- *
- * Function         L2CA_ConnectRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP connection, for which they had gotten an connect
- *                  indication callback.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
-                     uint16_t result, uint16_t status);
 
 /*******************************************************************************
  *
@@ -189,29 +175,6 @@ bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg);
 
 /*******************************************************************************
  *
- * Function         L2CA_ConfigReq
- *
- * Description      Higher layers call this function to send configuration.
- *
- * Returns          true if configuration sent, else false
- *
- ******************************************************************************/
-bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
- * Function         L2CA_ConfigRsp
- *
- * Description      Higher layers call this function to send a configuration
- *                  response.
- *
- * Returns          true if configuration response sent, else false
- *
- ******************************************************************************/
-bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
  * Function         L2CA_DisconnectReq
  *
  * Description      Higher layers call this function to disconnect a channel.
@@ -220,18 +183,6 @@ bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg);
  *
  ******************************************************************************/
 bool L2CA_DisconnectReq(uint16_t cid);
-
-/*******************************************************************************
- *
- * Function         L2CA_DisconnectRsp
- *
- * Description      Higher layers call this function to acknowledge the
- *                  disconnection of a channel.
- *
- * Returns          void
- *
- ******************************************************************************/
-bool L2CA_DisconnectRsp(uint16_t cid);
 
 /*******************************************************************************
  *

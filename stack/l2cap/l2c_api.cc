@@ -70,8 +70,8 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                        uint16_t my_mtu, uint16_t required_remote_mtu) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_Register(psm, p_cb_info, enable_snoop,
-                                          p_ertm_info, my_mtu);
+    return bluetooth::shim::L2CA_Register(
+        psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu, required_remote_mtu);
   }
 
   tL2C_RCB* p_rcb;
@@ -364,6 +364,8 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   /* Save registration info */
   p_ccb->p_rcb = p_rcb;
 
+  p_ccb->connection_initiator = L2CAP_INITIATOR_LOCAL;
+
   /* If link is up, start the L2CAP connection */
   if (p_lcb->link_state == LST_CONNECTED) {
     l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_REQ, nullptr);
@@ -568,6 +570,8 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
   /* Save registration info */
   p_ccb->p_rcb = p_rcb;
 
+  p_ccb->connection_initiator = L2CAP_INITIATOR_LOCAL;
+
   /* Save the configuration */
   if (p_cfg) {
     p_ccb->local_conn_cfg = *p_cfg;
@@ -699,70 +703,6 @@ bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
 
 /*******************************************************************************
  *
- * Function         L2CA_ConnectRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP connection, for which they had gotten an connect
- *                  indication callback.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
-                     uint16_t result, uint16_t status) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ConnectRsp(p_bd_addr, id, lcid, result,
-                                            status);
-  }
-
-  tL2C_LCB* p_lcb;
-  tL2C_CCB* p_ccb;
-
-  VLOG(1) << __func__ << " BDA: " << p_bd_addr
-          << StringPrintf(" CID:0x%04x  Result:%d  Status:%d", lcid, result,
-                          status);
-
-  /* First, find the link control block */
-  p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_lcb == NULL) {
-    /* No link. Get an LCB and start link establishment */
-    L2CAP_TRACE_WARNING("L2CAP - no LCB for L2CA_conn_rsp");
-    return (false);
-  }
-
-  /* Now, find the channel control block */
-  p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_conn_rsp");
-    return (false);
-  }
-
-  /* The IDs must match */
-  if (p_ccb->remote_id != id) {
-    L2CAP_TRACE_WARNING("L2CAP - bad id in L2CA_conn_rsp. Exp: %d  Got: %d",
-                        p_ccb->remote_id, id);
-    return (false);
-  }
-
-  if (result == L2CAP_CONN_OK) {
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
-  } else {
-    tL2C_CONN_INFO conn_info;
-
-    conn_info.l2cap_result = result;
-    conn_info.l2cap_status = status;
-
-    if (result == L2CAP_CONN_PENDING)
-      l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, &conn_info);
-    else
-      l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP_NEG, &conn_info);
-  }
-
-  return (true);
-}
-
-/*******************************************************************************
- *
  * Function         L2CA_DisconnectReq
  *
  * Description      Higher layers call this function to disconnect a channel.
@@ -787,37 +727,6 @@ bool L2CA_DisconnectReq(uint16_t cid) {
   }
 
   l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
-
-  return (true);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_DisconnectRsp
- *
- * Description      Higher layers call this function to acknowledge the
- *                  disconnection of a channel.
- *
- * Returns          void
- *
- ******************************************************************************/
-bool L2CA_DisconnectRsp(uint16_t cid) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_DisconnectRsp(cid);
-  }
-
-  tL2C_CCB* p_ccb;
-
-  L2CAP_TRACE_API("L2CA_DisconnectRsp()  CID: 0x%04x", cid);
-
-  /* Find the channel control block. We don't know the link it is on. */
-  p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_disc_rsp, CID: %d", cid);
-    return (false);
-  }
-
-  l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_RSP, NULL);
 
   return (true);
 }
@@ -978,7 +887,7 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
  * NOTE             This flush timeout applies to all logical channels active on
  *                  the ACL link.
  ******************************************************************************/
-inline uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
+constexpr uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
   return ((milliseconds * 8) + 3) / 5;
 }
 
@@ -1129,16 +1038,8 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda);
   }
-  uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
-  return L2CA_ConnectFixedChnl(fixed_cid, rem_bda, phy);
-}
-
-bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
-                           uint8_t initiating_phys) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda,
-                                                  initiating_phys);
-  }
+  uint8_t initiating_phys =
+      controller_get_interface()->get_le_all_initiating_phys();
 
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;

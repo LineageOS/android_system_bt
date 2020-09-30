@@ -48,6 +48,7 @@ void BTA_dm_init() {
   bta_sys_register(BTA_ID_DM_SEARCH, &bta_dm_search_reg);
   /* if UUID list is not provided as static data */
   bta_sys_eir_register(bta_dm_eir_update_uuid);
+  bta_sys_cust_eir_register(bta_dm_eir_update_cust_uuid);
 }
 
 /** Enables bluetooth device under test mode */

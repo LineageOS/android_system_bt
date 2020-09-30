@@ -47,7 +47,8 @@ tSDP_CB sdp_cb;
 static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                             UNUSED_ATTR uint16_t psm, uint8_t l2cap_id);
 static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result);
+static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result,
+                           tL2CAP_CFG_INFO* p_cfg);
 static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 
@@ -124,13 +125,11 @@ static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   /* Save the BD Address and Channel ID. */
   p_ccb->device_address = bd_addr;
   p_ccb->connection_id = l2cap_cid;
-
-  /* Send response to the L2CAP layer. */
-  L2CA_ConnectRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK, L2CAP_CONN_OK);
 }
 
 static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
   tCONN_CB* p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
+  if (p_ccb == nullptr) return;
   sdp_disconnect(p_ccb, SDP_CFG_FAILED);
 }
 
@@ -209,11 +208,13 @@ static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
  * Returns          void
  *
  ******************************************************************************/
-static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
+static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
+                           tL2CAP_CFG_INFO* p_cfg) {
+  sdp_config_ind(l2cap_cid, p_cfg);
+
   tCONN_CB* p_ccb;
 
-  SDP_TRACE_EVENT("SDP - Rcvd cfg cfm, CID: 0x%x  Result: %d", l2cap_cid,
-                  result);
+  SDP_TRACE_EVENT("SDP - Rcvd cfg cfm, CID: 0x%x", l2cap_cid);
 
   /* Find CCB based on CID */
   p_ccb = sdpu_find_ccb_by_cid(l2cap_cid);
@@ -223,18 +224,14 @@ static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result) {
   }
 
   /* For now, always accept configuration from the other side */
-  if (result == L2CAP_CFG_OK) {
-    p_ccb->con_state = SDP_STATE_CONNECTED;
+  p_ccb->con_state = SDP_STATE_CONNECTED;
 
-    if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {
-      sdp_disc_connected(p_ccb);
-    } else {
-      /* Start inactivity timer */
-      alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                         sdp_conn_timer_timeout, p_ccb);
-    }
+  if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG) {
+    sdp_disc_connected(p_ccb);
   } else {
-    LOG(ERROR) << __func__ << ": invoked with non OK status";
+    /* Start inactivity timer */
+    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                       sdp_conn_timer_timeout, p_ccb);
   }
 }
 

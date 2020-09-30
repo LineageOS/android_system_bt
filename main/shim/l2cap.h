@@ -60,7 +60,7 @@ class L2cap {
  public:
   uint16_t RegisterService(uint16_t psm, const tL2CAP_APPL_INFO& callbacks,
                            bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                           uint16_t required_mtu);
+                           uint16_t my_mtu, uint16_t required_remote_mtu);
   void UnregisterService(uint16_t psm);
 
   uint16_t CreateConnection(uint16_t psm, const RawAddress& raw_address);
@@ -82,13 +82,7 @@ class L2cap {
   uint16_t ConvertClientToRealPsm(uint16_t psm);
   void RemoveClientPsm(uint16_t client_psm);
 
-  // Legacy API entry points
-  bool ConnectResponse(const RawAddress& raw_address, uint8_t signal_id,
-                       uint16_t cid, uint16_t result, uint16_t status);
-  bool ConfigRequest(uint16_t cid, const tL2CAP_CFG_INFO* config_info);
-  bool ConfigResponse(uint16_t cid, const tL2CAP_CFG_INFO* config_info);
   bool DisconnectRequest(uint16_t cid);
-  bool DisconnectResponse(uint16_t cid);
 
   bool GetRemoteCid(uint16_t cid, uint16_t* remote_cid);
 

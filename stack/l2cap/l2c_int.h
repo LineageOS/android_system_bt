@@ -253,6 +253,8 @@ typedef struct t_l2c_ccb {
 #define CCB_FLAG_SENT_PENDING 0x02 /* already sent pending response */
   uint8_t flags;
 
+  bool connection_initiator; /* true if we sent ConnectReq */
+
   tL2CAP_CFG_INFO our_cfg;          /* Our saved configuration options */
   tL2CAP_CFG_INFO peer_cfg;         /* Peer's saved configuration options */
 
@@ -623,7 +625,6 @@ extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
 extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
-extern bool L2CA_DisconnectRsp(uint16_t cid);
 
 /* Functions provided by l2c_link.cc
  ***********************************
