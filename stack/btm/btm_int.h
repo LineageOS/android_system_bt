@@ -53,17 +53,11 @@ extern void btm_free(void);
 /* Internal functions provided by btm_inq.cc
  ******************************************
 */
-extern tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
-                                         uint8_t origin, uint64_t timeout_ms,
-                                         tBTM_CMPL_CB* p_cb);
-
 extern void btm_process_remote_name(const RawAddress* bda, BD_NAME name,
                                     uint16_t evt_len, uint8_t hci_status);
-extern void btm_inq_rmt_name_failed_cancelled(void);
 extern void btm_inq_remote_name_timer_timeout(void* data);
 
 /* Inquiry related functions */
-extern void btm_clr_inq_db(const RawAddress* p_bda);
 extern void btm_inq_db_init(void);
 extern void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
                                     uint8_t inq_res_mode);
@@ -98,33 +92,15 @@ extern void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data);
 */
 extern void btm_sco_init(void);
 extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
-extern void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
-                              uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data);
-extern void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
-                                   uint8_t tx_interval, uint8_t retrans_window,
-                                   uint16_t rx_pkt_len, uint16_t tx_pkt_len);
-extern void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
-                             uint8_t link_type);
-extern bool btm_sco_removed(uint16_t hci_handle, uint8_t reason);
 extern void btm_sco_acl_removed(const RawAddress* bda);
 extern void btm_route_sco_data(BT_HDR* p_msg);
-extern bool btm_is_sco_active(uint16_t handle);
-
-extern void btm_sco_flush_sco_data(uint16_t sco_inx);
 
 /* Internal functions provided by btm_devctl.cc
  *********************************************
 */
 extern void btm_dev_init(void);
-extern void btm_read_local_name_timeout(void* data);
-extern void btm_read_local_name_complete(uint8_t* p, uint16_t evt_len);
 
 extern void btm_ble_create_conn_cancel_complete(uint8_t* p);
-extern bool btm_ble_addr_resolvable(const RawAddress& rpa,
-                                    tBTM_SEC_DEV_REC* p_dev_rec);
-extern bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec);
-extern bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec);
-extern void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC* p_dev_rec);
 
 /* Vendor Specific Command complete evt handler */
 extern void btm_vsc_complete(uint8_t* p, uint16_t cc_opcode, uint16_t evt_len,
