@@ -451,6 +451,25 @@ bool btif_config_set_uint64(const std::string& section, const std::string& key,
   return true;
 }
 
+/*******************************************************************************
+ *
+ * Function         btif_config_get_str
+ *
+ * Description      Get the string value associated with a particular section
+ *                  and key.
+ *
+ *                  section : The section name (i.e "Adapter")
+ *                  key : The key name (i.e "Address")
+ *                  value : A pointer to a buffer where we will store the value
+ *                  size_bytes : The size of the buffer we have available to
+ *                               write the value into. Will be updated upon
+ *                               returning to contain the number of bytes
+ *                               written.
+ *
+ * Returns          True if a value was found, False otherwise.
+ *
+ ******************************************************************************/
+
 bool btif_config_get_str(const std::string& section, const std::string& key,
                          char* value, int* size_bytes) {
   if (bluetooth::shim::is_any_gd_enabled()) {
