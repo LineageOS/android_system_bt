@@ -88,6 +88,15 @@ typedef void(tBTA_SYS_DISABLE)(void);
 
 typedef uint8_t tBTA_SYS_ID;
 
+inline std::string BtaIdSysText(tBTA_SYS_ID sys_id) {
+  switch (sys_id) {
+    case BTA_ID_HD:
+      return std::string("Hid Device");
+    default:
+      return std::string("Unknown");
+  }
+}
+
 #define BTA_SYS_CONN_OPEN 0x00
 #define BTA_SYS_CONN_CLOSE 0x01
 #define BTA_SYS_APP_OPEN 0x02
