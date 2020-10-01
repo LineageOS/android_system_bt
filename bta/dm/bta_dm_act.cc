@@ -434,8 +434,7 @@ void bta_dm_disable() {
      * shutdown by
      * BTA_DISABLE_DELAY milliseconds
      */
-    APPL_TRACE_WARNING("%s BTA_DISABLE_DELAY set to %d ms", __func__,
-                       BTA_DISABLE_DELAY);
+    LOG_WARN("BTA_DISABLE_DELAY set to %d ms", BTA_DISABLE_DELAY);
     alarm_set_on_mloop(bta_dm_cb.disable_timer, BTA_DISABLE_DELAY,
                        bta_dm_disable_conn_down_timer_cback, NULL);
 #else
@@ -2382,8 +2381,8 @@ static void bta_dm_check_av() {
   uint8_t i;
   tBTA_DM_PEER_DEVICE* p_dev;
 
-  APPL_TRACE_WARNING("bta_dm_check_av:%d", bta_dm_cb.cur_av_count);
   if (bta_dm_cb.cur_av_count) {
+    LOG_INFO("av_count:%d", bta_dm_cb.cur_av_count);
     for (i = 0; i < bta_dm_cb.device_list.count; i++) {
       p_dev = &bta_dm_cb.device_list.peer_device[i];
       APPL_TRACE_WARNING("[%d]: state:%d, info:x%x", i, p_dev->conn_state,
@@ -2721,7 +2720,7 @@ static void bta_dm_set_eir(char* local_name) {
 
   memset(p, 0x00, HCI_EXT_INQ_RESPONSE_LEN);
 
-  APPL_TRACE_DEBUG("BTA is generating EIR");
+  LOG_DEBUG("Generating extended inquiry response packet EIR");
 
   if (local_name)
     local_name_len = strlen(local_name);
@@ -3022,19 +3021,17 @@ void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding) {
   if (!BTM_HasEirService(p_bta_dm_eir_cfg->uuid_mask, uuid16)) return;
 
   if (adding) {
-    APPL_TRACE_EVENT("Adding UUID=0x%04X into EIR", uuid16);
+    LOG_DEBUG("EIR Adding UUID=0x%04X into extended inquiry response", uuid16);
 
     BTM_AddEirService(bta_dm_cb.eir_uuid, uuid16);
   } else {
-    APPL_TRACE_EVENT("Removing UUID=0x%04X from EIR", uuid16);
+    LOG_DEBUG("EIR Removing UUID=0x%04X from extended inquiry response",
+              uuid16);
 
     BTM_RemoveEirService(bta_dm_cb.eir_uuid, uuid16);
   }
 
   bta_dm_set_eir(NULL);
-
-  APPL_TRACE_EVENT("bta_dm_eir_update_uuid UUID bit mask=0x%08X %08X",
-                   bta_dm_cb.eir_uuid[1], bta_dm_cb.eir_uuid[0]);
 }
 #endif
 
@@ -3544,7 +3541,7 @@ void bta_dm_ble_observe(bool start, uint8_t duration,
 void bta_dm_ble_set_data_length(const RawAddress& bd_addr,
                                 uint16_t tx_data_length) {
   if (BTM_SetBleDataLength(bd_addr, tx_data_length) != BTM_SUCCESS) {
-    APPL_TRACE_ERROR("%s failed", __func__);
+    LOG_INFO("Unable to set ble data length:%hu", tx_data_length);
   }
 }
 
