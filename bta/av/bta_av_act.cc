@@ -1280,9 +1280,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
            */
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
-            L2CA_SetFlushTimeout(
-                p_scbi->PeerAddress(),
-                p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
+            L2CA_SetFlushTimeout(p_scbi->PeerAddress(), 0);
           }
         }
       }
