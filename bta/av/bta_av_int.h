@@ -611,7 +611,6 @@ typedef struct {
   uint8_t rc_acp_idx; /* (index + 1) to RCB */
   uint8_t rs_idx;    /* (index + 1) to SCB for the one waiting for RS on open */
   bool sco_occupied; /* true if SCO is being used or call is in progress */
-  uint8_t audio_streams; /* handle mask of streaming audio channels */
 } tBTA_AV_CB;
 
 // total attempts are half seconds
