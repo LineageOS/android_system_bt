@@ -1339,7 +1339,7 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
   memset(&p_ccb->peer_cfg, 0, sizeof(tL2CAP_CFG_INFO));
 
   /* Put in default values for local/peer configurations */
-  p_ccb->our_cfg.flush_to = p_ccb->peer_cfg.flush_to = L2CAP_DEFAULT_FLUSH_TO;
+  p_ccb->our_cfg.flush_to = p_ccb->peer_cfg.flush_to = L2CAP_NO_AUTOMATIC_FLUSH;
   p_ccb->our_cfg.mtu = p_ccb->peer_cfg.mtu = L2CAP_DEFAULT_MTU;
   p_ccb->our_cfg.qos.service_type = p_ccb->peer_cfg.qos.service_type =
       L2CAP_DEFAULT_SERV_TYPE;
