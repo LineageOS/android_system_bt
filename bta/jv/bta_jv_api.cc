@@ -74,6 +74,8 @@ tBTA_JV_STATUS BTA_JvEnable(tBTA_JV_DM_CBACK* p_cback) {
   for (int i = 0; i < BTA_JV_PM_MAX_NUM; i++) {
     bta_jv_cb.pm_cb[i].handle = BTA_JV_PM_HANDLE_CLEAR;
   }
+  bta_jv_cb.dyn_psm = 0xfff;
+  used_l2cap_classic_dynamic_psm = {};
 
   bta_jv_enabled = true;
 
