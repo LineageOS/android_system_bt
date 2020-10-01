@@ -92,10 +92,16 @@ void ClassicSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid) {
   dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
       link_->GetDevice(),
       dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
-      handler_->BindOnceOn(this, &ClassicSignallingManager::on_security_result_for_outgoing, psm, local_cid));
+      handler_->BindOnceOn(
+          this,
+          &ClassicSignallingManager::on_security_result_for_outgoing,
+          SecurityEnforcementType::LINK_KEY,
+          psm,
+          local_cid));
 }
 
-void ClassicSignallingManager::on_security_result_for_outgoing(Psm psm, Cid local_cid, bool result) {
+void ClassicSignallingManager::on_security_result_for_outgoing(
+    SecurityEnforcementType type, Psm psm, Cid local_cid, bool result) {
   if (enqueue_buffer_.get() == nullptr) {
     LOG_ERROR("Got security result callback after deletion");
     return;
@@ -108,6 +114,12 @@ void ClassicSignallingManager::on_security_result_for_outgoing(Psm psm, Cid loca
         .l2cap_connection_response_result = ConnectionResponseResult::NO_RESOURCES_AVAILABLE,
     };
     link_->OnOutgoingConnectionRequestFail(local_cid, connection_result);
+    return;
+  }
+  if (type == SecurityEnforcementType::LINK_KEY && !link_->IsAuthenticated() &&
+      dynamic_service_manager_->GetService(psm)->GetSecurityPolicy() !=
+          SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK) {
+    link_->Encrypt();
     return;
   }
 
