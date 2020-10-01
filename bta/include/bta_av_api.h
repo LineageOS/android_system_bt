@@ -378,8 +378,6 @@ typedef struct {
   uint32_t company_id;  /* AVRCP Company ID */
   uint16_t avrc_ct_cat; /* AVRCP controller categories */
   uint16_t avrc_tg_cat; /* AVRCP target categories */
-  const uint16_t*
-      p_audio_flush_to;    /* AVDTP audio transport channel flush timeout */
   uint16_t audio_mqs;      /* AVDTP audio channel max data queue size */
   bool avrc_group;     /* true, to accept AVRC 1.3 group nevigation command */
   uint8_t num_co_ids;  /* company id count in p_meta_co_ids */
