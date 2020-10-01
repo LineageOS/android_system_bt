@@ -36,6 +36,7 @@
 #include "bta_sys.h"
 #include "btm_api.h"
 #include "device/include/controller.h"
+#include "osi/include/log.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btu.h"
 
@@ -405,7 +406,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   } else if (j == bta_dm_conn_srvcs.count) {
     /* check if we have more connected service that cbs */
     if (bta_dm_conn_srvcs.count == BTA_DM_NUM_CONN_SRVS) {
-      APPL_TRACE_WARNING("bta_dm_act no more connected service cbs");
+      LOG_WARN("bta_dm_act no more connected service cbs");
       return;
     }
 
@@ -415,7 +416,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     bta_dm_conn_srvcs.conn_srvc[j].new_request = true;
     bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr = peer_addr;
 
-    APPL_TRACE_WARNING("new conn_srvc id:%d, app_id:%d", id, app_id);
+    LOG_DEBUG("New connection service id:%d app_id:%d", id, app_id);
 
     bta_dm_conn_srvcs.count++;
     bta_dm_conn_srvcs.conn_srvc[j].state = status;
@@ -609,7 +610,6 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
         }
         break;
       } else if (!bta_dm_cb.pm_timer[i].in_use) {
-        APPL_TRACE_DEBUG("%s dm_pm_timer:%d, %d ms", __func__, i, timeout_ms);
         if (available_timer == BTA_DM_PM_MODE_TIMER_MAX) available_timer = i;
       }
     }
