@@ -260,10 +260,12 @@ void btif_enable_bluetooth_evt() {
   std::string bdstr = local_bd_addr.ToString();
 
   char val[PROPERTY_VALUE_MAX] = "";
-  int val_size = 0;
-  if ((btif_config_get_str("Adapter", "Address", val, &val_size) == 0) ||
-      strcmp(bdstr.c_str(), val) == 0) {
-    LOG_DEBUG("Storing the adapter address into the config file");
+  int val_size = PROPERTY_VALUE_MAX;
+  if (!btif_config_get_str("Adapter", "Address", val, &val_size) ||
+      strcmp(bdstr.c_str(), val) != 0) {
+    // We failed to get an address or the one in the config file does not match
+    // the address given by the controller interface. Update the config cache
+    LOG_DEBUG("%s: Storing '%s' into the config file", __func__, bdstr.c_str());
     btif_config_set_str("Adapter", "Address", bdstr.c_str());
     btif_config_save();
 
