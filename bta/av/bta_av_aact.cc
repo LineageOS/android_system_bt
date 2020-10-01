@@ -1882,7 +1882,7 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->co_started = false;
 
     p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
-    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_DEFAULT_FLUSH_TO);
+    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_NO_AUTOMATIC_FLUSH);
   }
 
   /* if q_info.a2dp_list is not empty, drop it now */
@@ -2513,7 +2513,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->co_started = false;
       p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
     }
-    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_DEFAULT_FLUSH_TO);
+    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_NO_AUTOMATIC_FLUSH);
   }
 
   {
