@@ -63,15 +63,6 @@ const uint32_t bta_av_meta_caps_co_ids[] = {AVRC_CO_METADATA, AVRC_CO_BROADCOM};
  *	3. GetCapabilities supported event_ids list
  *	4. GetCapabilities supported event_ids count
 */
-/* Flushing partial avdtp packets can cause some headsets to disconnect the link
-   if receiving partial a2dp frames */
-const uint16_t bta_av_audio_flush_to[] = {
-    0, /* 1 stream */
-    0, /* 2 streams */
-    0, /* 3 streams */
-    0, /* 4 streams */
-    0  /* 5 streams */
-};     /* AVDTP audio transport channel flush timeout */
 
 /* Note: Android doesnt support AVRC_SUPF_TG_GROUP_NAVI  */
 /* Note: if AVRC_SUPF_TG_GROUP_NAVI is set, bta_av_cfg.avrc_group should be true
@@ -129,8 +120,6 @@ const tBTA_AV_CFG bta_av_cfg = {
     BTA_AV_RC_COMP_ID,     /* AVRCP Company ID */
     BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
     BTA_AV_RC_SUPF_TG,     /* AVRCP target categories */
-    bta_av_audio_flush_to, /* AVDTP audio transport channel flush
-                              timeout */
     6,                     /* AVDTP audio channel max data queue size */
     false, /* true, to accept AVRC 1.3 group nevigation command */
     2,     /* company id count in p_meta_co_ids */
@@ -151,7 +140,6 @@ const tBTA_AV_CFG bta_avk_cfg = {
     AVRC_CO_METADATA,      /* AVRCP Company ID */
     BTA_AVK_RC_SUPF_CT,    /* AVRCP controller categories */
     BTA_AVK_RC_SUPF_TG,    /* AVRCP target categories */
-    bta_av_audio_flush_to, /* AVDTP audio transport channel flush timeout */
     6,                     /* AVDTP audio channel max data queue size */
     false, /* true, to accept AVRC 1.3 group nevigation command */
     2,     /* company id count in p_meta_co_ids */
@@ -171,7 +159,6 @@ const tBTA_AV_CFG bta_av_cfg_compatibility = {
     BTA_AV_RC_COMP_ID,     /* AVRCP Company ID */
     BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
     AVRC_SUPF_TG_CAT1,     /* Only support CAT1 for AVRCP1.3 */
-    bta_av_audio_flush_to, /* AVDTP audio transport channel flush timeout */
     6,                     /* AVDTP audio channel max data queue size */
     false, /* true, to accept AVRC 1.3 group nevigation command */
     2,     /* company id count in p_meta_co_ids */
