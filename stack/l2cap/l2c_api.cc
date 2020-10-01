@@ -184,46 +184,6 @@ void L2CA_Deregister(uint16_t psm) {
 
 /*******************************************************************************
  *
- * Function         L2CA_AllocatePSM
- *
- * Description      Other layers call this function to find an unused PSM for
- *                  L2CAP services.
- *
- * Returns          PSM to use.
- *
- ******************************************************************************/
-uint16_t L2CA_AllocatePSM(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_AllocatePSM();
-  }
-
-  bool done = false;
-  uint16_t psm = l2cb.dyn_psm;
-
-  L2CAP_TRACE_API("L2CA_AllocatePSM");
-  while (!done) {
-    psm += 2;
-    if (psm > 0xfeff) {
-      psm = 0x1001;
-    } else if (psm & 0x0100) {
-      /* the upper byte must be even */
-      psm += 0x0100;
-    }
-
-    /* if psm is in range of reserved BRCM Aware features */
-    if ((BRCM_RESERVED_PSM_START <= psm) && (psm <= BRCM_RESERVED_PSM_END))
-      continue;
-
-    /* make sure the newlly allocated psm is not used right now */
-    if ((l2cu_find_rcb_by_psm(psm)) == NULL) done = true;
-  }
-  l2cb.dyn_psm = psm;
-
-  return (psm);
-}
-
-/*******************************************************************************
- *
  * Function         L2CA_AllocateLePSM
  *
  * Description      To find an unused LE PSM for L2CAP services.

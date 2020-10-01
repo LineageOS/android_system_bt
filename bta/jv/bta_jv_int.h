@@ -125,6 +125,8 @@ typedef struct {
   uint8_t sdp_active;                          /* see BTA_JV_SDP_ACT_* */
   bluetooth::Uuid uuid;                   /* current uuid of sdp discovery*/
   tBTA_JV_PM_CB pm_cb[BTA_JV_PM_MAX_NUM]; /* PM on a per JV handle bases */
+
+  uint16_t dyn_psm; /* Next dynamic PSM value to try to assign */
 } tBTA_JV_CB;
 
 enum {
@@ -135,6 +137,8 @@ enum {
 
 /* JV control block */
 extern tBTA_JV_CB bta_jv_cb;
+
+extern std::unordered_set<uint16_t> used_l2cap_classic_dynamic_psm;
 
 /* config struct */
 extern tBTA_JV_CFG* p_bta_jv_cfg;
