@@ -75,6 +75,11 @@ namespace {
 StackAclBtmAcl internal_;
 }
 
+typedef struct {
+  uint16_t handle;
+  uint16_t hci_len;
+} __attribute__((packed)) acl_header_t;
+
 #define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS 3
 
 /* Define masks for supported and exception 2.0 ACL packet types
@@ -2916,4 +2921,29 @@ bool acl_create_le_connection(const RawAddress& bd_addr) {
 
 void acl_cancel_le_connection(const RawAddress& bd_addr) {
   connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, bd_addr);
+}
+
+void acl_rcv_acl_data(BT_HDR* p_msg) {
+  acl_header_t acl_header{
+      .handle = HCI_INVALID_HANDLE,
+      .hci_len = 0,
+  };
+  const uint8_t* p = (uint8_t*)(p_msg + 1) + p_msg->offset;
+
+  STREAM_TO_UINT16(acl_header.handle, p);
+  acl_header.handle = HCID_GET_HANDLE(acl_header.handle);
+
+  STREAM_TO_UINT16(acl_header.hci_len, p);
+  if (acl_header.hci_len < L2CAP_PKT_OVERHEAD ||
+      acl_header.hci_len != p_msg->len - sizeof(acl_header)) {
+    LOG_WARN("Received mismatched hci header length:%u data_len:%zu",
+             acl_header.hci_len, p_msg->len - sizeof(acl_header));
+    osi_free(p_msg);
+    return;
+  }
+  l2c_rcv_acl_data(p_msg);
+}
+
+void acl_link_segments_xmitted(BT_HDR* p_msg) {
+  l2c_link_segments_xmitted(p_msg);
 }
