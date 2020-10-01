@@ -313,7 +313,6 @@ enum {
 #define AVDT_AD_ST_UNUSED 0  /* Unused - unallocated */
 #define AVDT_AD_ST_IDLE 1    /* No connection */
 #define AVDT_AD_ST_ACP 2     /* Waiting to accept a connection */
-#define AVDT_AD_ST_INT 3     /* Initiating a connection */
 #define AVDT_AD_ST_CONN 4    /* Waiting for connection confirm */
 #define AVDT_AD_ST_CFG 5     /* Waiting for configuration complete */
 #define AVDT_AD_ST_OPEN 6    /* Channel opened */
@@ -321,15 +320,8 @@ enum {
 #define AVDT_AD_ST_SEC_ACP 8 /* Security process as ACP */
 
 /* Configuration flags. AvdtpTransportChannel.cfg_flags */
-#define AVDT_L2C_CFG_IND_DONE (1 << 0)
-#define AVDT_L2C_CFG_CFM_DONE (1 << 1)
 #define AVDT_L2C_CFG_CONN_INT (1 << 2)
 #define AVDT_L2C_CFG_CONN_ACP (1 << 3)
-
-/* result code for avdt_ad_write_req() (L2CA_DataWrite()) */
-#define AVDT_AD_FAILED L2CAP_DW_FAILED       /* FALSE */
-#define AVDT_AD_SUCCESS L2CAP_DW_SUCCESS     /* TRUE */
-#define AVDT_AD_CONGESTED L2CAP_DW_CONGESTED /* 2 */
 
 /*****************************************************************************
  * data types
