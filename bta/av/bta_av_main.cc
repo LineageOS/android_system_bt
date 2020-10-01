@@ -1404,8 +1404,6 @@ void bta_debug_av_dump(int fd) {
           bta_av_cb.sco_occupied ? "true" : "false");
   dprintf(fd, "  Connected audio channels: %d\n", bta_av_cb.audio_open_cnt);
   dprintf(fd, "  Connected audio channels mask: 0x%x\n", bta_av_cb.conn_audio);
-  dprintf(fd, "  Streaming audio channels mask: 0x%x\n",
-          bta_av_cb.audio_streams);
   dprintf(fd, "  Registered audio channels mask: 0x%x\n", bta_av_cb.reg_audio);
   dprintf(fd, "  Connected LCBs mask: 0x%x\n", bta_av_cb.conn_lcb);
 
