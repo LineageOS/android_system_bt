@@ -288,13 +288,13 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
     constexpr uint32_t PASSKEY_MAX = 999999;
     while (passkey > PASSKEY_MAX) passkey >>= 1;
 
-    i.user_interface_handler->Post(common::BindOnce(&UI::DisplayPasskey, common::Unretained(i.user_interface),
-                                                    i.remote_connection_address, i.remote_name, passkey));
+    ConfirmationData data(i.remote_connection_address, i.remote_name, passkey);
+    i.user_interface_handler->Post(common::BindOnce(&UI::DisplayPasskey, common::Unretained(i.user_interface), data));
 
   } else if (my_iocaps == IoCapability::KEYBOARD_ONLY || remote_iocaps == IoCapability::DISPLAY_ONLY) {
-    i.user_interface_handler->Post(common::BindOnce(&UI::DisplayEnterPasskeyDialog,
-                                                    common::Unretained(i.user_interface), i.remote_connection_address,
-                                                    i.remote_name));
+    ConfirmationData data(i.remote_connection_address, i.remote_name);
+    i.user_interface_handler->Post(
+        common::BindOnce(&UI::DisplayEnterPasskeyDialog, common::Unretained(i.user_interface), data));
     std::optional<PairingEvent> response = WaitUiPasskey();
     if (!response) return PairingFailure("Passkey did not arrive!");
 
@@ -409,8 +409,9 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsNumericComparison(const
 
   uint32_t number_to_display = crypto_toolbox::g2((uint8_t*)PKa.x.data(), (uint8_t*)PKb.x.data(), Na, Nb);
 
-  i.user_interface_handler->Post(common::BindOnce(&UI::DisplayConfirmValue, common::Unretained(i.user_interface),
-                                                  i.remote_connection_address, i.remote_name, number_to_display));
+  ConfirmationData data(i.remote_connection_address, i.remote_name, number_to_display);
+  i.user_interface_handler->Post(
+      common::BindOnce(&UI::DisplayConfirmValue, common::Unretained(i.user_interface), data));
 
   std::optional<PairingEvent> confirmyesno = WaitUiConfirmYesNo();
   if (!confirmyesno || confirmyesno->ui_value == 0) {

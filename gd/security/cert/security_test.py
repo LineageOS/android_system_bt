@@ -65,14 +65,10 @@ class SecurityTest(GdBaseTestClass):
         IoCapabilities.NO_INPUT_NO_OUTPUT)
 
     # Possible Authentication Requirements
-    auth_reqs = (
-        AuthenticationRequirements.NO_BONDING,
-        # TODO(optedoblivion): Figure out MITM cases
-        AuthenticationRequirements.NO_BONDING_MITM_PROTECTION,
-        AuthenticationRequirements.DEDICATED_BONDING,
-        AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION,
-        AuthenticationRequirements.GENERAL_BONDING,
-        AuthenticationRequirements.GENERAL_BONDING_MITM_PROTECTION)
+    auth_reqs = (AuthenticationRequirements.NO_BONDING, AuthenticationRequirements.NO_BONDING_MITM_PROTECTION,
+                 AuthenticationRequirements.DEDICATED_BONDING,
+                 AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION,
+                 AuthenticationRequirements.GENERAL_BONDING, AuthenticationRequirements.GENERAL_BONDING_MITM_PROTECTION)
 
     # Possible Out-of-Band data options
     oob_present = (
