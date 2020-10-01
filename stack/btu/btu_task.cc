@@ -31,8 +31,8 @@
 #include "common/message_loop_thread.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int.h"
+#include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btu.h"
-#include "stack/include/l2cap_acl_interface.h"
 
 #include <base/bind.h>
 #include <base/logging.h>
@@ -53,13 +53,13 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
   /* Determine the input message type. */
   switch (p_msg->event & BT_EVT_MASK) {
     case BT_EVT_TO_BTU_HCI_ACL:
-      /* All Acl Data goes to L2CAP */
-      l2c_rcv_acl_data(p_msg);
+      /* All Acl Data goes to ACL */
+      acl_rcv_acl_data(p_msg);
       break;
 
     case BT_EVT_TO_BTU_L2C_SEG_XMIT:
       /* L2CAP segment transmit complete */
-      l2c_link_segments_xmitted(p_msg);
+      acl_link_segments_xmitted(p_msg);
       break;
 
     case BT_EVT_TO_BTU_HCI_SCO:
