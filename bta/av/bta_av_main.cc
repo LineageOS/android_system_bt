@@ -756,7 +756,6 @@ bool bta_av_chk_start(tBTA_AV_SCB* p_scb) {
         // May need to update the flush timeout of this already started stream
         if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
           p_scbi->co_started = bta_av_cb.audio_open_cnt;
-          L2CA_SetFlushTimeout(p_scbi->PeerAddress(), 0);
         }
       }
     }
