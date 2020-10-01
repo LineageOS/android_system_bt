@@ -847,8 +847,6 @@ void l2c_init(void) {
   int16_t xx;
 
   memset(&l2cb, 0, sizeof(tL2C_CB));
-  /* the psm is increased by 2 before being used */
-  l2cb.dyn_psm = 0xFFF;
 
   /* the LE PSM is increased by 1 before being used */
   l2cb.le_dyn_psm = LE_DYNAMIC_PSM_START - 1;
