@@ -670,6 +670,8 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
   auto record = this->security_database_.FindOrCreate(result.connection_address);
   record->identity_address_ = result.distributed_keys.identity_address;
   record->ltk = result.distributed_keys.ltk;
+  record->key_size = result.key_size;
+  record->security_level = result.security_level;
   record->ediv = result.distributed_keys.ediv;
   record->rand = result.distributed_keys.rand;
   record->irk = result.distributed_keys.irk;
