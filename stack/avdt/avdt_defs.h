@@ -62,10 +62,6 @@
 /* used for general reject */
 #define AVDT_SIG_NONE 0
 
-/* some maximum and minimum sizes of signalling messages */
-#define AVDT_DISCOVER_REQ_MIN 1
-#define AVDT_DISCOVER_REQ_MAX 124
-
 /* service category information element field values */
 #define AVDT_CAT_TRANS 1     /* Media Transport */
 #define AVDT_CAT_REPORT 2    /* Reporting */
@@ -132,21 +128,6 @@
 
 /* first byte of media packet header */
 #define AVDT_MEDIA_OCTET1 0x80
-
-/* for adaptation layer header */
-/* coding of length field */
-#define AVDT_ALH_LCODE_MASK 0x03
-/* No length field present. Take length from l2cap */
-#define AVDT_ALH_LCODE_NONE 0x00
-/* 16bit length field */
-#define AVDT_ALH_LCODE_16BIT 0x01
-/* 9 bit length field, MSB = 0, 8 LSBs in 1 octet following */
-#define AVDT_ALH_LCODE_9BITM0 0x02
-/* 9 bit length field, MSB = 1, 8 LSBs in 1 octet following */
-#define AVDT_ALH_LCODE_9BITM1 0x03
-
-/* set this for continuation packet */
-#define AVDT_ALH_FRAG_MASK 0x04
 
 /*****************************************************************************
  * message parsing and building macros
