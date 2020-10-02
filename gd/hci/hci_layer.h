@@ -97,6 +97,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   void Stop() override;
 
   virtual void Disconnect(uint16_t handle, ErrorCode reason);
+  virtual void RegisterLeMetaEventHandler(common::ContextualCallback<void(EventPacketView)> event_handler);
 
  private:
   struct impl;

@@ -171,6 +171,11 @@ struct HciLayer::impl {
   }
 
   void register_event(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
+    ASSERT_LOG(
+        event != EventCode::LE_META_EVENT,
+        "Can not register handler for %02hhx (%s)",
+        EventCode::LE_META_EVENT,
+        EventCodeText(EventCode::LE_META_EVENT).c_str());
     ASSERT_LOG(event_handlers_.count(event) == 0, "Can not register a second handler for %02hhx (%s)", event,
                EventCodeText(event).c_str());
     event_handlers_[event] = handler;
@@ -178,6 +183,19 @@ struct HciLayer::impl {
 
   void unregister_event(EventCode event) {
     event_handlers_.erase(event_handlers_.find(event));
+  }
+
+  void register_le_meta_event(ContextualCallback<void(EventPacketView)> handler) {
+    ASSERT_LOG(
+        event_handlers_.count(EventCode::LE_META_EVENT) == 0,
+        "Can not register a second handler for %02hhx (%s)",
+        EventCode::LE_META_EVENT,
+        EventCodeText(EventCode::LE_META_EVENT).c_str());
+    event_handlers_[EventCode::LE_META_EVENT] = handler;
+  }
+
+  void unregister_le_meta_event() {
+    unregister_event(EventCode::LE_META_EVENT);
   }
 
   void register_le_event(SubeventCode event, ContextualCallback<void(LeMetaEventView)> handler) {
@@ -193,10 +211,11 @@ struct HciLayer::impl {
   void on_hci_event(EventPacketView event) {
     ASSERT(event.IsValid());
     EventCode event_code = event.GetEventCode();
-    if (event_handlers_.find(event_code) == event_handlers_.end()) {
-      LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
-      return;
-    }
+    ASSERT_LOG(
+        event_handlers_.find(event_code) != event_handlers_.end(),
+        "Unhandled event of type 0x%02hhx (%s)",
+        event_code,
+        EventCodeText(event_code).c_str());
     event_handlers_[event_code].Invoke(event);
   }
 
@@ -204,8 +223,11 @@ struct HciLayer::impl {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     ASSERT(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
-    ASSERT_LOG(subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
-               "Unhandled le event of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
+    ASSERT_LOG(
+        subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
+        "Unhandled le subevent of type 0x%02hhx (%s)",
+        subevent_code,
+        SubeventCodeText(subevent_code).c_str());
     subevent_handlers_[subevent_code].Invoke(meta_event_view);
   }
 
@@ -274,6 +296,10 @@ void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
 
 void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
   CallOn(impl_, &impl::register_event, event, handler);
+}
+
+void HciLayer::RegisterLeMetaEventHandler(ContextualCallback<void(EventPacketView)> handler) {
+  CallOn(impl_, &impl::register_le_meta_event, handler);
 }
 
 void HciLayer::UnregisterEventHandler(EventCode event) {
@@ -369,8 +395,8 @@ void HciLayer::Start() {
   impl_->acl_queue_.GetDownEnd()->RegisterDequeue(handler, BindOn(impl_, &impl::on_outbound_acl_ready));
   RegisterEventHandler(EventCode::COMMAND_COMPLETE, handler->BindOn(impl_, &impl::on_command_complete));
   RegisterEventHandler(EventCode::COMMAND_STATUS, handler->BindOn(impl_, &impl::on_command_status));
+  RegisterLeMetaEventHandler(handler->BindOn(impl_, &impl::on_le_meta_event));
   if (bluetooth::common::InitFlags::GdCoreEnabled()) {
-    RegisterEventHandler(EventCode::LE_META_EVENT, handler->BindOn(impl_, &impl::on_le_meta_event));
     RegisterEventHandler(
         EventCode::DISCONNECTION_COMPLETE, handler->BindOn(this, &HciLayer::on_disconnection_complete));
   }
