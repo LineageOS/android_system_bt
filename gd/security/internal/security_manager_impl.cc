@@ -665,10 +665,24 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
 
   auto result = std::get<PairingResult>(pairing_result);
   LOG_INFO("Pairing with %s was successful", result.connection_address.ToString().c_str());
+
+  // TODO: ensure that the security level is not weaker than what we already have.
+  auto record = this->security_database_.FindOrCreate(result.connection_address);
+  record->identity_address_ = result.distributed_keys.identity_address;
+  record->ltk = result.distributed_keys.ltk;
+  record->ediv = result.distributed_keys.ediv;
+  record->rand = result.distributed_keys.rand;
+  record->irk = result.distributed_keys.irk;
+  record->signature_key = result.distributed_keys.signature_key;
+  if (result.distributed_keys.link_key)
+    record->SetLinkKey(*result.distributed_keys.link_key, hci::KeyType::AUTHENTICATED_P256);
+  security_database_.SaveRecordsToStorage();
+
   NotifyDeviceBonded(result.connection_address);
+  // We also notify bond complete using identity address. That's what old stack used to do.
+  if (result.distributed_keys.identity_address) NotifyDeviceBonded(*result.distributed_keys.identity_address);
 
   security_handler_->CallOn(this, &SecurityManagerImpl::WipeLePairingHandler);
-  security_database_.SaveRecordsToStorage();
 }
 
 void SecurityManagerImpl::WipeLePairingHandler() {
