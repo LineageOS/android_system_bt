@@ -533,7 +533,6 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
     avdtp_stream_config.cfg.psc_mask = AVDT_PSC_TRANS;
     avdtp_stream_config.media_type = AVDT_MEDIA_TYPE_AUDIO;
     avdtp_stream_config.mtu = MAX_3MBPS_AVDTP_MTU;
-    avdtp_stream_config.flush_to = L2CAP_DEFAULT_FLUSH_TO;
     btav_a2dp_codec_index_t codec_index_min = BTAV_A2DP_CODEC_INDEX_SOURCE_MIN;
     btav_a2dp_codec_index_t codec_index_max = BTAV_A2DP_CODEC_INDEX_SOURCE_MAX;
 
@@ -757,9 +756,6 @@ bool bta_av_chk_start(tBTA_AV_SCB* p_scb) {
         // May need to update the flush timeout of this already started stream
         if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
           p_scbi->co_started = bta_av_cb.audio_open_cnt;
-          L2CA_SetFlushTimeout(
-              p_scbi->PeerAddress(),
-              p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
         }
       }
     }
@@ -1408,8 +1404,6 @@ void bta_debug_av_dump(int fd) {
           bta_av_cb.sco_occupied ? "true" : "false");
   dprintf(fd, "  Connected audio channels: %d\n", bta_av_cb.audio_open_cnt);
   dprintf(fd, "  Connected audio channels mask: 0x%x\n", bta_av_cb.conn_audio);
-  dprintf(fd, "  Streaming audio channels mask: 0x%x\n",
-          bta_av_cb.audio_streams);
   dprintf(fd, "  Registered audio channels mask: 0x%x\n", bta_av_cb.reg_audio);
   dprintf(fd, "  Connected LCBs mask: 0x%x\n", bta_av_cb.conn_lcb);
 

@@ -1339,7 +1339,7 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
   memset(&p_ccb->peer_cfg, 0, sizeof(tL2CAP_CFG_INFO));
 
   /* Put in default values for local/peer configurations */
-  p_ccb->our_cfg.flush_to = p_ccb->peer_cfg.flush_to = L2CAP_DEFAULT_FLUSH_TO;
+  p_ccb->our_cfg.flush_to = p_ccb->peer_cfg.flush_to = L2CAP_NO_AUTOMATIC_FLUSH;
   p_ccb->our_cfg.mtu = p_ccb->peer_cfg.mtu = L2CAP_DEFAULT_MTU;
   p_ccb->our_cfg.qos.service_type = p_ccb->peer_cfg.qos.service_type =
       L2CAP_DEFAULT_SERV_TYPE;
@@ -1886,9 +1886,6 @@ void l2cu_process_peer_cfg_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
  *
  ******************************************************************************/
 void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
-  tL2C_LCB* p_lcb;
-  uint16_t hci_flush_to;
-
   /* Save the QOS settings we are using for transmit */
   if (p_cfg->qos_present) {
     p_ccb->our_cfg.qos_present = true;
@@ -1921,34 +1918,6 @@ void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
   p_ccb->our_cfg.fcr.mode = p_cfg->fcr.mode;
   p_ccb->our_cfg.fcr_present = p_cfg->fcr_present;
-
-  /* Check the flush timeout. If it is lower than the current one used */
-  /* then we need to adjust the flush timeout sent to the controller   */
-  if (p_cfg->flush_to_present) {
-    if ((p_cfg->flush_to == 0) ||
-        (p_cfg->flush_to == L2CAP_NO_AUTOMATIC_FLUSH)) {
-      /* don't send invalid flush timeout */
-      /* SPEC: The sender of the Request shall specify its flush timeout value
-       */
-      /*       if it differs from the default value of 0xFFFF */
-      p_cfg->flush_to_present = false;
-    } else {
-      p_ccb->our_cfg.flush_to = p_cfg->flush_to;
-      p_lcb = p_ccb->p_lcb;
-
-      if (p_cfg->flush_to < p_lcb->LinkFlushTimeout()) {
-        p_lcb->SetLinkFlushTimeout(p_cfg->flush_to);
-
-        /* If the timeout is within range of HCI, set the flush timeout */
-        if (p_cfg->flush_to <= ((HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT * 5) / 8)) {
-          /* Convert flush timeout to 0.625 ms units, with round */
-          hci_flush_to = ((p_cfg->flush_to * 8) + 3) / 5;
-          acl_write_automatic_flush_timeout(p_lcb->remote_bd_addr,
-                                            hci_flush_to);
-        }
-      }
-    }
-  }
 }
 
 /*******************************************************************************

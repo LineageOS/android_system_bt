@@ -305,8 +305,7 @@ static void bta_av_rc_msg_cback(uint8_t handle, uint8_t label, uint8_t opcode,
 uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
                          uint8_t lidx) {
   if (is_new_avrcp_enabled()) {
-    APPL_TRACE_WARNING("%s: Skipping RC creation for the old AVRCP profile",
-                       __func__);
+    LOG_DEBUG("Skipping RC creation for the old AVRCP profile");
     return BTA_AV_RC_HANDLE_NONE;
   }
 
@@ -1096,11 +1095,9 @@ void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started) {
                    logbool(started).c_str(), started_msk);
 
   if (started) {
-    bta_av_cb.audio_streams |= started_msk;
     /* Let L2CAP know this channel is processed with high priority */
     L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_HIGH);
   } else {
-    bta_av_cb.audio_streams &= ~started_msk;
     /* Let L2CAP know this channel is processed with low priority */
     L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_NORMAL);
   }
@@ -1281,9 +1278,6 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
            */
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
-            L2CA_SetFlushTimeout(
-                p_scbi->PeerAddress(),
-                p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
           }
         }
       }

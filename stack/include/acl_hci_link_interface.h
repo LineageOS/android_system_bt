@@ -19,6 +19,8 @@
 
 #include <cstdint>
 
+#include "stack/include/bt_types.h"
+
 // This header contains functions for HCIF-Acl Management to invoke
 //
 void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc);
@@ -46,3 +48,6 @@ void btm_read_remote_features_complete(uint8_t* p);
 void btm_read_remote_version_complete(uint8_t* p);
 void btm_read_rssi_complete(uint8_t* p);
 void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
+
+void acl_rcv_acl_data(BT_HDR* p_msg);
+void acl_link_segments_xmitted(BT_HDR* p_msg);

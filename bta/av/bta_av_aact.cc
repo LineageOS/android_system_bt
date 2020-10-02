@@ -1882,7 +1882,6 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->co_started = false;
 
     p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
-    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_DEFAULT_FLUSH_TO);
   }
 
   /* if q_info.a2dp_list is not empty, drop it now */
@@ -2164,7 +2163,6 @@ void bta_av_data_path(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
 void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool initiator = false;
   bool suspend = false;
-  uint16_t flush_to;
   uint8_t new_role = p_scb->role;
   BT_HDR hdr;
   uint8_t cur_role;
@@ -2273,11 +2271,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
      * to be changed
      */
     p_scb->co_started = bta_av_cb.audio_open_cnt;
-    flush_to = p_bta_av_cfg->p_audio_flush_to[p_scb->co_started - 1];
-  } else {
-    flush_to = 0;
   }
-  L2CA_SetFlushTimeout(p_scb->PeerAddress(), flush_to);
 
   /* clear the congestion flag */
   p_scb->cong = false;
@@ -2516,7 +2510,6 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->co_started = false;
       p_scb->p_cos->stop(p_scb->hndl, p_scb->PeerAddress());
     }
-    L2CA_SetFlushTimeout(p_scb->PeerAddress(), L2CAP_DEFAULT_FLUSH_TO);
   }
 
   {
@@ -2877,9 +2870,6 @@ void bta_av_chk_2nd_start(tBTA_AV_SCB* p_scb,
           // May need to update the flush timeout of this already started stream
           if (p_scbi->co_started != bta_av_cb.audio_open_cnt) {
             p_scbi->co_started = bta_av_cb.audio_open_cnt;
-            L2CA_SetFlushTimeout(
-                p_scbi->PeerAddress(),
-                p_bta_av_cfg->p_audio_flush_to[p_scbi->co_started - 1]);
           }
         }
       }
