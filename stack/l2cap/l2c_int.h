@@ -373,14 +373,6 @@ typedef struct t_l2c_linkcb {
   void SetBonding() { is_bonding_ = true; }
   void ResetBonding() { is_bonding_ = false; }
 
- private:
-  uint16_t link_flush_tout_{0}; /* Flush timeout used */
- public:
-  uint16_t LinkFlushTimeout() const { return link_flush_tout_; }
-  void SetLinkFlushTimeout(uint16_t link_flush_tout) {
-    link_flush_tout_ = link_flush_tout;
-  }
-
   uint16_t link_xmit_quota; /* Num outstanding pkts allowed */
   uint16_t sent_not_acked;  /* Num packets sent but not acked */
 
