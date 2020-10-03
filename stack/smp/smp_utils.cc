@@ -340,18 +340,28 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
   }
 
   SMP_TRACE_EVENT("%s", __func__);
-  smp_cb.total_tx_unacked += 1;
 
   smp_log_metrics(rem_bda, true /* outgoing */,
                   p_toL2CAP->data + p_toL2CAP->offset, p_toL2CAP->len);
 
   l2cap_ret = L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
   if (l2cap_ret == L2CAP_DW_FAILED) {
-    smp_cb.total_tx_unacked -= 1;
     SMP_TRACE_ERROR("SMP failed to pass msg to L2CAP");
     return false;
-  } else
+  } else {
+    tSMP_CB* p_cb = &smp_cb;
+
+    if (p_cb->wait_for_authorization_complete) {
+      tSMP_INT_DATA smp_int_data;
+      smp_int_data.status = SMP_SUCCESS;
+      if (fixed_cid == L2CAP_SMP_CID) {
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+      } else {
+        smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
+      }
+    }
     return true;
+  }
 }
 
 /*******************************************************************************
