@@ -154,8 +154,28 @@ typedef struct {
   RawAddress bd_addr;      /* BD_ADDR of the device              */
   DEV_CLASS dev_class;     /* DEV_CLASS of the device            */
   LinkKey link_key;        /* Device link key                    */
+
+ private:
+  friend bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
+                               BD_NAME bd_name, uint8_t* features,
+                               LinkKey* p_link_key, uint8_t key_type,
+                               uint8_t pin_length);
+  friend void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res,
+                               uint8_t pin_len, uint8_t* p_pin);
+  friend void btm_sec_auth_complete(uint16_t handle, uint8_t status);
+  friend void btm_sec_connected(const RawAddress& bda, uint16_t handle,
+                                uint8_t status, uint8_t enc_mode);
+  friend void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
+                                     uint8_t encr_enable);
+  friend void btm_sec_link_key_notification(const RawAddress& p_bda,
+                                            const Octet16& link_key,
+                                            uint8_t key_type);
+  friend tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
+                                               tBT_TRANSPORT transport,
+                                               uint8_t pin_len, uint8_t* p_pin);
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
 
+ public:
   uint16_t sec_flags; /* Current device security state      */
   bool is_device_authenticated() const {
     return sec_flags & BTM_SEC_AUTHENTICATED;
