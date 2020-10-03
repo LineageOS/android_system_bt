@@ -23,80 +23,74 @@
 #include "types/raw_address.h"
 
 /* Discoverable modes */
-#define BTM_NON_DISCOVERABLE 0
-#define BTM_LIMITED_DISCOVERABLE 1
-#define BTM_GENERAL_DISCOVERABLE 2
-#define BTM_DISCOVERABLE_MASK \
-  (BTM_LIMITED_DISCOVERABLE | BTM_GENERAL_DISCOVERABLE)
-#define BTM_MAX_DISCOVERABLE BTM_GENERAL_DISCOVERABLE
-/* high byte for BLE Discoverable modes */
-#define BTM_BLE_NON_DISCOVERABLE 0x0000
-#define BTM_BLE_LIMITED_DISCOVERABLE 0x0100
-#define BTM_BLE_GENERAL_DISCOVERABLE 0x0200
-#define BTM_BLE_MAX_DISCOVERABLE BTM_BLE_GENERAL_DISCOVERABLE
-#define BTM_BLE_DISCOVERABLE_MASK                            \
-  (BTM_BLE_NON_DISCOVERABLE | BTM_BLE_LIMITED_DISCOVERABLE | \
-   BTM_BLE_GENERAL_DISCOVERABLE)
+enum : uint16_t {
+  BTM_NON_DISCOVERABLE = 0,
+  BTM_LIMITED_DISCOVERABLE = (1 << 0),
+  BTM_GENERAL_DISCOVERABLE = (1 << 1),
+  BTM_MAX_DISCOVERABLE = BTM_GENERAL_DISCOVERABLE,
+  BTM_DISCOVERABLE_MASK = (BTM_LIMITED_DISCOVERABLE | BTM_GENERAL_DISCOVERABLE),
+  /* high byte for BLE Discoverable modes */
+  BTM_BLE_NON_DISCOVERABLE = 0x0000,
+  BTM_BLE_LIMITED_DISCOVERABLE = 0x0100,
+  BTM_BLE_GENERAL_DISCOVERABLE = 0x0200,
+  BTM_BLE_MAX_DISCOVERABLE = BTM_BLE_GENERAL_DISCOVERABLE,
+  BTM_BLE_DISCOVERABLE_MASK =
+      (BTM_BLE_LIMITED_DISCOVERABLE | BTM_BLE_GENERAL_DISCOVERABLE),
+};
 
 /* Connectable modes */
-#define BTM_NON_CONNECTABLE 0
-#define BTM_CONNECTABLE 1
-#define BTM_CONNECTABLE_MASK (BTM_NON_CONNECTABLE | BTM_CONNECTABLE)
-/* high byte for BLE Connectable modes */
-#define BTM_BLE_NON_CONNECTABLE 0x0000
-#define BTM_BLE_CONNECTABLE 0x0100
-#define BTM_BLE_MAX_CONNECTABLE BTM_BLE_CONNECTABLE
-#define BTM_BLE_CONNECTABLE_MASK (BTM_BLE_NON_CONNECTABLE | BTM_BLE_CONNECTABLE)
+enum : uint16_t {
+  BTM_NON_CONNECTABLE = 0,
+  BTM_CONNECTABLE = (1 << 0),
+  BTM_CONNECTABLE_MASK = (BTM_NON_CONNECTABLE | BTM_CONNECTABLE),
+  /* high byte for BLE Connectable modes */
+  BTM_BLE_NON_CONNECTABLE = BTM_NON_CONNECTABLE,
+  BTM_BLE_CONNECTABLE = 0x0100,
+  BTM_BLE_MAX_CONNECTABLE = BTM_BLE_CONNECTABLE,
+  BTM_BLE_CONNECTABLE_MASK = (BTM_BLE_NON_CONNECTABLE | BTM_BLE_CONNECTABLE),
+};
 
 /* Inquiry modes
  * Note: These modes are associated with the inquiry active values (BTM_*ACTIVE)
  */
-#define BTM_INQUIRY_NONE 0
-#define BTM_GENERAL_INQUIRY 0x01
-#define BTM_BR_INQUIRY_MASK (BTM_GENERAL_INQUIRY)
-
-/* high byte of inquiry mode for BLE inquiry mode */
-#define BTM_BLE_INQUIRY_NONE 0x00
-#define BTM_BLE_GENERAL_INQUIRY 0x10
-#define BTM_BLE_INQUIRY_MASK (BTM_BLE_GENERAL_INQUIRY)
-
-/* BTM_IsInquiryActive return values (Bit Mask)
- * Note: These bit masks are associated with the inquiry modes (BTM_*_INQUIRY)
- */
-/* no inquiry in progress */
-#define BTM_INQUIRY_INACTIVE 0x0
-/* a general inquiry is in progress */
-#define BTM_GENERAL_INQUIRY_ACTIVE BTM_GENERAL_INQUIRY
-/* SSP is active, so inquiry is disallowed (work around for FW bug) */
-#define BTM_SSP_INQUIRY_ACTIVE 0x4
-/* a general inquiry is in progress */
-#define BTM_LE_GENERAL_INQUIRY_ACTIVE BTM_BLE_GENERAL_INQUIRY
-
-/* inquiry activity mask */
-/* BR/EDR inquiry activity mask */
-#define BTM_BR_INQ_ACTIVE_MASK (BTM_GENERAL_INQUIRY_ACTIVE)
-/* LE scan activity mask */
-#define BTM_BLE_SCAN_ACTIVE_MASK 0xF0
-/* LE inquiry activity mask*/
-#define BTM_BLE_INQ_ACTIVE_MASK (BTM_LE_GENERAL_INQUIRY_ACTIVE)
-/* inquiry activity mask */
-#define BTM_INQUIRY_ACTIVE_MASK \
-  (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK)
+enum : uint8_t {
+  BTM_INQUIRY_NONE = 0,
+  BTM_INQUIRY_INACTIVE = 0x0,
+  BTM_GENERAL_INQUIRY = 0x01,
+  /* SSP is active, so inquiry is disallowed (work around for FW bug) */
+  BTM_SSP_INQUIRY_ACTIVE = 0x4,
+  /* high nibble of inquiry mode for BLE inquiry mode */
+  BTM_BLE_GENERAL_INQUIRY = 0x10,
+  BTM_BR_INQUIRY_MASK = (BTM_GENERAL_INQUIRY),
+  BTM_BLE_INQUIRY_MASK = (BTM_BLE_GENERAL_INQUIRY),
+  BTM_BLE_INQUIRY_NONE = BTM_INQUIRY_NONE,
+  BTM_GENERAL_INQUIRY_ACTIVE = BTM_GENERAL_INQUIRY,
+  /* a general inquiry is in progress */
+  BTM_LE_GENERAL_INQUIRY_ACTIVE = BTM_BLE_GENERAL_INQUIRY,
+  /* BR/EDR inquiry activity mask */
+  BTM_BR_INQ_ACTIVE_MASK = (BTM_GENERAL_INQUIRY_ACTIVE),
+  /* LE scan activity mask */
+  BTM_BLE_SCAN_ACTIVE_MASK = 0xF0,
+  /* LE inquiry activity mask*/
+  BTM_BLE_INQ_ACTIVE_MASK = (BTM_LE_GENERAL_INQUIRY_ACTIVE),
+  /* inquiry activity mask */
+  BTM_INQUIRY_ACTIVE_MASK = (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK),
+};
 
 /* Define scan types */
-#define BTM_SCAN_TYPE_STANDARD 0
-#define BTM_SCAN_TYPE_INTERLACED 1 /* 1.2 devices only */
+enum : uint16_t {
+  BTM_SCAN_TYPE_STANDARD = 0,
+  BTM_SCAN_TYPE_INTERLACED = 1, /* 1.2 devices only */
+};
 
 /* Define inquiry results mode */
-#define BTM_INQ_RESULT_STANDARD 0
-#define BTM_INQ_RESULT_WITH_RSSI 1
-#define BTM_INQ_RESULT_EXTENDED 2
-/* RSSI value not supplied (ignore it) */
-#define BTM_INQ_RES_IGNORE_RSSI 0x7f
-
-/* Inquiry Filter Condition types (see tBTM_INQ_PARMS) */
-/* Inquiry Filtering is turned off */
-#define BTM_CLR_INQUIRY_FILTER 0
+enum : uint8_t {
+  BTM_INQ_RESULT_STANDARD = 0,
+  BTM_INQ_RESULT_WITH_RSSI = 1,
+  BTM_INQ_RESULT_EXTENDED = 2,
+  /* RSSI value not supplied (ignore it) */
+  BTM_INQ_RES_IGNORE_RSSI = 0x7f,
+};
 
 /* These are the fields returned in each device's response to the inquiry.  It
  * is returned in the results callback if registered.

@@ -95,7 +95,7 @@ void btm_ble_create_ll_conn_complete(uint8_t status) {
 }
 
 static bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
-  bool match = false;
+  bool is_in_security_db = false;
   tBLE_ADDR_TYPE peer_addr_type = *bda_type;
   bool addr_is_rpa =
       (peer_addr_type == BLE_ADDR_RANDOM && BTM_BLE_IS_RESOLVE_BDA(*bda));
@@ -106,16 +106,16 @@ static bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
    * address, or Random Static Address, we convert it into the "pseudo"
    * address here. */
   if (!addr_is_rpa || peer_addr_type & BLE_ADDR_TYPE_ID_BIT) {
-    match = btm_identity_addr_to_random_pseudo(bda, bda_type, true);
+    is_in_security_db = btm_identity_addr_to_random_pseudo(bda, bda_type, true);
   }
 
   /* possiblly receive connection complete with resolvable random while
      the device has been paired */
-  if (!match && addr_is_rpa) {
+  if (!is_in_security_db && addr_is_rpa) {
     tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(*bda);
     if (match_rec) {
       LOG(INFO) << __func__ << ": matched and resolved random address";
-      match = true;
+      is_in_security_db = true;
       match_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_RRA;
       match_rec->ble.cur_rand_addr = *bda;
       if (!btm_ble_init_pseudo_addr(match_rec, *bda)) {
@@ -129,7 +129,7 @@ static bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
       LOG(INFO) << __func__ << ": unable to match and resolve random address";
     }
   }
-  return match;
+  return is_in_security_db;
 }
 
 /** LE connection complete. */
@@ -162,7 +162,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 
   if (status == HCI_SUCCESS) {
     tBLE_ADDR_TYPE peer_addr_type = bda_type;
-    bool match = maybe_resolve_address(&bda, &bda_type);
+    bool is_in_security_db = maybe_resolve_address(&bda, &bda_type);
 
     // Log for the HCI success case after maybe resolving Bluetooth address
     bluetooth::common::LogLinkLayerConnectionEvent(
@@ -178,7 +178,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 
     connection_manager::on_connection_complete(bda);
     btm_ble_connected(bda, handle, HCI_ENCRYPT_MODE_DISABLED, role, bda_type,
-                      match);
+                      is_in_security_db);
 
     l2cble_conn_comp(handle, role, bda, bda_type, conn_interval, conn_latency,
                      conn_timeout);
@@ -186,12 +186,13 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
     tBLE_BD_ADDR address_with_type{.bda = bda, .type = bda_type};
     if (enhanced) {
       acl_ble_enhanced_connection_complete(
-          address_with_type, handle, role, match, conn_interval, conn_latency,
-          conn_timeout, local_rpa, peer_rpa, peer_addr_type);
+          address_with_type, handle, role, is_in_security_db, conn_interval,
+          conn_latency, conn_timeout, local_rpa, peer_rpa, peer_addr_type);
 
     } else {
-      acl_ble_connection_complete(address_with_type, handle, role, match,
-                                  conn_interval, conn_latency, conn_timeout);
+      acl_ble_connection_complete(address_with_type, handle, role,
+                                  is_in_security_db, conn_interval,
+                                  conn_latency, conn_timeout);
     }
   } else {
     bluetooth::common::LogLinkLayerConnectionEvent(
