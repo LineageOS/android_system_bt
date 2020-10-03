@@ -1076,12 +1076,13 @@ size_t audio_ha_hw_stream_compute_buffer_size(
   return buffer_sz;
 }
 
-static uint32_t out_get_channels(const struct audio_stream* stream) {
+static audio_channel_mask_t out_get_channels(
+    const struct audio_stream* stream) {
   struct ha_stream_out* out = (struct ha_stream_out*)stream;
 
   DEBUG("channels 0x%" PRIx32, out->common.cfg.channel_mask);
 
-  return out->common.cfg.channel_mask;
+  return (audio_channel_mask_t)out->common.cfg.channel_mask;
 }
 
 static audio_format_t out_get_format(const struct audio_stream* stream) {
@@ -1381,11 +1382,11 @@ static size_t in_get_buffer_size(
   return 320;
 }
 
-static uint32_t in_get_channels(const struct audio_stream* stream) {
+static audio_channel_mask_t in_get_channels(const struct audio_stream* stream) {
   struct ha_stream_in* in = (struct ha_stream_in*)stream;
 
   FNLOG();
-  return in->common.cfg.channel_mask;
+  return (audio_channel_mask_t)in->common.cfg.channel_mask;
 }
 
 static audio_format_t in_get_format(
