@@ -119,16 +119,6 @@ extern void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
 /* Internal functions provided by btm_sec.cc
  *********************************************
 */
-extern void btm_sec_dev_reset(void);
-extern void btm_sec_abort_access_req(const RawAddress& bd_addr);
-extern void btm_sec_connected(const RawAddress& bda, uint16_t handle,
-                              uint8_t status, uint8_t enc_mode);
-extern tBTM_STATUS btm_sec_disconnect(uint16_t handle, uint8_t reason);
-extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
-                                        uint8_t res, bool is_le_trasnport);
-
-extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
-
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
 extern tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(
