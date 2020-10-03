@@ -399,8 +399,6 @@ typedef struct t_l2c_linkcb {
   bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
   bool is_transport_ble() const { return transport == BT_TRANSPORT_LE; }
 
-  uint8_t initiating_phys;  // LE PHY used for connection initiation
-  tBLE_ADDR_TYPE ble_addr_type;
   uint16_t tx_data_len; /* tx data length used in data length extension */
   fixed_queue_t* le_sec_pending_q; /* LE coc channels waiting for security check
                                       completion */
