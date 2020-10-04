@@ -65,14 +65,14 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
   return nullptr;
 }
 tGATT_STATUS attp_send_cl_confirmation_msg(tGATT_TCB& tcb, uint16_t cid) {
-  return 0;
+  return GATT_SUCCESS;
 }
 tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                               uint8_t op_code, tGATT_CL_MSG* p_msg) {
-  return 0;
+  return GATT_SUCCESS;
 }
 tGATT_STATUS attp_send_sr_msg(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_msg) {
-  return 0;
+  return GATT_SUCCESS;
 }
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr) { return 0; }
 bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
@@ -88,7 +88,7 @@ tGATT_STATUS gatts_db_read_attr_value_by_type(
     BT_HDR* p_rsp, uint16_t s_handle, uint16_t e_handle, const Uuid& type,
     uint16_t* p_len, tGATT_SEC_FLAG sec_flag, uint8_t key_size,
     uint32_t trans_id, uint16_t* p_cur_handle) {
-  return 0;
+  return GATT_SUCCESS;
 }
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {}
 Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db) { return nullptr; }
