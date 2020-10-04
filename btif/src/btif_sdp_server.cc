@@ -268,7 +268,6 @@ static const sdp_slot_t* start_create_sdp(int id) {
 static void set_sdp_handle(int id, int handle) {
   std::unique_lock<std::recursive_mutex> lock(sdp_lock);
   sdp_slots[id].sdp_handle = handle;
-  BTIF_TRACE_DEBUG("%s() id=%d to handle=0x%08x", __func__, id, handle);
 }
 
 bt_status_t create_sdp_record(bluetooth_sdp_record* record,
@@ -381,17 +380,9 @@ static int add_maps_sdp(const bluetooth_sdp_mas_record* rec) {
   uint8_t temp[4];
   uint8_t* p_temp = temp;
 
-  APPL_TRACE_DEBUG(
-      "%s(): MASID = 0x%02x, scn 0x%02x, psm = 0x%04x\n  service name %s",
-      __func__, rec->mas_instance_id, rec->hdr.rfcomm_channel_number,
-      rec->hdr.l2cap_psm, rec->hdr.service_name);
-
-  APPL_TRACE_DEBUG("  msg_types: 0x%02x, feature_bits: 0x%08x",
-                   rec->supported_message_types, rec->supported_features);
-
   sdp_handle = SDP_CreateRecord();
   if (sdp_handle == 0) {
-    APPL_TRACE_ERROR("%s() - Unable to register MAPS Service", __func__);
+    LOG_ERROR("Unable to register MAPS Service");
     return sdp_handle;
   }
 
@@ -469,16 +460,9 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec) {
   uint8_t temp[4];
   uint8_t* p_temp = temp;
 
-  APPL_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s",
-                   __func__, rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm,
-                   rec->hdr.service_name);
-
-  APPL_TRACE_DEBUG("  feature_bits: 0x%08x", rec->supported_features);
-
   sdp_handle = SDP_CreateRecord();
   if (sdp_handle == 0) {
-    APPL_TRACE_ERROR("%s(): Unable to register MAP Notification Service",
-                     __func__);
+    LOG_ERROR("Unable to register MAP Notification Service");
     return sdp_handle;
   }
 
@@ -543,10 +527,9 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec) {
   bool status = true;
   uint32_t sdp_handle = 0;
 
-  APPL_TRACE_DEBUG("%s(): service name %s", __func__, rec->hdr.service_name);
   sdp_handle = SDP_CreateRecord();
   if (sdp_handle == 0) {
-    APPL_TRACE_ERROR("%s(): Unable to register PBAP Client Service", __func__);
+    LOG_ERROR("Unable to register PBAP Client Service");
     return sdp_handle;
   }
 
@@ -589,16 +572,9 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec) {
   uint8_t temp[4];
   uint8_t* p_temp = temp;
 
-  APPL_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s",
-                   __func__, rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm,
-                   rec->hdr.service_name);
-
-  APPL_TRACE_DEBUG("  supported_repositories: 0x%08x, feature_bits: 0x%08x",
-                   rec->supported_repositories, rec->supported_features);
-
   sdp_handle = SDP_CreateRecord();
   if (sdp_handle == 0) {
-    APPL_TRACE_ERROR("%s(): Unable to register PBAP Server Service", __func__);
+    LOG_ERROR("Unable to register PBAP Server Service");
     return sdp_handle;
   }
 
@@ -676,17 +652,9 @@ static int add_opps_sdp(const bluetooth_sdp_ops_record* rec) {
   tBTA_UTL_COD cod;
   int i, j;
 
-  APPL_TRACE_DEBUG("%s(): scn 0x%02x, psm = 0x%04x\n  service name %s",
-                   __func__, rec->hdr.rfcomm_channel_number, rec->hdr.l2cap_psm,
-                   rec->hdr.service_name);
-
-  APPL_TRACE_DEBUG("  supported formats count: %d",
-                   rec->supported_formats_list_len);
-
   sdp_handle = SDP_CreateRecord();
   if (sdp_handle == 0) {
-    APPL_TRACE_ERROR("%s(): Unable to register Object Push Server Service",
-                     __func__);
+    LOG_ERROR("Unable to register Object Push Server Service");
     return sdp_handle;
   }
 
@@ -763,12 +731,9 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec) {
   bool status = true;
   uint32_t sdp_handle = 0;
 
-  APPL_TRACE_DEBUG("%s(): scn 0x%02x, service name %s", __func__,
-                   rec->hdr.rfcomm_channel_number, rec->hdr.service_name);
-
   sdp_handle = SDP_CreateRecord();
   if (sdp_handle == 0) {
-    APPL_TRACE_ERROR("%s(): Unable to register SAPS Service", __func__);
+    LOG_ERROR("Unable to register SAPS Service");
     return sdp_handle;
   }
 
