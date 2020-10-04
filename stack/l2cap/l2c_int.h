@@ -373,14 +373,6 @@ typedef struct t_l2c_linkcb {
   void SetBonding() { is_bonding_ = true; }
   void ResetBonding() { is_bonding_ = false; }
 
- private:
-  uint16_t link_flush_tout_{0}; /* Flush timeout used */
- public:
-  uint16_t LinkFlushTimeout() const { return link_flush_tout_; }
-  void SetLinkFlushTimeout(uint16_t link_flush_tout) {
-    link_flush_tout_ = link_flush_tout;
-  }
-
   uint16_t link_xmit_quota; /* Num outstanding pkts allowed */
   uint16_t sent_not_acked;  /* Num packets sent but not acked */
 
@@ -407,8 +399,6 @@ typedef struct t_l2c_linkcb {
   bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
   bool is_transport_ble() const { return transport == BT_TRANSPORT_LE; }
 
-  uint8_t initiating_phys;  // LE PHY used for connection initiation
-  tBLE_ADDR_TYPE ble_addr_type;
   uint16_t tx_data_len; /* tx data length used in data length extension */
   fixed_queue_t* le_sec_pending_q; /* LE coc channels waiting for security check
                                       completion */

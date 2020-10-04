@@ -87,6 +87,12 @@ tHID_STATUS hidh_conn_reg(void) {
   hh_cb.l2cap_cfg.mtu = HID_HOST_MTU;
 
   /* Now, register with L2CAP */
+  if (!L2CA_Register2(HID_PSM_CONTROL, hst_reg_info, false /* enable_snoop */,
+                      nullptr, HID_HOST_MTU, 0,
+                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
+    HIDH_TRACE_ERROR("HID-Host Control Registration failed");
+    return (HID_ERR_L2CAP_FAILED);
+  }
   if (!L2CA_Register2(HID_PSM_INTERRUPT, hst_reg_info, false /* enable_snoop */,
                       nullptr, HID_HOST_MTU, 0,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
