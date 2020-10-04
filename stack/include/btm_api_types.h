@@ -468,35 +468,34 @@ typedef enum : uint8_t {
   BTM_SEC_MODE_SC = 6,
 } tSECURITY_MODE;
 
-/* Security Service Levels [bit mask] (BTM_SetSecurityLevel)
- * Encryption should not be used without authentication
-*/
-/* Nothing required */
-#define BTM_SEC_NONE 0x0000
-/* Inbound call requires authentication */
-#define BTM_SEC_IN_AUTHENTICATE 0x0002
-/* Inbound call requires encryption */
-#define BTM_SEC_IN_ENCRYPT 0x0004
-/* Outbound call requires authentication */
-#define BTM_SEC_OUT_AUTHENTICATE 0x0010
-/* Outbound call requires encryption */
-#define BTM_SEC_OUT_ENCRYPT 0x0020
-/* Secure Connections Only Mode */
-#define BTM_SEC_MODE4_LEVEL4 0x0040
-/* Need to switch connection to be central */
-#define BTM_SEC_FORCE_CENTRAL 0x0100
-/* Try to switch connection to be central */
-#define BTM_SEC_ATTEMPT_CENTRAL 0x0200
-/* Need to switch connection to be central */
-#define BTM_SEC_FORCE_SLAVE 0x0400
-/* Try to switch connection to be slave */
-#define BTM_SEC_ATTEMPT_SLAVE 0x0800
-/* inbound Do man in the middle protection */
-#define BTM_SEC_IN_MITM 0x1000
-/* outbound Do man in the middle protection */
-#define BTM_SEC_OUT_MITM 0x2000
-/* enforce a minimum of 16 digit for sec mode 2 */
-#define BTM_SEC_IN_MIN_16_DIGIT_PIN 0x4000
+enum : uint16_t {
+  /* Nothing required */
+  BTM_SEC_NONE = 0x0000,
+  /* Inbound call requires authentication */
+  BTM_SEC_IN_AUTHENTICATE = 0x0002,
+  /* Inbound call requires encryption */
+  BTM_SEC_IN_ENCRYPT = 0x0004,
+  /* Outbound call requires authentication */
+  BTM_SEC_OUT_AUTHENTICATE = 0x0010,
+  /* Outbound call requires encryption */
+  BTM_SEC_OUT_ENCRYPT = 0x0020,
+  /* Secure Connections Only Mode */
+  BTM_SEC_MODE4_LEVEL4 = 0x0040,
+  /* Need to switch connection to be central */
+  BTM_SEC_FORCE_CENTRAL = 0x0100,
+  /* Need to switch connection to be central */
+  BTM_SEC_ATTEMPT_CENTRAL = 0x0200,
+  /* Need to switch connection to be slave */
+  BTM_SEC_FORCE_SLAVE = 0x0400,
+  /* Try to switch connection to be slave */
+  BTM_SEC_ATTEMPT_SLAVE = 0x0800,
+  /* inbound Do man in the middle protection */
+  BTM_SEC_IN_MITM = 0x1000,
+  /* outbound Do man in the middle protection */
+  BTM_SEC_OUT_MITM = 0x2000,
+  /* enforce a minimum of 16 digit for sec mode 2 */
+  BTM_SEC_IN_MIN_16_DIGIT_PIN = 0x4000,
+};
 
 /* Security Flags [bit mask] (BTM_GetSecurityFlags)
 */
