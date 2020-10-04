@@ -27,57 +27,57 @@
  *  Constants
  ****************************************************************************/
 /* Success code and error codes */
-#define GATT_SUCCESS 0x00
-#define GATT_INVALID_HANDLE 0x01
-#define GATT_READ_NOT_PERMIT 0x02
-#define GATT_WRITE_NOT_PERMIT 0x03
-#define GATT_INVALID_PDU 0x04
-#define GATT_INSUF_AUTHENTICATION 0x05
-#define GATT_REQ_NOT_SUPPORTED 0x06
-#define GATT_INVALID_OFFSET 0x07
-#define GATT_INSUF_AUTHORIZATION 0x08
-#define GATT_PREPARE_Q_FULL 0x09
-#define GATT_NOT_FOUND 0x0a
-#define GATT_NOT_LONG 0x0b
-#define GATT_INSUF_KEY_SIZE 0x0c
-#define GATT_INVALID_ATTR_LEN 0x0d
-#define GATT_ERR_UNLIKELY 0x0e
-#define GATT_INSUF_ENCRYPTION 0x0f
-#define GATT_UNSUPPORT_GRP_TYPE 0x10
-#define GATT_INSUF_RESOURCE 0x11
-#define GATT_DATABASE_OUT_OF_SYNC 0x12
-#define GATT_VALUE_NOT_ALLOWED 0x13
+typedef enum GattStatus : uint8_t {
+  GATT_SUCCESS = 0x00,
+  GATT_INVALID_HANDLE = 0x01,
+  GATT_READ_NOT_PERMIT = 0x02,
+  GATT_WRITE_NOT_PERMIT = 0x03,
+  GATT_INVALID_PDU = 0x04,
+  GATT_INSUF_AUTHENTICATION = 0x05,
+  GATT_REQ_NOT_SUPPORTED = 0x06,
+  GATT_INVALID_OFFSET = 0x07,
+  GATT_INSUF_AUTHORIZATION = 0x08,
+  GATT_PREPARE_Q_FULL = 0x09,
+  GATT_NOT_FOUND = 0x0a,
+  GATT_NOT_LONG = 0x0b,
+  GATT_INSUF_KEY_SIZE = 0x0c,
+  GATT_INVALID_ATTR_LEN = 0x0d,
+  GATT_ERR_UNLIKELY = 0x0e,
+  GATT_INSUF_ENCRYPTION = 0x0f,
+  GATT_UNSUPPORT_GRP_TYPE = 0x10,
+  GATT_INSUF_RESOURCE = 0x11,
+  GATT_DATABASE_OUT_OF_SYNC = 0x12,
+  GATT_VALUE_NOT_ALLOWED = 0x13,
+  GATT_ILLEGAL_PARAMETER = 0x87,
+  GATT_TOO_SHORT = 0x7f,
+  GATT_NO_RESOURCES = 0x80,
+  GATT_INTERNAL_ERROR = 0x81,
+  GATT_WRONG_STATE = 0x82,
+  GATT_DB_FULL = 0x83,
+  GATT_BUSY = 0x84,
+  GATT_ERROR = 0x85,
+  GATT_CMD_STARTED = 0x86,
+  GATT_PENDING = 0x88,
+  GATT_AUTH_FAIL = 0x89,
+  GATT_MORE = 0x8a,
+  GATT_INVALID_CFG = 0x8b,
+  GATT_SERVICE_STARTED = 0x8c,
+  GATT_ENCRYPED_MITM = GATT_SUCCESS,
+  GATT_ENCRYPED_NO_MITM = 0x8d,
+  GATT_NOT_ENCRYPTED = 0x8e,
+  GATT_CONGESTED = 0x8f,
+  GATT_DUP_REG = 0x90,      /* 0x90 */
+  GATT_ALREADY_OPEN = 0x91, /* 0x91 */
+  GATT_CANCEL = 0x92,       /* 0x92 */
+  /* = 0xE0 ~ 0xFC reserved for future use */
 
-#define GATT_ILLEGAL_PARAMETER 0x87
-#define GATT_NO_RESOURCES 0x80
-#define GATT_INTERNAL_ERROR 0x81
-#define GATT_WRONG_STATE 0x82
-#define GATT_DB_FULL 0x83
-#define GATT_BUSY 0x84
-#define GATT_ERROR 0x85
-#define GATT_CMD_STARTED 0x86
-#define GATT_PENDING 0x88
-#define GATT_AUTH_FAIL 0x89
-#define GATT_MORE 0x8a
-#define GATT_INVALID_CFG 0x8b
-#define GATT_SERVICE_STARTED 0x8c
-#define GATT_ENCRYPED_MITM GATT_SUCCESS
-#define GATT_ENCRYPED_NO_MITM 0x8d
-#define GATT_NOT_ENCRYPTED 0x8e
-#define GATT_CONGESTED 0x8f
-
-#define GATT_DUP_REG 0x90      /* 0x90 */
-#define GATT_ALREADY_OPEN 0x91 /* 0x91 */
-#define GATT_CANCEL 0x92       /* 0x92 */
-/* 0xE0 ~ 0xFC reserved for future use */
-
-/* Client Characteristic Configuration Descriptor Improperly Configured */
-#define GATT_CCC_CFG_ERR 0xFD
-/* Procedure Already in progress */
-#define GATT_PRC_IN_PROGRESS 0xFE
-/* Attribute value out of range */
-#define GATT_OUT_OF_RANGE 0xFF
-typedef uint8_t tGATT_STATUS;
+  /* Client Characteristic Configuration Descriptor Improperly Configured */
+  GATT_CCC_CFG_ERR = 0xFD,
+  /* Procedure Already in progress */
+  GATT_PRC_IN_PROGRESS = 0xFE,
+  /* Attribute value out of range */
+  GATT_OUT_OF_RANGE = 0xFF,
+} tGATT_STATUS;
 
 #define GATT_RSP_ERROR 0x01
 #define GATT_REQ_MTU 0x02
