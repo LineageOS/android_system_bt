@@ -157,6 +157,69 @@ typedef struct {
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
 
   uint16_t sec_flags; /* Current device security state      */
+  bool is_device_authenticated() const {
+    return sec_flags & BTM_SEC_AUTHENTICATED;
+  }
+  void set_device_authenticated() { sec_flags |= BTM_SEC_AUTHENTICATED; }
+  void reset_device_authenticated() { sec_flags &= ~BTM_SEC_AUTHENTICATED; }
+
+  bool is_device_encrypted() const { return sec_flags & BTM_SEC_ENCRYPTED; }
+  void set_device_encrypted() { sec_flags |= BTM_SEC_ENCRYPTED; }
+  void reset_device_encrypted() { sec_flags &= ~BTM_SEC_ENCRYPTED; }
+
+  bool is_name_known() const { return sec_flags & BTM_SEC_NAME_KNOWN; }
+  void set_device_known() { sec_flags |= BTM_SEC_NAME_KNOWN; }
+  void reset_device_known() { sec_flags &= ~BTM_SEC_NAME_KNOWN; }
+
+  bool is_link_key_known() const { return sec_flags & BTM_SEC_LINK_KEY_KNOWN; }
+  void set_link_key_known() { sec_flags |= BTM_SEC_LINK_KEY_KNOWN; }
+  void reset_link_key_known() { sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN; }
+
+  bool is_link_key_authenticated() const {
+    return sec_flags & BTM_SEC_LINK_KEY_AUTHED;
+  }
+  void set_link_key_authenticated() { sec_flags |= BTM_SEC_LINK_KEY_AUTHED; }
+  void reset_link_key_authenticated() { sec_flags &= ~BTM_SEC_LINK_KEY_AUTHED; }
+
+  bool is_le_device_authenticated() const {
+    return sec_flags & BTM_SEC_LE_AUTHENTICATED;
+  }
+  void set_le_device_authenticated() { sec_flags |= BTM_SEC_LE_AUTHENTICATED; }
+  void reset_le_device_authenticated() {
+    sec_flags &= ~BTM_SEC_LE_AUTHENTICATED;
+  }
+
+  bool is_le_device_encrypted() const {
+    return sec_flags & BTM_SEC_LE_ENCRYPTED;
+  }
+  void set_le_device_encrypted() { sec_flags |= BTM_SEC_LE_ENCRYPTED; }
+  void reset_le_device_encrypted() { sec_flags &= ~BTM_SEC_LE_ENCRYPTED; }
+
+  bool is_le_link_key_known() const {
+    return sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN;
+  }
+  void set_le_link_key_known() { sec_flags |= BTM_SEC_LE_LINK_KEY_KNOWN; }
+  void reset_le_link_key_known() { sec_flags &= ~BTM_SEC_LE_LINK_KEY_KNOWN; }
+
+  bool is_le_link_key_authenticated() const {
+    return sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED;
+  }
+  void set_le_link_key_authenticated() {
+    sec_flags |= BTM_SEC_LE_LINK_KEY_AUTHED;
+  }
+  void reset_le_link_key_authenticated() {
+    sec_flags &= ~BTM_SEC_LE_LINK_KEY_AUTHED;
+  }
+
+  bool is_le_link_16_digit_key_authenticated() const {
+    return sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED;
+  }
+  void set_le_link_16_digit_key_authenticated() {
+    sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
+  }
+  void reset_le_link_16_digit_key_authenticated() {
+    sec_flags &= ~BTM_SEC_16_DIGIT_PIN_AUTHED;
+  }
 
   tBTM_BD_NAME sec_bd_name; /* User friendly name of the device. (may be
                                truncated to save space in dev_rec table) */
