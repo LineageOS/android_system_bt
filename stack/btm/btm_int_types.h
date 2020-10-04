@@ -284,7 +284,6 @@ typedef struct {
   fixed_queue_t* sec_pending_q; /* pending sequrity requests in
                                    tBTM_SEC_QUEUE_ENTRY format */
 
-  char state_temp_buffer[BTM_STATE_BUFFER_SIZE];
   // BQR Receiver
   tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver;
 
