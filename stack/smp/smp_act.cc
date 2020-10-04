@@ -29,6 +29,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/smp_api_types.h"
 #include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
 #include "types/raw_address.h"
