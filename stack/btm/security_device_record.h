@@ -117,6 +117,29 @@ typedef enum : uint8_t {
   BOND_TYPE_TEMPORARY = 2
 } tBTM_BOND_TYPE;
 
+enum : uint16_t {
+  BTM_SEC_AUTHENTICATED = 0x0002,
+  BTM_SEC_ENCRYPTED = 0x0004,
+  BTM_SEC_NAME_KNOWN = 0x0008,
+  BTM_SEC_LINK_KEY_KNOWN = 0x0010,
+  BTM_SEC_LINK_KEY_AUTHED = 0x0020,
+  BTM_SEC_ROLE_SWITCHED = 0x0040,  // UNUSED - only cleared
+  BTM_SEC_IN_USE = 0x0080,         // UNUSED - only set
+  /* LE link security flag */
+  /* LE link is encrypted after pairing with MITM */
+  BTM_SEC_LE_AUTHENTICATED = 0x0200,
+  /* LE link is encrypted */
+  BTM_SEC_LE_ENCRYPTED = 0x0400,
+  /* not used */
+  BTM_SEC_LE_NAME_KNOWN = 0x0800,  // UNUSED
+  /* bonded with peer (peer LTK and/or SRK is saved) */
+  BTM_SEC_LE_LINK_KEY_KNOWN = 0x1000,
+  /* pairing is done with MITM */
+  BTM_SEC_LE_LINK_KEY_AUTHED = 0x2000,
+  /* pairing is done with 16 digit pin */
+  BTM_SEC_16_DIGIT_PIN_AUTHED = 0x4000,
+};
+
 /*
  * Define structure for Security Device Record.
  * A record exists for each device authenticated with this device
@@ -132,24 +155,6 @@ typedef struct {
   DEV_CLASS dev_class;     /* DEV_CLASS of the device            */
   LinkKey link_key;        /* Device link key                    */
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
-
-#define BTM_SEC_AUTHENTICATED BTM_SEC_FLAG_AUTHENTICATED /* 0x02 */
-#define BTM_SEC_ENCRYPTED BTM_SEC_FLAG_ENCRYPTED         /* 0x04 */
-#define BTM_SEC_NAME_KNOWN 0x08
-#define BTM_SEC_LINK_KEY_KNOWN BTM_SEC_FLAG_LKEY_KNOWN   /* 0x10 */
-#define BTM_SEC_LINK_KEY_AUTHED BTM_SEC_FLAG_LKEY_AUTHED /* 0x20 */
-#define BTM_SEC_ROLE_SWITCHED 0x40
-#define BTM_SEC_IN_USE 0x80
-/* LE link security flag */
-#define BTM_SEC_LE_AUTHENTICATED \
-  0x0200 /* LE link is encrypted after pairing with MITM */
-#define BTM_SEC_LE_ENCRYPTED 0x0400  /* LE link is encrypted */
-#define BTM_SEC_LE_NAME_KNOWN 0x0800 /* not used */
-#define BTM_SEC_LE_LINK_KEY_KNOWN \
-  0x1000 /* bonded with peer (peer LTK and/or SRK is saved) */
-#define BTM_SEC_LE_LINK_KEY_AUTHED 0x2000 /* pairing is done with MITM */
-#define BTM_SEC_16_DIGIT_PIN_AUTHED \
-  0x4000 /* pairing is done with 16 digit pin */
 
   uint16_t sec_flags; /* Current device security state      */
 
