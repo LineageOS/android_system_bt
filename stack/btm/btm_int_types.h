@@ -289,6 +289,11 @@ typedef struct {
   tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver;
 
   tACL_CB acl_cb_;
+
+ private:
+  friend uint8_t BTM_AllocateSCN(void);
+  friend bool BTM_TryAllocateSCN(uint8_t scn);
+  friend bool BTM_FreeSCN(uint8_t scn);
   uint8_t btm_scn[BTM_MAX_SCN_];
 } tBTM_CB;
 
