@@ -542,7 +542,8 @@ tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
 
   VLOG(1) << __func__ << ": conn_id=" << loghex(conn_id)
-          << ", trans_id=" << loghex(trans_id) << ", status=" << loghex(status);
+          << ", trans_id=" << loghex(trans_id)
+          << ", status=" << loghex(static_cast<uint8_t>(status));
 
   if ((p_reg == NULL) || (p_tcb == NULL)) {
     LOG(ERROR) << "Unknown  conn_id=" << loghex(conn_id);
