@@ -3,6 +3,7 @@ filegroup {
     srcs: [
         "acl.cc",
         "acl_api.cc",
+        "acl_legacy_interface.cc",
         "btm.cc",
         "btm_api.cc",
         "controller.cc",
