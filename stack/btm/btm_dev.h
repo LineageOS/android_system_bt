@@ -177,7 +177,8 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void);
  * Returns          The device bond type if known, otherwise BOND_TYPE_UNKNOWN
  *
  ******************************************************************************/
-tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr);
+tBTM_SEC_DEV_REC::tBTM_BOND_TYPE btm_get_bond_type_dev(
+    const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -189,4 +190,5 @@ tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr);
  * Returns          true on success, otherwise false
  *
  ******************************************************************************/
-bool btm_set_bond_type_dev(const RawAddress& bd_addr, tBTM_BOND_TYPE bond_type);
+bool btm_set_bond_type_dev(const RawAddress& bd_addr,
+                           tBTM_SEC_DEV_REC::tBTM_BOND_TYPE bond_type);
