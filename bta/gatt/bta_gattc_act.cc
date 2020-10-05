@@ -64,10 +64,10 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda);
 static void bta_gattc_cong_cback(uint16_t conn_id, bool congested);
 static void bta_gattc_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                        uint8_t tx_phy, uint8_t rx_phy,
-                                       uint8_t status);
+                                       tGATT_STATUS status);
 static void bta_gattc_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                         uint16_t interval, uint16_t latency,
-                                        uint16_t timeout, uint8_t status);
+                                        uint16_t timeout, tGATT_STATUS status);
 
 static tGATT_CBACK bta_gattc_cl_cback = {bta_gattc_conn_cback,
                                          bta_gattc_cmpl_cback,
@@ -544,7 +544,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   if (p_data->hdr.event == BTA_GATTC_API_CLOSE_EVT) {
     cb_data.close.status = GATT_Disconnect(p_data->hdr.layer_specific);
   } else if (p_data->hdr.event == BTA_GATTC_INT_DISCONN_EVT) {
-    cb_data.close.status = p_data->int_conn.reason;
+    cb_data.close.status = static_cast<tGATT_STATUS>(p_data->int_conn.reason);
     cb_data.close.reason = p_data->int_conn.reason;
   }
 
@@ -1327,7 +1327,7 @@ static void bta_gattc_cong_cback(uint16_t conn_id, bool congested) {
 
 static void bta_gattc_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                        uint8_t tx_phy, uint8_t rx_phy,
-                                       uint8_t status) {
+                                       tGATT_STATUS status) {
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(gatt_if);
 
   if (!p_clreg || !p_clreg->p_cback) {
@@ -1346,7 +1346,7 @@ static void bta_gattc_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
 
 static void bta_gattc_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                         uint16_t interval, uint16_t latency,
-                                        uint16_t timeout, uint8_t status) {
+                                        uint16_t timeout, tGATT_STATUS status) {
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(gatt_if);
 
   if (!p_clreg || !p_clreg->p_cback) {

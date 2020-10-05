@@ -459,8 +459,8 @@ static void gatt_channel_congestion(tGATT_TCB* p_tcb, bool congested) {
   }
 }
 
-void gatt_notify_phy_updated(uint8_t status, uint16_t handle, uint8_t tx_phy,
-                             uint8_t rx_phy) {
+void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
+                             uint8_t tx_phy, uint8_t rx_phy) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) {
     BTM_TRACE_WARNING("%s: No Device Found!", __func__);
@@ -483,7 +483,7 @@ void gatt_notify_phy_updated(uint8_t status, uint16_t handle, uint8_t tx_phy,
 
 void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
                              uint16_t latency, uint16_t timeout,
-                             uint8_t status) {
+                             tGATT_STATUS status) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) return;
 

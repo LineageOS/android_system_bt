@@ -55,10 +55,10 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
 static void bta_gatts_cong_cback(uint16_t conn_id, bool congested);
 static void bta_gatts_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                        uint8_t tx_phy, uint8_t rx_phy,
-                                       uint8_t status);
+                                       tGATT_STATUS status);
 static void bta_gatts_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                         uint16_t interval, uint16_t latency,
-                                        uint16_t timeout, uint8_t status);
+                                        uint16_t timeout, tGATT_STATUS status);
 
 static tGATT_CBACK bta_gatts_cback = {bta_gatts_conn_cback,
                                       NULL,
@@ -625,7 +625,7 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
 
 static void bta_gatts_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                        uint8_t tx_phy, uint8_t rx_phy,
-                                       uint8_t status) {
+                                       tGATT_STATUS status) {
   tBTA_GATTS_RCB* p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
   if (!p_reg || !p_reg->p_cback) {
     LOG(ERROR) << __func__ << ": server_if=" << +gatt_if << " not found";
@@ -643,7 +643,7 @@ static void bta_gatts_phy_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
 
 static void bta_gatts_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                         uint16_t interval, uint16_t latency,
-                                        uint16_t timeout, uint8_t status) {
+                                        uint16_t timeout, tGATT_STATUS status) {
   tBTA_GATTS_RCB* p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
   if (!p_reg || !p_reg->p_cback) {
     LOG(ERROR) << __func__ << ": server_if=" << +gatt_if << " not found";
