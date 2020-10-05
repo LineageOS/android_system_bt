@@ -44,14 +44,14 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
   return nullptr;
 }
 tGATT_STATUS attp_send_cl_confirmation_msg(tGATT_TCB& tcb, uint16_t cid) {
-  return 0;
+  return GATT_SUCCESS;
 }
 tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                               uint8_t op_code, tGATT_CL_MSG* p_msg) {
-  return 0;
+  return GATT_SUCCESS;
 }
 tGATT_STATUS attp_send_sr_msg(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_msg) {
-  return 0;
+  return GATT_SUCCESS;
 }
 
 /** stack/gatt/gatt_attr.cc */
