@@ -154,8 +154,8 @@ static void gatt_update_last_srv_info() {
  *                  on error error status is returned.
  *
  ******************************************************************************/
-uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
-                          int count) {
+tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
+                              int count) {
   uint16_t s_hdl = 0;
   bool save_hdl = false;
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
