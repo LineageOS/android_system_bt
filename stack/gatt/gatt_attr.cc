@@ -240,8 +240,8 @@ tGATT_STATUS proc_read_req(uint16_t conn_id, tGATTS_REQ_TYPE,
 }
 
 /** GAP ATT server process a write request */
-uint8_t proc_write_req(uint16_t conn_id, tGATTS_REQ_TYPE,
-                       tGATT_WRITE_REQ* p_data) {
+tGATT_STATUS proc_write_req(uint16_t conn_id, tGATTS_REQ_TYPE,
+                            tGATT_WRITE_REQ* p_data) {
   /* GATT_UUID_SERVER_SUP_FEAT*/
   if (p_data->handle == gatt_cb.handle_sr_supported_feat)
     return GATT_WRITE_NOT_PERMIT;
@@ -282,7 +282,7 @@ uint8_t proc_write_req(uint16_t conn_id, tGATTS_REQ_TYPE,
  ******************************************************************************/
 static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
                                tGATTS_REQ_TYPE type, tGATTS_DATA* p_data) {
-  uint8_t status = GATT_INVALID_PDU;
+  tGATT_STATUS status = GATT_INVALID_PDU;
   tGATTS_RSP rsp_msg;
   bool rsp_needed = true;
 

@@ -244,7 +244,7 @@ uint8_t srvc_eng_process_write_req(uint8_t clcb_idx, tGATT_WRITE_REQ* p_data,
 static void srvc_eng_s_request_cback(uint16_t conn_id, uint32_t trans_id,
                                      tGATTS_REQ_TYPE type,
                                      tGATTS_DATA* p_data) {
-  uint8_t status = GATT_INVALID_PDU;
+  tGATT_STATUS status = GATT_INVALID_PDU;
   tGATTS_RSP rsp_msg;
   uint8_t act = SRVC_ACT_IGNORE;
   uint8_t clcb_idx = srvc_eng_find_clcb_idx_by_conn_id(conn_id);
