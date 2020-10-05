@@ -168,12 +168,6 @@ bool bluetooth::shim::L2CA_SetAclPriority(const RawAddress& bd_addr,
   return false;
 }
 
-bool bluetooth::shim::L2CA_SetFlushTimeout(const RawAddress& bd_addr,
-                                           uint16_t flush_tout) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
-}
-
 bool bluetooth::shim::L2CA_GetPeerFeatures(const RawAddress& bd_addr,
                                            uint32_t* p_ext_feat,
                                            uint8_t* p_chnl_mask) {
