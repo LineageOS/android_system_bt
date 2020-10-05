@@ -201,7 +201,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
                                  uint16_t handle, void* data) {
   if (status != GATT_SUCCESS) {
     LOG(ERROR) << __func__ << ": handle=" << handle << ", conn_id=" << conn_id
-               << ", status=" << loghex(status);
+               << ", status=" << loghex(static_cast<uint8_t>(status));
   }
 }
 
@@ -482,8 +482,8 @@ class HearingAidImpl : public HearingAid {
         send_state_change_to_other_side(hearingDevice, conn_update);
         send_state_change(hearingDevice, conn_update);
       } else {
-        LOG(INFO) << __func__
-                  << ": error status=" << loghex(p_data->conn_update.status)
+        LOG(INFO) << __func__ << ": error status="
+                  << loghex(static_cast<uint8_t>(p_data->conn_update.status))
                   << ", conn_id=" << conn_id
                   << ", device=" << hearingDevice->address
                   << ", connection_update_status="
@@ -928,7 +928,7 @@ class HearingAidImpl : public HearingAid {
     if (register_status != GATT_SUCCESS) {
       LOG(ERROR) << __func__
                  << ": BTA_GATTC_RegisterForNotifications failed, status="
-                 << loghex(register_status);
+                 << loghex(static_cast<uint8_t>(register_status));
       return;
     }
     std::vector<uint8_t> value(2);
