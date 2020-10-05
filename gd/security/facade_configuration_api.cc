@@ -51,6 +51,13 @@ void FacadeConfigurationApi::SetLeAuthRequirements(uint8_t auth_req) {
   security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetLeAuthRequirements, auth_req);
 }
 
+void FacadeConfigurationApi::SetLeMaximumEncryptionKeySize(uint8_t maximum_encryption_key_size) {
+  security_handler_->CallOn(
+      security_manager_impl_,
+      &internal::SecurityManagerImpl::SetLeMaximumEncryptionKeySize,
+      maximum_encryption_key_size);
+}
+
 void FacadeConfigurationApi::SetLeOobDataPresent(OobDataFlag oob_present) {
   security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetLeOobDataPresent, oob_present);
 }

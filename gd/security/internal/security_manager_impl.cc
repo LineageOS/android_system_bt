@@ -499,7 +499,7 @@ void SecurityManagerImpl::OnSmpCommandLe(hci::AddressWithType device) {
         .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                   .oob_data_flag = local_le_oob_data_present_,
                                   .auth_req = local_le_auth_req_,
-                                  .maximum_encryption_key_size = 16,
+                                  .maximum_encryption_key_size = local_maximum_encryption_key_size_,
                                   .initiator_key_distribution = 0x07,
                                   .responder_key_distribution = 0x07},
         .remotely_initiated = true,
@@ -569,7 +569,7 @@ void SecurityManagerImpl::ConnectionIsReadyStartPairing(LeFixedChannelEntry* sto
       .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                 .oob_data_flag = local_le_oob_data_present_,
                                 .auth_req = local_le_auth_req_,
-                                .maximum_encryption_key_size = 16,
+                                .maximum_encryption_key_size = local_maximum_encryption_key_size_,
                                 .initiator_key_distribution = 0x07,
                                 .responder_key_distribution = 0x07},
       .remotely_initiated = false,
@@ -706,6 +706,10 @@ void SecurityManagerImpl::SetLeIoCapability(security::IoCapability io_capability
 
 void SecurityManagerImpl::SetLeAuthRequirements(uint8_t auth_req) {
   this->local_le_auth_req_ = auth_req;
+}
+
+void SecurityManagerImpl::SetLeMaximumEncryptionKeySize(uint8_t maximum_encryption_key_size) {
+  this->local_maximum_encryption_key_size_ = maximum_encryption_key_size;
 }
 
 void SecurityManagerImpl::SetLeOobDataPresent(OobDataFlag data_present) {

@@ -41,6 +41,8 @@ from security.facade_pb2 import UiMsgType
 from security.facade_pb2 import LeAuthRequirementsMessage
 from security.facade_pb2 import LeIoCapabilityMessage
 from security.facade_pb2 import LeOobDataPresentMessage
+from security.facade_pb2 import LeMaximumEncryptionKeySizeMessage
+
 import time
 from bluetooth_packets_python3.hci_packets import OpCode
 
@@ -466,6 +468,42 @@ class LeSecurityTest(GdBaseTestClass):
                 message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
         # 3. IUT and Lower Tester perform phase 2 of the Just Works pairing and establish an encrypted link with the generated LTK.
+        assertThat(self.dut_security.get_bond_stream()).emits(
+            SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED, self.cert_address))
+
+    @metadata(
+        pts_test_id="SM/MAS/EKS/BV-01-C",
+        pts_test_name="IUT initiator, Lower Tester Maximum Encryption Key Size = Min_Encryption_Key_Length")
+    def test_min_encryption_key_size_equal_to_max(self):
+        """
+            Verify that the IUT uses correct key size during encryption as initiator.
+        """
+        self._prepare_cert_for_connection()
+
+        self.dut.security.SetLeIoCapability(KEYBOARD_DISPLAY)
+        self.dut.security.SetLeOobDataPresent(OOB_NOT_PRESENT)
+        self.dut_security.SetLeAuthRequirements(secure_connections=1)
+        self.dut.security.SetLeMaximumEncryptionKeySize(
+            LeMaximumEncryptionKeySizeMessage(maximum_encryption_key_size=0x10))
+
+        self.cert.security.SetLeIoCapability(NO_INPUT_NO_OUTPUT)
+        self.cert.security.SetLeOobDataPresent(OOB_NOT_PRESENT)
+        self.cert_security.SetLeAuthRequirements(mitm=1, secure_connections=1)
+        self.cert.security.SetLeMaximumEncryptionKeySize(
+            LeMaximumEncryptionKeySizeMessage(maximum_encryption_key_size=0x07))
+
+        # 1. IUT transmits a Pairing Request
+        self.dut.security.CreateBondLe(self.cert_address)
+
+        assertThat(self.cert_security.get_ui_stream()).emits(
+            SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PAIRING_PROMPT, self.dut_address))
+
+        # 2. Lower Tester responds with Pairing Response command with Maximum Encryption Key Size field set to Min_Encryption_Key_Length’.
+        self.cert.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+
+        # 3. IUT and Lower Tester perform phase 2 of the LE pairing and establish an encrypted link with the key generated in phase 2.
         assertThat(self.dut_security.get_bond_stream()).emits(
             SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED, self.cert_address))
 
