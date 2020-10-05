@@ -1231,32 +1231,35 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
  ******************************************************************************/
 void l2c_link_segments_xmitted(BT_HDR* p_msg) {
   uint8_t* p = (uint8_t*)(p_msg + 1) + p_msg->offset;
-  uint16_t handle;
-  tL2C_LCB* p_lcb;
 
   /* Extract the handle */
+  uint16_t handle{HCI_INVALID_HANDLE};
   STREAM_TO_UINT16(handle, p);
   handle = HCID_GET_HANDLE(handle);
 
   /* Find the LCB based on the handle */
-  p_lcb = l2cu_find_lcb_by_handle(handle);
-  if (p_lcb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - rcvd segment complete, unknown handle: %d",
-                        handle);
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
+  if (p_lcb == nullptr) {
+    LOG_WARN("Received segment complete for unknown connection handle:%d",
+             handle);
     osi_free(p_msg);
     return;
   }
 
-  if (p_lcb->link_state == LST_CONNECTED) {
-    /* Enqueue the buffer to the head of the transmit queue, and see */
-    /* if we can transmit anything more.                             */
-    list_prepend(p_lcb->link_xmit_data_q, p_msg);
-
-    p_lcb->partial_segment_being_sent = false;
-
-    l2c_link_check_send_pkts(p_lcb, 0, NULL);
-  } else
+  if (p_lcb->link_state != LST_CONNECTED) {
+    LOG_INFO("Received segment complete for unconnected connection handle:%d:",
+             handle);
     osi_free(p_msg);
+    return;
+  }
+
+  /* Enqueue the buffer to the head of the transmit queue, and see */
+  /* if we can transmit anything more.                             */
+  list_prepend(p_lcb->link_xmit_data_q, p_msg);
+
+  p_lcb->partial_segment_being_sent = false;
+
+  l2c_link_check_send_pkts(p_lcb, 0, NULL);
 }
 
 tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
