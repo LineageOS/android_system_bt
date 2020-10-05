@@ -322,7 +322,7 @@ struct tGATT_CLCB {
   tGATT_AUTH_REQ auth_req; /* authentication requirement */
   uint8_t operation;       /* one logic channel can have one operation active */
   uint8_t op_subtype;      /* operation subtype */
-  uint8_t status;          /* operation status */
+  tGATT_STATUS status;     /* operation status */
   bool first_read_blob_after_read;
   tGATT_READ_INC_UUID128 read_uuid128;
   bool in_use;
@@ -511,7 +511,7 @@ extern void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
 extern uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid,
                                     uint8_t op_code, uint16_t handle);
 extern bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda);
-extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
+extern void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
 /*   */
 
@@ -557,10 +557,10 @@ extern bool gatt_send_ble_burst_data(const RawAddress& remote_bda,
 
 /* GATT client functions */
 extern void gatt_dequeue_sr_cmd(tGATT_TCB& tcb);
-extern uint8_t gatt_send_write_msg(tGATT_TCB& p_tcb, tGATT_CLCB* p_clcb,
-                                   uint8_t op_code, uint16_t handle,
-                                   uint16_t len, uint16_t offset,
-                                   uint8_t* p_data);
+extern tGATT_STATUS gatt_send_write_msg(tGATT_TCB& p_tcb, tGATT_CLCB* p_clcb,
+                                        uint8_t op_code, uint16_t handle,
+                                        uint16_t len, uint16_t offset,
+                                        uint8_t* p_data);
 extern void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
                                    tBT_TRANSPORT transport);
 extern void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status,

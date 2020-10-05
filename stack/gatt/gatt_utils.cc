@@ -1280,9 +1280,9 @@ tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_op_code) {
 }
 
 /** Send out the ATT message for write */
-uint8_t gatt_send_write_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint8_t op_code,
-                            uint16_t handle, uint16_t len, uint16_t offset,
-                            uint8_t* p_data) {
+tGATT_STATUS gatt_send_write_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
+                                 uint8_t op_code, uint16_t handle, uint16_t len,
+                                 uint16_t offset, uint8_t* p_data) {
   tGATT_CL_MSG msg;
   msg.attr_value.handle = handle;
   msg.attr_value.len = len;

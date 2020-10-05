@@ -134,7 +134,8 @@ void bta_gatts_add_service_impl(tGATT_IF server_if,
     return;
   }
 
-  uint16_t status = GATTS_AddService(server_if, service.data(), service.size());
+  tGATT_STATUS status =
+      GATTS_AddService(server_if, service.data(), service.size());
   if (status != GATT_SERVICE_STARTED) {
     memset(&bta_gatts_cb.srvc_cb[srvc_idx], 0, sizeof(tBTA_GATTS_SRVC_CB));
     LOG(ERROR) << __func__ << ": service creation failed.";

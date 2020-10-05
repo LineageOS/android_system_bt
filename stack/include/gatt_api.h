@@ -571,12 +571,12 @@ typedef void(tGATT_ENC_CMPL_CB)(tGATT_IF gatt_if, const RawAddress& bda);
 /* Define a callback function when phy is updated. */
 typedef void(tGATT_PHY_UPDATE_CB)(tGATT_IF gatt_if, uint16_t conn_id,
                                   uint8_t tx_phy, uint8_t rx_phy,
-                                  uint8_t status);
+                                  tGATT_STATUS status);
 
 /* Define a callback function when connection parameters are updated */
 typedef void(tGATT_CONN_UPDATE_CB)(tGATT_IF gatt_if, uint16_t conn_id,
                                    uint16_t interval, uint16_t latency,
-                                   uint16_t timeout, uint8_t status);
+                                   uint16_t timeout, tGATT_STATUS status);
 
 /* Define the structure that applications use to register with
  * GATT. This structure includes callback functions. All functions
@@ -696,8 +696,8 @@ extern bool GATTS_NVRegister(tGATT_APPL_INFO* p_cb_info);
  *                  on error error status is returned.
  *
  ******************************************************************************/
-extern uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
-                                 int count);
+extern tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if,
+                                     btgatt_db_element_t* service, int count);
 
 /*******************************************************************************
  *

@@ -181,7 +181,7 @@ tGATT_STATUS proc_read(tGATTS_REQ_TYPE, tGATT_READ_REQ* p_data,
 }
 
 /** GAP ATT server process a write request */
-uint8_t proc_write_req(tGATTS_REQ_TYPE, tGATT_WRITE_REQ* p_data) {
+tGATT_STATUS proc_write_req(tGATTS_REQ_TYPE, tGATT_WRITE_REQ* p_data) {
   for (const auto& db_addr : gatt_attr)
     if (p_data->handle == db_addr.handle) return GATT_WRITE_NOT_PERMIT;
 
@@ -191,7 +191,7 @@ uint8_t proc_write_req(tGATTS_REQ_TYPE, tGATT_WRITE_REQ* p_data) {
 /** GAP ATT server attribute access request callback */
 void server_attr_request_cback(uint16_t conn_id, uint32_t trans_id,
                                tGATTS_REQ_TYPE type, tGATTS_DATA* p_data) {
-  uint8_t status = GATT_INVALID_PDU;
+  tGATT_STATUS status = GATT_INVALID_PDU;
   bool ignore = false;
 
   DVLOG(1) << StringPrintf("%s: recv type (0x%02x)", __func__, type);
