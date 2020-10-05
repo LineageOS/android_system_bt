@@ -535,13 +535,14 @@ void gatt_process_error_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   }
 
   if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY) {
-    gatt_proc_disc_error_rsp(tcb, p_clcb, opcode, handle, reason);
+    gatt_proc_disc_error_rsp(tcb, p_clcb, opcode, handle,
+                             static_cast<tGATT_STATUS>(reason));
   } else {
     if ((p_clcb->operation == GATTC_OPTYPE_WRITE) &&
         (p_clcb->op_subtype == GATT_WRITE) &&
         (opcode == GATT_REQ_PREPARE_WRITE) && (p_attr) &&
         (handle == p_attr->handle)) {
-      p_clcb->status = reason;
+      p_clcb->status = static_cast<tGATT_STATUS>(reason);
       gatt_send_queue_write_cancel(tcb, p_clcb, GATT_PREP_WRITE_CANCEL);
     } else if ((p_clcb->operation == GATTC_OPTYPE_READ) &&
                ((p_clcb->op_subtype == GATT_READ_CHAR_VALUE_HDL) ||
