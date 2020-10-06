@@ -116,6 +116,9 @@ static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
 static bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
+static bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+                                        RawAddress& conn_addr,
+                                        tBLE_ADDR_TYPE* p_addr_type);
 
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
