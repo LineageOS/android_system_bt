@@ -20,6 +20,7 @@
 
 #include "common/callback.h"
 #include "hci/acl_manager.h"
+#include "security/pairing_failure.h"
 
 namespace bluetooth {
 namespace security {
@@ -50,7 +51,7 @@ class ISecurityManagerListener {
    *
    * @param address of the device that failed to bond
    */
-  virtual void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) = 0;
+  virtual void OnDeviceBondFailed(bluetooth::hci::AddressWithType device, PairingFailure status) = 0;
 
   /**
    * Called as a result of a failure during the bonding process.

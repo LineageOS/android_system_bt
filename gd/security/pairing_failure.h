@@ -37,11 +37,11 @@ struct PairingFailure {
   std::string message;
 
   /* If failure is due to mismatch of received code, this contains the received opcode */
-  Code received_code_;
+  Code received_code_{0};
 
   /* if the failure is due to "SMP failure", this field contains the reson code
    */
-  PairingFailedReason reason;
+  PairingFailedReason reason{0};
 
   PairingFailure(/*const base::Location& location, */ const std::string& message)
       : /*location(location), */ message(message) {}
