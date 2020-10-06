@@ -123,8 +123,8 @@ void neighbor::PageModule::impl::Start() {
 }
 
 void neighbor::PageModule::impl::Stop() {
-  LOG_DEBUG("Page scan interval:%hd window:%hd", scan_parameters_.interval, scan_parameters_.window);
-  LOG_DEBUG("Page scan_type:%s", hci::PageScanTypeText(scan_type_).c_str());
+  LOG_INFO("Page scan interval:%hd window:%hd", scan_parameters_.interval, scan_parameters_.window);
+  LOG_INFO("Page scan_type:%s", hci::PageScanTypeText(scan_type_).c_str());
 }
 
 void neighbor::PageModule::impl::SetScanActivity(ScanParameters params) {
@@ -134,7 +134,7 @@ void neighbor::PageModule::impl::SetScanActivity(ScanParameters params) {
 
   hci_layer_->EnqueueCommand(
       hci::ReadPageScanActivityBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
-  LOG_DEBUG(
+  LOG_INFO(
       "Set page scan activity interval:0x%x/%.02fms window:0x%x/%.02fms",
       params.interval,
       ScanIntervalTimeMs(params.interval),
@@ -152,7 +152,7 @@ void neighbor::PageModule::impl::SetScanType(hci::PageScanType scan_type) {
 
   hci_layer_->EnqueueCommand(
       hci::ReadPageScanTypeBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
-  LOG_DEBUG("Set page scan type:%s", hci::PageScanTypeText(scan_type).c_str());
+  LOG_INFO("Set page scan type:%s", hci::PageScanTypeText(scan_type).c_str());
 }
 
 void neighbor::PageModule::impl::SetTimeout(PageTimeout timeout) {
@@ -161,7 +161,7 @@ void neighbor::PageModule::impl::SetTimeout(PageTimeout timeout) {
 
   hci_layer_->EnqueueCommand(
       hci::ReadPageTimeoutBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
-  LOG_DEBUG("Set page scan timeout:0x%x/%.02fms", timeout, PageTimeoutMs(timeout));
+  LOG_INFO("Set page scan timeout:0x%x/%.02fms", timeout, PageTimeoutMs(timeout));
 }
 
 /**

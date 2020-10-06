@@ -269,7 +269,7 @@ void ConfigCache::RemoveSectionWithProperty(const std::string& property) {
   for (auto* config_section : {&information_sections_, &persistent_devices_}) {
     for (auto it = config_section->begin(); it != config_section->end();) {
       if (it->second.contains(property)) {
-        LOG_DEBUG("Removing persistent section %s with property %s", it->first.c_str(), property.c_str());
+        LOG_INFO("Removing persistent section %s with property %s", it->first.c_str(), property.c_str());
         it = config_section->erase(it);
         num_persistent_removed++;
         continue;
@@ -279,7 +279,7 @@ void ConfigCache::RemoveSectionWithProperty(const std::string& property) {
   }
   for (auto it = temporary_devices_.begin(); it != temporary_devices_.end();) {
     if (it->second.contains(property)) {
-      LOG_DEBUG("Removing temporary section %s with property %s", it->first.c_str(), property.c_str());
+      LOG_INFO("Removing temporary section %s with property %s", it->first.c_str(), property.c_str());
       it = temporary_devices_.erase(it);
       continue;
     }

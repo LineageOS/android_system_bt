@@ -44,7 +44,7 @@ void bte_load_did_conf(const char* p_path) {
     snprintf(section_name, sizeof(section_name), "DID%d", i);
 
     if (!config_has_section(*config, section_name)) {
-      LOG_DEBUG("%s no section named %s.", __func__, section_name);
+      LOG_INFO("%s no section named %s.", __func__, section_name);
       break;
     }
 
@@ -80,15 +80,15 @@ void bte_load_did_conf(const char* p_path) {
       continue;
     }
 
-    LOG_DEBUG("Device ID record %d : %s", i,
-              (record.primary_record ? "primary" : "not primary"));
-    LOG_DEBUG("  vendorId            = %04x", record.vendor);
-    LOG_DEBUG("  vendorIdSource      = %04x", record.vendor_id_source);
-    LOG_DEBUG("  product             = %04x", record.product);
-    LOG_DEBUG("  version             = %04x", record.version);
-    LOG_DEBUG("  clientExecutableURL = %s", record.client_executable_url);
-    LOG_DEBUG("  serviceDescription  = %s", record.service_description);
-    LOG_DEBUG("  documentationURL    = %s", record.documentation_url);
+    LOG_INFO("Device ID record %d : %s", i,
+             (record.primary_record ? "primary" : "not primary"));
+    LOG_INFO("  vendorId            = %04x", record.vendor);
+    LOG_INFO("  vendorIdSource      = %04x", record.vendor_id_source);
+    LOG_INFO("  product             = %04x", record.product);
+    LOG_INFO("  version             = %04x", record.version);
+    LOG_INFO("  clientExecutableURL = %s", record.client_executable_url);
+    LOG_INFO("  serviceDescription  = %s", record.service_description);
+    LOG_INFO("  documentationURL    = %s", record.documentation_url);
 
     uint32_t record_handle;
     tBTA_STATUS status = BTA_DmSetLocalDiRecord(&record, &record_handle);

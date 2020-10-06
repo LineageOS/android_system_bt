@@ -127,7 +127,7 @@ class ConnectionInterface {
   }
 
   void Write(std::unique_ptr<packet::RawBuilder> packet) {
-    LOG_DEBUG("Writing packet cid:%hd size:%zd", cid_, packet->size());
+    LOG_INFO("Writing packet cid:%hd size:%zd", cid_, packet->size());
     write_queue_.push(std::move(packet));
     if (!enqueue_registered_) {
       enqueue_registered_ = true;
@@ -146,7 +146,7 @@ class ConnectionInterface {
   }
 
   void OnConnectionClosed(hci::ErrorCode error_code) {
-    LOG_DEBUG(
+    LOG_INFO(
         "Channel interface closed reason:%s cid:%hd device:%s",
         hci::ErrorCodeText(error_code).c_str(),
         cid_,
@@ -210,7 +210,7 @@ class ConnectionInterfaceManager {
       ConnectionInterfaceDescriptor cid,
       l2cap::Cid remote_cid) {
     hci::Address address = cid_to_interface_map_[cid]->GetRemoteAddress();
-    LOG_DEBUG("Connection opened address:%s psm:%hd cid:%hd", address.ToString().c_str(), psm, cid);
+    LOG_INFO("Connection opened address:%s psm:%hd cid:%hd", address.ToString().c_str(), psm, cid);
     on_complete(
         address.ToString(),
         static_cast<uint16_t>(psm),
@@ -221,7 +221,7 @@ class ConnectionInterfaceManager {
 
   void ConnectionFailed(
       ConnectionCompleteCallback on_complete, hci::Address address, l2cap::Psm psm, ConnectionInterfaceDescriptor cid) {
-    LOG_DEBUG("Connection failed address:%s psm:%hd", address.ToString().c_str(), psm);
+    LOG_INFO("Connection failed address:%s psm:%hd", address.ToString().c_str(), psm);
     on_complete(address.ToString(), static_cast<uint16_t>(psm), static_cast<uint16_t>(cid), 0, kConnectionFailed);
   }
 
@@ -285,7 +285,7 @@ void ConnectionInterfaceManager::AddConnection(
       cid,
       std::make_unique<ConnectionInterface>(
           cid, std::move(channel), handler_, [this](ConnectionInterfaceDescriptor cid) {
-            LOG_DEBUG("Deleting connection interface cid:%hd", cid);
+            LOG_INFO("Deleting connection interface cid:%hd", cid);
             auto connection = std::move(cid_to_interface_map_.at(cid));
             handler_->Post(common::BindOnce(
                 &ConnectionInterfaceManager::ConnectionClosed, common::Unretained(this), cid, std::move(connection)));
@@ -341,36 +341,35 @@ class PendingConnection {
         pending_fail_(pending_fail) {}
 
   void OnConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
-    LOG_DEBUG("Local initiated connection is open to device:%s for psm:%hd", address_.ToString().c_str(), psm_);
+    LOG_INFO("Local initiated connection is open to device:%s for psm:%hd", address_.ToString().c_str(), psm_);
     ASSERT_LOG(
         address_ == channel->GetDevice().GetAddress(), " Expected remote device does not match actual remote device");
     pending_open_(std::move(channel));
   }
 
   void OnConnectionFailure(l2cap::classic::DynamicChannelManager::ConnectionResult result) {
-    LOG_DEBUG("Connection failed to device:%s for psm:%hd", address_.ToString().c_str(), psm_);
+    LOG_INFO("Connection failed to device:%s for psm:%hd", address_.ToString().c_str(), psm_);
     switch (result.connection_result_code) {
       case l2cap::classic::DynamicChannelManager::ConnectionResultCode::SUCCESS:
         LOG_WARN("Connection failed result:success hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
         break;
       case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_NO_SERVICE_REGISTERED:
-        LOG_DEBUG(
-            "Connection failed result:no service registered hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
+        LOG_INFO("Connection failed result:no service registered hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
         break;
       case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_HCI_ERROR:
-        LOG_DEBUG("Connection failed result:hci error hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
+        LOG_INFO("Connection failed result:hci error hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
         break;
       case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_L2CAP_ERROR:
-        LOG_DEBUG(
+        LOG_INFO(
             "Connection failed result:l2cap error hci:%s l2cap:%s",
             hci::ErrorCodeText(result.hci_error).c_str(),
             l2cap::ConnectionResponseResultText(result.l2cap_connection_response_result).c_str());
         break;
       case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT:
-        LOG_DEBUG("Connection failed result:Remote not support required retransmission and flow control mode");
+        LOG_INFO("Connection failed result:Remote not support required retransmission and flow control mode");
         break;
       case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_SECURITY_BLOCK:
-        LOG_DEBUG("Connection failed result:security block");
+        LOG_INFO("Connection failed result:security block");
         break;
     }
     pending_fail_(result);
@@ -478,7 +477,7 @@ void L2cap::impl::RegisterService(
             std::unique_ptr<l2cap::classic::DynamicChannelService> service_ = std::move(service);
             switch (result) {
               case l2cap::classic::DynamicChannelManager::RegistrationResult::SUCCESS:
-                LOG_DEBUG("Service is registered for psm:%hd", service_->GetPsm());
+                LOG_INFO("Service is registered for psm:%hd", service_->GetPsm());
                 register_promise.set_value(service_->GetPsm());
                 psm_to_service_interface_map_->emplace(service_->GetPsm(), std::move(service_));
                 break;
@@ -499,13 +498,13 @@ void L2cap::impl::RegisterService(
              ConnectionCompleteCallback on_complete,
              ConnectionInterfaceManager* connection_interface_manager_,
              std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
-            LOG_DEBUG("Remote initiated connection is open from device:%s", channel->GetDevice().ToString().c_str());
+            LOG_INFO("Remote initiated connection is open from device:%s", channel->GetDevice().ToString().c_str());
 
             ConnectionInterfaceDescriptor cid = connection_interface_manager_->AllocateConnectionInterfaceDescriptor();
             uint16_t remote_cid = channel->HACK_GetRemoteCid();
             connection_interface_manager_->AddConnection(cid, std::move(channel));
             connection_interface_manager_->ConnectionOpened(on_complete, psm, cid, remote_cid);
-            LOG_DEBUG("connection open");
+            LOG_INFO("connection open");
           },
           psm,
           on_complete,
