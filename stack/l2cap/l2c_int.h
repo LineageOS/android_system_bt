@@ -384,7 +384,7 @@ typedef struct t_l2c_linkcb {
 
   uint8_t peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE];
 
-  uint8_t acl_priority;     /* L2C_PRIORITY_NORMAL or L2C_PRIORITY_HIGH */
+  tL2CAP_PRIORITY acl_priority;
 
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
 
@@ -528,7 +528,8 @@ extern tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
                                           tBT_TRANSPORT transport);
 extern tL2C_LCB* l2cu_find_lcb_by_handle(uint16_t handle);
 
-extern bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
+extern bool l2cu_set_acl_priority(const RawAddress& bd_addr,
+                                  tL2CAP_PRIORITY priority,
                                   bool reset_after_rs);
 
 extern void l2cu_enqueue_ccb(tL2C_CCB* p_ccb);

@@ -163,7 +163,7 @@ bool bluetooth::shim::L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr,
 }
 
 bool bluetooth::shim::L2CA_SetAclPriority(const RawAddress& bd_addr,
-                                          uint8_t priority) {
+                                          tL2CAP_PRIORITY priority) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   return false;
 }

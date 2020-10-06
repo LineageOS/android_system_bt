@@ -265,7 +265,7 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush);
  * Returns          true if a valid channel, else false
  *
  ******************************************************************************/
-bool L2CA_SetAclPriority(const RawAddress& bd_addr, uint8_t priority);
+bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority);
 
 /*******************************************************************************
  *
