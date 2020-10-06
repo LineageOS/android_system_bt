@@ -116,7 +116,7 @@ static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
 static bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
-static bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+static bool btm_ble_get_acl_remote_addr(const tBTM_SEC_DEV_REC& p_dev_rec,
                                         RawAddress& conn_addr,
                                         tBLE_ADDR_TYPE* p_addr_type);
 
@@ -253,39 +253,33 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
  * Returns          success return true, otherwise false.
  *
  ******************************************************************************/
-static bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
+static bool btm_ble_get_acl_remote_addr(const tBTM_SEC_DEV_REC& p_dev_rec,
                                         RawAddress& conn_addr,
                                         tBLE_ADDR_TYPE* p_addr_type) {
   bool st = true;
 
-  if (p_dev_rec == NULL) {
-    LOG_WARN("Unable to find device with matching address");
-    return false;
-  }
-
-  switch (p_dev_rec->ble.active_addr_type) {
+  switch (p_dev_rec.ble.active_addr_type) {
     case tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO:
-      conn_addr = p_dev_rec->bd_addr;
-      *p_addr_type = p_dev_rec->ble.ble_addr_type;
+      conn_addr = p_dev_rec.bd_addr;
+      *p_addr_type = p_dev_rec.ble.ble_addr_type;
       break;
 
     case tBTM_SEC_BLE::BTM_BLE_ADDR_RRA:
-      conn_addr = p_dev_rec->ble.cur_rand_addr;
+      conn_addr = p_dev_rec.ble.cur_rand_addr;
       *p_addr_type = BLE_ADDR_RANDOM;
       break;
 
     case tBTM_SEC_BLE::BTM_BLE_ADDR_STATIC:
-      conn_addr = p_dev_rec->ble.identity_address_with_type.bda;
-      *p_addr_type = p_dev_rec->ble.identity_address_with_type.type;
+      conn_addr = p_dev_rec.ble.identity_address_with_type.bda;
+      *p_addr_type = p_dev_rec.ble.identity_address_with_type.type;
       break;
 
     default:
       LOG_WARN("Unable to find record with active address type: %d",
-               p_dev_rec->ble.active_addr_type);
+               p_dev_rec.ble.active_addr_type);
       st = false;
       break;
   }
-
   return st;
 }
 
@@ -424,7 +418,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    btm_ble_get_acl_remote_addr(p_dev_rec, p_acl->active_remote_addr,
+    btm_ble_get_acl_remote_addr(*p_dev_rec, p_acl->active_remote_addr,
                                 &p_acl->active_remote_addr_type);
 
     if (controller_get_interface()
