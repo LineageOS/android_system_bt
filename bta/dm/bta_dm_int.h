@@ -434,7 +434,7 @@ extern void bta_dm_add_ampkey(tBTA_DM_MSG* p_data);
 
 extern void bta_dm_add_blekey(const RawAddress& bd_addr,
                               tBTA_LE_KEY_VALUE blekey,
-                              tBTA_LE_KEY_TYPE key_type);
+                              tBTM_LE_KEY_TYPE key_type);
 extern void bta_dm_add_ble_device(const RawAddress& bd_addr,
                                   tBLE_ADDR_TYPE addr_type,
                                   tBT_DEVICE_TYPE dev_type);

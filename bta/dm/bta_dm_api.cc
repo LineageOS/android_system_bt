@@ -363,7 +363,7 @@ tBTA_STATUS BTA_DmSetLocalDiRecord(tBTA_DI_RECORD* p_device_info,
  *
  ******************************************************************************/
 void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
-                     tBTA_LE_KEY_TYPE key_type) {
+                     tBTM_LE_KEY_TYPE key_type) {
   do_in_main_thread(
       FROM_HERE, base::Bind(bta_dm_add_blekey, bd_addr, *p_le_key, key_type));
 }
