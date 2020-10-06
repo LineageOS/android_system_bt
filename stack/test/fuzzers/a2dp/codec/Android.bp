@@ -1,0 +1,32 @@
+cc_defaults {
+    name: "libbt-stack_fuzz_codec_defaults",
+    defaults: ["libbt-stack_fuzz_defaults"],
+    include_dirs: [
+        "system/bt/bta/include/", // For tBT_A2DP_OFFLOAD
+        "system/bt/bta/sys/", // For tBT_A2DP_OFFLOAD
+    ],
+}
+
+cc_fuzz {
+    name: "a2dp_codec_fuzz",
+    defaults: ["libbt-stack_fuzz_codec_defaults"],
+    srcs: [
+        "fuzz_a2dp_codec.cc",
+    ],
+}
+
+cc_fuzz {
+    name: "a2dp_codec_info_fuzz",
+    defaults: ["libbt-stack_fuzz_codec_defaults"],
+    srcs: [
+        "fuzz_a2dp_codec_info.cc",
+    ],
+}
+
+cc_fuzz {
+    name: "a2dp_codec_cfg_fuzz",
+    defaults: ["libbt-stack_fuzz_codec_defaults"],
+    srcs: [
+        "fuzz_a2dp_codec_config.cc",
+    ],
+}
