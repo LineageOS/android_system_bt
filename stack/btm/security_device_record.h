@@ -298,7 +298,6 @@ typedef struct {
   bool link_key_not_sent; /* link key notification has not been sent waiting for
                              name */
   uint8_t link_key_type;  /* Type of key used in pairing   */
-  bool link_key_changed;  /* Changed link key during current connection */
 
 #define BTM_MAX_PRE_SM4_LKEY_TYPE \
   BTM_LKEY_TYPE_REMOTE_UNIT /* the link key type used by legacy pairing */
