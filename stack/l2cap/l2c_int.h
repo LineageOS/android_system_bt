@@ -374,7 +374,15 @@ typedef struct t_l2c_linkcb {
   void ResetBonding() { is_bonding_ = false; }
 
   uint16_t link_xmit_quota; /* Num outstanding pkts allowed */
+  bool is_round_robin_scheduling() const { return link_xmit_quota == 0; }
+
   uint16_t sent_not_acked;  /* Num packets sent but not acked */
+  void update_outstanding_packets(uint16_t packets_acked) {
+    if (sent_not_acked > packets_acked)
+      sent_not_acked -= packets_acked;
+    else
+      sent_not_acked = 0;
+  }
 
   bool partial_segment_being_sent; /* Set true when a partial segment */
                                    /* is being sent. */
@@ -385,6 +393,17 @@ typedef struct t_l2c_linkcb {
   uint8_t peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE];
 
   tL2CAP_PRIORITY acl_priority;
+  bool is_normal_priority() const {
+    return acl_priority == L2CAP_PRIORITY_NORMAL;
+  }
+  bool is_high_priority() const { return acl_priority == L2CAP_PRIORITY_HIGH; }
+  bool set_priority(tL2CAP_PRIORITY priority) {
+    if (acl_priority != priority) {
+      acl_priority = priority;
+      return true;
+    }
+    return false;
+  }
 
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
 
@@ -428,6 +447,16 @@ typedef struct {
 
   uint16_t round_robin_quota;   /* Round-robin link quota */
   uint16_t round_robin_unacked; /* Round-robin unacked */
+  bool is_classic_round_robin_quota_available() const {
+    return round_robin_unacked < round_robin_quota;
+  }
+  void update_outstanding_classic_packets(uint16_t num_packets_acked) {
+    if (round_robin_unacked > num_packets_acked)
+      round_robin_unacked -= num_packets_acked;
+    else
+      round_robin_unacked = 0;
+  }
+
   bool check_round_robin;       /* Do a round robin check */
 
   bool is_cong_cback_context;
@@ -466,6 +495,16 @@ typedef struct {
   uint16_t num_lm_ble_bufs;         /* # of ACL buffers on controller */
   uint16_t ble_round_robin_quota;   /* Round-robin link quota */
   uint16_t ble_round_robin_unacked; /* Round-robin unacked */
+  bool is_ble_round_robin_quota_available() const {
+    return ble_round_robin_unacked < ble_round_robin_quota;
+  }
+  void update_outstanding_le_packets(uint16_t num_packets_acked) {
+    if (ble_round_robin_unacked > num_packets_acked)
+      ble_round_robin_unacked -= num_packets_acked;
+    else
+      ble_round_robin_unacked = 0;
+  }
+
   bool ble_check_round_robin;       /* Do a round robin check */
   tL2C_RCB ble_rcb_pool[BLE_MAX_L2CAP_CLIENTS]; /* Registration info pool */
 
