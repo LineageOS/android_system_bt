@@ -1,0 +1,7 @@
+cc_fuzz {
+    name: "sdp_fuzz",
+    defaults: ["libbt-stack_fuzz_defaults"],
+    srcs: [
+        "fuzz_sdp.cc",
+    ],
+}
