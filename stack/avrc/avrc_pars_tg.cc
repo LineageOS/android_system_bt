@@ -306,6 +306,13 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
         return AVRC_STS_INTERNAL_ERR;
       else {
         BE_STREAM_TO_UINT8(p_result->reg_notif.event_id, p);
+        if (!AVRC_IS_VALID_EVENT_ID(p_result->reg_notif.event_id)) {
+          android_errorWriteLog(0x534e4554, "168802990");
+          AVRC_TRACE_ERROR("%s: Invalid event id: %d", __func__,
+                           p_result->reg_notif.event_id);
+          return AVRC_STS_BAD_PARAM;
+        }
+
         BE_STREAM_TO_UINT32(p_result->reg_notif.param, p);
       }
       break;
