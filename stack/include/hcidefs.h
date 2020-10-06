@@ -44,10 +44,6 @@
 
 #define HCI_GRP_VENDOR_SPECIFIC (0x3F << 10) /* 0xFC00 */
 
-/* Group occupies high 6 bits of the HCI command rest is opcode itself */
-#define HCI_OGF(p) (uint8_t)((0xFC00 & (p)) >> 10)
-#define HCI_OCF(p) (0x3FF & (p))
-
 /*
  *  Definitions for Link Control Commands
 */
@@ -447,9 +443,6 @@
 /* Energy info opcode */
 #define HCI_BLE_ENERGY_INFO (0x0159 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Extended BLE Scan parameters opcode */
-#define HCI_BLE_EXTENDED_SCAN_PARAMS (0x015A | HCI_GRP_VENDOR_SPECIFIC)
-
 /* Controller debug info opcode */
 #define HCI_CONTROLLER_DEBUG_INFO (0x015B | HCI_GRP_VENDOR_SPECIFIC)
 
@@ -487,20 +480,6 @@
 
 /* Bluetooth Quality Report sub event */
 #define HCI_VSE_SUBCODE_BQR_SUB_EVT 0x58
-
-/* LE supported states definition */
-#define HCI_LE_ADV_STATE 0x00000001
-#define HCI_LE_SCAN_STATE 0x00000002
-#define HCI_LE_INIT_STATE 0x00000004
-#define HCI_LE_CONN_SL_STATE 0x00000008
-#define HCI_LE_ADV_SCAN_STATE 0x00000010
-#define HCI_LE_ADV_INIT_STATE 0x00000020
-#define HCI_LE_ADV_MA_STATE 0x00000040
-#define HCI_LE_ADV_SL_STATE 0x00000080
-#define HCI_LE_SCAN_INIT_STATE 0x00000100
-#define HCI_LE_SCAN_MA_STATE 0x00000200
-#define HCI_LE_SCAN_SL_STATE 0x00000400
-#define HCI_LE_INIT_MA_STATE 0x00000800
 
 /* LE Supported States */
 constexpr uint8_t HCI_LE_STATES_NON_CONN_ADV_BIT = 0;
@@ -601,20 +580,6 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
 #define HCI_KEYPRESS_NOTIFY_EVT 0x3C
 #define HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT 0x3D
 
-/*#define HCI_GENERIC_AMP_LINK_KEY_NOTIF_EVT  0x3E Removed from spec */
-#define HCI_PHYSICAL_LINK_COMP_EVT 0x40
-#define HCI_CHANNEL_SELECTED_EVT 0x41
-#define HCI_DISC_PHYSICAL_LINK_COMP_EVT 0x42
-#define HCI_PHY_LINK_LOSS_EARLY_WARNING_EVT 0x43
-#define HCI_PHY_LINK_RECOVERY_EVT 0x44
-#define HCI_LOGICAL_LINK_COMP_EVT 0x45
-#define HCI_DISC_LOGICAL_LINK_COMP_EVT 0x46
-#define HCI_FLOW_SPEC_MODIFY_COMP_EVT 0x47
-#define HCI_NUM_COMPL_DATA_BLOCKS_EVT 0x48
-#define HCI_SHORT_RANGE_MODE_COMPLETE_EVT 0x4C
-#define HCI_AMP_STATUS_CHANGE_EVT 0x4D
-#define HCI_SET_TRIGGERED_CLOCK_CAPTURE_EVT 0x4E
-
 /* ULP HCI Event */
 #define HCI_BLE_EVENT 0x3e
 /* ULP Event sub code */
@@ -643,19 +608,11 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
 #define HCI_BLE_BIG_SYNC_LOST_EVT 0x1e
 #define HCI_BLE_REQ_PEER_SCA_CPL_EVT 0x1f
 
-/* Definitions for LE Channel Map */
-#define HCI_BLE_CHNL_MAP_SIZE 5
-
 #define HCI_VENDOR_SPECIFIC_EVT 0xFF /* Vendor specific events */
-#define HCI_NAP_TRACE_EVT                       \
-  0xFF /* was define 0xFE, 0xFD, change to 0xFF \
-          because conflict w/ TCI_EVT and per   \
-          specification compliant */
 
 /*
  * Definitions for HCI enable event
 */
-#define HCI_INQUIRY_COMPLETE_EV(p) (*((uint32_t*)(p)) & 0x00000001)
 #define HCI_INQUIRY_RESULT_EV(p) (*((uint32_t*)(p)) & 0x00000002)
 #define HCI_CONNECTION_COMPLETE_EV(p) (*((uint32_t*)(p)) & 0x00000004)
 #define HCI_CONNECTION_REQUEST_EV(p) (*((uint32_t*)(p)) & 0x00000008)
@@ -688,17 +645,7 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
 #define HCI_PAGE_SCAN_MODE_CHANGED_EV(p) (*((uint32_t*)(p)) & 0x40000000)
 #define HCI_PAGE_SCAN_REP_MODE_CHNG_EV(p) (*((uint32_t*)(p)) & 0x80000000)
 
-/* the default event mask for 2.1+EDR (Lisbon) does not include Lisbon events */
-#define HCI_DEFAULT_EVENT_MASK_0 0xFFFFFFFF
-#define HCI_DEFAULT_EVENT_MASK_1 0x00001FFF
-
 /* the event mask for 2.0 + EDR and later (includes Lisbon events) */
-#define HCI_LISBON_EVENT_MASK_0 0xFFFFFFFF
-#define HCI_LISBON_EVENT_MASK_1 0x1DBFFFFF
-#define HCI_LISBON_EVENT_MASK \
-  { 0x0D, 0xBF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }
-#define HCI_LISBON_EVENT_MASK_EXT \
-  { 0x1D, 0xBF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }
 #define HCI_DUMO_EVENT_MASK_EXT \
   { 0x3D, 0xBF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF }
 /*  0x00001FFF FFFFFFFF Default - no Lisbon events
@@ -722,39 +669,6 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
     0x20000000 00000000 LE Meta Event
  */
 
-/* the event mask for AMP controllers */
-#define HCI_AMP_EVENT_MASK_3_0 "\x00\x00\x00\x00\x00\x00\x3F\xFF"
-
-/*  0x0000000000000000 No events specified (default)
-    0x0000000000000001 Physical Link Complete Event
-    0x0000000000000002 Channel Selected Event
-    0x0000000000000004 Disconnection Physical Link Event
-    0x0000000000000008 Physical Link Loss Early Warning Event
-    0x0000000000000010 Physical Link Recovery Event
-    0x0000000000000020 Logical Link Complete Event
-    0x0000000000000040 Disconnection Logical Link Complete Event
-    0x0000000000000080 Flow Spec Modify Complete Event
-    0x0000000000000100 Number of Completed Data Blocks Event
-    0x0000000000000200 AMP Start Test Event
-    0x0000000000000400 AMP Test End Event
-    0x0000000000000800 AMP Receiver Report Event
-    0x0000000000001000 Short Range Mode Change Complete Event
-    0x0000000000002000 AMP Status Change Event
-*/
-
-/* the event mask page 2 (CLB + CSA4) for BR/EDR controller */
-#define HCI_PAGE_2_EVENT_MASK "\x00\x00\x00\x00\x00\x7F\xC0\x00"
-/*  0x0000000000004000 Triggered Clock Capture Event
-    0x0000000000008000 Sync Train Complete Event
-    0x0000000000010000 Sync Train Received Event
-    0x0000000000020000 Connectionless Broadcast Receive Event
-    0x0000000000040000 Connectionless Broadcast Timeout Event
-    0x0000000000080000 Truncated Page Complete Event
-    0x0000000000100000 Salve Page Response Timeout Event
-    0x0000000000200000 Connectionless Broadcast Channel Map Change Event
-    0x0000000000400000 Inquiry Response Notification Event
-*/
-
 /*
  * Definitions for packet type masks (BT1.2 and BT2.0 definitions)
 */
@@ -774,72 +688,11 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
 #define HCI_PKT_TYPES_MASK_DM5 0x4000
 #define HCI_PKT_TYPES_MASK_DH5 0x8000
 
-/* Packet type should be one of valid but at least one should be specified */
-#define HCI_VALID_SCO_PKT_TYPE(t)                         \
-  (((((t) &                                               \
-      ~(HCI_PKT_TYPES_MASK_HV1 | HCI_PKT_TYPES_MASK_HV2 | \
-        HCI_PKT_TYPES_MASK_HV3)) == 0)) &&                \
-   ((t) != 0))
-
-/* Packet type should not be invalid and at least one should be specified */
-#define HCI_VALID_ACL_PKT_TYPE(t)                                             \
-  (((((t) &                                                                   \
-      ~(HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 |                     \
-        HCI_PKT_TYPES_MASK_DM3 | HCI_PKT_TYPES_MASK_DH3 |                     \
-        HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5 |                     \
-        HCI_PKT_TYPES_MASK_NO_2_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH1 |           \
-        HCI_PKT_TYPES_MASK_NO_2_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH3 |           \
-        HCI_PKT_TYPES_MASK_NO_2_DH5 | HCI_PKT_TYPES_MASK_NO_3_DH5)) == 0)) && \
-   (((t) & (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 |                 \
-            HCI_PKT_TYPES_MASK_DM3 | HCI_PKT_TYPES_MASK_DH3 |                 \
-            HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5)) != 0))
-
-/* Packet type should be one of valid but at least one should be specified for
- * 1.2 */
-#define HCI_VALID_ESCO_PKT_TYPE(t)                                           \
-  (((((t) &                                                                  \
-      ~(HCI_ESCO_PKT_TYPES_MASK_EV3 | HCI_ESCO_PKT_TYPES_MASK_EV4 |          \
-        HCI_ESCO_PKT_TYPES_MASK_EV5)) == 0)) &&                              \
-   ((t) != 0)) /* Packet type should be one of valid but at least one should \
-                  be specified */
-
-#define HCI_VALID_ESCO_SCOPKT_TYPE(t)                           \
-  (((((t) &                                                     \
-      ~(ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 | \
-        HCI_ESCO_PKT_TYPES_MASK_HV3)) == 0)) &&                 \
-   ((t) != 0))
-
-#define HCI_VALID_SCO_ALL_PKT_TYPE(t)                                         \
-  (((((t) &                                                                   \
-      ~(ESCO_PKT_TYPES_MASK_HV1 | HCI_ESCO_PKT_TYPES_MASK_HV2 |               \
-        HCI_ESCO_PKT_TYPES_MASK_HV3 | HCI_ESCO_PKT_TYPES_MASK_EV3 |           \
-        HCI_ESCO_PKT_TYPES_MASK_EV4 | HCI_ESCO_PKT_TYPES_MASK_EV5)) == 0)) && \
-   ((t) != 0))
-
 /*
  * Define parameters to allow role switch during create connection
 */
 #define HCI_CR_CONN_NOT_ALLOW_SWITCH 0x00
 #define HCI_CR_CONN_ALLOW_SWITCH 0x01
-
-/*
- * Hold Mode command destination
-*/
-#define HOLD_MODE_DEST_LOCAL_DEVICE 0x00
-#define HOLD_MODE_DEST_RMT_DEVICE 0x01
-
-/*
- *  Definitions for different HCI parameters
-*/
-#define HCI_PER_INQ_MIN_MAX_PERIOD 0x0003
-#define HCI_PER_INQ_MAX_MAX_PERIOD 0xFFFF
-#define HCI_PER_INQ_MIN_MIN_PERIOD 0x0002
-#define HCI_PER_INQ_MAX_MIN_PERIOD 0xFFFE
-
-#define HCI_MAX_INQUIRY_LENGTH 0x30
-
-#define HCI_MIN_INQ_LAP 0x9E8B00
-#define HCI_MAX_INQ_LAP 0x9E8B3F
 
 /* HCI role defenitions */
 enum : uint8_t {
@@ -865,62 +718,15 @@ inline std::string RoleText(hci_role_t role) {
 #define HCI_MODE_SNIFF 0x02
 #define HCI_MODE_PARK 0x03
 
-/* HCI Flow Control Mode defenitions */
-#define HCI_PACKET_BASED_FC_MODE 0x00
-#define HCI_BLOCK_BASED_FC_MODE 0x01
-
-/* Define Packet types as requested by the Host */
-#define HCI_ACL_PKT_TYPE_NONE 0x0000
-#define HCI_ACL_PKT_TYPE_DM1 0x0008
-#define HCI_ACL_PKT_TYPE_DH1 0x0010
-#define HCI_ACL_PKT_TYPE_AUX1 0x0200
-#define HCI_ACL_PKT_TYPE_DM3 0x0400
-#define HCI_ACL_PKT_TYPE_DH3 0x0800
-#define HCI_ACL_PKT_TYPE_DM5 0x4000
-#define HCI_ACL_PKT_TYPE_DH5 0x8000
-
-/* Define key type in the Master Link Key command */
-#define HCI_USE_SEMI_PERMANENT_KEY 0x00
-#define HCI_USE_TEMPORARY_KEY 0x01
-
 /* Page scan period modes */
-#define HCI_PAGE_SCAN_REP_MODE_R0 0x00
 #define HCI_PAGE_SCAN_REP_MODE_R1 0x01
-#define HCI_PAGE_SCAN_REP_MODE_R2 0x02
-
-/* Define limits for page scan repetition modes */
-#define HCI_PAGE_SCAN_R1_LIMIT 0x0800
-#define HCI_PAGE_SCAN_R2_LIMIT 0x1000
-
-/* Page scan period modes */
-#define HCI_PAGE_SCAN_PER_MODE_P0 0x00
-#define HCI_PAGE_SCAN_PER_MODE_P1 0x01
-#define HCI_PAGE_SCAN_PER_MODE_P2 0x02
 
 /* Page scan modes */
 #define HCI_MANDATARY_PAGE_SCAN_MODE 0x00
-#define HCI_OPTIONAL_PAGE_SCAN_MODE1 0x01
-#define HCI_OPTIONAL_PAGE_SCAN_MODE2 0x02
-#define HCI_OPTIONAL_PAGE_SCAN_MODE3 0x03
 
 /* Page and inquiry scan types */
 #define HCI_SCAN_TYPE_STANDARD 0x00
-#define HCI_SCAN_TYPE_INTERLACED 0x01 /* 1.2 devices or later */
 #define HCI_DEF_SCAN_TYPE HCI_SCAN_TYPE_STANDARD
-
-/* Definitions for quality of service service types */
-#define HCI_SERVICE_NO_TRAFFIC 0x00
-#define HCI_SERVICE_BEST_EFFORT 0x01
-#define HCI_SERVICE_GUARANTEED 0x02
-
-#define HCI_QOS_LATENCY_DO_NOT_CARE 0xFFFFFFFF
-#define HCI_QOS_DELAY_DO_NOT_CARE 0xFFFFFFFF
-
-/* Definitions for Flow Specification */
-#define HCI_FLOW_SPEC_LATENCY_DO_NOT_CARE 0xFFFFFFFF
-
-/* Definitions for AFH Channel Map */
-#define HCI_AFH_CHANNEL_MAP_LEN 10
 
 /* Definitions for Extended Inquiry Response */
 #define HCI_EXT_INQ_RESPONSE_LEN 240
@@ -948,28 +754,10 @@ inline std::string RoleText(hci_role_t role) {
 #define HCI_EIR_OOB_SSP_RAND_R_TYPE BT_EIR_OOB_SSP_RAND_R_TYPE
 
 /* Definitions for Write Simple Pairing Mode */
-#define HCI_SP_MODE_UNDEFINED 0x00
 #define HCI_SP_MODE_ENABLED 0x01
 
-/* Definitions for Write Simple Pairing Debug Mode */
-#define HCI_SPD_MODE_DISABLED 0x00
-#define HCI_SPD_MODE_ENABLED 0x01
-
 /* Definitions for Write Secure Connections Host Support */
-#define HCI_SC_MODE_DISABLED 0x00
 #define HCI_SC_MODE_ENABLED 0x01
-
-/* Definitions for IO Capability Response/Command */
-#define HCI_IO_CAP_DISPLAY_ONLY 0x00
-#define HCI_IO_CAP_DISPLAY_YESNO 0x01
-#define HCI_IO_CAP_KEYBOARD_ONLY 0x02
-#define HCI_IO_CAP_NO_IO 0x03
-
-#define HCI_OOB_AUTH_DATA_NOT_PRESENT 0x00
-#define HCI_OOB_REM_AUTH_DATA_PRESENT 0x01
-
-#define HCI_MITM_PROTECT_NOT_REQUIRED 0x00
-#define HCI_MITM_PROTECT_REQUIRED 0x01
 
 /* Policy settings status */
 #define HCI_DISABLE_ALL_LM_MODES 0x0000
@@ -978,90 +766,50 @@ inline std::string RoleText(hci_role_t role) {
 #define HCI_ENABLE_SNIFF_MODE 0x0004
 #define HCI_ENABLE_PARK_MODE 0x0008
 
-/* By default allow switch, because host can not allow that */
-/* that until it created the connection */
-#define HCI_DEFAULT_POLICY_SETTINGS HCI_DISABLE_ALL_LM_MODES
-
 /* Filters that are sent in set filter command */
-#define HCI_FILTER_TYPE_CLEAR_ALL 0x00
-#define HCI_FILTER_INQUIRY_RESULT 0x01
 #define HCI_FILTER_CONNECTION_SETUP 0x02
 
 #define HCI_FILTER_COND_NEW_DEVICE 0x00
 #define HCI_FILTER_COND_DEVICE_CLASS 0x01
 #define HCI_FILTER_COND_BD_ADDR 0x02
 
-#define HCI_DO_NOT_AUTO_ACCEPT_CONNECT 1
 /* role switch disabled */
 #define HCI_DO_AUTO_ACCEPT_CONNECT 2
-/* role switch enabled (1.1 errata 1115) */
-#define HCI_DO_AUTO_ACCEPT_CONNECT_RS 3
 
 /* PIN type */
-#define HCI_PIN_TYPE_VARIABLE 0
 #define HCI_PIN_TYPE_FIXED 1
 
-/* Loopback Modes */
-#define HCI_LOOPBACK_MODE_DISABLED 0
-#define HCI_LOOPBACK_MODE_LOCAL 1
-#define HCI_LOOPBACK_MODE_REMOTE 2
-
-#define SLOTS_PER_10MS 16 /* 0.625 ms slots in a 10 ms tick */
-
-/* Maximum connection accept timeout in 0.625msec */
-#define HCI_MAX_CONN_ACCEPT_TOUT 0xB540 /* 29 sec */
-#define HCI_DEF_CONN_ACCEPT_TOUT 0x1F40 /* 5 sec */
-
-/* Page timeout is used in LC only and LC is counting down slots not using OS */
-#define HCI_DEFAULT_PAGE_TOUT 0x2000 /* 5.12 sec (in slots) */
-
 /* Scan enable flags */
-#define HCI_NO_SCAN_ENABLED 0x00
 #define HCI_INQUIRY_SCAN_ENABLED 0x01
 #define HCI_PAGE_SCAN_ENABLED 0x02
 
 /* Pagescan timer definitions in 0.625 ms */
-#define HCI_MIN_PAGESCAN_INTERVAL 0x12   /* 11.25 ms */
-#define HCI_MAX_PAGESCAN_INTERVAL 0x1000 /* 2.56 sec */
 #define HCI_DEF_PAGESCAN_INTERVAL 0x0800 /* 1.28 sec */
 
 /* Parameter for pagescan window is passed to LC and is kept in slots */
-#define HCI_MIN_PAGESCAN_WINDOW 0x11   /* 10.625 ms */
-#define HCI_MAX_PAGESCAN_WINDOW 0x1000 /* 2.56  sec */
 #define HCI_DEF_PAGESCAN_WINDOW 0x12   /* 11.25 ms  */
 
 /* Inquiryscan timer definitions in 0.625 ms */
-#define HCI_MIN_INQUIRYSCAN_INTERVAL 0x12   /* 11.25 ms */
-#define HCI_MAX_INQUIRYSCAN_INTERVAL 0x1000 /* 2.56 sec */
 #define HCI_DEF_INQUIRYSCAN_INTERVAL 0x1000 /* 2.56 sec */
 
 /* Parameter for inquiryscan window is passed to LC and is kept in slots */
-#define HCI_MIN_INQUIRYSCAN_WINDOW 0x11   /* 10.625 ms */
-#define HCI_MAX_INQUIRYSCAN_WINDOW 0x1000 /* 2.56 sec */
 #define HCI_DEF_INQUIRYSCAN_WINDOW 0x12   /* 11.25 ms */
 
 /* Encryption modes */
 #define HCI_ENCRYPT_MODE_DISABLED 0x00
-#define HCI_ENCRYPT_MODE_POINT_TO_POINT 0x01
-#define HCI_ENCRYPT_MODE_ALL 0x02
 
 /* Voice settings */
 #define HCI_INP_CODING_LINEAR 0x0000 /* 0000000000 */
 #define HCI_INP_CODING_U_LAW 0x0100  /* 0100000000 */
 #define HCI_INP_CODING_A_LAW 0x0200  /* 1000000000 */
-#define HCI_INP_CODING_MASK 0x0300   /* 1100000000 */
 
-#define HCI_INP_DATA_FMT_1S_COMPLEMENT 0x0000  /* 0000000000 */
 #define HCI_INP_DATA_FMT_2S_COMPLEMENT 0x0040  /* 0001000000 */
 #define HCI_INP_DATA_FMT_SIGN_MAGNITUDE 0x0080 /* 0010000000 */
 #define HCI_INP_DATA_FMT_UNSIGNED 0x00c0       /* 0011000000 */
-#define HCI_INP_DATA_FMT_MASK 0x00c0           /* 0011000000 */
 
 #define HCI_INP_SAMPLE_SIZE_8BIT 0x0000  /* 0000000000 */
 #define HCI_INP_SAMPLE_SIZE_16BIT 0x0020 /* 0000100000 */
-#define HCI_INP_SAMPLE_SIZE_MASK 0x0020  /* 0000100000 */
 
-#define HCI_INP_LINEAR_PCM_BIT_POS_MASK 0x001c /* 0000011100 */
 #define HCI_INP_LINEAR_PCM_BIT_POS_OFFS 2
 
 #define HCI_AIR_CODING_FORMAT_CVSD 0x0000     /* 0000000000 */
@@ -1075,40 +823,14 @@ inline std::string RoleText(hci_role_t role) {
   (HCI_INP_CODING_LINEAR | HCI_INP_DATA_FMT_2S_COMPLEMENT | \
    HCI_INP_SAMPLE_SIZE_16BIT | HCI_AIR_CODING_FORMAT_CVSD)
 
-#define HCI_CVSD_SUPPORTED(x) \
-  (((x)&HCI_AIR_CODING_FORMAT_MASK) == HCI_AIR_CODING_FORMAT_CVSD)
-#define HCI_U_LAW_SUPPORTED(x) \
-  (((x)&HCI_AIR_CODING_FORMAT_MASK) == HCI_AIR_CODING_FORMAT_U_LAW)
-#define HCI_A_LAW_SUPPORTED(x) \
-  (((x)&HCI_AIR_CODING_FORMAT_MASK) == HCI_AIR_CODING_FORMAT_A_LAW)
-#define HCI_TRANSPNT_SUPPORTED(x) \
-  (((x)&HCI_AIR_CODING_FORMAT_MASK) == HCI_AIR_CODING_FORMAT_TRANSPNT)
-
 /* Retransmit timer definitions in 0.625 */
 #define HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT 0x07FF
-#define HCI_DEFAULT_AUTOMATIC_FLUSH_TIMEOUT 0 /* No auto flush */
-
-/* Broadcast retransmitions */
-#define HCI_DEFAULT_NUM_BCAST_RETRAN 1
-
-/* Define broadcast data types as passed in the hci data packet */
-#define HCI_DATA_POINT_TO_POINT 0x00
-#define HCI_DATA_ACTIVE_BCAST 0x01
-#define HCI_DATA_PICONET_BCAST 0x02
-
-/* Hold mode activity */
-#define HCI_MAINTAIN_CUR_POWER_STATE 0x00
-#define HCI_SUSPEND_PAGE_SCAN 0x01
-#define HCI_SUSPEND_INQUIRY_SCAN 0x02
-#define HCI_SUSPEND_PERIODIC_INQUIRIES 0x04
 
 /* Default Link Supervision timeoout */
 #define HCI_DEFAULT_INACT_TOUT 0x7D00     /* BR/EDR (20 seconds) */
-#define HCI_DEFAULT_AMP_INACT_TOUT 0x3E80 /* AMP    (10 seconds) */
 
 /* Read transmit power level parameter */
 #define HCI_READ_CURRENT 0x00
-#define HCI_READ_MAXIMUM 0x01
 
 /* Link types for connection complete event */
 #define HCI_LINK_TYPE_SCO 0x00
@@ -1117,7 +839,6 @@ inline std::string RoleText(hci_role_t role) {
 
 /* Link Key Notification Event (Key Type) definitions */
 #define HCI_LKEY_TYPE_COMBINATION 0x00
-#define HCI_LKEY_TYPE_LOCAL_UNIT 0x01
 #define HCI_LKEY_TYPE_REMOTE_UNIT 0x02
 #define HCI_LKEY_TYPE_DEBUG_COMB 0x03
 #define HCI_LKEY_TYPE_UNAUTH_COMB 0x04
@@ -1126,15 +847,8 @@ inline std::string RoleText(hci_role_t role) {
 #define HCI_LKEY_TYPE_UNAUTH_COMB_P_256 0x07
 #define HCI_LKEY_TYPE_AUTH_COMB_P_256 0x08
 
-/* Read Local Version HCI Version return values (Command Complete Event) */
-#define HCI_VERSION_1_0B 0x00
-#define HCI_VERSION_1_1 0x01
-
 /* Define an invalid value for a handle */
 #define HCI_INVALID_HANDLE 0xFFFF
-
-/* Define max ammount of data in the HCI command */
-#define HCI_COMMAND_SIZE 255
 
 /* Define the preamble length for all HCI Commands.
  * This is 2-bytes for opcode and 1 byte for length
@@ -1151,34 +865,6 @@ inline std::string RoleText(hci_role_t role) {
 /* local Bluetooth controller id for AMP HCI */
 #define LOCAL_BR_EDR_CONTROLLER_ID 0
 
-/* controller id types for AMP HCI */
-#define HCI_CONTROLLER_TYPE_BR_EDR 0
-#define HCI_CONTROLLER_TYPE_802_11 1
-#define HCI_CONTROLLER_TYPE_ECMA 2
-#define HCI_MAX_CONTROLLER_TYPES 3
-
-/*  ConnectionLess Broadcast */
-#define HCI_CLB_DISABLE 0x00
-#define HCI_CLB_ENABLE 0x01
-
-/* ConnectionLess Broadcast Data fragment */
-#define HCI_CLB_FRAGMENT_CONT 0x00
-#define HCI_CLB_FRAGMENT_START 0x01
-#define HCI_CLB_FRAGMENT_END 0x02
-#define HCI_CLB_FRAGMENT_SINGLE 0x03
-
-/* AMP Controller Status codes
-*/
-#define HCI_AMP_CTRLR_PHYSICALLY_DOWN 0
-#define HCI_AMP_CTRLR_USABLE_BY_BT 1
-#define HCI_AMP_CTRLR_UNUSABLE_FOR_BT 2
-#define HCI_AMP_CTRLR_LOW_CAP_FOR_BT 3
-#define HCI_AMP_CTRLR_MED_CAP_FOR_BT 4
-#define HCI_AMP_CTRLR_HIGH_CAP_FOR_BT 5
-#define HCI_AMP_CTRLR_FULL_CAP_FOR_BT 6
-
-#define HCI_MAX_AMP_STATUS_TYPES 7
-
 /* Define the extended flow specification fields used by AMP */
 typedef struct {
   uint8_t id;
@@ -1189,76 +875,16 @@ typedef struct {
   uint32_t flush_timeout;
 } tHCI_EXT_FLOW_SPEC;
 
-/* HCI message type definitions (for H4 messages) */
-#define HCIT_TYPE_COMMAND 1
-#define HCIT_TYPE_ACL_DATA 2
-#define HCIT_TYPE_SCO_DATA 3
-#define HCIT_TYPE_EVENT 4
-#define HCIT_TYPE_LM_DIAG 7
-#define HCIT_TYPE_NFC 16
-
-#define HCIT_LM_DIAG_LENGTH 63
-
 /* Parameter information for HCI_BRCM_SET_ACL_PRIORITY */
 #define HCI_BRCM_ACL_PRIORITY_PARAM_SIZE 3
 #define HCI_BRCM_ACL_PRIORITY_LOW 0x00
 #define HCI_BRCM_ACL_PRIORITY_HIGH 0xFF
 #define HCI_BRCM_SET_ACL_PRIORITY (0x0057 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Define values for LMP Test Control parameters
- * Test Scenario, Hopping Mode, Power Control Mode
-*/
-#define LMP_TESTCTL_TESTSC_PAUSE 0
-#define LMP_TESTCTL_TESTSC_TXTEST_0 1
-#define LMP_TESTCTL_TESTSC_TXTEST_1 2
-#define LMP_TESTCTL_TESTSC_TXTEST_1010 3
-#define LMP_TESTCTL_TESTSC_PSRND_BITSEQ 4
-#define LMP_TESTCTL_TESTSC_CLOSEDLB_ACL 5
-#define LMP_TESTCTL_TESTSC_CLOSEDLB_SCO 6
-#define LMP_TESTCTL_TESTSC_ACL_NOWHIT 7
-#define LMP_TESTCTL_TESTSC_SCO_NOWHIT 8
-#define LMP_TESTCTL_TESTSC_TXTEST_11110000 9
-#define LMP_TESTCTL_TESTSC_EXITTESTMODE 255
-
-#define LMP_TESTCTL_HOPMOD_RXTX1FREQ 0
-#define LMP_TESTCTL_HOPMOD_HOP_EURUSA 1
-#define LMP_TESTCTL_HOPMOD_HOP_JAPAN 2
-#define LMP_TESTCTL_HOPMOD_HOP_FRANCE 3
-#define LMP_TESTCTL_HOPMOD_HOP_SPAIN 4
-#define LMP_TESTCTL_HOPMOD_REDUCED_HOP 5
-
-#define LMP_TESTCTL_POWCTL_FIXEDTX_OP 0
-#define LMP_TESTCTL_POWCTL_ADAPTIVE 1
-
 #define LMP_COMPID_GOOGLE 0xE0
 
 // TODO(zachoverflow): remove this once broadcom specific hacks are removed
 #define LMP_COMPID_BROADCOM 15
-
-/*
- * Define the packet types in the packet header, and a couple extra
-*/
-#define PKT_TYPE_NULL 0x00
-#define PKT_TYPE_POLL 0x01
-#define PKT_TYPE_FHS 0x02
-#define PKT_TYPE_DM1 0x03
-
-#define PKT_TYPE_DH1 0x04
-#define PKT_TYPE_HV1 0x05
-#define PKT_TYPE_HV2 0x06
-#define PKT_TYPE_HV3 0x07
-#define PKT_TYPE_DV 0x08
-#define PKT_TYPE_AUX1 0x09
-
-#define PKT_TYPE_DM3 0x0a
-#define PKT_TYPE_DH3 0x0b
-
-#define PKT_TYPE_DM5 0x0e
-#define PKT_TYPE_DH5 0x0f
-
-#define PKT_TYPE_ID 0x10 /* Internally used packet types */
-#define PKT_TYPE_BAD 0x11
-#define PKT_TYPE_NONE 0x12
 
 /*
  * Define packet size
@@ -1287,9 +913,6 @@ typedef struct {
 #define HCI_FEATURE_BYTES_PER_PAGE 8
 
 #define HCI_EXT_FEATURES_SUCCESS_EVT_LEN 13
-
-#define HCI_FEATURES_KNOWN(x) \
-  (((x)[0] | (x)[1] | (x)[2] | (x)[3] | (x)[4] | (x)[5] | (x)[6] | (x)[7]) != 0)
 
 /* LMP features encoding - page 0 */
 #define HCI_3_SLOT_PACKETS_SUPPORTED(x) ((x)[0] & 0x01)
