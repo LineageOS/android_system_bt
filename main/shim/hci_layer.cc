@@ -232,6 +232,16 @@ static bool event_already_registered_in_hci_layer(
   }
 }
 
+static bool event_already_registered_in_controller_layer(
+    bluetooth::hci::EventCode event_code) {
+  switch (event_code) {
+    case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_PACKETS:
+      return bluetooth::shim::is_gd_controller_enabled();
+    default:
+      return false;
+  }
+}
+
 static bool event_already_registered_in_acl_layer(
     bluetooth::hci::EventCode event_code) {
   for (auto event : bluetooth::hci::AclConnectionEvents) {
@@ -532,6 +542,8 @@ void bluetooth::shim::hci_on_reset_complete() {
     }
     auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
     if (event_already_registered_in_acl_layer(event_code)) {
+      continue;
+    } else if (event_already_registered_in_controller_layer(event_code)) {
       continue;
     } else if (event_already_registered_in_hci_layer(event_code)) {
       continue;
