@@ -3206,8 +3206,8 @@ static void bta_dm_observe_cmpl_cb(void* p_result) {
 
 static void ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap,
                        tBTM_OOB_DATA* p_oob_data, tBTM_LE_AUTH_REQ* p_auth_req,
-                       uint8_t* p_max_key_size, tBTA_LE_KEY_TYPE* p_init_key,
-                       tBTA_LE_KEY_TYPE* p_resp_key) {
+                       uint8_t* p_max_key_size, tBTM_LE_KEY_TYPE* p_init_key,
+                       tBTM_LE_KEY_TYPE* p_resp_key) {
   bte_appl_cfg.ble_io_cap = btif_storage_get_local_io_caps_ble();
 
   /* Retrieve the properties from file system if possible */
@@ -3433,7 +3433,7 @@ static void bta_dm_ble_id_key_cback(uint8_t key_type,
  *
  ******************************************************************************/
 void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
-                       tBTA_LE_KEY_TYPE key_type) {
+                       tBTM_LE_KEY_TYPE key_type) {
   if (!BTM_SecAddBleKey(bd_addr, (tBTM_LE_KEY_VALUE*)&blekey, key_type)) {
     LOG(ERROR) << "BTA_DM: Error adding BLE Key for device " << bd_addr;
   }
