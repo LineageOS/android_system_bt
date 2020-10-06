@@ -154,8 +154,8 @@ static void gatt_update_last_srv_info() {
  *                  on error error status is returned.
  *
  ******************************************************************************/
-uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
-                          int count) {
+tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
+                              int count) {
   uint16_t s_hdl = 0;
   bool save_hdl = false;
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
@@ -542,7 +542,8 @@ tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
 
   VLOG(1) << __func__ << ": conn_id=" << loghex(conn_id)
-          << ", trans_id=" << loghex(trans_id) << ", status=" << loghex(status);
+          << ", trans_id=" << loghex(trans_id)
+          << ", status=" << loghex(static_cast<uint8_t>(status));
 
   if ((p_reg == NULL) || (p_tcb == NULL)) {
     LOG(ERROR) << "Unknown  conn_id=" << loghex(conn_id);

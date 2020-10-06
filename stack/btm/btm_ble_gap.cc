@@ -1909,7 +1909,8 @@ void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* data) {
   STREAM_TO_UINT8(tx_phy, p);
   STREAM_TO_UINT8(rx_phy, p);
 
-  gatt_notify_phy_updated(status, handle, tx_phy, rx_phy);
+  gatt_notify_phy_updated(static_cast<tGATT_STATUS>(status), handle, tx_phy,
+                          rx_phy);
 }
 
 /*******************************************************************************
