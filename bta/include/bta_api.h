@@ -969,7 +969,7 @@ extern void BTA_DmAddBleDevice(const RawAddress& bd_addr,
  ******************************************************************************/
 extern void BTA_DmAddBleKey(const RawAddress& bd_addr,
                             tBTA_LE_KEY_VALUE* p_le_key,
-                            tBTA_LE_KEY_TYPE key_type);
+                            tBTM_LE_KEY_TYPE key_type);
 
 /*******************************************************************************
  *
