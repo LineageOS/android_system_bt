@@ -217,9 +217,9 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
   p_feeding_params->bits_per_sample =
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count = A2DP_GetTrackChannelCountSbc(p_codec_info);
-  LOG_DEBUG("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
-            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
-            p_feeding_params->channel_count);
+  LOG_INFO("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
+           p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+           p_feeding_params->channel_count);
   a2dp_sbc_feeding_reset();
 
   // The codec parameters
@@ -270,10 +270,9 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
   // Set the initial target bit rate
   p_encoder_params->u16BitRate = a2dp_sbc_source_rate();
 
-  LOG_DEBUG("%s: MTU=%d, peer_mtu=%d min_bitpool=%d max_bitpool=%d", __func__,
-            a2dp_sbc_encoder_cb.TxAaMtuSize, peer_mtu, min_bitpool,
-            max_bitpool);
-  LOG_DEBUG(
+  LOG_INFO("%s: MTU=%d, peer_mtu=%d min_bitpool=%d max_bitpool=%d", __func__,
+           a2dp_sbc_encoder_cb.TxAaMtuSize, peer_mtu, min_bitpool, max_bitpool);
+  LOG_INFO(
       "%s: ChannelMode=%d, NumOfSubBands=%d, NumOfBlocks=%d, "
       "AllocationMethod=%d, BitRate=%d, SamplingFreq=%d BitPool=%d",
       __func__, p_encoder_params->s16ChannelMode,
@@ -329,11 +328,11 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
 
     if (s16BitPool < 0) s16BitPool = 0;
 
-    LOG_DEBUG("%s: bitpool candidate: %d (%d kbps)", __func__, s16BitPool,
-              p_encoder_params->u16BitRate);
+    LOG_INFO("%s: bitpool candidate: %d (%d kbps)", __func__, s16BitPool,
+             p_encoder_params->u16BitRate);
 
     if (s16BitPool > max_bitpool) {
-      LOG_DEBUG("%s: computed bitpool too large (%d)", __func__, s16BitPool);
+      LOG_INFO("%s: computed bitpool too large (%d)", __func__, s16BitPool);
       /* Decrease bitrate */
       p_encoder_params->u16BitRate -= A2DP_SBC_BITRATE_STEP;
       /* Record that we have decreased the bitrate */
@@ -361,8 +360,8 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
   /* Finally update the bitpool in the encoder structure */
   p_encoder_params->s16BitPool = s16BitPool;
 
-  LOG_DEBUG("%s: final bit rate %d, final bit pool %d", __func__,
-            p_encoder_params->u16BitRate, p_encoder_params->s16BitPool);
+  LOG_INFO("%s: final bit rate %d, final bit pool %d", __func__,
+           p_encoder_params->u16BitRate, p_encoder_params->s16BitPool);
 
   /* Reset the SBC encoder */
   SBC_Encoder_Init(&a2dp_sbc_encoder_cb.sbc_encoder_params);
@@ -385,8 +384,8 @@ void a2dp_sbc_feeding_reset(void) {
        A2DP_SBC_ENCODER_INTERVAL_MS) /
       1000;
 
-  LOG_DEBUG("%s: PCM bytes per tick %u", __func__,
-            a2dp_sbc_encoder_cb.feeding_state.bytes_per_tick);
+  LOG_INFO("%s: PCM bytes per tick %u", __func__,
+           a2dp_sbc_encoder_cb.feeding_state.bytes_per_tick);
 }
 
 void a2dp_sbc_feeding_flush(void) {
@@ -902,7 +901,7 @@ static uint32_t a2dp_sbc_frame_length(void) {
 
 uint32_t a2dp_sbc_get_bitrate() {
   SBC_ENC_PARAMS* p_encoder_params = &a2dp_sbc_encoder_cb.sbc_encoder_params;
-  LOG_DEBUG("%s: bit rate %d ", __func__, p_encoder_params->u16BitRate);
+  LOG_INFO("%s: bit rate %d ", __func__, p_encoder_params->u16BitRate);
   return p_encoder_params->u16BitRate * 1000;
 }
 

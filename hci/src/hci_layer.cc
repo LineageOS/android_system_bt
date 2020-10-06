@@ -252,7 +252,7 @@ static future_t* hci_module_start_up(void) {
 
   hci_thread.DoInThread(FROM_HERE, base::Bind(&hci_initialize));
 
-  LOG_DEBUG("%s starting async portion", __func__);
+  LOG_INFO("%s starting async portion", __func__);
   return local_startup_future;
 
 error:

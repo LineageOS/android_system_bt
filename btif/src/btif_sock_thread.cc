@@ -521,7 +521,7 @@ static void* sock_poll_thread(void* arg) {
       }
       if (need_process_data_fd) process_data_sock(h, pfds, ret);
     } else {
-      LOG_DEBUG("no data, select ret: %d", ret);
+      LOG_INFO("no data, select ret: %d", ret);
     };
   }
   LOG_INFO("socket poll thread exiting, h:%d", h);

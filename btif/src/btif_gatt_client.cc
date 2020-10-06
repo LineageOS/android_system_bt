@@ -155,7 +155,7 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_ACL_EVT:
-      LOG_DEBUG("BTA_GATTC_ACL_EVT: status = %d", p_data->status);
+      LOG_INFO("BTA_GATTC_ACL_EVT: status = %d", p_data->status);
       /* Ignore for now */
       break;
 

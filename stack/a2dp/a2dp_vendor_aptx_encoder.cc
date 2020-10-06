@@ -259,9 +259,9 @@ static void a2dp_vendor_aptx_encoder_update(uint16_t peer_mtu,
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count =
       A2DP_VendorGetTrackChannelCountAptx(p_codec_info);
-  LOG_DEBUG("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
-            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
-            p_feeding_params->channel_count);
+  LOG_INFO("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
+           p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+           p_feeding_params->channel_count);
   a2dp_vendor_aptx_feeding_reset();
 }
 
@@ -296,8 +296,8 @@ static void aptx_init_framing_params(tAPTX_FRAMING_PARAMS* framing_params) {
     }
   }
 
-  LOG_DEBUG("%s: sleep_time_ns = %" PRIu64, __func__,
-            framing_params->sleep_time_ns);
+  LOG_INFO("%s: sleep_time_ns = %" PRIu64, __func__,
+           framing_params->sleep_time_ns);
 }
 
 //

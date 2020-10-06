@@ -277,9 +277,8 @@ static void btif_a2dp_audio_interface_init() {
     LOG_ERROR("%s: Cannot observe the Bluetooth Audio HAL's death", __func__);
   }
 
-  LOG_DEBUG("%s: IBluetoothAudioOffload::getService() returned %p (%s)",
-            __func__, btAudio.get(),
-            (btAudio->isRemote() ? "remote" : "local"));
+  LOG_INFO("%s: IBluetoothAudioOffload::getService() returned %p (%s)",
+           __func__, btAudio.get(), (btAudio->isRemote() ? "remote" : "local"));
 
   LOG_INFO("%s:Init returned", __func__);
 }

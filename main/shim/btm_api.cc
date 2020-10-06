@@ -542,8 +542,8 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   if (!Stack::GetInstance()->GetBtm()->StartInquiry(
           classic_mode, inqparms.duration, 0,
           [](uint16_t status, uint8_t inquiry_mode) {
-            LOG_DEBUG("%s Inquiry is complete status:%hd inquiry_mode:%hhd",
-                      __func__, status, inquiry_mode);
+            LOG_INFO("%s Inquiry is complete status:%hd inquiry_mode:%hhd",
+                     __func__, status, inquiry_mode);
             btm_cb.btm_inq_vars.inqparms.mode &= ~(inquiry_mode);
 
             btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
@@ -568,8 +568,8 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
               btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
 
               if (btm_cb.btm_inq_vars.p_inq_cmpl_cb != nullptr) {
-                LOG_DEBUG("%s Sending inquiry completion to upper layer",
-                          __func__);
+                LOG_INFO("%s Sending inquiry completion to upper layer",
+                         __func__);
                 (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
                     (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
                 btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
@@ -657,7 +657,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
     if (duration_sec != 0) {
       Stack::GetInstance()->GetBtm()->SetObservingTimer(
           duration_sec * 1000, common::BindOnce([]() {
-            LOG_DEBUG("%s observing timeout popped", __func__);
+            LOG_INFO("%s observing timeout popped", __func__);
 
             Stack::GetInstance()->GetBtm()->CancelObservingTimer();
             Stack::GetInstance()->GetBtm()->StopObserving();
@@ -777,7 +777,7 @@ uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
 }
 
 void bluetooth::shim::BTM_CancelInquiry(void) {
-  LOG_DEBUG("%s Cancel inquiry", __func__);
+  LOG_INFO("%s Cancel inquiry", __func__);
   Stack::GetInstance()->GetBtm()->CancelInquiry();
 
   btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
@@ -807,8 +807,7 @@ void bluetooth::shim::BTM_CancelInquiry(void) {
     btm_cb.btm_inq_vars.inq_counter++;
 
     if (btm_cb.btm_inq_vars.p_inq_cmpl_cb != nullptr) {
-      LOG_DEBUG("%s Sending cancel inquiry completion to upper layer",
-                __func__);
+      LOG_INFO("%s Sending cancel inquiry completion to upper layer", __func__);
       (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
           (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
       btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
@@ -1197,7 +1196,7 @@ tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
 
 bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* bta_callbacks) {
   CHECK(bta_callbacks != nullptr);
-  LOG_DEBUG("%s Registering security application", __func__);
+  LOG_INFO("%s Registering security application", __func__);
 
   if (bta_callbacks->p_pin_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s pin_callback", __func__);
