@@ -127,7 +127,7 @@ LeAddressManager::AddressPolicy LeAddressManager::Register(LeAddressManagerCallb
 void LeAddressManager::register_client(LeAddressManagerCallback* callback) {
   registered_clients_.insert(std::pair<LeAddressManagerCallback*, ClientState>(callback, ClientState::RESUMED));
   if (address_policy_ == AddressPolicy::POLICY_NOT_SET) {
-    LOG_DEBUG("address policy isn't set yet, pause clients and return");
+    LOG_INFO("address policy isn't set yet, pause clients and return");
     pause_registered_clients();
     return;
   } else if (
@@ -311,7 +311,7 @@ void LeAddressManager::handle_next_command() {
   for (auto client : registered_clients_) {
     if (client.second != ClientState::PAUSED) {
       // make sure all client paused, if not, this function will be trigger again by ack_pause
-      LOG_DEBUG("waiting for ack_pause, return");
+      LOG_INFO("waiting for ack_pause, return");
       return;
     }
   }
@@ -384,12 +384,12 @@ void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView vie
     return;
   }
   std::string op_code = OpCodeText(view.GetCommandOpCode());
-  LOG_DEBUG("Received command complete with op_code %s", op_code.c_str());
+  LOG_INFO("Received command complete with op_code %s", op_code.c_str());
 
   // The command was sent before any client registered, we can make sure all the clients paused when command complete.
   if (view.GetCommandOpCode() == OpCode::LE_SET_RANDOM_ADDRESS &&
       address_policy_ == AddressPolicy::USE_STATIC_ADDRESS) {
-    LOG_DEBUG("Received LE_SET_RANDOM_ADDRESS complete and Address policy is USE_STATIC_ADDRESS, return");
+    LOG_INFO("Received LE_SET_RANDOM_ADDRESS complete and Address policy is USE_STATIC_ADDRESS, return");
     return;
   }
 

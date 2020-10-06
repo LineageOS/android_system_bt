@@ -182,7 +182,7 @@ static void remove_all_clients_with_pending_connections(
 }
 
 void on_connection_complete(const RawAddress& address) {
-  LOG_DEBUG("Le connection completed to device:%s", address.ToString().c_str());
+  LOG_INFO("Le connection completed to device:%s", address.ToString().c_str());
 
   remove_all_clients_with_pending_connections(address);
 }

@@ -357,8 +357,8 @@ static void set_data_cb(
 void OnTransmitPacketCommandComplete(command_complete_cb complete_callback,
                                      void* context,
                                      bluetooth::hci::CommandCompleteView view) {
-  LOG_DEBUG("Received cmd complete for %s",
-            bluetooth::hci::OpCodeText(view.GetCommandOpCode()).c_str());
+  LOG_INFO("Received cmd complete for %s",
+           bluetooth::hci::OpCodeText(view.GetCommandOpCode()).c_str());
   std::vector<const uint8_t> data(view.begin(), view.end());
   BT_HDR* response = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &view);
   complete_callback(response, context);
@@ -385,9 +385,9 @@ class OsiObject {
 void OnTransmitPacketStatus(command_status_cb status_callback, void* context,
                             std::unique_ptr<OsiObject> command,
                             bluetooth::hci::CommandStatusView view) {
-  LOG_DEBUG("Received cmd status %s for %s",
-            bluetooth::hci::ErrorCodeText(view.GetStatus()).c_str(),
-            bluetooth::hci::OpCodeText(view.GetCommandOpCode()).c_str());
+  LOG_INFO("Received cmd status %s for %s",
+           bluetooth::hci::ErrorCodeText(view.GetStatus()).c_str(),
+           bluetooth::hci::OpCodeText(view.GetCommandOpCode()).c_str());
   uint8_t status = static_cast<uint8_t>(view.GetStatus());
   status_callback(status, static_cast<BT_HDR*>(command->Release()), context);
 }

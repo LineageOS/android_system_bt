@@ -218,9 +218,9 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   p_feeding_params->bits_per_sample =
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count = A2DP_GetTrackChannelCountAac(p_codec_info);
-  LOG_DEBUG("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
-            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
-            p_feeding_params->channel_count);
+  LOG_INFO("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
+           p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+           p_feeding_params->channel_count);
 
   // The codec parameters
   p_encoder_params->sample_rate =
@@ -249,10 +249,10 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
     a2dp_aac_encoder_cb.TxAaMtuSize = peer_mtu;
   }
 
-  LOG_DEBUG("%s: MTU=%d, peer_mtu=%d", __func__,
-            a2dp_aac_encoder_cb.TxAaMtuSize, peer_mtu);
-  LOG_DEBUG("%s: sample_rate: %d channel_mode: %d ", __func__,
-            p_encoder_params->sample_rate, p_encoder_params->channel_mode);
+  LOG_INFO("%s: MTU=%d, peer_mtu=%d", __func__, a2dp_aac_encoder_cb.TxAaMtuSize,
+           peer_mtu);
+  LOG_INFO("%s: sample_rate: %d channel_mode: %d ", __func__,
+           p_encoder_params->sample_rate, p_encoder_params->channel_mode);
 
   // Set the encoder's parameters: Audio Object Type - MANDATORY
   // A2DP_AAC_OBJECT_TYPE_MPEG2_LC -> AOT_AAC_LC
@@ -334,9 +334,8 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_peak_bit_rate =
       A2DP_ComputeMaxBitRateAac(p_codec_info, a2dp_aac_encoder_cb.TxAaMtuSize);
   aac_param_value = std::min(aac_param_value, aac_peak_bit_rate);
-  LOG_DEBUG("%s: MTU = %d Sampling Frequency = %d Bit Rate = %d", __func__,
-            a2dp_aac_encoder_cb.TxAaMtuSize, aac_sampling_freq,
-            aac_param_value);
+  LOG_INFO("%s: MTU = %d Sampling Frequency = %d Bit Rate = %d", __func__,
+           a2dp_aac_encoder_cb.TxAaMtuSize, aac_sampling_freq, aac_param_value);
   if (aac_param_value == -1) {
     LOG_ERROR(
         "%s: Cannot set AAC parameter AACENC_BITRATE: "
@@ -466,7 +465,7 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   p_encoder_params->frame_length = aac_info.frameLength;
   p_encoder_params->input_channels_n = aac_info.inputChannels;
   p_encoder_params->max_encoded_buffer_bytes = aac_info.maxOutBufBytes;
-  LOG_DEBUG(
+  LOG_INFO(
       "%s: AAC frame_length = %u input_channels_n = %u "
       "max_encoded_buffer_bytes = %d",
       __func__, p_encoder_params->frame_length,

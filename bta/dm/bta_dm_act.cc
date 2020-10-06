@@ -2720,7 +2720,7 @@ static void bta_dm_set_eir(char* local_name) {
 
   memset(p, 0x00, HCI_EXT_INQ_RESPONSE_LEN);
 
-  LOG_DEBUG("Generating extended inquiry response packet EIR");
+  LOG_INFO("Generating extended inquiry response packet EIR");
 
   if (local_name)
     local_name_len = strlen(local_name);
@@ -3021,12 +3021,11 @@ void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding) {
   if (!BTM_HasEirService(p_bta_dm_eir_cfg->uuid_mask, uuid16)) return;
 
   if (adding) {
-    LOG_DEBUG("EIR Adding UUID=0x%04X into extended inquiry response", uuid16);
+    LOG_INFO("EIR Adding UUID=0x%04X into extended inquiry response", uuid16);
 
     BTM_AddEirService(bta_dm_cb.eir_uuid, uuid16);
   } else {
-    LOG_DEBUG("EIR Removing UUID=0x%04X from extended inquiry response",
-              uuid16);
+    LOG_INFO("EIR Removing UUID=0x%04X from extended inquiry response", uuid16);
 
     BTM_RemoveEirService(bta_dm_cb.eir_uuid, uuid16);
   }
