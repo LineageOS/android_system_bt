@@ -203,22 +203,20 @@ void BTM_acl_after_controller_started() {
  *                 (BR/EDR or LE)
  *
  * Returns         Returns pointer to the ACL DB for the requested BDA if found.
- *                 NULL if not found.
+ *                 nullptr if not found.
  *
  ******************************************************************************/
 tACL_CONN* StackAclBtmAcl::btm_bda_to_acl(const RawAddress& bda,
                                           tBT_TRANSPORT transport) {
-  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
-  uint16_t xx;
-  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if ((p->in_use) && p->remote_addr == bda && p->transport == transport) {
+  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
+  for (uint8_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl++) {
+    if ((p_acl->in_use) && p_acl->remote_addr == bda &&
+        p_acl->transport == transport) {
       BTM_TRACE_DEBUG("btm_bda_to_acl found");
-      return (p);
+      return p_acl;
     }
   }
-
-  /* If here, no BD Addr found */
-  return ((tACL_CONN*)NULL);
+  return nullptr;
 }
 
 /*******************************************************************************
