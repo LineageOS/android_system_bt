@@ -754,6 +754,24 @@ typedef struct {
 #define BLE_ADDR_RANDOM_ID 0x03
 #define BLE_ADDR_ANONYMOUS 0xFF
 typedef uint8_t tBLE_ADDR_TYPE;
+#ifdef __cplusplus
+inline std::string AddressTypeText(tBLE_ADDR_TYPE type) {
+  switch (type) {
+    case BLE_ADDR_PUBLIC:
+      return std::string("public");
+    case BLE_ADDR_RANDOM:
+      return std::string("random");
+    case BLE_ADDR_PUBLIC_ID:
+      return std::string("public identity");
+    case BLE_ADDR_RANDOM_ID:
+      return std::string("random identity");
+    case BLE_ADDR_ANONYMOUS:
+      return std::string("anonymous");
+    default:
+      return std::string("unknown");
+  }
+}
+#endif  // __cplusplus
 
 /* BLE ADDR type ID bit */
 #define BLE_ADDR_TYPE_ID_BIT 0x02
