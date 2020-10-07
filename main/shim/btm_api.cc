@@ -350,14 +350,12 @@ class ShimUi : public bluetooth::security::UI {
           bluetooth::ToRawAddress(address.GetAddress());
       user_cfm_req_evt_data.cfm_req.num_val = numeric_value;
       // If we pop a dialog then it isn't just_works
-      user_cfm_req_evt_data.cfm_req.just_works = false;
+      user_cfm_req_evt_data.cfm_req.just_works = data.IsJustWorks();
 
       address_name_map_.emplace(address, legacy_name);
       memcpy((char*)user_cfm_req_evt_data.cfm_req.bd_name, legacy_name.name,
              BD_NAME_LEN);
 
-      // TODO(optedoblivion): BTA needs a callback for when just works auto
-      // accepted (i.e. =true)
       (*bta_callbacks_->p_sp_callback)(BTM_SP_CFM_REQ_EVT,
                                        &user_cfm_req_evt_data);
     }
@@ -365,11 +363,13 @@ class ShimUi : public bluetooth::security::UI {
 
   void DisplayConfirmValue(bluetooth::security::ConfirmationData data) {
     waiting_for_pairing_prompt_ = false;
+    data.SetJustWorks(false);
     HandleConfirm(data);
   }
 
   void DisplayYesNoDialog(bluetooth::security::ConfirmationData data) {
     waiting_for_pairing_prompt_ = false;
+    data.SetJustWorks(true);
     HandleConfirm(data);
   }
 
