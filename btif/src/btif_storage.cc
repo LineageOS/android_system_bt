@@ -835,7 +835,7 @@ bt_status_t btif_storage_add_bonded_device(RawAddress* remote_bd_addr,
 bt_status_t btif_storage_remove_bonded_device(
     const RawAddress* remote_bd_addr) {
   std::string bdstr = remote_bd_addr->ToString();
-  LOG_DEBUG("Removing bonded device addr:%s", bdstr.c_str());
+  LOG_INFO("Removing bonded device addr:%s", bdstr.c_str());
 
   btif_storage_remove_ble_bonding_keys(remote_bd_addr);
 
@@ -1128,7 +1128,7 @@ bt_status_t btif_storage_get_ble_bonding_key(const RawAddress& remote_bd_addr,
 bt_status_t btif_storage_remove_ble_bonding_keys(
     const RawAddress* remote_bd_addr) {
   std::string bdstr = remote_bd_addr->ToString();
-  LOG_DEBUG("Removing bonding keys for bd addr:%s", bdstr.c_str());
+  LOG_INFO("Removing bonding keys for bd addr:%s", bdstr.c_str());
   int ret = 1;
   if (btif_config_exist(bdstr, "LE_KEY_PENC"))
     ret &= btif_config_remove(bdstr, "LE_KEY_PENC");

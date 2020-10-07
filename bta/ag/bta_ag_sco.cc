@@ -617,10 +617,10 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
 static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
   tBTA_AG_SCO_CB* p_sco = &bta_ag_cb.sco;
   uint8_t previous_state = p_sco->state;
-  LOG_DEBUG("index=0x%04x, device=%s, state=%s[%d], event=%s[%d]",
-            p_scb->sco_idx, p_scb->peer_addr.ToString().c_str(),
-            bta_ag_sco_state_str(p_sco->state), p_sco->state,
-            bta_ag_sco_evt_str(event), event);
+  LOG_INFO("index=0x%04x, device=%s, state=%s[%d], event=%s[%d]",
+           p_scb->sco_idx, p_scb->peer_addr.ToString().c_str(),
+           bta_ag_sco_state_str(p_sco->state), p_sco->state,
+           bta_ag_sco_evt_str(event), event);
 
   switch (p_sco->state) {
     case BTA_AG_SCO_SHUTDOWN_ST:
@@ -1229,14 +1229,14 @@ void bta_ag_sco_close(tBTA_AG_SCB* p_scb,
 void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result) {
   if (result) {
     /* Subsequent SCO connection will skip codec negotiation */
-    LOG_DEBUG("Succeeded for index 0x%04x, device %s", p_scb->sco_idx,
-              p_scb->peer_addr.ToString().c_str());
+    LOG_INFO("Succeeded for index 0x%04x, device %s", p_scb->sco_idx,
+             p_scb->peer_addr.ToString().c_str());
     p_scb->codec_updated = false;
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CN_DONE_E);
   } else {
     /* codec negotiation failed */
-    LOG_DEBUG("Failed for index 0x%04x, device %s", p_scb->sco_idx,
-              p_scb->peer_addr.ToString().c_str());
+    LOG_INFO("Failed for index 0x%04x, device %s", p_scb->sco_idx,
+             p_scb->peer_addr.ToString().c_str());
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CLOSE_E);
   }
 }

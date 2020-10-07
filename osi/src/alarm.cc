@@ -535,7 +535,7 @@ done:
     timer_gettime(timer, &time_to_expire);
     if (time_to_expire.it_value.tv_sec == 0 &&
         time_to_expire.it_value.tv_nsec == 0) {
-      LOG_DEBUG(
+      LOG_INFO(
 
           "%s alarm expiration too close for posix timers, switching to guns",
           __func__);
@@ -661,7 +661,7 @@ static void callback_dispatch(UNUSED_ATTR void* context) {
     }
   }
 
-  LOG_DEBUG("%s Callback thread exited", __func__);
+  LOG_INFO("%s Callback thread exited", __func__);
 }
 
 static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {

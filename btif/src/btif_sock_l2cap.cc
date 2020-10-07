@@ -235,8 +235,8 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
     }
     if ((sock->channel >= 0) && (sock->server)) {
       BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP_LE);
-      LOG_DEBUG("Stopped L2CAP LE COC server socket_id:%u channel:%u", sock->id,
-                sock->channel);
+      LOG_INFO("Stopped L2CAP LE COC server socket_id:%u channel:%u", sock->id,
+               sock->channel);
       BTA_JvL2capStopServer(sock->channel, sock->id);
     }
   } else {
@@ -313,7 +313,7 @@ static l2cap_socket* btsock_l2cap_alloc_l(const char* name,
       sock->id++;
   }
   last_sock_id = sock->id;
-  LOG_DEBUG("Allocated l2cap socket structure socket_id:%u", sock->id);
+  LOG_INFO("Allocated l2cap socket structure socket_id:%u", sock->id);
   return sock;
 
 fail_sockpair:
@@ -337,8 +337,8 @@ bt_status_t btsock_l2cap_cleanup() {
 }
 
 static inline bool send_app_psm_or_chan_l(l2cap_socket* sock) {
-  LOG_DEBUG("Sending l2cap socket socket_id:%u channel:%d", sock->id,
-            sock->channel);
+  LOG_INFO("Sending l2cap socket socket_id:%u channel:%d", sock->id,
+           sock->channel);
   return sock_send_all(sock->our_fd, (const uint8_t*)&sock->channel,
                        sizeof(sock->channel)) == sizeof(sock->channel);
 }
@@ -395,7 +395,7 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
   if (!sock->server_psm_sent) {
     if (!send_app_psm_or_chan_l(sock)) {
       // closed
-      LOG_DEBUG("Unable to send socket to application socket_id:%u", sock->id);
+      LOG_INFO("Unable to send socket to application socket_id:%u", sock->id);
       btsock_l2cap_free_l(sock);
     } else {
       sock->server_psm_sent = true;
@@ -497,7 +497,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   // start monitoring the socketpair to get call back when app writing data
   btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
                        sock->id);
-  LOG_DEBUG("Connected l2cap socket socket_id:%u", sock->id);
+  LOG_INFO("Connected l2cap socket socket_id:%u", sock->id);
   sock->connected = true;
 }
 

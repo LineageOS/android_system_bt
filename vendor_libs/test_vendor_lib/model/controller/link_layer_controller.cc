@@ -701,7 +701,6 @@ void LinkLayerController::IncomingInquiryResponsePacket(
 
 void LinkLayerController::IncomingIoCapabilityRequestPacket(
     model::packets::LinkLayerPacketView incoming) {
-  LOG_DEBUG();
   if (!simple_pairing_mode_enabled_) {
     LOG_WARN("Only simple pairing mode is implemented");
     return;
@@ -739,8 +738,6 @@ void LinkLayerController::IncomingIoCapabilityRequestPacket(
 
 void LinkLayerController::IncomingIoCapabilityResponsePacket(
     model::packets::LinkLayerPacketView incoming) {
-  LOG_DEBUG();
-
   auto response = model::packets::IoCapabilityResponseView::Create(incoming);
   ASSERT(response.IsValid());
 
@@ -772,7 +769,6 @@ void LinkLayerController::IncomingIoCapabilityResponsePacket(
 
 void LinkLayerController::IncomingIoCapabilityNegativeResponsePacket(
     model::packets::LinkLayerPacketView incoming) {
-  LOG_DEBUG();
   Address peer = incoming.GetSourceAddress();
 
   ASSERT(security_manager_.GetAuthenticationAddress() == peer);

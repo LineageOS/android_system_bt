@@ -304,8 +304,8 @@ bt_status_t btsock_rfc_listen(const char* service_name,
     LOG_ERROR("unable to allocate RFCOMM slot");
     return BT_STATUS_FAIL;
   }
-  LOG_DEBUG("Adding listening socket service_name: %s - channel: %d",
-            service_name, channel);
+  LOG_INFO("Adding listening socket service_name: %s - channel: %d",
+           service_name, channel);
   BTA_JvGetChannelId(BTA_JV_CONN_TYPE_RFCOMM, slot->id, channel);
   *sock_fd = slot->app_fd;  // Transfer ownership of fd to caller.
   /*TODO:

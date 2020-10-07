@@ -216,7 +216,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
   }
 
   void OnLeConnectSuccess(AddressWithType address_with_type, std::unique_ptr<LeAclConnection> connection) override {
-    LOG_DEBUG("%s", address_with_type.ToString().c_str());
+    LOG_INFO("%s", address_with_type.ToString().c_str());
 
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto addr = address_with_type.GetAddress();
@@ -267,7 +267,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
         : handle_(handle), connection_(std::move(connection)), event_stream_(std::move(event_stream)) {}
     void OnConnectionUpdate(
         uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout) override {
-      LOG_DEBUG(
+      LOG_INFO(
           "interval: 0x%hx, latency: 0x%hx, timeout 0x%hx",
           connection_interval,
           connection_latency,
@@ -275,7 +275,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     }
 
     void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) override {
-      LOG_DEBUG(
+      LOG_INFO(
           "tx_octets: 0x%hx, tx_time: 0x%hx, rx_octets 0x%hx, rx_time 0x%hx", tx_octets, tx_time, rx_octets, rx_time);
     }
     void OnDisconnection(ErrorCode reason) override {

@@ -140,7 +140,7 @@ bool internal::FilterTypeInteger(
   }
 
   if (DBG) {
-    LOG_DEBUG(
+    LOG_INFO(
         "Integer Field_name:%s privacy_level:%s old_value:%d / 0x%x ==> new_value:%d\n",
         field.name()->c_str(),
         PrivacyLevelName(privacy_level),
@@ -176,7 +176,7 @@ bool internal::FilterTypeFloat(const reflection::Field& field, flatbuffers::Tabl
       break;
   }
   if (DBG) {
-    LOG_DEBUG(
+    LOG_INFO(
         "Float Field_name:%s privacy_level:%s old_value:%f ==> new_value:%f",
         field.name()->c_str(),
         PrivacyLevelName(privacy_level),
@@ -217,7 +217,7 @@ bool internal::FilterTypeString(const reflection::Field& field, flatbuffers::Tab
       break;
   }
   if (DBG) {
-    LOG_DEBUG(
+    LOG_INFO(
         "%s Field_name:%s size:%u privacy_level:%s old_string:%s ==> new_string:%s",
         __func__,
         field.name()->c_str(),
@@ -239,7 +239,7 @@ bool internal::FilterTypeStruct(const reflection::Field& field, flatbuffers::Tab
     flatbuffers::SetFieldT(table, field, nullptr);
     internal::ScrubFromTable(table, field_offset);
     if (DBG) {
-      LOG_DEBUG(
+      LOG_INFO(
           " Table Removing field name:%s privacy_level:%s", field.name()->c_str(), PrivacyLevelName(privacy_level));
     }
   }

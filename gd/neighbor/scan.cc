@@ -156,7 +156,7 @@ void neighbor::ScanModule::impl::Start() {
 }
 
 void neighbor::ScanModule::impl::Stop() {
-  LOG_DEBUG("inquiry scan enabled:%d page scan enabled:%d", inquiry_scan_enabled_, page_scan_enabled_);
+  LOG_INFO("inquiry scan enabled:%d page scan enabled:%d", inquiry_scan_enabled_, page_scan_enabled_);
 }
 
 neighbor::ScanModule::ScanModule() : pimpl_(std::make_unique<impl>(*this)) {}

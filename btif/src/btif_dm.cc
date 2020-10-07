@@ -446,7 +446,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   if (pairing_cb.bond_type == tBTM_SEC_DEV_REC::BOND_TYPE_TEMPORARY)
     state = BT_BOND_STATE_NONE;
 
-  LOG_DEBUG(
+  LOG_INFO(
       "Bond state changed to state=%d [0:none, 1:bonding, 2:bonded],"
       " prev_state=%d, sdp_attempts = %d",
       state, pairing_cb.state, pairing_cb.sdp_attempts);
@@ -490,8 +490,8 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
 
   btm_status = BTM_ReadRemoteVersion(*p_bd, &lmp_ver, &mfct_set, &lmp_subver);
 
-  LOG_DEBUG("remote version info [%s]: %x, %x, %x", p_bd->ToString().c_str(),
-            lmp_ver, mfct_set, lmp_subver);
+  LOG_INFO("remote version info [%s]: %x, %x, %x", p_bd->ToString().c_str(),
+           lmp_ver, mfct_set, lmp_subver);
 
   if (btm_status == BTM_SUCCESS) {
     // Always update cache to ensure we have availability whenever BTM API is
@@ -542,11 +542,11 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
         &bdaddr, &properties[num_properties]);
     LOG_VERBOSE("cod retrieved from storage is 0x%06x", cod);
     if (cod == 0) {
-      LOG_DEBUG("cod from storage is also unclassified");
+      LOG_INFO("cod from storage is also unclassified");
       cod = COD_UNCLASSIFIED;
     }
   } else {
-    LOG_DEBUG("class of device (cod) is 0x%06x", cod);
+    LOG_INFO("class of device (cod) is 0x%06x", cod);
   }
 
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
@@ -834,7 +834,7 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   cod = devclass2uint(p_ssp_cfm_req->dev_class);
 
   if (cod == 0) {
-    LOG_DEBUG("%s cod is 0, set as unclassified", __func__);
+    LOG_INFO("%s cod is 0, set as unclassified", __func__);
     cod = COD_UNCLASSIFIED;
   }
 
@@ -870,7 +870,7 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   cod = devclass2uint(p_ssp_key_notif->dev_class);
 
   if (cod == 0) {
-    LOG_DEBUG("%s cod is 0, set as unclassified", __func__);
+    LOG_INFO("%s cod is 0, set as unclassified", __func__);
     cod = COD_UNCLASSIFIED;
   }
 
@@ -1344,7 +1344,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
       int num_properties = 0;
       if (p_data->disc_ble_res.service.As16Bit() == UUID_SERVCLASS_LE_HID ||
           p_data->disc_ble_res.service == UUID_HEARING_AID) {
-        LOG_DEBUG("Found HOGP or HEARING AID UUID");
+        LOG_INFO("Found HOGP or HEARING AID UUID");
         bt_property_t prop[2];
         bt_status_t ret;
 
@@ -1815,7 +1815,7 @@ void btif_dm_start_discovery(void) {
  *
  ******************************************************************************/
 void btif_dm_cancel_discovery(void) {
-  LOG_DEBUG("Cancel search");
+  LOG_INFO("Cancel search");
   BTA_DmSearchCancel();
 }
 
