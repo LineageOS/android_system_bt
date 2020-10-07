@@ -55,7 +55,7 @@ class GrpcEventQueue {
     while (!context->IsCancelled()) {
       // Wait for 500 ms so that cancellation can be caught in amortized 250 ms latency
       if (pending_events_.wait_to_take(500ms)) {
-        LOG_DEBUG("%s: Got event after queue", log_name_.c_str());
+        LOG_INFO("%s: Got event after queue", log_name_.c_str());
         writer->Write(pending_events_.take());
       }
     }
@@ -70,10 +70,10 @@ class GrpcEventQueue {
    */
   void OnIncomingEvent(T event) {
     if (!running_) {
-      LOG_DEBUG("%s: Discarding an event while not running the loop", log_name_.c_str());
+      LOG_INFO("%s: Discarding an event while not running the loop", log_name_.c_str());
       return;
     }
-    LOG_DEBUG("%s: Got event before queue", log_name_.c_str());
+    LOG_INFO("%s: Got event before queue", log_name_.c_str());
     pending_events_.push(std::move(event));
   }
 

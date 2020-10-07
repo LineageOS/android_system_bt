@@ -474,7 +474,7 @@ void ClassicSignallingManager::negotiate_configuration(Cid cid, Continuation is_
   if (can_negotiate) {
     send_configuration_request(channel->GetRemoteCid(), std::move(negotiation_config));
   } else {
-    LOG_DEBUG("No suggested parameter received");
+    LOG_INFO("No suggested parameter received");
   }
 }
 

@@ -196,7 +196,7 @@ void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {
       LOG_INFO("%s", buffer);
       break;
     case TRACE_TYPE_DEBUG:
-      LOG_DEBUG("%s", buffer);
+      LOG_INFO("%s", buffer);
       break;
     default:
       /* we should never get this */

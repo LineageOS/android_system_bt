@@ -56,7 +56,7 @@ void allocation_tracker_init(void) {
   // randomize the canary contents
   for (size_t i = 0; i < canary_size; i++) canary[i] = (char)osi_rand();
 
-  LOG_DEBUG("canary initialized");
+  LOG_INFO("canary initialized");
 
   enabled = true;
 }
