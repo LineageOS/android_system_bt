@@ -34,11 +34,11 @@ StopWatch::StopWatch(std::string text)
   ss << std::put_time(std::localtime(&now_time_t), "%Y-%m-%d %H:%M:%S");
   ss << '.' << std::setfill('0') << std::setw(3) << millis.count();
   start_timestamp_ = ss.str();
-  LOG_INFO(" %s: %s:", start_timestamp_.c_str(), text_.c_str());
+  LOG_DEBUG(" %s: %s:", start_timestamp_.c_str(), text_.c_str());
 }
 
 StopWatch::~StopWatch() {
-  LOG_INFO(
+  LOG_DEBUG(
       "%s: %s: took %zu us",
       start_timestamp_.c_str(),
       text_.c_str(),
