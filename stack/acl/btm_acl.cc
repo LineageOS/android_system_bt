@@ -2841,11 +2841,26 @@ constexpr uint16_t kDataPacketEventBle =
 
 void acl_send_data_packet_br_edr([[maybe_unused]] const RawAddress& bd_addr,
                                  BT_HDR* p_buf) {
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+    if (p_acl == nullptr) {
+      LOG_WARN("Acl br_edr data write for unknown device");
+      return;
+    }
+    return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
+  }
   bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
 }
 
-void acl_send_data_packet_ble([[maybe_unused]] const RawAddress& bd_addr,
-                              BT_HDR* p_buf) {
+void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
+    if (p_acl == nullptr) {
+      LOG_WARN("Acl le data write for unknown device");
+      return;
+    }
+    return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
+  }
   bte_main_hci_send(p_buf, kDataPacketEventBle);
 }
 
@@ -2900,7 +2915,39 @@ void acl_link_segments_xmitted(BT_HDR* p_msg) {
   l2c_link_segments_xmitted(p_msg);
 }
 
+void acl_packets_completed(uint16_t handle, uint16_t credits) {
+  l2c_packets_completed(handle, credits);
+}
+
+static void acl_parse_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
+  if (evt_len == 0) {
+    LOG_ERROR("Received num completed packets with zero length");
+    return;
+  }
+
+  uint8_t num_handles{0};
+  STREAM_TO_UINT8(num_handles, p);
+
+  if (num_handles > evt_len / (2 * sizeof(uint16_t))) {
+    android_errorWriteLog(0x534e4554, "141617601");
+    num_handles = evt_len / (2 * sizeof(uint16_t));
+  }
+
+  for (uint8_t xx = 0; xx < num_handles; xx++) {
+    uint16_t handle{0};
+    uint16_t num_packets{0};
+    STREAM_TO_UINT16(handle, p);
+    handle = HCID_GET_HANDLE(handle);
+    STREAM_TO_UINT16(num_packets, p);
+    acl_packets_completed(handle, num_packets);
+  }
+}
+
 void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
-  l2c_link_process_num_completed_pkts(p, evt_len);
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    acl_parse_num_completed_pkts(p, evt_len);
+  } else {
+    l2c_link_process_num_completed_pkts(p, evt_len);
+  }
   bluetooth::hci::IsoManager::GetInstance()->HandleNumComplDataPkts(p, evt_len);
 }
