@@ -17,6 +17,7 @@ service SecurityModuleFacade {
   rpc SetOobDataPresent(OobDataPresentMessage) returns (google.protobuf.Empty) {}
   rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetLeAuthRequirements(LeAuthRequirementsMessage) returns (google.protobuf.Empty) {}
+  rpc SetLeMaximumEncryptionKeySize(LeMaximumEncryptionKeySizeMessage) returns (google.protobuf.Empty) {}
   rpc GetOutOfBandData(google.protobuf.Empty) returns (OobDataMessage) {}
   rpc SetOutOfBandData(OobDataMessage) returns (google.protobuf.Empty) {}
   rpc SetLeOobDataPresent(LeOobDataPresentMessage) returns (google.protobuf.Empty) {}
@@ -126,6 +127,10 @@ message LeAuthRequirementsMessage {
   bool keypress = 4;
   bool ct2 = 5;
   uint32 reserved_bits = 6;
+}
+
+message LeMaximumEncryptionKeySizeMessage {
+  uint32 maximum_encryption_key_size = 1;
 }
 
 message LeOobDataPresentMessage {
