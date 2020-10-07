@@ -16,6 +16,9 @@
 
 #pragma once
 
+#include <string>
+#include <unordered_map>
+
 namespace bluetooth {
 namespace common {
 
@@ -51,6 +54,18 @@ class InitFlags final {
     return gatt_robust_caching_enabled;
   }
 
+  inline static bool IsDebugLoggingEnabledForTag(const std::string& tag) {
+    auto tag_setting = logging_debug_explicit_tag_settings.find(tag);
+    if (tag_setting != logging_debug_explicit_tag_settings.end()) {
+      return tag_setting->second;
+    }
+    return logging_debug_enabled_for_all;
+  }
+
+  inline static bool IsDebugLoggingEnabledForAll() {
+    return logging_debug_enabled_for_all;
+  }
+
   static void SetAllForTesting();
 
  private:
@@ -62,6 +77,9 @@ class InitFlags final {
   static bool gd_controller_enabled;
   static bool gd_core_enabled;
   static bool gatt_robust_caching_enabled;
+  static bool logging_debug_enabled_for_all;
+  // save both log allow list and block list in the map to save hashing time
+  static std::unordered_map<std::string, bool> logging_debug_explicit_tag_settings;
 };
 
 }  // namespace common
