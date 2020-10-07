@@ -81,13 +81,14 @@ class LeDevice {
  public:
   // Get LE address type of the key address
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(AddressType, hci::AddressType, "AddrType");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(IdentityAddress, hci::Address, "LeIdentityAddr");
+  // IRK + Identity Address Type + Identity Address
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PeerId, std::string, "LE_KEY_PID");
+  // LTK + RAND + EDIV + Security Level + Key Length
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PeerEncryptionKeys, std::string, "LE_KEY_PENC");
+  // counter + CSRK (connection signature resolving key) + security level
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PeerSignatureResolvingKeys, std::string, "LE_KEY_PCSRK");
+
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LegacyPseudoAddress, hci::Address, "LeLegacyPseudoAddr");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Ltk, std::string, "Ltk");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Ediv, uint16_t, "Ediv");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Irk, std::string, "Irk");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Rand, std::string, "Rand");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SignatureKey, std::string, "SignatureKey");
 };
 
 }  // namespace storage
