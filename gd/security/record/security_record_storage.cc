@@ -40,32 +40,54 @@ void SetLeData(storage::Mutation& mutation, std::shared_ptr<record::SecurityReco
   if (*device.GetDeviceType() == hci::DeviceType::BR_EDR) {
     return;
   }
+
+  auto le_device = device.Le();
+
   if (record->identity_address_) {
-    mutation.Add(device.Le().SetIdentityAddress(record->identity_address_->GetAddress()));
-  }
-  if (record->pseudo_address_) {
-    mutation.Add(device.Le().SetLegacyPseudoAddress(record->pseudo_address_->GetAddress()));
-  }
-  if (record->ltk) {
-    common::ByteArray<16> byte_array(*record->ltk);
-    mutation.Add(device.Le().SetLtk(byte_array.ToString()));
-  }
-  if (record->ediv) {
-    mutation.Add(device.Le().SetEdiv(*record->ediv));
-  }
-  if (record->rand) {
-    common::ByteArray<8> byte_array(*record->rand);
-    mutation.Add(device.Le().SetRand(byte_array.ToString()));
+    mutation.Add(le_device.SetAddressType(record->identity_address_->GetAddressType()));
   }
 
   if (record->irk) {
-    common::ByteArray<16> byte_array(*record->irk);
-    mutation.Add(device.Le().SetIrk(byte_array.ToString()));
+    std::array<uint8_t, 23> peerid;
+    std::copy_n(record->irk->data(), record->irk->size(), peerid.data());
+    peerid[16] = static_cast<uint8_t>(record->identity_address_->GetAddressType());
+    std::copy_n(record->identity_address_->GetAddress().data(), 6, peerid.data() + 17);
+
+    common::ByteArray<23> byte_array(peerid);
+    mutation.Add(le_device.SetPeerId(byte_array.ToString()));
+  }
+
+  if (record->pseudo_address_) {
+    mutation.Add(le_device.SetLegacyPseudoAddress(record->pseudo_address_->GetAddress()));
+  }
+
+  if (record->ltk) {
+    std::array<uint8_t, 28> penc_keys;
+
+    std::copy_n(record->ltk->data(), record->ltk->size(), penc_keys.data());
+    std::copy_n(record->rand->data(), record->rand->size(), penc_keys.data() + 16);
+    uint16_t* ediv_location = (uint16_t*)(penc_keys.data() + 24);
+    *ediv_location = *record->ediv;
+    penc_keys[26] = record->security_level;
+    penc_keys[27] = record->key_size;
+
+    common::ByteArray<28> byte_array(penc_keys);
+    mutation.Add(le_device.SetPeerEncryptionKeys(byte_array.ToString()));
   }
 
   if (record->signature_key) {
-    common::ByteArray<16> byte_array(*record->signature_key);
-    mutation.Add(device.Le().SetSignatureKey(byte_array.ToString()));
+    std::array<uint8_t, 21> psrk_keys;
+
+    // four bytes counter, all zeros
+    *psrk_keys.data() = 0;
+    *(psrk_keys.data() + 1) = 0;
+    *(psrk_keys.data() + 2) = 0;
+    *(psrk_keys.data() + 3) = 0;
+    std::copy_n(record->signature_key->data(), record->signature_key->size(), psrk_keys.data() + 4);
+    *(psrk_keys.data() + 20) = record->security_level;
+
+    common::ByteArray<21> byte_array(psrk_keys);
+    mutation.Add(le_device.SetPeerSignatureResolvingKeys(byte_array.ToString()));
   }
 }
 
@@ -84,12 +106,12 @@ void SecurityRecordStorage::SaveSecurityRecords(std::set<std::shared_ptr<record:
     if (record->IsTemporary()) continue;
     storage::Device device = storage_module_->GetDeviceByClassicMacAddress(record->GetPseudoAddress()->GetAddress());
     auto mutation = storage_module_->Modify();
-    mutation.Add(device.SetDeviceType(hci::DeviceType::BR_EDR));
+
     if (record->IsClassicLinkKeyValid() && !record->identity_address_) {
       mutation.Add(device.SetDeviceType(hci::DeviceType::BR_EDR));
-    } else if (record->IsClassicLinkKeyValid() && record->identity_address_) {
+    } else if (record->IsClassicLinkKeyValid() && record->ltk) {
       mutation.Add(device.SetDeviceType(hci::DeviceType::DUAL));
-    } else if (!record->IsClassicLinkKeyValid() && record->identity_address_) {
+    } else if (!record->IsClassicLinkKeyValid() && record->ltk) {
       mutation.Add(device.SetDeviceType(hci::DeviceType::LE));
     } else {
       LOG_ERROR(
@@ -109,26 +131,52 @@ void SecurityRecordStorage::LoadSecurityRecords(std::set<std::shared_ptr<record:
   for (auto device : storage_module_->GetBondedDevices()) {
     auto address_type = (device.GetDeviceType() == hci::DeviceType::BR_EDR) ? hci::AddressType::PUBLIC_DEVICE_ADDRESS
                                                                             : device.Le().GetAddressType();
-    auto address_with_type = hci::AddressWithType(device.Classic().GetAddress(), *address_type);
+    auto address_with_type = hci::AddressWithType(device.GetAddress(), *address_type);
+
     auto record = std::make_shared<record::SecurityRecord>(address_with_type);
     if (device.GetDeviceType() != hci::DeviceType::LE) {
       record->SetLinkKey(device.Classic().GetLinkKey()->bytes, *device.Classic().GetLinkKeyType());
     }
     if (device.GetDeviceType() != hci::DeviceType::BR_EDR) {
-      record->identity_address_ =
-          std::make_optional<hci::AddressWithType>(*device.Le().GetIdentityAddress(), *device.Le().GetAddressType());
       record->pseudo_address_ = std::make_optional<hci::AddressWithType>(
           *device.Le().GetLegacyPseudoAddress(), *device.Le().GetAddressType());
-      auto byte_array = common::ByteArray<16>::FromString(*device.Le().GetLtk());
-      record->ltk = std::make_optional<std::array<uint8_t, 16>>(byte_array->bytes);
-      record->ediv = device.Le().GetEdiv();
-      auto byte_array2 = common::ByteArray<8>::FromString(*device.Le().GetRand());
-      record->rand = std::make_optional<std::array<uint8_t, 8>>(byte_array2->bytes);
-      byte_array = common::ByteArray<16>::FromString(*device.Le().GetIrk());
-      record->irk = std::make_optional<std::array<uint8_t, 16>>(byte_array->bytes);
-      byte_array = common::ByteArray<16>::FromString(*device.Le().GetSignatureKey());
-      record->signature_key = std::make_optional<std::array<uint8_t, 16>>(byte_array->bytes);
+
+      if (device.Le().GetPeerId()) {
+        auto peerid = common::ByteArray<23>::FromString(*device.Le().GetPeerId());
+        record->irk = std::make_optional<std::array<uint8_t, 16>>();
+        std::copy_n(peerid->data(), record->irk->size(), record->irk->data());
+
+        uint8_t idaddress_type;
+        hci::Address idaddress;
+        std::copy_n(peerid->data() + 16, 1, &idaddress_type);
+        std::copy_n(peerid->data() + 17, 6, idaddress.data());
+        record->identity_address_ =
+            std::make_optional<hci::AddressWithType>(idaddress, static_cast<hci::AddressType>(idaddress_type));
+      }
+
+      if (device.Le().GetPeerEncryptionKeys()) {
+        auto peer_encryption_keys = common::ByteArray<28>::FromString(*device.Le().GetPeerEncryptionKeys());
+        record->ltk = std::make_optional<std::array<uint8_t, 16>>();
+        record->rand = std::make_optional<std::array<uint8_t, 8>>();
+        record->ediv = std::make_optional(0);
+
+        std::copy_n(peer_encryption_keys->data(), 16, record->ltk->data());
+        std::copy_n(peer_encryption_keys->data() + 16, 8, record->rand->data());
+        std::copy_n(peer_encryption_keys->data() + 24, 2, &(*record->ediv));
+        record->security_level = peer_encryption_keys->data()[26];
+        record->key_size = peer_encryption_keys->data()[27];
+      }
+
+      if (device.Le().GetPeerSignatureResolvingKeys()) {
+        auto peer_signature_resolving_keys =
+            common::ByteArray<21>::FromString(*device.Le().GetPeerSignatureResolvingKeys());
+        record->signature_key = std::make_optional<std::array<uint8_t, 16>>();
+
+        std::copy_n(peer_signature_resolving_keys->data() + 4, 16, record->signature_key->data());
+        record->security_level = peer_signature_resolving_keys->data()[20];
+      }
     }
+
     record->SetIsEncrypted(false);
     record->SetIsEncryptionRequired(device.GetIsEncryptionRequired() == 1 ? true : false);
     record->SetAuthenticated(device.GetIsAuthenticated() == 1 ? true : false);
