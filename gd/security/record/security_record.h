@@ -136,6 +136,8 @@ class SecurityRecord {
   std::optional<hci::AddressWithType> identity_address_;
 
   std::optional<crypto_toolbox::Octet16> ltk;
+  uint8_t key_size;
+  uint8_t security_level;
   std::optional<uint16_t> ediv;
   std::optional<std::array<uint8_t, 8>> rand;
   std::optional<crypto_toolbox::Octet16> irk;
