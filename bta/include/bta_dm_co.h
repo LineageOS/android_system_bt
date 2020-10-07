@@ -177,7 +177,7 @@ extern void bta_dm_sco_co_in_data(BT_HDR* p_buf, tBTM_SCO_DATA_FLAG status);
 extern void bta_dm_co_ble_io_req(
     const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap, tBTM_OOB_DATA* p_oob_data,
     tBTM_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
-    tBTA_LE_KEY_TYPE* p_init_key, tBTA_LE_KEY_TYPE* p_resp_key);
+    tBTM_LE_KEY_TYPE* p_init_key, tBTM_LE_KEY_TYPE* p_resp_key);
 
 /*******************************************************************************
  *

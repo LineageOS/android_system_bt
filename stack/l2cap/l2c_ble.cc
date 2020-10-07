@@ -239,24 +239,26 @@ uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
  ******************************************************************************/
 void l2cble_notify_le_connection(const RawAddress& bda) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
-  tL2C_CCB* p_ccb;
+  if (p_lcb == nullptr) {
+    LOG_WARN("Received notification for le connection but no lcb found");
+    return;
+  }
 
-  if (p_lcb != NULL && BTM_IsAclConnectionUp(bda, BT_TRANSPORT_LE) &&
+  if (BTM_IsAclConnectionUp(bda, BT_TRANSPORT_LE) &&
       p_lcb->link_state != LST_CONNECTED) {
     /* update link status */
+    // TODO Move this back into acl layer
     btm_establish_continue_from_address(bda, BT_TRANSPORT_LE);
     /* update l2cap link status and send callback */
     p_lcb->link_state = LST_CONNECTED;
     l2cu_process_fixed_chnl_resp(p_lcb);
   }
 
-  if (p_lcb != NULL) {
-    /* For all channels, send the event through their FSMs */
-    for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
-         p_ccb = p_ccb->p_next_ccb) {
-      if (p_ccb->chnl_state == CST_CLOSED)
-        l2c_csm_execute(p_ccb, L2CEVT_LP_CONNECT_CFM, NULL);
-    }
+  /* For all channels, send the event through their FSMs */
+  for (tL2C_CCB* p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
+       p_ccb = p_ccb->p_next_ccb) {
+    if (p_ccb->chnl_state == CST_CLOSED)
+      l2c_csm_execute(p_ccb, L2CEVT_LP_CONNECT_CFM, NULL);
   }
 }
 
@@ -270,11 +272,6 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   // role == HCI_ROLE_MASTER => scanner completed connection
   // role == HCI_ROLE_SLAVE => advertiser completed connection
 
-  L2CAP_TRACE_DEBUG(
-      "%s: HANDLE=%d addr_type=%d conn_interval=%d "
-      "slave_latency=%d supervision_tout=%d",
-      __func__, handle, type, conn_interval, conn_latency, conn_timeout);
-
   /* See if we have a link control block for the remote device */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
 
@@ -283,18 +280,19 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
     p_lcb = l2cu_allocate_lcb(bda, false, BT_TRANSPORT_LE);
     if (!p_lcb) {
       btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
-      LOG(ERROR) << __func__ << "failed to allocate LCB";
+      LOG_ERROR("Unable to allocate link resource for le acl connection");
       return;
     } else {
       if (!l2cu_initialize_fixed_ccb(p_lcb, L2CAP_ATT_CID)) {
         btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
-        LOG(WARNING) << __func__ << "LCB but no CCB";
+        LOG_ERROR("Unable to allocate channel resource for le acl connection");
         return;
       }
     }
   } else if (role == HCI_ROLE_MASTER && p_lcb->link_state != LST_CONNECTING) {
-    LOG(ERROR) << "L2CAP got BLE scanner conn_comp in bad state: "
-               << +p_lcb->link_state;
+    LOG_ERROR(
+        "Received le acl connection as role master but not in connecting "
+        "state");
     return;
   }
 
