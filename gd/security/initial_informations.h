@@ -54,6 +54,8 @@ struct DistributedKeys {
 struct PairingResult {
   hci::AddressWithType connection_address;
   DistributedKeys distributed_keys;
+  uint8_t key_size;
+  uint8_t security_level;
 };
 
 using PairingResultOrFailure = std::variant<PairingResult, PairingFailure>;

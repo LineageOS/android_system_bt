@@ -106,6 +106,13 @@ ClassicDevice Device::Classic() {
   return ClassicDevice(config_, memory_only_config_, section_);
 }
 
+hci::Address Device::GetAddress() const {
+  // section name of a device is its address
+  auto addr = hci::Address::FromString(section_);
+  ASSERT(addr.has_value());
+  return addr.value();
+}
+
 std::string Device::ToLogString() const {
   return section_;
 }
