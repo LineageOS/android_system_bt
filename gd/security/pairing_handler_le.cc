@@ -68,6 +68,17 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
 
   auto [pairing_request, pairing_response] = std::get<Phase1Result>(phase_1_result);
 
+  uint8_t key_size =
+      std::min(pairing_request.GetMaximumEncryptionKeySize(), pairing_response.GetMaximumEncryptionKeySize());
+  if (key_size < 7 || key_size > 16) {
+    LOG_WARN("Resulting key size is bad %d", key_size);
+    i.OnPairingFinished(PairingFailure("Resulting key size is bad"));
+    return;
+  }
+  if (key_size != 16) {
+    LOG_WARN("Resulting key size is less than 16 octets!");
+  }
+
   /************************************************ PHASE 2 *********************************************************/
   bool isSecureConnections = pairing_request.GetAuthReq() & pairing_response.GetAuthReq() & AuthReqMaskSc;
   if (isSecureConnections) {
@@ -110,6 +121,9 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
     }
 
     Octet16 ltk = std::get<Octet16>(stage_2_result);
+    // Mask the key
+    std::fill(ltk.begin() + key_size, ltk.end(), 0x00);
+
     if (IAmMaster(i)) {
       LOG_INFO("Sending start encryption request");
       SendHciLeStartEncryption(i, i.connection_handle, {0}, {0}, ltk);
@@ -137,6 +151,8 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
     }
 
     Octet16 stk = std::get<Octet16>(stage2result);
+    // Mask the key
+    std::fill(stk.begin() + key_size, stk.end(), 0x00);
     if (IAmMaster(i)) {
       LOG_INFO("Sending start encryption request");
       SendHciLeStartEncryption(i, i.connection_handle, {0}, {0}, stk);
@@ -311,8 +327,8 @@ DistributedKeysOrFailure PairingHandlerLe::DistributeKeys(const InitialInformati
 
   LOG_INFO("Key distribution start, keys_i_send=0x%02x, keys_i_receive=0x%02x", keys_i_send, keys_i_receive);
 
-  // TODO: obtain actual values!
-  Octet16 my_ltk = {0};
+  // TODO: obtain actual values, and apply key_size to the LTK
+  Octet16 my_ltk = {0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE, 0xFE};
   uint16_t my_ediv{0};
   std::array<uint8_t, 8> my_rand = {0};
 
