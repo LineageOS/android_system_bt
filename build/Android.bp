@@ -88,6 +88,9 @@ fluoride_defaults {
     sanitize: {
         misc_undefined: ["bounds"],
     },
+    static_libs: [
+        "libbluetooth_gd",
+    ],
 }
 
 // Enables code coverage for a set of source files. Must be combined with
