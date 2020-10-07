@@ -182,6 +182,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void SetOobDataPresent(hci::OobDataPresent data_present);
   void SetLeIoCapability(security::IoCapability io_capability);
   void SetLeAuthRequirements(uint8_t auth_req);
+  void SetLeMaximumEncryptionKeySize(uint8_t maximum_encryption_key_size);
   void SetLeOobDataPresent(OobDataFlag data_present);
   void GetOutOfBandData(std::array<uint8_t, 16>* le_sc_confirmation_value, std::array<uint8_t, 16>* le_sc_random_value);
   void SetOutOfBandData(
@@ -248,6 +249,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   hci::OobDataPresent local_oob_data_present_ = kDefaultOobDataPresent;
   security::IoCapability local_le_io_capability_ = security::IoCapability::KEYBOARD_DISPLAY;
   uint8_t local_le_auth_req_ = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc;
+  uint8_t local_maximum_encryption_key_size_ = 0x10;
   OobDataFlag local_le_oob_data_present_ = OobDataFlag::NOT_PRESENT;
   std::optional<MyOobData> local_le_oob_data_;
   std::optional<hci::AddressWithType> remote_oob_data_address_;
