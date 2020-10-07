@@ -318,7 +318,7 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
 void SecurityManagerImpl::OnConnectionClosed(hci::Address address) {
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
-    LOG_DEBUG("Cancelling pairing handler for '%s'", address.ToString().c_str());
+    LOG_INFO("Cancelling pairing handler for '%s'", address.ToString().c_str());
     entry->second->Cancel();
   }
   auto record = security_database_.FindOrCreate(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));

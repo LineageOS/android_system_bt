@@ -380,9 +380,9 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count =
       A2DP_VendorGetTrackChannelCountLdac(p_codec_info);
-  LOG_DEBUG("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
-            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
-            p_feeding_params->channel_count);
+  LOG_INFO("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
+           p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+           p_feeding_params->channel_count);
   a2dp_vendor_ldac_feeding_reset();
 
   // The codec parameters
@@ -403,14 +403,14 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
   int old_quality_mode_index = p_encoder_params->quality_mode_index;
   if (codec_config.codec_specific_1 != 0) {
     p_encoder_params->quality_mode_index = codec_config.codec_specific_1 % 10;
-    LOG_DEBUG("%s: setting quality mode to %s", __func__,
-              quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                  .c_str());
+    LOG_INFO("%s: setting quality mode to %s", __func__,
+             quality_mode_index_to_name(p_encoder_params->quality_mode_index)
+                 .c_str());
   } else {
     p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_ABR;
-    LOG_DEBUG("%s: setting quality mode to default %s", __func__,
-              quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                  .c_str());
+    LOG_INFO("%s: setting quality mode to default %s", __func__,
+             quality_mode_index_to_name(p_encoder_params->quality_mode_index)
+                 .c_str());
   }
 
   int ldac_eqmid = LDAC_ABR_MODE_EQMID;
@@ -424,14 +424,14 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
           quality_mode_index_to_name(p_encoder_params->quality_mode_index)
               .c_str());
     } else {
-      LOG_DEBUG("%s: changing mode from %s to %s", __func__,
-                quality_mode_index_to_name(old_quality_mode_index).c_str(),
-                quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                    .c_str());
+      LOG_INFO("%s: changing mode from %s to %s", __func__,
+               quality_mode_index_to_name(old_quality_mode_index).c_str(),
+               quality_mode_index_to_name(p_encoder_params->quality_mode_index)
+                   .c_str());
       if (a2dp_ldac_encoder_cb.ldac_abr_handle != NULL) {
-        LOG_DEBUG("%s: already in LDAC ABR mode, do nothing.", __func__);
+        LOG_INFO("%s: already in LDAC ABR mode, do nothing.", __func__);
       } else {
-        LOG_DEBUG("%s: get and init LDAC ABR handle.", __func__);
+        LOG_INFO("%s: get and init LDAC ABR handle.", __func__);
         a2dp_ldac_encoder_cb.ldac_abr_handle = a2dp_ldac_abr_get_handle();
         if (a2dp_ldac_encoder_cb.ldac_abr_handle != NULL) {
           a2dp_ldac_encoder_cb.has_ldac_abr_handle = true;
@@ -441,7 +441,7 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
                              A2DP_LDAC_ENCODER_INTERVAL_MS);
         } else {
           p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_MID;
-          LOG_DEBUG(
+          LOG_INFO(
 
               "%s: get LDAC ABR handle failed, resetting quality mode to %s.",
               __func__,
@@ -452,8 +452,8 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
     }
   } else {
     ldac_eqmid = p_encoder_params->quality_mode_index;
-    LOG_DEBUG("%s: in %s mode, free LDAC ABR handle.", __func__,
-              quality_mode_index_to_name(ldac_eqmid).c_str());
+    LOG_INFO("%s: in %s mode, free LDAC ABR handle.", __func__,
+             quality_mode_index_to_name(ldac_eqmid).c_str());
     if (a2dp_ldac_encoder_cb.has_ldac_abr_handle) {
       a2dp_ldac_abr_free_handle(a2dp_ldac_encoder_cb.ldac_abr_handle);
       a2dp_ldac_encoder_cb.ldac_abr_handle = NULL;
@@ -477,9 +477,9 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
   else if (p_encoder_params->pcm_wlength == 4)
     p_encoder_params->pcm_fmt = LDACBT_SMPL_FMT_S32;
 
-  LOG_DEBUG("%s: MTU=%d, peer_mtu=%d", __func__,
-            a2dp_ldac_encoder_cb.TxAaMtuSize, peer_mtu);
-  LOG_DEBUG(
+  LOG_INFO("%s: MTU=%d, peer_mtu=%d", __func__,
+           a2dp_ldac_encoder_cb.TxAaMtuSize, peer_mtu);
+  LOG_INFO(
       "%s: sample_rate: %d channel_mode: %d "
       "quality_mode_index: %d pcm_wlength: %d pcm_fmt: %d",
       __func__, p_encoder_params->sample_rate, p_encoder_params->channel_mode,
@@ -523,8 +523,8 @@ void a2dp_vendor_ldac_feeding_reset(void) {
        A2DP_LDAC_ENCODER_INTERVAL_MS) /
       1000;
 
-  LOG_DEBUG("%s: PCM bytes per tick %u", __func__,
-            a2dp_ldac_encoder_cb.ldac_feeding_state.bytes_per_tick);
+  LOG_INFO("%s: PCM bytes per tick %u", __func__,
+           a2dp_ldac_encoder_cb.ldac_feeding_state.bytes_per_tick);
 }
 
 void a2dp_vendor_ldac_feeding_flush(void) {

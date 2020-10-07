@@ -3229,13 +3229,13 @@ bool btif_av_is_connected(void) {
 uint8_t btif_av_get_peer_sep(void) {
   BtifAvPeer* peer = btif_av_find_active_peer();
   if (peer == nullptr) {
-    LOG_DEBUG("No active sink or source peer found");
+    LOG_INFO("No active sink or source peer found");
     return AVDT_TSEP_SNK;
   }
 
   uint8_t peer_sep = peer->PeerSep();
-  LOG_DEBUG("Peer %s SEP is %s (%d)", peer->PeerAddress().ToString().c_str(),
-            (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink", peer_sep);
+  LOG_INFO("Peer %s SEP is %s (%d)", peer->PeerAddress().ToString().c_str(),
+           (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink", peer_sep);
   return peer_sep;
 }
 

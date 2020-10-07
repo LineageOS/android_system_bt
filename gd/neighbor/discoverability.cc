@@ -121,14 +121,14 @@ void neighbor::DiscoverabilityModule::impl::Start() {
 
   hci_layer_->EnqueueCommand(
       hci::ReadNumberOfSupportedIacBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
-  LOG_DEBUG("Started discoverability module");
+  LOG_INFO("Started discoverability module");
 }
 
 void neighbor::DiscoverabilityModule::impl::Dump() const {
-  LOG_DEBUG("Number of supported iacs:%hhd", num_supported_iac_);
-  LOG_DEBUG("Number of current iacs:%zd", laps_.size());
+  LOG_INFO("Number of supported iacs:%hhd", num_supported_iac_);
+  LOG_INFO("Number of current iacs:%zd", laps_.size());
   for (auto it : laps_) {
-    LOG_DEBUG("  discoverability lap:%x", it.lap_);
+    LOG_INFO("  discoverability lap:%x", it.lap_);
   }
 }
 

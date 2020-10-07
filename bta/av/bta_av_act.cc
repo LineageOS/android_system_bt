@@ -305,7 +305,7 @@ static void bta_av_rc_msg_cback(uint8_t handle, uint8_t label, uint8_t opcode,
 uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
                          uint8_t lidx) {
   if (is_new_avrcp_enabled()) {
-    LOG_DEBUG("Skipping RC creation for the old AVRCP profile");
+    LOG_INFO("Skipping RC creation for the old AVRCP profile");
     return BTA_AV_RC_HANDLE_NONE;
   }
 

@@ -232,7 +232,7 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
     case BTA_GATTS_OPEN_EVT:
     case BTA_GATTS_CANCEL_OPEN_EVT:
     case BTA_GATTS_CLOSE_EVT:
-      LOG_DEBUG("%s: Empty event (%d)!", __func__, event);
+      LOG_INFO("%s: Empty event (%d)!", __func__, event);
       break;
 
     case BTA_GATTS_PHY_UPDATE_EVT:

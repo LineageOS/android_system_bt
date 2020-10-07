@@ -1380,8 +1380,8 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
     if (!charac.uuid.Is16Bit()) continue;
 
     uint16_t uuid16 = charac.uuid.As16Bit();
-    LOG_DEBUG("%s: %s %s", __func__, bta_hh_uuid_to_str(uuid16),
-              charac.uuid.ToString().c_str());
+    LOG_INFO("%s: %s %s", __func__, bta_hh_uuid_to_str(uuid16),
+             charac.uuid.ToString().c_str());
 
     switch (uuid16) {
       case GATT_UUID_HID_CONTROL_POINT:
