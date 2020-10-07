@@ -186,7 +186,7 @@ class ClassicShimAclConnection
   void OnReadRemoteVersionInformationComplete(uint8_t lmp_version,
                                               uint16_t manufacturer_name,
                                               uint16_t sub_version) override {
-    LOG_DEBUG(
+    LOG_INFO(
         "UNIMPLEMENTED lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
         lmp_version, manufacturer_name, sub_version);
   }
@@ -274,15 +274,15 @@ void bluetooth::shim::legacy::Acl::WriteData(
 
 void bluetooth::shim::legacy::Acl::CreateClassicConnection(
     const bluetooth::hci::Address& address) {
-  LOG_DEBUG("%s Initiate the creation of a classic connection %s", __func__,
-            address.ToString().c_str());
+  LOG_INFO("%s Initiate the creation of a classic connection %s", __func__,
+           address.ToString().c_str());
   GetAclManager()->CreateConnection(address);
 }
 
 void bluetooth::shim::legacy::Acl::CreateLeConnection(
     const bluetooth::hci::AddressWithType& address_with_type) {
-  LOG_DEBUG("%s Initiate the creation of a le connection %s", __func__,
-            address_with_type.ToString().c_str());
+  LOG_INFO("%s Initiate the creation of a le connection %s", __func__,
+           address_with_type.ToString().c_str());
   GetAclManager()->CreateLeConnection(address_with_type);
 }
 
@@ -297,8 +297,8 @@ void bluetooth::shim::legacy::Acl::OnConnectSuccess(
                   handler_, std::move(connection)));
   pimpl_->handle_to_classic_connection_map_[handle]->RegisterCallbacks();
 
-  LOG_DEBUG("%s Classic ACL created successfully peer:%s", __func__,
-            bd_addr.ToString().c_str());
+  LOG_INFO("%s Classic ACL created successfully peer:%s", __func__,
+           bd_addr.ToString().c_str());
   btm_acl_connected(bd_addr, handle, HCI_SUCCESS, false);
 }
 
@@ -322,8 +322,8 @@ void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
       std::make_unique<LeShimAclConnection>(handler_, std::move(connection)));
   pimpl_->handle_to_le_connection_map_[handle]->RegisterCallbacks();
 
-  LOG_DEBUG("%s Le ACL created successfully peer:%s", __func__,
-            address_with_type.ToString().c_str());
+  LOG_INFO("%s Le ACL created successfully peer:%s", __func__,
+           address_with_type.ToString().c_str());
 
   tBLE_BD_ADDR legacy_address_with_type =
       ToLegacyAddressWithType(address_with_type);

@@ -65,8 +65,8 @@ void Link::OnDisconnection(hci::ErrorCode status) {
 }
 
 void Link::OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout) {
-  LOG_DEBUG("interval %hx latency %hx supervision_timeout %hx", connection_interval, connection_latency,
-            supervision_timeout);
+  LOG_INFO(
+      "interval %hx latency %hx supervision_timeout %hx", connection_interval, connection_latency, supervision_timeout);
   if (update_request_signal_id_ != kInvalidSignalId) {
     hci::ErrorCode result = hci::ErrorCode::SUCCESS;
     if (connection_interval > update_request_interval_max_ || connection_interval < update_request_interval_min_ ||
@@ -84,7 +84,7 @@ void Link::OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_
 }
 
 void Link::OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) {
-  LOG_DEBUG("tx_octets %hx tx_time %hx rx_octets %hx rx_time %hx", tx_octets, tx_time, rx_octets, rx_time);
+  LOG_INFO("tx_octets %hx tx_time %hx rx_octets %hx rx_time %hx", tx_octets, tx_time, rx_octets, rx_time);
 }
 void Link::Disconnect() {
   acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);

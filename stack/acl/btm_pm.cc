@@ -172,8 +172,8 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
          (p_mode->min <= p_cb->interval)) ||
         ((p_mode->mode & BTM_PM_MD_FORCE) == 0 &&
          (p_mode->max >= p_cb->interval))) {
-      LOG_DEBUG("already in requested mode %d, interval: %d, max: %d, min: %d",
-                p_mode->mode, p_cb->interval, p_mode->max, p_mode->min);
+      LOG_INFO("already in requested mode %d, interval: %d, max: %d, min: %d",
+               p_mode->mode, p_cb->interval, p_mode->max, p_mode->min);
       return BTM_SUCCESS;
     }
   }
@@ -198,20 +198,20 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   /* if mode == hold or pending, return */
   if ((p_cb->state == BTM_PM_STS_HOLD) || (p_cb->state == BTM_PM_STS_PENDING) ||
       (btm_cb.acl_cb_.pm_pend_link != MAX_L2CAP_LINKS)) {
-    LOG_DEBUG("storing pm setup, state: %d, pm_pending_link: %d", p_cb->state,
-              btm_cb.acl_cb_.pm_pend_link);
+    LOG_INFO("storing pm setup, state: %d, pm_pending_link: %d", p_cb->state,
+             btm_cb.acl_cb_.pm_pend_link);
     /* command pending */
     if (acl_ind != btm_cb.acl_cb_.pm_pend_link) {
       /* set the stored mask */
       p_cb->state |= BTM_PM_STORED_MASK;
-      LOG_DEBUG("btm_pm state stored: %d", acl_ind);
+      LOG_INFO("btm_pm state stored: %d", acl_ind);
     }
     return BTM_CMD_STORED;
   }
 
-  LOG_DEBUG("pm_id: %d, bda: %s, mode: %d, state: %d, pending_link: %d", pm_id,
-            remote_bda.ToString().c_str(), p_mode->mode, p_cb->state,
-            btm_cb.acl_cb_.pm_pend_link);
+  LOG_INFO("pm_id: %d, bda: %s, mode: %d, state: %d, pending_link: %d", pm_id,
+           remote_bda.ToString().c_str(), p_mode->mode, p_cb->state,
+           btm_cb.acl_cb_.pm_pend_link);
 
   return internal_.btm_pm_snd_md_req(pm_id, acl_ind, p_mode);
 }
@@ -279,7 +279,7 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
                               max_lat, min_rmt_to, min_loc_to);
     return BTM_SUCCESS;
   }
-  LOG_DEBUG("pm_mode_db state: %d", btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
+  LOG_INFO("pm_mode_db state: %d", btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
   tBTM_PM_MCB* p_cb = &btm_cb.acl_cb_.pm_mode_db[acl_ind];
   p_cb->max_lat = max_lat;
   p_cb->min_rmt_to = min_rmt_to;
@@ -318,7 +318,7 @@ void btm_pm_reset(void) {
   }
   /* no command pending */
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
-  LOG_DEBUG("reset pm");
+  LOG_INFO("reset pm");
 }
 
 /*******************************************************************************
@@ -468,7 +468,7 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   mode = btm_pm_get_set_mode(pm_id, p_cb, p_mode, &md_res);
   md_res.mode = mode;
 
-  LOG_DEBUG("link_ind: %d, mode: %d", link_ind, mode);
+  LOG_INFO("link_ind: %d, mode: %d", link_ind, mode);
 
   if (p_cb->state == mode) {
     /* already in the resulting mode */
@@ -498,9 +498,9 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   /* send the appropriate HCI command */
   btm_cb.pm_pend_id = pm_id;
 
-  LOG_DEBUG("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
-            mode_to_string(p_cb->state), p_cb->state,
-            mode_to_string(md_res.mode), md_res.mode, link_ind);
+  LOG_INFO("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
+           mode_to_string(p_cb->state), p_cb->state,
+           mode_to_string(md_res.mode), md_res.mode, link_ind);
 
   switch (md_res.mode) {
     case BTM_PM_MD_ACTIVE:
@@ -589,8 +589,8 @@ void btm_pm_proc_cmd_status(uint8_t status) {
   }
 
   /* no pending cmd now */
-  LOG_DEBUG("state: %d, pend_link: %d", p_cb->state,
-            btm_cb.acl_cb_.pm_pend_link);
+  LOG_INFO("state: %d, pend_link: %d", p_cb->state,
+           btm_cb.acl_cb_.pm_pend_link);
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 
   /*******************************************************************************
@@ -650,8 +650,8 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   p_cb->state = mode;
   p_cb->interval = interval;
 
-  LOG_DEBUG("switched from [%s] to [%s].", mode_to_string(old_state),
-            mode_to_string(p_cb->state));
+  LOG_INFO("switched from [%s] to [%s].", mode_to_string(old_state),
+           mode_to_string(p_cb->state));
 
   if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
     l2c_OnHciModeChangeSendPendingPackets(bd_addr);

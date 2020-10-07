@@ -918,7 +918,7 @@ void btm_ble_set_adv_flag(uint16_t connect_mode, uint16_t disc_mode) {
 
   btm_ble_update_dmt_flag_bits(&flag, connect_mode, disc_mode);
 
-  LOG_DEBUG("disc_mode %04x", disc_mode);
+  LOG_INFO("disc_mode %04x", disc_mode);
   /* update discoverable flag */
   if (disc_mode & BTM_BLE_LIMITED_DISCOVERABLE) {
     flag &= ~BTM_BLE_GEN_DISC_FLAG;
@@ -1572,13 +1572,13 @@ void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
   if ((p_cur->flag & BTM_BLE_BREDR_NOT_SPT) == 0 &&
       !ble_evt_type_is_directed(evt_type)) {
     if (p_cur->ble_addr_type != BLE_ADDR_RANDOM) {
-      LOG_DEBUG("NOT_BR_EDR support bit not set, treat device as DUMO");
+      LOG_INFO("NOT_BR_EDR support bit not set, treat device as DUMO");
       p_cur->device_type |= BT_DEVICE_TYPE_DUMO;
     } else {
-      LOG_DEBUG("Random address, treat device as LE only");
+      LOG_INFO("Random address, treat device as LE only");
     }
   } else {
-    LOG_DEBUG("NOT_BR/EDR support bit set, treat device as LE only");
+    LOG_INFO("NOT_BR/EDR support bit set, treat device as LE only");
   }
 }
 
@@ -1876,7 +1876,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
   uint8_t result = btm_ble_is_discoverable(bda, adv_data);
   if (result == 0) {
     cache.Clear(addr_type, bda);
-    LOG_DEBUG("device no longer discoverable, discarding advertising packet");
+    LOG_INFO("device no longer discoverable, discarding advertising packet");
     return;
   }
 

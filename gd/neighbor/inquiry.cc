@@ -184,7 +184,7 @@ void neighbor::InquiryModule::impl::OnCommandStatus(hci::CommandStatusView statu
       auto packet = hci::InquiryStatusView::Create(status);
       ASSERT(packet.IsValid());
       if (active_limited_one_shot_ || active_general_one_shot_) {
-        LOG_DEBUG("Inquiry started lap: %s", active_limited_one_shot_ ? "Limited" : "General");
+        LOG_INFO("Inquiry started lap: %s", active_limited_one_shot_ ? "Limited" : "General");
       }
     } break;
 
@@ -199,7 +199,7 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventPacketView view) {
     case hci::EventCode::INQUIRY_COMPLETE: {
       auto packet = hci::InquiryCompleteView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_DEBUG("inquiry complete");
+      LOG_INFO("inquiry complete");
       active_limited_one_shot_ = false;
       active_general_one_shot_ = false;
       inquiry_callbacks_.complete(packet.GetStatus());
@@ -208,21 +208,21 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventPacketView view) {
     case hci::EventCode::INQUIRY_RESULT: {
       auto packet = hci::InquiryResultView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_DEBUG("Inquiry result size:%zd num_responses:%zu", packet.size(), packet.GetInquiryResults().size());
+      LOG_INFO("Inquiry result size:%zd num_responses:%zu", packet.size(), packet.GetInquiryResults().size());
       inquiry_callbacks_.result(packet);
     } break;
 
     case hci::EventCode::INQUIRY_RESULT_WITH_RSSI: {
       auto packet = hci::InquiryResultWithRssiView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_DEBUG("Inquiry result with rssi num_responses:%zu", packet.GetInquiryResults().size());
+      LOG_INFO("Inquiry result with rssi num_responses:%zu", packet.GetInquiryResults().size());
       inquiry_callbacks_.result_with_rssi(packet);
     } break;
 
     case hci::EventCode::EXTENDED_INQUIRY_RESULT: {
       auto packet = hci::ExtendedInquiryResultView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_DEBUG(
+      LOG_INFO(
           "Extended inquiry result addr:%s repetition_mode:%s cod:%s clock_offset:%d rssi:%hhd",
           packet.GetAddress().ToString().c_str(),
           hci::PageScanRepetitionModeText(packet.GetPageScanRepetitionMode()).c_str(),
@@ -343,7 +343,7 @@ void neighbor::InquiryModule::impl::Start() {
   EnqueueCommandComplete(hci::ReadInquiryScanTypeBuilder::Create());
   EnqueueCommandCompleteSync(hci::ReadInquiryModeBuilder::Create());
 
-  LOG_DEBUG("Started inquiry module");
+  LOG_INFO("Started inquiry module");
 }
 
 void neighbor::InquiryModule::impl::Stop() {
@@ -353,19 +353,19 @@ void neighbor::InquiryModule::impl::Stop() {
       hci::InquiryModeText(inquiry_mode_).c_str(),
       hci::InquiryScanTypeText(inquiry_scan_type_).c_str());
   LOG_INFO("Inquiry response tx power:%hhd", inquiry_response_tx_power_);
-  LOG_DEBUG("Stopped inquiry module");
+  LOG_INFO("Stopped inquiry module");
 }
 
 void neighbor::InquiryModule::impl::SetInquiryMode(hci::InquiryMode mode) {
   EnqueueCommandComplete(hci::WriteInquiryModeBuilder::Create(mode));
   inquiry_mode_ = mode;
-  LOG_DEBUG("Set inquiry mode:%s", hci::InquiryModeText(mode).c_str());
+  LOG_INFO("Set inquiry mode:%s", hci::InquiryModeText(mode).c_str());
 }
 
 void neighbor::InquiryModule::impl::SetScanActivity(ScanParameters params) {
   EnqueueCommandComplete(hci::WriteInquiryScanActivityBuilder::Create(params.interval, params.window));
   inquiry_scan_ = params;
-  LOG_DEBUG(
+  LOG_INFO(
       "Set scan activity interval:0x%x/%.02fms window:0x%x/%.02fms",
       params.interval,
       ScanIntervalTimeMs(params.interval),
@@ -375,7 +375,7 @@ void neighbor::InquiryModule::impl::SetScanActivity(ScanParameters params) {
 
 void neighbor::InquiryModule::impl::SetScanType(hci::InquiryScanType scan_type) {
   EnqueueCommandComplete(hci::WriteInquiryScanTypeBuilder::Create(scan_type));
-  LOG_DEBUG("Set scan type:%s", hci::InquiryScanTypeText(scan_type).c_str());
+  LOG_INFO("Set scan type:%s", hci::InquiryScanTypeText(scan_type).c_str());
 }
 
 bool neighbor::InquiryModule::impl::HasCallbacks() const {

@@ -328,8 +328,8 @@ void tBTA_AV_SCB::OnDisconnected() {
 
 void tBTA_AV_SCB::SetAvdtpVersion(uint16_t avdtp_version) {
   avdtp_version_ = avdtp_version;
-  LOG_DEBUG("%s: AVDTP version for %s set to 0x%x", __func__,
-            peer_address_.ToString().c_str(), avdtp_version_);
+  LOG_INFO("%s: AVDTP version for %s set to 0x%x", __func__,
+           peer_address_.ToString().c_str(), avdtp_version_);
 }
 
 /*******************************************************************************

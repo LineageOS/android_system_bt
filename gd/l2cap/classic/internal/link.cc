@@ -297,7 +297,7 @@ void Link::OnRemoteExtendedFeatureReceived(bool ertm_supported, bool fcs_support
 }
 
 void Link::OnConnectionPacketTypeChanged(uint16_t packet_type) {
-  LOG_DEBUG("UNIMPLEMENTED %s packet_type:%x", __func__, packet_type);
+  LOG_INFO("UNIMPLEMENTED %s packet_type:%x", __func__, packet_type);
 }
 
 void Link::OnAuthenticationComplete() {
@@ -310,69 +310,80 @@ void Link::OnEncryptionChange(hci::EncryptionEnabled enabled) {
 }
 
 void Link::OnChangeConnectionLinkKeyComplete() {
-  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void Link::OnReadClockOffsetComplete(uint16_t clock_offset) {
-  LOG_DEBUG("UNIMPLEMENTED %s clock_offset:%d", __func__, clock_offset);
+  LOG_INFO("UNIMPLEMENTED %s clock_offset:%d", __func__, clock_offset);
 }
 
 void Link::OnModeChange(hci::Mode current_mode, uint16_t interval) {
-  LOG_DEBUG("UNIMPLEMENTED %s mode:%s interval:%d", __func__, hci::ModeText(current_mode).c_str(), interval);
+  LOG_INFO("UNIMPLEMENTED %s mode:%s interval:%d", __func__, hci::ModeText(current_mode).c_str(), interval);
 }
 
 void Link::OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
                               uint32_t latency, uint32_t delay_variation) {
-  LOG_DEBUG("UNIMPLEMENTED %s service_type:%s token_rate:%d peak_bandwidth:%d latency:%d delay_varitation:%d", __func__,
-            hci::ServiceTypeText(service_type).c_str(), token_rate, peak_bandwidth, latency, delay_variation);
+  LOG_INFO(
+      "UNIMPLEMENTED %s service_type:%s token_rate:%d peak_bandwidth:%d latency:%d delay_varitation:%d",
+      __func__,
+      hci::ServiceTypeText(service_type).c_str(),
+      token_rate,
+      peak_bandwidth,
+      latency,
+      delay_variation);
 }
 void Link::OnFlowSpecificationComplete(hci::FlowDirection flow_direction, hci::ServiceType service_type,
                                        uint32_t token_rate, uint32_t token_bucket_size, uint32_t peak_bandwidth,
                                        uint32_t access_latency) {
-  LOG_DEBUG(
+  LOG_INFO(
       "UNIMPLEMENTED %s flow_direction:%s service_type:%s token_rate:%d token_bucket_size:%d peak_bandwidth:%d "
       "access_latency:%d",
-      __func__, hci::FlowDirectionText(flow_direction).c_str(), hci::ServiceTypeText(service_type).c_str(), token_rate,
-      token_bucket_size, peak_bandwidth, access_latency);
+      __func__,
+      hci::FlowDirectionText(flow_direction).c_str(),
+      hci::ServiceTypeText(service_type).c_str(),
+      token_rate,
+      token_bucket_size,
+      peak_bandwidth,
+      access_latency);
 }
 void Link::OnFlushOccurred() {
-  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 void Link::OnRoleDiscoveryComplete(hci::Role current_role) {
-  LOG_DEBUG("UNIMPLEMENTED %s current_role:%s", __func__, hci::RoleText(current_role).c_str());
+  LOG_INFO("UNIMPLEMENTED %s current_role:%s", __func__, hci::RoleText(current_role).c_str());
 }
 void Link::OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) {
-  LOG_DEBUG("UNIMPLEMENTED %s link_policy_settings:0x%x", __func__, link_policy_settings);
+  LOG_INFO("UNIMPLEMENTED %s link_policy_settings:0x%x", __func__, link_policy_settings);
 }
 void Link::OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) {
-  LOG_DEBUG("UNIMPLEMENTED %s flush_timeout:%d", __func__, flush_timeout);
+  LOG_INFO("UNIMPLEMENTED %s flush_timeout:%d", __func__, flush_timeout);
 }
 void Link::OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) {
-  LOG_DEBUG("UNIMPLEMENTED %s transmit_power_level:%d", __func__, transmit_power_level);
+  LOG_INFO("UNIMPLEMENTED %s transmit_power_level:%d", __func__, transmit_power_level);
 }
 void Link::OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) {
-  LOG_DEBUG("UNIMPLEMENTED %s link_supervision_timeout:%d", __func__, link_supervision_timeout);
+  LOG_INFO("UNIMPLEMENTED %s link_supervision_timeout:%d", __func__, link_supervision_timeout);
 }
 void Link::OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) {
-  LOG_DEBUG("UNIMPLEMENTED %sfailed_contact_counter:%hu", __func__, failed_contact_counter);
+  LOG_INFO("UNIMPLEMENTED %sfailed_contact_counter:%hu", __func__, failed_contact_counter);
 }
 void Link::OnReadLinkQualityComplete(uint8_t link_quality) {
-  LOG_DEBUG("UNIMPLEMENTED %s link_quality:%hhu", __func__, link_quality);
+  LOG_INFO("UNIMPLEMENTED %s link_quality:%hhu", __func__, link_quality);
 }
 void Link::OnReadAfhChannelMapComplete(hci::AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) {
-  LOG_DEBUG("UNIMPLEMENTED %s afh_mode:%s", __func__, hci::AfhModeText(afh_mode).c_str());
+  LOG_INFO("UNIMPLEMENTED %s afh_mode:%s", __func__, hci::AfhModeText(afh_mode).c_str());
 }
 void Link::OnReadRssiComplete(uint8_t rssi) {
-  LOG_DEBUG("UNIMPLEMENTED %s rssi:%hhd", __func__, rssi);
+  LOG_INFO("UNIMPLEMENTED %s rssi:%hhd", __func__, rssi);
 }
 void Link::OnReadClockComplete(uint32_t clock, uint16_t accuracy) {
-  LOG_DEBUG("UNIMPLEMENTED %s clock:%u accuracy:%hu", __func__, clock, accuracy);
+  LOG_INFO("UNIMPLEMENTED %s clock:%u accuracy:%hu", __func__, clock, accuracy);
 }
 void Link::OnMasterLinkKeyComplete(hci::KeyFlag key_flag) {
-  LOG_DEBUG("UNIMPLEMENTED key_flag:%s", hci::KeyFlagText(key_flag).c_str());
+  LOG_INFO("UNIMPLEMENTED key_flag:%s", hci::KeyFlagText(key_flag).c_str());
 }
 void Link::OnRoleChange(hci::Role new_role) {
-  LOG_DEBUG("UNIMPLEMENTED role:%s", hci::RoleText(new_role).c_str());
+  LOG_INFO("UNIMPLEMENTED role:%s", hci::RoleText(new_role).c_str());
 }
 void Link::OnDisconnection(hci::ErrorCode reason) {
   OnAclDisconnected(reason);
@@ -380,7 +391,7 @@ void Link::OnDisconnection(hci::ErrorCode reason) {
 }
 void Link::OnReadRemoteVersionInformationComplete(
     uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
-  LOG_DEBUG(
+  LOG_INFO(
       "UNIMPLEMENTED lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
       lmp_version,
       manufacturer_name,

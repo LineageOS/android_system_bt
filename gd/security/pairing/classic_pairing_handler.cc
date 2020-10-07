@@ -87,7 +87,7 @@ void ClassicPairingHandler::OnPasskeyEntry(const bluetooth::hci::AddressWithType
 void ClassicPairingHandler::Initiate(bool locally_initiated, hci::IoCapability io_capability,
                                      hci::OobDataPresent oob_present,
                                      hci::AuthenticationRequirements auth_requirements) {
-  LOG_DEBUG("Initiate");
+  LOG_INFO("Initiate");
   locally_initiated_ = locally_initiated;
   local_io_capability_ = io_capability;
   local_oob_present_ = oob_present;

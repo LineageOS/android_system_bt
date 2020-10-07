@@ -265,7 +265,7 @@ void btif_enable_bluetooth_evt() {
       strcmp(bdstr.c_str(), val) != 0) {
     // We failed to get an address or the one in the config file does not match
     // the address given by the controller interface. Update the config cache
-    LOG_DEBUG("%s: Storing '%s' into the config file", __func__, bdstr.c_str());
+    LOG_INFO("%s: Storing '%s' into the config file", __func__, bdstr.c_str());
     btif_config_set_str("Adapter", "Address", bdstr.c_str());
     btif_config_save();
 

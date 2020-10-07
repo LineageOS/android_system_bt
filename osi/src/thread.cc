@@ -233,7 +233,7 @@ static void* run_thread(void* start_arg) {
   }
 
   if (count > fixed_queue_capacity(thread->work_queue))
-    LOG_DEBUG("%s growing event queue on shutdown.", __func__);
+    LOG_INFO("%s growing event queue on shutdown.", __func__);
 
   LOG_WARN("%s: thread id %d, thread name %s exited", __func__, thread->tid,
            thread->name);
