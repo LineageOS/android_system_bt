@@ -1112,7 +1112,6 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
   } else {
     l2c_link_send_to_lower_ble(p_lcb, p_buf);
   }
-  if (p_cbi) l2cu_tx_complete(p_cbi);
 }
 
 /*******************************************************************************
@@ -1402,8 +1401,6 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
 /* Highest priority are fixed channels */
   int xx;
 
-  p_cbi->cb = NULL;
-
   for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
     p_ccb = p_lcb->p_fixed_ccbs[xx];
     if (p_ccb == NULL) continue;
@@ -1437,7 +1434,6 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
         }
 
         /* Prepare callback info for TX completion */
-        p_cbi->cb = l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb;
         p_cbi->local_cid = p_ccb->local_cid;
         p_cbi->num_sdu = 1;
 
