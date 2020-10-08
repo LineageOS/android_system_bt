@@ -216,6 +216,15 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status SetLeMaximumEncryptionKeySize(
+      ::grpc::ServerContext* context,
+      const LeMaximumEncryptionKeySizeMessage* request,
+      ::google::protobuf::Empty* response) override {
+    security_module_->GetFacadeConfigurationApi()->SetLeMaximumEncryptionKeySize(
+        request->maximum_encryption_key_size());
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status SetLeOobDataPresent(
       ::grpc::ServerContext* context,
       const LeOobDataPresentMessage* request,

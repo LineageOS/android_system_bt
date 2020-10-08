@@ -106,7 +106,7 @@ void A2dpCodecConfig::setDefaultCodecPriority() {
 A2dpCodecConfig* A2dpCodecConfig::createCodec(
     btav_a2dp_codec_index_t codec_index,
     btav_a2dp_codec_priority_t codec_priority) {
-  LOG_DEBUG("%s: codec %s", __func__, A2DP_CodecIndexStr(codec_index));
+  LOG_INFO("%s: codec %s", __func__, A2DP_CodecIndexStr(codec_index));
 
   A2dpCodecConfig* codec_config = nullptr;
   switch (codec_index) {
@@ -555,7 +555,7 @@ A2dpCodecs::~A2dpCodecs() {
 }
 
 bool A2dpCodecs::init() {
-  LOG_DEBUG("%s", __func__);
+  LOG_INFO("%s", __func__);
   std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
   char* tok = NULL;
   char* tmp_token = NULL;
@@ -729,8 +729,8 @@ bool A2dpCodecs::setCodecUserConfig(
   *p_restart_output = false;
   *p_config_updated = false;
 
-  LOG_DEBUG("%s: Configuring: %s", __func__,
-            codec_user_config.ToString().c_str());
+  LOG_INFO("%s: Configuring: %s", __func__,
+           codec_user_config.ToString().c_str());
 
   if (codec_user_config.codec_type < BTAV_A2DP_CODEC_INDEX_MAX) {
     auto iter = indexed_codecs_.find(codec_user_config.codec_type);
@@ -809,7 +809,7 @@ bool A2dpCodecs::setCodecUserConfig(
 
   if (*p_restart_input || *p_restart_output) *p_config_updated = true;
 
-  LOG_DEBUG(
+  LOG_INFO(
       "%s: Configured: restart_input = %d restart_output = %d "
       "config_updated = %d",
       __func__, *p_restart_input, *p_restart_output, *p_config_updated);

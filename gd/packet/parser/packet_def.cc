@@ -439,7 +439,7 @@ void PacketDef::GenTestDefine(std::ostream& s) const {
   s << "void CompareBytes(std::vector<uint8_t> captured_packet) {";
   s << name_ << "View view = " << name_ << "View::FromBytes(captured_packet);";
   s << "if (!view.IsValid()) { LOG_INFO(\"Invalid Packet Bytes (size = %zu)\", view.size());";
-  s << "for (size_t i = 0; i < view.size(); i++) { LOG_DEBUG(\"%5zd:%02X\", i, *(view.begin() + i)); }}";
+  s << "for (size_t i = 0; i < view.size(); i++) { LOG_INFO(\"%5zd:%02X\", i, *(view.begin() + i)); }}";
   s << "ASSERT_TRUE(view.IsValid());";
   s << "auto packet = " << name_ << "Builder::FromView(view);";
   s << "std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();";

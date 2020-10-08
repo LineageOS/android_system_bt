@@ -134,7 +134,7 @@ void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::E
   auto pending_link = pending_links_.find(address_with_type);
   if (pending_link == pending_links_.end()) {
     // There is no pending link, exit
-    LOG_DEBUG("Connection to %s failed without a pending link", address_with_type.ToString().c_str());
+    LOG_INFO("Connection to %s failed without a pending link", address_with_type.ToString().c_str());
     return;
   }
   for (auto& pending_fixed_channel_connection : pending_link->second.pending_fixed_channel_connections_) {

@@ -318,7 +318,7 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
 void SecurityManagerImpl::OnConnectionClosed(hci::Address address) {
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
-    LOG_DEBUG("Cancelling pairing handler for '%s'", address.ToString().c_str());
+    LOG_INFO("Cancelling pairing handler for '%s'", address.ToString().c_str());
     entry->second->Cancel();
   }
   auto record = security_database_.FindOrCreate(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
@@ -499,7 +499,7 @@ void SecurityManagerImpl::OnSmpCommandLe(hci::AddressWithType device) {
         .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                   .oob_data_flag = local_le_oob_data_present_,
                                   .auth_req = local_le_auth_req_,
-                                  .maximum_encryption_key_size = 16,
+                                  .maximum_encryption_key_size = local_maximum_encryption_key_size_,
                                   .initiator_key_distribution = 0x07,
                                   .responder_key_distribution = 0x07},
         .remotely_initiated = true,
@@ -569,7 +569,7 @@ void SecurityManagerImpl::ConnectionIsReadyStartPairing(LeFixedChannelEntry* sto
       .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                 .oob_data_flag = local_le_oob_data_present_,
                                 .auth_req = local_le_auth_req_,
-                                .maximum_encryption_key_size = 16,
+                                .maximum_encryption_key_size = local_maximum_encryption_key_size_,
                                 .initiator_key_distribution = 0x07,
                                 .responder_key_distribution = 0x07},
       .remotely_initiated = false,
@@ -670,6 +670,8 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
   auto record = this->security_database_.FindOrCreate(result.connection_address);
   record->identity_address_ = result.distributed_keys.identity_address;
   record->ltk = result.distributed_keys.ltk;
+  record->key_size = result.key_size;
+  record->security_level = result.security_level;
   record->ediv = result.distributed_keys.ediv;
   record->rand = result.distributed_keys.rand;
   record->irk = result.distributed_keys.irk;
@@ -706,6 +708,10 @@ void SecurityManagerImpl::SetLeIoCapability(security::IoCapability io_capability
 
 void SecurityManagerImpl::SetLeAuthRequirements(uint8_t auth_req) {
   this->local_le_auth_req_ = auth_req;
+}
+
+void SecurityManagerImpl::SetLeMaximumEncryptionKeySize(uint8_t maximum_encryption_key_size) {
+  this->local_maximum_encryption_key_size_ = maximum_encryption_key_size;
 }
 
 void SecurityManagerImpl::SetLeOobDataPresent(OobDataFlag data_present) {

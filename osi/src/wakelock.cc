@@ -187,7 +187,7 @@ static void wakelock_initialize(void) {
 }
 
 static void wakelock_initialize_native(void) {
-  LOG_DEBUG("%s opening wake locks", __func__);
+  LOG_INFO("%s opening wake locks", __func__);
 
   if (wake_lock_path.empty()) wake_lock_path = DEFAULT_WAKE_LOCK_PATH;
 

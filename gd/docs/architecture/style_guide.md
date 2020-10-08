@@ -191,7 +191,7 @@ Gabeldorsche uses `printf` style logging with macros defined in `os/log.h`. Five
 log levels are available.
 
 *   LOG_VERBOSE(fmt, args...): Will be disabled by default
-*   LOG_DEBUG(fmt, args...): Will be disabled by default
+*   LOG_INFO(fmt, args...): Will be disabled by default
 *   LOG_INFO(fmt, args...): Enabled
 *   LOG_WARN(fmt, args...): Enabled
 *   LOG_ERROR(fmt, args...): Enabled

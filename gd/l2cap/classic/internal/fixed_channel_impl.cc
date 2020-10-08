@@ -71,7 +71,7 @@ void FixedChannelImpl::Acquire() {
     return;
   }
   if (acquired_) {
-    LOG_DEBUG("%s was already acquired", ToString().c_str());
+    LOG_INFO("%s was already acquired", ToString().c_str());
     return;
   }
   acquired_ = true;
@@ -86,7 +86,7 @@ void FixedChannelImpl::Release() {
     return;
   }
   if (!acquired_) {
-    LOG_DEBUG("%s was already released", ToString().c_str());
+    LOG_INFO("%s was already released", ToString().c_str());
     return;
   }
   acquired_ = false;

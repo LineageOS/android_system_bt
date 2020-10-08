@@ -88,7 +88,7 @@ void BtifAvrcpAudioTrackStart(void* handle) {
 
 void BtifAvrcpAudioTrackStop(void* handle) {
   if (handle == NULL) {
-    LOG_DEBUG("%s handle is null.", __func__);
+    LOG_INFO("%s handle is null.", __func__);
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
@@ -100,7 +100,7 @@ void BtifAvrcpAudioTrackStop(void* handle) {
 
 void BtifAvrcpAudioTrackDelete(void* handle) {
   if (handle == NULL) {
-    LOG_DEBUG("%s handle is null.", __func__);
+    LOG_INFO("%s handle is null.", __func__);
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
@@ -121,7 +121,7 @@ void BtifAvrcpAudioTrackDelete(void* handle) {
 
 void BtifAvrcpAudioTrackPause(void* handle) {
   if (handle == NULL) {
-    LOG_DEBUG("%s handle is null.", __func__);
+    LOG_INFO("%s handle is null.", __func__);
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
@@ -134,7 +134,7 @@ void BtifAvrcpAudioTrackPause(void* handle) {
 
 void BtifAvrcpSetAudioTrackGain(void* handle, float gain) {
   if (handle == NULL) {
-    LOG_DEBUG("%s handle is null.", __func__);
+    LOG_INFO("%s handle is null.", __func__);
     return;
   }
   // Does nothing right now

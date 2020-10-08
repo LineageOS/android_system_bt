@@ -210,7 +210,7 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
   }
 
   void OnConnectionClosed(hci::Address address) override {
-    LOG_DEBUG("Called");
+    LOG_INFO("Called");
   }
 
   void OnEncryptionChange(hci::Address address, bool encrypted) override {}

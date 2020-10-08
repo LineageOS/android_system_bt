@@ -78,6 +78,46 @@ TEST_F(SecurityRecordStorageTest, store_security_record) {
   }
 }
 
+TEST_F(SecurityRecordStorageTest, store_le_security_record) {
+  hci::AddressWithType identity_address(
+      hci::Address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06}), hci::AddressType::RANDOM_DEVICE_ADDRESS);
+  std::array<uint8_t, 16> ltk{
+      0x07, 0x0c, 0x0e, 0x16, 0x18, 0x55, 0xc6, 0x72, 0x64, 0x5a, 0xd8, 0xb1, 0xf6, 0x93, 0x94, 0xa7};
+  uint16_t ediv = 0x28;
+  std::array<uint8_t, 8> rand{0x48, 0xac, 0x91, 0xf4, 0xef, 0x6d, 0x41, 0x10};
+  std::array<uint8_t, 16> irk{
+      0x66, 0x90, 0x40, 0x76, 0x27, 0x69, 0x57, 0x71, 0x0d, 0x39, 0xf7, 0x80, 0x9e, 0x2f, 0x49, 0xcf};
+  std::array<uint8_t, 16> signature_key{
+      0x08, 0x83, 0xae, 0x44, 0xd6, 0x77, 0x9e, 0x90, 0x1d, 0x25, 0xcd, 0xd7, 0xb6, 0xf4, 0x57, 0x85};
+  std::shared_ptr<record::SecurityRecord> record = std::make_shared<record::SecurityRecord>(identity_address);
+
+  record->identity_address_ = identity_address;
+  record->ltk = ltk;
+  record->key_size = 16;
+  record->security_level = 2;
+  record->ediv = ediv;
+  record->rand = rand;
+  record->irk = irk;
+  record->signature_key = signature_key;
+
+  std::set<std::shared_ptr<record::SecurityRecord>> record_set;
+  record_set.insert(record);
+  record_storage_->SaveSecurityRecords(&record_set);
+
+  auto device = storage_module_->GetDeviceByClassicMacAddress(identity_address.GetAddress());
+  ASSERT_EQ(hci::DeviceType::LE, device.GetDeviceType());
+  ASSERT_EQ(device.Le().GetAddressType(), identity_address.GetAddressType());
+
+  // IRK, address type, and address glued together
+  ASSERT_EQ(*device.Le().GetPeerId(), "66904076276957710d39f7809e2f49cf01010203040506");
+
+  // LTK, RAND, EDIV and sec level glued together
+  ASSERT_EQ(*device.Le().GetPeerEncryptionKeys(), "070c0e161855c672645ad8b1f69394a748ac91f4ef6d411028000210");
+
+  // Counter, signature key, and security level glued together
+  ASSERT_EQ(device.Le().GetPeerSignatureResolvingKeys(), "000000000883ae44d6779e901d25cdd7b6f4578502");
+}
+
 TEST_F(SecurityRecordStorageTest, load_security_record) {
   hci::AddressWithType remote(
       hci::Address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06}), hci::AddressType::PUBLIC_DEVICE_ADDRESS);

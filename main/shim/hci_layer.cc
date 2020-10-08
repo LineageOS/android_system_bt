@@ -416,7 +416,7 @@ static void transmit_command(BT_HDR* command,
   auto packet =
       bluetooth::hci::CommandPacketBuilder::Create(op_code, std::move(payload));
 
-  LOG_INFO("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
+  LOG_DEBUG("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
 
   if (IsCommandStatusOpcode(op_code)) {
     auto command_unique = std::make_unique<OsiObject>(command);
