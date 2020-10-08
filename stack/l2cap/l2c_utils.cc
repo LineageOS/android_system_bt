@@ -2143,7 +2143,7 @@ bool l2cu_lcb_disconnecting(void) {
  *
  ******************************************************************************/
 
-bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
+bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
                            bool reset_after_rs) {
   tL2C_LCB* p_lcb;
   uint8_t* pp;

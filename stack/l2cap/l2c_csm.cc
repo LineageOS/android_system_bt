@@ -281,7 +281,12 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             l2cu_reject_ble_connection(p_ccb, p_ccb->remote_id, result);
             l2cu_release_ccb(p_ccb);
             break;
-            // TODO: Handle the other return codes
+          case L2CAP_LE_RESULT_CONN_OK:
+          case L2CAP_LE_RESULT_NO_PSM:
+          case L2CAP_LE_RESULT_NO_RESOURCES:
+          case L2CAP_LE_RESULT_INVALID_SOURCE_CID:
+          case L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED:
+            break;
         }
       } else {
         /* Cancel sniff mode if needed */
