@@ -2181,8 +2181,6 @@ static void btm_ble_observer_timer_timeout(UNUSED_ATTR void* data) {
  *
  ******************************************************************************/
 void btm_ble_read_remote_features_complete(uint8_t* p) {
-  BTM_TRACE_EVENT("%s", __func__);
-
   uint16_t handle;
   uint8_t status;
   STREAM_TO_UINT8(status, p);
@@ -2190,15 +2188,18 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
   handle = handle & 0x0FFF;  // only 12 bits meaningful
 
   if (status != HCI_SUCCESS) {
-    BTM_TRACE_ERROR("%s: failed for handle: 0x%04d, status 0x%02x", __func__,
-                    handle, status);
-    if (status != HCI_ERR_UNSUPPORTED_REM_FEATURE) return;
+    if (status != HCI_ERR_UNSUPPORTED_REM_FEATURE) {
+      LOG_ERROR("Failed to read remote features status:%s",
+                hci_error_code_text(status).c_str());
+      return;
+    }
+    LOG_WARN("Remote does not support reading remote feature");
   }
 
   if (status == HCI_SUCCESS) {
     if (!acl_set_peer_le_features_from_handle(handle, p)) {
-      BTM_TRACE_ERROR("%s: can't find acl for handle: 0x%04d", __func__,
-                      handle);
+      LOG_ERROR(
+          "Unable to find existing connection after read remote features");
       return;
     }
   }
