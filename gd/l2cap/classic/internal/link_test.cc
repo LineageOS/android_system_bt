@@ -130,7 +130,7 @@ TEST_F(L2capClassicLinkTest, pending_channels_get_notified_on_acl_disconnect) {
   EXPECT_CALL(mock_classic_dynamic_channel_service_manager_, GetSecurityEnforcementInterface())
       .WillOnce(::testing::Return(&security_module_impl_));
   EXPECT_CALL(mock_classic_dynamic_channel_service_manager_, GetService(::testing::_))
-      .WillOnce(::testing::Return(&service));
+      .WillRepeatedly(::testing::Return(&service));
 
   link_->SendConnectionRequest(kPsm, kCid, std::move(pending_dynamic_channel_connection));
   link_->OnAclDisconnected(hci::ErrorCode::UNKNOWN_HCI_COMMAND);
