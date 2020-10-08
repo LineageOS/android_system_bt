@@ -523,13 +523,6 @@ typedef struct {
 
 typedef void(tL2C_FCR_MGMT_EVT_HDLR)(uint8_t, tL2C_CCB*);
 
-/* Necessary info for postponed TX completion callback
-*/
-typedef struct {
-  uint16_t local_cid;
-  uint16_t num_sdu;
-} tL2C_TX_COMPLETE_CB_INFO;
-
 /* The offset in a buffer that L2CAP will use when building commands.
 */
 #define L2CAP_SEND_CMD_OFFSET 0
