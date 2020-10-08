@@ -336,12 +336,7 @@ typedef struct t_l2c_linkcb {
   alarm_t* l2c_lcb_timer; /* Timer entry for timeout evt */
  private:
   uint16_t handle_; /* The handle used with LM */
-  friend void l2cble_conn_comp(uint16_t handle, uint8_t role,
-                               const RawAddress& bda, tBLE_ADDR_TYPE type,
-                               uint16_t conn_interval, uint16_t conn_latency,
-                               uint16_t conn_timeout);
-  friend void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
-                                     const RawAddress& p_bda);
+  friend void l2cu_set_lcb_handle(struct t_l2c_linkcb& p_lcb, uint16_t handle);
   void SetHandle(uint16_t handle) { handle_ = handle; }
 
  public:
