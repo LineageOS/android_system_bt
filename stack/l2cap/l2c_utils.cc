@@ -2885,10 +2885,6 @@ tL2C_CCB* l2cu_find_ccb_by_cid(tL2C_LCB* p_lcb, uint16_t local_cid) {
   return (p_ccb);
 }
 
-void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
-  if (p_cbi->cb != NULL) p_cbi->cb(p_cbi->local_cid, p_cbi->num_sdu);
-}
-
 /******************************************************************************
  *
  * Function         l2cu_set_acl_hci_header
