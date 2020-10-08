@@ -652,8 +652,8 @@ class SecurityMatchers(object):
         return lambda event: True if event.message_type == type and (address == None or address == event.peer) else False
 
     @staticmethod
-    def BondMsg(type, address=None):
-        return lambda event: True if event.message_type == type and (address == None or address == event.peer) else False
+    def BondMsg(type, address=None, reason=None):
+        return lambda event: True if event.message_type == type and (address == None or address == event.peer) and (reason == None or reason == event.reason) else False
 
     @staticmethod
     def HelperMsg(type, address=None):

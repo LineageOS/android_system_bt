@@ -499,7 +499,7 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
 
   void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {}
   void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {}
-  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {}
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device, security::PairingFailure status) override {}
 
   void OnEncryptionStateChanged(EncryptionChangeView encryption_change_view) override {
     if (!encryption_change_view.IsValid()) {
