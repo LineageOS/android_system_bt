@@ -40,7 +40,6 @@ class ISecurityManagerChannelListener {
   virtual ~ISecurityManagerChannelListener() = default;
   virtual void OnHciEventReceived(hci::EventPacketView packet) = 0;
   virtual void OnConnectionClosed(hci::Address) = 0;
-  virtual void OnEncryptionChange(hci::Address, bool encrypted) = 0;
 };
 
 /**

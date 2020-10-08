@@ -212,8 +212,6 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
   void OnConnectionClosed(hci::Address address) override {
     LOG_INFO("Called");
   }
-
-  void OnEncryptionChange(hci::Address address, bool encrypted) override {}
 };
 
 class SecurityManagerChannelTest : public ::testing::Test {
