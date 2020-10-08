@@ -85,9 +85,12 @@ bool ConnectionHandler::CleanUp() {
   CHECK(instance_ != nullptr);
 
   // TODO (apanicke): Cleanup the SDP Entries here
-  for (const auto& entry : instance_->device_map_) {
-    entry.second->DeviceDisconnected();
-    instance_->avrc_->Close(entry.first);
+  for (auto entry = instance_->device_map_.begin();
+       entry != instance_->device_map_.end();) {
+    auto curr = entry;
+    entry++;
+    curr->second->DeviceDisconnected();
+    instance_->avrc_->Close(curr->first);
   }
   instance_->device_map_.clear();
   instance_->feature_map_.clear();
