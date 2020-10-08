@@ -34,6 +34,7 @@
 #include "l2c_int.h"
 #include "l2cdefs.h"
 #include "osi/include/allocator.h"
+#include "osi/include/log.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 
@@ -92,6 +93,14 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
 
   /* If here, no free LCB found */
   return (NULL);
+}
+
+void l2cu_set_lcb_handle(struct t_l2c_linkcb& p_lcb, uint16_t handle) {
+  if (p_lcb.Handle() != HCI_INVALID_HANDLE) {
+    LOG_WARN("Should not replace active handle:%hu with new handle:%hu",
+             p_lcb.Handle(), handle);
+  }
+  p_lcb.SetHandle(handle);
 }
 
 /*******************************************************************************

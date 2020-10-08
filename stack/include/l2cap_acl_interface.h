@@ -43,3 +43,5 @@ extern void l2c_link_segments_xmitted(BT_HDR* p_msg);
 extern void l2c_link_hci_conn_req(const RawAddress& bd_addr);
 
 extern void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);
+
+extern void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len);
