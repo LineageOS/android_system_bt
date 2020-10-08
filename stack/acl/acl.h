@@ -174,6 +174,7 @@ typedef struct {
   friend bool BTM_ReadPowerMode(const RawAddress& remote_bda,
                                 tBTM_PM_MODE* p_mode);
   friend bool acl_is_role_switch_allowed();
+  friend bool btm_pm_is_le_link(const RawAddress& remote_bda);
   friend const RawAddress acl_address_from_handle(uint16_t hci_handle);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
   friend tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
