@@ -55,6 +55,7 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_api.h"
+#include "stack/include/btm_iso_api.h"
 #include "stack/include/btu.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_acl_interface.h"
@@ -2892,4 +2893,9 @@ void acl_rcv_acl_data(BT_HDR* p_msg) {
 
 void acl_link_segments_xmitted(BT_HDR* p_msg) {
   l2c_link_segments_xmitted(p_msg);
+}
+
+void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
+  l2c_link_process_num_completed_pkts(p, evt_len);
+  bluetooth::hci::IsoManager::GetInstance()->HandleNumComplDataPkts(p, evt_len);
 }
