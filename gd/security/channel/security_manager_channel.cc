@@ -119,8 +119,6 @@ void SecurityManagerChannel::OnAuthenticationComplete(hci::Address remote) {
 }
 
 void SecurityManagerChannel::OnEncryptionChange(hci::Address remote, bool encrypted) {
-  ASSERT_LOG(listener_ != nullptr, "No listener set!");
-  listener_->OnEncryptionChange(remote, encrypted);
 }
 
 }  // namespace channel

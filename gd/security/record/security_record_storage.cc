@@ -176,8 +176,6 @@ void SecurityRecordStorage::LoadSecurityRecords(std::set<std::shared_ptr<record:
         record->security_level = peer_signature_resolving_keys->data()[20];
       }
     }
-
-    record->SetIsEncrypted(false);
     record->SetIsEncryptionRequired(device.GetIsEncryptionRequired() == 1 ? true : false);
     record->SetAuthenticated(device.GetIsAuthenticated() == 1 ? true : false);
     record->SetRequiresMitmProtection(device.GetRequiresMitmProtection() == 1 ? true : false);
