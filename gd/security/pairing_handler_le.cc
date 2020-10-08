@@ -72,7 +72,8 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
       std::min(pairing_request.GetMaximumEncryptionKeySize(), pairing_response.GetMaximumEncryptionKeySize());
   if (key_size < 7 || key_size > 16) {
     LOG_WARN("Resulting key size is bad %d", key_size);
-    i.OnPairingFinished(PairingFailure("Resulting key size is bad"));
+    SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::ENCRYPTION_KEY_SIZE));
+    i.OnPairingFinished(PairingFailure("Resulting key size is bad", PairingFailedReason::ENCRYPTION_KEY_SIZE));
     return;
   }
   if (key_size != 16) {
@@ -282,6 +283,13 @@ Phase1ResultOrFailure PairingHandlerLe::ExchangePairingFeature(const InitialInfo
       }
 
       pairing_request = std::get<PairingRequestView>(request);
+    }
+
+    uint8_t key_size = pairing_request->GetMaximumEncryptionKeySize();
+    if (key_size < 7 || key_size > 16) {
+      LOG_WARN("Resulting key size is bad %d", key_size);
+      SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::ENCRYPTION_KEY_SIZE));
+      return PairingFailure("Resulting key size is bad", PairingFailedReason::ENCRYPTION_KEY_SIZE);
     }
 
     // Send Pairing Request
