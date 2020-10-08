@@ -99,6 +99,12 @@ class ClassicSignallingManager {
 
   void OnInformationResponse(SignalId signal_id, const InformationResponseView& response);
 
+  enum class SecurityEnforcementType {
+    LINK_KEY,
+    ENCRYPTION,
+  };
+  void on_security_result_for_outgoing(SecurityEnforcementType type, Psm psm, Cid local_cid, bool result);
+
  private:
   void on_incoming_packet();
   void handle_one_command(ControlView control_view);
@@ -112,7 +118,6 @@ class ClassicSignallingManager {
 
   void send_configuration_request(Cid remote_cid, std::vector<std::unique_ptr<ConfigurationOption>> config);
   void on_security_result_for_incoming(Psm psm, Cid remote_cid, SignalId signal_id, bool result);
-  void on_security_result_for_outgoing(Psm psm, Cid local_cid, bool result);
 
   os::Handler* handler_;
   Link* link_;
