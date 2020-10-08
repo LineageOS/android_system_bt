@@ -200,10 +200,10 @@ void SecurityManagerImpl::NotifyDeviceBonded(hci::AddressWithType device) {
   }
 }
 
-void SecurityManagerImpl::NotifyDeviceBondFailed(hci::AddressWithType device, PairingResultOrFailure status) {
+void SecurityManagerImpl::NotifyDeviceBondFailed(hci::AddressWithType device, PairingFailure status) {
   for (auto& iter : listeners_) {
-    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first),
-                                   device /*, status */));
+    iter.second->Post(
+        common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first), device, status));
   }
 }
 
@@ -398,7 +398,7 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
   if (!std::holds_alternative<PairingFailure>(status)) {
     NotifyDeviceBonded(remote);
   } else {
-    NotifyDeviceBondFailed(remote, status);
+    NotifyDeviceBondFailed(remote, std::get<PairingFailure>(status));
   }
   auto record = this->security_database_.FindOrCreate(remote);
   record->CancelPairing();
@@ -653,6 +653,7 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
     PairingFailure failure = std::get<PairingFailure>(pairing_result);
     LOG_INFO(" ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ failure message: %s",
              failure.message.c_str());
+    NotifyDeviceBondFailed(stored_chan->channel_->GetDevice(), failure);
     return;
   }
 
