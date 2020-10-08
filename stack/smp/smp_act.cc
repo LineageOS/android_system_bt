@@ -97,7 +97,6 @@ static void smp_update_key_mask(tSMP_CB* p_cb, uint8_t key_type, bool recv) {
 void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tSMP_EVT_DATA cb_data;
   tSMP_STATUS callback_rc;
-  SMP_TRACE_DEBUG("%s p_cb->cb_evt=%d", __func__, p_cb->cb_evt);
   if (p_cb->p_callback && p_cb->cb_evt != 0) {
     switch (p_cb->cb_evt) {
       case SMP_IO_CAP_REQ_EVT:
@@ -107,7 +106,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         cb_data.io_req.max_key_size = SMP_MAX_ENC_KEY_SIZE;
         cb_data.io_req.init_keys = p_cb->local_i_key;
         cb_data.io_req.resp_keys = p_cb->local_r_key;
-        SMP_TRACE_WARNING("io_cap = %d", cb_data.io_req.io_cap);
+        LOG_DEBUG("Notify app io_cap = %hhu", cb_data.io_req.io_cap);
         break;
 
       case SMP_NC_REQ_EVT:
@@ -136,9 +135,6 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     callback_rc =
         (*p_cb->p_callback)(p_cb->cb_evt, p_cb->pairing_bda, &cb_data);
 
-    SMP_TRACE_DEBUG("%s: callback_rc=%d  p_cb->cb_evt=%d", __func__,
-                    callback_rc, p_cb->cb_evt);
-
     if (callback_rc == SMP_SUCCESS) {
       switch (p_cb->cb_evt) {
         case SMP_IO_CAP_REQ_EVT:
@@ -150,14 +146,14 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           p_cb->local_r_key = cb_data.io_req.resp_keys;
 
           if (!(p_cb->loc_auth_req & SMP_AUTH_BOND)) {
-            SMP_TRACE_WARNING("Non bonding: No keys will be exchanged");
+            LOG_INFO("Non bonding: No keys will be exchanged");
             p_cb->local_i_key = 0;
             p_cb->local_r_key = 0;
           }
 
-          SMP_TRACE_WARNING(
-              "rcvd auth_req: 0x%02x, io_cap: %d "
-              "loc_oob_flag: %d loc_enc_size: %d, "
+          LOG_DEBUG(
+              "Remote request IO capabilities precondition auth_req: 0x%02x,"
+              " io_cap: %d loc_oob_flag: %d loc_enc_size: %d, "
               "local_i_key: 0x%02x, local_r_key: 0x%02x",
               p_cb->loc_auth_req, p_cb->local_io_capability, p_cb->loc_oob_flag,
               p_cb->loc_enc_size, p_cb->local_i_key, p_cb->local_r_key);
@@ -184,8 +180,9 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
             p_cb->loc_auth_req &= ~SMP_H7_SUPPORT_BIT;
           }
 
-          SMP_TRACE_WARNING(
-              "set auth_req: 0x%02x, local_i_key: 0x%02x, local_r_key: 0x%02x",
+          LOG_DEBUG(
+              "Remote request IO capabilities postcondition auth_req: 0x%02x,"
+              " local_i_key: 0x%02x, local_r_key: 0x%02x",
               p_cb->loc_auth_req, p_cb->local_i_key, p_cb->local_r_key);
 
           smp_sm_event(p_cb, SMP_IO_RSP_EVT, NULL);
@@ -200,7 +197,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
           p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
 
-          SMP_TRACE_WARNING(
+          LOG_DEBUG(
               "for SMP over BR max_key_size: 0x%02x, local_i_key: 0x%02x, "
               "local_r_key: 0x%02x, p_cb->loc_auth_req: 0x%02x",
               p_cb->loc_enc_size, p_cb->local_i_key, p_cb->local_r_key,
@@ -216,8 +213,6 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     p_cb->discard_sec_req = false;
     smp_sm_event(p_cb, SMP_DISCARD_SEC_REQ_EVT, NULL);
   }
-
-  SMP_TRACE_DEBUG("%s: return", __func__);
 }
 
 /*******************************************************************************
@@ -378,7 +373,6 @@ void smp_send_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       (p_cb->loc_auth_req & SMP_AUTH_BOND))
     btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_LID, &le_key, true);
 
-  SMP_TRACE_WARNING("%s", __func__);
   smp_key_distribution_by_transport(p_cb, NULL);
 }
 
