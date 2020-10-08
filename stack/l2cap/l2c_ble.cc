@@ -296,7 +296,7 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   if (role == HCI_ROLE_MASTER) alarm_cancel(p_lcb->l2c_lcb_timer);
 
   /* Save the handle */
-  p_lcb->SetHandle(handle);
+  l2cu_set_lcb_handle(*p_lcb, handle);
 
   /* Connected OK. Change state to connected, we were scanning so we are master
    */
