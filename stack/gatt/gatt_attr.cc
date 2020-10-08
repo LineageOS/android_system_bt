@@ -32,6 +32,7 @@
 
 #include "gatt_api.h"
 #include "gatt_int.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 
 using base::StringPrintf;
@@ -459,12 +460,18 @@ static void gatt_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
 static void gatt_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
                                  tGATT_STATUS status) {
   tGATT_PROFILE_CLCB* p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
+  if (p_clcb == NULL) {
+    LOG_WARN("Unable to find gatt profile after discovery complete");
+    return;
+  }
 
-  if (p_clcb == NULL) return;
-
-  if (status != GATT_SUCCESS || p_clcb->ccc_result == 0) {
-    LOG(WARNING) << __func__
-                 << ": Unable to register for service changed indication";
+  if (status != GATT_SUCCESS) {
+    LOG_WARN("Gatt discovery completed with errors status:%u", status);
+    return;
+  }
+  if (p_clcb->ccc_result == 0) {
+    LOG_WARN("Gatt discovery completed but connection was idle id:%hu",
+             conn_id);
     return;
   }
 
