@@ -528,7 +528,6 @@ typedef void(tL2C_FCR_MGMT_EVT_HDLR)(uint8_t, tL2C_CCB*);
 typedef struct {
   uint16_t local_cid;
   uint16_t num_sdu;
-  tL2CA_TX_COMPLETE_CB* cb;
 } tL2C_TX_COMPLETE_CB_INFO;
 
 /* The offset in a buffer that L2CAP will use when building commands.
@@ -599,8 +598,6 @@ extern void l2cu_send_peer_info_req(tL2C_LCB* p_lcb, uint16_t info_type);
 extern void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb);
 extern void l2cu_check_channel_congestion(tL2C_CCB* p_ccb);
 extern void l2cu_disconnect_chnl(tL2C_CCB* p_ccb);
-
-extern void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
 extern void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
                                        uint16_t max_int, uint16_t latency,
