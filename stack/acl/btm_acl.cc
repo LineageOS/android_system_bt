@@ -1211,30 +1211,9 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
   return (BTM_UNKNOWN_ADDR);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_IsAclConnectionUp
- *
- * Description      This function is called to check if an ACL connection exists
- *                  to a specific remote BD Address.
- *
- * Returns          true if connection is up, else false.
- *
- ******************************************************************************/
 bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
                            tBT_TRANSPORT transport) {
-  tACL_CONN* p;
-
-  VLOG(2) << __func__ << " RemBdAddr: " << remote_bda;
-
-  p = internal_.btm_bda_to_acl(remote_bda, transport);
-  if (p != (tACL_CONN*)NULL) {
-    LOG_WARN("Unable to find active acl");
-    return (true);
-  }
-
-  /* If here, no BD Addr found */
-  return (false);
+  return internal_.btm_bda_to_acl(remote_bda, transport) != nullptr;
 }
 
 bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
