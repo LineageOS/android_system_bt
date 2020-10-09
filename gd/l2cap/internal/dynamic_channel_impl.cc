@@ -55,6 +55,10 @@ void DynamicChannelImpl::RegisterOnCloseCallback(DynamicChannel::OnCloseCallback
 }
 
 void DynamicChannelImpl::Close() {
+  if (link_ == nullptr) {
+    LOG_ERROR("Channel is already closed");
+    return;
+  }
   link_->SendDisconnectionRequest(cid_, remote_cid_);
 }
 
