@@ -17,6 +17,7 @@
 #include <cstdint>
 
 #include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_types.h"
