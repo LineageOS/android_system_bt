@@ -16,6 +16,7 @@
 
 #include <cstdint>
 
+#include "osi/include/log.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/connection_manager.h"
@@ -28,10 +29,12 @@ void btm_ble_advertiser_notify_terminated_legacy(uint8_t status,
                                                  uint16_t connection_handle);
 void btm_ble_increment_link_topology_mask(uint8_t link_role);
 
-bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type,
-                               uint16_t handle, uint8_t role,
-                               bool is_in_security_db, uint16_t conn_interval,
-                               uint16_t conn_latency, uint16_t conn_timeout) {
+static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type,
+                                      uint16_t handle, uint8_t role,
+                                      bool is_in_security_db,
+                                      uint16_t conn_interval,
+                                      uint16_t conn_latency,
+                                      uint16_t conn_timeout) {
   if (role == HCI_ROLE_MASTER) {
     btm_cb.ble_ctr_cb.set_connection_state_idle();
     btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
@@ -57,14 +60,11 @@ void acl_ble_connection_complete(const tBLE_BD_ADDR& address_with_type,
                                  uint16_t handle, uint8_t role, bool match,
                                  uint16_t conn_interval, uint16_t conn_latency,
                                  uint16_t conn_timeout) {
-  connection_manager::on_connection_complete(address_with_type.bda);
-  btm_ble_connected(address_with_type.bda, handle, HCI_ENCRYPT_MODE_DISABLED,
-                    role, address_with_type.type, match);
-
-  btm_ble_increment_link_topology_mask(role);
-
-  l2cble_conn_comp(handle, role, address_with_type.bda, address_with_type.type,
-                   conn_interval, conn_latency, conn_timeout);
+  if (!acl_ble_common_connection(address_with_type, handle, role, match,
+                                 conn_interval, conn_latency, conn_timeout)) {
+    LOG_WARN("Unable to create non enhanced ble acl connection");
+    return;
+  }
 
   btm_ble_update_mode_operation(role, &address_with_type.bda, HCI_SUCCESS);
 
@@ -77,14 +77,11 @@ void acl_ble_enhanced_connection_complete(
     bool match, uint16_t conn_interval, uint16_t conn_latency,
     uint16_t conn_timeout, const RawAddress& local_rpa,
     const RawAddress& peer_rpa, uint8_t peer_addr_type) {
-  connection_manager::on_connection_complete(address_with_type.bda);
-  btm_ble_connected(address_with_type.bda, handle, HCI_ENCRYPT_MODE_DISABLED,
-                    role, address_with_type.type, match);
-
-  btm_ble_increment_link_topology_mask(role);
-
-  l2cble_conn_comp(handle, role, address_with_type.bda, address_with_type.type,
-                   conn_interval, conn_latency, conn_timeout);
+  if (!acl_ble_common_connection(address_with_type, handle, role, match,
+                                 conn_interval, conn_latency, conn_timeout)) {
+    LOG_WARN("Unable to create enhanced ble acl connection");
+    return;
+  }
 
   btm_ble_refresh_local_resolvable_private_addr(address_with_type.bda,
                                                 local_rpa);
