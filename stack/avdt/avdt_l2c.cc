@@ -51,7 +51,8 @@ const tL2CAP_APPL_INFO avdt_l2c_appl = {
     avdt_l2c_config_ind_cback,     avdt_l2c_config_cfm_cback,
     avdt_l2c_disconnect_ind_cback, avdt_l2c_data_ind_cback,
     avdt_l2c_congestion_ind_cback, NULL,
-    avdt_on_l2cap_error,
+    avdt_on_l2cap_error,           NULL,
+    NULL,                          NULL
 };
 
 /*******************************************************************************

@@ -24,6 +24,7 @@
 #ifndef L2C_API_H
 #define L2C_API_H
 
+#include <vector>
 #include <stdbool.h>
 
 #include "bt_target.h"
@@ -165,6 +166,7 @@ static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
  * connection oriented channels.
  */
 struct tL2CAP_LE_CFG_INFO {
+  uint16_t result; /* Only used in confirm messages */
   uint16_t mtu;
   uint16_t mps;
   uint16_t credits = L2CAP_LE_CREDIT_DEFAULT;
@@ -244,6 +246,39 @@ typedef void(tL2CA_TX_COMPLETE_CB)(uint16_t, uint16_t);
  */
 typedef void(tL2CA_ERROR_CB)(uint16_t, uint16_t);
 
+/* Create credit based connection request callback prototype. Parameters are
+ *              BD Address of remote
+ *              Vector of allocated local cids to accept
+ *              PSM
+ *              Peer MTU
+ *              Identifier that the remote sent
+ */
+typedef void(tL2CA_CREDIT_BASED_CONNECT_IND_CB)(const RawAddress& bdaddr,
+                                                std::vector<uint16_t>& lcids,
+                                                uint16_t psm, uint16_t peer_mtu,
+                                                uint8_t identifier);
+
+/* Credit based connection confirmation callback prototype. Parameters are
+ *              BD Address of remote
+ *              Connected Local CIDs
+ *              Peer MTU
+ *              Result - 0 = connected, non-zero means CID is not connected
+ */
+typedef void(tL2CA_CREDIT_BASED_CONNECT_CFM_CB)(const RawAddress& bdaddr,
+                                                uint16_t lcid,
+                                                uint16_t peer_mtu,
+                                                uint16_t result);
+
+/* Credit based reconfiguration confirm callback prototype. Parameters are
+ *              BD Address of remote
+ *              Local CID assigned to the connection
+ *              Flag indicating if this is local or peer configuration
+ *              Pointer to configuration info
+ */
+typedef void(tL2CA_CREDIT_BASED_RECONFIG_COMPLETED_CB)(
+    const RawAddress& bdaddr, uint16_t lcid, bool is_local_cfg,
+    tL2CAP_LE_CFG_INFO* p_cfg);
+
 /* Define the structure that applications use to register with
  * L2CAP. This structure includes callback functions. All functions
  * MUST be provided, with the exception of the "connect pending"
@@ -259,6 +294,10 @@ typedef struct {
   tL2CA_CONGESTION_STATUS_CB* pL2CA_CongestionStatus_Cb;
   tL2CA_TX_COMPLETE_CB* pL2CA_TxComplete_Cb;
   tL2CA_ERROR_CB* pL2CA_Error_Cb;
+  tL2CA_CREDIT_BASED_CONNECT_IND_CB* pL2CA_CreditBasedConnectInd_Cb;
+  tL2CA_CREDIT_BASED_CONNECT_CFM_CB* pL2CA_CreditBasedConnectCfm_Cb;
+  tL2CA_CREDIT_BASED_RECONFIG_COMPLETED_CB*
+      pL2CA_CreditBasedReconfigCompleted_Cb;
 } tL2CAP_APPL_INFO;
 
 /* Define the structure that applications use to create or accept
@@ -427,6 +466,51 @@ extern bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
 extern bool L2CA_GetPeerLECocConfig(uint16_t lcid,
                                     tL2CAP_LE_CFG_INFO* peer_cfg);
 
+/*******************************************************************************
+ *
+ *  Function         L2CA_ReconfigCreditBasedConnsReq
+ *
+ *  Description      Start reconfigure procedure on Connection Oriented Channel.
+ *
+ *  Return value:    true if peer is connected
+ *
+ ******************************************************************************/
+
+extern bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bd_addr,
+                                             std::vector<uint16_t>& lcids,
+                                             tL2CAP_LE_CFG_INFO* p_cfg);
+
+/*******************************************************************************
+ *
+ *  Function         L2CA_ConnectCreditBasedReq
+ *
+ *  Description      With this function L2CAP will initiate setup of up to 5 credit
+ *                   based connections for given psm using provided configuration.
+ *                   L2CAP will notify user on the connection result, by calling
+ *                   pL2CA_CreditBasedConnectCfm_Cb for each cid with a result.
+ *
+ *  Return value: vector of allocated local cids for the connection
+ *
+ ******************************************************************************/
+
+extern std::vector<uint16_t> L2CA_ConnectCreditBasedReq(
+    uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_LE_CFG_INFO* p_cfg);
+
+/*******************************************************************************
+ *
+ *  Function         L2CA_ConnectCreditBasedRsp
+ *
+ *  Description      Response for the pL2CA_CreditBasedConnectInd_Cb which is the
+ *                   indication for peer requesting credit based connection.
+ *
+ *  Return value: true if peer is connected
+ *
+ ******************************************************************************/
+
+extern bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
+                                       std::vector<uint16_t>& accepted_lcids,
+                                       uint16_t result,
+                                       tL2CAP_LE_CFG_INFO* p_cfg);
 /*******************************************************************************
  *
  * Function         L2CA_DisconnectReq
