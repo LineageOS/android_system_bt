@@ -628,6 +628,11 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       p_ccb->p_rcb = p_rcb;
       p_ccb->remote_cid = rcid;
 
+      p_ccb->local_conn_cfg.mtu = L2CAP_SDU_LENGTH_LE_MAX;
+      p_ccb->local_conn_cfg.mps =
+          controller_get_interface()->get_acl_data_size_ble();
+      p_ccb->local_conn_cfg.credits = L2CAP_LE_CREDIT_DEFAULT,
+
       p_ccb->peer_conn_cfg.mtu = mtu;
       p_ccb->peer_conn_cfg.mps = mps;
       p_ccb->peer_conn_cfg.credits = initial_credit;
