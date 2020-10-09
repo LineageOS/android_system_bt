@@ -148,6 +148,29 @@ bool bluetooth::shim::L2CA_GetPeerLECocConfig(uint16_t lcid,
   return false;
 }
 
+bool bluetooth::shim::L2CA_ReconfigCreditBasedConnsReq(
+    const RawAddress& bd_addr, std::vector<uint16_t>& lcids,
+    tL2CAP_LE_CFG_INFO* p_cfg) {
+  LOG_INFO("UNIMPLEMENTED %s addr: %s cfg:%p", __func__,
+           bd_addr.ToString().c_str(), p_cfg);
+  return false;
+}
+
+std::vector<uint16_t> bluetooth::shim::L2CA_ConnectCreditBasedReq(
+    uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_LE_CFG_INFO* p_cfg) {
+  LOG_INFO("UNIMPLEMENTED %s addr:%s", __func__, p_bd_addr.ToString().c_str());
+  std::vector<uint16_t> result;
+  return result;
+}
+
+bool bluetooth::shim::L2CA_ConnectCreditBasedRsp(
+    const RawAddress& bd_addr, uint8_t id,
+    std::vector<uint16_t>& accepted_lcids, uint16_t result,
+    tL2CAP_LE_CFG_INFO* p_cfg) {
+  LOG_INFO("UNIMPLEMENTED %s addr:%s", __func__, bd_addr.ToString().c_str());
+  return false;
+}
+
 uint8_t bluetooth::shim::L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
   bool write_success = shim_l2cap.Write(cid, p_data);
   return write_success ? L2CAP_DW_SUCCESS : L2CAP_DW_FAILED;

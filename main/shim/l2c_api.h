@@ -18,6 +18,7 @@
 
 #include <set>
 #include <unordered_map>
+#include <vector>
 
 #include "stack/include/l2c_api.h"
 
@@ -173,6 +174,53 @@ bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
  *
  ******************************************************************************/
 bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg);
+
+/*******************************************************************************
+ *
+ *  Function         L2CA_ReconfigCreditBasedConnsReq
+ *
+ *  Description      Start reconfigure procedure on Credit Based Connection Oriented
+ *                   Channels.
+ *
+ *  Return value:    true if peer is connected
+ *
+ ******************************************************************************/
+
+bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bd_addr,
+                                      std::vector<uint16_t>& lcids,
+                                      tL2CAP_LE_CFG_INFO* p_cfg);
+
+/*******************************************************************************
+ *
+ *  Function         L2CA_ConnectCreditBasedReq
+ *
+ *  Description      With this function L2CAP will initiate setup of up to 5 credit
+ *                   based connections for given psm using provided configuration.
+ *                   L2CAP will notify user on the connection result, by calling
+ *                   pL2CA_CreditBasedConnectCfm_Cb for each cid with a result.
+ *
+ *  Return value: vector of allocated local cids for the connection
+ *
+ ******************************************************************************/
+
+extern std::vector<uint16_t> L2CA_ConnectCreditBasedReq(
+    uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_LE_CFG_INFO* p_cfg);
+
+/*******************************************************************************
+ *
+ *  Function         L2CA_ConnectCreditBasedRsp
+ *
+ *  Description      Response for the pL2CA_CreditBasedConnectInd_Cb which is the
+ *                   indication for peer requesting credit based connection.
+ *
+ *  Return value:    true if peer is connected
+ *
+ ******************************************************************************/
+
+extern bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
+                                       std::vector<uint16_t>& accepted_lcids,
+                                       uint16_t result,
+                                       tL2CAP_LE_CFG_INFO* p_cfg);
 
 /*******************************************************************************
  *
