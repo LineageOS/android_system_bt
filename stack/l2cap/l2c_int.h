@@ -41,6 +41,8 @@
 
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
 
+constexpr uint16_t L2CAP_CREDIT_BASED_MIN_MTU = 64;
+constexpr uint16_t L2CAP_CREDIT_BASED_MIN_MPS = 64;
 #define L2CAP_NO_IDLE_TIMEOUT 0xFFFF
 
 /*
@@ -136,7 +138,25 @@ typedef enum {
 #define L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT                                  \
   35                                             /* Upper layer credit packet \
                                                     */
-#define L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT 36 /* Peer credit packet */
+/* Peer credit based connection */
+#define L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT 36 /* credit packet */
+#define L2CEVT_L2CAP_CREDIT_BASED_CONNECT_REQ \
+  37 /* credit based connection request */
+#define L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP \
+  38 /* accepted credit based connection */
+#define L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG \
+  39 /* rejected credit based connection */
+#define L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_REQ \
+  40 /* credit based reconfig request*/
+#define L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_RSP \
+  41 /* credit based reconfig response */
+
+/* Upper layer credit based connection */
+#define L2CEVT_L2CA_CREDIT_BASED_CONNECT_REQ 42 /* connect request */
+#define L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP 43 /* connect response */
+#define L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP_NEG \
+  44                                             /* connect response (failed)*/
+#define L2CEVT_L2CA_CREDIT_BASED_RECONFIG_REQ 45 /* reconfig request */
 
 /* Constants for LE Dynamic PSM values */
 #define LE_DYNAMIC_PSM_START 0x0080
@@ -284,6 +304,10 @@ typedef struct t_l2c_ccb {
   /* Number of LE frames that the remote can send to us (credit count in
    * remote). Valid only for LE CoC */
   uint16_t remote_credit_count;
+
+  /* used to indicate that ECOC is used */
+  bool ecoc;
+  bool reconfig_started;
 } tL2C_CCB;
 
 /***********************************************************************
@@ -432,6 +456,18 @@ typedef struct t_l2c_linkcb {
   tL2C_RR_SERV rr_serv[L2CAP_NUM_CHNL_PRIORITY];
   uint8_t rr_pri; /* current serving priority group */
 
+  /* Pending ECOC reconfiguration data */
+  tL2CAP_LE_CFG_INFO pending_ecoc_reconfig_cfg;
+  uint8_t pending_ecoc_reconfig_cnt;
+
+  /* This is to keep list of local cids use in the
+   * credit based connection response.
+   */
+  std::vector<uint16_t> pending_ecoc_connection_cids;
+  /* List of allocated cids, sent to user for acceptance */
+  std::vector<uint16_t> pending_ecoc_allocated_cids;
+  uint16_t pending_lead_cid;
+  uint16_t pending_l2cap_result;
 } tL2C_LCB;
 
 /* Define the L2CAP control structure
@@ -519,6 +555,8 @@ typedef struct {
   uint16_t l2cap_result; /* L2CAP result */
   uint16_t l2cap_status; /* L2CAP status */
   uint16_t remote_cid;   /* Remote CID */
+  std::vector<uint16_t> lcids; /* Used when credit based is used*/
+  uint16_t peer_mtu;     /* Peer MTU */
 } tL2C_CONN_INFO;
 
 typedef void(tL2C_FCR_MGMT_EVT_HDLR)(uint8_t, tL2C_CCB*);
@@ -599,11 +637,24 @@ extern void l2cu_send_peer_ble_par_rsp(tL2C_LCB* p_lcb, uint16_t reason,
                                        uint8_t rem_id);
 extern void l2cu_reject_ble_connection(tL2C_CCB* p_ccb, uint8_t rem_id,
                                        uint16_t result);
+extern void l2cu_reject_credit_based_conn_req(tL2C_LCB* p_lcb, uint8_t rem_id,
+                                              uint8_t num_of_channels,
+                                              uint16_t result);
 extern void l2cu_reject_ble_coc_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
                                            uint16_t result);
 extern void l2cu_send_peer_ble_credit_based_conn_res(tL2C_CCB* p_ccb,
                                                      uint16_t result);
+extern void l2cu_send_peer_credit_based_conn_res(
+    tL2C_CCB* p_ccb, std::vector<uint16_t>& accepted_lcids, uint16_t result);
+
 extern void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb);
+extern void l2cu_send_peer_credit_based_conn_req(tL2C_CCB* p_ccb);
+
+extern void l2cu_send_ble_reconfig_rsp(tL2C_LCB* p_lcb, uint8_t rem_id,
+                                       uint16_t result);
+extern void l2cu_send_credit_based_reconfig_req(tL2C_CCB* p_ccb,
+                                                tL2CAP_LE_CFG_INFO* p_data);
+
 extern void l2cu_send_peer_ble_flow_control_credit(tL2C_CCB* p_ccb,
                                                    uint16_t credit_value);
 extern void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB* p_ccb);

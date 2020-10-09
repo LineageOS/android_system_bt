@@ -663,6 +663,249 @@ bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
 
 /*******************************************************************************
  *
+ * Function         L2CA_ConnectCreditBasedRsp
+ *
+ * Description      Response for the pL2CA_CreditBasedConnectInd_Cb which is the
+ *                  indication for peer requesting credit based connection.
+ *
+ * Parameters:      BD address of the peer
+ *                  Identifier of the transaction
+ *                  Vector of accepted lcids by upper layer
+ *                  L2CAP result
+ *                  Local channel configuration
+ *
+ * Returns          true for success, false for failure
+ *
+ ******************************************************************************/
+bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
+                                std::vector<uint16_t>& accepted_lcids,
+                                uint16_t result, tL2CAP_LE_CFG_INFO* p_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectCreditBasedRsp(
+        p_bd_addr, id, accepted_lcids, result, p_cfg);
+  }
+
+  VLOG(1) << __func__ << " BDA: " << p_bd_addr
+          << StringPrintf(" num of cids: %d Result: %d",
+                          int(accepted_lcids.size()), +result);
+
+  /* First, find the link control block */
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
+  if (p_lcb == NULL) {
+    /* No link. Get an LCB and start link establishment */
+    L2CAP_TRACE_WARNING("%s no LCB", __func__);
+    return false;
+  }
+
+  /* Now, find the channel control block. We kept lead cid.
+   */
+  tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(p_lcb, p_lcb->pending_lead_cid);
+
+  for (uint16_t cid : accepted_lcids) {
+    tL2C_CCB* temp_p_ccb = l2cu_find_ccb_by_cid(p_lcb, cid);
+    if (temp_p_ccb == NULL) {
+      L2CAP_TRACE_WARNING("%s no CCB", __func__);
+      return false;
+    }
+
+    if (p_cfg) {
+      temp_p_ccb->local_conn_cfg = *p_cfg;
+      temp_p_ccb->remote_credit_count = p_cfg->credits;
+    }
+  }
+
+  /* The IDs must match */
+  if (p_ccb->remote_id != id) {
+    L2CAP_TRACE_WARNING("%s bad id. Expected: %d  Got: %d", __func__,
+                        p_ccb->remote_id, id);
+    return false;
+  }
+
+  tL2C_CONN_INFO conn_info;
+  conn_info.lcids = accepted_lcids;
+  conn_info.bd_addr = p_bd_addr;
+  conn_info.l2cap_result = result;
+
+  if (accepted_lcids.size() > 0) {
+    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP, &conn_info);
+  } else {
+    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP_NEG,
+                    &conn_info);
+  }
+
+  return true;
+}
+/*******************************************************************************
+ *
+ *  Function         L2CA_ConnectCreditBasedReq
+ *
+ *  Description      Initiate Create Credit Based connections.
+ *
+ *  Parameters:      PSM for the L2CAP channel
+ *                   BD address of the peer
+ *                   Local channel configuration
+ *
+ *  Return value:    Vector of allocated local cids.
+ *
+ ******************************************************************************/
+
+std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
+                                                 const RawAddress& p_bd_addr,
+                                                 tL2CAP_LE_CFG_INFO* p_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectCreditBasedReq(psm, p_bd_addr, p_cfg);
+  }
+
+  VLOG(1) << __func__ << " BDA: " << p_bd_addr
+          << StringPrintf(" PSM: 0x%04x", psm);
+
+  std::vector<uint16_t> allocated_cids;
+
+  /* Fail if we have not established communications with the controller */
+  if (!BTM_IsDeviceUp()) {
+    L2CAP_TRACE_WARNING("%s BTU not ready", __func__);
+    return allocated_cids;
+  }
+
+  if (!p_cfg) {
+    L2CAP_TRACE_WARNING("%s p_cfg is NULL", __func__);
+    return allocated_cids;
+  }
+
+  /* Fail if the PSM is not registered */
+  tL2C_RCB* p_rcb = l2cu_find_ble_rcb_by_psm(psm);
+  if (p_rcb == NULL) {
+    L2CAP_TRACE_WARNING("%s No BLE RCB, PSM: 0x%04x", __func__, psm);
+    return allocated_cids;
+  }
+
+  /* First, see if we already have a le link to the remote */
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
+  if (p_lcb == NULL || (p_lcb->link_state != LST_CONNECTED)) {
+    L2CAP_TRACE_WARNING("%s incorrect link state: %d", __func__,
+                        p_lcb->link_state);
+    return allocated_cids;
+  }
+
+  L2CAP_TRACE_DEBUG("%s LE Link is up", __func__);
+
+  tL2C_CCB* p_ccb_primary;
+
+  for (int i = 0; i < 5; i++) {
+    /* Allocate a channel control block */
+    tL2C_CCB* p_ccb = l2cu_allocate_ccb(p_lcb, 0);
+    if (p_ccb == NULL) {
+      if (i == 0) {
+        L2CAP_TRACE_WARNING("%s no CCB, PSM: 0x%04x", __func__, psm);
+        return allocated_cids;
+      } else {
+        break;
+      }
+    }
+
+    p_ccb->ecoc = true;
+    p_ccb->local_conn_cfg = *p_cfg;
+    p_ccb->remote_credit_count = p_cfg->credits;
+    /* Save registration info */
+    p_ccb->p_rcb = p_rcb;
+    if (i == 0) {
+      p_ccb_primary = p_ccb;
+    } else {
+      /* Only primary channel we keep in closed state, as in that
+       * context we will run state machine where security is checked etc.
+       * Others we can directly put into waiting for connect
+       * response, so those are not confused by system as incomming connections
+       */
+      p_ccb->chnl_state = CST_W4_L2CAP_CONNECT_RSP;
+    }
+
+    allocated_cids.push_back(p_ccb->local_cid);
+  }
+
+  p_lcb->pending_ecoc_connection_cids = allocated_cids;
+  l2c_csm_execute(p_ccb_primary, L2CEVT_L2CA_CREDIT_BASED_CONNECT_REQ, NULL);
+
+  L2CAP_TRACE_API("%s(psm: 0x%04x) returned CID: 0x%04x", __func__, psm,
+                  p_ccb_primary->local_cid);
+
+  return allocated_cids;
+}
+
+/*******************************************************************************
+ *
+ *  Function         L2CA_ReconfigCreditBasedConnsReq
+ *
+ *  Description      Start reconfigure procedure on Connection Oriented Channel.
+ *
+ *  Parameters:      Vector of channels for which configuration should be changed
+ *                   New local channel configuration
+ *
+ *  Return value:    true if peer is connected
+ *
+ ******************************************************************************/
+
+bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bda,
+                                      std::vector<uint16_t>& lcids,
+                                      tL2CAP_LE_CFG_INFO* p_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ReconfigCreditBasedConnsReq(bda, lcids, p_cfg);
+  }
+
+  tL2C_CCB* p_ccb;
+
+  L2CAP_TRACE_API("L2CA_ReconfigCreditBasedConnsReq() ");
+
+  for (uint16_t cid : lcids) {
+    p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
+
+    if (!p_ccb) {
+      L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_cfg_req, CID: %d", cid);
+      return (false);
+    }
+
+    if ((p_ccb->local_conn_cfg.mtu > p_cfg->mtu) ||
+        (p_ccb->local_conn_cfg.mps > p_cfg->mps)) {
+      L2CAP_TRACE_WARNING("L2CAP - MPS or MTU reduction, CID: %d", cid);
+      return (false);
+    }
+  }
+
+  if (p_cfg->mtu > L2CAP_MTU_SIZE) {
+    L2CAP_TRACE_WARNING("L2CAP - adjust MTU: %u too large", p_cfg->mtu);
+    p_cfg->mtu = L2CAP_MTU_SIZE;
+  }
+
+  /* Mark all the p_ccbs which going to be reconfigured */
+  for (uint16_t cid : lcids) {
+    L2CAP_TRACE_API(" cid: %d", cid);
+    p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
+    if (!p_ccb) {
+      LOG(ERROR) << __func__ << "Missing cid? " << int(cid);
+      return (false);
+    }
+    p_ccb->reconfig_started = true;
+  }
+
+  tL2C_LCB* p_lcb = p_ccb->p_lcb;
+
+  /* Hack warning - the whole reconfig we are doing in the context of the first
+   * p_ccb. In the p_lcp we store configuration and cid in which context we are
+   * doing reconfiguration.
+   */
+  for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb)
+    if ((p_ccb->in_use) && (p_ccb->ecoc) && (p_ccb->reconfig_started)) {
+      p_ccb->p_lcb->pending_ecoc_reconfig_cfg = *p_cfg;
+      p_ccb->p_lcb->pending_ecoc_reconfig_cnt = lcids.size();
+      break;
+    }
+
+  l2c_csm_execute(p_ccb, L2CEVT_L2CA_CREDIT_BASED_RECONFIG_REQ, p_cfg);
+
+  return (true);
+}
+
+/*******************************************************************************
+ *
  * Function         L2CA_DisconnectReq
  *
  * Description      Higher layers call this function to disconnect a channel.
