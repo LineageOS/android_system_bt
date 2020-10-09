@@ -85,7 +85,7 @@
 #endif
 
 #ifndef AVRCP_DEFAULT_VERSION
-#define AVRCP_DEFAULT_VERSION AVRCP_1_4_STRING
+#define AVRCP_DEFAULT_VERSION AVRCP_1_5_STRING
 #endif
 
 /* state machine states */
