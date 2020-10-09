@@ -484,6 +484,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
   tL2C_CCB *p_ccb = NULL, *temp_p_ccb = NULL;
   tL2C_RCB* p_rcb;
   uint16_t credit;
+  uint8_t num_of_channels;
+
   p_pkt_end = p + pkt_len;
 
   if (p + 4 > p_pkt_end) {
@@ -562,6 +564,341 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
     case L2CAP_CMD_BLE_UPDATE_RSP:
       p += 2;
       break;
+
+    case L2CAP_CMD_CREDIT_BASED_CONN_REQ: {
+      if (p + 10 > p_pkt_end) {
+        LOG(ERROR) << "invalid L2CAP_CMD_CREDIT_BASED_CONN_REQ len";
+        return;
+      }
+
+      STREAM_TO_UINT16(con_info.psm, p);
+      STREAM_TO_UINT16(mtu, p);
+      STREAM_TO_UINT16(mps, p);
+      STREAM_TO_UINT16(initial_credit, p);
+
+      /* Check how many channels remote side wants. */
+      num_of_channels = (p_pkt_end - p) / sizeof(uint16_t);
+
+      L2CAP_TRACE_DEBUG(
+          "Recv L2CAP_CMD_CREDIT_BASED_CONN_REQ with "
+          "mtu = %d, "
+          "mps = %d, "
+          "initial credit = %d"
+          "num_of_channels = %d",
+          mtu, mps, initial_credit, num_of_channels);
+
+      if (p_lcb->pending_ecoc_connection_cids.size() > 0) {
+        L2CAP_TRACE_WARNING(
+            "L2CAP - L2CAP_CMD_CREDIT_BASED_CONN_REQ collision:");
+        l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
+                                          L2CAP_LE_RESULT_NO_RESOURCES);
+        return;
+      }
+
+      /* Check PSM Support */
+      p_rcb = l2cu_find_ble_rcb_by_psm(con_info.psm);
+      if (p_rcb == NULL) {
+        L2CAP_TRACE_WARNING("L2CAP - rcvd conn req for unknown PSM: 0x%04x",
+                            con_info.psm);
+        l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
+                                          L2CAP_LE_RESULT_NO_PSM);
+        return;
+      }
+
+      if (!p_rcb->api.pL2CA_CreditBasedConnectInd_Cb) {
+        L2CAP_TRACE_WARNING(
+            "L2CAP - rcvd conn req for outgoing-only connection PSM: %d",
+            con_info.psm);
+        l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
+                                          L2CAP_CONN_NO_PSM);
+        return;
+      }
+
+      /* validate the parameters */
+      if (mtu < L2CAP_CREDIT_BASED_MIN_MTU ||
+          mps < L2CAP_CREDIT_BASED_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
+        L2CAP_TRACE_ERROR("L2CAP don't like the params");
+        l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
+                                          L2CAP_LE_RESULT_INVALID_PARAMETERS);
+        return;
+      }
+
+      /* Clear previous list */
+      p_lcb->pending_ecoc_allocated_cids.clear();
+
+      for (int i = 0; i < num_of_channels; i++) {
+        STREAM_TO_UINT16(rcid, p);
+        temp_p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, rcid);
+        if (temp_p_ccb) {
+          L2CAP_TRACE_WARNING(
+              "L2CAP - rcvd conn req for duplicated cid: 0x%04x", rcid);
+          p_lcb->pending_ecoc_connection_cids.push_back(0);
+          p_lcb->pending_l2cap_result =
+              L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED;
+        } else {
+          /* Allocate a ccb for this.*/
+          temp_p_ccb = l2cu_allocate_ccb(p_lcb, 0);
+          if (temp_p_ccb == NULL) {
+            L2CAP_TRACE_ERROR("L2CAP - unable to allocate CCB");
+            p_lcb->pending_ecoc_connection_cids.push_back(0);
+            p_lcb->pending_l2cap_result = L2CAP_LE_RESULT_NO_RESOURCES;
+            continue;
+          }
+
+          temp_p_ccb->ecoc = true;
+          temp_p_ccb->remote_id = id;
+          temp_p_ccb->p_rcb = p_rcb;
+          temp_p_ccb->remote_cid = rcid;
+
+          temp_p_ccb->peer_conn_cfg.mtu = mtu;
+          temp_p_ccb->peer_conn_cfg.mps = mps;
+          temp_p_ccb->peer_conn_cfg.credits = initial_credit;
+
+          temp_p_ccb->tx_mps = mps;
+          temp_p_ccb->ble_sdu = NULL;
+          temp_p_ccb->ble_sdu_length = 0;
+          temp_p_ccb->is_first_seg = true;
+          temp_p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
+
+          /* This list will be used to prepare response */
+          p_lcb->pending_ecoc_connection_cids.push_back(temp_p_ccb->local_cid);
+
+          /* This is used to notify user */
+          p_lcb->pending_ecoc_allocated_cids.push_back(temp_p_ccb->local_cid);
+
+          /*This is going to be our lead p_ccb for state machine */
+          if (p_lcb->pending_ecoc_allocated_cids.size() == 1) {
+            p_ccb = temp_p_ccb;
+            p_lcb->pending_lead_cid = p_ccb->local_cid;
+          }
+        }
+      }
+
+      if (p_lcb->pending_ecoc_allocated_cids.size() == 0) {
+        L2CAP_TRACE_ERROR("L2CAP - unable to allocate CCB");
+        l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
+                                          p_lcb->pending_l2cap_result);
+        return;
+      }
+
+      l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_REQ, NULL);
+      break;
+    }
+    case L2CAP_CMD_CREDIT_BASED_CONN_RES:
+      if (p + 2 > p_pkt_end) {
+        LOG(ERROR) << "invalid L2CAP_CMD_CREDIT_BASED_CONN_RES len";
+        return;
+      }
+
+      L2CAP_TRACE_DEBUG("Recv L2CAP_CMD_CREDIT_BASED_CONN_RES");
+      /* For all channels, see whose identifier matches this id */
+      for (temp_p_ccb = p_lcb->ccb_queue.p_first_ccb; temp_p_ccb;
+           temp_p_ccb = temp_p_ccb->p_next_ccb) {
+        if (temp_p_ccb->local_id == id) {
+          p_ccb = temp_p_ccb;
+          break;
+        }
+      }
+
+      if (!p_ccb) {
+        L2CAP_TRACE_DEBUG(" Cannot find matching connection req");
+        con_info.l2cap_result = L2CAP_LE_RESULT_INVALID_SOURCE_CID;
+        l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
+        return;
+      }
+
+      STREAM_TO_UINT16(mtu, p);
+      STREAM_TO_UINT16(mps, p);
+      STREAM_TO_UINT16(initial_credit, p);
+      STREAM_TO_UINT16(con_info.l2cap_result, p);
+
+      /* When one of these result is sent back that means,
+       * all the channels has been rejected
+       */
+      if (con_info.l2cap_result == L2CAP_LE_RESULT_NO_PSM ||
+          con_info.l2cap_result ==
+              L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION ||
+          con_info.l2cap_result == L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP ||
+          con_info.l2cap_result == L2CAP_LE_RESULT_INSUFFICIENT_AUTHORIZATION ||
+          con_info.l2cap_result == L2CAP_LE_RESULT_UNACCEPTABLE_PARAMETERS ||
+          con_info.l2cap_result == L2CAP_LE_RESULT_INVALID_PARAMETERS) {
+        l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG,
+                        &con_info);
+        return;
+      }
+
+      /* validate the parameters */
+      if (mtu < L2CAP_CREDIT_BASED_MIN_MTU ||
+          mps < L2CAP_CREDIT_BASED_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
+        L2CAP_TRACE_ERROR("L2CAP - invalid params");
+        con_info.l2cap_result = L2CAP_LE_RESULT_INVALID_PARAMETERS;
+        l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG,
+                        &con_info);
+        break;
+      }
+
+      /* At least some of the channels has been created and parameters are
+       * good*/
+      num_of_channels = (p_pkt_end - p) / sizeof(uint16_t);
+      if (num_of_channels != p_lcb->pending_ecoc_connection_cids.size()) {
+        L2CAP_TRACE_ERROR(
+            "Incorrect response."
+            "expected num of channels = %d",
+            "received num of channels = %d", num_of_channels,
+            p_lcb->pending_ecoc_connection_cids.size());
+        return;
+      }
+
+      L2CAP_TRACE_DEBUG(
+          "mtu = %d, "
+          "mps = %d, "
+          "initial_credit = %d, "
+          "con_info.l2cap_result = %d"
+          "num_of_channels = %d",
+          mtu, mps, initial_credit, con_info.l2cap_result, num_of_channels);
+
+      con_info.peer_mtu = mtu;
+
+      for (uint16_t cid : p_lcb->pending_ecoc_connection_cids) {
+        temp_p_ccb = l2cu_find_ccb_by_cid(p_lcb, cid);
+        STREAM_TO_UINT16(temp_p_ccb->remote_cid, p);
+
+        L2CAP_TRACE_DEBUG(
+            "local cid = %d "
+            "remote cid = %d",
+            cid, temp_p_ccb->remote_cid);
+
+        /* Check if peer accepted channel, if not release the one not
+         * created
+         */
+        if (temp_p_ccb->remote_cid == 0) {
+          l2c_csm_execute(temp_p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG,
+                          &con_info);
+        } else {
+          temp_p_ccb->tx_mps = mps;
+          temp_p_ccb->ble_sdu = NULL;
+          temp_p_ccb->ble_sdu_length = 0;
+          temp_p_ccb->is_first_seg = true;
+          temp_p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
+          temp_p_ccb->peer_conn_cfg.mtu = mtu;
+          temp_p_ccb->peer_conn_cfg.mps = mps;
+          temp_p_ccb->peer_conn_cfg.credits = initial_credit;
+
+          l2c_csm_execute(temp_p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP,
+                          &con_info);
+        }
+      }
+
+      p_lcb->pending_ecoc_connection_cids.clear();
+
+      break;
+    case L2CAP_CMD_CREDIT_BASED_RECONFIG_REQ: {
+      if (p + 6 > p_pkt_end) {
+        l2cu_send_ble_reconfig_rsp(p_lcb, id, L2CAP_RECONFIG_UNACCAPTED_PARAM);
+        return;
+      }
+
+      STREAM_TO_UINT16(mtu, p);
+      STREAM_TO_UINT16(mps, p);
+
+      /* validate the parameters */
+      if (mtu < L2CAP_CREDIT_BASED_MIN_MTU ||
+          mps < L2CAP_CREDIT_BASED_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
+        L2CAP_TRACE_ERROR("L2CAP - invalid params");
+        l2cu_send_ble_reconfig_rsp(p_lcb, id, L2CAP_RECONFIG_UNACCAPTED_PARAM);
+        return;
+      }
+
+      /* Check how many channels remote side wants to reconfigure */
+      num_of_channels = (p_pkt_end - p) / sizeof(uint16_t);
+
+      L2CAP_TRACE_DEBUG(
+          "Recv L2CAP_CMD_CREDIT_BASED_RECONFIG_REQ with "
+          "mtu = %d, "
+          "mps = %d, "
+          "num_of_channels = %d",
+          mtu, mps, num_of_channels);
+
+      uint8_t* p_tmp = p;
+      for (int i = 0; i < num_of_channels; i++) {
+        STREAM_TO_UINT16(rcid, p_tmp);
+        p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, rcid);
+        if (!p_ccb) {
+          L2CAP_TRACE_WARNING(
+              "L2CAP - rcvd config req for non existing cid: 0x%04x", rcid);
+          l2cu_send_ble_reconfig_rsp(p_lcb, id, L2CAP_RECONFIG_INVALID_DCID);
+          return;
+        }
+
+        if (p_ccb->peer_conn_cfg.mtu > mtu) {
+          L2CAP_TRACE_WARNING(
+              "L2CAP - rcvd config req mtu reduction new mtu < mtu (%d < %d)",
+              mtu, p_ccb->peer_conn_cfg.mtu);
+          l2cu_send_ble_reconfig_rsp(p_lcb, id,
+                                     L2CAP_RECONFIG_REDUCTION_MTU_NO_ALLOWED);
+          return;
+        }
+
+        if (p_ccb->peer_conn_cfg.mps > mps) {
+          L2CAP_TRACE_WARNING(
+              "L2CAP - rcvd config req mps reduction new mps < mps (%d < %d)",
+              mtu, p_ccb->peer_conn_cfg.mtu);
+          l2cu_send_ble_reconfig_rsp(p_lcb, id,
+                                     L2CAP_RECONFIG_REDUCTION_MPS_NO_ALLOWED);
+          return;
+        }
+      }
+
+      for (int i = 0; i < num_of_channels; i++) {
+        STREAM_TO_UINT16(rcid, p);
+
+        /* Store new values */
+        p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, rcid);
+        p_ccb->peer_conn_cfg.mtu = mtu;
+        p_ccb->peer_conn_cfg.mps = mps;
+        p_ccb->tx_mps = mps;
+
+        tL2CAP_LE_CFG_INFO le_cfg;
+        le_cfg.mps = mps;
+        le_cfg.mtu = mtu;
+
+        l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_REQ, &le_cfg);
+      }
+
+      l2cu_send_ble_reconfig_rsp(p_lcb, id, L2CAP_RECONFIG_SUCCEED);
+
+      break;
+    }
+
+    case L2CAP_CMD_CREDIT_BASED_RECONFIG_RES: {
+      uint16_t result;
+      STREAM_TO_UINT16(result, p);
+
+      L2CAP_TRACE_DEBUG(
+          "Recv L2CAP_CMD_CREDIT_BASED_RECONFIG_RES for "
+          "result = 0x%04x",
+          result);
+
+      p_lcb->pending_ecoc_reconfig_cfg.result = result;
+
+      /* All channels which are in reconfiguration state are marked with
+       * reconfig_started flag. Find it and send response
+       */
+      for (temp_p_ccb = p_lcb->ccb_queue.p_first_ccb; temp_p_ccb;
+           temp_p_ccb = temp_p_ccb->p_next_ccb) {
+        if ((temp_p_ccb->in_use) && (temp_p_ccb->reconfig_started)) {
+          l2c_csm_execute(temp_p_ccb, L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_RSP,
+                          &p_lcb->pending_ecoc_reconfig_cfg);
+
+          temp_p_ccb->reconfig_started = false;
+          if (result == L2CAP_CFG_OK) {
+            temp_p_ccb->local_conn_cfg = p_lcb->pending_ecoc_reconfig_cfg;
+          }
+        }
+      }
+
+      break;
+    }
 
     case L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ:
       if (p + 10 > p_pkt_end) {
@@ -1075,7 +1412,11 @@ void l2cble_credit_based_conn_req(tL2C_CCB* p_ccb) {
     return;
   }
 
-  l2cu_send_peer_ble_credit_based_conn_req(p_ccb);
+  if (p_ccb->ecoc) {
+    l2cu_send_peer_credit_based_conn_req(p_ccb);
+  } else {
+    l2cu_send_peer_ble_credit_based_conn_req(p_ccb);
+  }
   return;
 }
 

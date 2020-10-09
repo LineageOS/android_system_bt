@@ -491,6 +491,59 @@ void l2cu_reject_connection(tL2C_LCB* p_lcb, uint16_t remote_cid,
 
 /*******************************************************************************
  *
+ * Function         l2cu_send_credit_based_reconfig_req
+ *
+ * Description      Build and send an L2CAP "recoonfiguration request" message
+ *                  to the peer.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void l2cu_send_credit_based_reconfig_req(tL2C_CCB* p_ccb,
+                                         tL2CAP_LE_CFG_INFO* p_cfg) {
+  BT_HDR* p_buf;
+  uint16_t cmd_len;
+  uint8_t* p;
+  tL2C_LCB* p_lcb = p_ccb->p_lcb;
+  tL2C_CCB* p_ccb_temp;
+
+  cmd_len = L2CAP_CMD_CREDIT_BASED_RECONFIG_REQ_MIN_LEN +
+            sizeof(uint16_t) * p_lcb->pending_ecoc_reconfig_cnt;
+
+  /* Create an identifier for this packet */
+  p_lcb->signal_id++;
+  l2cu_adj_id(p_lcb);
+
+  p_ccb->local_id = p_lcb->signal_id;
+
+  p_buf = l2cu_build_header(p_lcb, cmd_len, L2CAP_CMD_CREDIT_BASED_RECONFIG_REQ,
+                            p_lcb->signal_id);
+  if (p_buf == NULL) {
+    L2CAP_TRACE_WARNING("l2cu_send_reconfig_req - no buffer");
+    return;
+  }
+
+  p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+      L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+  L2CAP_TRACE_DEBUG("l2cu_send_reconfig_req number of cids: %d mtu:%d mps:%d",
+                    p_lcb->pending_ecoc_reconfig_cnt, p_cfg->mtu, p_cfg->mps);
+
+  UINT16_TO_STREAM(p, p_cfg->mtu);
+  UINT16_TO_STREAM(p, p_cfg->mps);
+
+  for (p_ccb_temp = p_lcb->ccb_queue.p_first_ccb; p_ccb_temp;
+       p_ccb_temp = p_ccb_temp->p_next_ccb) {
+    if ((p_ccb_temp->in_use) && (p_ccb_temp->ecoc) &&
+        (p_ccb_temp->reconfig_started))
+      UINT16_TO_STREAM(p, p_ccb_temp->local_cid);
+  }
+
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
+}
+
+/*******************************************************************************
+ *
  * Function         l2cu_send_peer_config_req
  *
  * Description      Build and send an L2CAP "configuration request" message
@@ -2656,6 +2709,68 @@ void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb) {
 
 /*******************************************************************************
  *
+ * Function         l2cu_send_peer_credit_based_conn_req
+ *
+ * Description      Build and send a BLE packet to establish enhanced connection
+ *                  oriented L2CAP channel.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void l2cu_send_peer_credit_based_conn_req(tL2C_CCB* p_ccb) {
+  BT_HDR* p_buf;
+  uint8_t* p;
+  tL2C_LCB* p_lcb = NULL;
+  uint16_t mtu;
+  uint16_t mps;
+  uint16_t initial_credit;
+
+  if (!p_ccb) return;
+
+  p_lcb = p_ccb->p_lcb;
+
+  /* Create an identifier for this packet */
+  p_ccb->p_lcb->signal_id++;
+  l2cu_adj_id(p_ccb->p_lcb);
+
+  p_ccb->local_id = p_lcb->signal_id;
+
+  p_buf = l2cu_build_header(p_lcb,
+                            L2CAP_CMD_CREDIT_BASED_CONN_REQ_MIN_LEN +
+                                2 * p_lcb->pending_ecoc_connection_cids.size(),
+                            L2CAP_CMD_CREDIT_BASED_CONN_REQ, p_ccb->local_id);
+  if (p_buf == NULL) {
+    L2CAP_TRACE_WARNING("%s - no buffer", __func__);
+    return;
+  }
+
+  p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+      L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+  mtu = p_ccb->local_conn_cfg.mtu;
+  mps = p_ccb->local_conn_cfg.mps;
+  initial_credit = p_ccb->local_conn_cfg.credits;
+
+  L2CAP_TRACE_DEBUG(
+      "%s PSM:0x%04x mtu:%d mps:%d initial_credit:%d, cids_cnt %d", __func__,
+      p_ccb->p_rcb->real_psm, mtu, mps, initial_credit,
+      p_lcb->pending_ecoc_connection_cids.size());
+
+  UINT16_TO_STREAM(p, p_ccb->p_rcb->real_psm);
+  UINT16_TO_STREAM(p, mtu);
+  UINT16_TO_STREAM(p, mps);
+  UINT16_TO_STREAM(p, initial_credit);
+
+  for (uint16_t cid : p_lcb->pending_ecoc_connection_cids) {
+    L2CAP_TRACE_DEBUG("\n\t cid: ", cid);
+    UINT16_TO_STREAM(p, cid);
+  }
+
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
+}
+
+/*******************************************************************************
+ *
  * Function         l2cu_reject_ble_coc_connection
  *
  * Description      Build and send an L2CAP "Credit based connection res"
@@ -2691,6 +2806,112 @@ void l2cu_reject_ble_coc_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
 
 /*******************************************************************************
  *
+ * Function         l2cu_reject_credit_based_connection_req
+ *
+ * Description      Build and send an L2CAP "credit based connection
+ *res" message to the peer. This function is called for non-success cases.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void l2cu_reject_credit_based_conn_req(tL2C_LCB* p_lcb, uint8_t rem_id,
+                                       uint8_t num_of_channels,
+                                       uint16_t result) {
+  BT_HDR* p_buf;
+  uint8_t* p;
+  uint8_t rsp_len = L2CAP_CMD_CREDIT_BASED_CONN_RES_MIN_LEN +
+                    sizeof(uint16_t) * num_of_channels;
+
+  p_buf = l2cu_build_header(p_lcb, rsp_len, L2CAP_CMD_CREDIT_BASED_CONN_RES,
+                            rem_id);
+  if (p_buf == NULL) {
+    L2CAP_TRACE_WARNING("l2cu_reject_credit_based_conn_req - no buffer");
+    return;
+  }
+
+  p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+      L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+  memset(p, 0, rsp_len);
+  UINT16_TO_STREAM(p, L2CAP_CREDIT_BASED_MIN_MTU); /* dummy MTU to satisy PTS */
+  UINT16_TO_STREAM(p, L2CAP_CREDIT_BASED_MIN_MPS); /* dummy MPS to satisy PTS*/
+  UINT16_TO_STREAM(p, 1); /* dummy initial credit to satisy PTS */
+  UINT16_TO_STREAM(p, result);
+
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
+}
+
+/*******************************************************************************
+ *
+ * Function         l2cu_send_peer_credit_based_conn_res
+ *
+ * Description      Build and send an L2CAP "Credit based connection res"
+ *                  message to the peer. This function is called in case of
+ *                  success.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void l2cu_send_peer_credit_based_conn_res(tL2C_CCB* p_ccb,
+                                          std::vector<uint16_t>& accepted_cids,
+                                          uint16_t result) {
+  BT_HDR* p_buf;
+  uint8_t* p;
+
+  L2CAP_TRACE_DEBUG("%s", __func__);
+  uint8_t rsp_len =
+      L2CAP_CMD_CREDIT_BASED_CONN_RES_MIN_LEN +
+      p_ccb->p_lcb->pending_ecoc_connection_cids.size() * sizeof(uint16_t);
+
+  p_buf = l2cu_build_header(p_ccb->p_lcb, rsp_len,
+                            L2CAP_CMD_CREDIT_BASED_CONN_RES, p_ccb->remote_id);
+  if (p_buf == NULL) {
+    L2CAP_TRACE_WARNING("%s - no buffer", __func__);
+    return;
+  }
+
+  p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+      L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+  memset(p, 0, rsp_len);
+  UINT16_TO_STREAM(p, p_ccb->local_conn_cfg.mtu);     /* MTU */
+  UINT16_TO_STREAM(p, p_ccb->local_conn_cfg.mps);     /* MPS */
+  UINT16_TO_STREAM(p, p_ccb->local_conn_cfg.credits); /* initial credit */
+
+  if (result == L2CAP_CONN_OK) {
+    /* In case of success, we need to check if stack
+     * did not have previous result stored e.g. when there was no
+     * resources for allocation all the requrested channels,
+     * before user indication.
+     */
+    result = p_ccb->p_lcb->pending_l2cap_result;
+  }
+
+  UINT16_TO_STREAM(p, result);
+
+  /* We need to keep order from the request.
+   * if this vector contais 0 it means channel has been rejected by
+   * the stack.
+   * If there is valid cid, we need to verify if it is accepted by upper layer.
+   */
+  for (uint16_t cid : p_ccb->p_lcb->pending_ecoc_connection_cids) {
+    if (cid == 0) {
+      UINT16_TO_STREAM(p, 0);
+      continue;
+    }
+    auto it = std::find(accepted_cids.begin(), accepted_cids.end(), cid);
+    if (it != accepted_cids.end()) {
+      UINT16_TO_STREAM(p, cid);
+    } else {
+      UINT16_TO_STREAM(p, 0);
+    }
+  }
+
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
+}
+
+/*******************************************************************************
+ *
  * Function         l2cu_reject_ble_connection
  *
  * Description      Build and send an L2CAP "Credit based connection res"
@@ -2702,7 +2923,46 @@ void l2cu_reject_ble_coc_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
  ******************************************************************************/
 void l2cu_reject_ble_connection(tL2C_CCB* p_ccb, uint8_t rem_id,
                                 uint16_t result) {
-  l2cu_reject_ble_coc_connection(p_ccb->p_lcb, rem_id, result);
+  if (p_ccb->ecoc)
+    l2cu_reject_credit_based_conn_req(
+        p_ccb->p_lcb, rem_id, p_ccb->p_lcb->pending_ecoc_reconfig_cnt, result);
+  else
+    l2cu_reject_ble_coc_connection(p_ccb->p_lcb, rem_id, result);
+}
+
+/*******************************************************************************
+ *
+ * Function         l2cu_send_ble_reconfig_rsp
+ *
+ * Description      Build and send an L2CAP "Credit based reconfig res"
+ *                  message to the peer. This function is called for non-success
+ *                  cases.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+
+void l2cu_send_ble_reconfig_rsp(tL2C_LCB* p_lcb, uint8_t rem_id,
+                                uint16_t result) {
+  BT_HDR* p_buf;
+  uint8_t* p;
+
+  L2CAP_TRACE_DEBUG("l2cu_send_ble_reconfig_rsp result 0x04%x", result);
+
+  p_buf = l2cu_build_header(p_lcb, L2CAP_CMD_CREDIT_BASED_RECONFIG_RES_LEN,
+                            L2CAP_CMD_CREDIT_BASED_RECONFIG_RES, rem_id);
+  if (p_buf == NULL) {
+    L2CAP_TRACE_WARNING("l2cu_send_peer_ble_credit_based_conn_res - no buffer");
+    return;
+  }
+
+  p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
+      L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+
+  memset(p, 0, L2CAP_CMD_CREDIT_BASED_RECONFIG_RES_LEN);
+  UINT16_TO_STREAM(p, result);
+
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
