@@ -307,6 +307,13 @@ void Link::OnAuthenticationComplete() {
 void Link::OnEncryptionChange(hci::EncryptionEnabled enabled) {
   encryption_enabled_ = enabled;
   link_manager_->OnEncryptionChange(GetDevice().GetAddress(), enabled);
+  for (auto& listener : encryption_change_listener_) {
+    signalling_manager_.on_security_result_for_outgoing(
+        ClassicSignallingManager::SecurityEnforcementType::ENCRYPTION,
+        listener.psm,
+        listener.cid,
+        enabled != hci::EncryptionEnabled::OFF);
+  }
 }
 
 void Link::OnChangeConnectionLinkKeyComplete() {
@@ -396,6 +403,10 @@ void Link::OnReadRemoteVersionInformationComplete(
       lmp_version,
       manufacturer_name,
       sub_version);
+}
+
+void Link::AddEncryptionChangeListener(EncryptionChangeListener listener) {
+  encryption_change_listener_.push_back(listener);
 }
 
 }  // namespace internal

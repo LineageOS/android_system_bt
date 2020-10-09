@@ -336,12 +336,7 @@ typedef struct t_l2c_linkcb {
   alarm_t* l2c_lcb_timer; /* Timer entry for timeout evt */
  private:
   uint16_t handle_; /* The handle used with LM */
-  friend void l2cble_conn_comp(uint16_t handle, uint8_t role,
-                               const RawAddress& bda, tBLE_ADDR_TYPE type,
-                               uint16_t conn_interval, uint16_t conn_latency,
-                               uint16_t conn_timeout);
-  friend void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
-                                     const RawAddress& p_bda);
+  friend void l2cu_set_lcb_handle(struct t_l2c_linkcb& p_lcb, uint16_t handle);
   void SetHandle(uint16_t handle) { handle_ = handle; }
 
  public:
@@ -374,7 +369,15 @@ typedef struct t_l2c_linkcb {
   void ResetBonding() { is_bonding_ = false; }
 
   uint16_t link_xmit_quota; /* Num outstanding pkts allowed */
+  bool is_round_robin_scheduling() const { return link_xmit_quota == 0; }
+
   uint16_t sent_not_acked;  /* Num packets sent but not acked */
+  void update_outstanding_packets(uint16_t packets_acked) {
+    if (sent_not_acked > packets_acked)
+      sent_not_acked -= packets_acked;
+    else
+      sent_not_acked = 0;
+  }
 
   bool partial_segment_being_sent; /* Set true when a partial segment */
                                    /* is being sent. */
@@ -384,7 +387,18 @@ typedef struct t_l2c_linkcb {
 
   uint8_t peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE];
 
-  uint8_t acl_priority;     /* L2C_PRIORITY_NORMAL or L2C_PRIORITY_HIGH */
+  tL2CAP_PRIORITY acl_priority;
+  bool is_normal_priority() const {
+    return acl_priority == L2CAP_PRIORITY_NORMAL;
+  }
+  bool is_high_priority() const { return acl_priority == L2CAP_PRIORITY_HIGH; }
+  bool set_priority(tL2CAP_PRIORITY priority) {
+    if (acl_priority != priority) {
+      acl_priority = priority;
+      return true;
+    }
+    return false;
+  }
 
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
 
@@ -428,6 +442,16 @@ typedef struct {
 
   uint16_t round_robin_quota;   /* Round-robin link quota */
   uint16_t round_robin_unacked; /* Round-robin unacked */
+  bool is_classic_round_robin_quota_available() const {
+    return round_robin_unacked < round_robin_quota;
+  }
+  void update_outstanding_classic_packets(uint16_t num_packets_acked) {
+    if (round_robin_unacked > num_packets_acked)
+      round_robin_unacked -= num_packets_acked;
+    else
+      round_robin_unacked = 0;
+  }
+
   bool check_round_robin;       /* Do a round robin check */
 
   bool is_cong_cback_context;
@@ -466,6 +490,16 @@ typedef struct {
   uint16_t num_lm_ble_bufs;         /* # of ACL buffers on controller */
   uint16_t ble_round_robin_quota;   /* Round-robin link quota */
   uint16_t ble_round_robin_unacked; /* Round-robin unacked */
+  bool is_ble_round_robin_quota_available() const {
+    return ble_round_robin_unacked < ble_round_robin_quota;
+  }
+  void update_outstanding_le_packets(uint16_t num_packets_acked) {
+    if (ble_round_robin_unacked > num_packets_acked)
+      ble_round_robin_unacked -= num_packets_acked;
+    else
+      ble_round_robin_unacked = 0;
+  }
+
   bool ble_check_round_robin;       /* Do a round robin check */
   tL2C_RCB ble_rcb_pool[BLE_MAX_L2CAP_CLIENTS]; /* Registration info pool */
 
@@ -488,14 +522,6 @@ typedef struct {
 } tL2C_CONN_INFO;
 
 typedef void(tL2C_FCR_MGMT_EVT_HDLR)(uint8_t, tL2C_CCB*);
-
-/* Necessary info for postponed TX completion callback
-*/
-typedef struct {
-  uint16_t local_cid;
-  uint16_t num_sdu;
-  tL2CA_TX_COMPLETE_CB* cb;
-} tL2C_TX_COMPLETE_CB_INFO;
 
 /* The offset in a buffer that L2CAP will use when building commands.
 */
@@ -528,7 +554,8 @@ extern tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
                                           tBT_TRANSPORT transport);
 extern tL2C_LCB* l2cu_find_lcb_by_handle(uint16_t handle);
 
-extern bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
+extern bool l2cu_set_acl_priority(const RawAddress& bd_addr,
+                                  tL2CAP_PRIORITY priority,
                                   bool reset_after_rs);
 
 extern void l2cu_enqueue_ccb(tL2C_CCB* p_ccb);
@@ -564,8 +591,6 @@ extern void l2cu_send_peer_info_req(tL2C_LCB* p_lcb, uint16_t info_type);
 extern void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb);
 extern void l2cu_check_channel_congestion(tL2C_CCB* p_ccb);
 extern void l2cu_disconnect_chnl(tL2C_CCB* p_ccb);
-
-extern void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
 extern void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
                                        uint16_t max_int, uint16_t latency,

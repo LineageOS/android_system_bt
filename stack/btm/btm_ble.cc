@@ -667,15 +667,6 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   return (dev_type == BT_DEVICE_TYPE_BLE);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetBleDataLength
- *
- * Description      This function is to set maximum BLE transmission packet size
- *
- * Returns          BTM_SUCCESS if success; otherwise failed.
- *
- ******************************************************************************/
 tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
                                  uint16_t tx_pdu_length) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
@@ -684,22 +675,20 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
   uint16_t tx_time = BTM_BLE_DATA_TX_TIME_MAX_LEGACY;
 
   if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-    BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
-                    __func__);
+    LOG_INFO(
+        "Unable to set data length because no le acl link connected to device");
     return BTM_WRONG_MODE;
   }
 
-  BTM_TRACE_DEBUG("%s: tx_pdu_length =%d", __func__, tx_pdu_length);
-
   if (!controller_get_interface()->supports_ble_packet_extension()) {
-    BTM_TRACE_ERROR("%s failed, request not supported", __func__);
+    LOG_INFO("Local controller unable to support le packet extension");
     return BTM_ILLEGAL_VALUE;
   }
 
   uint16_t hci_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
 
   if (!acl_peer_supports_ble_packet_extension(hci_handle)) {
-    BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
+    LOG_INFO("Remote device unable to support le packet extension");
     return BTM_ILLEGAL_VALUE;
   }
 
@@ -784,21 +773,6 @@ void BTM_BleReadPhy(
 
 void doNothing(uint8_t* data, uint16_t len) {}
 
-/*******************************************************************************
- *
- * Function         BTM_BleSetPhy
- *
- * Description      To set PHY preferences for specified LE connection
- *
- *
- * Returns          BTM_SUCCESS if command successfully sent to controller,
- *                  BTM_MODE_UNSUPPORTED if local controller doesn't support LE
- *                  2M or LE Coded PHY,
- *                  BTM_ILLEGAL_VALUE if specified remote doesn't support LE 2M
- *                  or LE Coded PHY,
- *                  BTM_WRONG_MODE if Device in wrong mode for request.
- *
- ******************************************************************************/
 void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
                    uint16_t phy_options) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
@@ -806,8 +780,9 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
                                           phy_options);
   }
   if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-    BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
-                    __func__);
+    LOG_INFO(
+        "Unable to set phy preferences because no le acl is connected to "
+        "device");
     return;
   }
 
@@ -815,25 +790,19 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
   if (tx_phys == 0) all_phys &= 0x01;
   if (rx_phys == 0) all_phys &= 0x02;
 
-  BTM_TRACE_DEBUG(
-      "%s: all_phys = 0x%02x, tx_phys = 0x%02x, rx_phys = 0x%02x, phy_options "
-      "= 0x%04x",
-      __func__, all_phys, tx_phys, rx_phys, phy_options);
-
   uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
 
   // checking if local controller supports it!
   if (!controller_get_interface()->supports_ble_2m_phy() &&
       !controller_get_interface()->supports_ble_coded_phy()) {
-    BTM_TRACE_ERROR("%s failed, request not supported in local controller!",
-                    __func__);
+    LOG_INFO("Local controller unable to support setting of le phy parameters");
     gatt_notify_phy_updated(GATT_REQ_NOT_SUPPORTED, handle, tx_phys, rx_phys);
     return;
   }
 
   if (!acl_peer_supports_ble_2m_phy(handle) &&
       !acl_peer_supports_ble_coded_phy(handle)) {
-    BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
+    LOG_INFO("Remote device unable to support setting of le phy parameter");
     gatt_notify_phy_updated(GATT_REQ_NOT_SUPPORTED, handle, tx_phys, rx_phys);
     return;
   }
@@ -1747,9 +1716,9 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
 
   if (!addr_matched) {
     p_dev_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO;
-  }
-  if (!addr_matched && p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM) {
-    p_dev_rec->ble.cur_rand_addr = bda;
+    if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM) {
+      p_dev_rec->ble.cur_rand_addr = bda;
+    }
   }
   btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_ADV_IND_EVT;
 }

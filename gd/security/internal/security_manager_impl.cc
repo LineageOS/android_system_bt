@@ -200,10 +200,10 @@ void SecurityManagerImpl::NotifyDeviceBonded(hci::AddressWithType device) {
   }
 }
 
-void SecurityManagerImpl::NotifyDeviceBondFailed(hci::AddressWithType device, PairingResultOrFailure status) {
+void SecurityManagerImpl::NotifyDeviceBondFailed(hci::AddressWithType device, PairingFailure status) {
   for (auto& iter : listeners_) {
-    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first),
-                                   device /*, status */));
+    iter.second->Post(
+        common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first), device, status));
   }
 }
 
@@ -331,13 +331,6 @@ void SecurityManagerImpl::OnConnectionClosed(hci::Address address) {
   }
 }
 
-void SecurityManagerImpl::OnEncryptionChange(hci::Address address, bool encrypted) {
-  auto remote = hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
-  auto record = security_database_.FindOrCreate(remote);
-  record->SetIsEncrypted(encrypted);
-  UpdateLinkSecurityCondition(remote);
-}
-
 void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   hci::SubeventCode code = event.GetSubeventCode();
 
@@ -405,7 +398,7 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
   if (!std::holds_alternative<PairingFailure>(status)) {
     NotifyDeviceBonded(remote);
   } else {
-    NotifyDeviceBondFailed(remote, status);
+    NotifyDeviceBondFailed(remote, std::get<PairingFailure>(status));
   }
   auto record = this->security_database_.FindOrCreate(remote);
   record->CancelPairing();
@@ -660,6 +653,7 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
     PairingFailure failure = std::get<PairingFailure>(pairing_result);
     LOG_INFO(" ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ failure message: %s",
              failure.message.c_str());
+    NotifyDeviceBondFailed(stored_chan->channel_->GetDevice(), failure);
     return;
   }
 
@@ -829,10 +823,9 @@ bool SecurityManagerImpl::IsSecurityRequirementSatisfied(
   switch (policy) {
     case l2cap::classic::SecurityPolicy::BEST:
     case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
-      // TODO(b/165671060): Use IO cap to check whether we can waive authenticated LK requirement
-      return (!record->RequiresMitmProtection() || record->IsAuthenticated()) && record->IsEncrypted();
+      return (record->IsPaired() && record->IsAuthenticated());
     case l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
-      return record->IsEncrypted();
+      return record->IsPaired();
     case l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
       return true;
     default:

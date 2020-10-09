@@ -156,12 +156,6 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnConnectionClosed(hci::Address address) override;
 
   /**
-   * When link encryption status change, we need to update the device record (temporary).
-   * @param encrypted
-   */
-  void OnEncryptionChange(hci::Address remote, bool encrypted) override;
-
-  /**
    * Pairing handler has finished or cancelled
    *
    * @param address address for pairing handler
@@ -200,7 +194,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   os::Handler* user_interface_handler_ = nullptr;
 
   void NotifyDeviceBonded(hci::AddressWithType device);
-  void NotifyDeviceBondFailed(hci::AddressWithType device, PairingResultOrFailure status);
+  void NotifyDeviceBondFailed(hci::AddressWithType device, PairingFailure status);
   void NotifyDeviceUnbonded(hci::AddressWithType device);
   void NotifyEncryptionStateChanged(hci::EncryptionChangeView encryption_change_view);
 

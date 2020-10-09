@@ -366,7 +366,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
 uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                             uint16_t sec_level) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info);
+    return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info, sec_level);
   }
 
   BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
@@ -783,7 +783,7 @@ uint8_t L2CA_SetTraceLevel(uint8_t new_level) {
  * Returns          true if a valid channel, else false
  *
  ******************************************************************************/
-bool L2CA_SetAclPriority(const RawAddress& bd_addr, uint8_t priority) {
+bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_SetAclPriority(bd_addr, priority);
   }

@@ -52,8 +52,10 @@
 #define L2CAP_DW_CONGESTED 2
 
 /* Values for priority parameter to L2CA_SetAclPriority */
-#define L2CAP_PRIORITY_NORMAL 0
-#define L2CAP_PRIORITY_HIGH 1
+typedef enum : uint8_t {
+  L2CAP_PRIORITY_NORMAL = 0,
+  L2CAP_PRIORITY_HIGH = 1,
+} tL2CAP_PRIORITY;
 
 /* Values for priority parameter to L2CA_SetTxPriority */
 #define L2CAP_CHNL_PRIORITY_HIGH 0
@@ -518,7 +520,8 @@ extern uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush);
  * Returns          true if a valid channel, else false
  *
  ******************************************************************************/
-extern bool L2CA_SetAclPriority(const RawAddress& bd_addr, uint8_t priority);
+extern bool L2CA_SetAclPriority(const RawAddress& bd_addr,
+                                tL2CAP_PRIORITY priority);
 
 /*******************************************************************************
  *
@@ -597,8 +600,6 @@ typedef struct {
   tL2CA_FIXED_CONGESTION_STATUS_CB* pL2CA_FixedCong_Cb;
 
   uint16_t default_idle_tout;
-  tL2CA_TX_COMPLETE_CB*
-      pL2CA_FixedTxComplete_Cb; /* fixed channel tx complete callback */
 } tL2CAP_FIXED_CHNL_REG;
 
 /*******************************************************************************

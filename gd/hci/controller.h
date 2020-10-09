@@ -37,6 +37,9 @@ class Controller : public Module {
 
   virtual void UnregisterCompletedAclPacketsCallback();
 
+  virtual void RegisterCompletedMonitorAclPacketsCallback(CompletedAclPacketsCallback cb);
+  virtual void UnregisterCompletedMonitorAclPacketsCallback();
+
   virtual std::string GetLocalName() const;
 
   virtual LocalVersionInformation GetLocalVersionInformation() const;

@@ -281,7 +281,12 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             l2cu_reject_ble_connection(p_ccb, p_ccb->remote_id, result);
             l2cu_release_ccb(p_ccb);
             break;
-            // TODO: Handle the other return codes
+          case L2CAP_LE_RESULT_CONN_OK:
+          case L2CAP_LE_RESULT_NO_PSM:
+          case L2CAP_LE_RESULT_NO_RESOURCES:
+          case L2CAP_LE_RESULT_INVALID_SOURCE_CID:
+          case L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED:
+            break;
         }
       } else {
         /* Cancel sniff mode if needed */
@@ -447,12 +452,14 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
         /* Don't need to get info from peer or already retrieved so continue */
         alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CONNECT_TIMEOUT_MS,
                            l2c_ccb_timer_timeout, p_ccb);
-        L2CAP_TRACE_API("L2CAP - Calling Connect_Ind_Cb(), CID: 0x%04x",
-                        p_ccb->local_cid);
 
         if (p_ccb->p_lcb->transport != BT_TRANSPORT_LE) {
           l2c_csm_send_connect_rsp(p_ccb);
           l2c_csm_send_config_req(p_ccb);
+        } else {
+          L2CAP_TRACE_API("L2CAP - Calling Connect_Ind_Cb(), CID: 0x%04x",
+                        p_ccb->local_cid);
+          l2c_csm_indicate_connection_open(p_ccb);
         }
       } else {
         /*

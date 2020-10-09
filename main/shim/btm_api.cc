@@ -486,7 +486,8 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
         bluetooth::ToRawAddress(device.GetAddress()));
   }
 
-  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device,
+                          bluetooth::security::PairingFailure status) override {
     auto it = address_name_map_.find(device);
     bt_bdname_t tmp_name;
     if (it != address_name_map_.end()) {

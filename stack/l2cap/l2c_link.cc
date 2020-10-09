@@ -39,10 +39,8 @@
 void btm_sco_acl_removed(const RawAddress* bda);
 void btm_ble_decrement_link_topology_mask(uint8_t link_role);
 
-static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
-                                   tL2C_TX_COMPLETE_CB_INFO* p_cbi);
-static BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
-                                            tL2C_TX_COMPLETE_CB_INFO* p_cbi);
+static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf);
+static BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb);
 
 /*******************************************************************************
  *
@@ -163,7 +161,7 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
   }
 
   /* Save the handle */
-  p_lcb->SetHandle(handle);
+  l2cu_set_lcb_handle(*p_lcb, handle);
 
   if (ci.status == HCI_SUCCESS) {
     /* Connected OK. Change state to connected */
@@ -918,17 +916,16 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
       if (!list_is_empty(p_lcb->link_xmit_data_q)) {
         p_buf = (BT_HDR*)list_front(p_lcb->link_xmit_data_q);
         list_remove(p_lcb->link_xmit_data_q, p_buf);
-        l2c_link_send_to_lower(p_lcb, p_buf, NULL);
+        l2c_link_send_to_lower(p_lcb, p_buf);
       } else if (single_write) {
         /* If only doing one write, break out */
         break;
       }
       /* If nothing on the link queue, check the channel queue */
       else {
-        tL2C_TX_COMPLETE_CB_INFO cbi;
-        p_buf = l2cu_get_next_buffer_to_send(p_lcb, &cbi);
+        p_buf = l2cu_get_next_buffer_to_send(p_lcb);
         if (p_buf != NULL) {
-          l2c_link_send_to_lower(p_lcb, p_buf, &cbi);
+          l2c_link_send_to_lower(p_lcb, p_buf);
         }
       }
     }
@@ -961,7 +958,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
 
       p_buf = (BT_HDR*)list_front(p_lcb->link_xmit_data_q);
       list_remove(p_lcb->link_xmit_data_q, p_buf);
-      l2c_link_send_to_lower(p_lcb, p_buf, NULL);
+      l2c_link_send_to_lower(p_lcb, p_buf);
     }
 
     if (!single_write) {
@@ -971,11 +968,10 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
               (l2cb.controller_le_xmit_window != 0 &&
                (p_lcb->transport == BT_TRANSPORT_LE))) &&
              (p_lcb->sent_not_acked < p_lcb->link_xmit_quota)) {
-        tL2C_TX_COMPLETE_CB_INFO cbi;
-        p_buf = l2cu_get_next_buffer_to_send(p_lcb, &cbi);
+        p_buf = l2cu_get_next_buffer_to_send(p_lcb);
         if (p_buf == NULL) break;
 
-        l2c_link_send_to_lower(p_lcb, p_buf, &cbi);
+        l2c_link_send_to_lower(p_lcb, p_buf);
       }
     }
 
@@ -1105,14 +1101,12 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
       l2cb.ble_round_robin_unacked);
 }
 
-static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
-                                   tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
+static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
   if (p_lcb->transport == BT_TRANSPORT_BR_EDR) {
     l2c_link_send_to_lower_br_edr(p_lcb, p_buf);
   } else {
     l2c_link_send_to_lower_ble(p_lcb, p_buf);
   }
-  if (p_cbi) l2cu_tx_complete(p_cbi);
 }
 
 /*******************************************************************************
@@ -1231,32 +1225,35 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
  ******************************************************************************/
 void l2c_link_segments_xmitted(BT_HDR* p_msg) {
   uint8_t* p = (uint8_t*)(p_msg + 1) + p_msg->offset;
-  uint16_t handle;
-  tL2C_LCB* p_lcb;
 
   /* Extract the handle */
+  uint16_t handle{HCI_INVALID_HANDLE};
   STREAM_TO_UINT16(handle, p);
   handle = HCID_GET_HANDLE(handle);
 
   /* Find the LCB based on the handle */
-  p_lcb = l2cu_find_lcb_by_handle(handle);
-  if (p_lcb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - rcvd segment complete, unknown handle: %d",
-                        handle);
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
+  if (p_lcb == nullptr) {
+    LOG_WARN("Received segment complete for unknown connection handle:%d",
+             handle);
     osi_free(p_msg);
     return;
   }
 
-  if (p_lcb->link_state == LST_CONNECTED) {
-    /* Enqueue the buffer to the head of the transmit queue, and see */
-    /* if we can transmit anything more.                             */
-    list_prepend(p_lcb->link_xmit_data_q, p_msg);
-
-    p_lcb->partial_segment_being_sent = false;
-
-    l2c_link_check_send_pkts(p_lcb, 0, NULL);
-  } else
+  if (p_lcb->link_state != LST_CONNECTED) {
+    LOG_INFO("Received segment complete for unconnected connection handle:%d:",
+             handle);
     osi_free(p_msg);
+    return;
+  }
+
+  /* Enqueue the buffer to the head of the transmit queue, and see */
+  /* if we can transmit anything more.                             */
+  list_prepend(p_lcb->link_xmit_data_q, p_msg);
+
+  p_lcb->partial_segment_being_sent = false;
+
+  l2c_link_check_send_pkts(p_lcb, 0, NULL);
 }
 
 tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
@@ -1391,15 +1388,12 @@ tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb) {
  * Returns          pointer to buffer or NULL
  *
  ******************************************************************************/
-BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
-                                     tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
+BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb) {
   tL2C_CCB* p_ccb;
   BT_HDR* p_buf;
 
 /* Highest priority are fixed channels */
   int xx;
-
-  p_cbi->cb = NULL;
 
   for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
     p_ccb = p_lcb->p_fixed_ccbs[xx];
@@ -1432,11 +1426,6 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
           L2CAP_TRACE_ERROR("%s: No data to be sent", __func__);
           return (NULL);
         }
-
-        /* Prepare callback info for TX completion */
-        p_cbi->cb = l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb;
-        p_cbi->local_cid = p_ccb->local_cid;
-        p_cbi->num_sdu = 1;
 
         l2cu_check_channel_congestion(p_ccb);
         l2cu_set_acl_hci_header(p_buf, p_ccb);

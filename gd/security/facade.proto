@@ -76,6 +76,7 @@ enum BondMsgType {
 message BondMsg {
   BondMsgType message_type = 1;
   facade.BluetoothAddressWithType peer = 2;
+  uint32 reason = 3;
 }
 
 enum HelperMsgType { DEVICE_DISCONNECTED = 0; }

@@ -34,6 +34,7 @@
 #include "l2c_int.h"
 #include "l2cdefs.h"
 #include "osi/include/allocator.h"
+#include "osi/include/log.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 
@@ -92,6 +93,14 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
 
   /* If here, no free LCB found */
   return (NULL);
+}
+
+void l2cu_set_lcb_handle(struct t_l2c_linkcb& p_lcb, uint16_t handle) {
+  if (p_lcb.Handle() != HCI_INVALID_HANDLE) {
+    LOG_WARN("Should not replace active handle:%hu with new handle:%hu",
+             p_lcb.Handle(), handle);
+  }
+  p_lcb.SetHandle(handle);
 }
 
 /*******************************************************************************
@@ -2143,7 +2152,7 @@ bool l2cu_lcb_disconnecting(void) {
  *
  ******************************************************************************/
 
-bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
+bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
                            bool reset_after_rs) {
   tL2C_LCB* p_lcb;
   uint8_t* pp;
@@ -2874,10 +2883,6 @@ tL2C_CCB* l2cu_find_ccb_by_cid(tL2C_LCB* p_lcb, uint16_t local_cid) {
     }
   }
   return (p_ccb);
-}
-
-void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
-  if (p_cbi->cb != NULL) p_cbi->cb(p_cbi->local_cid, p_cbi->num_sdu);
 }
 
 /******************************************************************************
