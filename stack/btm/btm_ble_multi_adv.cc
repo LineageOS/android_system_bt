@@ -129,8 +129,8 @@ static void alarm_closure_cb(void* p) {
 }
 
 // Periodic alarms are not supported, because we clean up data in callback
-void alarm_set_closure(const base::Location& posted_from, alarm_t* alarm,
-                       uint64_t interval_ms, base::Closure user_task) {
+static void alarm_set_closure(const base::Location& posted_from, alarm_t* alarm,
+                              uint64_t interval_ms, base::Closure user_task) {
   closure_data* data = new closure_data;
   data->posted_from = posted_from;
   data->user_task = std::move(user_task);
