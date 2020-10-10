@@ -647,7 +647,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
     btm_cb.security_mode_changed = true;
     btsnd_hcic_write_auth_enable(true);
 
-    acl_set_disconnect_reason(0xff);
+    acl_set_disconnect_reason(HCI_ERR_UNDEFINED);
 
     /* if we rejected incoming connection request, we have to wait
      * HCI_Connection_Complete event */

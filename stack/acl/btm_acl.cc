@@ -1262,9 +1262,7 @@ uint16_t BTM_GetNumAclLinks(void) {
  *
  ******************************************************************************/
 uint16_t btm_get_acl_disc_reason_code(void) {
-  uint8_t res = btm_cb.acl_cb_.acl_disc_reason;
-  LOG_WARN("This API should require an address for per ACL basis");
-  return res;
+  return btm_cb.acl_cb_.get_disconnect_reason();
 }
 
 /*******************************************************************************
@@ -2738,10 +2736,12 @@ uint16_t acl_get_link_supervision_timeout() {
   return btm_cb.acl_cb_.btm_def_link_super_tout;
 }
 
-uint8_t acl_get_disconnect_reason() { return btm_cb.acl_cb_.acl_disc_reason; }
+tHCI_STATUS acl_get_disconnect_reason() {
+  return btm_cb.acl_cb_.get_disconnect_reason();
+}
 
-void acl_set_disconnect_reason(uint8_t acl_disc_reason) {
-  btm_cb.acl_cb_.acl_disc_reason = acl_disc_reason;
+void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason) {
+  btm_cb.acl_cb_.set_disconnect_reason(acl_disc_reason);
 }
 
 bool acl_is_role_switch_allowed() {
