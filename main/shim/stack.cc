@@ -143,11 +143,11 @@ void Stack::Stop() {
   if (!common::InitFlags::GdCoreEnabled()) {
     bluetooth::shim::hci_on_shutting_down();
   }
-  ASSERT_LOG(is_running_, "%s Gd stack not running", __func__);
-  is_running_ = false;
-
   delete acl_;
   acl_ = nullptr;
+
+  ASSERT_LOG(is_running_, "%s Gd stack not running", __func__);
+  is_running_ = false;
 
   delete btm_;
   btm_ = nullptr;
