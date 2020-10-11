@@ -102,6 +102,15 @@ typedef struct {
        ? true                                                       \
        : false)
 
+/* Policy settings status */
+typedef enum : uint16_t {
+  HCI_DISABLE_ALL_LM_MODES = 0,
+  HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH = (1u << 0),
+  HCI_ENABLE_HOLD_MODE = (1u << 1),
+  HCI_ENABLE_SNIFF_MODE = (1u << 2),
+  HCI_ENABLE_PARK_MODE = (1u << 3),
+} tLINK_POLICY;
+
 extern tBTM_CB btm_cb;
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
