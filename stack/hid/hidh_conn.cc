@@ -65,7 +65,8 @@ static const tL2CAP_APPL_INFO hst_reg_info = {
     hidh_l2cif_config_ind,     hidh_l2cif_config_cfm,
     hidh_l2cif_disconnect_ind, hidh_l2cif_data_ind,
     hidh_l2cif_cong_ind,       NULL,
-    hidh_on_l2cap_error,
+    hidh_on_l2cap_error,       NULL,
+    NULL,                      NULL
 };
 
 /*******************************************************************************

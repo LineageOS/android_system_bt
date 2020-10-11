@@ -1211,30 +1211,9 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
   return (BTM_UNKNOWN_ADDR);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_IsAclConnectionUp
- *
- * Description      This function is called to check if an ACL connection exists
- *                  to a specific remote BD Address.
- *
- * Returns          true if connection is up, else false.
- *
- ******************************************************************************/
 bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
                            tBT_TRANSPORT transport) {
-  tACL_CONN* p;
-
-  VLOG(2) << __func__ << " RemBdAddr: " << remote_bda;
-
-  p = internal_.btm_bda_to_acl(remote_bda, transport);
-  if (p != (tACL_CONN*)NULL) {
-    LOG_WARN("Unable to find active acl");
-    return (true);
-  }
-
-  /* If here, no BD Addr found */
-  return (false);
+  return internal_.btm_bda_to_acl(remote_bda, transport) != nullptr;
 }
 
 bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
@@ -1547,6 +1526,14 @@ tBTM_STATUS StackAclBtmAcl::btm_set_packet_types(tACL_CONN* p,
 void btm_set_packet_types_from_address(const RawAddress& bd_addr,
                                        tBT_TRANSPORT transport,
                                        uint16_t pkt_types) {
+  if (transport == BT_TRANSPORT_LE) {
+    LOG_WARN("Unable to set packet types on le transport");
+    return;
+  }
+  if (btm_pm_is_le_link(bd_addr)) {
+    LOG_DEBUG("Unable to set packet types on provided le acl");
+    return;
+  }
   tACL_CONN* p_acl_cb = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl_cb == nullptr) {
     LOG_WARN("Unable to find active acl");
