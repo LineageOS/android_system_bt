@@ -1302,7 +1302,7 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *
  ******************************************************************************/
 void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  uint8_t int_evt = 0;
+  tSMP_EVENT int_evt = SMP_NOP_EVT;
   tSMP_INT_DATA smp_int_data;
 
   SMP_TRACE_DEBUG("%s Association Model = %d", __func__,
