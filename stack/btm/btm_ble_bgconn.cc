@@ -18,7 +18,7 @@
 
 /******************************************************************************
  *
- *  This file contains functions for BLE whitelist operation.
+ *  This file contains functions for BLE acceptlist operation.
  *
  ******************************************************************************/
 
@@ -47,9 +47,9 @@ extern void btm_ble_create_conn_cancel();
 static bool btm_ble_stop_auto_conn();
 static void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */);
 
-// Unfortunately (for now?) we have to maintain a copy of the device whitelist
+// Unfortunately (for now?) we have to maintain a copy of the device acceptlist
 // on the host to determine if a device is pending to be connected or not. This
-// controls whether the host should keep trying to scan for whitelisted
+// controls whether the host should keep trying to scan for acceptlisted
 // peripherals or not.
 // TODO: Move all of this to controller/le/background_list or similar?
 struct BackgroundConnection {
@@ -81,9 +81,9 @@ static void background_connection_add(uint8_t addr_type,
     BackgroundConnection* connection = &map_iter->second;
     if (addr_type != connection->addr_type) {
       LOG(INFO) << __func__ << " Addr type mismatch " << address;
-      btsnd_hcic_ble_remove_from_white_list(
-        connection->addr_type_in_wl, connection->address,
-        base::Bind(&wl_remove_complete));
+      btsnd_hcic_ble_remove_from_acceptlist(connection->addr_type_in_wl,
+                                            connection->address,
+                                            base::Bind(&wl_remove_complete));
       connection->addr_type = addr_type;
       connection->in_controller_wl = false;
     }
@@ -156,9 +156,9 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  * Function         btm_ble_bgconn_cancel_if_disconnected
  *
  * Description      If a device has been disconnected, it must be re-added to
- *                  the white list. If needed, this function cancels a pending
+ *                  the acceptlist. If needed, this function cancels a pending
  *                  initiate command in order to trigger restart of the initiate
- *                  command which in turn updates the white list.
+ *                  command which in turn updates the acceptlist.
  *
  * Parameters       bd_addr: updated device
  *
@@ -203,7 +203,7 @@ bool BTM_BackgroundConnectAddressKnown(const RawAddress& address) {
  *
  * Function         btm_add_dev_to_controller
  *
- * Description      This function load the device into controller white list
+ * Description      This function load the device into controller acceptlist
  ******************************************************************************/
 static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
@@ -219,11 +219,11 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
 
         if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
             BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
-          LOG(INFO) << __func__ << " addig RPA into white list";
+          LOG(INFO) << __func__ << " addig RPA into acceptlist";
         }
       }
 
-      p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
+      p_dev_rec->ble.in_controller_list |= BTM_ACCEPTLIST_BIT;
     } else {
       if (!p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
         background_connection_remove(
@@ -233,11 +233,11 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
 
         if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
             BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
-          LOG(INFO) << __func__ << " removing RPA from white list";
+          LOG(INFO) << __func__ << " removing RPA from acceptlist";
         }
       }
 
-      p_dev_rec->ble.in_controller_list &= ~BTM_WHITE_LIST_BIT;
+      p_dev_rec->ble.in_controller_list &= ~BTM_ACCEPTLIST_BIT;
     }
   } else {
     /* not a known device, i.e. attempt to connect to device never seen before
@@ -251,14 +251,14 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   return true;
 }
 
-/** White list add complete */
+/** Acceptlist add complete */
 static void wl_add_complete(uint8_t* p_data, uint16_t /* evt_len */) {
   uint8_t status;
   STREAM_TO_UINT8(status, p_data);
   VLOG(2) << __func__ << ": status=" << loghex(status);
 }
 
-/** White list element remove complete */
+/** Acceptlist element remove complete */
 static void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */) {
   uint8_t status;
   STREAM_TO_UINT8(status, p_data);
@@ -269,16 +269,16 @@ static void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */) {
  *
  * Function         btm_execute_wl_dev_operation
  *
- * Description      execute the pending whitelist device operation (loading or
+ * Description      execute the pending acceptlist device operation (loading or
  *                                                                  removing)
  ******************************************************************************/
 static bool btm_execute_wl_dev_operation(void) {
-  // handle removals first to avoid filling up controller's white list
+  // handle removals first to avoid filling up controller's acceptlist
   for (auto map_it = background_connections.begin();
        map_it != background_connections.end();) {
     BackgroundConnection* connection = &map_it->second;
     if (connection->pending_removal) {
-      btsnd_hcic_ble_remove_from_white_list(
+      btsnd_hcic_ble_remove_from_acceptlist(
           connection->addr_type_in_wl, connection->address,
           base::BindOnce(&wl_remove_complete));
       map_it = background_connections.erase(map_it);
@@ -290,7 +290,7 @@ static bool btm_execute_wl_dev_operation(void) {
     const bool connected =
         BTM_IsAclConnectionUp(connection->address, BT_TRANSPORT_LE);
     if (!connection->in_controller_wl && !connected) {
-      btsnd_hcic_ble_add_white_list(connection->addr_type, connection->address,
+      btsnd_hcic_ble_add_acceptlist(connection->addr_type, connection->address,
                                     base::BindOnce(&wl_add_complete));
       connection->in_controller_wl = true;
       connection->addr_type_in_wl = connection->addr_type;
@@ -298,8 +298,8 @@ static bool btm_execute_wl_dev_operation(void) {
       /* Bluetooth Core 4.2 as well as ESR08 disallows more than one
          connection between two LE addresses. Not all controllers handle this
          correctly, therefore we must make sure connected devices are not in
-         the white list when bg connection attempt is active. */
-      btsnd_hcic_ble_remove_from_white_list(
+         the acceptlist when bg connection attempt is active. */
+      btsnd_hcic_ble_remove_from_acceptlist(
           connection->addr_type_in_wl, connection->address,
           base::BindOnce(&wl_remove_complete));
       connection->in_controller_wl = false;
@@ -310,21 +310,21 @@ static bool btm_execute_wl_dev_operation(void) {
 
 /*******************************************************************************
  *
- * Function         btm_ble_white_list_init
+ * Function         btm_ble_acceptlist_init
  *
- * Description      Initialize white list size
+ * Description      Initialize acceptlist size
  *
  ******************************************************************************/
-void btm_ble_white_list_init(uint8_t white_list_size) {
-  BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, white_list_size);
+void btm_ble_acceptlist_init(uint8_t acceptlist_size) {
+  BTM_TRACE_DEBUG("%s acceptlist_size = %d", __func__, acceptlist_size);
 }
 
-uint8_t BTM_GetWhiteListSize() {
+uint8_t BTM_GetAcceptlistSize() {
   const controller_t* controller = controller_get_interface();
   if (!controller->supports_ble()) {
     return 0;
   }
-  return controller->get_ble_white_list_size();
+  return controller->get_ble_acceptlist_size();
 }
 
 bool BTM_SetLeConnectionModeToFast() {
@@ -382,7 +382,7 @@ static bool btm_ble_start_auto_conn() {
     return false;
   }
 
-  p_cb->wl_state |= BTM_BLE_WL_INIT;
+  p_cb->wl_state |= BTM_BLE_ACCEPTLIST_INIT;
 
   btm_execute_wl_dev_operation();
 
@@ -396,7 +396,7 @@ static bool btm_ble_start_auto_conn() {
   btm_send_hci_create_connection(
       scan_int,                       /* uint16_t scan_int      */
       scan_win,                       /* uint16_t scan_win      */
-      0x01,                           /* uint8_t white_list     */
+      0x01,                           /* uint8_t acceptlist     */
       peer_addr_type,                 /* uint8_t addr_type_peer */
       RawAddress::kEmpty,             /* BD_ADDR bda_peer     */
       own_addr_type,                  /* uint8_t addr_type_own */
@@ -421,7 +421,7 @@ static bool btm_ble_stop_auto_conn() {
 
   btm_ble_create_conn_cancel();
 
-  btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_WL_INIT;
+  btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_ACCEPTLIST_INIT;
   return true;
 }
 
@@ -456,18 +456,18 @@ bool btm_ble_suspend_bg_conn(void) {
  ******************************************************************************/
 bool btm_ble_resume_bg_conn(void) { return btm_ble_start_auto_conn(); }
 
-/** Adds the device into white list. Returns false if white list is full and
+/** Adds the device into acceptlist. Returns false if acceptlist is full and
  * device can't be added, true otherwise. */
-bool BTM_WhiteListAdd(const RawAddress& address) {
+bool BTM_AcceptlistAdd(const RawAddress& address) {
   VLOG(1) << __func__ << ": " << address;
 
   if (background_connections_count() ==
-      controller_get_interface()->get_ble_white_list_size()) {
-    BTM_TRACE_ERROR("%s Whitelist full, unable to add device", __func__);
+      controller_get_interface()->get_ble_acceptlist_size()) {
+    BTM_TRACE_ERROR("%s Acceptlist full, unable to add device", __func__);
     return false;
   }
 
-  if (btm_cb.ble_ctr_cb.wl_state & BTM_BLE_WL_INIT) {
+  if (btm_cb.ble_ctr_cb.wl_state & BTM_BLE_ACCEPTLIST_INIT) {
     btm_ble_stop_auto_conn();
   }
   btm_add_dev_to_controller(true, address);
@@ -475,28 +475,28 @@ bool BTM_WhiteListAdd(const RawAddress& address) {
   return true;
 }
 
-/** Removes the device from white list */
-void BTM_WhiteListRemove(const RawAddress& address) {
+/** Removes the device from acceptlist */
+void BTM_AcceptlistRemove(const RawAddress& address) {
   VLOG(1) << __func__ << ": " << address;
-  if (btm_cb.ble_ctr_cb.wl_state & BTM_BLE_WL_INIT) {
+  if (btm_cb.ble_ctr_cb.wl_state & BTM_BLE_ACCEPTLIST_INIT) {
     btm_ble_stop_auto_conn();
   }
   btm_add_dev_to_controller(false, address);
   btm_ble_resume_bg_conn();
 }
 
-/** clear white list complete */
+/** clear acceptlist complete */
 void wl_clear_complete(uint8_t* p_data, uint16_t /* evt_len */) {
   uint8_t status;
   STREAM_TO_UINT8(status, p_data);
   VLOG(2) << __func__ << ": status=" << loghex(status);
 }
 
-/** Clear the whitelist, end any pending whitelist connections */
-void BTM_WhiteListClear() {
+/** Clear the acceptlist, end any pending acceptlist connections */
+void BTM_AcceptlistClear() {
   VLOG(1) << __func__;
   if (!controller_get_interface()->supports_ble()) return;
   btm_ble_stop_auto_conn();
-  btsnd_hcic_ble_clear_white_list(base::BindOnce(&wl_clear_complete));
+  btsnd_hcic_ble_clear_acceptlist(base::BindOnce(&wl_clear_complete));
   background_connections_clear();
 }

@@ -59,8 +59,8 @@ class HearingAidInterface {
   /** Disconnect from Hearing Aid */
   virtual void Disconnect(const RawAddress& address) = 0;
 
-  /** Add a hearing aid device to white list */
-  virtual void AddToWhiteList(const RawAddress& address) = 0;
+  /** Add a hearing aid device to acceptlist */
+  virtual void AddToAcceptlist(const RawAddress& address) = 0;
 
   /** Set the volume */
   virtual void SetVolume(int8_t volume) = 0;

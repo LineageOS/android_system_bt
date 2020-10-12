@@ -111,7 +111,7 @@ class FilterTracker {
   uint16_t rfc_remote_cid = 0;
   std::unordered_set<uint16_t> rfc_channels = {0};
 
-  // Adds L2C channel to whitelist.
+  // Adds L2C channel to allowlist.
   void addL2cCid(uint16_t local_cid, uint16_t remote_cid) {
     l2c_local_cid.insert(local_cid);
     l2c_remote_cid.insert(remote_cid);
@@ -123,7 +123,7 @@ class FilterTracker {
     rfc_remote_cid = remote_cid;
   }
 
-  // Remove L2C channel from whitelist.
+  // Remove L2C channel from allowlist.
   void removeL2cCid(uint16_t local_cid, uint16_t remote_cid) {
     if (rfc_local_cid == local_cid) {
       rfc_channels.clear();
@@ -138,7 +138,7 @@ class FilterTracker {
 
   void addRfcDlci(uint8_t channel) { rfc_channels.insert(channel); }
 
-  bool isWhitelistedL2c(bool local, uint16_t cid) {
+  bool isAllowlistedL2c(bool local, uint16_t cid) {
     const auto& set = local ? l2c_local_cid : l2c_remote_cid;
     return (set.find(cid) != set.end());
   }
@@ -148,7 +148,7 @@ class FilterTracker {
     return cid == channel;
   }
 
-  bool isWhitelistedDlci(uint8_t dlci) {
+  bool isAllowlistedDlci(uint8_t dlci) {
     return rfc_channels.find(dlci) != rfc_channels.end();
   }
 };
@@ -290,10 +290,10 @@ static void capture(const BT_HDR* buffer, bool is_received) {
   }
 }
 
-static void whitelist_l2c_channel(uint16_t conn_handle, uint16_t local_cid,
+static void allowlist_l2c_channel(uint16_t conn_handle, uint16_t local_cid,
                                   uint16_t remote_cid) {
   LOG(INFO) << __func__
-            << ": Whitelisting l2cap channel. conn_handle=" << conn_handle
+            << ": Allowlisting l2cap channel. conn_handle=" << conn_handle
             << " cid=" << loghex(local_cid) << ":" << loghex(remote_cid);
   if (bluetooth::shim::is_any_gd_enabled()) {
     return;
@@ -305,9 +305,9 @@ static void whitelist_l2c_channel(uint16_t conn_handle, uint16_t local_cid,
   filter_list[conn_handle].addL2cCid(local_cid, remote_cid);
 }
 
-static void whitelist_rfc_dlci(uint16_t local_cid, uint8_t dlci) {
+static void allowlist_rfc_dlci(uint16_t local_cid, uint8_t dlci) {
   LOG(INFO) << __func__
-            << ": Whitelisting rfcomm channel. L2CAP CID=" << loghex(local_cid)
+            << ": Allowlisting rfcomm channel. L2CAP CID=" << loghex(local_cid)
             << " DLCI=" << loghex(dlci);
   if (bluetooth::shim::is_any_gd_enabled()) {
     return;
@@ -333,10 +333,10 @@ static void add_rfc_l2c_channel(uint16_t conn_handle, uint16_t local_cid,
   local_cid_to_acl.insert({local_cid, conn_handle});
 }
 
-static void clear_l2cap_whitelist(uint16_t conn_handle, uint16_t local_cid,
+static void clear_l2cap_allowlist(uint16_t conn_handle, uint16_t local_cid,
                                   uint16_t remote_cid) {
   LOG(INFO) << __func__
-            << ": Clearing whitelist from l2cap channel. conn_handle="
+            << ": Clearing acceptlist from l2cap channel. conn_handle="
             << conn_handle << " cid=" << local_cid << ":" << remote_cid;
 
   if (bluetooth::shim::is_any_gd_enabled()) {
@@ -346,9 +346,9 @@ static void clear_l2cap_whitelist(uint16_t conn_handle, uint16_t local_cid,
   filter_list[conn_handle].removeL2cCid(local_cid, remote_cid);
 }
 
-static const btsnoop_t interface = {capture, whitelist_l2c_channel,
-                                    whitelist_rfc_dlci, add_rfc_l2c_channel,
-                                    clear_l2cap_whitelist};
+static const btsnoop_t interface = {capture, allowlist_l2c_channel,
+                                    allowlist_rfc_dlci, add_rfc_l2c_channel,
+                                    clear_l2cap_allowlist};
 
 const btsnoop_t* btsnoop_get_interface() { return &interface; }
 
@@ -435,10 +435,10 @@ static bool should_filter_log(bool is_received, uint8_t* packet) {
     }
 
     uint8_t rfc_dlci = packet[RFC_CHANNEL_OFFSET] >> 2;
-    if (!filters.isWhitelistedDlci(rfc_dlci)) {
+    if (!filters.isAllowlistedDlci(rfc_dlci)) {
       return true;
     }
-  } else if (!filters.isWhitelistedL2c(is_received, l2c_channel)) {
+  } else if (!filters.isAllowlistedL2c(is_received, l2c_channel)) {
     return true;
   }
 

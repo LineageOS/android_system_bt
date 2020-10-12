@@ -218,13 +218,13 @@ class HearingAid {
   static void DebugDump(int fd);
 
   static void AddFromStorage(const HearingDevice& dev_info,
-                             uint16_t is_white_listed);
+                             uint16_t is_acceptlisted);
 
   static int GetDeviceCount();
 
   virtual void Connect(const RawAddress& address) = 0;
   virtual void Disconnect(const RawAddress& address) = 0;
-  virtual void AddToWhiteList(const RawAddress& address) = 0;
+  virtual void AddToAcceptlist(const RawAddress& address) = 0;
   virtual void SetVolume(int8_t volume) = 0;
 };
 
