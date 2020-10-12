@@ -16,14 +16,15 @@
  *
  ******************************************************************************/
 
-#include <cutils/log.h>
-#include <log/log.h>
+#define LOG_TAG "smp_act"
+
 #include <string.h>
 #include "btif_api.h"
 #include "btif_common.h"
 #include "btif_storage.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
+#include "osi/include/log.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int.h"
 #include "stack/btm/btm_sec.h"
@@ -33,7 +34,6 @@
 #include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
 #include "types/raw_address.h"
-#include "utils/include/bt_utils.h"
 
 #define SMP_KEY_DIST_TYPE_MAX 4
 
