@@ -1318,24 +1318,6 @@ tSMP_ASSO_MODEL smp_select_association_model_secure_connections(tSMP_CB* p_cb) {
 }
 
 /*******************************************************************************
- * Function         smp_reverse_array
- *
- * Description      This function reverses array bytes
- *
- ******************************************************************************/
-void smp_reverse_array(uint8_t* arr, uint8_t len) {
-  uint8_t i = 0, tmp;
-
-  SMP_TRACE_DEBUG("smp_reverse_array");
-
-  for (i = 0; i < len / 2; i++) {
-    tmp = arr[i];
-    arr[i] = arr[len - 1 - i];
-    arr[len - 1 - i] = tmp;
-  }
-}
-
-/*******************************************************************************
  * Function         smp_calculate_random_input
  *
  * Description      This function returns random input value to be used in
