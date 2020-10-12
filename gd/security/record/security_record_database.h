@@ -59,7 +59,7 @@ class SecurityRecordDatabase {
       std::shared_ptr<SecurityRecord> record = *it;
       if (record->identity_address_.has_value() && record->identity_address_.value() == address) return it;
       if (record->GetPseudoAddress() == address) return it;
-      if (record->irk.has_value() && address.IsRpaThatMatchesIrk(record->irk.value())) return it;
+      if (record->remote_irk.has_value() && address.IsRpaThatMatchesIrk(record->remote_irk.value())) return it;
     }
     return records_.end();
   }
