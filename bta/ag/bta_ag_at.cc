@@ -21,10 +21,9 @@
  *  BTA AG AT command interpreter.
  *
  ******************************************************************************/
+#define LOG_TAG "bta_ag_at"
 
 #include "bta_ag_at.h"
-
-#include <log/log.h>
 
 #include <cstring>
 
