@@ -9,7 +9,7 @@ enum Code : 8 {
   PAIRING_RANDOM = 0x04,
   PAIRING_FAILED = 0x05,
   ENCRYPTION_INFORMATION = 0x06,
-  MASTER_IDENTIFICATION = 0x07,
+  CENTRAL_IDENTIFICATION = 0x07,
   IDENTITY_INFORMATION = 0x08,
   IDENTITY_ADDRESS_INFORMATION = 0x09,
   SIGNING_INFORMATION = 0x0A,
@@ -93,7 +93,7 @@ packet EncryptionInformation : Command (code = ENCRYPTION_INFORMATION) {
  long_term_key : 8[16],
 }
 
-packet MasterIdentification : Command (code = MASTER_IDENTIFICATION) {
+packet CentralIdentification : Command (code = CENTRAL_IDENTIFICATION) {
   ediv : 16,
   rand : 8[8],
 }

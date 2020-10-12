@@ -178,7 +178,7 @@ extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
 extern bool smp_proc_ltk_request(const RawAddress& bda);
 
 // Called when link is encrypted and notified to slave device.
-// Proceed to send LTK, DIV and ER to master if bonding the devices.
+// Proceed to send LTK, DIV and ER to central if bonding the devices.
 extern void smp_link_encrypted(const RawAddress& bda, uint8_t encr_enable);
 
 #endif /* SMP_API_H */

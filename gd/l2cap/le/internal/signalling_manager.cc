@@ -134,14 +134,14 @@ void LeSignallingManager::OnConnectionParameterUpdateRequest(SignalId signal_id,
                                                              uint16_t interval_max, uint16_t slave_latency,
                                                              uint16_t timeout_multiplier) {
   if (link_->GetRole() == hci::Role::SLAVE) {
-    LOG_WARN("Received request from LL master");
+    LOG_WARN("Received request from LL central");
     auto builder = LeCommandRejectNotUnderstoodBuilder::Create(signal_id.Value());
     enqueue_buffer_->Enqueue(std::move(builder), handler_);
     return;
   }
 
   if (!link_->CheckConnectionParameters(interval_min, interval_max, slave_latency, timeout_multiplier)) {
-    LOG_WARN("Received invalid connection parameter update request from LL master");
+    LOG_WARN("Received invalid connection parameter update request from LL central");
     auto builder = ConnectionParameterUpdateResponseBuilder::Create(signal_id.Value(),
                                                                     ConnectionParameterUpdateResponseResult::REJECTED);
     enqueue_buffer_->Enqueue(std::move(builder), handler_);

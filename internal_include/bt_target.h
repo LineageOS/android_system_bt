@@ -64,7 +64,7 @@
 #endif
 
 #ifndef BTA_HH_ROLE
-#define BTA_HH_ROLE BTA_MASTER_ROLE_PREF
+#define BTA_HH_ROLE BTA_CENTRAL_ROLE_PREF
 #endif
 
 #ifndef BTA_AV_SINK_INCLUDED

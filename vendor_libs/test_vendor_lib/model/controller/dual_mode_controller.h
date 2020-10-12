@@ -146,7 +146,7 @@ class DualModeController : public Device {
   void ChangeConnectionLinkKey(CommandPacketView args);
 
   // 7.1.18
-  void MasterLinkKey(CommandPacketView args);
+  void CentralLinkKey(CommandPacketView args);
 
   // 7.1.19
   void RemoteNameRequest(CommandPacketView args);

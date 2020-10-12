@@ -132,7 +132,7 @@ class PairingHandlerUnitTest : public testing::Test {
 };
 
 InitialInformations initial_informations{
-    .my_role = hci::Role::MASTER,
+    .my_role = hci::Role::CENTRAL,
     .my_connection_address = {{}, hci::AddressType::PUBLIC_DEVICE_ADDRESS},
 
     .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
@@ -269,7 +269,7 @@ TEST_F(PairingHandlerUnitTest, test_secure_connections_just_works) {
 }
 
 InitialInformations initial_informations_trsi{
-    .my_role = hci::Role::MASTER,
+    .my_role = hci::Role::CENTRAL,
     .my_connection_address = hci::AddressWithType(),
 
     .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
@@ -331,7 +331,7 @@ InitialInformations initial_informations_trmi{
 
 /* This test verifies that when remote device sends pairing request, and user does accept the prompt, we do send proper
  * reply back */
-TEST_F(PairingHandlerUnitTest, test_remote_master_initiating) {
+TEST_F(PairingHandlerUnitTest, test_remote_central_initiating) {
   initial_informations_trmi.proper_l2cap_interface = up_buffer_.get();
   initial_informations_trmi.l2cap_handler = handler_;
   initial_informations_trmi.user_interface_handler = handler_;

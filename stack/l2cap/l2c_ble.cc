@@ -269,7 +269,7 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
 bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                       tBLE_ADDR_TYPE type, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
-  // role == HCI_ROLE_MASTER => scanner completed connection
+  // role == HCI_ROLE_CENTRAL => scanner completed connection
   // role == HCI_ROLE_SLAVE => advertiser completed connection
 
   /* See if we have a link control block for the remote device */
@@ -287,22 +287,22 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
         return false;
       }
     }
-  } else if (role == HCI_ROLE_MASTER && p_lcb->link_state != LST_CONNECTING) {
+  } else if (role == HCI_ROLE_CENTRAL && p_lcb->link_state != LST_CONNECTING) {
     LOG_ERROR(
-        "Received le acl connection as role master but not in connecting "
+        "Received le acl connection as role central but not in connecting "
         "state");
     return false;
   }
 
-  if (role == HCI_ROLE_MASTER) alarm_cancel(p_lcb->l2c_lcb_timer);
+  if (role == HCI_ROLE_CENTRAL) alarm_cancel(p_lcb->l2c_lcb_timer);
 
   /* Save the handle */
   l2cu_set_lcb_handle(*p_lcb, handle);
 
-  /* Connected OK. Change state to connected, we were scanning so we are master
+  /* Connected OK. Change state to connected, we were scanning so we are central
    */
-  if (role == HCI_ROLE_MASTER) {
-    p_lcb->SetLinkRoleAsMaster();
+  if (role == HCI_ROLE_CENTRAL) {
+    p_lcb->SetLinkRoleAsCentral();
   } else {
     p_lcb->SetLinkRoleAsSlave();
   }
@@ -379,8 +379,8 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       slave_latency = BTM_BLE_CONN_SLAVE_LATENCY_DEF;
       supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
 
-      /* if both side 4.1, or we are master device, send HCI command */
-      if (p_lcb->IsLinkRoleMaster()
+      /* if both side 4.1, or we are central device, send HCI command */
+      if (p_lcb->IsLinkRoleCentral()
 #if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
@@ -402,8 +402,8 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
   } else {
     /* application allows to do update, if we were delaying one do it now */
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
-      /* if both side 4.1, or we are master device, send HCI command */
-      if (p_lcb->IsLinkRoleMaster()
+      /* if both side 4.1, or we are central device, send HCI command */
+      if (p_lcb->IsLinkRoleCentral()
 #if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
@@ -527,8 +527,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       STREAM_TO_UINT16(max_interval, p); /* 0x0006 - 0x0C80 */
       STREAM_TO_UINT16(latency, p);      /* 0x0000 - 0x03E8 */
       STREAM_TO_UINT16(timeout, p);      /* 0x000A - 0x0C80 */
-      /* If we are a master, the slave wants to update the parameters */
-      if (p_lcb->IsLinkRoleMaster()) {
+      /* If we are a central, the slave wants to update the parameters */
+      if (p_lcb->IsLinkRoleCentral()) {
         L2CA_AdjustConnectionIntervals(&min_interval, &max_interval,
                                        BTM_BLE_CONN_INT_MIN_LIMIT);
 

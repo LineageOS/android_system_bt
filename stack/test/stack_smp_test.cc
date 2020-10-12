@@ -30,7 +30,7 @@
  * This test verifies various key distribution methods in SMP works using the
  * following parameter set:
  *
- * When testing target as Master (Initiator is local, Responder is remote)
+ * When testing target as Central (Initiator is local, Responder is remote)
  *
  * Initiator's Pairing Request: 0x070710000001(01)
  * Responder's Pairing Response: 0x050008000003(02)
@@ -147,8 +147,8 @@ class SmpCalculateConfirmTest : public Test {
     p_cb_.peer_enc_size = 0x08;
     p_cb_.peer_i_key = 0x00;
     p_cb_.peer_r_key = 0x05;
-    // Set role to master
-    p_cb_.role = HCI_ROLE_MASTER;
+    // Set role to central
+    p_cb_.role = HCI_ROLE_CENTRAL;
     std::reverse(rand_.begin(), rand_.end());
   }
   void TearDown() override {}
@@ -157,7 +157,7 @@ class SmpCalculateConfirmTest : public Test {
 };
 
 // Test smp_gen_p2_4_confirm function implementation
-TEST_F(SmpCalculateConfirmTest, test_smp_gen_p2_4_confirm_as_master) {
+TEST_F(SmpCalculateConfirmTest, test_smp_gen_p2_4_confirm_as_central) {
   RawAddress remote_bda;
   tBLE_ADDR_TYPE remote_bd_addr_type = 0;
   BTM_ReadRemoteConnectionAddr(p_cb_.pairing_bda, remote_bda,
@@ -172,7 +172,7 @@ TEST_F(SmpCalculateConfirmTest, test_smp_gen_p2_4_confirm_as_master) {
 }
 
 // Test smp_gen_p1_4_confirm and aes_128 function implementation
-TEST_F(SmpCalculateConfirmTest, test_aes_128_as_master) {
+TEST_F(SmpCalculateConfirmTest, test_aes_128_as_central) {
   RawAddress remote_bda;
   tBLE_ADDR_TYPE remote_bd_addr_type = 0;
   BTM_ReadRemoteConnectionAddr(p_cb_.pairing_bda, remote_bda,
@@ -198,7 +198,7 @@ TEST_F(SmpCalculateConfirmTest, test_aes_128_as_master) {
 }
 
 // Test smp_calculate_comfirm function implementation
-TEST_F(SmpCalculateConfirmTest, test_smp_calculate_comfirm_as_master) {
+TEST_F(SmpCalculateConfirmTest, test_smp_calculate_comfirm_as_central) {
   Octet16 output;
   tSMP_STATUS status = smp_calculate_comfirm(&p_cb_, rand_, &output);
   EXPECT_EQ(status, SMP_SUCCESS);

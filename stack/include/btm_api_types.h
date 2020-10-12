@@ -334,8 +334,8 @@ typedef struct {
   uint8_t pcm_intf_rate; /* PCM interface rate: 0: 128kbps, 1: 256 kbps;
                              2:512 bps; 3: 1024kbps; 4: 2048kbps */
   uint8_t frame_type;    /* frame type: 0: short; 1: long */
-  uint8_t sync_mode;     /* sync mode: 0: slave; 1: master */
-  uint8_t clock_mode;    /* clock mode: 0: slave; 1: master */
+  uint8_t sync_mode;     /* sync mode: 0: slave; 1: central */
+  uint8_t clock_mode;    /* clock mode: 0: slave; 1: central */
 
 } tBTM_SCO_PCM_PARAM;
 
@@ -482,11 +482,11 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 #define BTM_SEC_OUT_ENCRYPT 0x0020
 /* Secure Connections Only Mode */
 #define BTM_SEC_MODE4_LEVEL4 0x0040
-/* Need to switch connection to be master */
-#define BTM_SEC_FORCE_MASTER 0x0100
-/* Try to switch connection to be master */
-#define BTM_SEC_ATTEMPT_MASTER 0x0200
-/* Need to switch connection to be master */
+/* Need to switch connection to be central */
+#define BTM_SEC_FORCE_CENTRAL 0x0100
+/* Try to switch connection to be central */
+#define BTM_SEC_ATTEMPT_CENTRAL 0x0200
+/* Need to switch connection to be central */
 #define BTM_SEC_FORCE_SLAVE 0x0400
 /* Try to switch connection to be slave */
 #define BTM_SEC_ATTEMPT_SLAVE 0x0800
@@ -827,9 +827,9 @@ typedef uint8_t tBTM_LE_EVT;
 #define BTM_LE_KEY_PCSRK SMP_SEC_KEY_TYPE_CSRK
 #define BTM_LE_KEY_PLK SMP_SEC_KEY_TYPE_LK
 #define BTM_LE_KEY_LLK (SMP_SEC_KEY_TYPE_LK << 4)
-/* master role security information:div */
+/* central role security information:div */
 #define BTM_LE_KEY_LENC (SMP_SEC_KEY_TYPE_ENC << 4)
-/* master device ID key */
+/* central device ID key */
 #define BTM_LE_KEY_LID (SMP_SEC_KEY_TYPE_ID << 4)
 /* local CSRK has been deliver to peer */
 #define BTM_LE_KEY_LCSRK (SMP_SEC_KEY_TYPE_CSRK << 4)

@@ -496,7 +496,7 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     MOCK_METHOD2(OnReadAfhChannelMapComplete, void(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map));
     MOCK_METHOD1(OnReadRssiComplete, void(uint8_t rssi));
     MOCK_METHOD2(OnReadClockComplete, void(uint32_t clock, uint16_t accuracy));
-    MOCK_METHOD1(OnMasterLinkKeyComplete, void(KeyFlag flag));
+    MOCK_METHOD1(OnCentralLinkKeyComplete, void(KeyFlag flag));
     MOCK_METHOD1(OnRoleChange, void(Role new_role));
     MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
     MOCK_METHOD3(
@@ -1009,10 +1009,10 @@ TEST_F(AclManagerWithConnectionTest, send_role_discovery) {
   auto command_view = RoleDiscoveryView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
 
-  EXPECT_CALL(mock_connection_management_callbacks_, OnRoleDiscoveryComplete(Role::MASTER));
+  EXPECT_CALL(mock_connection_management_callbacks_, OnRoleDiscoveryComplete(Role::CENTRAL));
   uint8_t num_packets = 1;
   test_hci_layer_->IncomingEvent(
-      RoleDiscoveryCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, handle_, Role::MASTER));
+      RoleDiscoveryCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, handle_, Role::CENTRAL));
 }
 
 TEST_F(AclManagerWithConnectionTest, send_read_link_policy_settings) {

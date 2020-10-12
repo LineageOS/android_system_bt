@@ -436,7 +436,7 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
     {
       p_srec->security_flags &=
           ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM |
-            BTM_SEC_FORCE_MASTER | BTM_SEC_ATTEMPT_MASTER |
+            BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
             BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
     }
 
@@ -463,10 +463,11 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
             BT_MAX_SERVICE_NAME_LEN + 1);
 /* clear out the old setting, just in case it exists */
     {
-      p_srec->security_flags &= ~(
-          BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_MITM |
-          BTM_SEC_FORCE_MASTER | BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE |
-          BTM_SEC_ATTEMPT_SLAVE | BTM_SEC_IN_MIN_16_DIGIT_PIN);
+      p_srec->security_flags &=
+          ~(BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_MITM |
+            BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
+            BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE |
+            BTM_SEC_IN_MIN_16_DIGIT_PIN);
     }
 
     /* Parameter validation.  Acceptor should not set requirements for outgoing
@@ -3149,7 +3150,7 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
         BTM_TRACE_DEBUG(
             "link encrypted afer dedic bonding can use SMP_BR_CHNL");
 
-        if (acl_br_edr_is_role_master(p_dev_rec->bd_addr)) {
+        if (acl_br_edr_is_role_central(p_dev_rec->bd_addr)) {
           // Encryption is required to start SM over BR/EDR
           // indicate that this is encryption after authentication
           BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL,
@@ -3280,7 +3281,7 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
     }
     if (p_dev_rec->new_encryption_key_is_p256) {
       if (btm_sec_use_smp_br_chnl(p_dev_rec) &&
-          acl_br_edr_is_role_master(p_dev_rec->bd_addr) &&
+          acl_br_edr_is_role_central(p_dev_rec->bd_addr) &&
           /* if LE key is not known, do deriving */
           (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) ||
            /* or BR key is higher security than existing LE keys */
@@ -4355,8 +4356,8 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* All required  security procedures already established */
   p_dev_rec->security_required &=
       ~(BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE |
-        BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_MASTER |
-        BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
+        BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_CENTRAL |
+        BTM_SEC_ATTEMPT_CENTRAL | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
 
   BTM_TRACE_EVENT("Security Manager: access granted");
 
