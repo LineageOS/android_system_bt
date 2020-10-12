@@ -22,8 +22,11 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "l2c_ble"
+
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+
 #include "bt_target.h"
 #include "bta_hearing_aid_api.h"
 #include "device/include/controller.h"
@@ -31,8 +34,8 @@
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
-#include "log/log.h"
 #include "main/shim/shim.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
