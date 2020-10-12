@@ -126,13 +126,17 @@ class SecurityRecord {
   /* Identity Address */
   std::optional<hci::AddressWithType> identity_address_;
 
-  std::optional<crypto_toolbox::Octet16> ltk;
+  std::optional<crypto_toolbox::Octet16> remote_ltk;
   uint8_t key_size;
   uint8_t security_level;
-  std::optional<uint16_t> ediv;
-  std::optional<std::array<uint8_t, 8>> rand;
-  std::optional<crypto_toolbox::Octet16> irk;
-  std::optional<crypto_toolbox::Octet16> signature_key;
+  std::optional<uint16_t> remote_ediv;
+  std::optional<std::array<uint8_t, 8>> remote_rand;
+  std::optional<crypto_toolbox::Octet16> remote_irk;
+  std::optional<crypto_toolbox::Octet16> remote_signature_key;
+
+  std::optional<crypto_toolbox::Octet16> local_ltk;
+  std::optional<uint16_t> local_ediv;
+  std::optional<std::array<uint8_t, 8>> local_rand;
 };
 
 }  // namespace record
