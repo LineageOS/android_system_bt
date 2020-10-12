@@ -22,6 +22,8 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "sdp_discovery"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +35,6 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2cdefs.h"
-#include "log/log.h"
 #include "osi/include/log.h"
 #include "sdp_api.h"
 #include "sdpint.h"

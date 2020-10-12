@@ -24,6 +24,8 @@
 #define LOG_TAG "bluetooth"
 #endif
 
+static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
+
 #if defined(OS_ANDROID)
 
 #include <log/log.h>
@@ -39,6 +41,9 @@
 #define LOG_INFO(...)
 #define LOG_WARN(...)
 #else
+
+static_assert(LOG_TAG != nullptr, "LOG_TAG is null after header inclusion");
+
 #define LOG_VERBOSE(fmt, args...)                                             \
   do {                                                                        \
     if (bluetooth::common::InitFlags::IsDebugLoggingEnabledForTag(LOG_TAG)) { \
