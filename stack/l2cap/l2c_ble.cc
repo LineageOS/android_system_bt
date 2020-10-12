@@ -279,12 +279,10 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   if (!p_lcb) {
     p_lcb = l2cu_allocate_lcb(bda, false, BT_TRANSPORT_LE);
     if (!p_lcb) {
-      btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
       LOG_ERROR("Unable to allocate link resource for le acl connection");
       return false;
     } else {
       if (!l2cu_initialize_fixed_ccb(p_lcb, L2CAP_ATT_CID)) {
-        btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
         LOG_ERROR("Unable to allocate channel resource for le acl connection");
         return false;
       }
@@ -317,14 +315,9 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   p_lcb->latency = conn_latency;
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
 
-  /* Tell BTM Acl management about the link */
-  btm_acl_created(bda, handle, p_lcb->LinkRole(), BT_TRANSPORT_LE);
-
   p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT |
                              L2CAP_FIXED_CHNL_BLE_SIG_BIT |
                              L2CAP_FIXED_CHNL_SMP_BIT;
-
-  btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
 
   if (role == HCI_ROLE_SLAVE) {
     if (!controller_get_interface()

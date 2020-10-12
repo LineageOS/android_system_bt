@@ -51,8 +51,19 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type,
   btm_ble_increment_link_topology_mask(role);
 
   // Inform l2cap of a potential connection.
-  l2cble_conn_comp(handle, role, address_with_type.bda, address_with_type.type,
-                   conn_interval, conn_latency, conn_timeout);
+  if (!l2cble_conn_comp(handle, role, address_with_type.bda,
+                        address_with_type.type, conn_interval, conn_latency,
+                        conn_timeout)) {
+    btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
+    LOG_WARN("Unable to complete l2cap connection");
+    return false;
+  }
+
+  btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
+
+  /* Tell BTM Acl management about the link */
+  btm_acl_created(address_with_type.bda, handle, role, BT_TRANSPORT_LE);
+
   return true;
 }
 
