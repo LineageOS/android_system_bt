@@ -329,7 +329,7 @@ void btif_gattc_close_impl(int client_if, RawAddress address, int conn_id) {
   else
     BTA_GATTC_CancelOpen(client_if, address, true);
 
-  // Cancel pending background connections (remove from whitelist)
+  // Cancel pending background connections (remove from acceptlist)
   BTA_GATTC_CancelOpen(client_if, address, false);
 }
 
