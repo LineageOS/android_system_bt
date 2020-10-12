@@ -115,7 +115,7 @@ static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
 static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
-static bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport);
+static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
 static bool btm_ble_get_acl_remote_addr(const tBTM_SEC_DEV_REC& p_dev_rec,
                                         RawAddress& conn_addr,
@@ -145,7 +145,7 @@ void btm_acl_init(void) {
 
 void BTM_acl_after_controller_started() {
   internal_.btm_set_default_link_policy(
-      HCI_ENABLE_MASTER_SLAVE_SWITCH | HCI_ENABLE_HOLD_MODE |
+      HCI_ENABLE_CENTRAL_SLAVE_SWITCH | HCI_ENABLE_HOLD_MODE |
       HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE);
 
   const controller_t* controller = controller_get_interface();
@@ -424,7 +424,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
 
     if (controller_get_interface()
             ->supports_ble_peripheral_initiated_feature_exchange() ||
-        link_role == HCI_ROLE_MASTER) {
+        link_role == HCI_ROLE_CENTRAL) {
       btsnd_hcic_ble_read_remote_feat(p_acl->hci_handle);
     } else {
       internal_.btm_establish_continue(p_acl);
@@ -529,7 +529,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  * Function         BTM_SwitchRole
  *
- * Description      This function is called to switch role between master and
+ * Description      This function is called to switch role between central and
  *                  slave.  If role is already set it will do nothing.
  *
  * Returns          BTM_SUCCESS if already in specified role.
@@ -543,7 +543,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
-  if (!controller_get_interface()->supports_master_slave_role_switch()) {
+  if (!controller_get_interface()->supports_central_slave_role_switch()) {
     LOG_INFO("Local controller does not support role switching");
     return BTM_MODE_UNSUPPORTED;
   }
@@ -683,9 +683,9 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 void check_link_policy(uint16_t* settings) {
   const controller_t* controller = controller_get_interface();
 
-  if ((*settings & HCI_ENABLE_MASTER_SLAVE_SWITCH) &&
+  if ((*settings & HCI_ENABLE_CENTRAL_SLAVE_SWITCH) &&
       (!controller->supports_role_switch())) {
-    *settings &= (~HCI_ENABLE_MASTER_SLAVE_SWITCH);
+    *settings &= (~HCI_ENABLE_CENTRAL_SLAVE_SWITCH);
     LOG_INFO("Role switch not supported (settings: 0x%04x)", *settings);
   }
   if ((*settings & HCI_ENABLE_HOLD_MODE) &&
@@ -749,11 +749,11 @@ void BTM_block_sniff_mode_for(const RawAddress& peer_addr) {
 }
 
 void BTM_unblock_role_switch_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_MASTER_SLAVE_SWITCH);
+  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_CENTRAL_SLAVE_SWITCH);
 }
 
 void BTM_block_role_switch_for(const RawAddress& peer_addr) {
-  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_MASTER_SLAVE_SWITCH);
+  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_CENTRAL_SLAVE_SWITCH);
 }
 
 void StackAclBtmAcl::btm_set_default_link_policy(uint16_t settings) {
@@ -764,12 +764,12 @@ void StackAclBtmAcl::btm_set_default_link_policy(uint16_t settings) {
 
 void BTM_default_unblock_role_switch() {
   internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy |
-                                        HCI_ENABLE_MASTER_SLAVE_SWITCH);
+                                        HCI_ENABLE_CENTRAL_SLAVE_SWITCH);
 }
 
 void BTM_default_block_role_switch() {
   internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy &
-                                        ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
+                                        ~HCI_ENABLE_CENTRAL_SLAVE_SWITCH);
 }
 
 /*******************************************************************************
@@ -1196,8 +1196,8 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
   if (p != (tACL_CONN*)NULL) {
     p->link_super_tout = timeout;
 
-    /* Only send if current role is Master; 2.0 spec requires this */
-    if (p->link_role == HCI_ROLE_MASTER) {
+    /* Only send if current role is Central; 2.0 spec requires this */
+    if (p->link_role == HCI_ROLE_CENTRAL) {
       btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID,
                                        p->hci_handle, timeout);
       return (BTM_CMD_STARTED);
@@ -1407,7 +1407,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
  *
  * Function         btm_acl_role_changed
  *
- * Description      This function is called whan a link's master/slave role
+ * Description      This function is called whan a link's central/slave role
  *                  change event or command status event (with error) is
  *                  received. It updates the link control block, and calls the
  *                  registered callback with status and role (if registered).
@@ -1439,7 +1439,7 @@ void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
 
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
-    if (new_role == HCI_ROLE_MASTER) {
+    if (new_role == HCI_ROLE_CENTRAL) {
       BTM_SetLinkSuperTout(p_acl->remote_addr, p_acl->link_super_tout);
     }
   } else {
@@ -2376,21 +2376,21 @@ bool lmp_version_below(const RawAddress& bda, uint8_t version) {
   return acl->lmp_version < version;
 }
 
-bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport) {
+bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport) {
   tACL_CONN* p = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
   if (p == nullptr) {
     LOG_WARN("Unable to find active acl");
     return false;
   }
-  return (p->link_role == HCI_ROLE_MASTER);
+  return (p->link_role == HCI_ROLE_CENTRAL);
 }
 
-bool acl_br_edr_is_role_master(const RawAddress& bda) {
-  return acl_is_role_master(bda, BT_TRANSPORT_BR_EDR);
+bool acl_br_edr_is_role_central(const RawAddress& bda) {
+  return acl_is_role_central(bda, BT_TRANSPORT_BR_EDR);
 }
 
-bool acl_ble_is_role_master(const RawAddress& bda) {
-  return acl_is_role_master(bda, BT_TRANSPORT_LE);
+bool acl_ble_is_role_central(const RawAddress& bda) {
+  return acl_is_role_central(bda, BT_TRANSPORT_LE);
 }
 
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
@@ -2743,7 +2743,7 @@ void acl_set_disconnect_reason(uint8_t acl_disc_reason) {
 }
 
 bool acl_is_role_switch_allowed() {
-  return btm_cb.acl_cb_.btm_def_link_policy & HCI_ENABLE_MASTER_SLAVE_SWITCH;
+  return btm_cb.acl_cb_.btm_def_link_policy & HCI_ENABLE_CENTRAL_SLAVE_SWITCH;
 }
 
 uint16_t acl_get_supported_packet_types() {

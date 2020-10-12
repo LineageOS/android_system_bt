@@ -53,7 +53,7 @@ class PairingHandler : public UICallbacks {
                         hci::AuthenticationRequirements auth_requirements) = 0;  // This is for local initiated only
   virtual void Cancel() = 0;
   virtual void OnReceive(hci::ChangeConnectionLinkKeyCompleteView packet) = 0;
-  virtual void OnReceive(hci::MasterLinkKeyCompleteView packet) = 0;
+  virtual void OnReceive(hci::CentralLinkKeyCompleteView packet) = 0;
   virtual void OnReceive(hci::PinCodeRequestView packet) = 0;
   virtual void OnReceive(hci::LinkKeyRequestView packet) = 0;
   virtual void OnReceive(hci::LinkKeyNotificationView packet) = 0;

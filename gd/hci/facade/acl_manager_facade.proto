@@ -30,7 +30,7 @@ message PolicyMsg {
 }
 
 enum NewRole {
-  MASTER = 0;
+  CENTRAL = 0;
   SLAVE = 1;
 }
 

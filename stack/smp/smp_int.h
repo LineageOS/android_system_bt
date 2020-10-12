@@ -62,7 +62,7 @@ typedef uint8_t tSMP_ASSO_MODEL;
 #define SMP_RAND_EVT SMP_OPCODE_RAND
 #define SMP_PAIRING_FAILED_EVT SMP_OPCODE_PAIRING_FAILED
 #define SMP_ENCRPTION_INFO_EVT SMP_OPCODE_ENCRYPT_INFO
-#define SMP_MASTER_ID_EVT SMP_OPCODE_MASTER_ID
+#define SMP_CENTRAL_ID_EVT SMP_OPCODE_CENTRAL_ID
 #define SMP_ID_INFO_EVT SMP_OPCODE_IDENTITY_INFO
 #define SMP_ID_ADDR_EVT SMP_OPCODE_ID_ADDR
 #define SMP_SIGN_INFO_EVT SMP_OPCODE_SIGN_INFO
@@ -170,7 +170,7 @@ typedef uint8_t tSMP_STATE;
 #define SMP_BR_ENCRPTION_INFO_EVT                                    \
   SMP_OPCODE_ENCRYPT_INFO                         /* not over BR/EDR \
                                                      */
-#define SMP_BR_MASTER_ID_EVT SMP_OPCODE_MASTER_ID /* not over BR/EDR */
+#define SMP_BR_CENTRAL_ID_EVT SMP_OPCODE_CENTRAL_ID /* not over BR/EDR */
 #define SMP_BR_ID_INFO_EVT SMP_OPCODE_IDENTITY_INFO
 #define SMP_BR_ID_ADDR_EVT SMP_OPCODE_ID_ADDR
 #define SMP_BR_SIGN_INFO_EVT SMP_OPCODE_SIGN_INFO
@@ -367,7 +367,7 @@ extern void smp_proc_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_process_pairing_public_key(tSMP_CB* p_cb,
                                            tSMP_INT_DATA* p_data);
 extern void smp_proc_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
-extern void smp_proc_master_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
+extern void smp_proc_central_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_proc_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_proc_id_addr(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_proc_sec_grant(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);

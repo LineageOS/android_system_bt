@@ -122,7 +122,7 @@ std::string BqrVseSubEvt::ToString() const {
   ss << QualityReportIdToString(bqr_link_quality_event_.quality_report_id)
      << ", Handle: " << loghex(bqr_link_quality_event_.connection_handle)
      << ", " << PacketTypeToString(bqr_link_quality_event_.packet_types) << ", "
-     << ((bqr_link_quality_event_.connection_role == 0) ? "Master" : "Slave ")
+     << ((bqr_link_quality_event_.connection_role == 0) ? "Central" : "Slave ")
      << ", PwLv: " << std::to_string(bqr_link_quality_event_.tx_power_level)
      << ", RSSI: " << std::to_string(bqr_link_quality_event_.rssi)
      << ", SNR: " << std::to_string(bqr_link_quality_event_.snr)
