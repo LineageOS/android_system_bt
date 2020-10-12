@@ -662,21 +662,22 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
 
   // TODO: ensure that the security level is not weaker than what we already have.
   auto record = this->security_database_.FindOrCreate(result.connection_address);
-  record->identity_address_ = result.distributed_keys.identity_address;
-  record->ltk = result.distributed_keys.ltk;
+  record->identity_address_ = result.distributed_keys.remote_identity_address;
+  record->remote_ltk = result.distributed_keys.remote_ltk;
   record->key_size = result.key_size;
   record->security_level = result.security_level;
-  record->ediv = result.distributed_keys.ediv;
-  record->rand = result.distributed_keys.rand;
-  record->irk = result.distributed_keys.irk;
-  record->signature_key = result.distributed_keys.signature_key;
-  if (result.distributed_keys.link_key)
-    record->SetLinkKey(*result.distributed_keys.link_key, hci::KeyType::AUTHENTICATED_P256);
+  record->remote_ediv = result.distributed_keys.remote_ediv;
+  record->remote_rand = result.distributed_keys.remote_rand;
+  record->remote_irk = result.distributed_keys.remote_irk;
+  record->remote_signature_key = result.distributed_keys.remote_signature_key;
+  if (result.distributed_keys.remote_link_key)
+    record->SetLinkKey(*result.distributed_keys.remote_link_key, hci::KeyType::AUTHENTICATED_P256);
   security_database_.SaveRecordsToStorage();
 
   NotifyDeviceBonded(result.connection_address);
   // We also notify bond complete using identity address. That's what old stack used to do.
-  if (result.distributed_keys.identity_address) NotifyDeviceBonded(*result.distributed_keys.identity_address);
+  if (result.distributed_keys.remote_identity_address)
+    NotifyDeviceBonded(*result.distributed_keys.remote_identity_address);
 
   security_handler_->CallOn(this, &SecurityManagerImpl::WipeLePairingHandler);
 }
