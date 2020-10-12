@@ -28,6 +28,31 @@ void btm_ble_advertiser_notify_terminated_legacy(uint8_t status,
                                                  uint16_t connection_handle);
 void btm_ble_increment_link_topology_mask(uint8_t link_role);
 
+bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type,
+                               uint16_t handle, uint8_t role,
+                               bool is_in_security_db, uint16_t conn_interval,
+                               uint16_t conn_latency, uint16_t conn_timeout) {
+  if (role == HCI_ROLE_MASTER) {
+    btm_cb.ble_ctr_cb.set_connection_state_idle();
+    btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
+  }
+
+  // Inform any applications that a connection has completed.
+  connection_manager::on_connection_complete(address_with_type.bda);
+
+  // Allocate or update the security device record for this device
+  btm_ble_connected(address_with_type.bda, handle, HCI_ENCRYPT_MODE_DISABLED,
+                    role, address_with_type.type, is_in_security_db);
+
+  // Update the link topology information for our device
+  btm_ble_increment_link_topology_mask(role);
+
+  // Inform l2cap of a potential connection.
+  l2cble_conn_comp(handle, role, address_with_type.bda, address_with_type.type,
+                   conn_interval, conn_latency, conn_timeout);
+  return true;
+}
+
 void acl_ble_connection_complete(const tBLE_BD_ADDR& address_with_type,
                                  uint16_t handle, uint8_t role, bool match,
                                  uint16_t conn_interval, uint16_t conn_latency,
