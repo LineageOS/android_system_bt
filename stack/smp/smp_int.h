@@ -454,7 +454,6 @@ extern bool smp_command_has_invalid_length(tSMP_CB* p_cb);
 extern bool smp_command_has_invalid_parameters(tSMP_CB* p_cb);
 extern void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr);
 extern tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb);
-extern void smp_reverse_array(uint8_t* arr, uint8_t len);
 extern uint8_t smp_calculate_random_input(uint8_t* random, uint8_t round);
 extern void smp_collect_local_io_capabilities(uint8_t* iocap, tSMP_CB* p_cb);
 extern void smp_collect_peer_io_capabilities(uint8_t* iocap, tSMP_CB* p_cb);
