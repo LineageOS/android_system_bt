@@ -50,24 +50,24 @@ typedef struct {
 } __attribute__((packed)) tBTA_GATT_ID;
 
 /* Client callback function events */
-#define BTA_GATTC_DEREG_EVT 1        /* GATT client deregistered event */
-#define BTA_GATTC_OPEN_EVT 2         /* GATTC open request status  event */
-#define BTA_GATTC_CLOSE_EVT 5        /* GATTC  close request status event */
-#define BTA_GATTC_SEARCH_CMPL_EVT 6  /* GATT discovery complete event */
-#define BTA_GATTC_SEARCH_RES_EVT 7   /* GATT discovery result event */
-#define BTA_GATTC_SRVC_DISC_DONE_EVT 8 /* GATT service discovery done event */
-#define BTA_GATTC_NOTIF_EVT 10       /* GATT attribute notification event */
-#define BTA_GATTC_EXEC_EVT 12        /* execute write complete event */
-#define BTA_GATTC_ACL_EVT 13         /* ACL up event */
-#define BTA_GATTC_CANCEL_OPEN_EVT 14 /* cancel open event */
-#define BTA_GATTC_SRVC_CHG_EVT 15    /* service change event */
-#define BTA_GATTC_ENC_CMPL_CB_EVT 17 /* encryption complete callback event */
-#define BTA_GATTC_CFG_MTU_EVT 18     /* configure MTU complete event */
-#define BTA_GATTC_CONGEST_EVT 24     /* Congestion event */
-#define BTA_GATTC_PHY_UPDATE_EVT 25  /* PHY change event */
-#define BTA_GATTC_CONN_UPDATE_EVT 26 /* Connection parameters update event */
-
-typedef uint8_t tBTA_GATTC_EVT;
+typedef enum : uint8_t {
+  BTA_GATTC_DEREG_EVT = 1,          /* GATT client deregistered event */
+  BTA_GATTC_OPEN_EVT = 2,           /* GATTC open request status  event */
+  BTA_GATTC_CLOSE_EVT = 5,          /* GATTC  close request status event */
+  BTA_GATTC_SEARCH_CMPL_EVT = 6,    /* GATT discovery complete event */
+  BTA_GATTC_SEARCH_RES_EVT = 7,     /* GATT discovery result event */
+  BTA_GATTC_SRVC_DISC_DONE_EVT = 8, /* GATT service discovery done event */
+  BTA_GATTC_NOTIF_EVT = 10,         /* GATT attribute notification event */
+  BTA_GATTC_EXEC_EVT = 12,          /* execute write complete event */
+  BTA_GATTC_ACL_EVT = 13,           /* ACL up event */
+  BTA_GATTC_CANCEL_OPEN_EVT = 14,   /* cancel open event */
+  BTA_GATTC_SRVC_CHG_EVT = 15,      /* service change event */
+  BTA_GATTC_ENC_CMPL_CB_EVT = 17,   /* encryption complete callback event */
+  BTA_GATTC_CFG_MTU_EVT = 18,       /* configure MTU complete event */
+  BTA_GATTC_CONGEST_EVT = 24,       /* Congestion event */
+  BTA_GATTC_PHY_UPDATE_EVT = 25,    /* PHY change event */
+  BTA_GATTC_CONN_UPDATE_EVT = 26,   /* Connection parameters update event */
+} tBTA_GATTC_EVT;
 
 inline std::string GattClientEventText(tBTA_GATTC_EVT event) {
   switch (event) {
