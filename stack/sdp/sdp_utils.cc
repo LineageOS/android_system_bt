@@ -31,6 +31,7 @@
 #include "bt_types.h"
 #include "btif_config.h"
 
+#include "avrc_defs.h"
 #include "sdp_api.h"
 #include "sdpint.h"
 
@@ -1154,4 +1155,42 @@ uint8_t* sdpu_build_partial_attrib_entry(uint8_t* p_out, tSDP_ATTRIBUTE* p_attr,
 
   osi_free(p_attr_buff);
   return p_out;
+}
+/*******************************************************************************
+ *
+ * Function         sdpu_is_avrcp_profile_description_list
+ *
+ * Description      This function is to check if attirbute contain AVRCP profile
+ *                  description list
+ *
+ *                  p_attr: attibute to be check
+ *
+ * Returns          AVRCP profile version if matched, else 0
+ *
+ ******************************************************************************/
+uint16_t sdpu_is_avrcp_profile_description_list(tSDP_ATTRIBUTE* p_attr) {
+  if (p_attr->id != ATTR_ID_BT_PROFILE_DESC_LIST || p_attr->len != 8) {
+    return 0;
+  }
+
+  uint8_t* p_uuid = p_attr->value_ptr + 3;
+  // Check if AVRCP profile UUID
+  if (p_uuid[0] != 0x11 || p_uuid[1] != 0xe) {
+    return 0;
+  }
+  uint8_t p_version = *(p_uuid + 4);
+  switch (p_version) {
+    case 0x0:
+      return AVRC_REV_1_0;
+    case 0x3:
+      return AVRC_REV_1_3;
+    case 0x4:
+      return AVRC_REV_1_4;
+    case 0x5:
+      return AVRC_REV_1_5;
+    case 0x6:
+      return AVRC_REV_1_6;
+    default:
+      return 0;
+  }
 }

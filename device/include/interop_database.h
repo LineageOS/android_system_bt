@@ -150,6 +150,12 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // for skip name request,
     // because BR/EDR address and ADV random address are the same
     {{{0xd4, 0x7a, 0xe2, 0, 0, 0}}, 3, INTEROP_DISABLE_NAME_REQUEST},
+
+    // Toyota Car Audio
+    {{{0x00, 0x17, 0x53, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
+
+    // Honda High End Carkit
+    {{{0x9c, 0x8d, 0x7c, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
 };
 
 typedef struct {
