@@ -42,6 +42,12 @@ void btsnd_hcic_enhanced_flush(uint16_t handle,
 
 using base::StringPrintf;
 
+tBT_TRANSPORT l2c_get_transport_from_fixed_cid(uint16_t fixed_cid) {
+  if (fixed_cid >= L2CAP_ATT_CID && fixed_cid <= L2CAP_SMP_CID)
+    return BT_TRANSPORT_LE;
+  return BT_TRANSPORT_BR_EDR;
+}
+
 uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                         uint16_t my_mtu, uint16_t required_remote_mtu,
