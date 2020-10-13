@@ -787,7 +787,12 @@ std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
 
   /* First, see if we already have a le link to the remote */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
-  if (p_lcb == NULL || (p_lcb->link_state != LST_CONNECTED)) {
+  if (p_lcb == NULL) {
+    L2CAP_TRACE_WARNING("%s No link available", __func__);
+    return allocated_cids;
+  }
+
+  if (p_lcb->link_state != LST_CONNECTED) {
     L2CAP_TRACE_WARNING("%s incorrect link state: %d", __func__,
                         p_lcb->link_state);
     return allocated_cids;
