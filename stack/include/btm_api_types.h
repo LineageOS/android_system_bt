@@ -334,8 +334,8 @@ typedef struct {
   uint8_t pcm_intf_rate; /* PCM interface rate: 0: 128kbps, 1: 256 kbps;
                              2:512 bps; 3: 1024kbps; 4: 2048kbps */
   uint8_t frame_type;    /* frame type: 0: short; 1: long */
-  uint8_t sync_mode;     /* sync mode: 0: slave; 1: central */
-  uint8_t clock_mode;    /* clock mode: 0: slave; 1: central */
+  uint8_t sync_mode;     /* sync mode: 0: peripheral; 1: central */
+  uint8_t clock_mode;    /* clock mode: 0: peripheral; 1: central */
 
 } tBTM_SCO_PCM_PARAM;
 
@@ -486,9 +486,9 @@ enum : uint16_t {
   /* Need to switch connection to be central */
   BTM_SEC_ATTEMPT_CENTRAL = 0x0200,
   /* Need to switch connection to be slave */
-  BTM_SEC_FORCE_SLAVE = 0x0400,
+  BTM_SEC_FORCE_PERIPHERAL = 0x0400,
   /* Try to switch connection to be slave */
-  BTM_SEC_ATTEMPT_SLAVE = 0x0800,
+  BTM_SEC_ATTEMPT_PERIPHERAL = 0x0800,
   /* inbound Do man in the middle protection */
   BTM_SEC_IN_MITM = 0x1000,
   /* outbound Do man in the middle protection */

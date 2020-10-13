@@ -64,7 +64,7 @@ std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle) {
 
 std::unique_ptr<AclPacketBuilder> NextAclPacket(uint16_t handle) {
   PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
-  BroadcastFlag broadcast_flag = BroadcastFlag::ACTIVE_SLAVE_BROADCAST;
+  BroadcastFlag broadcast_flag = BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST;
   return AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, NextPayload(handle));
 }
 
@@ -590,7 +590,7 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
         ErrorCode::SUCCESS,
         handle_,
-        Role::SLAVE,
+        Role::PERIPHERAL,
         AddressType::PUBLIC_DEVICE_ADDRESS,
         remote,
         0x0100,
@@ -661,8 +661,15 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   EXPECT_CALL(mock_le_connection_callbacks_,
               OnLeConnectFail(remote_with_type, ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES));
   test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
-      ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES, 0x123, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS, remote,
-      0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
+      ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES,
+      0x123,
+      Role::PERIPHERAL,
+      AddressType::PUBLIC_DEVICE_ADDRESS,
+      remote,
+      0x0100,
+      0x0010,
+      0x0011,
+      ClockAccuracy::PPM_30));
 
   test_hci_layer_->SetCommandFuture();
   packet = test_hci_layer_->GetLastCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST);
@@ -692,7 +699,7 @@ TEST_F(AclManagerTest, cancel_le_connection) {
   test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
       ErrorCode::UNKNOWN_CONNECTION,
       0x123,
-      Role::SLAVE,
+      Role::PERIPHERAL,
       AddressType::PUBLIC_DEVICE_ADDRESS,
       remote,
       0x0100,
@@ -851,15 +858,16 @@ TEST_F(AclManagerWithConnectionTest, acl_send_data_credits) {
 
 TEST_F(AclManagerWithConnectionTest, send_switch_role) {
   test_hci_layer_->SetCommandFuture();
-  acl_manager_->SwitchRole(connection_->GetAddress(), Role::SLAVE);
+  acl_manager_->SwitchRole(connection_->GetAddress(), Role::PERIPHERAL);
   auto packet = test_hci_layer_->GetCommandPacket(OpCode::SWITCH_ROLE);
   auto command_view = SwitchRoleView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(command_view.GetBdAddr(), connection_->GetAddress());
-  ASSERT_EQ(command_view.GetRole(), Role::SLAVE);
+  ASSERT_EQ(command_view.GetRole(), Role::PERIPHERAL);
 
-  EXPECT_CALL(mock_connection_management_callbacks_, OnRoleChange(Role::SLAVE));
-  test_hci_layer_->IncomingEvent(RoleChangeBuilder::Create(ErrorCode::SUCCESS, connection_->GetAddress(), Role::SLAVE));
+  EXPECT_CALL(mock_connection_management_callbacks_, OnRoleChange(Role::PERIPHERAL));
+  test_hci_layer_->IncomingEvent(
+      RoleChangeBuilder::Create(ErrorCode::SUCCESS, connection_->GetAddress(), Role::PERIPHERAL));
 }
 
 TEST_F(AclManagerWithConnectionTest, send_write_default_link_policy_settings) {
@@ -1268,7 +1276,7 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
       ErrorCode::SUCCESS,
       0x123,
-      Role::SLAVE,
+      Role::PERIPHERAL,
       AddressType::PUBLIC_DEVICE_ADDRESS,
       remote,
       0x0100,

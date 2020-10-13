@@ -394,18 +394,18 @@ static bool btm_ble_start_auto_conn() {
   }
 
   btm_send_hci_create_connection(
-      scan_int,                       /* uint16_t scan_int      */
-      scan_win,                       /* uint16_t scan_win      */
-      0x01,                           /* uint8_t acceptlist     */
-      peer_addr_type,                 /* uint8_t addr_type_peer */
-      RawAddress::kEmpty,             /* BD_ADDR bda_peer     */
-      own_addr_type,                  /* uint8_t addr_type_own */
-      BTM_BLE_CONN_INT_MIN_DEF,       /* uint16_t conn_int_min  */
-      BTM_BLE_CONN_INT_MAX_DEF,       /* uint16_t conn_int_max  */
-      BTM_BLE_CONN_SLAVE_LATENCY_DEF, /* uint16_t conn_latency  */
-      BTM_BLE_CONN_TIMEOUT_DEF,       /* uint16_t conn_timeout  */
-      0,                              /* uint16_t min_len       */
-      0,                              /* uint16_t max_len       */
+      scan_int,                            /* uint16_t scan_int      */
+      scan_win,                            /* uint16_t scan_win      */
+      0x01,                                /* uint8_t acceptlist     */
+      peer_addr_type,                      /* uint8_t addr_type_peer */
+      RawAddress::kEmpty,                  /* BD_ADDR bda_peer     */
+      own_addr_type,                       /* uint8_t addr_type_own */
+      BTM_BLE_CONN_INT_MIN_DEF,            /* uint16_t conn_int_min  */
+      BTM_BLE_CONN_INT_MAX_DEF,            /* uint16_t conn_int_max  */
+      BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF, /* uint16_t conn_latency  */
+      BTM_BLE_CONN_TIMEOUT_DEF,            /* uint16_t conn_timeout  */
+      0,                                   /* uint16_t min_len       */
+      0,                                   /* uint16_t max_len       */
       phy);
   return true;
 }

@@ -45,7 +45,7 @@ enum PacketBoundaryFlag : 2 {
 
 enum BroadcastFlag : 2 {
   POINT_TO_POINT = 0,
-  ACTIVE_SLAVE_BROADCAST = 1,
+  ACTIVE_PERIPHERAL_BROADCAST = 1,
 }
 
 packet AclPacket {
@@ -906,7 +906,7 @@ packet CreateConnectionCancelComplete : CommandComplete (command_op_code = CREAT
 
 enum AcceptConnectionRequestRole : 8 {
   BECOME_CENTRAL = 0x00,
-  REMAIN_SLAVE = 0x01,
+  REMAIN_PERIPHERAL = 0x01,
 }
 
 packet AcceptConnectionRequest : ConnectionManagementCommand (op_code = ACCEPT_CONNECTION_REQUEST) {
@@ -1265,7 +1265,7 @@ packet RoleDiscovery : ConnectionManagementCommand (op_code = ROLE_DISCOVERY) {
 
 enum Role : 8 {
   CENTRAL = 0x00,
-  SLAVE = 0x01,
+  PERIPHERAL = 0x01,
 }
 
 packet RoleDiscoveryComplete : CommandComplete (command_op_code = ROLE_DISCOVERY) {
@@ -3414,7 +3414,7 @@ packet LeSetCigParameters : CommandPacket (op_code = LE_SET_CIG_PARAMETERS) {
   cig_id : 8,
   sdu_interval_m_to_s : 24,
   sdu_interval_s_to_m : 24,
-  slaves_clock_accuracy : ClockAccuracy,
+  peripherals_clock_accuracy : ClockAccuracy,
   packing : Packing,
   framing : Enable,
   max_transport_latency_m_to_s : 16,

@@ -290,7 +290,7 @@ bool btm_dev_support_role_switch(const RawAddress& bd_addr) {
     return false;
   }
 
-  if (!controller_get_interface()->supports_central_slave_role_switch()) {
+  if (!controller_get_interface()->supports_central_peripheral_role_switch()) {
     BTM_TRACE_DEBUG("%s Local controller does not support role switch",
                     __func__);
     return false;

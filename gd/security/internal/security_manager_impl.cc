@@ -467,7 +467,7 @@ void SecurityManagerImpl::OnSmpCommandLe(hci::AddressWithType device) {
   }
 
   auto my_role = channel->GetLinkOptions()->GetRole();
-  if (temp_cmd_view.GetCode() == Code::PAIRING_REQUEST && my_role == hci::Role::SLAVE) {
+  if (temp_cmd_view.GetCode() == Code::PAIRING_REQUEST && my_role == hci::Role::PERIPHERAL) {
     // TODO: if (pending_le_pairing_) { do not start another }
 
     LOG_INFO("start of security request handling!");

@@ -346,7 +346,7 @@ class DirectHciTest(GdBaseTestClass):
         connection_request = connect_request_capture.get()
         self.send_hal_hci_command(
             hci_packets.AcceptConnectionRequestBuilder(connection_request.GetBdAddr(),
-                                                       hci_packets.AcceptConnectionRequestRole.REMAIN_SLAVE))
+                                                       hci_packets.AcceptConnectionRequestRole.REMAIN_PERIPHERAL))
 
         (dut_handle, cert_handle) = self._verify_connection_complete()
 
@@ -387,7 +387,7 @@ class DirectHciTest(GdBaseTestClass):
         connection_request = connection_request_capture.get()
         self.dut_hci.send_command_with_status(
             hci_packets.AcceptConnectionRequestBuilder(connection_request.GetBdAddr(),
-                                                       hci_packets.AcceptConnectionRequestRole.REMAIN_SLAVE))
+                                                       hci_packets.AcceptConnectionRequestRole.REMAIN_PERIPHERAL))
 
         (dut_handle, cert_handle) = self._verify_connection_complete()
 

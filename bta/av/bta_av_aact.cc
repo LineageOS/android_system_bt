@@ -1794,7 +1794,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   /* disallow role switch during streaming, only if we are the central role
-   * i.e. allow role switch, if we are slave.
+   * i.e. allow role switch, if we are peripheral.
    * It would not hurt us, if the peer device wants us to be central */
   if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_CENTRAL)) {
@@ -2292,7 +2292,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     /* If sink starts stream, disable sniff mode here */
     if (!initiator) {
       /* If souce is the central role, disable role switch during streaming.
-       * Otherwise allow role switch, if source is slave.
+       * Otherwise allow role switch, if source is peripheral.
        * Because it would not hurt source, if the peer device wants source to be
        * central */
       if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
