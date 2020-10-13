@@ -866,6 +866,11 @@ bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bda,
 
   L2CAP_TRACE_API("L2CA_ReconfigCreditBasedConnsReq() ");
 
+  if (lcids.empty()) {
+    L2CAP_TRACE_WARNING("L2CAP - no lcids given to %s", __func__);
+    return (false);
+  }
+
   for (uint16_t cid : lcids) {
     p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
 
