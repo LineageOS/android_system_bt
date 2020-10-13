@@ -16,6 +16,8 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "bluetooth"
+
 #include "bt_target.h"
 
 #include <log/log.h>
