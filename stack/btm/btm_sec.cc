@@ -3711,6 +3711,13 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
   tBTM_SEC_CALLBACK* p_callback = NULL;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
+  if ((reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) &&
+      (reason != HCI_ERR_PEER_USER)) {
+    /* Uncommon disconnection reasons */
+    LOG_WARN("Got Disconn Complete Event: reason=%s, handle=%d",
+             hci_error_code_text(reason).c_str(), handle);
+  }
+
   btm_acl_resubmit_page();
 
   if (!p_dev_rec) return;
@@ -3720,8 +3727,8 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
 
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
-  LOG_INFO("%s clearing pending flag handle:%d reason:%d", __func__, handle,
-           reason);
+  LOG_INFO("clearing pending flag handle:%d reason:%s", handle,
+           hci_error_code_text(reason).c_str());
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
   /* clear unused flags */
@@ -3732,9 +3739,6 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
           << " state: " << btm_pair_state_descr(btm_cb.pairing_state)
           << " reason: " << reason << " sec_req: " << std::hex
           << p_dev_rec->security_required;
-
-  BTM_TRACE_EVENT("%s before update sec_flags=0x%x", __func__,
-                  p_dev_rec->sec_flags);
 
   /* If we are in the process of bonding we need to tell client that auth failed
    */
@@ -3802,9 +3806,6 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
     bta_dm_remove_device(p_dev_rec->bd_addr);
     return;
   }
-
-  BTM_TRACE_EVENT("%s after update sec_flags=0x%x", __func__,
-                  p_dev_rec->sec_flags);
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
     p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE)

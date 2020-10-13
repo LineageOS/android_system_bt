@@ -1015,13 +1015,6 @@ static void btu_hcif_disconnection_comp_evt(uint8_t* p) {
 
   handle = HCID_GET_HANDLE(handle);
 
-  if ((reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) &&
-      (reason != HCI_ERR_PEER_USER)) {
-    /* Uncommon disconnection reasons */
-    HCI_TRACE_DEBUG("%s: Got Disconn Complete Event: reason=%d, handle=%d",
-                    __func__, reason, handle);
-  }
-
   /* If L2CAP or SCO doesn't know about it, send it to ISO */
   if (!l2c_link_hci_disc_comp(handle, reason) &&
       !btm_sco_removed(handle, reason)) {
