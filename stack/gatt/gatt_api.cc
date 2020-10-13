@@ -387,7 +387,7 @@ bool GATTS_DeleteService(tGATT_IF gatt_if, Uuid* p_svc_uuid,
  *
  ******************************************************************************/
 void GATTS_StopService(uint16_t service_handle) {
-  LOG(INFO) << __func__ << ": " << loghex(service_handle);
+  LOG(INFO) << __func__ << ": service = " << loghex(service_handle);
 
   auto it = gatt_sr_find_i_rcb_by_handle(service_handle);
   if (it == gatt_cb.srv_list_info->end()) {
@@ -960,12 +960,11 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info, bool eat
   uint8_t i_gatt_if = 0;
   tGATT_IF gatt_if = 0;
 
-  LOG(INFO) << __func__ << " " << app_uuid128;
-
   for (i_gatt_if = 0, p_reg = gatt_cb.cl_rcb; i_gatt_if < GATT_MAX_APPS;
        i_gatt_if++, p_reg++) {
     if (p_reg->in_use && p_reg->app_uuid128 == app_uuid128) {
-      LOG(ERROR) << "application already registered.";
+      LOG(ERROR) << __func__ << ": Application already registered "
+                 << app_uuid128;
       return 0;
     }
   }
@@ -980,12 +979,15 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info, bool eat
       p_reg->app_cb = *p_cb_info;
       p_reg->in_use = true;
       p_reg->eatt_support = eatt_support;
-      LOG(INFO) << "allocated gatt_if=" << +gatt_if << " eatt support " << int(eatt_support);
+      LOG(INFO) << __func__ << ": Allocated gatt_if=" << +gatt_if
+                << " eatt_support=" << std::boolalpha << eatt_support
+                << std::noboolalpha << " " << app_uuid128;
       return gatt_if;
     }
   }
 
-  LOG(ERROR) << "can't Register GATT client, MAX client reached: "
+  LOG(ERROR) << __func__
+             << ": Unable to register GATT client, MAX client reached: "
              << GATT_MAX_APPS;
   return 0;
 }
@@ -1002,12 +1004,14 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info, bool eat
  *
  ******************************************************************************/
 void GATT_Deregister(tGATT_IF gatt_if) {
-  VLOG(1) << __func__ << " gatt_if=" << +gatt_if;
+  LOG(INFO) << __func__ << " gatt_if=" << +gatt_if;
 
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   /* Index 0 is GAP and is never deregistered */
   if ((gatt_if == 0) || (p_reg == NULL)) {
-    LOG(ERROR) << "invalid gatt_if=" << +gatt_if;
+    LOG(ERROR) << __func__
+               << ": Unable to deregister client with invalid gatt_if="
+               << +gatt_if;
     return;
   }
 
@@ -1118,22 +1122,27 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
                   tBT_TRANSPORT transport, bool opportunistic,
                   uint8_t initiating_phys) {
-  LOG(INFO) << __func__ << "gatt_if=" << +gatt_if << ", address=" << bd_addr;
+  LOG(INFO) << __func__ << ": gatt_if=" << +gatt_if << ", address=" << bd_addr;
 
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
-    LOG(ERROR) << "gatt_if = " << +gatt_if << " is not registered";
+    LOG(ERROR) << __func__
+               << ": Unable to find registered app gatt_if=" << +gatt_if;
     return false;
   }
 
   if (!is_direct && transport != BT_TRANSPORT_LE) {
-    LOG(ERROR) << "Unsupported transport for background connection";
+    LOG(ERROR) << __func__
+               << ": Unsupported transport for background connection gatt_if="
+               << +gatt_if;
     return false;
   }
 
   if (opportunistic) {
-    LOG(INFO) << __func__ << " opportunistic connection";
+    LOG(INFO) << __func__
+              << ": Registered for opportunistic connection gatt_if="
+              << +gatt_if;
     return true;
   }
 
@@ -1145,7 +1154,9 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
       //  RPA can rotate, causing address to "expire" in the background
       //  connection list. RPA is allowed for direct connect, as such request
       //  times out after 30 seconds
-      LOG(INFO) << "Can't add RPA to background connection.";
+      LOG(INFO) << __func__
+                << ": Unable to add RPA to background connection gatt_if="
+                << +gatt_if;
       ret = true;
     } else {
       ret = connection_manager::background_connect_add(gatt_if, bd_addr);
