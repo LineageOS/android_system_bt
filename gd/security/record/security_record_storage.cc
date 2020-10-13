@@ -47,9 +47,9 @@ void SetLeData(storage::Mutation& mutation, std::shared_ptr<record::SecurityReco
     mutation.Add(le_device.SetAddressType(record->identity_address_->GetAddressType()));
   }
 
-  if (record->irk) {
+  if (record->remote_irk) {
     std::array<uint8_t, 23> peerid;
-    std::copy_n(record->irk->data(), record->irk->size(), peerid.data());
+    std::copy_n(record->remote_irk->data(), record->remote_irk->size(), peerid.data());
     peerid[16] = static_cast<uint8_t>(record->identity_address_->GetAddressType());
     std::copy_n(record->identity_address_->GetAddress().data(), 6, peerid.data() + 17);
 
@@ -61,13 +61,13 @@ void SetLeData(storage::Mutation& mutation, std::shared_ptr<record::SecurityReco
     mutation.Add(le_device.SetLegacyPseudoAddress(record->pseudo_address_->GetAddress()));
   }
 
-  if (record->ltk) {
+  if (record->remote_ltk) {
     std::array<uint8_t, 28> penc_keys;
 
-    std::copy_n(record->ltk->data(), record->ltk->size(), penc_keys.data());
-    std::copy_n(record->rand->data(), record->rand->size(), penc_keys.data() + 16);
+    std::copy_n(record->remote_ltk->data(), record->remote_ltk->size(), penc_keys.data());
+    std::copy_n(record->remote_rand->data(), record->remote_rand->size(), penc_keys.data() + 16);
     uint16_t* ediv_location = (uint16_t*)(penc_keys.data() + 24);
-    *ediv_location = *record->ediv;
+    *ediv_location = *record->remote_ediv;
     penc_keys[26] = record->security_level;
     penc_keys[27] = record->key_size;
 
@@ -75,7 +75,7 @@ void SetLeData(storage::Mutation& mutation, std::shared_ptr<record::SecurityReco
     mutation.Add(le_device.SetPeerEncryptionKeys(byte_array.ToString()));
   }
 
-  if (record->signature_key) {
+  if (record->remote_signature_key) {
     std::array<uint8_t, 21> psrk_keys;
 
     // four bytes counter, all zeros
@@ -83,7 +83,7 @@ void SetLeData(storage::Mutation& mutation, std::shared_ptr<record::SecurityReco
     *(psrk_keys.data() + 1) = 0;
     *(psrk_keys.data() + 2) = 0;
     *(psrk_keys.data() + 3) = 0;
-    std::copy_n(record->signature_key->data(), record->signature_key->size(), psrk_keys.data() + 4);
+    std::copy_n(record->remote_signature_key->data(), record->remote_signature_key->size(), psrk_keys.data() + 4);
     *(psrk_keys.data() + 20) = record->security_level;
 
     common::ByteArray<21> byte_array(psrk_keys);
@@ -109,9 +109,9 @@ void SecurityRecordStorage::SaveSecurityRecords(std::set<std::shared_ptr<record:
 
     if (record->IsClassicLinkKeyValid() && !record->identity_address_) {
       mutation.Add(device.SetDeviceType(hci::DeviceType::BR_EDR));
-    } else if (record->IsClassicLinkKeyValid() && record->ltk) {
+    } else if (record->IsClassicLinkKeyValid() && record->remote_ltk) {
       mutation.Add(device.SetDeviceType(hci::DeviceType::DUAL));
-    } else if (!record->IsClassicLinkKeyValid() && record->ltk) {
+    } else if (!record->IsClassicLinkKeyValid() && record->remote_ltk) {
       mutation.Add(device.SetDeviceType(hci::DeviceType::LE));
     } else {
       LOG_ERROR(
@@ -143,8 +143,8 @@ void SecurityRecordStorage::LoadSecurityRecords(std::set<std::shared_ptr<record:
 
       if (device.Le().GetPeerId()) {
         auto peerid = common::ByteArray<23>::FromString(*device.Le().GetPeerId());
-        record->irk = std::make_optional<std::array<uint8_t, 16>>();
-        std::copy_n(peerid->data(), record->irk->size(), record->irk->data());
+        record->remote_irk = std::make_optional<std::array<uint8_t, 16>>();
+        std::copy_n(peerid->data(), record->remote_irk->size(), record->remote_irk->data());
 
         uint8_t idaddress_type;
         hci::Address idaddress;
@@ -156,13 +156,13 @@ void SecurityRecordStorage::LoadSecurityRecords(std::set<std::shared_ptr<record:
 
       if (device.Le().GetPeerEncryptionKeys()) {
         auto peer_encryption_keys = common::ByteArray<28>::FromString(*device.Le().GetPeerEncryptionKeys());
-        record->ltk = std::make_optional<std::array<uint8_t, 16>>();
-        record->rand = std::make_optional<std::array<uint8_t, 8>>();
-        record->ediv = std::make_optional(0);
+        record->remote_ltk = std::make_optional<std::array<uint8_t, 16>>();
+        record->remote_rand = std::make_optional<std::array<uint8_t, 8>>();
+        record->remote_ediv = std::make_optional(0);
 
-        std::copy_n(peer_encryption_keys->data(), 16, record->ltk->data());
-        std::copy_n(peer_encryption_keys->data() + 16, 8, record->rand->data());
-        std::copy_n(peer_encryption_keys->data() + 24, 2, &(*record->ediv));
+        std::copy_n(peer_encryption_keys->data(), 16, record->remote_ltk->data());
+        std::copy_n(peer_encryption_keys->data() + 16, 8, record->remote_rand->data());
+        std::copy_n(peer_encryption_keys->data() + 24, 2, &(*record->remote_ediv));
         record->security_level = peer_encryption_keys->data()[26];
         record->key_size = peer_encryption_keys->data()[27];
       }
@@ -170,9 +170,9 @@ void SecurityRecordStorage::LoadSecurityRecords(std::set<std::shared_ptr<record:
       if (device.Le().GetPeerSignatureResolvingKeys()) {
         auto peer_signature_resolving_keys =
             common::ByteArray<21>::FromString(*device.Le().GetPeerSignatureResolvingKeys());
-        record->signature_key = std::make_optional<std::array<uint8_t, 16>>();
+        record->remote_signature_key = std::make_optional<std::array<uint8_t, 16>>();
 
-        std::copy_n(peer_signature_resolving_keys->data() + 4, 16, record->signature_key->data());
+        std::copy_n(peer_signature_resolving_keys->data() + 4, 16, record->remote_signature_key->data());
         record->security_level = peer_signature_resolving_keys->data()[20];
       }
     }

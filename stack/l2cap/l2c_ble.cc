@@ -22,8 +22,11 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "l2c_ble"
+
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+
 #include "bt_target.h"
 #include "bta_hearing_aid_api.h"
 #include "device/include/controller.h"
@@ -31,8 +34,8 @@
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
-#include "log/log.h"
 #include "main/shim/shim.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
@@ -263,7 +266,7 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
 
 /** This function is called when an HCI Connection Complete event is received.
  */
-void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
+bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                       tBLE_ADDR_TYPE type, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
   // role == HCI_ROLE_MASTER => scanner completed connection
@@ -276,21 +279,19 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   if (!p_lcb) {
     p_lcb = l2cu_allocate_lcb(bda, false, BT_TRANSPORT_LE);
     if (!p_lcb) {
-      btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
       LOG_ERROR("Unable to allocate link resource for le acl connection");
-      return;
+      return false;
     } else {
       if (!l2cu_initialize_fixed_ccb(p_lcb, L2CAP_ATT_CID)) {
-        btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
         LOG_ERROR("Unable to allocate channel resource for le acl connection");
-        return;
+        return false;
       }
     }
   } else if (role == HCI_ROLE_MASTER && p_lcb->link_state != LST_CONNECTING) {
     LOG_ERROR(
         "Received le acl connection as role master but not in connecting "
         "state");
-    return;
+    return false;
   }
 
   if (role == HCI_ROLE_MASTER) alarm_cancel(p_lcb->l2c_lcb_timer);
@@ -314,14 +315,9 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   p_lcb->latency = conn_latency;
   p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
 
-  /* Tell BTM Acl management about the link */
-  btm_acl_created(bda, handle, p_lcb->LinkRole(), BT_TRANSPORT_LE);
-
   p_lcb->peer_chnl_mask[0] = L2CAP_FIXED_CHNL_ATT_BIT |
                              L2CAP_FIXED_CHNL_BLE_SIG_BIT |
                              L2CAP_FIXED_CHNL_SMP_BIT;
-
-  btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
 
   if (role == HCI_ROLE_SLAVE) {
     if (!controller_get_interface()
@@ -330,13 +326,15 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
       l2cu_process_fixed_chnl_resp(p_lcb);
     }
   }
+  return true;
 }
 
-void l2cble_conn_comp_from_address_with_type(
+bool l2cble_conn_comp_from_address_with_type(
     uint16_t handle, uint8_t role, const tBLE_BD_ADDR& address_with_type,
     uint16_t conn_interval, uint16_t conn_latency, uint16_t conn_timeout) {
-  l2cble_conn_comp(handle, role, address_with_type.bda, address_with_type.type,
-                   conn_interval, conn_latency, conn_timeout);
+  return l2cble_conn_comp(handle, role, address_with_type.bda,
+                          address_with_type.type, conn_interval, conn_latency,
+                          conn_timeout);
 }
 
 /*******************************************************************************
