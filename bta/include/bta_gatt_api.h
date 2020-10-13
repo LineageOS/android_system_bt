@@ -30,6 +30,7 @@
 #include "gatt_api.h"
 
 #include <base/callback_forward.h>
+#include <string>
 #include <vector>
 
 #ifndef BTA_GATT_DEBUG
@@ -67,6 +68,45 @@ typedef struct {
 #define BTA_GATTC_CONN_UPDATE_EVT 26 /* Connection parameters update event */
 
 typedef uint8_t tBTA_GATTC_EVT;
+
+inline std::string GattClientEventText(tBTA_GATTC_EVT event) {
+  switch (event) {
+    case BTA_GATTC_DEREG_EVT:
+      return std::string("deregistered");
+    case BTA_GATTC_OPEN_EVT:
+      return std::string("opened");
+    case BTA_GATTC_CLOSE_EVT:
+      return std::string("closed");
+    case BTA_GATTC_SEARCH_CMPL_EVT:
+      return std::string("discovery completed");
+    case BTA_GATTC_SEARCH_RES_EVT:
+      return std::string("discovery result");
+    case BTA_GATTC_SRVC_DISC_DONE_EVT:
+      return std::string("discovery done");
+    case BTA_GATTC_NOTIF_EVT:
+      return std::string("attribute notification");
+    case BTA_GATTC_EXEC_EVT:
+      return std::string("execute write completed");
+    case BTA_GATTC_ACL_EVT:
+      return std::string("ACL up event");
+    case BTA_GATTC_CANCEL_OPEN_EVT:
+      return std::string("cancel open event");
+    case BTA_GATTC_SRVC_CHG_EVT:
+      return std::string("service changed");
+    case BTA_GATTC_ENC_CMPL_CB_EVT:
+      return std::string("encryption complete");
+    case BTA_GATTC_CFG_MTU_EVT:
+      return std::string("configure MTU complete");
+    case BTA_GATTC_CONGEST_EVT:
+      return std::string("congestion");
+    case BTA_GATTC_PHY_UPDATE_EVT:
+      return std::string("PHY change");
+    case BTA_GATTC_CONN_UPDATE_EVT:
+      return std::string("connection parameters update");
+    default:
+      return std::string("unknown");
+  }
+}
 
 typedef struct {
   uint16_t unit;  /* as UUIUD defined by SIG */
