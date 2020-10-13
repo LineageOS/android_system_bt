@@ -99,12 +99,13 @@ static const uint8_t hci_event_parameters_minimum_length[] = {
     9,    //  0x4E - HCI_Triggered_Clock_Capture Event
     1,    //  0x4F - HCI_Synchronization_Train_Complete Event
     29,   //  0x50 - HCI_Synchronization_Train_Received Event
-    18,   //  0x51 - HCI_Connectionless_Slave_Broadcast_Receive Event
+    18,   //  0x51 - HCI_Connectionless_Peripheral_Broadcast_Receive Event
           //  (Data_Length = 0)
-    7,    //  0x52 - HCI_Connectionless_Slave_Broadcast_Timeout Event
+    7,    //  0x52 - HCI_Connectionless_Peripheral_Broadcast_Timeout Event
     7,    //  0x53 - HCI_Truncated_Page_Complete Event
-    0,    //  0x54 - HCI_Slave_Page_Response_Timeout Event
-    10,   //  0x55 - HCI_Connectionless_Slave_Broadcast_Channel_Map_Change Event
+    0,    //  0x54 - HCI_Peripheral_Page_Response_Timeout Event
+    10,   //  0x55 - HCI_Connectionless_Peripheral_Broadcast_Channel_Map_Change
+          //  Event
     4,    //  0x56 - HCI_Inquiry_Response_Notification Event
     2,    //  0x57 - HCI_Authenticated_Payload_Timeout_Expired Event
     8,    //  0x58 - HCI_SAM_Status_Change Event
