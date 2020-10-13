@@ -76,7 +76,7 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
   acl_cancel_le_connection(rem_bda);
 
   /* Do not remove lcb if an LE link is already up as a peripheral */
-  if (p_lcb != NULL && !(p_lcb->IsLinkRoleSlave() &&
+  if (p_lcb != NULL && !(p_lcb->IsLinkRolePeripheral() &&
                          BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE))) {
     p_lcb->SetDisconnectReason(L2CAP_CONN_CANCEL);
     l2cu_release_lcb(p_lcb);
@@ -259,7 +259,7 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                       tBLE_ADDR_TYPE type, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
   // role == HCI_ROLE_CENTRAL => scanner completed connection
-  // role == HCI_ROLE_SLAVE => advertiser completed connection
+  // role == HCI_ROLE_PERIPHERAL => advertiser completed connection
 
   /* See if we have a link control block for the remote device */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
@@ -293,12 +293,13 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   if (role == HCI_ROLE_CENTRAL) {
     p_lcb->SetLinkRoleAsCentral();
   } else {
-    p_lcb->SetLinkRoleAsSlave();
+    p_lcb->SetLinkRoleAsPeripheral();
   }
 
   p_lcb->transport = BT_TRANSPORT_LE;
 
-  /* update link parameter, set slave link as non-spec default upon link up */
+  /* update link parameter, set peripheral link as non-spec default upon link up
+   */
   p_lcb->min_interval = p_lcb->max_interval = conn_interval;
   p_lcb->timeout = conn_timeout;
   p_lcb->latency = conn_latency;
@@ -308,7 +309,7 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                              L2CAP_FIXED_CHNL_BLE_SIG_BIT |
                              L2CAP_FIXED_CHNL_SMP_BIT;
 
-  if (role == HCI_ROLE_SLAVE) {
+  if (role == HCI_ROLE_PERIPHERAL) {
     if (!controller_get_interface()
              ->supports_ble_peripheral_initiated_feature_exchange()) {
       p_lcb->link_state = LST_CONNECTED;
@@ -339,7 +340,7 @@ bool l2cble_conn_comp_from_address_with_type(
  *
  ******************************************************************************/
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
-  uint16_t min_conn_int, max_conn_int, slave_latency, supervision_tout;
+  uint16_t min_conn_int, max_conn_int, peripheral_latency, supervision_tout;
   if (!BTM_IsAclConnectionUp(p_lcb->remote_bd_addr, BT_TRANSPORT_LE)) {
     LOG(ERROR) << "No known connection ACL for " << p_lcb->remote_bd_addr;
     return;
@@ -359,13 +360,13 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
     if (p_lcb->conn_update_mask & L2C_BLE_NOT_DEFAULT_PARAM &&
         /* current connection interval is greater than default min */
         p_lcb->min_interval > BTM_BLE_CONN_INT_MIN) {
-      /* use 7.5 ms as fast connection parameter, 0 slave latency */
+      /* use 7.5 ms as fast connection parameter, 0 peripheral latency */
       min_conn_int = max_conn_int = BTM_BLE_CONN_INT_MIN;
 
       L2CA_AdjustConnectionIntervals(&min_conn_int, &max_conn_int,
                                      BTM_BLE_CONN_INT_MIN);
 
-      slave_latency = BTM_BLE_CONN_SLAVE_LATENCY_DEF;
+      peripheral_latency = BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF;
       supervision_tout = BTM_BLE_CONN_TIMEOUT_DEF;
 
       /* if both side 4.1, or we are central device, send HCI command */
@@ -378,12 +379,12 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 #endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->Handle(), min_conn_int,
-                                          max_conn_int, slave_latency,
+                                          max_conn_int, peripheral_latency,
                                           supervision_tout, 0, 0);
         p_lcb->conn_update_mask |= L2C_BLE_UPDATE_PENDING;
       } else {
         l2cu_send_peer_ble_par_req(p_lcb, min_conn_int, max_conn_int,
-                                   slave_latency, supervision_tout);
+                                   peripheral_latency, supervision_tout);
       }
       p_lcb->conn_update_mask &= ~L2C_BLE_NOT_DEFAULT_PARAM;
       p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
@@ -516,7 +517,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       STREAM_TO_UINT16(max_interval, p); /* 0x0006 - 0x0C80 */
       STREAM_TO_UINT16(latency, p);      /* 0x0000 - 0x03E8 */
       STREAM_TO_UINT16(timeout, p);      /* 0x000A - 0x0C80 */
-      /* If we are a central, the slave wants to update the parameters */
+      /* If we are a central, the peripheral wants to update the parameters */
       if (p_lcb->IsLinkRoleCentral()) {
         L2CA_AdjustConnectionIntervals(&min_interval, &max_interval,
                                        BTM_BLE_CONN_INT_MIN_LIMIT);
@@ -1649,31 +1650,31 @@ void l2cble_use_preferred_conn_params(const RawAddress& bda) {
       (p_dev_rec->conn_params.min_conn_int <= BTM_BLE_CONN_INT_MAX) &&
       (p_dev_rec->conn_params.max_conn_int >= BTM_BLE_CONN_INT_MIN) &&
       (p_dev_rec->conn_params.max_conn_int <= BTM_BLE_CONN_INT_MAX) &&
-      (p_dev_rec->conn_params.slave_latency <= BTM_BLE_CONN_LATENCY_MAX) &&
+      (p_dev_rec->conn_params.peripheral_latency <= BTM_BLE_CONN_LATENCY_MAX) &&
       (p_dev_rec->conn_params.supervision_tout >= BTM_BLE_CONN_SUP_TOUT_MIN) &&
       (p_dev_rec->conn_params.supervision_tout <= BTM_BLE_CONN_SUP_TOUT_MAX) &&
       ((p_lcb->min_interval < p_dev_rec->conn_params.min_conn_int &&
         p_dev_rec->conn_params.min_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ||
        (p_lcb->min_interval > p_dev_rec->conn_params.max_conn_int) ||
-       (p_lcb->latency > p_dev_rec->conn_params.slave_latency) ||
+       (p_lcb->latency > p_dev_rec->conn_params.peripheral_latency) ||
        (p_lcb->timeout > p_dev_rec->conn_params.supervision_tout))) {
     BTM_TRACE_DEBUG(
-        "%s: HANDLE=%d min_conn_int=%d max_conn_int=%d slave_latency=%d "
+        "%s: HANDLE=%d min_conn_int=%d max_conn_int=%d peripheral_latency=%d "
         "supervision_tout=%d",
         __func__, p_lcb->Handle(), p_dev_rec->conn_params.min_conn_int,
         p_dev_rec->conn_params.max_conn_int,
-        p_dev_rec->conn_params.slave_latency,
+        p_dev_rec->conn_params.peripheral_latency,
         p_dev_rec->conn_params.supervision_tout);
 
     p_lcb->min_interval = p_dev_rec->conn_params.min_conn_int;
     p_lcb->max_interval = p_dev_rec->conn_params.max_conn_int;
     p_lcb->timeout = p_dev_rec->conn_params.supervision_tout;
-    p_lcb->latency = p_dev_rec->conn_params.slave_latency;
+    p_lcb->latency = p_dev_rec->conn_params.peripheral_latency;
 
     btsnd_hcic_ble_upd_ll_conn_params(
         p_lcb->Handle(), p_dev_rec->conn_params.min_conn_int,
         p_dev_rec->conn_params.max_conn_int,
-        p_dev_rec->conn_params.slave_latency,
+        p_dev_rec->conn_params.peripheral_latency,
         p_dev_rec->conn_params.supervision_tout, 0, 0);
   }
 }

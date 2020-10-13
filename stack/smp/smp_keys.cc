@@ -794,9 +794,9 @@ Octet16 smp_calculate_peer_commitment(tSMP_CB* p_cb) {
   switch (p_cb->selected_association_model) {
     case SMP_MODEL_SEC_CONN_JUSTWORKS:
     case SMP_MODEL_SEC_CONN_NUM_COMP:
-      if (p_cb->role == HCI_ROLE_SLAVE)
+      if (p_cb->role == HCI_ROLE_PERIPHERAL)
         SMP_TRACE_WARNING(
-            "peer commitment calc on slave is not expected "
+            "peer commitment calc on peripheral is not expected "
             "for Just Works/Numeric Comparison models");
       output = crypto_toolbox::f4(p_cb->peer_publ_key.x, p_cb->loc_publ_key.x,
                                   p_cb->rrand, 0);

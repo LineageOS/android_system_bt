@@ -82,7 +82,7 @@ const tBTA_DM_CFG bta_dm_cfg = {
 
 #ifndef BTA_PANU_ROLE
 /* By default, AV role (backward BTA_CENTRAL_ROLE_PREF) */
-#define BTA_PANU_ROLE BTA_SLAVE_ROLE_ONLY
+#define BTA_PANU_ROLE BTA_PERIPHERAL_ROLE_ONLY
 #endif
 #define BTA_DM_NUM_RM_ENTRY 6
 

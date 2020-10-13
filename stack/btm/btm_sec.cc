@@ -436,7 +436,7 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
       p_srec->security_flags &=
           ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM |
             BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-            BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
+            BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL);
     }
 
     /* Parameter validation.  Originator should not set requirements for
@@ -465,7 +465,7 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
       p_srec->security_flags &=
           ~(BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_MITM |
             BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-            BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE |
+            BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL |
             BTM_SEC_IN_MIN_16_DIGIT_PIN);
     }
 
@@ -3046,7 +3046,7 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
   }
 
   /* For transaction collision we need to wait and repeat.  There is no need */
-  /* for random timeout because only slave should receive the result */
+  /* for random timeout because only peripheral should receive the result */
   if ((status == HCI_ERR_LMP_ERR_TRANS_COLLISION) ||
       (status == HCI_ERR_DIFF_TRANSACTION_COLLISION)) {
     btm_sec_auth_collision(handle);
@@ -3201,7 +3201,7 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                   (p_dev_rec) ? p_dev_rec->sec_flags : 0);
 
   /* For transaction collision we need to wait and repeat.  There is no need */
-  /* for random timeout because only slave should receive the result */
+  /* for random timeout because only peripheral should receive the result */
   if ((status == HCI_ERR_LMP_ERR_TRANS_COLLISION) ||
       (status == HCI_ERR_DIFF_TRANSACTION_COLLISION)) {
     btm_sec_auth_collision(handle);
@@ -3620,7 +3620,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   btm_set_packet_types_from_address(bda, BT_TRANSPORT_BR_EDR,
                                     acl_get_supported_packet_types());
 
-  btm_acl_created(bda, handle, HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
+  btm_acl_created(bda, handle, HCI_ROLE_PERIPHERAL, BT_TRANSPORT_BR_EDR);
 
   /* Initialize security flags.  We need to do that because some            */
   /* authorization complete could have come after the connection is dropped */
@@ -4333,10 +4333,10 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
 
   /* All required  security procedures already established */
-  p_dev_rec->security_required &=
-      ~(BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE |
-        BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_CENTRAL |
-        BTM_SEC_ATTEMPT_CENTRAL | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
+  p_dev_rec->security_required &= ~(
+      BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT |
+      BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
+      BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL);
 
   BTM_TRACE_EVENT("Security Manager: access granted");
 

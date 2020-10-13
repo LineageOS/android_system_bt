@@ -168,9 +168,9 @@ typedef uint8_t tBTM_BLE_SFP;
 #endif
 #endif
 
-/* default slave latency */
-#ifndef BTM_BLE_CONN_SLAVE_LATENCY_DEF
-#define BTM_BLE_CONN_SLAVE_LATENCY_DEF 0 /* 0 */
+/* default peripheral latency */
+#ifndef BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF
+#define BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF 0 /* 0 */
 #endif
 
 /* default supervision timeout */

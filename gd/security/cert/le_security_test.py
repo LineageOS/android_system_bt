@@ -218,7 +218,7 @@ class LeSecurityTest(GdBaseTestClass):
     @metadata(pts_test_id="SM/SLA/JW/BV-02-C", pts_test_name="Just Works IUT Responder – Success")
     def test_just_works_iut_responder(self):
         """
-            Verify that the IUT is able to perform the Just Works pairing procedure correctly when acting as slave, responder.
+            Verify that the IUT is able to perform the Just Works pairing procedure correctly when acting as peripheral, responder.
         """
         self._prepare_dut_for_connection()
 
@@ -254,7 +254,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_id="SM/SLA/JW/BI-03-C", pts_test_name="Just Works IUT Responder – Handle AuthReq flag RFU correctly")
     def test_just_works_iut_responder_auth_req_rfu(self):
         """
-            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as slave, responder.
+            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as peripheral, responder.
         """
         self._prepare_dut_for_connection()
 
@@ -402,7 +402,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_name="Just Works, IUT Responder, Secure Connections – Handle AuthReq Flag RFU Correctly")
     def test_just_works_iut_responder_secure_connections_auth_req_rfu(self):
         """
-            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as slave, responder.
+            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as peripheral, responder.
         """
         self._prepare_dut_for_connection()
 
@@ -673,7 +673,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_id="SM/SLA/SCPK/BV-02-C", pts_test_name="Passkey Entry, IUT Responder, Secure Connections – Success")
     def test_passkey_entry_iut_responder_secure_connections(self):
         """
-            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure correctly when acting as slave, responder.
+            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure correctly when acting as peripheral, responder.
         """
         self._prepare_dut_for_connection()
 
@@ -724,7 +724,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_name="Passkey Entry, IUT Responder, Secure Connections – Handle AuthReq Flag RFU Correctly")
     def test_passkey_entry_iut_responder_secure_connections_auth_req_rfu(self):
         """
-            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as slave, responder.
+            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as peripheral, responder.
         """
         self._prepare_dut_for_connection()
 
@@ -887,7 +887,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_id="SM/SLA/SCOB/BV-02-C", pts_test_name="Out of Band, IUT Responder, Secure Connections – Success")
     def test_out_of_band_iut_responder_secure_connections(self):
         """
-            Verify that the IUT supporting LE Secure Connections is able to perform the Out-of-Band pairing procedure correctly when acting as slave, responder.
+            Verify that the IUT supporting LE Secure Connections is able to perform the Out-of-Band pairing procedure correctly when acting as peripheral, responder.
         """
 
         oob_combinations = [(OOB_NOT_PRESENT, OOB_PRESENT), (OOB_PRESENT, OOB_NOT_PRESENT), (OOB_PRESENT, OOB_PRESENT)]
@@ -955,7 +955,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_name="Out of Band, IUT Responder, Secure Connections – Handle AuthReq Flag RFU Correctly")
     def test_out_of_band_iut_responder_secure_connections_auth_req_rfu(self):
         """
-            Verify that the IUT supporting LE Secure Connections is able to perform the Out-of-Band pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as slave, responder.
+            Verify that the IUT supporting LE Secure Connections is able to perform the Out-of-Band pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as peripheral, responder.
         """
 
         reserved_bits_combinations = [1, 2, 3]

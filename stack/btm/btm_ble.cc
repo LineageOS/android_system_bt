@@ -90,7 +90,7 @@ bool BTM_SecAddBleDevice(const RawAddress& bd_addr, BD_NAME bd_name,
     p_dev_rec->conn_params.min_conn_int = BTM_BLE_CONN_PARAM_UNDEF;
     p_dev_rec->conn_params.max_conn_int = BTM_BLE_CONN_PARAM_UNDEF;
     p_dev_rec->conn_params.supervision_tout = BTM_BLE_CONN_PARAM_UNDEF;
-    p_dev_rec->conn_params.slave_latency = BTM_BLE_CONN_PARAM_UNDEF;
+    p_dev_rec->conn_params.peripheral_latency = BTM_BLE_CONN_PARAM_UNDEF;
 
     BTM_TRACE_DEBUG("%s: Device added, handle=0x%x, p_dev_rec=%p, bd_addr=%s",
                     __func__, p_dev_rec->ble_hci_handle, p_dev_rec,
@@ -402,25 +402,27 @@ void BTM_BleSecureConnectionOobDataReply(const RawAddress& bd_addr,
  *                  scan_window: scan window
  *                  min_conn_int     - minimum preferred connection interval
  *                  max_conn_int     - maximum preferred connection interval
- *                  slave_latency    - preferred slave latency
+ *                  peripheral_latency    - preferred peripheral latency
  *                  supervision_tout - preferred supervision timeout
  *
  * Returns          void
  *
  ******************************************************************************/
 void BTM_BleSetPrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
-                              uint16_t max_conn_int, uint16_t slave_latency,
+                              uint16_t max_conn_int,
+                              uint16_t peripheral_latency,
                               uint16_t supervision_tout) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_BleSetPrefConnParams(
-        bd_addr, min_conn_int, max_conn_int, slave_latency, supervision_tout);
+        bd_addr, min_conn_int, max_conn_int, peripheral_latency,
+        supervision_tout);
   }
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
   BTM_TRACE_API(
       "BTM_BleSetPrefConnParams min: %u  max: %u  latency: %u  \
                     tout: %u",
-      min_conn_int, max_conn_int, slave_latency, supervision_tout);
+      min_conn_int, max_conn_int, peripheral_latency, supervision_tout);
 
   if (BTM_BLE_ISVALID_PARAM(min_conn_int, BTM_BLE_CONN_INT_MIN,
                             BTM_BLE_CONN_INT_MAX) &&
@@ -428,10 +430,11 @@ void BTM_BleSetPrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
                             BTM_BLE_CONN_INT_MAX) &&
       BTM_BLE_ISVALID_PARAM(supervision_tout, BTM_BLE_CONN_SUP_TOUT_MIN,
                             BTM_BLE_CONN_SUP_TOUT_MAX) &&
-      (slave_latency <= BTM_BLE_CONN_LATENCY_MAX ||
-       slave_latency == BTM_BLE_CONN_PARAM_UNDEF)) {
+      (peripheral_latency <= BTM_BLE_CONN_LATENCY_MAX ||
+       peripheral_latency == BTM_BLE_CONN_PARAM_UNDEF)) {
     if (p_dev_rec) {
-      /* expect conn int and stout and slave latency to be updated all together
+      /* expect conn int and stout and peripheral latency to be updated all
+       * together
        */
       if (min_conn_int != BTM_BLE_CONN_PARAM_UNDEF ||
           max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) {
@@ -445,10 +448,11 @@ void BTM_BleSetPrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
         else
           p_dev_rec->conn_params.max_conn_int = min_conn_int;
 
-        if (slave_latency != BTM_BLE_CONN_PARAM_UNDEF)
-          p_dev_rec->conn_params.slave_latency = slave_latency;
+        if (peripheral_latency != BTM_BLE_CONN_PARAM_UNDEF)
+          p_dev_rec->conn_params.peripheral_latency = peripheral_latency;
         else
-          p_dev_rec->conn_params.slave_latency = BTM_BLE_CONN_SLAVE_LATENCY_DEF;
+          p_dev_rec->conn_params.peripheral_latency =
+              BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF;
 
         if (supervision_tout != BTM_BLE_CONN_PARAM_UNDEF)
           p_dev_rec->conn_params.supervision_tout = supervision_tout;
@@ -1430,7 +1434,7 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
  * Function         btm_ble_ltk_request
  *
  * Description      This function is called when encryption request is received
- *                  on a slave device.
+ *                  on a peripheral device.
  *
  *
  * Returns          void
@@ -1542,7 +1546,7 @@ void btm_ble_link_encrypted(const RawAddress& bd_addr, uint8_t encr_enable) {
  * Function         btm_ble_ltk_request_reply
  *
  * Description      This function is called to send a LTK request reply on a
- *                  slave
+ *                  peripheral
  *                  device.
  *
  * Returns          void

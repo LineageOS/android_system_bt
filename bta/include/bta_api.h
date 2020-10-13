@@ -116,7 +116,7 @@ typedef uint16_t tBTA_DM_CONN;
 #define BTA_ANY_ROLE 0x00
 #define BTA_CENTRAL_ROLE_PREF 0x01
 #define BTA_CENTRAL_ROLE_ONLY 0x02
-#define BTA_SLAVE_ROLE_ONLY \
+#define BTA_PERIPHERAL_ROLE_ONLY \
   0x03 /* Used for PANU only, skip role switch to central */
 
 typedef uint8_t tBTA_PREF_ROLES;
@@ -128,10 +128,10 @@ enum {
                                 an incoming connection, when it already has
                                 another connection in central role */
   BTA_DM_PARTIAL_SCATTERNET, /* Device supports partial scatternet. It can have
-                                simultaneous connection in Central and Slave
-                                roles for short period of time */
+                                simultaneous connection in Central and
+                                Peripheral roles for short period of time */
   BTA_DM_FULL_SCATTERNET /* Device can have simultaneous connection in central
-                            and slave roles */
+                            and peripheral roles */
 
 };
 
@@ -976,7 +976,7 @@ extern void BTA_DmAddBleKey(const RawAddress& bd_addr,
  * Parameters:      bd_addr          - BD address of the peripheral
  *                  min_conn_int     - minimum preferred connection interval
  *                  max_conn_int     - maximum preferred connection interval
- *                  slave_latency    - preferred slave latency
+ *                  peripheral_latency    - preferred peripheral latency
  *                  supervision_tout - preferred supervision timeout
  *
  *
@@ -986,7 +986,7 @@ extern void BTA_DmAddBleKey(const RawAddress& bd_addr,
 extern void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
                                        uint16_t min_conn_int,
                                        uint16_t max_conn_int,
-                                       uint16_t slave_latency,
+                                       uint16_t peripheral_latency,
                                        uint16_t supervision_tout);
 
 /*******************************************************************************
@@ -1073,7 +1073,7 @@ extern void BTA_DmBleEnableRemotePrivacy(const RawAddress& bd_addr,
  * Parameters:      bd_addr   - BD address of the peer
  *                  min_int   - minimum connection interval, [0x0004 ~ 0x4000]
  *                  max_int   - maximum connection interval, [0x0004 ~ 0x4000]
- *                  latency   - slave latency [0 ~ 500]
+ *                  latency   - peripheral latency [0 ~ 500]
  *                  timeout   - supervision timeout [0x000a ~ 0xc80]
  *
  * Returns          void
