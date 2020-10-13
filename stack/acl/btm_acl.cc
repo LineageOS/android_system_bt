@@ -2557,21 +2557,22 @@ bool btm_pm_is_le_link(const RawAddress& remote_bda) {
  ******************************************************************************/
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa) {
-  tACL_CONN* p = internal_.btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
-
-  if (p != NULL) {
-    if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
-      p->conn_addr_type = BLE_ADDR_RANDOM;
-      if (!local_rpa.IsEmpty())
-        p->conn_addr = local_rpa;
-      else
-        p->conn_addr = btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr;
-    } else {
-      p->conn_addr_type = BLE_ADDR_PUBLIC;
-      p->conn_addr = *controller_get_interface()->get_address();
-    }
-  } else {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
+  if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
+    return;
+  }
+
+  if (btm_cb.ble_ctr_cb.privacy_mode == BTM_PRIVACY_NONE) {
+    p_acl->conn_addr_type = BLE_ADDR_PUBLIC;
+    p_acl->conn_addr = *controller_get_interface()->get_address();
+  } else {
+    p_acl->conn_addr_type = BLE_ADDR_RANDOM;
+    if (local_rpa.IsEmpty()) {
+      p_acl->conn_addr = btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr;
+    } else {
+      p_acl->conn_addr = local_rpa;
+    }
   }
 }
 
