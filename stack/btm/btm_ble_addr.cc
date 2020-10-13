@@ -206,17 +206,10 @@ static bool btm_ble_match_random_bda(void* data, void* context) {
  * matched to.
  */
 tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
-  /* start to resolve random address */
-  /* check for next security record */
-
   list_node_t* n = list_foreach(btm_cb.sec_dev_rec, btm_ble_match_random_bda,
                                 (void*)&random_bda);
-  tBTM_SEC_DEV_REC* p_dev_rec = nullptr;
-  if (n != nullptr) p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
-
-  BTM_TRACE_EVENT("%s:  %sresolved", __func__,
-                  (p_dev_rec == nullptr ? "not " : ""));
-  return p_dev_rec;
+  return (n == nullptr) ? (nullptr)
+                        : (static_cast<tBTM_SEC_DEV_REC*>(list_node(n)));
 }
 
 /*******************************************************************************
