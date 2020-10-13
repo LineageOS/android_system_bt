@@ -1339,15 +1339,17 @@ static void btm_ble_update_adv_flag(uint8_t flag) {
  * Check ADV flag to make sure device is discoverable and match the search
  * condition
  */
-uint8_t btm_ble_is_discoverable(const RawAddress& bda,
-                                std::vector<uint8_t> const& adv_data) {
-  uint8_t flag = 0, rt = 0;
-  uint8_t data_len;
+static uint8_t btm_ble_is_discoverable(const RawAddress& bda,
+                                       std::vector<uint8_t> const& adv_data) {
+  uint8_t scan_state = BTM_BLE_NOT_SCANNING;
 
   /* for observer, always "discoverable */
-  if (btm_cb.ble_ctr_cb.is_ble_observe_active()) rt |= BTM_BLE_OBS_RESULT;
+  if (btm_cb.ble_ctr_cb.is_ble_observe_active())
+    scan_state |= BTM_BLE_OBS_RESULT;
 
   if (!adv_data.empty()) {
+    uint8_t flag = 0;
+    uint8_t data_len;
     const uint8_t* p_flag = AdvertiseDataParser::GetFieldByType(
         adv_data, BTM_BLE_AD_TYPE_FLAG, &data_len);
     if (p_flag != NULL && data_len != 0) {
@@ -1355,12 +1357,11 @@ uint8_t btm_ble_is_discoverable(const RawAddress& bda,
 
       if ((btm_cb.btm_inq_vars.inq_active & BTM_BLE_GENERAL_INQUIRY) &&
           (flag & (BTM_BLE_LIMIT_DISC_FLAG | BTM_BLE_GEN_DISC_FLAG)) != 0) {
-        BTM_TRACE_DEBUG("Find Generable Discoverable device");
-        rt |= BTM_BLE_INQ_RESULT;
+        scan_state |= BTM_BLE_INQ_RESULT;
       }
     }
   }
-  return rt;
+  return scan_state;
 }
 
 static void btm_ble_appearance_to_cod(uint16_t appearance, uint8_t* dev_class) {
@@ -1871,8 +1872,8 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
 
   uint8_t result = btm_ble_is_discoverable(bda, adv_data);
   if (result == 0) {
+    // Device no longer discoverable so discard outstanding advertising packet
     cache.Clear(addr_type, bda);
-    LOG_INFO("device no longer discoverable, discarding advertising packet");
     return;
   }
 
