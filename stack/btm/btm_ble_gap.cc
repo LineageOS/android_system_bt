@@ -181,8 +181,11 @@ static void btm_ble_inquiry_timer_gap_limited_discovery_timeout(void* data);
 static void btm_ble_inquiry_timer_timeout(void* data);
 static void btm_ble_observer_timer_timeout(void* data);
 
-#define BTM_BLE_INQ_RESULT 0x01
-#define BTM_BLE_OBS_RESULT 0x02
+enum : uint8_t {
+  BTM_BLE_NOT_SCANNING = 0x00,
+  BTM_BLE_INQ_RESULT = 0x01,
+  BTM_BLE_OBS_RESULT = 0x02,
+};
 
 static bool ble_evt_type_is_connectable(uint16_t evt_type) {
   return evt_type & (1 << BLE_EVT_CONNECTABLE_BIT);
