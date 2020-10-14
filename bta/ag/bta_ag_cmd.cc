@@ -961,8 +961,14 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         /* send OK */
         bta_ag_send_ok(p_scb);
 
-        /* if service level conn. not already open, now it's open */
-        bta_ag_svc_conn_open(p_scb, tBTA_AG_DATA::kEmpty);
+        /* if service level conn. not already open and our features and
+        ** peer features do not have HF Indicators, service level conn. now open
+        */
+        if (!p_scb->svc_conn &&
+            !((p_scb->features & BTA_AG_FEAT_HF_IND) &&
+              (p_scb->peer_features & BTA_AG_PEER_FEAT_HF_IND))) {
+          bta_ag_svc_conn_open(p_scb, tBTA_AG_DATA::kEmpty);
+        }
       } else {
         val.idx = bta_ag_parse_chld(p_scb, val.str);
 
@@ -1053,11 +1059,13 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         bta_ag_send_ok(p_scb);
 
         /* if service level conn. not already open and our features and
-        ** peer features do not have 3-way, service level conn. now open
-        */
+         * peer features do not have 3-way or HF Indicators, service level conn.
+         * now open */
         if (!p_scb->svc_conn &&
             !((p_scb->features & BTA_AG_FEAT_3WAY) &&
-              (p_scb->peer_features & BTA_AG_PEER_FEAT_3WAY))) {
+              (p_scb->peer_features & BTA_AG_PEER_FEAT_3WAY)) &&
+            !((p_scb->features & BTA_AG_FEAT_HF_IND) &&
+              (p_scb->peer_features & BTA_AG_PEER_FEAT_HF_IND))) {
           bta_ag_svc_conn_open(p_scb, tBTA_AG_DATA::kEmpty);
         }
       } else {
