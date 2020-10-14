@@ -675,7 +675,7 @@ bool btm_ble_disable_resolving_list(uint8_t rl_mask, bool to_resume) {
  * Function         btm_ble_resolving_list_load_dev
  *
  * Description      This function adds a device which is using RPA into the
- *                  white list.
+ *                  acceptlist.
  *
  * Parameters       pointer to device security record
  *
@@ -835,7 +835,7 @@ void btm_ble_enable_resolving_list(uint8_t rl_mask) {
 static bool is_on_resolving_list(void* data, void* context) {
   tBTM_SEC_DEV_REC* p_dev = static_cast<tBTM_SEC_DEV_REC*>(data);
   if ((p_dev->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) &&
-      (p_dev->ble.in_controller_list & BTM_WHITE_LIST_BIT))
+      (p_dev->ble.in_controller_list & BTM_ACCEPTLIST_BIT))
     return false;
 
   return true;
@@ -846,7 +846,7 @@ static bool is_on_resolving_list(void* data, void* context) {
  * Function         btm_ble_enable_resolving_list_for_platform
  *
  * Description      enable/disable resolving list feature depending on if any
- *                  resolving list is empty and whitelist is involoved in the
+ *                  resolving list is empty and acceptlist is involoved in the
  *                  operation.
  *
  * Returns          none
