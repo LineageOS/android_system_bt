@@ -47,8 +47,8 @@ typedef struct {
       BT_HDR* response, uint8_t* page_number_ptr, uint8_t* max_page_number_ptr,
       bt_device_features_t* feature_pages, size_t feature_pages_count);
 
-  void (*parse_ble_read_white_list_size_response)(BT_HDR* response,
-                                                  uint8_t* white_list_size_ptr);
+  void (*parse_ble_read_acceptlist_size_response)(BT_HDR* response,
+                                                  uint8_t* acceptlist_size_ptr);
 
   void (*parse_ble_read_buffer_size_response)(BT_HDR* response,
                                               uint16_t* data_size_ptr,

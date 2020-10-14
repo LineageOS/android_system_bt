@@ -88,9 +88,9 @@ extern void btm_ble_update_sec_key_size(const RawAddress& bd_addr,
                                         uint8_t enc_key_size);
 extern uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 
-/* white list function */
+/* acceptlist function */
 extern void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
-extern void btm_ble_white_list_init(uint8_t white_list_size);
+extern void btm_ble_acceptlist_init(uint8_t acceptlist_size);
 
 /* background connection function */
 extern bool btm_ble_suspend_bg_conn(void);
