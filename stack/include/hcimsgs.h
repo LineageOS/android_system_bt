@@ -676,9 +676,9 @@ extern void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode,
 #define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_ENABLE 2
 #define HCIC_PARAM_SIZE_BLE_CREATE_LL_CONN 25
 #define HCIC_PARAM_SIZE_BLE_CREATE_CONN_CANCEL 0
-#define HCIC_PARAM_SIZE_CLEAR_WHITE_LIST 0
-#define HCIC_PARAM_SIZE_ADD_WHITE_LIST 7
-#define HCIC_PARAM_SIZE_REMOVE_WHITE_LIST 7
+#define HCIC_PARAM_SIZE_CLEAR_ACCEPTLIST 0
+#define HCIC_PARAM_SIZE_ADD_ACCEPTLIST 7
+#define HCIC_PARAM_SIZE_REMOVE_ACCEPTLIST 7
 #define HCIC_PARAM_SIZE_BLE_UPD_LL_CONN_PARAMS 14
 #define HCIC_PARAM_SIZE_SET_HOST_CHNL_CLASS 5
 #define HCIC_PARAM_SIZE_READ_CHNL_MAP 2
@@ -754,16 +754,16 @@ extern void btsnd_hcic_ble_create_ll_conn(
 
 extern void btsnd_hcic_ble_create_conn_cancel(void);
 
-extern void btsnd_hcic_ble_read_white_list_size(void);
+extern void btsnd_hcic_ble_read_acceptlist_size(void);
 
-extern void btsnd_hcic_ble_clear_white_list(
+extern void btsnd_hcic_ble_clear_acceptlist(
     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-extern void btsnd_hcic_ble_add_white_list(
+extern void btsnd_hcic_ble_add_acceptlist(
     uint8_t addr_type, const RawAddress& bda,
     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-extern void btsnd_hcic_ble_remove_from_white_list(
+extern void btsnd_hcic_ble_remove_from_acceptlist(
     uint8_t addr_type, const RawAddress& bda,
     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
