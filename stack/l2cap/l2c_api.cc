@@ -42,6 +42,12 @@ void btsnd_hcic_enhanced_flush(uint16_t handle,
 
 using base::StringPrintf;
 
+tBT_TRANSPORT l2c_get_transport_from_fixed_cid(uint16_t fixed_cid) {
+  if (fixed_cid >= L2CAP_ATT_CID && fixed_cid <= L2CAP_SMP_CID)
+    return BT_TRANSPORT_LE;
+  return BT_TRANSPORT_BR_EDR;
+}
+
 uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                         uint16_t my_mtu, uint16_t required_remote_mtu,
@@ -781,7 +787,12 @@ std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
 
   /* First, see if we already have a le link to the remote */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
-  if (p_lcb == NULL || (p_lcb->link_state != LST_CONNECTED)) {
+  if (p_lcb == NULL) {
+    L2CAP_TRACE_WARNING("%s No link available", __func__);
+    return allocated_cids;
+  }
+
+  if (p_lcb->link_state != LST_CONNECTED) {
     L2CAP_TRACE_WARNING("%s incorrect link state: %d", __func__,
                         p_lcb->link_state);
     return allocated_cids;
@@ -1160,21 +1171,20 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
-  VLOG(1) << __func__ << " BDA: " << rem_bda
-          << StringPrintf("CID: 0x%04x ", fixed_cid);
+  LOG_DEBUG(" fixed_cid:0x%04x", fixed_cid);
 
   // Check CID is valid and registered
   if ((fixed_cid < L2CAP_FIRST_FIXED_CHNL) ||
       (fixed_cid > L2CAP_LAST_FIXED_CHNL) ||
       (l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].pL2CA_FixedData_Cb ==
        NULL)) {
-    L2CAP_TRACE_ERROR("%s() Invalid CID: 0x%04x", __func__, fixed_cid);
+    LOG_ERROR("Invalid fixed_cid:0x%04x", fixed_cid);
     return (false);
   }
 
   // Fail if BT is not yet up
   if (!BTM_IsDeviceUp()) {
-    L2CAP_TRACE_WARNING("%s(0x%04x) - BTU not ready", __func__, fixed_cid);
+    LOG_WARN("Bt controller is not ready fixed_cid:0x%04x", fixed_cid);
     return (false);
   }
 
@@ -1196,20 +1206,22 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
 
     // Check for supported channel
     if (!(peer_channel_mask & (1 << fixed_cid))) {
-      VLOG(2) << __func__ << " BDA " << rem_bda
-              << StringPrintf(" CID:0x%04x not supported", fixed_cid);
+      LOG_INFO("Peer device does not support fixed_cid:0x%04x", fixed_cid);
       return false;
     }
 
     // Get a CCB and link the lcb to it
     if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
-      L2CAP_TRACE_WARNING("%s(0x%04x) - LCB but no CCB", __func__, fixed_cid);
+      LOG_WARN("Unable to allocate fixed channel resource fixed_cid:0x%04x",
+               fixed_cid);
       return false;
     }
 
     // racing with disconnecting, queue the connection request
     if (p_lcb->link_state == LST_DISCONNECTING) {
-      L2CAP_TRACE_DEBUG("$s() - link disconnecting: RETRY LATER", __func__);
+      LOG_DEBUG(
+          "Link is disconnecting so deferring connection fixed_cid:0x%04x",
+          fixed_cid);
       /* Save ccb so it can be started after disconnect is finished */
       p_lcb->p_pending_ccb =
           p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL];
@@ -1224,14 +1236,16 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   // No link. Get an LCB and start link establishment
   p_lcb = l2cu_allocate_lcb(rem_bda, false, transport);
   if (p_lcb == NULL) {
-    L2CAP_TRACE_WARNING("%s(0x%04x) - no LCB", __func__, fixed_cid);
+    LOG_WARN("Unable to allocate link resource for connection fixed_cid:0x%04x",
+             fixed_cid);
     return false;
   }
 
   // Get a CCB and link the lcb to it
   if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
     p_lcb->SetDisconnectReason(L2CAP_CONN_NO_RESOURCES);
-    L2CAP_TRACE_WARNING("%s(0x%04x) - no CCB", __func__, fixed_cid);
+    LOG_WARN("Unable to allocate fixed channel resource fixed_cid:0x%04x",
+             fixed_cid);
     l2cu_release_lcb(p_lcb);
     return false;
   }
@@ -1239,7 +1253,8 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   if (transport == BT_TRANSPORT_LE) {
     bool ret = l2cu_create_conn_le(p_lcb, initiating_phys);
     if (!ret) {
-      L2CAP_TRACE_WARNING("%s() - create connection failed", __func__);
+      LOG_WARN("Unable to create fixed channel le connection fixed_cid:0x%04x",
+               fixed_cid);
       l2cu_release_lcb(p_lcb);
       return false;
     }

@@ -30,6 +30,7 @@
 #include "gatt_api.h"
 
 #include <base/callback_forward.h>
+#include <string>
 #include <vector>
 
 #ifndef BTA_GATT_DEBUG
@@ -49,24 +50,63 @@ typedef struct {
 } __attribute__((packed)) tBTA_GATT_ID;
 
 /* Client callback function events */
-#define BTA_GATTC_DEREG_EVT 1        /* GATT client deregistered event */
-#define BTA_GATTC_OPEN_EVT 2         /* GATTC open request status  event */
-#define BTA_GATTC_CLOSE_EVT 5        /* GATTC  close request status event */
-#define BTA_GATTC_SEARCH_CMPL_EVT 6  /* GATT discovery complete event */
-#define BTA_GATTC_SEARCH_RES_EVT 7   /* GATT discovery result event */
-#define BTA_GATTC_SRVC_DISC_DONE_EVT 8 /* GATT service discovery done event */
-#define BTA_GATTC_NOTIF_EVT 10       /* GATT attribute notification event */
-#define BTA_GATTC_EXEC_EVT 12        /* execute write complete event */
-#define BTA_GATTC_ACL_EVT 13         /* ACL up event */
-#define BTA_GATTC_CANCEL_OPEN_EVT 14 /* cancel open event */
-#define BTA_GATTC_SRVC_CHG_EVT 15    /* service change event */
-#define BTA_GATTC_ENC_CMPL_CB_EVT 17 /* encryption complete callback event */
-#define BTA_GATTC_CFG_MTU_EVT 18     /* configure MTU complete event */
-#define BTA_GATTC_CONGEST_EVT 24     /* Congestion event */
-#define BTA_GATTC_PHY_UPDATE_EVT 25  /* PHY change event */
-#define BTA_GATTC_CONN_UPDATE_EVT 26 /* Connection parameters update event */
+typedef enum : uint8_t {
+  BTA_GATTC_DEREG_EVT = 1,          /* GATT client deregistered event */
+  BTA_GATTC_OPEN_EVT = 2,           /* GATTC open request status  event */
+  BTA_GATTC_CLOSE_EVT = 5,          /* GATTC  close request status event */
+  BTA_GATTC_SEARCH_CMPL_EVT = 6,    /* GATT discovery complete event */
+  BTA_GATTC_SEARCH_RES_EVT = 7,     /* GATT discovery result event */
+  BTA_GATTC_SRVC_DISC_DONE_EVT = 8, /* GATT service discovery done event */
+  BTA_GATTC_NOTIF_EVT = 10,         /* GATT attribute notification event */
+  BTA_GATTC_EXEC_EVT = 12,          /* execute write complete event */
+  BTA_GATTC_ACL_EVT = 13,           /* ACL up event */
+  BTA_GATTC_CANCEL_OPEN_EVT = 14,   /* cancel open event */
+  BTA_GATTC_SRVC_CHG_EVT = 15,      /* service change event */
+  BTA_GATTC_ENC_CMPL_CB_EVT = 17,   /* encryption complete callback event */
+  BTA_GATTC_CFG_MTU_EVT = 18,       /* configure MTU complete event */
+  BTA_GATTC_CONGEST_EVT = 24,       /* Congestion event */
+  BTA_GATTC_PHY_UPDATE_EVT = 25,    /* PHY change event */
+  BTA_GATTC_CONN_UPDATE_EVT = 26,   /* Connection parameters update event */
+} tBTA_GATTC_EVT;
 
-typedef uint8_t tBTA_GATTC_EVT;
+inline std::string GattClientEventText(tBTA_GATTC_EVT event) {
+  switch (event) {
+    case BTA_GATTC_DEREG_EVT:
+      return std::string("deregistered");
+    case BTA_GATTC_OPEN_EVT:
+      return std::string("opened");
+    case BTA_GATTC_CLOSE_EVT:
+      return std::string("closed");
+    case BTA_GATTC_SEARCH_CMPL_EVT:
+      return std::string("discovery completed");
+    case BTA_GATTC_SEARCH_RES_EVT:
+      return std::string("discovery result");
+    case BTA_GATTC_SRVC_DISC_DONE_EVT:
+      return std::string("discovery done");
+    case BTA_GATTC_NOTIF_EVT:
+      return std::string("attribute notification");
+    case BTA_GATTC_EXEC_EVT:
+      return std::string("execute write completed");
+    case BTA_GATTC_ACL_EVT:
+      return std::string("ACL up event");
+    case BTA_GATTC_CANCEL_OPEN_EVT:
+      return std::string("cancel open event");
+    case BTA_GATTC_SRVC_CHG_EVT:
+      return std::string("service changed");
+    case BTA_GATTC_ENC_CMPL_CB_EVT:
+      return std::string("encryption complete");
+    case BTA_GATTC_CFG_MTU_EVT:
+      return std::string("configure MTU complete");
+    case BTA_GATTC_CONGEST_EVT:
+      return std::string("congestion");
+    case BTA_GATTC_PHY_UPDATE_EVT:
+      return std::string("PHY change");
+    case BTA_GATTC_CONN_UPDATE_EVT:
+      return std::string("connection parameters update");
+    default:
+      return std::string("unknown");
+  }
+}
 
 typedef struct {
   uint16_t unit;  /* as UUIUD defined by SIG */
