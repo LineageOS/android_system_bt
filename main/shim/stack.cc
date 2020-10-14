@@ -39,8 +39,10 @@
 #include "gd/shim/l2cap.h"
 #include "gd/storage/storage_module.h"
 
+#include "main/shim/acl_legacy_interface.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/le_advertising_manager.h"
+#include "main/shim/shim.h"
 #include "main/shim/stack.h"
 
 namespace bluetooth {
@@ -110,12 +112,12 @@ void Stack::StartEverything() {
     btm_ = new Btm(stack_handler_,
                    stack_manager_.GetInstance<neighbor::InquiryModule>());
   }
+  is_running_ = true;
   if (common::InitFlags::GdAclEnabled()) {
     if (!common::InitFlags::GdCoreEnabled()) {
-      acl_ = new legacy::Acl(stack_handler_);
+      acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface());
     }
   }
-  is_running_ = true;
   if (!common::InitFlags::GdCoreEnabled()) {
     bluetooth::shim::hci_on_reset_complete();
   }
@@ -180,6 +182,7 @@ StackManager* Stack::GetStackManager() {
 legacy::Acl* Stack::GetAcl() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);
+  ASSERT_LOG(acl_ != nullptr, "Acl shim layer has not been created");
   return acl_;
 }
 
