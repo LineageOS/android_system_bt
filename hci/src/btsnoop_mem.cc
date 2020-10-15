@@ -18,14 +18,20 @@
 
 #include <base/logging.h>
 
+#include "gd/common/init_flags.h"
 #include "hci/include/btsnoop_mem.h"
 
 static btsnoop_data_cb data_callback = NULL;
+static activity_attribution_cb attribution_callback = NULL;
 
 void btsnoop_mem_set_callback(btsnoop_data_cb cb) { data_callback = cb; }
 
+void activity_attribution_set_callback(activity_attribution_cb cb) {
+  attribution_callback = cb;
+}
+
 void btsnoop_mem_capture(const BT_HDR* packet, uint64_t timestamp_us) {
-  if (!data_callback) return;
+  if (!data_callback && !attribution_callback) return;
 
   CHECK(packet);
 
@@ -53,5 +59,10 @@ void btsnoop_mem_capture(const BT_HDR* packet, uint64_t timestamp_us) {
       break;
   }
 
-  if (length) (*data_callback)(type, data, length, timestamp_us);
+  if (length && data_callback)
+    (*data_callback)(type, data, length, timestamp_us);
+  if (length && attribution_callback &&
+      bluetooth::common::InitFlags::BtaaHciLogEnabled()) {
+    (*attribution_callback)(type, data, length, timestamp_us);
+  }
 }

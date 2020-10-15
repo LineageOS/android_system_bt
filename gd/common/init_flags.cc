@@ -26,6 +26,7 @@
 namespace bluetooth {
 namespace common {
 
+bool InitFlags::btaa_hci_log_enabled = false;
 bool InitFlags::gd_core_enabled = false;
 bool InitFlags::gd_advertising_enabled = false;
 bool InitFlags::gd_security_enabled = false;
@@ -67,6 +68,7 @@ void InitFlags::Load(const char** flags) {
     ParseBoolFlag(flag_pair, "INIT_gd_controller", &gd_controller_enabled);
     ParseBoolFlag(flag_pair, "INIT_gatt_robust_caching", &gatt_robust_caching_enabled);
     ParseBoolFlag(flag_pair, "INIT_logging_debug_enabled_for_all", &logging_debug_enabled_for_all);
+    ParseBoolFlag(flag_pair, "INIT_btaa_hci", &btaa_hci_log_enabled);
     if ("INIT_logging_debug_enabled_for_tags" == flag_pair[0]) {
       auto tags = StringSplit(flag_pair[1], ",");
       for (const auto& tag : tags) {
@@ -111,7 +113,7 @@ void InitFlags::Load(const char** flags) {
   LOG_INFO(
       "Flags loaded: gd_advertising_enabled=%s, gd_security_enabled=%s, gd_acl_enabled=%s, gd_hci_enabled=%s, "
       "gd_controller_enabled=%s, gd_core_enabled=%s, logging_debug_enabled_for_all=%s, "
-      "logging_debug_enabled_tags=%s, logging_debug_disabled_tags=%s",
+      "logging_debug_enabled_tags=%s, logging_debug_disabled_tags=%s, btaa_hci_log_enabled=%s",
       ToString(gd_advertising_enabled).c_str(),
       ToString(gd_security_enabled).c_str(),
       ToString(gd_acl_enabled).c_str(),
@@ -120,7 +122,8 @@ void InitFlags::Load(const char** flags) {
       ToString(gd_core_enabled).c_str(),
       ToString(logging_debug_enabled_for_all).c_str(),
       StringJoin(logging_debug_enabled_tags, ",").c_str(),
-      StringJoin(logging_debug_disabled_tags, ",").c_str());
+      StringJoin(logging_debug_disabled_tags, ",").c_str(),
+      ToString(btaa_hci_log_enabled).c_str());
 }
 
 void InitFlags::SetAll(bool value) {
