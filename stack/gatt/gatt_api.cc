@@ -650,15 +650,14 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
     return GATT_ILLEGAL_PARAMETER;
   }
 
-  LOG(INFO) << __func__ << " conn_id=" << loghex(conn_id)
-            << ", disc_type=" << +disc_type
-            << ", s_handle=" << loghex(start_handle)
-            << ", e_handle=" << loghex(end_handle);
-
   if (!GATT_HANDLE_IS_VALID(start_handle) ||
       !GATT_HANDLE_IS_VALID(end_handle) ||
       /* search by type does not have a valid UUID param */
       (disc_type == GATT_DISC_SRVC_BY_UUID && uuid.IsEmpty())) {
+    LOG(WARNING) << __func__ << " Illegal parameter conn_id=" << loghex(conn_id)
+                 << ", disc_type=" << +disc_type
+                 << ", s_handle=" << loghex(start_handle)
+                 << ", e_handle=" << loghex(end_handle);
     return GATT_ILLEGAL_PARAMETER;
   }
 
@@ -668,13 +667,24 @@ tGATT_STATUS GATTC_Discover(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
   }
 
   tGATT_CLCB* p_clcb = gatt_clcb_alloc(conn_id);
-  if (!p_clcb) return GATT_NO_RESOURCES;
+  if (!p_clcb) {
+    LOG(WARNING) << __func__ << " No resources conn_id=" << loghex(conn_id)
+                 << ", disc_type=" << +disc_type
+                 << ", s_handle=" << loghex(start_handle)
+                 << ", e_handle=" << loghex(end_handle);
+    return GATT_NO_RESOURCES;
+  }
 
   p_clcb->operation = GATTC_OPTYPE_DISCOVERY;
   p_clcb->op_subtype = disc_type;
   p_clcb->s_handle = start_handle;
   p_clcb->e_handle = end_handle;
   p_clcb->uuid = uuid;
+
+  LOG(INFO) << __func__ << " conn_id=" << loghex(conn_id)
+            << ", disc_type=" << +disc_type
+            << ", s_handle=" << loghex(start_handle)
+            << ", e_handle=" << loghex(end_handle);
 
   gatt_act_discovery(p_clcb);
   return GATT_SUCCESS;
