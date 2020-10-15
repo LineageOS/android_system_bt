@@ -45,6 +45,7 @@ TEST(InitFlagsTest, test_load_core) {
   ASSERT_TRUE(InitFlags::GdCoreEnabled());
   ASSERT_TRUE(InitFlags::GdControllerEnabled());
   ASSERT_TRUE(InitFlags::GdHciEnabled());
+  ASSERT_FALSE(InitFlags::BtaaHciLogEnabled());
 }
 
 TEST(InitFlagsTest, test_load_controller) {
@@ -53,6 +54,7 @@ TEST(InitFlagsTest, test_load_controller) {
   ASSERT_FALSE(InitFlags::GdCoreEnabled());
   ASSERT_TRUE(InitFlags::GdControllerEnabled());
   ASSERT_TRUE(InitFlags::GdHciEnabled());
+  ASSERT_FALSE(InitFlags::BtaaHciLogEnabled());
 }
 
 TEST(InitFlagsTest, test_load_hci) {
@@ -61,6 +63,7 @@ TEST(InitFlagsTest, test_load_hci) {
   ASSERT_FALSE(InitFlags::GdCoreEnabled());
   ASSERT_FALSE(InitFlags::GdControllerEnabled());
   ASSERT_TRUE(InitFlags::GdHciEnabled());
+  ASSERT_FALSE(InitFlags::BtaaHciLogEnabled());
 }
 
 TEST(InitFlagsTest, test_load_gatt_robust_caching) {
@@ -108,4 +111,13 @@ TEST(InitFlagsTest, test_debug_logging_multiple_flags) {
   ASSERT_TRUE(InitFlags::IsDebugLoggingEnabledForTag("hello"));
   ASSERT_FALSE(InitFlags::IsDebugLoggingEnabledForTag("Foo"));
   ASSERT_FALSE(InitFlags::IsDebugLoggingEnabledForAll());
+}
+
+TEST(InitFlagsTest, test_load_btaa_hci_log) {
+  const char* input[] = {"INIT_btaa_hci=true", nullptr};
+  InitFlags::Load(input);
+  ASSERT_TRUE(InitFlags::BtaaHciLogEnabled());
+  ASSERT_FALSE(InitFlags::GdCoreEnabled());
+  ASSERT_FALSE(InitFlags::GdControllerEnabled());
+  ASSERT_FALSE(InitFlags::GdHciEnabled());
 }
