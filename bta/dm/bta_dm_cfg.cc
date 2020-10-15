@@ -42,7 +42,7 @@
 #define BTA_DM_LINK_TIMEOUT 8000
 #endif
 
-/* TRUE to avoid scatternet when av is streaming (be the master) */
+/* TRUE to avoid scatternet when av is streaming (be the central) */
 #ifndef BTA_DM_AVOID_SCATTER_A2DP
 #define BTA_DM_AVOID_SCATTER_A2DP TRUE
 #endif
@@ -62,7 +62,7 @@ const tBTA_DM_CFG bta_dm_cfg = {
     BTA_DM_PAGE_TIMEOUT,
     /* link supervision timeout in 625uS*/
     BTA_DM_LINK_TIMEOUT,
-    /* true to avoid scatternet when av is streaming (be the master) */
+    /* true to avoid scatternet when av is streaming (be the central) */
     BTA_DM_AVOID_SCATTER_A2DP};
 
 #ifndef BTA_DM_SCATTERNET
@@ -76,12 +76,12 @@ const tBTA_DM_CFG bta_dm_cfg = {
 #endif
 
 #ifndef BTA_AV_ROLE
-/* By default, AV role (backward BTA_MASTER_ROLE_PREF) */
-#define BTA_AV_ROLE BTA_MASTER_ROLE_PREF
+/* By default, AV role (backward BTA_CENTRAL_ROLE_PREF) */
+#define BTA_AV_ROLE BTA_CENTRAL_ROLE_PREF
 #endif
 
 #ifndef BTA_PANU_ROLE
-/* By default, AV role (backward BTA_MASTER_ROLE_PREF) */
+/* By default, AV role (backward BTA_CENTRAL_ROLE_PREF) */
 #define BTA_PANU_ROLE BTA_SLAVE_ROLE_ONLY
 #endif
 #define BTA_DM_NUM_RM_ENTRY 6
@@ -99,7 +99,7 @@ const tBTA_DM_RM bta_dm_rm_cfg[] = {
     {BTA_ID_SYS, BTA_DM_NUM_RM_ENTRY, BTA_DM_SCATTERNET},
     {BTA_ID_PAN, BTUI_PAN_ID_NAP, BTA_ANY_ROLE},
     {BTA_ID_PAN, BTUI_PAN_ID_GN, BTA_ANY_ROLE},
-    {BTA_ID_PAN, BTA_APP_ID_PAN_MULTI, BTA_MASTER_ROLE_ONLY},
+    {BTA_ID_PAN, BTA_APP_ID_PAN_MULTI, BTA_CENTRAL_ROLE_ONLY},
     {BTA_ID_PAN, BTUI_PAN_ID_PANU, BTA_PANU_ROLE},
     {BTA_ID_HH, BTA_ALL_APP_ID, BTA_HH_ROLE},
     {BTA_ID_AV, BTA_ALL_APP_ID, BTA_AV_ROLE}};

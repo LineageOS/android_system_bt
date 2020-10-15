@@ -156,7 +156,7 @@ class LeL2capTest(GdBaseTestClass):
     def test_send_connection_parameter_update_request(self):
         """
         Verify that the IUT is able to send the connection parameter update Request to Lower Tester when acting as a slave device.
-        NOTE: This is an optional feature. Also if both LL master and slave supports 4.1+ connection parameter update, this should happen in LL only, not L2CAP
+        NOTE: This is an optional feature. Also if both LL central and slave supports 4.1+ connection parameter update, this should happen in LL only, not L2CAP
         NOTE: Currently we need to establish at least one dynamic channel to allow update.
         """
         self._setup_link_from_cert()
@@ -167,7 +167,7 @@ class LeL2capTest(GdBaseTestClass):
     @metadata(pts_test_id="L2CAP/LE/CPU/BV-02-C", pts_test_name="Accept Connection Parameter Update Request")
     def test_accept_connection_parameter_update_request(self):
         """
-        Verify that the IUT is able to receive and handle a request for connection parameter update when acting as a master device.
+        Verify that the IUT is able to receive and handle a request for connection parameter update when acting as a central device.
         NOTE: Currently we need to establish at least one dynamic channel to allow update.
         """
         self._set_link_from_dut_and_open_channel()
@@ -224,7 +224,7 @@ class LeL2capTest(GdBaseTestClass):
         dut_channel.send(b'hello' * 40)
         assertThat(cert_channel).emits(L2capMatchers.FirstLeIFrame(b'hello' * 40, sdu_size=200))
 
-    def test_no_segmentation_dut_is_master(self):
+    def test_no_segmentation_dut_is_central(self):
         """
         L2CAP/COS/CFC/BV-02-C
         """
@@ -254,7 +254,7 @@ class LeL2capTest(GdBaseTestClass):
         cert_channel.send_first_le_i_frame(4, SAMPLE_PACKET)
         assertThat(dut_channel).emits(L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'))
 
-    def test_data_receiving_dut_is_master(self):
+    def test_data_receiving_dut_is_central(self):
         """
         L2CAP/COS/CFC/BV-04-C
         """

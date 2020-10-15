@@ -69,7 +69,7 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
  public:
   // HCI
   bool receivedChangeConnectionLinkKeyComplete = false;
-  bool receivedMasterLinkKeyComplete = false;
+  bool receivedCentralLinkKeyComplete = false;
   bool receivedPinCodeRequest = false;
   bool receivedLinkKeyRequest = false;
   bool receivedLinkKeyNotification = false;
@@ -89,9 +89,9 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
     ASSERT_TRUE(packet.IsValid());
     receivedChangeConnectionLinkKeyComplete = true;
   }
-  void OnReceive(hci::AddressWithType device, hci::MasterLinkKeyCompleteView packet) {
+  void OnReceive(hci::AddressWithType device, hci::CentralLinkKeyCompleteView packet) {
     ASSERT_TRUE(packet.IsValid());
-    receivedMasterLinkKeyComplete = true;
+    receivedCentralLinkKeyComplete = true;
   }
   void OnReceive(hci::AddressWithType device, hci::PinCodeRequestView packet) {
     ASSERT_TRUE(packet.IsValid());
@@ -158,8 +158,8 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
       case hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE:
         OnReceive(hci::AddressWithType(), hci::ChangeConnectionLinkKeyCompleteView::Create(event));
         break;
-      case hci::EventCode::MASTER_LINK_KEY_COMPLETE:
-        OnReceive(hci::AddressWithType(), hci::MasterLinkKeyCompleteView::Create(event));
+      case hci::EventCode::CENTRAL_LINK_KEY_COMPLETE:
+        OnReceive(hci::AddressWithType(), hci::CentralLinkKeyCompleteView::Create(event));
         break;
       case hci::EventCode::PIN_CODE_REQUEST:
         OnReceive(hci::AddressWithType(), hci::PinCodeRequestView::Create(event));
@@ -475,12 +475,12 @@ TEST_F(SecurityManagerChannelTest, recv_link_key_notification) {
   ASSERT_TRUE(callback_->receivedLinkKeyNotification);
 }
 
-TEST_F(SecurityManagerChannelTest, recv_master_link_key_complete) {
+TEST_F(SecurityManagerChannelTest, recv_central_link_key_complete) {
   uint16_t connection_handle = 0x0;
   hci_layer_->IncomingEvent(
-      hci::MasterLinkKeyCompleteBuilder::Create(hci::ErrorCode::SUCCESS, connection_handle, hci::KeyFlag::TEMPORARY));
+      hci::CentralLinkKeyCompleteBuilder::Create(hci::ErrorCode::SUCCESS, connection_handle, hci::KeyFlag::TEMPORARY));
   synchronize();
-  ASSERT_TRUE(callback_->receivedMasterLinkKeyComplete);
+  ASSERT_TRUE(callback_->receivedCentralLinkKeyComplete);
 }
 
 TEST_F(SecurityManagerChannelTest, recv_change_connection_link_key_complete) {

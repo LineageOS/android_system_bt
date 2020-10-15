@@ -129,7 +129,7 @@ void ClassicPairingHandler::OnReceive(hci::ChangeConnectionLinkKeyCompleteView p
   LOG_INFO("Received unsupported event: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
 }
 
-void ClassicPairingHandler::OnReceive(hci::MasterLinkKeyCompleteView packet) {
+void ClassicPairingHandler::OnReceive(hci::CentralLinkKeyCompleteView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received unsupported event: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
 }

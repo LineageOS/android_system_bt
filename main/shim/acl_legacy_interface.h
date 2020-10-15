@@ -54,7 +54,7 @@ typedef struct {
                                          uint32_t peak_bandwidth,
                                          uint32_t access_latency);
   void (*on_flush_occurred)();
-  void (*on_master_link_key_complete)(uint8_t key_flag);
+  void (*on_central_link_key_complete)(uint8_t key_flag);
   void (*on_mode_change)(uint16_t current_mode, uint16_t interval);
   void (*on_packet_type_changed)(uint16_t packet_type);
   void (*on_qos_setup_complete)(uint16_t service_type, uint32_t token_rate,

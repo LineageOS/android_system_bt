@@ -111,7 +111,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
  *
  * Function         BTM_SwitchRole
  *
- * Description      This function is called to switch role between master and
+ * Description      This function is called to switch role between central and
  *                  slave.  If role is already set it will do nothing.
  *
  * Returns          BTM_SUCCESS if already in specified role.
@@ -215,8 +215,8 @@ void btm_set_packet_types_from_address(const RawAddress& bda,
 
 bool lmp_version_below(const RawAddress& bda, uint8_t version);
 
-bool acl_br_edr_is_role_master(const RawAddress& bda);
-bool acl_ble_is_role_master(const RawAddress& bda);
+bool acl_br_edr_is_role_central(const RawAddress& bda);
+bool acl_ble_is_role_central(const RawAddress& bda);
 
 #define BLE_RESOLVE_ADDR_MASK 0xc0
 #define BLE_RESOLVE_ADDR_MSB 0x40
