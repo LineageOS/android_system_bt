@@ -48,7 +48,7 @@ enum btm_acl_swkey_state_t {
 typedef struct {
   RawAddress remote_bd_addr; /* Remote BD addr involved with the switch */
   uint8_t hci_status;        /* HCI status returned with the event */
-  uint8_t role;              /* HCI_ROLE_MASTER or HCI_ROLE_SLAVE */
+  uint8_t role;              /* HCI_ROLE_CENTRAL or HCI_ROLE_SLAVE */
 } tBTM_ROLE_SWITCH_CMPL;
 
 typedef struct {

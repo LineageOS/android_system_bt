@@ -67,7 +67,7 @@ bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
     case bluetooth::hci::OpCode::AUTHENTICATION_REQUESTED:
     case bluetooth::hci::OpCode::SET_CONNECTION_ENCRYPTION:
     case bluetooth::hci::OpCode::CHANGE_CONNECTION_LINK_KEY:
-    case bluetooth::hci::OpCode::MASTER_LINK_KEY:
+    case bluetooth::hci::OpCode::CENTRAL_LINK_KEY:
     case bluetooth::hci::OpCode::REMOTE_NAME_REQUEST:
     case bluetooth::hci::OpCode::READ_REMOTE_SUPPORTED_FEATURES:
     case bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES:
@@ -120,7 +120,7 @@ bool is_valid_event_code(uint8_t event_code_raw) {
     case bluetooth::hci::EventCode::REMOTE_NAME_REQUEST_COMPLETE:
     case bluetooth::hci::EventCode::ENCRYPTION_CHANGE:
     case bluetooth::hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE:
-    case bluetooth::hci::EventCode::MASTER_LINK_KEY_COMPLETE:
+    case bluetooth::hci::EventCode::CENTRAL_LINK_KEY_COMPLETE:
     case bluetooth::hci::EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE:
     case bluetooth::hci::EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE:
     case bluetooth::hci::EventCode::QOS_SETUP_COMPLETE:

@@ -377,7 +377,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       return this;
     }
 
-    void OnMasterLinkKeyComplete(KeyFlag key_flag) override {
+    void OnCentralLinkKeyComplete(KeyFlag key_flag) override {
       LOG_INFO("key_flag:%s", KeyFlagText(key_flag).c_str());
     }
 

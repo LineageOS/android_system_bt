@@ -2045,20 +2045,20 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
       controller_get_interface()->supports_role_switch();
 
   /* While creating a new classic connection, check check all the other
-   * active connections where we are not SCO nor master.
+   * active connections where we are not SCO nor central.
    * If our controller supports role switching, try switching
-   * roles back to MASTER on those connections.
+   * roles back to CENTRAL on those connections.
    */
   tL2C_LCB* p_lcb_cur = &l2cb.lcb_pool[0];
   for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb_cur++) {
     if (p_lcb_cur == p_lcb) continue;
     if (!p_lcb_cur->in_use) continue;
     if (BTM_IsScoActiveByBdaddr(p_lcb_cur->remote_bd_addr)) {
-      L2CAP_TRACE_DEBUG("%s Master slave switch not allowed when SCO active",
+      L2CAP_TRACE_DEBUG("%s Central slave switch not allowed when SCO active",
                         __func__);
       continue;
     }
-    if (p_lcb->IsLinkRoleMaster()) continue;
+    if (p_lcb->IsLinkRoleCentral()) continue;
     /* The LMP_switch_req shall be sent only if the ACL logical transport
        is in active mode, when encryption is disabled, and all synchronous
        logical transports on the same physical link are disabled." */
@@ -2068,9 +2068,9 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
       /* mark this lcb waiting for switch to be completed and
          start switch on the other one */
       p_lcb->link_state = LST_CONNECTING_WAIT_SWITCH;
-      p_lcb->SetLinkRoleAsMaster();
+      p_lcb->SetLinkRoleAsCentral();
 
-      if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_MASTER) ==
+      if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_CENTRAL) ==
           BTM_CMD_STARTED) {
         alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
                            L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS,
@@ -2225,7 +2225,7 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
       LMP_COMPID_BROADCOM) {
     /* Called from above L2CAP through API; send VSC if changed */
     if ((!reset_after_rs && (priority != p_lcb->acl_priority)) ||
-        /* Called because of a master/slave role switch; if high resend VSC */
+        /* Called because of a central/slave role switch; if high resend VSC */
         (reset_after_rs && p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)) {
       pp = command;
 

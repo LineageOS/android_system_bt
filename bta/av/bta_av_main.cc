@@ -949,7 +949,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
  ******************************************************************************/
 bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
   // TODO: A workaround for devices that are connected first, become
-  // Master, and block follow-up role changes - b/72122792 .
+  // Central, and block follow-up role changes - b/72122792 .
   return false;
 #if 0
   uint8_t role;
@@ -967,11 +967,11 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
       BTM_GetRole(p_scbi->PeerAddress(), &role);
       /* this channel is open - clear the role switch link policy for this link
        */
-      if (HCI_ROLE_MASTER != role) {
-        if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
+      if (HCI_ROLE_CENTRAL != role) {
+        if (bta_av_cb.features & BTA_AV_FEAT_CENTRAL)
           BTM_block_role_switch_for(p_scbi->PeerAddress());
         if (BTM_CMD_STARTED !=
-            BTM_SwitchRole(p_scbi->PeerAddress(), HCI_ROLE_MASTER)) {
+            BTM_SwitchRole(p_scbi->PeerAddress(), HCI_ROLE_CENTRAL)) {
           /* can not switch role on SCBI
            * start the timer on SCB - because this function is ONLY called when
            * SCB gets API_OPEN */
@@ -1009,17 +1009,17 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
         "features:0x%x",
         __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, role,
         bta_av_cb.conn_audio, bits, bta_av_cb.features);
-    if (HCI_ROLE_MASTER != role &&
+    if (HCI_ROLE_CENTRAL != role &&
         (A2DP_BitsSet(bta_av_cb.conn_audio) > bits ||
-         (bta_av_cb.features & BTA_AV_FEAT_MASTER))) {
-      if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
+         (bta_av_cb.features & BTA_AV_FEAT_CENTRAL))) {
+      if (bta_av_cb.features & BTA_AV_FEAT_CENTRAL)
         BTM_block_role_switch_for(p_scb->PeerAddress());
 
       tBTM_STATUS status =
-          BTM_SwitchRole(p_scb->PeerAddress(), HCI_ROLE_MASTER);
+          BTM_SwitchRole(p_scb->PeerAddress(), HCI_ROLE_CENTRAL);
       if (status != BTM_CMD_STARTED) {
         /* can not switch role on SCB - start the timer on SCB */
-        LOG_ERROR("%s: peer %s BTM_SwitchRole(HCI_ROLE_MASTER) error: %d",
+        LOG_ERROR("%s: peer %s BTM_SwitchRole(HCI_ROLE_CENTRAL) error: %d",
                   __func__, p_scb->PeerAddress().ToString().c_str(), status);
       }
       if (status != BTM_MODE_UNSUPPORTED && status != BTM_DEV_BLACKLISTED) {

@@ -205,8 +205,8 @@ void AclManager::RemoveDeviceFromResolvingList(AddressWithType address_with_type
   CallOn(pimpl_->le_impl_, &le_impl::remove_device_from_resolving_list, address_with_type);
 }
 
-void AclManager::MasterLinkKey(KeyFlag key_flag) {
-  CallOn(pimpl_->classic_impl_, &classic_impl::master_link_key, key_flag);
+void AclManager::CentralLinkKey(KeyFlag key_flag) {
+  CallOn(pimpl_->classic_impl_, &classic_impl::central_link_key, key_flag);
 }
 
 void AclManager::SwitchRole(Address address, Role role) {

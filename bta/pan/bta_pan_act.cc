@@ -493,7 +493,7 @@ void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
   p_scb->app_flow_enable = true;
 
   /* If app_id is NAP/GN, check whether there are multiple connections.
-     If there are, provide a special app_id to dm to enforce master role only.
+     If there are, provide a special app_id to dm to enforce central role only.
      */
   if (p_scb->app_id == bta_pan_cb.app_id[2] &&
       bta_pan_has_multiple_connections(p_scb->app_id)) {
