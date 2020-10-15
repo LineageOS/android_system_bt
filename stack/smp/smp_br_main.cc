@@ -31,7 +31,7 @@ const char* const smp_br_event_name[SMP_BR_MAX_EVT] = {
     "BR_PAIRING_REQ_EVT",     "BR_PAIRING_RSP_EVT",
     "BR_CONFIRM_EVT",         "BR_RAND_EVT",
     "BR_PAIRING_FAILED_EVT",  "BR_ENCRPTION_INFO_EVT",
-    "BR_MASTER_ID_EVT",       "BR_ID_INFO_EVT",
+    "BR_CENTRAL_ID_EVT",      "BR_ID_INFO_EVT",
     "BR_ID_ADDR_EVT",         "BR_SIGN_INFO_EVT",
     "BR_SECURITY_REQ_EVT",    "BR_PAIR_PUBLIC_KEY_EVT",
     "BR_PAIR_DHKEY_CHCK_EVT", "BR_PAIR_KEYPR_NOTIF_EVT",
@@ -101,8 +101,8 @@ static const uint8_t smp_br_all_table[][SMP_BR_SM_NUM_COLS] = {
     /* BR_L2CAP_DISCONN */
     {SMP_PAIR_TERMINATE, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_IDLE}};
 
-/************ SMP Master FSM State/Event Indirection Table **************/
-static const uint8_t smp_br_master_entry_map[][SMP_BR_STATE_MAX] = {
+/************ SMP Central FSM State/Event Indirection Table **************/
+static const uint8_t smp_br_central_entry_map[][SMP_BR_STATE_MAX] = {
     /* br_state name:               Idle      WaitApp  Pair    Bond
                                               Rsp      ReqRsp  Pend       */
     /* BR_PAIRING_REQ           */ {0, 0, 0, 0},
@@ -111,7 +111,7 @@ static const uint8_t smp_br_master_entry_map[][SMP_BR_STATE_MAX] = {
     /* BR_RAND                  */ {0, 0, 0, 0},
     /* BR_PAIRING_FAILED        */ {0, 0x81, 0x81, 0},
     /* BR_ENCRPTION_INFO        */ {0, 0, 0, 0},
-    /* BR_MASTER_ID             */ {0, 0, 0, 0},
+    /* BR_CENTRAL_ID             */ {0, 0, 0, 0},
     /* BR_ID_INFO               */ {0, 0, 0, 1},
     /* BR_ID_ADDR               */ {0, 0, 0, 2},
     /* BR_SIGN_INFO             */ {0, 0, 0, 3},
@@ -131,7 +131,7 @@ static const uint8_t smp_br_master_entry_map[][SMP_BR_STATE_MAX] = {
     /* BR_BOND_REQ              */ {0, 0, 2, 0},
     /* BR_DISCARD_SEC_REQ       */ {0, 0, 0, 0}};
 
-static const uint8_t smp_br_master_idle_table[][SMP_BR_SM_NUM_COLS] = {
+static const uint8_t smp_br_central_idle_table[][SMP_BR_SM_NUM_COLS] = {
     /* Event               Action               Next State */
     /* BR_L2CAP_CONN */
     {SMP_SEND_APP_CBACK, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_WAIT_APP_RSP},
@@ -139,13 +139,13 @@ static const uint8_t smp_br_master_idle_table[][SMP_BR_SM_NUM_COLS] = {
     {SMP_IDLE_TERMINATE, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_IDLE}};
 
 static const uint8_t
-    smp_br_master_wait_appln_response_table[][SMP_BR_SM_NUM_COLS] = {
+    smp_br_central_wait_appln_response_table[][SMP_BR_SM_NUM_COLS] = {
         /* Event               Action              Next State */
         /* BR_KEYS_RSP */
         {SMP_SEND_PAIR_REQ, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_PAIR_REQ_RSP}};
 
 static const uint8_t
-    smp_br_master_pair_request_response_table[][SMP_BR_SM_NUM_COLS] = {
+    smp_br_central_pair_request_response_table[][SMP_BR_SM_NUM_COLS] = {
         /* Event                Action                 Next State */
         /* BR_PAIRING_RSP */
         {SMP_BR_PROC_PAIR_CMD, SMP_BR_CHECK_AUTH_REQ,
@@ -153,7 +153,7 @@ static const uint8_t
         /* BR_BOND_REQ */
         {SMP_BR_SM_NO_ACTION, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING}};
 
-static const uint8_t smp_br_master_bond_pending_table[][SMP_BR_SM_NUM_COLS] = {
+static const uint8_t smp_br_central_bond_pending_table[][SMP_BR_SM_NUM_COLS] = {
     /* Event            Action               Next State */
     /* BR_ID_INFO */
     {SMP_PROC_ID_INFO, SMP_BR_SM_NO_ACTION, SMP_BR_STATE_BOND_PENDING},
@@ -171,7 +171,7 @@ static const uint8_t smp_br_slave_entry_map[][SMP_BR_STATE_MAX] = {
     /* BR_RAND                  */ {0, 0, 0, 0},
     /* BR_PAIRING_FAILED        */ {0, 0x81, 0x81, 0x81},
     /* BR_ENCRPTION_INFO        */ {0, 0, 0, 0},
-    /* BR_MASTER_ID             */ {0, 0, 0, 0},
+    /* BR_CENTRAL_ID             */ {0, 0, 0, 0},
     /* BR_ID_INFO               */ {0, 0, 0, 1},
     /* BR_ID_ADDR               */ {0, 0, 0, 2},
     /* BR_SIGN_INFO             */ {0, 0, 0, 3},
@@ -219,22 +219,22 @@ static const uint8_t smp_br_slave_bond_pending_table[][SMP_BR_SM_NUM_COLS] = {
 
 static const tSMP_BR_SM_TBL smp_br_state_table[][2] = {
     /* SMP_BR_STATE_IDLE */
-    {smp_br_master_idle_table, smp_br_slave_idle_table},
+    {smp_br_central_idle_table, smp_br_slave_idle_table},
 
     /* SMP_BR_STATE_WAIT_APP_RSP */
-    {smp_br_master_wait_appln_response_table,
+    {smp_br_central_wait_appln_response_table,
      smp_br_slave_wait_appln_response_table},
 
     /* SMP_BR_STATE_PAIR_REQ_RSP */
-    {smp_br_master_pair_request_response_table, NULL},
+    {smp_br_central_pair_request_response_table, NULL},
 
     /* SMP_BR_STATE_BOND_PENDING */
-    {smp_br_master_bond_pending_table, smp_br_slave_bond_pending_table},
+    {smp_br_central_bond_pending_table, smp_br_slave_bond_pending_table},
 };
 
 typedef const uint8_t (*tSMP_BR_ENTRY_TBL)[SMP_BR_STATE_MAX];
 
-static const tSMP_BR_ENTRY_TBL smp_br_entry_table[] = {smp_br_master_entry_map,
+static const tSMP_BR_ENTRY_TBL smp_br_entry_table[] = {smp_br_central_entry_map,
                                                        smp_br_slave_entry_map};
 
 #define SMP_BR_ALL_TABLE_MASK 0x80
@@ -318,7 +318,7 @@ void smp_br_state_machine_event(tSMP_CB* p_cb, tSMP_BR_EVENT event,
   }
 
   SMP_TRACE_DEBUG("SMP Role: %s State: [%s (%d)], Event: [%s (%d)]",
-                  (p_cb->role == HCI_ROLE_SLAVE) ? "Slave" : "Master",
+                  (p_cb->role == HCI_ROLE_SLAVE) ? "Slave" : "Central",
                   smp_get_br_state_name(p_cb->br_state), p_cb->br_state,
                   smp_get_br_event_name(event), event);
 

@@ -1134,7 +1134,7 @@ void LinkLayerController::IncomingLeConnectCompletePacket(
       AddressWithType(
           incoming.GetDestinationAddress(),
           static_cast<bluetooth::hci::AddressType>(le_address_type_)),
-      static_cast<uint8_t>(bluetooth::hci::Role::MASTER),
+      static_cast<uint8_t>(bluetooth::hci::Role::CENTRAL),
       complete.GetLeConnectionInterval(), complete.GetLeConnectionLatency(),
       complete.GetLeConnectionSupervisionTimeout());
 }
@@ -1810,7 +1810,7 @@ ErrorCode LinkLayerController::ChangeConnectionLinkKey(uint16_t handle) {
   return ErrorCode::COMMAND_DISALLOWED;
 }
 
-ErrorCode LinkLayerController::MasterLinkKey(uint8_t /* key_flag */) {
+ErrorCode LinkLayerController::CentralLinkKey(uint8_t /* key_flag */) {
   // TODO: implement real logic
   return ErrorCode::COMMAND_DISALLOWED;
 }

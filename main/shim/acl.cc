@@ -171,7 +171,7 @@ class ClassicShimAclConnection
   void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
     LOG_INFO("%s UNIMPLEMENTED", __func__);
   }
-  void OnMasterLinkKeyComplete(hci::KeyFlag key_flag) override {
+  void OnCentralLinkKeyComplete(hci::KeyFlag key_flag) override {
     LOG_INFO("%s UNIMPLEMENTED", __func__);
   }
   void OnRoleChange(hci::Role new_role) override {
@@ -328,7 +328,7 @@ void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
   tBLE_BD_ADDR legacy_address_with_type =
       ToLegacyAddressWithType(address_with_type);
 
-  uint8_t role = 0;   /* TODO Master */
+  uint8_t role = 0;   /* TODO Central */
   bool match = false; /* TODO Was address resolved with known record ? */
 
   uint16_t conn_interval{0}; /* TODO */

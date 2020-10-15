@@ -293,7 +293,7 @@ typedef struct {
   }
 
   bool is_originator;         /* true if device is originating connection */
-  bool role_master;           /* true if current mode is master     */
+  bool role_central;          /* true if current mode is central     */
   uint16_t security_required; /* Security required for connection   */
   bool link_key_not_sent; /* link key notification has not been sent waiting for
                              name */

@@ -101,9 +101,8 @@ typedef enum {
   OI_STATUS_LINK_TERMINATED = 143, /**< The link was terminated */
   OI_STATUS_PIN_CODE_TOO_LONG =
       144, /**< Application gave us a pin code that is too long */
-  OI_STATUS_STILL_REGISTERED =
-      145, /**< The service cannot be shutdown because there are still active
-              registrations. */
+  OI_STATUS_STILL_REGISTERED = 145, /**< The service cannot be shutdown because
+                                       there are still active registrations. */
   OI_STATUS_SPEC_VIOLATION =
       146, /**< Some application behavior contrary to BT specifications */
 
@@ -324,7 +323,7 @@ typedef enum {
       819, /**< SDP: Failed attempt to connect to an SDP server */
   OI_SDP_SERVER_TOO_MANY_CONNECTIONS =
       821, /**< SDP: Exceeded maximum number of simultaneous server connections
-              */
+            */
   OI_SDP_NO_MATCHING_SERVICE_RECORD =
       823, /**< SDP: No service record matched the UUID list */
   OI_SDP_PARTIAL_RESPONSE = 824, /**< SDP: Internal use only */
@@ -445,9 +444,8 @@ typedef enum {
   OI_DEVMGR_ENUM_UNEXPECTED_INQ_RESULT = 1321, /**< DEVMGR: inquiry result event
                                                   in inappropriate enumeration
                                                   state */
-  OI_DEVMGR_ENUM_DATABASE_FULL =
-      1322, /**< DEVMGR: device enumeration, database is full, couldn't add a
-               new device */
+  OI_DEVMGR_ENUM_DATABASE_FULL = 1322, /**< DEVMGR: device enumeration, database
+                                          is full, couldn't add a new device */
   OI_DEVMGR_ENUM_INQUIRIES_OVERLAP = 1323, /**< DEVMGR: device enumeration,
                                               periodic inquiries occurring too
                                               close together */
@@ -461,9 +459,8 @@ typedef enum {
       1327, /**< DEVMGR: only one application can use SCO */
   OI_DEVMGR_SCO_NOT_REGISTERED =
       1328, /**< DEVMGR: SCO applications must register before using the API */
-  OI_DEVMGR_SCO_WITHOUT_ACL =
-      1329, /**< DEVMGR: Got SCO connection but there is no underlying ACL
-               connection */
+  OI_DEVMGR_SCO_WITHOUT_ACL = 1329, /**< DEVMGR: Got SCO connection but there is
+                                       no underlying ACL connection */
   OI_DEVMGR_NO_SUPPORT =
       1330, /**< DEVMGR: Request is not supported by the device */
   OI_DEVMGR_WRITE_POLICY_FAILED = 1331, /**< DEVMGR: connection attempt failed -
@@ -471,9 +468,8 @@ typedef enum {
   OI_DEVMGR_NOT_IN_MASTER_MODE = 1332,  /**< DEVMGR: OI_DEVMGR EndMasterMode
                                            without prior
                                            OI_DEVMGR_BeginMasterMode */
-  OI_DEVMGR_POLICY_VIOLATION =
-      1333, /**< DEVMGR: low-power request is rejected - link policy does not
-               allow it */
+  OI_DEVMGR_POLICY_VIOLATION = 1333, /**< DEVMGR: low-power request is rejected
+                                        - link policy does not allow it */
   OI_DEVMGR_BUSY_TIMEOUT = 1334, /**< DEVMGR: queued operation timed out while
 in the queue; \n
 timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
@@ -508,9 +504,8 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
       1408, /**< SECMGR: l2cap access denied - disconnected */
   OI_SECMGR_ACCESS_PENDING =
       1409, /**< SECMGR: l2cap access request is still pending  */
-  OI_SECMGR_PIN_CODE_TOO_SHORT =
-      1410, /**< SECMGR: Higher-layer process gave us a pin code that is too
-               short */
+  OI_SECMGR_PIN_CODE_TOO_SHORT = 1410, /**< SECMGR: Higher-layer process gave us
+                                          a pin code that is too short */
   OI_SECMGR_UNKNOWN_ENCRYPT_VALUE = 1411, /**< SECMGR: got EncryptionChange
                                              event, unknown encryption enable
                                              value */
@@ -521,7 +516,7 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
   OI_SECMGR_ENCRYPTION_FAILED = 1414, /**< SECMGR: device encryption failed */
   OI_SECMGR_UNIT_KEY_UNSUPPORTED =
       1415, /**< SECMGR: authentication failed due to non-support of unit keys
-               */
+             */
   OI_SECMGR_NOT_REGISTERED =
       1416, /**< SECMGR: required registrations have not yet occurred */
   OI_SECMGR_ILLEGAL_WRITE_SSP_MODE =
@@ -640,9 +635,8 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
                                                 feature not supported for
                                                 requested command */
 
-  OI_HEADSET_SERVICE_NOT_STARTED =
-      1901, /**< HEADSET: Cannot connect to headset AG if headset service not
-               started */
+  OI_HEADSET_SERVICE_NOT_STARTED = 1901, /**< HEADSET: Cannot connect to headset
+                                            AG if headset service not started */
   OI_HEADSET_AG_SERVICE_NOT_STARTED = 1902, /**< HEADSET: Cannot connect to
                                                headset device if headset AG
                                                service not started */
@@ -690,8 +684,9 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
       2033, /**< BNEP: multicast response code Max Limit Reached */
   OI_BNEP_FILTER_MULTI_FAILED_SECURITY =
       2034, /**< BNEP: multicast response code Security */
-  OI_BNEP_LOCAL_DEVICE_MUST_BE_MASTER =
-      2040, /**< BNEP: Device must be master of the piconet for this function */
+  OI_BNEP_LOCAL_DEVICE_MUST_BE_CENTRAL =
+      2040, /**< BNEP: Device must be central of the piconet for this function
+             */
   OI_BNEP_PACKET_FILTERED_OUT =
       2041, /**< BNEP: Packet did not pass current filters */
 
@@ -710,9 +705,8 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
       2201, /**< PAN: This PAN role was already registered */
   OI_PAN_ROLE_NOT_ALLOWED =
       2202, /**< PAN: The PAN role is not currently allowed */
-  OI_PAN_INCOMPATIBLE_ROLES =
-      2203, /**< PAN: Only certain local and remote role combinations are
-               permitted */
+  OI_PAN_INCOMPATIBLE_ROLES = 2203, /**< PAN: Only certain local and remote role
+                                       combinations are permitted */
   OI_PAN_INVALID_ROLE =
       2204, /**< PAN: Role specified is not one the defined PAN roles */
   OI_PAN_CONNECTION_IN_PROGRESS =
@@ -751,7 +745,7 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
                                              */
   OI_HID_DEVICE_SERVICE_NOT_STARTED =
       2602, /**< HID: Cannot connect to a HID host unless HID device is started
-               */
+             */
 
   OI_AT_ERROR = 2701,       /**< AT: ERROR response */
   OI_AT_NO_CARRIER = 2702,  /**< AT: NO CARRIER response */
@@ -762,9 +756,8 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
   OI_AT_CME_ERROR = 2707,   /**< AT: +CME ERROR response */
   OI_AT_CMS_ERROR = 2708,   /**< AT: +CMS ERROR response */
 
-  OI_BLST_CHARACTER_TIMEOUT =
-      2801, /**< BLST: Timeout expired while waiting for a character from the
-               client. */
+  OI_BLST_CHARACTER_TIMEOUT = 2801, /**< BLST: Timeout expired while waiting for
+                                       a character from the client. */
   OI_BLST_ACKNOWLDGE_TIMEOUT =
       2802, /**< BLST: Timeout expired while waiting for event acknowledgment
                from the client */
@@ -778,9 +771,8 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
   OI_AVDTP_OUT_OF_RESOURCES = 2902, /**< AVDTP: Tried to allocate too many
                                        endpoints or signalling channels. */
 
-  OI_PBAP_REPOSITORY_NOT_SET =
-      3001, /**< PBAP: Phonebook repository must be set for operation to
-               complete. */
+  OI_PBAP_REPOSITORY_NOT_SET = 3001, /**< PBAP: Phonebook repository must be set
+                                        for operation to complete. */
   OI_PBAP_PHONEBOOK_NOT_SET =
       3002, /**< PBAP: Phonebook be set for operation to complete. */
 
@@ -826,7 +818,7 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
   OI_MAX_BM3_STATUS_VAL, /* Maximum BM3 status code */
 
   /* Status code values reserved for BM3 SDK platform-specific implementations
-     */
+   */
   OI_STATUS_RESERVED_FOR_BCOT = 9000,
 
   /* Status code values reserved for BHAPI products */

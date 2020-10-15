@@ -70,14 +70,14 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
 
     no_links = true;
 
-    /* If we already have connection, accept as a master */
+    /* If we already have connection, accept as a central */
     for (xx = 0, p_lcb_cur = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS;
          xx++, p_lcb_cur++) {
       if (p_lcb_cur == p_lcb) continue;
 
       if (p_lcb_cur->in_use) {
         no_links = false;
-        p_lcb->SetLinkRoleAsMaster();
+        p_lcb->SetLinkRoleAsCentral();
         break;
       }
     }
@@ -86,7 +86,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
       if (!btm_dev_support_role_switch(bd_addr))
         p_lcb->SetLinkRoleAsSlave();
       else
-        p_lcb->SetLinkRoleAsMaster();
+        p_lcb->SetLinkRoleAsCentral();
     }
 
     /* Tell the other side we accept the connection */
@@ -107,7 +107,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
     if (!btm_dev_support_role_switch(bd_addr))
       p_lcb->SetLinkRoleAsSlave();
     else
-      p_lcb->SetLinkRoleAsMaster();
+      p_lcb->SetLinkRoleAsCentral();
 
     acl_accept_connection_request(bd_addr, p_lcb->LinkRole());
 
@@ -744,7 +744,7 @@ void l2c_link_init() {
  *
  * Function         l2c_link_role_changed
  *
- * Description      This function is called whan a link's master/slave role
+ * Description      This function is called whan a link's central/slave role
  *                  change event is received. It simply updates the link control
  *                  block.
  *
@@ -759,8 +759,8 @@ void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
     /* If here came form hci role change event */
     tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(*bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_lcb) {
-      if (new_role == HCI_ROLE_MASTER) {
-        p_lcb->SetLinkRoleAsMaster();
+      if (new_role == HCI_ROLE_CENTRAL) {
+        p_lcb->SetLinkRoleAsCentral();
       } else {
         p_lcb->SetLinkRoleAsSlave();
       }

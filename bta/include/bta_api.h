@@ -119,10 +119,10 @@ typedef uint16_t tBTA_DM_CONN;
 
 /* M/S preferred roles */
 #define BTA_ANY_ROLE 0x00
-#define BTA_MASTER_ROLE_PREF 0x01
-#define BTA_MASTER_ROLE_ONLY 0x02
+#define BTA_CENTRAL_ROLE_PREF 0x01
+#define BTA_CENTRAL_ROLE_ONLY 0x02
 #define BTA_SLAVE_ROLE_ONLY \
-  0x03 /* Used for PANU only, skip role switch to master */
+  0x03 /* Used for PANU only, skip role switch to central */
 
 typedef uint8_t tBTA_PREF_ROLES;
 
@@ -131,11 +131,11 @@ enum {
   BTA_DM_NO_SCATTERNET,      /* Device doesn't support scatternet, it might
                                 support "role switch during connection" for
                                 an incoming connection, when it already has
-                                another connection in master role */
+                                another connection in central role */
   BTA_DM_PARTIAL_SCATTERNET, /* Device supports partial scatternet. It can have
-                                simulateous connection in Master and Slave roles
-                                for short period of time */
-  BTA_DM_FULL_SCATTERNET /* Device can have simultaneous connection in master
+                                simultaneous connection in Central and Slave
+                                roles for short period of time */
+  BTA_DM_FULL_SCATTERNET /* Device can have simultaneous connection in central
                             and slave roles */
 
 };

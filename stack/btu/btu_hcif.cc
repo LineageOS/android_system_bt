@@ -1704,7 +1704,7 @@ extern void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
                                     tGATT_STATUS status);
 
 static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
-  /* LE connection update has completed successfully as a master. */
+  /* LE connection update has completed successfully as a central. */
   /* We can enable the update request if the result is a success. */
   /* extract the HCI handle first */
   uint8_t status;

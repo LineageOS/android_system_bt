@@ -1,7 +1,7 @@
 #!/bin/bash
 CLANG_PACKAGE=clang
 GNSHA1_URL="https://chromium.googlesource.com/chromium/buildtools/\
-+/master/linux64/gn.sha1?format=TEXT"
++/central/linux64/gn.sha1?format=TEXT"
 
 # Check if clang is already installed on current system
 clang_path=`which clang`

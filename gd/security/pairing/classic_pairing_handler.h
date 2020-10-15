@@ -64,7 +64,7 @@ class ClassicPairingHandler : public PairingHandler {
   void Cancel() override;
 
   void OnReceive(hci::ChangeConnectionLinkKeyCompleteView packet) override;
-  void OnReceive(hci::MasterLinkKeyCompleteView packet) override;
+  void OnReceive(hci::CentralLinkKeyCompleteView packet) override;
   void OnReceive(hci::PinCodeRequestView packet) override;
   void OnReceive(hci::LinkKeyRequestView packet) override;
   void OnReceive(hci::LinkKeyNotificationView packet) override;

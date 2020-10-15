@@ -85,7 +85,7 @@ class Controller : public Module {
   virtual bool SupportsBleConnectionParameterRequest() const;
   virtual bool SupportsBlePeriodicAdvertisingSyncTransferSender() const;
   virtual bool SupportsBlePeriodicAdvertisingSyncTransferRecipient() const;
-  virtual bool SupportsBleConnectedIsochronousStreamMaster() const;
+  virtual bool SupportsBleConnectedIsochronousStreamCentral() const;
   virtual bool SupportsBleConnectedIsochronousStreamSlave() const;
   virtual bool SupportsBleIsochronousBroadcaster() const;
   virtual bool SupportsBleSynchronizedReceiver() const;

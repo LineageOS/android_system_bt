@@ -110,8 +110,8 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
     SAVE_OR_CALL(OnReadClockComplete, clock, accuracy)
   }
-  void OnMasterLinkKeyComplete(KeyFlag key_flag) override {
-    SAVE_OR_CALL(OnMasterLinkKeyComplete, key_flag)
+  void OnCentralLinkKeyComplete(KeyFlag key_flag) override {
+    SAVE_OR_CALL(OnCentralLinkKeyComplete, key_flag)
   }
   void OnRoleChange(Role new_role) override {
     SAVE_OR_CALL(OnRoleChange, new_role)
