@@ -597,7 +597,7 @@ void btm_read_local_oob_complete(uint8_t* p);
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_auth_complete(uint16_t handle, uint8_t status);
+void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status);
 
 /*******************************************************************************
  *
@@ -634,7 +634,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
  * Returns          btm status
  *
  ******************************************************************************/
-tBTM_STATUS btm_sec_disconnect(uint16_t handle, uint8_t reason);
+tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason);
 
 /*******************************************************************************
  *
