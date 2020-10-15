@@ -96,7 +96,7 @@ enum OpCode : 16 {
   AUTHENTICATION_REQUESTED = 0x0411,
   SET_CONNECTION_ENCRYPTION = 0x0413,
   CHANGE_CONNECTION_LINK_KEY = 0x0415,
-  MASTER_LINK_KEY = 0x0417,
+  CENTRAL_LINK_KEY = 0x0417,
   REMOTE_NAME_REQUEST = 0x0419,
   REMOTE_NAME_REQUEST_CANCEL = 0x041A,
   READ_REMOTE_SUPPORTED_FEATURES = 0x041B,
@@ -377,7 +377,7 @@ enum OpCodeIndex : 16 {
   AUTHENTICATION_REQUESTED = 17,
   SET_CONNECTION_ENCRYPTION = 20,
   CHANGE_CONNECTION_LINK_KEY = 21,
-  MASTER_LINK_KEY = 22,
+  CENTRAL_LINK_KEY = 22,
   REMOTE_NAME_REQUEST = 23,
   REMOTE_NAME_REQUEST_CANCEL = 24,
   READ_REMOTE_SUPPORTED_FEATURES = 25,
@@ -640,7 +640,7 @@ enum EventCode : 8 {
   REMOTE_NAME_REQUEST_COMPLETE = 0x07,
   ENCRYPTION_CHANGE = 0x08,
   CHANGE_CONNECTION_LINK_KEY_COMPLETE = 0x09,
-  MASTER_LINK_KEY_COMPLETE = 0x0A,
+  CENTRAL_LINK_KEY_COMPLETE = 0x0A,
   READ_REMOTE_SUPPORTED_FEATURES_COMPLETE = 0x0B,
   READ_REMOTE_VERSION_INFORMATION_COMPLETE = 0x0C,
   QOS_SETUP_COMPLETE = 0x0D,
@@ -859,7 +859,7 @@ enum ClockOffsetValid : 1 {
 }
 
 enum CreateConnectionRoleSwitch : 8 {
-  REMAIN_MASTER = 0x00,
+  REMAIN_CENTRAL = 0x00,
   ALLOW_ROLE_SWITCH = 0x01,
 }
 
@@ -905,7 +905,7 @@ packet CreateConnectionCancelComplete : CommandComplete (command_op_code = CREAT
 }
 
 enum AcceptConnectionRequestRole : 8 {
-  BECOME_MASTER = 0x00,
+  BECOME_CENTRAL = 0x00,
   REMAIN_SLAVE = 0x01,
 }
 
@@ -1009,11 +1009,11 @@ enum KeyFlag : 8 {
   TEMPORARY = 0x01,
 }
 
-packet MasterLinkKey : ConnectionManagementCommand (op_code = MASTER_LINK_KEY) {
+packet CentralLinkKey : ConnectionManagementCommand (op_code = CENTRAL_LINK_KEY) {
   key_flag : KeyFlag,
 }
 
-packet MasterLinkKeyStatus : CommandStatus (command_op_code = MASTER_LINK_KEY) {
+packet CentralLinkKeyStatus : CommandStatus (command_op_code = CENTRAL_LINK_KEY) {
 }
 
 packet RemoteNameRequest : DiscoveryCommand (op_code = REMOTE_NAME_REQUEST) {
@@ -1264,7 +1264,7 @@ packet RoleDiscovery : ConnectionManagementCommand (op_code = ROLE_DISCOVERY) {
 }
 
 enum Role : 8 {
-  MASTER = 0x00,
+  CENTRAL = 0x00,
   SLAVE = 0x01,
 }
 
@@ -3942,7 +3942,7 @@ packet ChangeConnectionLinkKeyComplete : EventPacket (event_code = CHANGE_CONNEC
   _reserved_ : 4,
 }
 
-packet MasterLinkKeyComplete : EventPacket (event_code = MASTER_LINK_KEY_COMPLETE){
+packet CentralLinkKeyComplete : EventPacket (event_code = CENTRAL_LINK_KEY_COMPLETE){
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4248,7 +4248,7 @@ packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) 
   conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   conn_latency : 16,  // Number of connection events
   supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
-  master_clock_accuracy : ClockAccuracy,
+  central_clock_accuracy : ClockAccuracy,
 }
 
 enum AdvertisingEventType : 8 {
@@ -4336,7 +4336,7 @@ packet LeEnhancedConnectionComplete : LeMetaEvent (subevent_code = ENHANCED_CONN
   conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   conn_latency : 16,  // Number of connection events
   supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
-  master_clock_accuracy : ClockAccuracy,
+  central_clock_accuracy : ClockAccuracy,
 }
 
 enum DirectAdvertisingAddressType : 8 {

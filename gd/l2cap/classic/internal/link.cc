@@ -386,7 +386,7 @@ void Link::OnReadRssiComplete(uint8_t rssi) {
 void Link::OnReadClockComplete(uint32_t clock, uint16_t accuracy) {
   LOG_INFO("UNIMPLEMENTED %s clock:%u accuracy:%hu", __func__, clock, accuracy);
 }
-void Link::OnMasterLinkKeyComplete(hci::KeyFlag key_flag) {
+void Link::OnCentralLinkKeyComplete(hci::KeyFlag key_flag) {
   LOG_INFO("UNIMPLEMENTED key_flag:%s", hci::KeyFlagText(key_flag).c_str());
 }
 void Link::OnRoleChange(hci::Role new_role) {

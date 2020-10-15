@@ -201,8 +201,8 @@ class PairingHandlerLe {
     return ltk_req_packet;
   }
 
-  inline bool IAmMaster(const InitialInformations& i) {
-    return i.my_role == hci::Role::MASTER;
+  inline bool IAmCentral(const InitialInformations& i) {
+    return i.my_role == hci::Role::CENTRAL;
   }
 
   /* This function generates data that should be passed to remote device, except
@@ -396,8 +396,8 @@ class PairingHandlerLe {
     typedef EncryptionInformationView type;
   };
   template <>
-  struct CodeToPacketView<Code::MASTER_IDENTIFICATION> {
-    typedef MasterIdentificationView type;
+  struct CodeToPacketView<Code::CENTRAL_IDENTIFICATION> {
+    typedef CentralIdentificationView type;
   };
   template <>
   struct CodeToPacketView<Code::IDENTITY_INFORMATION> {
@@ -510,8 +510,8 @@ class PairingHandlerLe {
     return WaitPacket<Code::ENCRYPTION_INFORMATION>();
   }
 
-  auto WaitMasterIdentification() {
-    return WaitPacket<Code::MASTER_IDENTIFICATION>();
+  auto WaitCentralIdentification() {
+    return WaitPacket<Code::CENTRAL_IDENTIFICATION>();
   }
 
   auto WaitIdentityInformation() {

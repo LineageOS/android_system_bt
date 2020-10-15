@@ -1309,7 +1309,7 @@ void btm_ble_link_sec_check(const RawAddress& bd_addr,
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_ENCRYPTING ||
       p_dev_rec->sec_state == BTM_SEC_STATE_AUTHENTICATING) {
-    /* race condition: discard the security request while master is encrypting
+    /* race condition: discard the security request while central is encrypting
      * the link */
     *p_sec_req_act = BTM_BLE_SEC_REQ_ACT_DISCARD;
   } else {
@@ -1376,8 +1376,8 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
     return (BTM_WRONG_MODE);
   }
 
-  BTM_TRACE_DEBUG("btm_ble_set_encryption sec_act=0x%x role_master=%d", sec_act,
-                  p_rec->role_master);
+  BTM_TRACE_DEBUG("btm_ble_set_encryption sec_act=0x%x role_central=%d",
+                  sec_act, p_rec->role_central);
 
   if (sec_act == BTM_BLE_SEC_ENCRYPT_MITM) {
     p_rec->security_required |= BTM_SEC_IN_MITM;
@@ -1385,13 +1385,13 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
 
   switch (sec_act) {
     case BTM_BLE_SEC_ENCRYPT:
-      if (link_role == HCI_ROLE_MASTER) {
+      if (link_role == HCI_ROLE_CENTRAL) {
         /* start link layer encryption using the security info stored */
         cmd = btm_ble_start_encrypt(bd_addr, false, NULL);
         break;
       }
-    /* if salve role then fall through to call SMP_Pair below which will send a
-       sec_request to request the master to encrypt the link */
+      /* if salve role then fall through to call SMP_Pair below which will send
+         a sec_request to request the central to encrypt the link */
       FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case BTM_BLE_SEC_ENCRYPT_NO_MITM:
     case BTM_BLE_SEC_ENCRYPT_MITM:
@@ -1405,7 +1405,7 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
         cmd = BTM_SUCCESS;
         break;
       }
-      if (link_role == HCI_ROLE_MASTER) {
+      if (link_role == HCI_ROLE_CENTRAL) {
         if (sec_req_act == BTM_BLE_SEC_REQ_ACT_ENCRYPT) {
           cmd = btm_ble_start_encrypt(bd_addr, false, NULL);
           break;
@@ -1530,7 +1530,7 @@ void btm_ble_link_encrypted(const RawAddress& bd_addr, uint8_t encr_enable) {
       btm_sec_dev_rec_cback_event(p_dev_rec, BTM_SUCCESS, true);
     else if (p_dev_rec->sec_flags & ~BTM_SEC_LE_LINK_KEY_KNOWN) {
       btm_sec_dev_rec_cback_event(p_dev_rec, BTM_FAILED_ON_SECURITY, true);
-    } else if (p_dev_rec->role_master)
+    } else if (p_dev_rec->role_central)
       btm_sec_dev_rec_cback_event(p_dev_rec, BTM_ERR_PROCESSING, true);
   }
   /* to notify GATT to send data if any request is pending */
@@ -1712,7 +1712,7 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   p_dev_rec->ble.pseudo_addr = bda;
   p_dev_rec->ble_hci_handle = handle;
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BLE;
-  p_dev_rec->role_master = (role == HCI_ROLE_MASTER) ? true : false;
+  p_dev_rec->role_central = (role == HCI_ROLE_CENTRAL) ? true : false;
 
   if (!addr_matched) {
     p_dev_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO;

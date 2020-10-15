@@ -198,7 +198,7 @@ tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
     return SMP_BUSY;
   }
 
-  p_cb->role = HCI_ROLE_MASTER;
+  p_cb->role = HCI_ROLE_CENTRAL;
   p_cb->flags = SMP_PAIR_FLAGS_WE_STARTED_DD;
   p_cb->smp_over_br = true;
   p_cb->pairing_bda = bd_addr;
