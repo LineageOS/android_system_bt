@@ -35,7 +35,7 @@ typedef struct {
   BT_HDR* (*make_set_event_mask)(const bt_event_mask_t* event_mask);
   BT_HDR* (*make_ble_write_host_support)(uint8_t supported_host,
                                          uint8_t simultaneous_host);
-  BT_HDR* (*make_ble_read_white_list_size)(void);
+  BT_HDR* (*make_ble_read_acceptlist_size)(void);
   BT_HDR* (*make_ble_read_buffer_size)(void);
   BT_HDR* (*make_ble_read_buffer_size_v2)(void);
   BT_HDR* (*make_ble_read_supported_states)(void);

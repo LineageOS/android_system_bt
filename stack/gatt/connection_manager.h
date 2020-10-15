@@ -24,7 +24,7 @@
 
 /* connection_manager takes care of all the low-level details of LE connection
  * initiation. It accept requests from multiple subsystems to connect to
- * devices, and multiplex them into whitelist add/remove, and scan parameter
+ * devices, and multiplex them into acceptlist add/remove, and scan parameter
  * changes.
  *
  * There is no code for app_id generation. GATT clients use their GATT_IF, and

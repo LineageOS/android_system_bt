@@ -374,7 +374,7 @@ inline bool BTM_LE_STATES_SUPPORTED(const uint8_t* x, uint8_t bit_num) {
  *                  events from a broadcast device.
  *
  * Parameters       start: start or stop observe.
- *                  white_list: use white list in observer mode or not.
+ *                  acceptlist: use acceptlist in observer mode or not.
  *
  * Returns          void
  *
@@ -418,7 +418,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
       p_inq->scan_type = (p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE)
                              ? BTM_BLE_SCAN_MODE_ACTI
                              : p_inq->scan_type;
-/* assume observe always not using white list */
+      /* assume observe always not using acceptlist */
       /* enable resolving list */
       btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
 
@@ -2339,7 +2339,7 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
   }
 
   /* in case of disconnected, we must cancel bgconn and restart
-     in order to add back device to white list in order to reconnect */
+     in order to add back device to acceptlist in order to reconnect */
   if (bd_addr) btm_ble_bgconn_cancel_if_disconnected(*bd_addr);
 
   /* when no connection is attempted, and controller is not rejecting last

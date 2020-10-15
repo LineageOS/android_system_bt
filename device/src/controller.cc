@@ -74,7 +74,7 @@ static uint16_t acl_buffer_count_classic;
 static uint8_t acl_buffer_count_ble;
 static uint8_t iso_buffer_count;
 
-static uint8_t ble_white_list_size;
+static uint8_t ble_acceptlist_size;
 static uint8_t ble_resolving_list_max_size;
 static uint8_t ble_supported_states[BLE_SUPPORTED_STATES_SIZE];
 static bt_device_features_t features_ble;
@@ -202,10 +202,10 @@ static future_t* start_up(void) {
   ble_supported = last_features_classic_page_index >= 1 &&
                   HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
   if (ble_supported) {
-    // Request the ble white list size next
-    response = AWAIT_COMMAND(packet_factory->make_ble_read_white_list_size());
-    packet_parser->parse_ble_read_white_list_size_response(
-        response, &ble_white_list_size);
+    // Request the ble acceptlist size next
+    response = AWAIT_COMMAND(packet_factory->make_ble_read_acceptlist_size());
+    packet_parser->parse_ble_read_acceptlist_size_response(
+        response, &ble_acceptlist_size);
 
     // Request the ble supported features next
     response =
@@ -700,10 +700,10 @@ static uint8_t get_iso_buffer_count(void) {
   return iso_buffer_count;
 }
 
-static uint8_t get_ble_white_list_size(void) {
+static uint8_t get_ble_acceptlist_size(void) {
   CHECK(readable);
   CHECK(ble_supported);
-  return ble_white_list_size;
+  return ble_acceptlist_size;
 }
 
 static uint8_t get_ble_resolving_list_max_size(void) {
@@ -807,7 +807,7 @@ static const controller_t interface = {
     get_acl_buffer_count_ble,
     get_iso_buffer_count,
 
-    get_ble_white_list_size,
+    get_ble_acceptlist_size,
 
     get_ble_resolving_list_max_size,
     set_ble_resolving_list_max_size,

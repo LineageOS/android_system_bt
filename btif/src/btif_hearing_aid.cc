@@ -92,15 +92,15 @@ class HearingAidInterfaceImpl
     DVLOG(2) << __func__ << " address: " << address;
     do_in_main_thread(FROM_HERE, Bind(&HearingAid::Disconnect,
                                       Unretained(HearingAid::Get()), address));
-    do_in_jni_thread(FROM_HERE, Bind(&btif_storage_set_hearing_aid_white_list,
+    do_in_jni_thread(FROM_HERE, Bind(&btif_storage_set_hearing_aid_acceptlist,
                                      address, false));
   }
 
-  void AddToWhiteList(const RawAddress& address) override {
+  void AddToAcceptlist(const RawAddress& address) override {
     VLOG(2) << __func__ << " address: " << address;
-    do_in_main_thread(FROM_HERE, Bind(&HearingAid::AddToWhiteList,
+    do_in_main_thread(FROM_HERE, Bind(&HearingAid::AddToAcceptlist,
                                       Unretained(HearingAid::Get()), address));
-    do_in_jni_thread(FROM_HERE, Bind(&btif_storage_set_hearing_aid_white_list,
+    do_in_jni_thread(FROM_HERE, Bind(&btif_storage_set_hearing_aid_acceptlist,
                                      address, true));
   }
 

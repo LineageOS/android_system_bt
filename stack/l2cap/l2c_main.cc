@@ -398,7 +398,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           btsnoop_get_interface()->add_rfc_l2c_channel(
               p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         } else if (p_rcb->log_packets) {
-          btsnoop_get_interface()->whitelist_l2c_channel(
+          btsnoop_get_interface()->allowlist_l2c_channel(
               p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         }
 
@@ -438,7 +438,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           btsnoop_get_interface()->add_rfc_l2c_channel(
               p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         } else if (p_rcb->log_packets) {
-          btsnoop_get_interface()->whitelist_l2c_channel(
+          btsnoop_get_interface()->allowlist_l2c_channel(
               p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         }
 
