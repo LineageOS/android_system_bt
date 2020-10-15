@@ -136,7 +136,7 @@ Return<void> BluetoothHci::initialize_impl(
   controller_->RegisterScoChannel(
       [this, cb](std::shared_ptr<std::vector<uint8_t>> packet) {
         hidl_vec<uint8_t> sco_packet(packet->begin(), packet->end());
-        auto ret = cb->aclDataReceived(sco_packet);
+        auto ret = cb->scoDataReceived(sco_packet);
         if (!ret.isOk()) {
           LOG_ERROR("Error sending sco callback");
           if (!death_recipient_->getHasDied()) {
