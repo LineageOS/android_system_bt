@@ -28,7 +28,7 @@ static const uint8_t hci_event_parameters_minimum_length[] = {
     255,  //  0x07 - HCI_Remote_Name_Request_Complete Event
     4,    //  0x08 - HCI_Encryption_Change Event
     3,    //  0x09 - HCI_Change_Connection_Link_Key_Complete Event
-    4,    //  0x0A - HCI_Master_Link_Key_Complete Event
+    4,    //  0x0A - HCI_Central_Link_Key_Complete Event
     11,   //  0x0B - HCI_Read_Remote_Supported_Features_Complete Event
     8,    //  0x0C - HCI_Read_Remote_Version_Information_Complete Event
     21,   //  0x0D - HCI_QoS_Setup_Complete Event

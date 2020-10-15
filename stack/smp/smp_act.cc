@@ -241,7 +241,7 @@ void smp_send_pair_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
   SMP_TRACE_DEBUG("%s", __func__);
 
-  /* erase all keys when master sends pairing req*/
+  /* erase all keys when central sends pairing req*/
   if (p_dev_rec) btm_sec_clear_ble_keys(p_dev_rec);
   /* do not manipulate the key, let app decide,
      leave out to BTM to mandate key distribution for bonding case */
@@ -340,7 +340,7 @@ void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ENC, false);
 
   smp_send_cmd(SMP_OPCODE_ENCRYPT_INFO, p_cb);
-  smp_send_cmd(SMP_OPCODE_MASTER_ID, p_cb);
+  smp_send_cmd(SMP_OPCODE_CENTRAL_ID, p_cb);
 
   /* save the DIV and key size information when acting as slave device */
   le_key.lenc_key.ltk = p_cb->ltk;
@@ -536,7 +536,7 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   if (p_cb->role == HCI_ROLE_SLAVE) {
     if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
-      /* peer (master) started pairing sending Pairing Request */
+      /* peer (central) started pairing sending Pairing Request */
       p_cb->local_i_key = p_cb->peer_i_key;
       p_cb->local_r_key = p_cb->peer_r_key;
 
@@ -567,7 +567,7 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         smp_send_pair_rsp(p_cb, NULL);
       }
     }
-  } else /* Master receives pairing response */
+  } else /* Central receives pairing response */
   {
     p_cb->selected_association_model = smp_select_association_model(p_cb);
 
@@ -575,8 +575,8 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         (!(p_cb->le_secure_connections_mode_is_used) ||
          (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS))) {
       SMP_TRACE_ERROR(
-          "Master requires secure connection only mode "
-          "but it can't be provided -> Master fails pairing");
+          "Central requires secure connection only mode "
+          "but it can't be provided -> Central fails pairing");
       tSMP_INT_DATA smp_int_data;
       smp_int_data.status = SMP_PAIR_AUTH_FAIL;
       smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
@@ -807,8 +807,9 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
-  /* peer (master) started pairing sending Pairing Request */
-  /* or being master device always use received i/r key as keys to distribute */
+  /* peer (central) started pairing sending Pairing Request */
+  /* or being central device always use received i/r key as keys to distribute
+   */
   p_cb->local_i_key = p_cb->peer_i_key;
   p_cb->local_r_key = p_cb->peer_r_key;
 
@@ -817,9 +818,9 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     /* shortcut to skip Security Grant step */
     p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
   } else {
-    /* Master receives pairing response */
+    /* Central receives pairing response */
     SMP_TRACE_DEBUG(
-        "%s master rcvs valid PAIRING RESPONSE."
+        "%s central rcvs valid PAIRING RESPONSE."
         " Supposed to move to key distribution phase. ",
         __func__);
   }
@@ -858,8 +859,8 @@ void smp_br_check_authorization_request(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
 
   /* In LE SC mode only IRK, IAI, CSRK are exchanged with the peer.
-  ** Set local_r_key on master to expect only these keys. */
-  if (p_cb->role == HCI_ROLE_MASTER) {
+  ** Set local_r_key on central to expect only these keys. */
+  if (p_cb->role == HCI_ROLE_CENTRAL) {
     p_cb->local_r_key &= (SMP_SEC_KEY_TYPE_ID | SMP_SEC_KEY_TYPE_CSRK);
   }
 
@@ -879,8 +880,8 @@ void smp_br_check_authorization_request(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       (p_cb->local_i_key || p_cb->local_r_key)) {
     smp_br_state_machine_event(p_cb, SMP_BR_BOND_REQ_EVT, NULL);
 
-    /* if no peer key is expected, start master key distribution */
-    if (p_cb->role == HCI_ROLE_MASTER && p_cb->local_r_key == 0)
+    /* if no peer key is expected, start central key distribution */
+    if (p_cb->role == HCI_ROLE_CENTRAL && p_cb->local_r_key == 0)
       smp_key_distribution_by_transport(p_cb, NULL);
   } else {
     tSMP_INT_DATA smp_int_data;
@@ -895,11 +896,11 @@ void smp_br_check_authorization_request(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *              used.
  ******************************************************************************/
 void smp_br_select_next_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  SMP_TRACE_DEBUG("%s role=%d (0-master) r_keys=0x%x i_keys=0x%x", __func__,
+  SMP_TRACE_DEBUG("%s role=%d (0-central) r_keys=0x%x i_keys=0x%x", __func__,
                   p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
   if (p_cb->role == HCI_ROLE_SLAVE ||
-      (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER)) {
+      (!p_cb->local_r_key && p_cb->role == HCI_ROLE_CENTRAL)) {
     smp_key_pick_key(p_cb, p_data);
   }
 
@@ -936,8 +937,8 @@ void smp_proc_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_key_distribution(p_cb, NULL);
 }
 
-/** process master ID from slave device */
-void smp_proc_master_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+/** process central ID from slave device */
+void smp_proc_central_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
   tBTM_LE_KEY_VALUE le_key;
 
@@ -1065,7 +1066,7 @@ void smp_proc_compare(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     if (p_cb->role == HCI_ROLE_SLAVE)
       smp_sm_event(p_cb, SMP_RAND_EVT, NULL);
     else {
-      /* master device always use received i/r key as keys to distribute */
+      /* central device always use received i/r key as keys to distribute */
       p_cb->local_i_key = p_cb->peer_i_key;
       p_cb->local_r_key = p_cb->peer_r_key;
 
@@ -1167,9 +1168,9 @@ void smp_check_auth_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       }
 
       /* In LE SC mode only IRK, IAI, CSRK are exchanged with the peer.
-      ** Set local_r_key on master to expect only these keys.
+      ** Set local_r_key on central to expect only these keys.
       */
-      if (p_cb->role == HCI_ROLE_MASTER) {
+      if (p_cb->role == HCI_ROLE_CENTRAL) {
         p_cb->local_r_key &= (SMP_SEC_KEY_TYPE_ID | SMP_SEC_KEY_TYPE_CSRK);
       }
     } else {
@@ -1197,8 +1198,8 @@ void smp_check_auth_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     if (p_cb->flags & SMP_PAIR_FLAG_ENC_AFTER_PAIR)
       smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
     /* if enc failed for old security information */
-    /* if master device, clean up and abck to idle; slave device do nothing */
-    else if (p_cb->role == HCI_ROLE_MASTER) {
+    /* if central device, clean up and abck to idle; slave device do nothing */
+    else if (p_cb->role == HCI_ROLE_CENTRAL) {
       smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
     }
   }
@@ -1230,11 +1231,11 @@ void smp_key_pick_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  start key distribution if required.
  ******************************************************************************/
 void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  SMP_TRACE_DEBUG("%s role=%d (0-master) r_keys=0x%x i_keys=0x%x", __func__,
+  SMP_TRACE_DEBUG("%s role=%d (0-central) r_keys=0x%x i_keys=0x%x", __func__,
                   p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
   if (p_cb->role == HCI_ROLE_SLAVE ||
-      (!p_cb->local_r_key && p_cb->role == HCI_ROLE_MASTER)) {
+      (!p_cb->local_r_key && p_cb->role == HCI_ROLE_CENTRAL)) {
     smp_key_pick_key(p_cb, p_data);
   }
 
@@ -1292,7 +1293,7 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   switch (p_cb->selected_association_model) {
     case SMP_MODEL_ENCRYPTION_ONLY: /* TK = 0, go calculate Confirm */
-      if (p_cb->role == HCI_ROLE_MASTER &&
+      if (p_cb->role == HCI_ROLE_CENTRAL &&
           ((p_cb->peer_auth_req & SMP_AUTH_YN_BIT) != 0) &&
           ((p_cb->loc_auth_req & SMP_AUTH_YN_BIT) == 0)) {
         SMP_TRACE_ERROR(
@@ -1391,7 +1392,7 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     smp_send_cmd(SMP_OPCODE_SEC_REQ, p_cb);
   } else /* plan to send pairing respond */
   {
-    /* pairing started by peer (master) Pairing Request */
+    /* pairing started by peer (central) Pairing Request */
     p_cb->selected_association_model = smp_select_association_model(p_cb);
 
     if (p_cb->secure_connections_only_mode_required &&
@@ -1562,13 +1563,13 @@ void smp_process_local_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         smp_send_commitment(p_cb, NULL);
         /* slave has to wait for peer nonce */
         smp_set_state(SMP_STATE_WAIT_NONCE);
-      } else /* i.e. master */
+      } else /* i.e. central */
       {
         if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM) {
           /* slave commitment is already received, send local nonce, wait for
            * remote nonce*/
           SMP_TRACE_DEBUG(
-              "master in assoc mode = %d "
+              "central in assoc mode = %d "
               "already rcvd slave commitment - race condition",
               p_cb->selected_association_model);
           p_cb->flags &= ~SMP_PAIR_FLAG_HAVE_PEER_COMM;
@@ -1581,19 +1582,19 @@ void smp_process_local_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     case SMP_MODEL_SEC_CONN_PASSKEY_DISP:
       smp_calculate_local_commitment(p_cb);
 
-      if (p_cb->role == HCI_ROLE_MASTER) {
+      if (p_cb->role == HCI_ROLE_CENTRAL) {
         smp_send_commitment(p_cb, NULL);
       } else /* slave */
       {
         if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM) {
-          /* master commitment is already received */
+          /* central commitment is already received */
           smp_send_commitment(p_cb, NULL);
           smp_set_state(SMP_STATE_WAIT_NONCE);
         }
       }
       break;
     case SMP_MODEL_SEC_CONN_OOB:
-      if (p_cb->role == HCI_ROLE_MASTER) {
+      if (p_cb->role == HCI_ROLE_CENTRAL) {
         smp_send_rand(p_cb, NULL);
       }
 
@@ -1641,8 +1642,8 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   switch (p_cb->selected_association_model) {
     case SMP_MODEL_SEC_CONN_JUSTWORKS:
     case SMP_MODEL_SEC_CONN_NUM_COMP:
-      /* in these models only master receives commitment */
-      if (p_cb->role == HCI_ROLE_MASTER) {
+      /* in these models only central receives commitment */
+      if (p_cb->role == HCI_ROLE_CENTRAL) {
         if (!smp_check_commitment(p_cb)) {
           tSMP_INT_DATA smp_int_data;
           smp_int_data.status = SMP_CONFIRM_VALUE_ERR;
@@ -1742,7 +1743,7 @@ void smp_match_dhkey_checks(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   if (p_cb->role == HCI_ROLE_SLAVE) {
     smp_sm_event(p_cb, SMP_PAIR_DHKEY_CHCK_EVT, NULL);
   } else {
-    /* master device always use received i/r key as keys to distribute */
+    /* central device always use received i/r key as keys to distribute */
     p_cb->local_i_key = p_cb->peer_i_key;
     p_cb->local_r_key = p_cb->peer_r_key;
     smp_sm_event(p_cb, SMP_ENC_REQ_EVT, NULL);
@@ -1782,7 +1783,7 @@ void smp_phase_2_dhkey_checks_are_present(tSMP_CB* p_cb,
 /*******************************************************************************
  * Function     smp_wait_for_both_public_keys
  * Description  generates SMP_BOTH_PUBL_KEYS_RCVD_EVT event when both local and
- *              master public keys are available.
+ *              central public keys are available.
  *
  * Note         on the slave it is used to prevent race condition.
  *
@@ -1930,7 +1931,7 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *
  * Description      This function is called when link is encrypted and notified
  *                  to the slave device. Proceed to to send LTK, DIV and ER to
- *                  master if bonding the devices.
+ *                  central if bonding the devices.
  *
  *
  * Returns          void

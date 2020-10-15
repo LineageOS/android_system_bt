@@ -235,7 +235,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
       std::unique_ptr<BasePacketBuilder> builder = LeConnectionCompleteBuilder::Create(
           ErrorCode::SUCCESS,
           handle,
-          Role::MASTER,
+          Role::CENTRAL,
           address_with_type.GetAddressType(),
           addr,
           1,
@@ -251,7 +251,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
 
   void OnLeConnectFail(AddressWithType address, ErrorCode reason) override {
     std::unique_ptr<BasePacketBuilder> builder = LeConnectionCompleteBuilder::Create(
-        reason, 0, Role::MASTER, address.GetAddressType(), address.GetAddress(), 0, 0, 0, ClockAccuracy::PPM_20);
+        reason, 0, Role::CENTRAL, address.GetAddressType(), address.GetAddress(), 0, 0, 0, ClockAccuracy::PPM_20);
     LeConnectionEvent fail;
     fail.set_event(builder_to_string(std::move(builder)));
     per_connection_events_[current_connection_request_]->OnIncomingEvent(fail);

@@ -216,7 +216,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* single state support */
         HCI_LE_STATES_CONN_ADV_BIT, /* conn_adv */
         HCI_LE_STATES_INIT_BIT,     /* init */
-        HCI_LE_STATES_INIT_BIT,     /* master */
+        HCI_LE_STATES_INIT_BIT,     /* central */
         HCI_LE_STATES_SLAVE_BIT,    /* slave */
         UNSUPPORTED,                /* todo: lo du dir adv, not covered ? */
         HCI_LE_STATES_HI_DUTY_DIR_ADV_BIT, /* hi duty dir adv */
@@ -229,7 +229,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* conn_adv =0 */
         UNSUPPORTED,                            /* conn_adv */
         HCI_LE_STATES_CONN_ADV_INIT_BIT,        /* init: 32 */
-        HCI_LE_STATES_CONN_ADV_MASTER_BIT,      /* master: 35 */
+        HCI_LE_STATES_CONN_ADV_CENTRAL_BIT,     /* central: 35 */
         HCI_LE_STATES_CONN_ADV_SLAVE_BIT,       /* slave: 38,*/
         UNSUPPORTED,                            /* lo du dir adv */
         UNSUPPORTED,                            /* hi duty dir adv */
@@ -242,8 +242,8 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* init */
         HCI_LE_STATES_CONN_ADV_INIT_BIT,        /* conn_adv: 32 */
         UNSUPPORTED,                            /* init */
-        HCI_LE_STATES_INIT_MASTER_BIT,          /* master 28 */
-        HCI_LE_STATES_INIT_MASTER_SLAVE_BIT,    /* slave 41 */
+        HCI_LE_STATES_INIT_CENTRAL_BIT,         /* central 28 */
+        HCI_LE_STATES_INIT_CENTRAL_SLAVE_BIT,   /* slave 41 */
         HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT, /* lo du dir adv 34 */
         HCI_LE_STATES_HI_DUTY_DIR_ADV_INIT_BIT, /* hi duty dir adv 33 */
         HCI_LE_STATES_NON_CONN_INIT_BIT,        /*  non connectable adv */
@@ -253,24 +253,24 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
 
     },
     {
-        /* master */
-        HCI_LE_STATES_CONN_ADV_MASTER_BIT,        /* conn_adv: 35 */
-        HCI_LE_STATES_INIT_MASTER_BIT,            /* init 28 */
-        HCI_LE_STATES_INIT_MASTER_BIT,            /* master 28 */
-        HCI_LE_STATES_CONN_ADV_INIT_BIT,          /* slave: 32 */
-        HCI_LE_STATES_LO_DUTY_DIR_ADV_MASTER_BIT, /* lo duty cycle adv 37 */
-        HCI_LE_STATES_HI_DUTY_DIR_ADV_MASTER_BIT, /* hi duty cycle adv 36 */
-        HCI_LE_STATES_NON_CONN_ADV_MASTER_BIT,    /*  non connectable adv*/
-        HCI_LE_STATES_PASS_SCAN_MASTER_BIT,       /*  passive scan */
-        HCI_LE_STATES_ACTIVE_SCAN_MASTER_BIT,     /*   active scan */
-        HCI_LE_STATES_SCAN_ADV_MASTER_BIT         /*  scanable adv */
+        /* central */
+        HCI_LE_STATES_CONN_ADV_CENTRAL_BIT,        /* conn_adv: 35 */
+        HCI_LE_STATES_INIT_CENTRAL_BIT,            /* init 28 */
+        HCI_LE_STATES_INIT_CENTRAL_BIT,            /* central 28 */
+        HCI_LE_STATES_CONN_ADV_INIT_BIT,           /* slave: 32 */
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_CENTRAL_BIT, /* lo duty cycle adv 37 */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_CENTRAL_BIT, /* hi duty cycle adv 36 */
+        HCI_LE_STATES_NON_CONN_ADV_CENTRAL_BIT,    /*  non connectable adv*/
+        HCI_LE_STATES_PASS_SCAN_CENTRAL_BIT,       /*  passive scan */
+        HCI_LE_STATES_ACTIVE_SCAN_CENTRAL_BIT,     /*   active scan */
+        HCI_LE_STATES_SCAN_ADV_CENTRAL_BIT         /*  scanable adv */
 
     },
     {
         /* slave */
         HCI_LE_STATES_CONN_ADV_SLAVE_BIT,        /* conn_adv: 38,*/
-        HCI_LE_STATES_INIT_MASTER_SLAVE_BIT,     /* init 41 */
-        HCI_LE_STATES_INIT_MASTER_SLAVE_BIT,     /* master 41 */
+        HCI_LE_STATES_INIT_CENTRAL_SLAVE_BIT,    /* init 41 */
+        HCI_LE_STATES_INIT_CENTRAL_SLAVE_BIT,    /* central 41 */
         HCI_LE_STATES_CONN_ADV_SLAVE_BIT,        /* slave: 38,*/
         HCI_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_BIT, /* lo duty cycle adv 40 */
         HCI_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_BIT, /* hi duty cycle adv 39 */
@@ -282,13 +282,13 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
     },
     {
         /* lo duty cycle adv */
-        UNSUPPORTED,                              /* conn_adv: 38,*/
-        HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT,   /* init 34 */
-        HCI_LE_STATES_LO_DUTY_DIR_ADV_MASTER_BIT, /* master 37 */
-        HCI_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_BIT,  /* slave: 40 */
-        UNSUPPORTED,                              /* lo duty cycle adv 40 */
-        UNSUPPORTED,                              /* hi duty cycle adv 39 */
-        UNSUPPORTED,                              /*  non connectable adv */
+        UNSUPPORTED,                               /* conn_adv: 38,*/
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT,    /* init 34 */
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_CENTRAL_BIT, /* central 37 */
+        HCI_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_BIT,   /* slave: 40 */
+        UNSUPPORTED,                               /* lo duty cycle adv 40 */
+        UNSUPPORTED,                               /* hi duty cycle adv 39 */
+        UNSUPPORTED,                               /*  non connectable adv */
         UNSUPPORTED, /* TODO: passive scan, not covered? */
         UNSUPPORTED, /* TODO:  active scan, not covered? */
         UNSUPPORTED  /*  scanable adv */
@@ -297,7 +297,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* hi duty cycle adv */
         UNSUPPORTED,                                 /* conn_adv: 38,*/
         HCI_LE_STATES_HI_DUTY_DIR_ADV_INIT_BIT,      /* init 33 */
-        HCI_LE_STATES_HI_DUTY_DIR_ADV_MASTER_BIT,    /* master 36 */
+        HCI_LE_STATES_HI_DUTY_DIR_ADV_CENTRAL_BIT,   /* central 36 */
         HCI_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_BIT,     /* slave: 39*/
         UNSUPPORTED,                                 /* lo duty cycle adv 40 */
         UNSUPPORTED,                                 /* hi duty cycle adv 39 */
@@ -310,7 +310,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* non connectable adv */
         UNSUPPORTED,                                /* conn_adv: */
         HCI_LE_STATES_NON_CONN_INIT_BIT,            /* init  */
-        HCI_LE_STATES_NON_CONN_ADV_MASTER_BIT,      /* master  */
+        HCI_LE_STATES_NON_CONN_ADV_CENTRAL_BIT,     /* central  */
         HCI_LE_STATES_NON_CONN_ADV_SLAVE_BIT,       /* slave: */
         UNSUPPORTED,                                /* lo duty cycle adv */
         UNSUPPORTED,                                /* hi duty cycle adv */
@@ -323,7 +323,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* passive scan */
         HCI_LE_STATES_CONN_ADV_PASS_SCAN_BIT,        /* conn_adv: */
         HCI_LE_STATES_PASS_SCAN_INIT_BIT,            /* init  */
-        HCI_LE_STATES_PASS_SCAN_MASTER_BIT,          /* master  */
+        HCI_LE_STATES_PASS_SCAN_CENTRAL_BIT,         /* central  */
         HCI_LE_STATES_PASS_SCAN_SLAVE_BIT,           /* slave: */
         UNSUPPORTED,                                 /* lo duty cycle adv */
         HCI_LE_STATES_HI_DUTY_DIR_ADV_PASS_SCAN_BIT, /* hi duty cycle adv */
@@ -336,7 +336,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* active scan */
         HCI_LE_STATES_CONN_ADV_ACTIVE_SCAN_BIT,        /* conn_adv: */
         HCI_LE_STATES_ACTIVE_SCAN_INIT_BIT,            /* init  */
-        HCI_LE_STATES_ACTIVE_SCAN_MASTER_BIT,          /* master  */
+        HCI_LE_STATES_ACTIVE_SCAN_CENTRAL_BIT,         /* central  */
         HCI_LE_STATES_ACTIVE_SCAN_SLAVE_BIT,           /* slave: */
         UNSUPPORTED,                                   /* lo duty cycle adv */
         HCI_LE_STATES_HI_DUTY_DIR_ADV_ACTIVE_SCAN_BIT, /* hi duty cycle adv */
@@ -349,7 +349,7 @@ const uint8_t btm_le_state_combo_tbl[BTM_BLE_STATE_MAX][BTM_BLE_STATE_MAX] = {
         /* scanable adv */
         UNSUPPORTED,                            /* conn_adv: */
         HCI_LE_STATES_SCAN_ADV_INIT_BIT,        /* init  */
-        HCI_LE_STATES_SCAN_ADV_MASTER_BIT,      /* master  */
+        HCI_LE_STATES_SCAN_ADV_CENTRAL_BIT,     /* central  */
         HCI_LE_STATES_SCAN_ADV_SLAVE_BIT,       /* slave: */
         UNSUPPORTED,                            /* lo duty cycle adv */
         UNSUPPORTED,                            /* hi duty cycle adv */
@@ -2290,8 +2290,8 @@ static void btm_ble_update_link_topology_mask(uint8_t link_role,
   else if (btm_cb.ble_ctr_cb.link_count[link_role] > 0)
     btm_cb.ble_ctr_cb.link_count[link_role]--;
 
-  if (btm_cb.ble_ctr_cb.link_count[HCI_ROLE_MASTER])
-    btm_ble_set_topology_mask(BTM_BLE_STATE_MASTER_BIT);
+  if (btm_cb.ble_ctr_cb.link_count[HCI_ROLE_CENTRAL])
+    btm_ble_set_topology_mask(BTM_BLE_STATE_CENTRAL_BIT);
 
   if (btm_cb.ble_ctr_cb.link_count[HCI_ROLE_SLAVE])
     btm_ble_set_topology_mask(BTM_BLE_STATE_SLAVE_BIT);
