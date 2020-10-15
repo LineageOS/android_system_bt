@@ -35,8 +35,8 @@ LegacyStage1ResultOrFailure PairingHandlerLe::DoLegacyStage1(const InitialInform
 
   if (pairing_request.GetOobDataFlag() == OobDataFlag::PRESENT &&
       pairing_response.GetOobDataFlag() == OobDataFlag::PRESENT) {
-    // OobDataFlag remote_oob_flag = IAmMaster(i) ? pairing_response.GetOobDataFlag() :
-    // pairing_request.GetOobDataFlag(); OobDataFlag my_oob_flag = IAmMaster(i) ? pairing_request.GetOobDataFlag() :
+    // OobDataFlag remote_oob_flag = IAmCentral(i) ? pairing_response.GetOobDataFlag() :
+    // pairing_request.GetOobDataFlag(); OobDataFlag my_oob_flag = IAmCentral(i) ? pairing_request.GetOobDataFlag() :
     // pairing_response.GetOobDataFlag();
     return LegacyOutOfBand(i);
   }
@@ -56,8 +56,8 @@ LegacyStage1ResultOrFailure PairingHandlerLe::DoLegacyStage1(const InitialInform
   // This if() should not be needed, these are only combinations left.
   if (iom == IoCapability::KEYBOARD_DISPLAY || iom == IoCapability::KEYBOARD_ONLY ||
       ios == IoCapability::KEYBOARD_DISPLAY || ios == IoCapability::KEYBOARD_ONLY) {
-    IoCapability my_iocaps = IAmMaster(i) ? iom : ios;
-    IoCapability remote_iocaps = IAmMaster(i) ? ios : iom;
+    IoCapability my_iocaps = IAmCentral(i) ? iom : ios;
+    IoCapability remote_iocaps = IAmCentral(i) ? ios : iom;
     return LegacyPasskeyEntry(i, my_iocaps, remote_iocaps);
   }
 
@@ -76,8 +76,8 @@ LegacyStage1ResultOrFailure PairingHandlerLe::LegacyPasskeyEntry(const InitialIn
   bool i_am_displaying = false;
   if (my_iocaps == IoCapability::DISPLAY_ONLY || my_iocaps == IoCapability::DISPLAY_YES_NO) {
     i_am_displaying = true;
-  } else if (IAmMaster(i) && remote_iocaps == IoCapability::KEYBOARD_DISPLAY &&
-             my_iocaps == IoCapability::KEYBOARD_DISPLAY) {
+  } else if (
+      IAmCentral(i) && remote_iocaps == IoCapability::KEYBOARD_DISPLAY && my_iocaps == IoCapability::KEYBOARD_DISPLAY) {
     i_am_displaying = true;
   } else if (my_iocaps == IoCapability::KEYBOARD_DISPLAY && remote_iocaps == IoCapability::KEYBOARD_ONLY) {
     i_am_displaying = true;
@@ -127,13 +127,13 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
   std::vector<uint8_t> pres(pairing_response.begin(), pairing_response.end());
 
   Octet16 mrand, srand;
-  if (IAmMaster(i)) {
+  if (IAmCentral(i)) {
     mrand = GenerateRandom<16>();
 
-    // LOG(INFO) << +(IAmMaster(i)) << " tk = " << base::HexEncode(tk.data(), tk.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " mrand = " << base::HexEncode(mrand.data(), mrand.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " pres = " << base::HexEncode(pres.data(), pres.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " preq = " << base::HexEncode(preq.data(), preq.size());
+    // LOG(INFO) << +(IAmCentral(i)) << " tk = " << base::HexEncode(tk.data(), tk.size());
+    // LOG(INFO) << +(IAmCentral(i)) << " mrand = " << base::HexEncode(mrand.data(), mrand.size());
+    // LOG(INFO) << +(IAmCentral(i)) << " pres = " << base::HexEncode(pres.data(), pres.size());
+    // LOG(INFO) << +(IAmCentral(i)) << " preq = " << base::HexEncode(preq.data(), preq.size());
 
     Octet16 mconfirm = crypto_toolbox::c1(
         tk,
@@ -145,29 +145,29 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
         (uint8_t)i.remote_connection_address.GetAddressType(),
         i.remote_connection_address.GetAddress().data());
 
-    // LOG(INFO) << +(IAmMaster(i)) << " mconfirm = " << base::HexEncode(mconfirm.data(), mconfirm.size());
+    // LOG(INFO) << +(IAmCentral(i)) << " mconfirm = " << base::HexEncode(mconfirm.data(), mconfirm.size());
 
-    LOG_INFO("Master sends Mconfirm");
+    LOG_INFO("Central sends Mconfirm");
     SendL2capPacket(i, PairingConfirmBuilder::Create(mconfirm));
 
-    LOG_INFO("Master waits for the Sconfirm");
+    LOG_INFO("Central waits for the Sconfirm");
     auto sconfirm_pkt = WaitPairingConfirm();
     if (std::holds_alternative<PairingFailure>(sconfirm_pkt)) {
       return std::get<PairingFailure>(sconfirm_pkt);
     }
     Octet16 sconfirm = std::get<PairingConfirmView>(sconfirm_pkt).GetConfirmValue();
 
-    LOG_INFO("Master sends Mrand");
+    LOG_INFO("Central sends Mrand");
     SendL2capPacket(i, PairingRandomBuilder::Create(mrand));
 
-    LOG_INFO("Master waits for Srand");
+    LOG_INFO("Central waits for Srand");
     auto random_pkt = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random_pkt)) {
       return std::get<PairingFailure>(random_pkt);
     }
     srand = std::get<PairingRandomView>(random_pkt).GetRandomValue();
 
-    // LOG(INFO) << +(IAmMaster(i)) << " srand = " << base::HexEncode(srand.data(), srand.size());
+    // LOG(INFO) << +(IAmCentral(i)) << " srand = " << base::HexEncode(srand.data(), srand.size());
 
     Octet16 sconfirm_generated = crypto_toolbox::c1(
         tk,

@@ -138,7 +138,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::AUTHENTICATION_REQUESTED, AuthenticationRequested);
   SET_HANDLER(OpCode::SET_CONNECTION_ENCRYPTION, SetConnectionEncryption);
   SET_HANDLER(OpCode::CHANGE_CONNECTION_LINK_KEY, ChangeConnectionLinkKey);
-  SET_HANDLER(OpCode::MASTER_LINK_KEY, MasterLinkKey);
+  SET_HANDLER(OpCode::CENTRAL_LINK_KEY, CentralLinkKey);
   SET_HANDLER(OpCode::WRITE_AUTHENTICATION_ENABLE, WriteAuthenticationEnable);
   SET_HANDLER(OpCode::READ_AUTHENTICATION_ENABLE, ReadAuthenticationEnable);
   SET_HANDLER(OpCode::WRITE_CLASS_OF_DEVICE, WriteClassOfDevice);
@@ -912,15 +912,15 @@ void DualModeController::ChangeConnectionLinkKey(CommandPacketView command) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::MasterLinkKey(CommandPacketView command) {
-  auto command_view = gd_hci::MasterLinkKeyView::Create(
+void DualModeController::CentralLinkKey(CommandPacketView command) {
+  auto command_view = gd_hci::CentralLinkKeyView::Create(
       gd_hci::ConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
   uint8_t key_flag = static_cast<uint8_t>(command_view.GetKeyFlag());
 
-  auto status = link_layer_controller_.MasterLinkKey(key_flag);
+  auto status = link_layer_controller_.CentralLinkKey(key_flag);
 
-  auto packet = bluetooth::hci::MasterLinkKeyStatusBuilder::Create(
+  auto packet = bluetooth::hci::CentralLinkKeyStatusBuilder::Create(
       status, kNumCommandPackets);
   send_event_(std::move(packet));
 }
@@ -1327,7 +1327,7 @@ void DualModeController::AcceptConnectionRequest(CommandPacketView command) {
   ASSERT(command_view.IsValid());
   Address addr = command_view.GetBdAddr();
   bool try_role_switch = command_view.GetRole() ==
-                         gd_hci::AcceptConnectionRequestRole::BECOME_MASTER;
+                         gd_hci::AcceptConnectionRequestRole::BECOME_CENTRAL;
   auto status =
       link_layer_controller_.AcceptConnectionRequest(addr, try_role_switch);
   auto packet = bluetooth::hci::AcceptConnectionRequestStatusBuilder::Create(

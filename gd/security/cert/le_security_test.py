@@ -182,7 +182,7 @@ class LeSecurityTest(GdBaseTestClass):
     @metadata(pts_test_id="SM/MAS/JW/BV-01-C", pts_test_name="Just Works IUT Initiator – Success")
     def test_just_works_iut_initiator(self):
         """
-            Verify that the IUT performs the Just Works pairing procedure correctly as master, initiator when both sides do not require MITM protection.
+            Verify that the IUT performs the Just Works pairing procedure correctly as central, initiator when both sides do not require MITM protection.
         """
         self._prepare_cert_for_connection()
 
@@ -291,7 +291,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_id="SM/MAS/JW/BI-04-C", pts_test_name="Just Works IUT Initiator – Handle AuthReq flag RFU correctly")
     def test_just_works_iut_initiator_auth_req_rfu(self):
         """
-            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as master, initiator.
+            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as central, initiator.
         """
         self._prepare_cert_for_connection()
 
@@ -440,7 +440,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_name="Just Works, IUT Initiator, Secure Connections – Handle AuthReq Flag RFU Correctly")
     def test_just_works_iut_initiator_secure_connections_auth_req_rfu(self):
         """
-            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as master, initiator.
+            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as central, initiator.
         """
         self._prepare_cert_for_connection()
 
@@ -622,7 +622,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_id="SM/MAS/SCPK/BV-01-C", pts_test_name="Passkey Entry, IUT Initiator, Secure Connections – Success")
     def test_passkey_entry_iut_initiator_secure_connections(self):
         """
-            Verify that the IUT supporting LE Secure Connections performs the Passkey Entry pairing procedure correctly as master, initiator.
+            Verify that the IUT supporting LE Secure Connections performs the Passkey Entry pairing procedure correctly as central, initiator.
         """
         self._prepare_cert_for_connection()
 
@@ -774,7 +774,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_name="Passkey Entry, IUT Initiator, Secure Connections – Handle AuthReq Flag RFU Correctly")
     def test_passkey_entry_iut_initiator_secure_connections_auth_req_rfu(self):
         """
-            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as master, initiator.
+            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as central, initiator.
         """
         self._prepare_cert_for_connection()
 
@@ -820,7 +820,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_id="SM/MAS/SCOB/BV-01-C", pts_test_name="Out of Band, IUT Initiator, Secure Connections – Success")
     def test_out_of_band_iut_initiator_secure_connections(self):
         """
-            Verify that the IUT supporting LE Secure Connections performs the Out-of-Band pairing procedure correctly as master, initiator.
+            Verify that the IUT supporting LE Secure Connections performs the Out-of-Band pairing procedure correctly as central, initiator.
         """
 
         oob_combinations = [(OOB_NOT_PRESENT, OOB_PRESENT), (OOB_PRESENT, OOB_NOT_PRESENT), (OOB_PRESENT, OOB_PRESENT)]
@@ -1026,7 +1026,7 @@ class LeSecurityTest(GdBaseTestClass):
         pts_test_name="Out of Band, IUT Initiator, Secure Connections – Handle AuthReq Flag RFU Correctly")
     def test_out_of_band_iut_initiator_secure_connections_auth_req_rfu(self):
         """
-            Verify that the IUT supporting LE Secure Connections is able to perform the Out-of-Band pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as master, initiator.
+            Verify that the IUT supporting LE Secure Connections is able to perform the Out-of-Band pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as central, initiator.
         """
 
         reserved_bits_combinations = [1, 2, 3]

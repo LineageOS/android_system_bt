@@ -333,16 +333,23 @@ TEST_F(HciTest, leMetaEvent) {
   // Send an LE event
   ErrorCode status = ErrorCode::SUCCESS;
   uint16_t handle = 0x123;
-  Role role = Role::MASTER;
+  Role role = Role::CENTRAL;
   AddressType peer_address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
   Address peer_address = Address::kAny;
   uint16_t conn_interval = 0x0ABC;
   uint16_t conn_latency = 0x0123;
   uint16_t supervision_timeout = 0x0B05;
-  ClockAccuracy master_clock_accuracy = ClockAccuracy::PPM_50;
-  hal->callbacks->hciEventReceived(GetPacketBytes(
-      LeConnectionCompleteBuilder::Create(status, handle, role, peer_address_type, peer_address, conn_interval,
-                                          conn_latency, supervision_timeout, master_clock_accuracy)));
+  ClockAccuracy central_clock_accuracy = ClockAccuracy::PPM_50;
+  hal->callbacks->hciEventReceived(GetPacketBytes(LeConnectionCompleteBuilder::Create(
+      status,
+      handle,
+      role,
+      peer_address_type,
+      peer_address,
+      conn_interval,
+      conn_latency,
+      supervision_timeout,
+      central_clock_accuracy)));
 
   // Wait for the event
   auto event_status = event_future.wait_for(kTimeout);

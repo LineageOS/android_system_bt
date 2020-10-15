@@ -35,7 +35,7 @@ static bool acl_ble_common_connection(const tBLE_BD_ADDR& address_with_type,
                                       uint16_t conn_interval,
                                       uint16_t conn_latency,
                                       uint16_t conn_timeout) {
-  if (role == HCI_ROLE_MASTER) {
+  if (role == HCI_ROLE_CENTRAL) {
     btm_cb.ble_ctr_cb.set_connection_state_idle();
     btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
   }

@@ -25,7 +25,7 @@ namespace hci {
 constexpr hci::EventCode SecurityEvents[] = {
     hci::EventCode::ENCRYPTION_CHANGE,
     hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE,
-    hci::EventCode::MASTER_LINK_KEY_COMPLETE,
+    hci::EventCode::CENTRAL_LINK_KEY_COMPLETE,
     hci::EventCode::RETURN_LINK_KEYS,
     hci::EventCode::PIN_CODE_REQUEST,
     hci::EventCode::LINK_KEY_REQUEST,

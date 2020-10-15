@@ -280,7 +280,7 @@ Octet16 smp_gen_p1_4_confirm(tSMP_CB* p_cb,
   SMP_TRACE_DEBUG("%s", __func__);
   Octet16 p1;
   uint8_t* p = p1.data();
-  if (p_cb->role == HCI_ROLE_MASTER) {
+  if (p_cb->role == HCI_ROLE_CENTRAL) {
     /* iat': initiator's (local) address type */
     UINT8_TO_STREAM(p, p_cb->addr_type);
     /* rat': responder's (remote) address type */
@@ -316,7 +316,7 @@ Octet16 smp_gen_p2_4_confirm(tSMP_CB* p_cb, const RawAddress& remote_bda) {
   uint8_t* p = p2.data();
   /* 32-bit Padding */
   memset(p, 0, OCTET16_LEN);
-  if (p_cb->role == HCI_ROLE_MASTER) {
+  if (p_cb->role == HCI_ROLE_CENTRAL) {
     /* ra : Responder's (remote) address */
     BDADDR_TO_STREAM(p, remote_bda);
     /* ia : Initiator's (local) address */
@@ -589,7 +589,7 @@ Octet16 smp_calculate_legacy_short_term_key(tSMP_CB* p_cb) {
   SMP_TRACE_DEBUG("%s", __func__);
 
   Octet16 text{0};
-  if (p_cb->role == HCI_ROLE_MASTER) {
+  if (p_cb->role == HCI_ROLE_CENTRAL) {
     memcpy(text.data(), p_cb->rand.data(), BT_OCTET8_LEN);
     memcpy(text.data() + BT_OCTET8_LEN, p_cb->rrand.data(), BT_OCTET8_LEN);
   } else {
@@ -755,9 +755,9 @@ void smp_calculate_local_commitment(tSMP_CB* p_cb) {
   switch (p_cb->selected_association_model) {
     case SMP_MODEL_SEC_CONN_JUSTWORKS:
     case SMP_MODEL_SEC_CONN_NUM_COMP:
-      if (p_cb->role == HCI_ROLE_MASTER)
+      if (p_cb->role == HCI_ROLE_CENTRAL)
         SMP_TRACE_WARNING(
-            "local commitment calc on master is not expected "
+            "local commitment calc on central is not expected "
             "for Just Works/Numeric Comparison models");
       p_cb->commitment = crypto_toolbox::f4(
           p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, p_cb->rand, 0);
@@ -835,7 +835,7 @@ void smp_calculate_numeric_comparison_display_number(tSMP_CB* p_cb,
                                                      tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
 
-  if (p_cb->role == HCI_ROLE_MASTER) {
+  if (p_cb->role == HCI_ROLE_CENTRAL) {
     p_cb->number_to_display = crypto_toolbox::g2(
         p_cb->loc_publ_key.x, p_cb->peer_publ_key.x, p_cb->rand, p_cb->rrand);
   } else {

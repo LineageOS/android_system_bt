@@ -374,12 +374,12 @@ typedef struct t_l2c_linkcb {
   RawAddress remote_bd_addr; /* The BD address of the remote */
 
  private:
-  uint8_t link_role_{HCI_ROLE_MASTER}; /* Master or slave */
+  uint8_t link_role_{HCI_ROLE_CENTRAL}; /* Central or slave */
  public:
   uint8_t LinkRole() const { return link_role_; }
-  bool IsLinkRoleMaster() const { return link_role_ == HCI_ROLE_MASTER; }
+  bool IsLinkRoleCentral() const { return link_role_ == HCI_ROLE_CENTRAL; }
   bool IsLinkRoleSlave() const { return link_role_ == HCI_ROLE_SLAVE; }
-  void SetLinkRoleAsMaster() { link_role_ = HCI_ROLE_MASTER; }
+  void SetLinkRoleAsCentral() { link_role_ = HCI_ROLE_CENTRAL; }
   void SetLinkRoleAsSlave() { link_role_ = HCI_ROLE_SLAVE; }
 
   uint8_t signal_id;                /* Signalling channel id */
