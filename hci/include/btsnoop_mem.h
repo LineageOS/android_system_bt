@@ -27,9 +27,16 @@
 typedef void (*btsnoop_data_cb)(const uint16_t type, const uint8_t* p_data,
                                 const size_t len, const uint64_t timestamp_us);
 
+// Callback invoked for each HCI packet when activity attribution is enabled.
+typedef void (*activity_attribution_cb)(const uint16_t type,
+                                        const uint8_t* p_data, const size_t len,
+                                        const uint64_t timestamp_us);
+
 // This call sets the (one and only) callback that will
 // be invoked once for each HCI packet/event.
 void btsnoop_mem_set_callback(btsnoop_data_cb cb);
+
+void activity_attribution_set_callback(activity_attribution_cb cb);
 
 // This function is invoked every time an HCI packet
 // is sent/received. Packets will be filtered  and then
