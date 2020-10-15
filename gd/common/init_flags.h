@@ -66,6 +66,10 @@ class InitFlags final {
     return logging_debug_enabled_for_all;
   }
 
+  static bool BtaaHciLogEnabled() {
+    return btaa_hci_log_enabled;
+  }
+
   static void SetAllForTesting();
 
  private:
@@ -80,6 +84,7 @@ class InitFlags final {
   static bool logging_debug_enabled_for_all;
   // save both log allow list and block list in the map to save hashing time
   static std::unordered_map<std::string, bool> logging_debug_explicit_tag_settings;
+  static bool btaa_hci_log_enabled;
 };
 
 }  // namespace common
