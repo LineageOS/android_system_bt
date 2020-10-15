@@ -18,18 +18,18 @@
 
 #include "types/raw_address.h"
 
-/** Adds the device into white list. Returns false if white list is full and
+/** Adds the device into acceptlist. Returns false if acceptlist is full and
  * device can't be added, true otherwise. */
-extern bool BTM_WhiteListAdd(const RawAddress& address);
+extern bool BTM_AcceptlistAdd(const RawAddress& address);
 
-/** Removes the device from white list */
-extern void BTM_WhiteListRemove(const RawAddress& address);
+/** Removes the device from acceptlist */
+extern void BTM_AcceptlistRemove(const RawAddress& address);
 
-/** Get max white list size supports of the Bluetooth controller */
-extern uint8_t BTM_GetWhiteListSize();
+/** Get max acceptlist size supports of the Bluetooth controller */
+extern uint8_t BTM_GetAcceptlistSize();
 
-/** Clear the whitelist, end any pending whitelist connections */
-extern void BTM_WhiteListClear();
+/** Clear the acceptlist, end any pending acceptlist connections */
+extern void BTM_AcceptlistClear();
 
 /* Use fast scan window/interval for LE connection establishment.
  * This does not send any requests to controller, instead it changes the
