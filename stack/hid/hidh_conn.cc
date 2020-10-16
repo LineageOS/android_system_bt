@@ -811,9 +811,6 @@ tHID_STATUS hidh_conn_snd_data(uint8_t dhandle, uint8_t trans_type,
  *
  ******************************************************************************/
 tHID_STATUS hidh_conn_initiate(uint8_t dhandle) {
-  uint8_t service_id = BTM_SEC_SERVICE_HIDH_NOSEC_CTRL;
-  uint32_t mx_chan_id = HID_NOSEC_CHN;
-
   tHID_HOST_DEV_CTB* p_dev = &hh_cb.devices[dhandle];
 
   if (p_dev->conn.conn_state != HID_CONN_STATE_UNUSED)
@@ -827,11 +824,6 @@ tHID_STATUS hidh_conn_initiate(uint8_t dhandle) {
 
   /* We are the originator of this connection */
   p_dev->conn.conn_flags = HID_CONN_FLAGS_IS_ORIG;
-
-  if (p_dev->attr_mask & HID_SEC_REQUIRED) {
-    service_id = BTM_SEC_SERVICE_HIDH_SEC_CTRL;
-    mx_chan_id = HID_SEC_CHN;
-  }
 
   /* Check if L2CAP started the connection process */
   p_dev->conn.ctrl_cid = L2CA_ConnectReq2(
