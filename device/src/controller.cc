@@ -74,7 +74,7 @@ static uint16_t acl_buffer_count_classic;
 static uint8_t acl_buffer_count_ble;
 static uint8_t iso_buffer_count;
 
-static uint8_t ble_white_list_size;
+static uint8_t ble_acceptlist_size;
 static uint8_t ble_resolving_list_max_size;
 static uint8_t ble_supported_states[BLE_SUPPORTED_STATES_SIZE];
 static bt_device_features_t features_ble;
@@ -202,10 +202,10 @@ static future_t* start_up(void) {
   ble_supported = last_features_classic_page_index >= 1 &&
                   HCI_LE_HOST_SUPPORTED(features_classic[1].as_array);
   if (ble_supported) {
-    // Request the ble white list size next
-    response = AWAIT_COMMAND(packet_factory->make_ble_read_white_list_size());
-    packet_parser->parse_ble_read_white_list_size_response(
-        response, &ble_white_list_size);
+    // Request the ble acceptlist size next
+    response = AWAIT_COMMAND(packet_factory->make_ble_read_acceptlist_size());
+    packet_parser->parse_ble_read_acceptlist_size_response(
+        response, &ble_acceptlist_size);
 
     // Request the ble supported features next
     response =
@@ -213,7 +213,7 @@ static future_t* start_up(void) {
     packet_parser->parse_ble_read_local_supported_features_response(
         response, &features_ble);
 
-    iso_supported = HCI_LE_CIS_MASTER(features_ble.as_array) ||
+    iso_supported = HCI_LE_CIS_CENTRAL(features_ble.as_array) ||
                     HCI_LE_CIS_SLAVE(features_ble.as_array) ||
                     HCI_LE_ISO_BROADCASTER(features_ble.as_array);
 
@@ -393,7 +393,7 @@ static bool supports_extended_inquiry_response(void) {
   return HCI_EXT_INQ_RSP_SUPPORTED(features_classic[0].as_array);
 }
 
-static bool supports_master_slave_role_switch(void) {
+static bool supports_central_slave_role_switch(void) {
   CHECK(readable);
   return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
 }
@@ -598,10 +598,10 @@ static bool supports_ble_periodic_advertising_sync_transfer_recipient(void) {
       features_ble.as_array);
 }
 
-static bool supports_ble_connected_isochronous_stream_master(void) {
+static bool supports_ble_connected_isochronous_stream_central(void) {
   CHECK(readable);
   CHECK(ble_supported);
-  return HCI_LE_CIS_MASTER(features_ble.as_array);
+  return HCI_LE_CIS_CENTRAL(features_ble.as_array);
 }
 
 static bool supports_ble_connected_isochronous_stream_slave(void) {
@@ -700,10 +700,10 @@ static uint8_t get_iso_buffer_count(void) {
   return iso_buffer_count;
 }
 
-static uint8_t get_ble_white_list_size(void) {
+static uint8_t get_ble_acceptlist_size(void) {
   CHECK(readable);
   CHECK(ble_supported);
-  return ble_white_list_size;
+  return ble_acceptlist_size;
 }
 
 static uint8_t get_ble_resolving_list_max_size(void) {
@@ -745,7 +745,7 @@ static const controller_t interface = {
     supports_interlaced_inquiry_scan,
     supports_rssi_with_inquiry_results,
     supports_extended_inquiry_response,
-    supports_master_slave_role_switch,
+    supports_central_slave_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
     supports_3_slot_packets,
@@ -784,7 +784,7 @@ static const controller_t interface = {
     supports_ble_connection_parameter_request,
     supports_ble_periodic_advertising_sync_transfer_sender,
     supports_ble_periodic_advertising_sync_transfer_recipient,
-    supports_ble_connected_isochronous_stream_master,
+    supports_ble_connected_isochronous_stream_central,
     supports_ble_connected_isochronous_stream_slave,
     supports_ble_isochronous_broadcaster,
     supports_ble_synchronized_receiver,
@@ -807,7 +807,7 @@ static const controller_t interface = {
     get_acl_buffer_count_ble,
     get_iso_buffer_count,
 
-    get_ble_white_list_size,
+    get_ble_acceptlist_size,
 
     get_ble_resolving_list_max_size,
     set_ble_resolving_list_max_size,

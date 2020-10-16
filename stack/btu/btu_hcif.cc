@@ -542,8 +542,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
       }
       if (initiator_filter_policy == 0x00 ||
           (cmd_status != HCI_SUCCESS && !is_cmd_status)) {
-        // Selectively log to avoid log spam due to whitelist connections:
-        // - When doing non-whitelist connection
+        // Selectively log to avoid log spam due to acceptlist connections:
+        // - When doing non-acceptlist connection
         // - When there is an error in command status
         bluetooth::common::LogLinkLayerConnectionEvent(
             bd_addr_p, bluetooth::common::kUnknownConnectionHandle,
@@ -570,8 +570,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
       }
       if (initiator_filter_policy == 0x00 ||
           (cmd_status != HCI_SUCCESS && !is_cmd_status)) {
-        // Selectively log to avoid log spam due to whitelist connections:
-        // - When doing non-whitelist connection
+        // Selectively log to avoid log spam due to acceptlist connections:
+        // - When doing non-acceptlist connection
         // - When there is an error in command status
         bluetooth::common::LogLinkLayerConnectionEvent(
             bd_addr_p, bluetooth::common::kUnknownConnectionHandle,
@@ -584,7 +584,7 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
     }
     case HCI_BLE_CREATE_CONN_CANCEL:
       if (cmd_status != HCI_SUCCESS && !is_cmd_status) {
-        // Only log errors to prevent log spam due to whitelist connections
+        // Only log errors to prevent log spam due to acceptlist connections
         bluetooth::common::LogLinkLayerConnectionEvent(
             nullptr, bluetooth::common::kUnknownConnectionHandle,
             android::bluetooth::DIRECTION_OUTGOING,
@@ -593,15 +593,15 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
             android::bluetooth::hci::STATUS_UNKNOWN);
       }
       break;
-    case HCI_BLE_CLEAR_WHITE_LIST:
+    case HCI_BLE_CLEAR_ACCEPTLIST:
       bluetooth::common::LogLinkLayerConnectionEvent(
           nullptr, bluetooth::common::kUnknownConnectionHandle,
           android::bluetooth::DIRECTION_INCOMING,
           android::bluetooth::LINK_TYPE_ACL, opcode, hci_event, kUnknownBleEvt,
           cmd_status, android::bluetooth::hci::STATUS_UNKNOWN);
       break;
-    case HCI_BLE_ADD_WHITE_LIST:
-    case HCI_BLE_REMOVE_WHITE_LIST: {
+    case HCI_BLE_ADD_ACCEPTLIST:
+    case HCI_BLE_REMOVE_ACCEPTLIST: {
       uint8_t peer_addr_type;
       STREAM_TO_UINT8(peer_addr_type, p_cmd);
       STREAM_TO_BDADDR(bd_addr, p_cmd);
@@ -757,9 +757,9 @@ static void btu_hcif_log_command_complete_metrics(uint16_t opcode,
   uint16_t hci_ble_event = android::bluetooth::hci::BLE_EVT_UNKNOWN;
   RawAddress bd_addr = RawAddress::kEmpty;
   switch (opcode) {
-    case HCI_BLE_CLEAR_WHITE_LIST:
-    case HCI_BLE_ADD_WHITE_LIST:
-    case HCI_BLE_REMOVE_WHITE_LIST: {
+    case HCI_BLE_CLEAR_ACCEPTLIST:
+    case HCI_BLE_ADD_ACCEPTLIST:
+    case HCI_BLE_REMOVE_ACCEPTLIST: {
       STREAM_TO_UINT8(status, p_return_params);
       bluetooth::common::LogLinkLayerConnectionEvent(
           nullptr, bluetooth::common::kUnknownConnectionHandle,
@@ -1704,7 +1704,7 @@ extern void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
                                     tGATT_STATUS status);
 
 static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
-  /* LE connection update has completed successfully as a master. */
+  /* LE connection update has completed successfully as a central. */
   /* We can enable the update request if the result is a success. */
   /* extract the HCI handle first */
   uint8_t status;

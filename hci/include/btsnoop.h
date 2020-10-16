@@ -30,17 +30,17 @@ typedef struct btsnoop_t {
   // as outgoing.
   void (*capture)(const BT_HDR* packet, bool is_received);
 
-  // Set a L2CAP channel as whitelisted, allowing packets with that L2CAP CID
+  // Set a L2CAP channel as allowlisted, allowing packets with that L2CAP CID
   // to show up in the snoop logs.
-  void (*whitelist_l2c_channel)(uint16_t conn_handle, uint16_t local_cid,
+  void (*allowlist_l2c_channel)(uint16_t conn_handle, uint16_t local_cid,
                                 uint16_t remote_cid);
 
-  // Set a RFCOMM dlci as whitelisted, allowing packets with that RFCOMM CID
+  // Set a RFCOMM dlci as allowlisted, allowing packets with that RFCOMM CID
   // to show up in the snoop logs. The local_cid is used to associate it with
   // its corrisponding ACL connection. The dlci is the channel with direction
   // so there is no chance of a collision if two services are using the same
   // channel but in different directions.
-  void (*whitelist_rfc_dlci)(uint16_t local_cid, uint8_t dlci);
+  void (*allowlist_rfc_dlci)(uint16_t local_cid, uint8_t dlci);
 
   // Indicate that the provided L2CAP channel is being used for RFCOMM.
   // If packets with the provided L2CAP CID are encountered, they will be
@@ -49,7 +49,7 @@ typedef struct btsnoop_t {
                               uint16_t remote_cid);
 
   // Clear an L2CAP channel from being filtered.
-  void (*clear_l2cap_whitelist)(uint16_t conn_handle, uint16_t local_cid,
+  void (*clear_l2cap_allowlist)(uint16_t conn_handle, uint16_t local_cid,
                                 uint16_t remote_cid);
 } btsnoop_t;
 

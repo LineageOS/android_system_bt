@@ -570,7 +570,7 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
       if (peer_device.peer_bdaddr == bd_addr) {
         peer_device.conn_state = BTA_DM_UNPAIRING;
 
-        /* Make sure device is not in white list before we disconnect */
+        /* Make sure device is not in acceptlist before we disconnect */
         GATT_CancelConnect(0, bd_addr, false);
 
         btm_remove_acl(bd_addr, peer_device.transport);
@@ -610,7 +610,7 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
       if (peer_device.peer_bdaddr == other_address) {
         peer_device.conn_state = BTA_DM_UNPAIRING;
 
-        /* Make sure device is not in white list before we disconnect */
+        /* Make sure device is not in acceptlist before we disconnect */
         GATT_CancelConnect(0, bd_addr, false);
 
         btm_remove_acl(other_address, peer_device.transport);
@@ -681,7 +681,7 @@ void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
       APPL_TRACE_ERROR("unknown device, remove ACL failed");
     }
 
-    /* Make sure device is not in white list before we disconnect */
+    /* Make sure device is not in acceptlist before we disconnect */
     GATT_CancelConnect(0, bd_addr, false);
 
     /* Disconnect the ACL link */
@@ -2202,11 +2202,11 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
         hci_status == HCI_SUCCESS) {
       /* more than one connections and the AV connection is role switched
        * to slave
-       * switch it back to master and remove the switch policy */
-      BTM_SwitchRole(bd_addr, HCI_ROLE_MASTER);
+       * switch it back to central and remove the switch policy */
+      BTM_SwitchRole(bd_addr, HCI_ROLE_CENTRAL);
       need_policy_change = true;
-    } else if (p_bta_dm_cfg->avoid_scatter && (new_role == HCI_ROLE_MASTER)) {
-      /* if the link updated to be master include AV activities, remove
+    } else if (p_bta_dm_cfg->avoid_scatter && (new_role == HCI_ROLE_CENTRAL)) {
+      /* if the link updated to be central include AV activities, remove
        * the switch policy */
       need_policy_change = true;
     }
@@ -2217,7 +2217,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
   } else {
     /* there's AV no activity on this link and role switch happened
      * check if AV is active
-     * if so, make sure the AV link is master */
+     * if so, make sure the AV link is central */
     bta_dm_check_av();
   }
   bta_sys_notify_role_chg(bd_addr, new_role, hci_status);
@@ -2374,7 +2374,7 @@ void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
  * Function         bta_dm_check_av
  *
  * Description      This function checks if AV is active
- *                  if yes, make sure the AV link is master
+ *                  if yes, make sure the AV link is central
  *
  ******************************************************************************/
 static void bta_dm_check_av() {
@@ -2389,9 +2389,9 @@ static void bta_dm_check_av() {
                          p_dev->info);
       if ((p_dev->conn_state == BTA_DM_CONNECTED) &&
           (p_dev->info & BTA_DM_DI_AV_ACTIVE)) {
-        /* make master and take away the role switch policy */
-        BTM_SwitchRole(p_dev->peer_bdaddr, HCI_ROLE_MASTER);
-        /* else either already master or can not switch for some reasons */
+        /* make central and take away the role switch policy */
+        BTM_SwitchRole(p_dev->peer_bdaddr, HCI_ROLE_CENTRAL);
+        /* else either already central or can not switch for some reasons */
         BTM_block_role_switch_for(p_dev->peer_bdaddr);
         break;
       }
@@ -2571,9 +2571,8 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
       if (bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_CONNECTED &&
           bta_dm_cb.device_list.peer_device[i].transport ==
               BT_TRANSPORT_BR_EDR) {
-
         if ((bta_dm_cb.device_list.peer_device[i].pref_role ==
-             BTA_MASTER_ROLE_ONLY) ||
+             BTA_CENTRAL_ROLE_ONLY) ||
             (br_count > 1)) {
           /* Initiating immediate role switch with certain remote devices
             has caused issues due to role  switch colliding with link encryption
@@ -2588,7 +2587,7 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
                   BTA_SLAVE_ROLE_ONLY &&
               !delay_role_switch) {
             BTM_SwitchRole(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
-                           HCI_ROLE_MASTER);
+                           HCI_ROLE_CENTRAL);
           } else {
             alarm_set_on_mloop(bta_dm_cb.switch_delay_timer,
                                BTA_DM_SWITCH_DELAY_TIMER_MS,

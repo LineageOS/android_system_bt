@@ -96,7 +96,7 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
     */
 
     OobDataFlag remote_have_oob_data =
-        IAmMaster(i) ? pairing_response.GetOobDataFlag() : pairing_request.GetOobDataFlag();
+        IAmCentral(i) ? pairing_response.GetOobDataFlag() : pairing_request.GetOobDataFlag();
 
     auto key_exchange_result = ExchangePublicKeys(i, remote_have_oob_data);
     if (std::holds_alternative<PairingFailure>(key_exchange_result)) {
@@ -125,7 +125,7 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
     // Mask the key
     std::fill(ltk.begin() + key_size, ltk.end(), 0x00);
 
-    if (IAmMaster(i)) {
+    if (IAmCentral(i)) {
       LOG_INFO("Sending start encryption request");
       SendHciLeStartEncryption(i, i.connection_handle, {0}, {0}, ltk);
     } else {
@@ -154,7 +154,7 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
     Octet16 stk = std::get<Octet16>(stage2result);
     // Mask the key
     std::fill(stk.begin() + key_size, stk.end(), 0x00);
-    if (IAmMaster(i)) {
+    if (IAmCentral(i)) {
       LOG_INFO("Sending start encryption request");
       SendHciLeStartEncryption(i, i.connection_handle, {0}, {0}, stk);
     } else {
@@ -217,7 +217,7 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
 Phase1ResultOrFailure PairingHandlerLe::ExchangePairingFeature(const InitialInformations& i) {
   LOG_INFO("Phase 1 start");
 
-  if (IAmMaster(i)) {
+  if (IAmCentral(i)) {
     // Send Pairing Request
     const auto& x = i.myPairingCapabilities;
     auto pairing_request_builder =
@@ -323,9 +323,9 @@ DistributedKeysOrFailure PairingHandlerLe::DistributeKeys(const InitialInformati
                                                           const PairingResponseView& pairing_response,
                                                           bool isSecureConnections) {
   uint8_t keys_i_receive =
-      IAmMaster(i) ? pairing_response.GetResponderKeyDistribution() : pairing_response.GetInitiatorKeyDistribution();
+      IAmCentral(i) ? pairing_response.GetResponderKeyDistribution() : pairing_response.GetInitiatorKeyDistribution();
   uint8_t keys_i_send =
-      IAmMaster(i) ? pairing_response.GetInitiatorKeyDistribution() : pairing_response.GetResponderKeyDistribution();
+      IAmCentral(i) ? pairing_response.GetInitiatorKeyDistribution() : pairing_response.GetResponderKeyDistribution();
 
   // In Secure Connections on the LE Transport, the EncKey field shall be ignored
   if (isSecureConnections) {
@@ -345,7 +345,7 @@ DistributedKeysOrFailure PairingHandlerLe::DistributeKeys(const InitialInformati
   AddrType my_identity_address_type = AddrType::PUBLIC;
   Octet16 my_signature_key{0};
 
-  if (IAmMaster(i)) {
+  if (IAmCentral(i)) {
     // EncKey is unused for LE Secure Connections
     DistributedKeysOrFailure keys = ReceiveKeys(keys_i_receive);
     if (std::holds_alternative<PairingFailure>(keys)) {
@@ -396,13 +396,13 @@ DistributedKeysOrFailure PairingHandlerLe::ReceiveKeys(const uint8_t& keys_i_rec
     }
 
     {
-      auto packet = WaitMasterIdentification();
+      auto packet = WaitCentralIdentification();
       if (std::holds_alternative<PairingFailure>(packet)) {
-        LOG_ERROR(" Was expecting Master Identification but did not receive!");
+        LOG_ERROR(" Was expecting Central Identification but did not receive!");
         return std::get<PairingFailure>(packet);
       }
-      ediv = std::get<MasterIdentificationView>(packet).GetEdiv();
-      rand = std::get<MasterIdentificationView>(packet).GetRand();
+      ediv = std::get<CentralIdentificationView>(packet).GetEdiv();
+      rand = std::get<CentralIdentificationView>(packet).GetRand();
     }
   }
 
@@ -455,8 +455,8 @@ void PairingHandlerLe::SendKeys(const InitialInformations& i, const uint8_t& key
   if (keys_i_send & KeyMaskEnc) {
     LOG_INFO("Sending Encryption Information");
     SendL2capPacket(i, EncryptionInformationBuilder::Create(ltk));
-    LOG_INFO("Sending Master Identification");
-    SendL2capPacket(i, MasterIdentificationBuilder::Create(ediv, rand));
+    LOG_INFO("Sending Central Identification");
+    SendL2capPacket(i, CentralIdentificationBuilder::Create(ediv, rand));
   }
 
   if (keys_i_send & KeyMaskId) {

@@ -126,12 +126,12 @@ static void parse_read_local_extended_features_response(
   buffer_allocator->free(response);
 }
 
-static void parse_ble_read_white_list_size_response(
-    BT_HDR* response, uint8_t* white_list_size_ptr) {
+static void parse_ble_read_acceptlist_size_response(
+    BT_HDR* response, uint8_t* acceptlist_size_ptr) {
   uint8_t* stream = read_command_complete_header(
-      response, HCI_BLE_READ_WHITE_LIST_SIZE, 1 /* byte after */);
+      response, HCI_BLE_READ_ACCEPTLIST_SIZE, 1 /* byte after */);
   CHECK(stream != NULL);
-  STREAM_TO_UINT8(*white_list_size_ptr, stream);
+  STREAM_TO_UINT8(*acceptlist_size_ptr, stream);
 
   buffer_allocator->free(response);
 }
@@ -297,7 +297,7 @@ static const hci_packet_parser_t interface = {
     parse_read_bd_addr_response,
     parse_read_local_supported_commands_response,
     parse_read_local_extended_features_response,
-    parse_ble_read_white_list_size_response,
+    parse_ble_read_acceptlist_size_response,
     parse_ble_read_buffer_size_response,
     parse_ble_read_buffer_size_v2_response,
     parse_ble_read_supported_states_response,

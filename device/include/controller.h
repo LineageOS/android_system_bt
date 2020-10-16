@@ -43,7 +43,7 @@ typedef struct controller_t {
   bool (*supports_interlaced_inquiry_scan)(void);
   bool (*supports_rssi_with_inquiry_results)(void);
   bool (*supports_extended_inquiry_response)(void);
-  bool (*supports_master_slave_role_switch)(void);
+  bool (*supports_central_slave_role_switch)(void);
   bool (*supports_enhanced_setup_synchronous_connection)(void);
   bool (*supports_enhanced_accept_synchronous_connection)(void);
   bool (*supports_3_slot_packets)(void);
@@ -82,7 +82,7 @@ typedef struct controller_t {
   bool (*supports_ble_connection_parameter_request)(void);
   bool (*supports_ble_periodic_advertising_sync_transfer_sender)(void);
   bool (*supports_ble_periodic_advertising_sync_transfer_recipient)(void);
-  bool (*supports_ble_connected_isochronous_stream_master)(void);
+  bool (*supports_ble_connected_isochronous_stream_central)(void);
   bool (*supports_ble_connected_isochronous_stream_slave)(void);
   bool (*supports_ble_isochronous_broadcaster)(void);
   bool (*supports_ble_synchronized_receiver)(void);
@@ -110,7 +110,7 @@ typedef struct controller_t {
   uint8_t (*get_acl_buffer_count_ble)(void);
   uint8_t (*get_iso_buffer_count)(void);
 
-  uint8_t (*get_ble_white_list_size)(void);
+  uint8_t (*get_ble_acceptlist_size)(void);
 
   uint8_t (*get_ble_resolving_list_max_size)(void);
   void (*set_ble_resolving_list_max_size)(int resolving_list_max_size);

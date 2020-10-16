@@ -130,9 +130,9 @@ typedef struct {
   alarm_t* refresh_raddr_timer;
 } tBTM_LE_RANDOM_CB;
 
-/* white list using state as a bit mask */
+/* acceptlist using state as a bit mask */
 constexpr uint8_t BTM_BLE_WL_IDLE = 0;
-constexpr uint8_t BTM_BLE_WL_INIT = 1;
+constexpr uint8_t BTM_BLE_ACCEPTLIST_INIT = 1;
 
 /* resolving list using state as a bit mask */
 enum : uint8_t {
@@ -152,7 +152,7 @@ typedef struct { void* p_param; } tBTM_BLE_CONN_REQ;
 
 #define BTM_BLE_STATE_CONN_ADV_BIT 0x0001
 #define BTM_BLE_STATE_INIT_BIT 0x0002
-#define BTM_BLE_STATE_MASTER_BIT 0x0004
+#define BTM_BLE_STATE_CENTRAL_BIT 0x0004
 #define BTM_BLE_STATE_SLAVE_BIT 0x0008
 #define BTM_BLE_STATE_LO_DUTY_DIR_ADV_BIT 0x0010
 #define BTM_BLE_STATE_HI_DUTY_DIR_ADV_BIT 0x0020
@@ -167,7 +167,7 @@ typedef uint16_t tBTM_BLE_STATE_MASK;
   (BTM_BLE_STATE_CONN_ADV_BIT | BTM_BLE_STATE_LO_DUTY_DIR_ADV_BIT | \
    BTM_BLE_STATE_HI_DUTY_DIR_ADV_BIT | BTM_BLE_STATE_SCAN_ADV_BIT)
 #define BTM_BLE_STATE_ALL_CONN_MASK \
-  (BTM_BLE_STATE_MASTER_BIT | BTM_BLE_STATE_SLAVE_BIT)
+  (BTM_BLE_STATE_CENTRAL_BIT | BTM_BLE_STATE_SLAVE_BIT)
 
 typedef struct {
   RawAddress* resolve_q_random_pseudo;
@@ -188,7 +188,7 @@ typedef uint8_t tBTM_PRIVACY_MODE;
 */
 constexpr uint8_t kBTM_BLE_INQUIRY_ACTIVE = 0x10;
 constexpr uint8_t kBTM_BLE_OBSERVE_ACTIVE = 0x80;
-constexpr size_t kMasterAndSlaveCount = 2;
+constexpr size_t kCentralAndSlaveCount = 2;
 
 typedef struct {
  private:
@@ -226,11 +226,17 @@ typedef struct {
   uint16_t scan_int;
   uint16_t scan_win;
 
-  /* white list information */
+  /* acceptlist information */
   uint8_t wl_state;
-  void set_whitelist_process_in_progress() { wl_state |= BTM_BLE_WL_INIT; }
-  void reset_whitelist_process_in_progress() { wl_state &= ~BTM_BLE_WL_INIT; }
-  bool is_whitelist_in_progress() const { return wl_state & BTM_BLE_WL_INIT; }
+  void set_acceptlist_process_in_progress() {
+    wl_state |= BTM_BLE_ACCEPTLIST_INIT;
+  }
+  void reset_acceptlist_process_in_progress() {
+    wl_state &= ~BTM_BLE_ACCEPTLIST_INIT;
+  }
+  bool is_acceptlist_in_progress() const {
+    return wl_state & BTM_BLE_ACCEPTLIST_INIT;
+  }
 
  private:
   enum : uint8_t { /* BLE connection state */
@@ -265,7 +271,7 @@ typedef struct {
   tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */
 
   uint8_t
-      link_count[kMasterAndSlaveCount]; /* total link count master and slave*/
+      link_count[kCentralAndSlaveCount]; /* total link count central and slave*/
 } tBTM_BLE_CB;
 
 #endif  // BTM_BLE_INT_TYPES_H

@@ -199,7 +199,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
     auto role = connection_complete.GetRole();
     AddressWithType local_address;
-    if (role == hci::Role::MASTER) {
+    if (role == hci::Role::CENTRAL) {
       local_address = le_address_manager_->GetCurrentAddress();
     } else {
       // when accepting connection, we must obtain the address from the advertiser.

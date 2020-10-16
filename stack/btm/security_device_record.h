@@ -93,7 +93,7 @@ typedef struct {
 
   tBLE_BD_ADDR identity_address_with_type;
 
-#define BTM_WHITE_LIST_BIT 0x01
+#define BTM_ACCEPTLIST_BIT 0x01
 #define BTM_RESOLVING_LIST_BIT 0x02
   uint8_t in_controller_list; /* in controller resolving list or not */
   uint8_t resolving_list_index;
@@ -293,7 +293,7 @@ typedef struct {
   }
 
   bool is_originator;         /* true if device is originating connection */
-  bool role_master;           /* true if current mode is master     */
+  bool role_central;          /* true if current mode is central     */
   uint16_t security_required; /* Security required for connection   */
   bool link_key_not_sent; /* link key notification has not been sent waiting for
                              name */

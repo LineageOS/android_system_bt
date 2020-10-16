@@ -204,7 +204,7 @@ void btm_ble_create_conn_cancel_complete(uint8_t* p) {
   uint8_t status;
   STREAM_TO_UINT8(status, p);
   if (status != HCI_SUCCESS) {
-    // Only log errors to prevent log spam due to whitelist connections
+    // Only log errors to prevent log spam due to acceptlist connections
     bluetooth::common::LogLinkLayerConnectionEvent(
         nullptr, bluetooth::common::kUnknownConnectionHandle,
         android::bluetooth::DIRECTION_OUTGOING,

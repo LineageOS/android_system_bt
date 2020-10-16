@@ -293,7 +293,7 @@ class LinkLayerController {
 
   ErrorCode ChangeConnectionPacketType(uint16_t handle, uint16_t types);
   ErrorCode ChangeConnectionLinkKey(uint16_t handle);
-  ErrorCode MasterLinkKey(uint8_t key_flag);
+  ErrorCode CentralLinkKey(uint8_t key_flag);
   ErrorCode HoldMode(uint16_t handle, uint16_t hold_mode_max_interval,
                      uint16_t hold_mode_min_interval);
   ErrorCode SniffMode(uint16_t handle, uint16_t sniff_max_interval,

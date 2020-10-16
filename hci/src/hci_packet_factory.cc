@@ -118,8 +118,8 @@ static BT_HDR* make_ble_write_host_support(uint8_t supported_host,
   return packet;
 }
 
-static BT_HDR* make_ble_read_white_list_size(void) {
-  return make_command_no_params(HCI_BLE_READ_WHITE_LIST_SIZE);
+static BT_HDR* make_ble_read_acceptlist_size(void) {
+  return make_command_no_params(HCI_BLE_READ_ACCEPTLIST_SIZE);
 }
 
 static BT_HDR* make_ble_read_buffer_size(void) {
@@ -231,7 +231,7 @@ static const hci_packet_factory_t interface = {
     make_write_secure_connections_host_support,
     make_set_event_mask,
     make_ble_write_host_support,
-    make_ble_read_white_list_size,
+    make_ble_read_acceptlist_size,
     make_ble_read_buffer_size,
     make_ble_read_buffer_size_v2,
     make_ble_read_supported_states,

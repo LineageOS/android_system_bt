@@ -21,6 +21,7 @@
  *  This file contains L2CAP utility functions
  *
  ******************************************************************************/
+#define LOG_TAG "l2c_utils"
 
 #include <stdio.h>
 #include <string.h>
@@ -426,26 +427,25 @@ void l2cu_send_peer_connect_req(tL2C_CCB* p_ccb) {
  ******************************************************************************/
 void l2cu_send_peer_connect_rsp(tL2C_CCB* p_ccb, uint16_t result,
                                 uint16_t status) {
-  BT_HDR* p_buf;
-  uint8_t* p;
-
   if (result == L2CAP_CONN_PENDING) {
     /* if we already sent pending response */
-    if (p_ccb->flags & CCB_FLAG_SENT_PENDING)
+    if (p_ccb->flags & CCB_FLAG_SENT_PENDING) {
+      LOG_DEBUG("Already sent connection pending, not sending again");
       return;
-    else
+    } else {
       p_ccb->flags |= CCB_FLAG_SENT_PENDING;
+    }
   }
 
-  p_buf = l2cu_build_header(p_ccb->p_lcb, L2CAP_CONN_RSP_LEN,
-                            L2CAP_CMD_CONN_RSP, p_ccb->remote_id);
-  if (p_buf == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no buffer for conn_rsp");
+  BT_HDR* p_buf = l2cu_build_header(p_ccb->p_lcb, L2CAP_CONN_RSP_LEN,
+                                    L2CAP_CMD_CONN_RSP, p_ccb->remote_id);
+  if (p_buf == nullptr) {
+    LOG_WARN("no buffer for conn_rsp");
     return;
   }
 
-  p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET + HCI_DATA_PREAMBLE_SIZE +
-      L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
+  uint8_t* p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET +
+               HCI_DATA_PREAMBLE_SIZE + L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD;
 
   UINT16_TO_STREAM(p, p_ccb->local_cid);
   UINT16_TO_STREAM(p, p_ccb->remote_cid);
@@ -1341,46 +1341,44 @@ void l2cu_change_pri_ccb(tL2C_CCB* p_ccb, tL2CAP_CHNL_PRIORITY priority) {
  *
  ******************************************************************************/
 tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
+  LOG_DEBUG("cid 0x%04x", cid);
+  if (!l2cb.p_free_ccb_first) {
+    LOG_ERROR("First free ccb is null for cid 0x%04x", cid);
+    return nullptr;
+  }
   tL2C_CCB* p_ccb;
-  tL2C_CCB* p_prev;
-
-  L2CAP_TRACE_DEBUG("l2cu_allocate_ccb: cid 0x%04x", cid);
-
-  if (!l2cb.p_free_ccb_first) return (NULL);
-
   /* If a CID was passed in, use that, else take the first free one */
   if (cid == 0) {
     p_ccb = l2cb.p_free_ccb_first;
     l2cb.p_free_ccb_first = p_ccb->p_next_ccb;
   } else {
-    p_prev = NULL;
+    tL2C_CCB* p_prev = nullptr;
 
     p_ccb = &l2cb.ccb_pool[cid - L2CAP_BASE_APPL_CID];
 
-    if (p_ccb == l2cb.p_free_ccb_first)
+    if (p_ccb == l2cb.p_free_ccb_first) {
       l2cb.p_free_ccb_first = p_ccb->p_next_ccb;
-    else {
-      for (p_prev = l2cb.p_free_ccb_first; p_prev != NULL;
+    } else {
+      for (p_prev = l2cb.p_free_ccb_first; p_prev != nullptr;
            p_prev = p_prev->p_next_ccb) {
         if (p_prev->p_next_ccb == p_ccb) {
           p_prev->p_next_ccb = p_ccb->p_next_ccb;
 
-          if (p_ccb == l2cb.p_free_ccb_last) l2cb.p_free_ccb_last = p_prev;
+          if (p_ccb == l2cb.p_free_ccb_last) {
+            l2cb.p_free_ccb_last = p_prev;
+          }
 
           break;
         }
       }
-      if (p_prev == NULL) {
-        L2CAP_TRACE_ERROR(
-            "l2cu_allocate_ccb: could not find CCB for CID 0x%04x in the free "
-            "list",
-            cid);
-        return NULL;
+      if (p_prev == nullptr) {
+        LOG_ERROR("Could not find CCB for CID 0x%04x in the free list", cid);
+        return nullptr;
       }
     }
   }
 
-  p_ccb->p_next_ccb = p_ccb->p_prev_ccb = NULL;
+  p_ccb->p_next_ccb = p_ccb->p_prev_ccb = nullptr;
 
   p_ccb->in_use = true;
 
@@ -1388,7 +1386,7 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
   p_ccb->local_cid = L2CAP_BASE_APPL_CID + (uint16_t)(p_ccb - l2cb.ccb_pool);
 
   p_ccb->p_lcb = p_lcb;
-  p_ccb->p_rcb = NULL;
+  p_ccb->p_rcb = nullptr;
 
   /* Set priority then insert ccb into LCB queue (if we have an LCB) */
   p_ccb->ccb_priority = L2CAP_CHNL_PRIORITY_LOW;
@@ -1441,11 +1439,10 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
   p_ccb->buff_quota = 2; /* This gets set after config */
 
   /* If CCB was reserved Config_Done can already have some value */
-  if (cid == 0)
+  if (cid == 0) {
     p_ccb->config_done = 0;
-  else {
-    L2CAP_TRACE_DEBUG("l2cu_allocate_ccb: cid 0x%04x config_done:0x%x", cid,
-                      p_ccb->config_done);
+  } else {
+    LOG_DEBUG("cid 0x%04x config_done:0x%x", cid, p_ccb->config_done);
   }
 
   p_ccb->chnl_state = CST_CLOSED;
@@ -1460,7 +1457,7 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
 
   l2c_link_adjust_chnl_allocation();
 
-  return (p_ccb);
+  return p_ccb;
 }
 
 /*******************************************************************************
@@ -1527,7 +1524,7 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
   /* If already released, could be race condition */
   if (!p_ccb->in_use) return;
 
-  btsnoop_get_interface()->clear_l2cap_whitelist(
+  btsnoop_get_interface()->clear_l2cap_allowlist(
       p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
 
   if (p_rcb && (p_rcb->psm != p_rcb->real_psm)) {
@@ -2045,20 +2042,20 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
       controller_get_interface()->supports_role_switch();
 
   /* While creating a new classic connection, check check all the other
-   * active connections where we are not SCO nor master.
+   * active connections where we are not SCO nor central.
    * If our controller supports role switching, try switching
-   * roles back to MASTER on those connections.
+   * roles back to CENTRAL on those connections.
    */
   tL2C_LCB* p_lcb_cur = &l2cb.lcb_pool[0];
   for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb_cur++) {
     if (p_lcb_cur == p_lcb) continue;
     if (!p_lcb_cur->in_use) continue;
     if (BTM_IsScoActiveByBdaddr(p_lcb_cur->remote_bd_addr)) {
-      L2CAP_TRACE_DEBUG("%s Master slave switch not allowed when SCO active",
+      L2CAP_TRACE_DEBUG("%s Central slave switch not allowed when SCO active",
                         __func__);
       continue;
     }
-    if (p_lcb->IsLinkRoleMaster()) continue;
+    if (p_lcb->IsLinkRoleCentral()) continue;
     /* The LMP_switch_req shall be sent only if the ACL logical transport
        is in active mode, when encryption is disabled, and all synchronous
        logical transports on the same physical link are disabled." */
@@ -2068,9 +2065,9 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
       /* mark this lcb waiting for switch to be completed and
          start switch on the other one */
       p_lcb->link_state = LST_CONNECTING_WAIT_SWITCH;
-      p_lcb->SetLinkRoleAsMaster();
+      p_lcb->SetLinkRoleAsCentral();
 
-      if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_MASTER) ==
+      if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_CENTRAL) ==
           BTM_CMD_STARTED) {
         alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
                            L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS,
@@ -2225,7 +2222,7 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
       LMP_COMPID_BROADCOM) {
     /* Called from above L2CAP through API; send VSC if changed */
     if ((!reset_after_rs && (priority != p_lcb->acl_priority)) ||
-        /* Called because of a master/slave role switch; if high resend VSC */
+        /* Called because of a central/slave role switch; if high resend VSC */
         (reset_after_rs && p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)) {
       pp = command;
 
