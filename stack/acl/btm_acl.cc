@@ -59,6 +59,7 @@
 #include "stack/include/btu.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_acl_interface.h"
+#include "stack/include/sco_hci_link_interface.h"
 #include "types/raw_address.h"
 
 struct StackAclBtmAcl {
@@ -2767,6 +2768,23 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
   btm_sec_connected(bda, handle, status, enc_mode);
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(status, handle, bda);
+}
+
+void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
+                          tHCI_STATUS reason) {
+  if (status != HCI_SUCCESS) {
+    LOG_WARN("Received disconnect with error:%s",
+             hci_error_code_text(status).c_str());
+  }
+
+  /* If L2CAP or SCO doesn't know about it, send it to ISO */
+  if (!l2c_link_hci_disc_comp(handle, reason) &&
+      !btm_sco_removed(handle, reason)) {
+    bluetooth::hci::IsoManager::GetInstance()->HandleDisconnect(handle, reason);
+  }
+
+  /* Notify security manager */
+  btm_sec_disconnected(handle, reason);
 }
 
 constexpr uint16_t kDefaultPacketTypes =
