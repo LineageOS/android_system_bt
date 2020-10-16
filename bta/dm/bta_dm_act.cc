@@ -191,47 +191,6 @@ const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
     UUID_PROTOCOL_ATT                     /* BTA_GATT_SERVICE_ID */
 };
 
-/*
- * NOTE : The number of element in bta_service_id_to_btm_srv_id_lkup_tbl should
- * be matching with the value BTA_MAX_SERVICE_ID in bta_api.h
- *
- * i.e., If you add new Service ID for BTA, the correct security ID of the new
- * service from Security service definitions (btm_api.h) should be added to
- * this lookup table.
- */
-const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[BTA_MAX_SERVICE_ID] = {
-    0,                             /* Reserved */
-    BTM_SEC_SERVICE_SERIAL_PORT,   /* BTA_SPP_SERVICE_ID */
-    BTM_SEC_SERVICE_DUN,           /* BTA_DUN_SERVICE_ID */
-    BTM_SEC_SERVICE_AVDTP,         /* BTA_AUDIO_SOURCE_SERVICE_ID */
-    BTM_SEC_SERVICE_LAN_ACCESS,    /* BTA_LAP_SERVICE_ID */
-    BTM_SEC_SERVICE_HEADSET_AG,    /* BTA_HSP_SERVICE_ID */
-    BTM_SEC_SERVICE_AG_HANDSFREE,  /* BTA_HFP_SERVICE_ID */
-    BTM_SEC_SERVICE_OBEX,          /* BTA_OPP_SERVICE_ID */
-    BTM_SEC_SERVICE_OBEX_FTP,      /* BTA_FTP_SERVICE_ID */
-    BTM_SEC_SERVICE_CORDLESS,      /* BTA_CTP_SERVICE_ID */
-    BTM_SEC_SERVICE_INTERCOM,      /* BTA_ICP_SERVICE_ID */
-    BTM_SEC_SERVICE_IRMC_SYNC,     /* BTA_SYNC_SERVICE_ID */
-    BTM_SEC_SERVICE_BPP_JOB,       /* BTA_BPP_SERVICE_ID */
-    BTM_SEC_SERVICE_BIP,           /* BTA_BIP_SERVICE_ID */
-    BTM_SEC_SERVICE_BNEP_PANU,     /* BTA_PANU_SERVICE_ID */
-    BTM_SEC_SERVICE_BNEP_NAP,      /* BTA_NAP_SERVICE_ID */
-    BTM_SEC_SERVICE_BNEP_GN,       /* BTA_GN_SERVICE_ID */
-    BTM_SEC_SERVICE_SAP,           /* BTA_SAP_SERVICE_ID */
-    BTM_SEC_SERVICE_AVDTP,         /* BTA_A2DP_SERVICE_ID */
-    BTM_SEC_SERVICE_AVCTP,         /* BTA_AVRCP_SERVICE_ID */
-    BTM_SEC_SERVICE_HIDH_SEC_CTRL, /* BTA_HID_SERVICE_ID */
-    BTM_SEC_SERVICE_AVDTP,         /* BTA_VDP_SERVICE_ID */
-    BTM_SEC_SERVICE_PBAP,          /* BTA_PBAP_SERVICE_ID */
-    BTM_SEC_SERVICE_HEADSET,       /* BTA_HSP_HS_SERVICE_ID */
-    BTM_SEC_SERVICE_HF_HANDSFREE,  /* BTA_HFP_HS_SERVICE_ID */
-    BTM_SEC_SERVICE_MAP,           /* BTA_MAP_SERVICE_ID */
-    BTM_SEC_SERVICE_MAP,           /* BTA_MN_SERVICE_ID */
-    BTM_SEC_SERVICE_HDP_SNK,       /* BTA_HDP_SERVICE_ID */
-    BTM_SEC_SERVICE_PBAP,          /* BTA_PCE_SERVICE_ID */
-    BTM_SEC_SERVICE_ATT            /* BTA_GATT_SERVICE_ID */
-};
-
 /* bta security callback */
 const tBTM_APPL_INFO bta_security = {&bta_dm_pin_cback,
                                      &bta_dm_new_link_key_cback,

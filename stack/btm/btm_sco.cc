@@ -158,31 +158,6 @@ static void btm_esco_conn_rsp(uint16_t sco_inx, uint8_t hci_status,
       *p_setup = btm_cb.sco_cb.def_esco_parms;
     }
 
-    uint16_t temp_packet_types =
-        (p_setup->packet_types & BTM_SCO_SUPPORTED_PKTS_MASK &
-         btm_cb.btm_sco_pkt_types_supported);
-
-    /* Make sure at least one eSCO packet type is sent, else might confuse peer
-     */
-    /* Taking this out to confirm with BQB tests
-    ** Real application would like to include this though, as many devices
-    ** do not retry with SCO only if an eSCO connection fails.
-    if (!(temp_packet_types & BTM_ESCO_LINK_ONLY_MASK))
-    {
-        temp_packet_types |= BTM_SCO_PKT_TYPES_MASK_EV3;
-    }
-    */
-    /* If SCO request, remove eSCO packet types (conformance) */
-    if (p_sco->esco.data.link_type == BTM_LINK_TYPE_SCO) {
-      temp_packet_types &= BTM_SCO_LINK_ONLY_MASK;
-      temp_packet_types |= BTM_SCO_EXCEPTION_PKTS_MASK;
-    } else {
-      /* OR in any exception packet types */
-      temp_packet_types |=
-          ((p_setup->packet_types & BTM_SCO_EXCEPTION_PKTS_MASK) |
-           (btm_cb.btm_sco_pkt_types_supported & BTM_SCO_EXCEPTION_PKTS_MASK));
-    }
-
     /* Use Enhanced Synchronous commands if supported */
     if (controller_get_interface()
             ->supports_enhanced_setup_synchronous_connection()) {
