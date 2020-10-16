@@ -17,6 +17,7 @@
 #pragma once
 
 #include "stack/include/bt_types.h"
+#include "stack/include/hci_error_code.h"
 
 void acl_ble_connection_complete(const tBLE_BD_ADDR& address_with_type,
                                  uint16_t handle, uint8_t role, bool match,
