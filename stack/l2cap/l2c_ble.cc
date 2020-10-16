@@ -189,25 +189,14 @@ bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
   return (true);
 }
 
-/*******************************************************************************
- *
- * Function         L2CA_GetBleConnRole
- *
- * Description      This function returns the connection role.
- *
- * Returns          link role.
- *
- ******************************************************************************/
-uint8_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
-  uint8_t role = HCI_ROLE_UNKNOWN;
-
-  tL2C_LCB* p_lcb;
-
-  p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
-  if (p_lcb != NULL) role = p_lcb->LinkRole();
-
-  return role;
+hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+  if (p_lcb == nullptr) {
+    return HCI_ROLE_UNKNOWN;
+  }
+  return p_lcb->LinkRole();
 }
+
 /*******************************************************************************
  *
  * Function         L2CA_GetDisconnectReason
