@@ -611,6 +611,20 @@ typedef uint8_t BD_NAME[BD_NAME_LEN + 1]; /* Device name */
 typedef uint8_t
     BD_FEATURES[BD_FEATURES_LEN]; /* LMP features supported by device */
 
+#ifdef __cplusplus
+// Bit order [0]:0-7 [1]:8-15 ... [7]:56-63
+inline std::string bd_features_text(BD_FEATURES features) {
+  uint8_t len = BD_FEATURES_LEN;
+  char buf[255];
+  char* pbuf = buf;
+  uint8_t* b = features;
+  while (len--) {
+    pbuf += sprintf(pbuf, "0x%02x ", *b++);
+  }
+  return std::string(buf);
+}
+#endif  // __cplusplus
+
 #define BT_EVENT_MASK_LEN 8
 typedef uint8_t BT_EVENT_MASK[BT_EVENT_MASK_LEN]; /* Event Mask */
 
