@@ -471,6 +471,19 @@ typedef enum : uint8_t {
   BTM_SEC_MODE_SC = 6,
 } tSECURITY_MODE;
 
+inline std::string security_mode_text(const tSECURITY_MODE& security_mode) {
+  switch (security_mode) {
+    case BTM_SEC_MODE_SERVICE:
+      return std::string("service");
+    case BTM_SEC_MODE_SP:
+      return std::string("simple pairing");
+    case BTM_SEC_MODE_SC:
+      return std::string("secure connections only");
+    default:
+      return std::string("UNKNOWN[%hhu]", security_mode);
+  }
+}
+
 enum : uint16_t {
   /* Nothing required */
   BTM_SEC_NONE = 0x0000,
