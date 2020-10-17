@@ -99,6 +99,7 @@ typedef struct {
 
 typedef struct {
   void (*on_send_data_upwards)(BT_HDR*);
+  void (*on_packets_completed)(uint16_t handle, uint16_t num_packets);
   acl_connection_interface_t connection;
   acl_link_interface_t link;
 } acl_interface_t;
