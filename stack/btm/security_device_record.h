@@ -133,6 +133,22 @@ enum : uint16_t {
   BTM_SEC_16_DIGIT_PIN_AUTHED = 0x4000,
 };
 
+typedef enum : uint8_t {
+  BTM_SEC_STATE_IDLE = 0,
+  BTM_SEC_STATE_AUTHENTICATING = 1,
+  BTM_SEC_STATE_ENCRYPTING = 2,
+  BTM_SEC_STATE_GETTING_NAME = 3,
+  BTM_SEC_STATE_AUTHORIZING = 4,
+  BTM_SEC_STATE_SWITCHING_ROLE = 5,
+  /* disconnecting BR/EDR */
+  BTM_SEC_STATE_DISCONNECTING = 6,
+  /* delay to check for encryption to work around */
+  /* controller problems */
+  BTM_SEC_STATE_DELAY_FOR_ENC = 7,
+  BTM_SEC_STATE_DISCONNECTING_BLE = 8,
+  BTM_SEC_STATE_DISCONNECTING_BOTH = 9,
+} tSECURITY_STATE;
+
 /*
  * Define structure for Security Device Record.
  * A record exists for each device authenticated with this device
@@ -246,19 +262,6 @@ typedef struct {
   BD_FEATURES feature_pages[HCI_EXT_FEATURES_PAGE_MAX +
                             1]; /* Features supported by the device */
   uint8_t num_read_pages;
-
-#define BTM_SEC_STATE_IDLE 0
-#define BTM_SEC_STATE_AUTHENTICATING 1
-#define BTM_SEC_STATE_ENCRYPTING 2
-#define BTM_SEC_STATE_GETTING_NAME 3
-#define BTM_SEC_STATE_AUTHORIZING 4
-#define BTM_SEC_STATE_SWITCHING_ROLE 5
-#define BTM_SEC_STATE_DISCONNECTING 6 /* disconnecting BR/EDR */
-#define BTM_SEC_STATE_DELAY_FOR_ENC \
-  7 /* delay to check for encryption to work around */
-    /* controller problems */
-#define BTM_SEC_STATE_DISCONNECTING_BLE 8  /* disconnecting BLE */
-#define BTM_SEC_STATE_DISCONNECTING_BOTH 9 /* disconnecting BR/EDR and BLE */
 
   uint8_t sec_state;          /* Operating state                    */
   bool is_security_state_idle() const {
