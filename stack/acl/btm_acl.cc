@@ -136,7 +136,7 @@ static bool btm_ble_get_acl_remote_addr(const tBTM_SEC_DEV_REC& p_dev_rec,
 void btm_acl_init(void) {
   /* Initialize nonzero defaults */
   btm_cb.acl_cb_.btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
-  btm_cb.acl_cb_.acl_disc_reason = 0xff;
+  btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_UNDEFINED;
 
   btm_cb.acl_cb_.btm_acl_pkt_types_supported =
       HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1 + HCI_PKT_TYPES_MASK_DH3 +
