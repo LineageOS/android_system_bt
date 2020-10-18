@@ -184,4 +184,24 @@ inline uint8_t ToLegacyHciErrorCode(hci::ErrorCode reason) {
   }
 }
 
+namespace debug {
+
+inline void DumpBtHdr(const BT_HDR* p_buf, const char* token) {
+  uint16_t len = p_buf->len;
+  char buf[255];
+  const uint8_t* data = p_buf->data + p_buf->offset;
+  int cnt = 0;
+  while (len > 0) {
+    memset(buf, 0, sizeof(buf));
+    char* pbuf = buf;
+    pbuf += sprintf(pbuf, "len:%5u %5d: ", p_buf->len, cnt);
+    for (int j = 0; j < 16; j++, --len, data++, cnt++) {
+      if (len == 0) break;
+      pbuf += sprintf(pbuf, "0x%02x ", *data);
+    }
+    LOG_DEBUG("%s %s", token, buf);
+  }
+}
+
+}  // namespace debug
 }  // namespace bluetooth
