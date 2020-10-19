@@ -201,17 +201,17 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
         (uint8_t)i.my_connection_address.GetAddressType(),
         i.my_connection_address.GetAddress().data());
 
-    LOG_INFO("Slave waits for the Mconfirm");
+    LOG_INFO("Peripheral waits for the Mconfirm");
     auto mconfirm_pkt = WaitPairingConfirm();
     if (std::holds_alternative<PairingFailure>(mconfirm_pkt)) {
       return std::get<PairingFailure>(mconfirm_pkt);
     }
     Octet16 mconfirm = std::get<PairingConfirmView>(mconfirm_pkt).GetConfirmValue();
 
-    LOG_INFO("Slave sends Sconfirm");
+    LOG_INFO("Peripheral sends Sconfirm");
     SendL2capPacket(i, PairingConfirmBuilder::Create(sconfirm));
 
-    LOG_INFO("Slave waits for Mrand");
+    LOG_INFO("Peripheral waits for Mrand");
     auto random_pkt = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random_pkt)) {
       return std::get<PairingFailure>(random_pkt);
@@ -234,7 +234,7 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
       return PairingFailure("mconfirm does not match generated value");
     }
 
-    LOG_INFO("Slave sends Srand");
+    LOG_INFO("Peripheral sends Srand");
     SendL2capPacket(i, PairingRandomBuilder::Create(srand));
   }
 

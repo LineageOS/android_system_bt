@@ -456,7 +456,7 @@ void BTA_DmBleSecurityGrant(const RawAddress& bd_addr,
  *                  scan_window      - scan window
  *                  min_conn_int     - minimum preferred connection interval
  *                  max_conn_int     - maximum preferred connection interval
- *                  slave_latency    - preferred slave latency
+ *                  peripheral_latency    - preferred peripheral latency
  *                  supervision_tout - preferred supervision timeout
  *
  *
@@ -465,11 +465,12 @@ void BTA_DmBleSecurityGrant(const RawAddress& bd_addr,
  ******************************************************************************/
 void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
                                 uint16_t min_conn_int, uint16_t max_conn_int,
-                                uint16_t slave_latency,
+                                uint16_t peripheral_latency,
                                 uint16_t supervision_tout) {
   do_in_main_thread(
-      FROM_HERE, base::Bind(bta_dm_ble_set_conn_params, bd_addr, min_conn_int,
-                            max_conn_int, slave_latency, supervision_tout));
+      FROM_HERE,
+      base::Bind(bta_dm_ble_set_conn_params, bd_addr, min_conn_int,
+                 max_conn_int, peripheral_latency, supervision_tout));
 }
 
 /*******************************************************************************
@@ -484,7 +485,7 @@ void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
  *                                  [0x0004 ~ 0x4000]
  *                  max_int   -     maximum connection interval,
  *                                  [0x0004 ~ 0x4000]
- *                  latency   -     slave latency [0 ~ 500]
+ *                  latency   -     peripheral latency [0 ~ 500]
  *                  timeout   -     supervision timeout [0x000a ~ 0xc80]
  *
  * Returns          void

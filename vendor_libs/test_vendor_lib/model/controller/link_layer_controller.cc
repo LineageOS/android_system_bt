@@ -1111,7 +1111,7 @@ void LinkLayerController::IncomingLeConnectPacket(
       AddressWithType(
           incoming.GetSourceAddress(),
           static_cast<bluetooth::hci::AddressType>(connect.GetAddressType())),
-      my_address, static_cast<uint8_t>(bluetooth::hci::Role::SLAVE),
+      my_address, static_cast<uint8_t>(bluetooth::hci::Role::PERIPHERAL),
       connection_interval, connect.GetLeConnectionLatency(),
       connect.GetLeConnectionSupervisionTimeout());
 
@@ -1683,14 +1683,14 @@ ErrorCode LinkLayerController::AcceptConnectionRequest(const Address& addr,
   LOG_INFO("Accept in 200ms");
   ScheduleTask(milliseconds(200), [this, addr, try_role_switch]() {
     LOG_INFO("Accepted");
-    MakeSlaveConnection(addr, try_role_switch);
+    MakePeripheralConnection(addr, try_role_switch);
   });
 
   return ErrorCode::SUCCESS;
 }
 
-void LinkLayerController::MakeSlaveConnection(const Address& addr,
-                                              bool try_role_switch) {
+void LinkLayerController::MakePeripheralConnection(const Address& addr,
+                                                   bool try_role_switch) {
   LOG_INFO("Sending page response to %s", addr.ToString().c_str());
   auto to_send = model::packets::PageResponseBuilder::Create(
       properties_.GetAddress(), addr, try_role_switch);
@@ -1716,14 +1716,15 @@ ErrorCode LinkLayerController::RejectConnectionRequest(const Address& addr,
     return ErrorCode::UNKNOWN_CONNECTION;
   }
 
-  ScheduleTask(milliseconds(200),
-               [this, addr, reason]() { RejectSlaveConnection(addr, reason); });
+  ScheduleTask(milliseconds(200), [this, addr, reason]() {
+    RejectPeripheralConnection(addr, reason);
+  });
 
   return ErrorCode::SUCCESS;
 }
 
-void LinkLayerController::RejectSlaveConnection(const Address& addr,
-                                                uint8_t reason) {
+void LinkLayerController::RejectPeripheralConnection(const Address& addr,
+                                                     uint8_t reason) {
   auto to_send = model::packets::PageRejectBuilder::Create(
       properties_.GetAddress(), addr, reason);
   LOG_INFO("Sending page reject to %s (reason 0x%02hhx)",

@@ -54,7 +54,7 @@ DEBUG_DATA = "DEBUG_DATA"
 AUDIO_DATA_B = "AUDIO_DATA_B"
 
 # Debug packet header struct
-header_list_str = ["Event Processed", "Number Packet Nacked By Slave", "Number Packet Nacked By Central"]
+header_list_str = ["Event Processed", "Number Packet Nacked By Peripheral", "Number Packet Nacked By Central"]
 # Debug frame information structs
 data_list_str = [
     "Event Number", "Overrun", "Underrun", "Skips", "Rendered Audio Frame", "First PDU Option", "Second PDU Option",

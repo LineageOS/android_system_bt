@@ -159,7 +159,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
 
   // Received connection update complete from ACL manager. SignalId is bound to a valid number when we need to send a
   // response to remote. If SignalId is bound to an invalid number, we don't send a response to remote, because the
-  // connection update request is not from remote LL slave.
+  // connection update request is not from remote LL peripheral.
   void on_connection_update_complete(SignalId signal_id, hci::ErrorCode error_code);
 };
 

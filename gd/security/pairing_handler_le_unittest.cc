@@ -286,9 +286,9 @@ InitialInformations initial_informations_trsi{
     .OnPairingFinished = OnPairingFinished,
 };
 
-/* This test verifies that when remote slave device sends security request , and user
+/* This test verifies that when remote peripheral device sends security request , and user
  * does accept the prompt, we do send pairing request */
-TEST_F(PairingHandlerUnitTest, test_remote_slave_initiating) {
+TEST_F(PairingHandlerUnitTest, test_remote_peripheral_initiating) {
   initial_informations_trsi.proper_l2cap_interface = up_buffer_.get();
   initial_informations_trsi.l2cap_handler = handler_;
   initial_informations_trsi.user_interface_handler = handler_;
@@ -308,7 +308,7 @@ TEST_F(PairingHandlerUnitTest, test_remote_slave_initiating) {
 }
 
 InitialInformations initial_informations_trmi{
-    .my_role = hci::Role::SLAVE,
+    .my_role = hci::Role::PERIPHERAL,
     .my_connection_address = hci::AddressWithType(),
 
     .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
@@ -320,9 +320,13 @@ InitialInformations initial_informations_trmi{
 
     .remotely_initiated = true,
     .remote_connection_address = hci::AddressWithType(),
-    .pairing_request = PairingRequestView::Create(BuilderToView(
-        PairingRequestBuilder::Create(IoCapability::NO_INPUT_NO_OUTPUT, OobDataFlag::NOT_PRESENT,
-                                      AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc, 16, 0x03, 0x03))),
+    .pairing_request = PairingRequestView::Create(BuilderToView(PairingRequestBuilder::Create(
+        IoCapability::NO_INPUT_NO_OUTPUT,
+        OobDataFlag::NOT_PRESENT,
+        AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc,
+        16,
+        0x03,
+        0x03))),
     .user_interface = &uiMock,
     .le_security_interface = &leSecurityMock,
 

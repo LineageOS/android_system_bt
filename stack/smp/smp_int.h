@@ -117,8 +117,8 @@ typedef uint8_t tSMP_ASSO_MODEL;
 /* user confirms 'OK' numeric comparison request */
 #define SMP_SC_NC_OK_EVT (SMP_SELF_DEF_EVT + 19)
 
-/* both local and peer DHKey Checks are already present - it is used on slave to
- * prevent a race condition */
+/* both local and peer DHKey Checks are already present - it is used on
+ * peripheral to prevent a race condition */
 #define SMP_SC_2_DHCK_CHKS_PRES_EVT (SMP_SELF_DEF_EVT + 20)
 
 /* same meaning as SMP_KEY_READY_EVT to separate between SC and legacy actions
@@ -234,13 +234,13 @@ typedef union {
 #define SMP_PAIR_FLAGS_CMD_CONFIRM (1 << SMP_OPCODE_CONFIRM) /* 1 << 3 */
 #define SMP_PAIR_FLAG_ENC_AFTER_PAIR (1 << 4)
 #define SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK \
-  (1 << 5) /* used on slave to resolve race condition */
+  (1 << 5) /* used on peripheral to resolve race condition */
 #define SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY \
-  (1 << 6) /* used on slave to resolve race condition */
+  (1 << 6) /* used on peripheral to resolve race condition */
 #define SMP_PAIR_FLAG_HAVE_PEER_COMM \
   (1 << 7) /* used to resolve race condition */
 #define SMP_PAIR_FLAG_HAVE_LOCAL_PUBL_KEY \
-  (1 << 8) /* used on slave to resolve race condition */
+  (1 << 8) /* used on peripheral to resolve race condition */
 
 /* check if authentication requirement need MITM protection */
 #define SMP_NO_MITM_REQUIRED(x) (((x)&SMP_AUTH_YN_BIT) == 0)
@@ -424,8 +424,8 @@ extern void smp_derive_link_key_from_long_term_key(tSMP_CB* p_cb,
 extern void smp_br_process_pairing_command(tSMP_CB* p_cb,
                                            tSMP_INT_DATA* p_data);
 extern void smp_br_process_security_grant(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
-extern void smp_br_process_slave_keys_response(tSMP_CB* p_cb,
-                                               tSMP_INT_DATA* p_data);
+extern void smp_br_process_peripheral_keys_response(tSMP_CB* p_cb,
+                                                    tSMP_INT_DATA* p_data);
 extern void smp_br_send_pair_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data);
 extern void smp_br_check_authorization_request(tSMP_CB* p_cb,
                                                tSMP_INT_DATA* p_data);
