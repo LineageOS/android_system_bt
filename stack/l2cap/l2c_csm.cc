@@ -463,12 +463,13 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
         alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CONNECT_TIMEOUT_MS,
                            l2c_ccb_timer_timeout, p_ccb);
 
-        l2c_csm_send_connect_rsp(p_ccb);
         if (p_ccb->p_lcb->transport != BT_TRANSPORT_LE) {
           LOG_DEBUG("Not LE connection, sending configure request");
+          l2c_csm_send_connect_rsp(p_ccb);
           l2c_csm_send_config_req(p_ccb);
         } else {
           if (p_ccb->ecoc) {
+            /* Handle Credit Based Connection */
             LOG_DEBUG("Calling CreditBasedConnect_Ind_Cb(), num of cids: %d",
                       p_ccb->p_lcb->pending_ecoc_conn_cnt);
 
@@ -482,8 +483,10 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
                 p_ccb->p_lcb->remote_bd_addr, pending_cids, p_ccb->p_rcb->psm,
                 p_ccb->peer_cfg.mtu, p_ccb->remote_id);
           } else {
+            /* Handle BLE CoC */
             LOG_DEBUG("Calling Connect_Ind_Cb(), CID: 0x%04x",
                       p_ccb->local_cid);
+            l2c_csm_send_connect_rsp(p_ccb);
             l2c_csm_indicate_connection_open(p_ccb);
           }
         }
