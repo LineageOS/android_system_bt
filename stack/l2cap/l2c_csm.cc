@@ -469,12 +469,17 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
           l2c_csm_send_config_req(p_ccb);
         } else {
           if (p_ccb->ecoc) {
-            LOG_DEBUG("Calling CreditBasedConnect_Ind_Cb(), num of cids: %zu",
-                      p_ccb->p_lcb->pending_ecoc_connection_cids.size());
+            LOG_DEBUG("Calling CreditBasedConnect_Ind_Cb(), num of cids: %d",
+                      p_ccb->p_lcb->pending_ecoc_conn_cnt);
+
+            std::vector<uint16_t> pending_cids;
+            for (int i = 0; i < p_ccb->p_lcb->pending_ecoc_conn_cnt; i++) {
+              uint16_t cid = p_ccb->p_lcb->pending_ecoc_connection_cids[i];
+              if (cid != 0) pending_cids.push_back(cid);
+            }
 
             (*p_ccb->p_rcb->api.pL2CA_CreditBasedConnectInd_Cb)(
-                p_ccb->p_lcb->remote_bd_addr,
-                p_ccb->p_lcb->pending_ecoc_connection_cids, p_ccb->p_rcb->psm,
+                p_ccb->p_lcb->remote_bd_addr, pending_cids, p_ccb->p_rcb->psm,
                 p_ccb->peer_cfg.mtu, p_ccb->remote_id);
           } else {
             LOG_DEBUG("Calling Connect_Ind_Cb(), CID: 0x%04x",
@@ -647,14 +652,17 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       LOG(WARNING) << __func__ << ": L2CAP connection timeout";
 
       if (p_ccb->ecoc) {
-        for (uint16_t cid : p_lcb->pending_ecoc_connection_cids) {
+        for (int i = 0; i < p_lcb->pending_ecoc_conn_cnt; i++) {
+          uint16_t cid = p_lcb->pending_ecoc_connection_cids[i];
           tL2C_CCB* temp_p_ccb = l2cu_find_ccb_by_cid(p_lcb, cid);
           LOG(WARNING) << __func__ << ": lcid= " << loghex(cid);
           (*p_ccb->p_rcb->api.pL2CA_Error_Cb)(p_ccb->local_cid,
                                               L2CAP_CONN_TIMEOUT);
           l2cu_release_ccb(temp_p_ccb);
         }
-        p_lcb->pending_ecoc_connection_cids.clear();
+        p_lcb->pending_ecoc_conn_cnt = 0;
+        memset(p_lcb->pending_ecoc_connection_cids, 0,
+               L2CAP_CREDIT_BASED_MAX_CIDS);
 
       } else {
         LOG(WARNING) << __func__ << ": lcid= " << loghex(p_ccb->local_cid);
@@ -734,7 +742,8 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
                                            p_ci->l2cap_result);
       alarm_cancel(p_ccb->l2c_ccb_timer);
 
-      for (uint16_t cid : p_ccb->p_lcb->pending_ecoc_connection_cids) {
+      for (int i = 0; i < p_ccb->p_lcb->pending_ecoc_conn_cnt; i++) {
+        uint16_t cid = p_ccb->p_lcb->pending_ecoc_connection_cids[i];
         tL2C_CCB* temp_p_ccb = l2cu_find_ccb_by_cid(p_ccb->p_lcb, cid);
         auto it = std::find(p_ci->lcids.begin(), p_ci->lcids.end(), cid);
         if (it != p_ci->lcids.end()) {
@@ -743,7 +752,9 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
           l2cu_release_ccb(temp_p_ccb);
         }
       }
-      p_ccb->p_lcb->pending_ecoc_connection_cids.clear();
+      p_ccb->p_lcb->pending_ecoc_conn_cnt = 0;
+      memset(p_ccb->p_lcb->pending_ecoc_connection_cids, 0,
+             L2CAP_CREDIT_BASED_MAX_CIDS);
 
       break;
     case L2CEVT_L2CA_CONNECT_RSP:
@@ -786,11 +797,16 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
                                              p_ci->l2cap_result);
       }
       alarm_cancel(p_ccb->l2c_ccb_timer);
-      for (uint16_t cid : p_ccb->p_lcb->pending_ecoc_connection_cids) {
+      for (int i = 0; i < p_ccb->p_lcb->pending_ecoc_conn_cnt; i++) {
+        uint16_t cid = p_ccb->p_lcb->pending_ecoc_connection_cids[i];
         tL2C_CCB* temp_p_ccb = l2cu_find_ccb_by_cid(p_ccb->p_lcb, cid);
         l2cu_release_ccb(temp_p_ccb);
       }
-      p_ccb->p_lcb->pending_ecoc_connection_cids.clear();
+
+      p_ccb->p_lcb->pending_ecoc_conn_cnt = 0;
+      memset(p_ccb->p_lcb->pending_ecoc_connection_cids, 0,
+             L2CAP_CREDIT_BASED_MAX_CIDS);
+
       break;
     case L2CEVT_L2CA_CONNECT_RSP_NEG:
       p_ci = (tL2C_CONN_INFO*)p_data;
