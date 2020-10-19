@@ -112,8 +112,11 @@ Return<void> BluetoothHci::initialize_impl(
         hidl_vec<uint8_t> hci_event(packet->begin(), packet->end());
         auto ret = cb->hciEventReceived(hci_event);
         if (!ret.isOk()) {
-          CHECK(death_recipient_->getHasDied())
-              << "Error sending event callback, but no death notification.";
+          LOG_ERROR("Error sending event callback");
+          if (!death_recipient_->getHasDied()) {
+            LOG_ERROR("Closing");
+            close();
+          }
         }
       });
 
@@ -122,8 +125,11 @@ Return<void> BluetoothHci::initialize_impl(
         hidl_vec<uint8_t> acl_packet(packet->begin(), packet->end());
         auto ret = cb->aclDataReceived(acl_packet);
         if (!ret.isOk()) {
-          CHECK(death_recipient_->getHasDied())
-              << "Error sending acl callback, but no death notification.";
+          LOG_ERROR("Error sending acl callback");
+          if (!death_recipient_->getHasDied()) {
+            LOG_ERROR("Closing");
+            close();
+          }
         }
       });
 
@@ -132,8 +138,11 @@ Return<void> BluetoothHci::initialize_impl(
         hidl_vec<uint8_t> sco_packet(packet->begin(), packet->end());
         auto ret = cb->aclDataReceived(sco_packet);
         if (!ret.isOk()) {
-          CHECK(death_recipient_->getHasDied())
-              << "Error sending sco callback, but no death notification.";
+          LOG_ERROR("Error sending sco callback");
+          if (!death_recipient_->getHasDied()) {
+            LOG_ERROR("Closing");
+            close();
+          }
         }
       });
 
@@ -143,8 +152,11 @@ Return<void> BluetoothHci::initialize_impl(
           hidl_vec<uint8_t> iso_packet(packet->begin(), packet->end());
           auto ret = cb_1_1->isoDataReceived(iso_packet);
           if (!ret.isOk()) {
-            CHECK(death_recipient_->getHasDied())
-                << "Error sending iso callback, but no death notification.";
+            LOG_ERROR("Error sending iso callback");
+            if (!death_recipient_->getHasDied()) {
+              LOG_ERROR("Closing");
+              close();
+            }
           }
         });
   }
