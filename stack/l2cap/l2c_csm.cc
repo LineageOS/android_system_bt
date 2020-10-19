@@ -1473,6 +1473,9 @@ static const char* l2c_csm_get_event_name(uint16_t event) {
     case L2CEVT_L2CA_CREDIT_BASED_CONNECT_REQ: /* Upper layer credit based
                                                   connect request */
       return ("SEND_CREDIT_BASED_CONNECT_REQ");
+    case L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP: /* Upper layer credit based
+                                                  connect response */
+      return ("SEND_CREDIT_BASED_CONNECT_RSP");
     case L2CEVT_L2CA_CREDIT_BASED_RECONFIG_REQ: /* Upper layer credit based
                                                    reconfig request */
       return ("SEND_CREDIT_BASED_RECONFIG_REQ");
