@@ -180,7 +180,7 @@ class ClassicShimAclConnection
 
   void OnDisconnection(hci::ErrorCode reason) override {
     btm_sec_disconnected(connection_->GetHandle(),
-                         static_cast<uint8_t>(reason));
+                         static_cast<tHCI_STATUS>(reason));
   }
 
   void OnReadRemoteVersionInformationComplete(uint8_t lmp_version,
@@ -351,7 +351,7 @@ void bluetooth::shim::legacy::Acl::OnLeConnectFail(
 
   uint16_t handle{0};  /* TODO Unneeded */
   bool enhanced{true}; /* TODO logging metrics only */
-  uint8_t status = ToLegacyHciErrorCode(reason);
+  tHCI_STATUS status = ToLegacyHciErrorCode(reason);
 
   acl_ble_connection_fail(legacy_address_with_type, handle, enhanced, status);
 }
