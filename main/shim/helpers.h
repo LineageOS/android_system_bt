@@ -18,6 +18,7 @@
 #include "hci/address_with_type.h"
 
 #include "gd/packet/raw_builder.h"
+#include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
 
@@ -99,6 +100,20 @@ inline std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
   auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
   payload->AddOctets(bytes);
   return payload;
+}
+
+inline BT_HDR* MakeLegacyBtHdrPacket(
+    std::unique_ptr<bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>>
+        packet,
+    const std::vector<uint8_t>& preamble) {
+  std::vector<uint8_t> packet_vector(packet->begin(), packet->end());
+  BT_HDR* buffer = static_cast<BT_HDR*>(
+      osi_calloc(packet_vector.size() + preamble.size() + sizeof(BT_HDR)));
+  std::copy(preamble.begin(), preamble.end(), buffer->data);
+  std::copy(packet_vector.begin(), packet_vector.end(),
+            buffer->data + preamble.size());
+  buffer->len = preamble.size() + packet_vector.size();
+  return buffer;
 }
 
 inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
