@@ -75,7 +75,7 @@ uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
 uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                        uint16_t my_mtu, uint16_t required_remote_mtu) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_Register(
         psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu, required_remote_mtu);
   }
@@ -149,7 +149,7 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
  *
  ******************************************************************************/
 void L2CA_Deregister(uint16_t psm) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_Deregister(psm);
   }
 
@@ -198,7 +198,7 @@ void L2CA_Deregister(uint16_t psm) {
  *
  ******************************************************************************/
 uint16_t L2CA_AllocateLePSM(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_AllocateLePSM();
   }
 
@@ -248,7 +248,7 @@ uint16_t L2CA_AllocateLePSM(void) {
  *
  ******************************************************************************/
 void L2CA_FreeLePSM(uint16_t psm) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_FreeLePSM(psm);
   }
 
@@ -285,7 +285,7 @@ uint16_t L2CA_ConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
  *
  ******************************************************************************/
 uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectReq(psm, p_bd_addr);
   }
 
@@ -371,7 +371,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
  ******************************************************************************/
 uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                             uint16_t sec_level) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info, sec_level);
   }
 
@@ -440,7 +440,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
  *
  ******************************************************************************/
 void L2CA_DeregisterLECoc(uint16_t psm) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_DeregisterLECoc(psm);
   }
 
@@ -490,7 +490,7 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
  ******************************************************************************/
 uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
                               tL2CAP_LE_CFG_INFO* p_cfg, uint16_t sec_level) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectLECocReq(psm, p_bd_addr, p_cfg);
   }
 
@@ -586,7 +586,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
 bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
                           uint16_t lcid, uint16_t result, uint16_t status,
                           tL2CAP_LE_CFG_INFO* p_cfg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectLECocRsp(p_bd_addr, id, lcid, result,
                                                  status, p_cfg);
   }
@@ -649,7 +649,7 @@ bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
  *
  ******************************************************************************/
 bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_GetPeerLECocConfig(lcid, peer_cfg);
   }
 
@@ -686,7 +686,7 @@ bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
 bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
                                 std::vector<uint16_t>& accepted_lcids,
                                 uint16_t result, tL2CAP_LE_CFG_INFO* p_cfg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectCreditBasedRsp(
         p_bd_addr, id, accepted_lcids, result, p_cfg);
   }
@@ -758,7 +758,7 @@ bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
 std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
                                                  const RawAddress& p_bd_addr,
                                                  tL2CAP_LE_CFG_INFO* p_cfg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectCreditBasedReq(psm, p_bd_addr, p_cfg);
   }
 
@@ -861,7 +861,7 @@ std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
 bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bda,
                                       std::vector<uint16_t>& lcids,
                                       tL2CAP_LE_CFG_INFO* p_cfg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ReconfigCreditBasedConnsReq(bda, lcids, p_cfg);
   }
 
@@ -933,7 +933,7 @@ bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bda,
  *
  ******************************************************************************/
 bool L2CA_DisconnectReq(uint16_t cid) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_DisconnectReq(cid);
   }
 
@@ -954,7 +954,7 @@ bool L2CA_DisconnectReq(uint16_t cid) {
 }
 
 bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_GetRemoteCid(lcid, rcid);
   }
 
@@ -987,7 +987,7 @@ bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid) {
  ******************************************************************************/
 bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
                                  tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_SetIdleTimeoutByBdAddr(bd_addr, timeout,
                                                         transport);
   }
@@ -1046,7 +1046,7 @@ uint8_t L2CA_SetTraceLevel(uint8_t new_level) {
  *
  ******************************************************************************/
 bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_SetAclPriority(bd_addr, priority);
   }
 
@@ -1065,7 +1065,7 @@ bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
  *
  ******************************************************************************/
 bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_SetTxPriority(cid, priority);
   }
 
@@ -1102,7 +1102,7 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
  ******************************************************************************/
 bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
                           uint8_t* p_chnl_mask) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_GetPeerFeatures(bd_addr, p_ext_feat,
                                                  p_chnl_mask);
   }
@@ -1141,7 +1141,7 @@ bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
  ******************************************************************************/
 bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
                                tL2CAP_FIXED_CHNL_REG* p_freg) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_RegisterFixedChannel(fixed_cid, p_freg);
   }
 
@@ -1170,7 +1170,7 @@ bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
  *
  ******************************************************************************/
 bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda);
   }
   uint8_t initiating_phys =
@@ -1288,7 +1288,7 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
  ******************************************************************************/
 uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
                                 BT_HDR* p_buf) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_buf);
   }
 
@@ -1394,7 +1394,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
  *
  ******************************************************************************/
 bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_RemoveFixedChnl(fixed_cid, rem_bda);
   }
 
@@ -1465,7 +1465,7 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
  ******************************************************************************/
 bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
                               uint16_t idle_tout) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_SetFixedChannelTout(rem_bda, fixed_cid,
                                                      idle_tout);
   }
@@ -1511,7 +1511,7 @@ bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
  *
  ******************************************************************************/
 uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_DataWrite(cid, p_data);
   }
 
@@ -1530,7 +1530,7 @@ uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
  *
  ******************************************************************************/
 bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_SetChnlFlushability(cid, is_flushable);
   }
 
@@ -1567,7 +1567,7 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
  *
  ******************************************************************************/
 uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_FlushChannel(lcid, num_to_flush);
   }
 
@@ -1658,7 +1658,7 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
 
 bool L2CA_IsLinkEstablished(const RawAddress& bd_addr,
                             tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_IsLinkEstablished(bd_addr, transport);
   }
 
