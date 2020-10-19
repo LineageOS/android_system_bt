@@ -223,7 +223,7 @@ static bool event_already_registered_in_hci_layer(
     case bluetooth::hci::EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE:
     case bluetooth::hci::EventCode::MAX_SLOTS_CHANGE:
     case bluetooth::hci::EventCode::VENDOR_SPECIFIC:
-      return true;
+      return bluetooth::shim::is_gd_hci_enabled();
     case bluetooth::hci::EventCode::LE_META_EVENT:
     case bluetooth::hci::EventCode::DISCONNECTION_COMPLETE:
       return bluetooth::shim::is_gd_shim_enabled();
@@ -236,7 +236,7 @@ static bool event_already_registered_in_controller_layer(
     bluetooth::hci::EventCode event_code) {
   switch (event_code) {
     case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_PACKETS:
-      return bluetooth::shim::is_gd_controller_enabled();
+      return bluetooth::shim::is_gd_acl_enabled();
     default:
       return false;
   }
