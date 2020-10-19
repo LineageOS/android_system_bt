@@ -27,7 +27,7 @@ extern "C" {
 #endif /* LDAC_BCO_API */
 
 /* This file contains the definitions, declarations and macros for an
- * implimentation of LDAC buffer control operation.
+ * implementation of LDAC buffer control operation.
  */
 
 #define LDAC_BCO_ERR_NONE 0
