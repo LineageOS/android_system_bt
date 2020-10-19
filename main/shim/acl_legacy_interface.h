@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include "stack/include/bt_types.h"
+#include "stack/include/hci_error_code.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {
@@ -25,11 +26,11 @@ namespace shim {
 namespace legacy {
 
 typedef struct {
-  void (*on_connected)(const RawAddress& bda, uint16_t handle, uint8_t status,
-                       uint8_t enc_mode);
-  void (*on_failed)(const RawAddress& bda, uint16_t handle, uint8_t status,
+  void (*on_connected)(const RawAddress& bda, uint16_t handle,
+                       tHCI_STATUS status, uint8_t enc_mode);
+  void (*on_failed)(const RawAddress& bda, uint16_t handle, tHCI_STATUS status,
                     uint8_t enc_mode);
-  void (*on_disconnected)(uint16_t handle, uint8_t reason);
+  void (*on_disconnected)(uint16_t handle, tHCI_STATUS reason);
 } acl_classic_connection_interface_t;
 
 typedef struct {
@@ -39,8 +40,8 @@ typedef struct {
                        const RawAddress& local_rpa, const RawAddress& peer_rpa,
                        uint8_t peer_addr_type);
   void (*on_failed)(const tBLE_BD_ADDR& address_with_type, uint16_t handle,
-                    bool enhanced, uint8_t status);
-  void (*on_disconnected)(uint16_t handle, uint8_t reason);
+                    bool enhanced, tHCI_STATUS status);
+  void (*on_disconnected)(uint16_t handle, tHCI_STATUS reason);
 } acl_le_connection_interface_t;
 
 typedef struct {
@@ -77,7 +78,6 @@ typedef struct {
   void (*on_role_change)(uint8_t new_role);
   void (*on_role_discovery_complete)(uint8_t current_role);
 } acl_classic_link_interface_t;
-;
 
 typedef struct {
   void (*on_connection_update)(uint16_t connection_interval,

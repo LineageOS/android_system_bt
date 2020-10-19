@@ -101,7 +101,7 @@ inline std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
   return payload;
 }
 
-inline uint8_t ToLegacyHciErrorCode(hci::ErrorCode reason) {
+inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
   switch (reason) {
     case hci::ErrorCode::SUCCESS:
       return HCI_SUCCESS;
@@ -138,17 +138,17 @@ inline uint8_t ToLegacyHciErrorCode(hci::ErrorCode reason) {
     case hci::ErrorCode::CONNECTION_ACCEPT_TIMEOUT:
       return HCI_ERR_HOST_TIMEOUT;
     case hci::ErrorCode::UNSUPORTED_FEATURE_OR_PARAMETER_VALUE:
-      return static_cast<uint8_t>(
+      return static_cast<tHCI_STATUS>(
           hci::ErrorCode::UNSUPORTED_FEATURE_OR_PARAMETER_VALUE);
     case hci::ErrorCode::INVALID_HCI_COMMAND_PARAMETERS:
       return HCI_ERR_ILLEGAL_PARAMETER_FMT;
     case hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION:
       return HCI_ERR_PEER_USER;
     case hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES:
-      return static_cast<uint8_t>(
+      return static_cast<tHCI_STATUS>(
           hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES);
     case hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF:
-      return static_cast<uint8_t>(
+      return static_cast<tHCI_STATUS>(
           hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF);
     case hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST:
       return HCI_ERR_CONN_CAUSE_LOCAL_HOST;
@@ -157,30 +157,31 @@ inline uint8_t ToLegacyHciErrorCode(hci::ErrorCode reason) {
     case hci::ErrorCode::PAIRING_NOT_ALLOWED:
       return HCI_ERR_PAIRING_NOT_ALLOWED;
     case hci::ErrorCode::UNKNOWN_LMP_PDU:
-      return static_cast<uint8_t>(hci::ErrorCode::UNKNOWN_LMP_PDU);
+      return static_cast<tHCI_STATUS>(hci::ErrorCode::UNKNOWN_LMP_PDU);
     case hci::ErrorCode::UNSUPPORTED_REMOTE_OR_LMP_FEATURE:
       return HCI_ERR_UNSUPPORTED_REM_FEATURE;
     case hci::ErrorCode::SCO_OFFSET_REJECTED:
-      return static_cast<uint8_t>(hci::ErrorCode::SCO_OFFSET_REJECTED);
+      return static_cast<tHCI_STATUS>(hci::ErrorCode::SCO_OFFSET_REJECTED);
     case hci::ErrorCode::SCO_INTERVAL_REJECTED:
-      return static_cast<uint8_t>(hci::ErrorCode::SCO_INTERVAL_REJECTED);
+      return static_cast<tHCI_STATUS>(hci::ErrorCode::SCO_INTERVAL_REJECTED);
     case hci::ErrorCode::SCO_AIR_MODE_REJECTED:
-      return static_cast<uint8_t>(hci::ErrorCode::SCO_AIR_MODE_REJECTED);
+      return static_cast<tHCI_STATUS>(hci::ErrorCode::SCO_AIR_MODE_REJECTED);
     case hci::ErrorCode::INVALID_LMP_OR_LL_PARAMETERS:
-      return static_cast<uint8_t>(hci::ErrorCode::INVALID_LMP_OR_LL_PARAMETERS);
+      return static_cast<tHCI_STATUS>(
+          hci::ErrorCode::INVALID_LMP_OR_LL_PARAMETERS);
     case hci::ErrorCode::UNSPECIFIED_ERROR:
       return HCI_ERR_UNSPECIFIED;
     case hci::ErrorCode::UNSUPPORTED_LMP_OR_LL_PARAMETER:
-      return static_cast<uint8_t>(
+      return static_cast<tHCI_STATUS>(
           hci::ErrorCode::UNSUPPORTED_LMP_OR_LL_PARAMETER);
     case hci::ErrorCode::ROLE_CHANGE_NOT_ALLOWED:
-      return static_cast<uint8_t>(hci::ErrorCode::ROLE_CHANGE_NOT_ALLOWED);
+      return static_cast<tHCI_STATUS>(hci::ErrorCode::ROLE_CHANGE_NOT_ALLOWED);
     case hci::ErrorCode::LINK_LAYER_COLLISION:
       return HCI_ERR_LMP_ERR_TRANS_COLLISION;
     case hci::ErrorCode::ENCRYPTION_MODE_NOT_ACCEPTABLE:
       return HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE;
     case hci::ErrorCode::CONTROLLER_BUSY:
-      return static_cast<uint8_t>(hci::ErrorCode::CONTROLLER_BUSY);
+      return static_cast<tHCI_STATUS>(hci::ErrorCode::CONTROLLER_BUSY);
   }
 }
 

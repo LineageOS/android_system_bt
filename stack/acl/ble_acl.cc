@@ -107,7 +107,8 @@ void acl_ble_enhanced_connection_complete(
 }
 
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
-                             uint16_t handle, bool enhanced, uint8_t status) {
+                             uint16_t handle, bool enhanced,
+                             tHCI_STATUS status) {
   if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
     btm_cb.ble_ctr_cb.set_connection_state_idle();
     btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);

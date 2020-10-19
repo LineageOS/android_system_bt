@@ -3690,17 +3690,7 @@ tBTM_STATUS btm_sec_disconnect(uint16_t handle, uint8_t reason) {
   return (btm_sec_send_hci_disconnect(p_dev_rec, reason, handle));
 }
 
-/*******************************************************************************
- *
- * Function         btm_sec_disconnected
- *
- * Description      This function is when a connection to the peer device is
- *                  dropped
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
+void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   uint8_t old_pairing_flags = btm_cb.pairing_flags;
   int result = HCI_ERR_AUTH_FAILURE;
