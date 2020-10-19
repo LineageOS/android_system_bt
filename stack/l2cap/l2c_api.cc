@@ -833,7 +833,10 @@ std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
     allocated_cids.push_back(p_ccb->local_cid);
   }
 
-  p_lcb->pending_ecoc_connection_cids = allocated_cids;
+  for (int i = 0; i < (int)(allocated_cids.size()); i++)
+    p_lcb->pending_ecoc_connection_cids[i] = allocated_cids[i];
+
+  p_lcb->pending_ecoc_conn_cnt = (uint16_t)(allocated_cids.size());
   l2c_csm_execute(p_ccb_primary, L2CEVT_L2CA_CREDIT_BASED_CONNECT_REQ, NULL);
 
   L2CAP_TRACE_API("%s(psm: 0x%04x) returned CID: 0x%04x", __func__, psm,
