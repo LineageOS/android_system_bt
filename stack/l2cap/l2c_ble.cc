@@ -575,13 +575,15 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           "num_of_channels = %d",
           mtu, mps, initial_credit, num_of_channels);
 
-      if (p_lcb->pending_ecoc_connection_cids.size() > 0) {
+      if (p_lcb->pending_ecoc_conn_cnt > 0) {
         L2CAP_TRACE_WARNING(
             "L2CAP - L2CAP_CMD_CREDIT_BASED_CONN_REQ collision:");
         l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
                                           L2CAP_LE_RESULT_NO_RESOURCES);
         return;
       }
+
+      p_lcb->pending_ecoc_conn_cnt = num_of_channels;
 
       /* Check PSM Support */
       p_rcb = l2cu_find_ble_rcb_by_psm(con_info.psm);
@@ -611,8 +613,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         return;
       }
 
-      /* Clear previous list */
-      p_lcb->pending_ecoc_allocated_cids.clear();
+      bool lead_cid_set = false;
 
       for (int i = 0; i < num_of_channels; i++) {
         STREAM_TO_UINT16(rcid, p);
@@ -620,7 +621,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         if (temp_p_ccb) {
           L2CAP_TRACE_WARNING(
               "L2CAP - rcvd conn req for duplicated cid: 0x%04x", rcid);
-          p_lcb->pending_ecoc_connection_cids.push_back(0);
+          p_lcb->pending_ecoc_connection_cids[i] = 0;
           p_lcb->pending_l2cap_result =
               L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED;
         } else {
@@ -628,7 +629,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           temp_p_ccb = l2cu_allocate_ccb(p_lcb, 0);
           if (temp_p_ccb == NULL) {
             L2CAP_TRACE_ERROR("L2CAP - unable to allocate CCB");
-            p_lcb->pending_ecoc_connection_cids.push_back(0);
+            p_lcb->pending_ecoc_connection_cids[i] = 0;
             p_lcb->pending_l2cap_result = L2CAP_LE_RESULT_NO_RESOURCES;
             continue;
           }
@@ -649,20 +650,18 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           temp_p_ccb->peer_cfg.fcr.mode = L2CAP_FCR_LE_COC_MODE;
 
           /* This list will be used to prepare response */
-          p_lcb->pending_ecoc_connection_cids.push_back(temp_p_ccb->local_cid);
-
-          /* This is used to notify user */
-          p_lcb->pending_ecoc_allocated_cids.push_back(temp_p_ccb->local_cid);
+          p_lcb->pending_ecoc_connection_cids[i] = temp_p_ccb->local_cid;
 
           /*This is going to be our lead p_ccb for state machine */
-          if (p_lcb->pending_ecoc_allocated_cids.size() == 1) {
+          if (!lead_cid_set) {
             p_ccb = temp_p_ccb;
             p_lcb->pending_lead_cid = p_ccb->local_cid;
+            lead_cid_set = true;
           }
         }
       }
 
-      if (p_lcb->pending_ecoc_allocated_cids.size() == 0) {
+      if (!lead_cid_set) {
         L2CAP_TRACE_ERROR("L2CAP - unable to allocate CCB");
         l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
                                           p_lcb->pending_l2cap_result);
@@ -728,12 +727,12 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       /* At least some of the channels has been created and parameters are
        * good*/
       num_of_channels = (p_pkt_end - p) / sizeof(uint16_t);
-      if (num_of_channels != p_lcb->pending_ecoc_connection_cids.size()) {
+      if (num_of_channels != p_lcb->pending_ecoc_conn_cnt) {
         L2CAP_TRACE_ERROR(
             "Incorrect response."
             "expected num of channels = %d",
             "received num of channels = %d", num_of_channels,
-            p_lcb->pending_ecoc_connection_cids.size());
+            p_lcb->pending_ecoc_conn_cnt);
         return;
       }
 
@@ -747,7 +746,8 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 
       con_info.peer_mtu = mtu;
 
-      for (uint16_t cid : p_lcb->pending_ecoc_connection_cids) {
+      for (int i = 0; i < p_lcb->pending_ecoc_conn_cnt; i++) {
+        uint16_t cid = p_lcb->pending_ecoc_connection_cids[i];
         temp_p_ccb = l2cu_find_ccb_by_cid(p_lcb, cid);
         STREAM_TO_UINT16(temp_p_ccb->remote_cid, p);
 
@@ -777,7 +777,9 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         }
       }
 
-      p_lcb->pending_ecoc_connection_cids.clear();
+      p_lcb->pending_ecoc_conn_cnt = 0;
+      memset(p_lcb->pending_ecoc_connection_cids, 0,
+             L2CAP_CREDIT_BASED_MAX_CIDS);
 
       break;
     case L2CAP_CMD_CREDIT_BASED_RECONFIG_REQ: {
