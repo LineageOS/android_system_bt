@@ -190,7 +190,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
         android::bluetooth::hci::STATUS_UNKNOWN);
 
     tBLE_BD_ADDR address_with_type{.bda = bda, .type = bda_type};
-    acl_ble_connection_fail(address_with_type, handle, enhanced, status);
+    acl_ble_connection_fail(address_with_type, handle, enhanced,
+                            static_cast<tHCI_STATUS>(status));
   }
 }
 
