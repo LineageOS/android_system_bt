@@ -41,6 +41,32 @@ struct PeriodicAdvertisingParameters {
   uint16_t periodic_advertising_properties;
 };
 
+/**
+ * LE Advertising related callbacks invoked from from the Bluetooth native stack
+ * All callbacks are invoked on the JNI thread
+ */
+class AdvertisingCallbacks {
+ public:
+  virtual ~AdvertisingCallbacks() = default;
+  virtual void OnAdvertisingSetStarted(int reg_id, uint8_t advertiser_id,
+                                       int8_t tx_power, uint8_t status) = 0;
+  virtual void OnAdvertisingEnabled(uint8_t advertiser_id, bool enable,
+                                    uint8_t status) = 0;
+  virtual void OnAdvertisingDataSet(uint8_t advertiser_id, uint8_t status) = 0;
+  virtual void OnScanResponseDataSet(uint8_t advertiser_id, uint8_t status) = 0;
+  virtual void OnAdvertisingParametersUpdated(uint8_t advertiser_id,
+                                              int8_t tx_power,
+                                              uint8_t status) = 0;
+  virtual void OnPeriodicAdvertisingParametersUpdated(uint8_t advertiser_id,
+                                                      uint8_t status) = 0;
+  virtual void OnPeriodicAdvertisingDataSet(uint8_t advertiser_id,
+                                            uint8_t status) = 0;
+  virtual void OnPeriodicAdvertisingEnabled(uint8_t advertiser_id, bool enable,
+                                            uint8_t status) = 0;
+  virtual void OnOwnAddressRead(uint8_t advertiser_id, uint8_t address_type,
+                                RawAddress address) = 0;
+};
+
 class BleAdvertiserInterface {
  public:
   virtual ~BleAdvertiserInterface() = default;
@@ -86,10 +112,11 @@ class BleAdvertiserInterface {
 
   /** Start the advertising set. This include registering, setting all
    * parameters and data, and enabling it. |register_cb| is called when the set
-   * is advertising. |timeout_cb| is called when the timeout_s have passed */
+   * is advertising. |timeout_cb| is called when the timeout_s have passed.
+   * |reg_id| is the callback id assigned from upper layer */
   virtual void StartAdvertisingSet(
-      IdTxPowerStatusCallback register_cb, AdvertiseParameters params,
-      std::vector<uint8_t> advertise_data,
+      int reg_id, IdTxPowerStatusCallback register_cb,
+      AdvertiseParameters params, std::vector<uint8_t> advertise_data,
       std::vector<uint8_t> scan_response_data,
       PeriodicAdvertisingParameters periodic_params,
       std::vector<uint8_t> periodic_data, uint16_t duration,
@@ -105,6 +132,7 @@ class BleAdvertiserInterface {
 
   virtual void SetPeriodicAdvertisingEnable(int advertiser_id, bool enable,
                                             StatusCallback cb) = 0;
+  virtual void RegisterCallbacks(AdvertisingCallbacks* callbacks) = 0;
 };
 
 #endif /* ANDROID_INCLUDE_BLE_ADVERTISER_H */

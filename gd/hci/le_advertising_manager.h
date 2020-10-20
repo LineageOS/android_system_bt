@@ -74,8 +74,15 @@ class AdvertisingCallback {
   };
 
   virtual ~AdvertisingCallback() = default;
-  virtual void OnAdvertisingSetStarted(uint8_t advertiser_id, int8_t tx_power, AdvertisingStatus status) = 0;
-  virtual void onAdvertisingEnabled(uint8_t advertiser_id, bool enable, uint8_t status) = 0;
+  virtual void OnAdvertisingSetStarted(
+      int reg_id, uint8_t advertiser_id, int8_t tx_power, AdvertisingStatus status) = 0;
+  virtual void OnAdvertisingEnabled(uint8_t advertiser_id, bool enable, uint8_t status) = 0;
+  virtual void OnAdvertisingDataSet(uint8_t advertiser_id, uint8_t status) = 0;
+  virtual void OnScanResponseDataSet(uint8_t advertiser_id, uint8_t status) = 0;
+  virtual void OnAdvertisingParametersUpdated(uint8_t advertiser_id, int8_t tx_power, uint8_t status) = 0;
+  virtual void OnPeriodicAdvertisingParametersUpdated(uint8_t advertiser_id, uint8_t status) = 0;
+  virtual void OnPeriodicAdvertisingDataSet(uint8_t advertiser_id, uint8_t status) = 0;
+  virtual void OnPeriodicAdvertisingEnabled(uint8_t advertiser_id, bool enable, uint8_t status) = 0;
 };
 
 class LeAdvertisingManager : public bluetooth::Module {
@@ -92,8 +99,11 @@ class LeAdvertisingManager : public bluetooth::Module {
                                 const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
                                 os::Handler* handler);
   AdvertiserId ExtendedCreateAdvertiser(
-      const ExtendedAdvertisingConfig& config, const common::Callback<void(Address, AddressType)>& scan_callback,
-      const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback, os::Handler* handler);
+      int reg_id,
+      const ExtendedAdvertisingConfig& config,
+      const common::Callback<void(Address, AddressType)>& scan_callback,
+      const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+      os::Handler* handler);
 
   void RemoveAdvertiser(AdvertiserId id);
 
