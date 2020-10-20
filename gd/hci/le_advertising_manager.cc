@@ -282,16 +282,21 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         // sid must be in range 0x00 to 0x0F. Since no controller supports more than
         // 16 advertisers, it's safe to make sid equal to id.
         new_config.sid = id % 0x0F;
-
-        create_extended_advertiser(id, new_config, scan_callback, set_terminated_callback, handler);
+        // TODO remove, always call create_advertiser via create_extended_advertiser
+        create_extended_advertiser(0x00, id, new_config, scan_callback, set_terminated_callback, handler);
       } break;
     }
   }
 
-  void create_extended_advertiser(AdvertiserId id, const ExtendedAdvertisingConfig& config,
-                                  const common::Callback<void(Address, AddressType)>& scan_callback,
-                                  const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
-                                  os::Handler* handler) {
+  void create_extended_advertiser(
+      int reg_id,
+      AdvertiserId id,
+      const ExtendedAdvertisingConfig& config,
+      const common::Callback<void(Address, AddressType)>& scan_callback,
+      const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+      os::Handler* handler) {
+    id_map_[id] = reg_id;
+
     if (advertising_api_type_ != AdvertisingApiType::LE_5_0) {
       create_advertiser(id, config, scan_callback, set_terminated_callback, handler);
       return;
@@ -559,6 +564,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   std::mutex id_mutex_;
   size_t num_instances_;
   std::vector<hci::EnabledSet> enabled_sets_;
+  std::map<uint8_t, int> id_map_;
 
   AdvertisingApiType advertising_api_type_{0};
 
@@ -566,7 +572,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   void on_set_advertising_enable_complete(
       Enable enable, std::vector<EnabledSet> enabled_sets, CommandCompleteView view) {
     ASSERT(view.IsValid());
-    auto complete_view = LeSetAdvertisingEnableCompleteView::Create(view);
+    auto complete_view = View::Create(view);
     ASSERT(complete_view.IsValid());
     AdvertisingCallback::AdvertisingStatus advertising_status = AdvertisingCallback::AdvertisingStatus::SUCCESS;
     if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
@@ -582,9 +588,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         continue;
       }
       if (enable == Enable::ENABLED) {
-        advertising_callbacks_->onAdvertisingEnabled(id, true, advertising_status);
+        advertising_callbacks_->OnAdvertisingEnabled(id, true, advertising_status);
       } else {
-        advertising_callbacks_->onAdvertisingEnabled(id, false, advertising_status);
+        advertising_callbacks_->OnAdvertisingEnabled(id, false, advertising_status);
       }
     }
   }
@@ -612,9 +618,10 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         continue;
       }
       if (enable == Enable::ENABLED) {
-        advertising_callbacks_->OnAdvertisingSetStarted(id, tx_power, advertising_status);
+        int reg_id = id_map_[id];
+        advertising_callbacks_->OnAdvertisingSetStarted(reg_id, id, tx_power, advertising_status);
       } else {
-        advertising_callbacks_->onAdvertisingEnabled(id, false, advertising_status);
+        advertising_callbacks_->OnAdvertisingEnabled(id, false, advertising_status);
       }
     }
   }
@@ -629,6 +636,49 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       return;
     }
     advertising_sets_[id].tx_power = complete_view.GetSelectedTxPower();
+  }
+
+  template <class View>
+  void check_status_with_id(AdvertiserId id, CommandCompleteView view) {
+    ASSERT(view.IsValid());
+    auto status_view = View::Create(view);
+    ASSERT(status_view.IsValid());
+    if (status_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_INFO(
+          "Got a Command complete %s, status %s",
+          OpCodeText(view.GetCommandOpCode()).c_str(),
+          ErrorCodeText(status_view.GetStatus()).c_str());
+    }
+    AdvertisingCallback::AdvertisingStatus advertising_status = AdvertisingCallback::AdvertisingStatus::SUCCESS;
+    if (status_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_INFO("Got a command complete with status %s", ErrorCodeText(status_view.GetStatus()).c_str());
+      advertising_status = AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR;
+    }
+
+    if (advertising_callbacks_ == nullptr) {
+      return;
+    }
+
+    OpCode opcode = view.GetCommandOpCode();
+
+    switch (opcode) {
+      case OpCode::LE_SET_ADVERTISING_DATA:
+      case OpCode::LE_SET_EXTENDED_ADVERTISING_DATA:
+        advertising_callbacks_->OnAdvertisingDataSet(id, advertising_status);
+        break;
+      case OpCode::LE_SET_SCAN_RESPONSE_DATA:
+      case OpCode::LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE:
+        advertising_callbacks_->OnScanResponseDataSet(id, advertising_status);
+        break;
+      case OpCode::LE_SET_PERIODIC_ADVERTISING_PARAM:
+        advertising_callbacks_->OnPeriodicAdvertisingParametersUpdated(id, advertising_status);
+        break;
+      case OpCode::LE_SET_PERIODIC_ADVERTISING_DATA:
+        advertising_callbacks_->OnPeriodicAdvertisingDataSet(id, advertising_status);
+        break;
+      default:
+        LOG_WARN("Unexpected event type %s", OpCodeText(view.GetCommandOpCode()).c_str());
+    }
   }
 
   template <class View>
@@ -697,8 +747,11 @@ AdvertiserId LeAdvertisingManager::CreateAdvertiser(
 }
 
 AdvertiserId LeAdvertisingManager::ExtendedCreateAdvertiser(
-    const ExtendedAdvertisingConfig& config, const common::Callback<void(Address, AddressType)>& scan_callback,
-    const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback, os::Handler* handler) {
+    int reg_id,
+    const ExtendedAdvertisingConfig& config,
+    const common::Callback<void(Address, AddressType)>& scan_callback,
+    const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+    os::Handler* handler) {
   if (config.directed) {
     if (config.peer_address == Address::kEmpty) {
       LOG_INFO("Peer address can not be empty for directed advertising");
@@ -727,8 +780,15 @@ AdvertiserId LeAdvertisingManager::ExtendedCreateAdvertiser(
   if (id == kInvalidId) {
     return id;
   }
-  GetHandler()->Post(common::BindOnce(&impl::create_extended_advertiser, common::Unretained(pimpl_.get()), id, config,
-                                      scan_callback, set_terminated_callback, handler));
+  CallOn(
+      pimpl_.get(),
+      &impl::create_extended_advertiser,
+      reg_id,
+      id,
+      config,
+      scan_callback,
+      set_terminated_callback,
+      handler);
   return id;
 }
 
