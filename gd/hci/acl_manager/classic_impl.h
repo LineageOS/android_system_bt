@@ -457,7 +457,10 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
       LOG_ERROR("Received on_read_remote_version_information_complete with error code %s", error_code.c_str());
       return;
     }
-    LOG_INFO("UNIMPLEMENTED called");
+    uint16_t handle = view.GetConnectionHandle();
+    auto& acl_connection = acl_connections_.find(handle)->second;
+    acl_connection.connection_management_callbacks_->OnReadRemoteVersionInformationComplete(
+        view.GetVersion(), view.GetManufacturerName(), view.GetSubVersion());
   }
 
   void on_read_remote_supported_features_complete(EventPacketView packet) {
@@ -469,7 +472,10 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   void on_read_remote_extended_features_complete(EventPacketView packet) {
     auto view = ReadRemoteExtendedFeaturesCompleteView::Create(packet);
     ASSERT_LOG(view.IsValid(), "Read remote extended features packet invalid");
-    LOG_INFO("UNIMPLEMENTED called");
+    uint16_t handle = view.GetConnectionHandle();
+    auto& acl_connection = acl_connections_.find(handle)->second;
+    acl_connection.connection_management_callbacks_->OnReadRemoteExtendedFeaturesComplete(
+        view.GetPageNumber(), view.GetMaximumPageNumber(), view.GetExtendedLmpFeatures());
   }
 
   void on_link_supervision_timeout_changed(EventPacketView packet) {
