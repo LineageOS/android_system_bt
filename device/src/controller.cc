@@ -214,7 +214,7 @@ static future_t* start_up(void) {
         response, &features_ble);
 
     iso_supported = HCI_LE_CIS_CENTRAL(features_ble.as_array) ||
-                    HCI_LE_CIS_SLAVE(features_ble.as_array) ||
+                    HCI_LE_CIS_PERIPHERAL(features_ble.as_array) ||
                     HCI_LE_ISO_BROADCASTER(features_ble.as_array);
 
     if (iso_supported) {
@@ -393,7 +393,7 @@ static bool supports_extended_inquiry_response(void) {
   return HCI_EXT_INQ_RSP_SUPPORTED(features_classic[0].as_array);
 }
 
-static bool supports_central_slave_role_switch(void) {
+static bool supports_central_peripheral_role_switch(void) {
   CHECK(readable);
   return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
 }
@@ -575,7 +575,7 @@ static bool supports_ble_periodic_advertising(void) {
 static bool supports_ble_peripheral_initiated_feature_exchange(void) {
   CHECK(readable);
   CHECK(ble_supported);
-  return HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(features_ble.as_array);
+  return HCI_LE_PERIPHERAL_INIT_FEAT_EXC_SUPPORTED(features_ble.as_array);
 }
 
 static bool supports_ble_connection_parameter_request(void) {
@@ -604,10 +604,10 @@ static bool supports_ble_connected_isochronous_stream_central(void) {
   return HCI_LE_CIS_CENTRAL(features_ble.as_array);
 }
 
-static bool supports_ble_connected_isochronous_stream_slave(void) {
+static bool supports_ble_connected_isochronous_stream_peripheral(void) {
   CHECK(readable);
   CHECK(ble_supported);
-  return HCI_LE_CIS_SLAVE(features_ble.as_array);
+  return HCI_LE_CIS_PERIPHERAL(features_ble.as_array);
 }
 
 static bool supports_ble_isochronous_broadcaster(void) {
@@ -745,7 +745,7 @@ static const controller_t interface = {
     supports_interlaced_inquiry_scan,
     supports_rssi_with_inquiry_results,
     supports_extended_inquiry_response,
-    supports_central_slave_role_switch,
+    supports_central_peripheral_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
     supports_3_slot_packets,
@@ -785,7 +785,7 @@ static const controller_t interface = {
     supports_ble_periodic_advertising_sync_transfer_sender,
     supports_ble_periodic_advertising_sync_transfer_recipient,
     supports_ble_connected_isochronous_stream_central,
-    supports_ble_connected_isochronous_stream_slave,
+    supports_ble_connected_isochronous_stream_peripheral,
     supports_ble_isochronous_broadcaster,
     supports_ble_synchronized_receiver,
 

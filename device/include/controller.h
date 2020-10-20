@@ -43,7 +43,7 @@ typedef struct controller_t {
   bool (*supports_interlaced_inquiry_scan)(void);
   bool (*supports_rssi_with_inquiry_results)(void);
   bool (*supports_extended_inquiry_response)(void);
-  bool (*supports_central_slave_role_switch)(void);
+  bool (*supports_central_peripheral_role_switch)(void);
   bool (*supports_enhanced_setup_synchronous_connection)(void);
   bool (*supports_enhanced_accept_synchronous_connection)(void);
   bool (*supports_3_slot_packets)(void);
@@ -83,7 +83,7 @@ typedef struct controller_t {
   bool (*supports_ble_periodic_advertising_sync_transfer_sender)(void);
   bool (*supports_ble_periodic_advertising_sync_transfer_recipient)(void);
   bool (*supports_ble_connected_isochronous_stream_central)(void);
-  bool (*supports_ble_connected_isochronous_stream_slave)(void);
+  bool (*supports_ble_connected_isochronous_stream_peripheral)(void);
   bool (*supports_ble_isochronous_broadcaster)(void);
   bool (*supports_ble_synchronized_receiver)(void);
 

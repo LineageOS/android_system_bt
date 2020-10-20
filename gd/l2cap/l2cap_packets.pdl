@@ -582,7 +582,7 @@ packet LeDisconnectionResponse : LeControl (code = DISCONNECTION_RESPONSE) {
 packet ConnectionParameterUpdateRequest : LeControl (code = CONNECTION_PARAMETER_UPDATE_REQUEST) {
   interval_min : 16,
   interval_max : 16,
-  slave_latency : 16,
+  peripheral_latency : 16,
   timeout_multiplier : 16,
 }
 

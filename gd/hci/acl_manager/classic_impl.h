@@ -199,7 +199,7 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
       ASSERT_LOG(incoming_connecting_address_ == address, "No prior connection request for %s",
                  address.ToString().c_str());
       incoming_connecting_address_ = Address::kEmpty;
-      current_role = Role::SLAVE;
+      current_role = Role::PERIPHERAL;
     }
     if (status != ErrorCode::SUCCESS) {
       client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),

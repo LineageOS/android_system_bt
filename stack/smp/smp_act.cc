@@ -73,7 +73,7 @@ static void smp_update_key_mask(tSMP_CB* p_cb, uint8_t key_type, bool recv) {
     ** being exchanged with the peer */
     p_cb->local_i_key &= ~key_type;
     p_cb->local_r_key &= ~key_type;
-  } else if (p_cb->role == HCI_ROLE_SLAVE) {
+  } else if (p_cb->role == HCI_ROLE_PERIPHERAL) {
     if (recv)
       p_cb->local_i_key &= ~key_type;
     else
@@ -277,7 +277,7 @@ void smp_send_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
 /*******************************************************************************
  * Function     smp_send_init
- * Description  process pairing initializer to slave device
+ * Description  process pairing initializer to peripheral device
  ******************************************************************************/
 void smp_send_init(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
@@ -342,7 +342,7 @@ void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_send_cmd(SMP_OPCODE_ENCRYPT_INFO, p_cb);
   smp_send_cmd(SMP_OPCODE_CENTRAL_ID, p_cb);
 
-  /* save the DIV and key size information when acting as slave device */
+  /* save the DIV and key size information when acting as peripheral device */
   le_key.lenc_key.ltk = p_cb->ltk;
   le_key.lenc_key.div = p_cb->div;
   le_key.lenc_key.key_size = p_cb->loc_enc_size;
@@ -503,8 +503,8 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s: pairing_bda=%s", __func__,
                   p_cb->pairing_bda.ToString().c_str());
 
-  /* erase all keys if it is slave proc pairing req */
-  if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE))
+  /* erase all keys if it is peripheral proc pairing req */
+  if (p_dev_rec && (p_cb->role == HCI_ROLE_PERIPHERAL))
     btm_sec_clear_ble_keys(p_dev_rec);
 
   p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
@@ -534,7 +534,7 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   // PTS Testing failure modes
   if (pts_test_send_authentication_complete_failure(p_cb)) return;
 
-  if (p_cb->role == HCI_ROLE_SLAVE) {
+  if (p_cb->role == HCI_ROLE_PERIPHERAL) {
     if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD)) {
       /* peer (central) started pairing sending Pairing Request */
       p_cb->local_i_key = p_cb->peer_i_key;
@@ -543,7 +543,7 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       p_cb->cb_evt = SMP_SEC_REQUEST_EVT;
     } else /* update local i/r key according to pairing request */
     {
-      /* pairing started with this side (slave) sending Security Request */
+      /* pairing started with this side (peripheral) sending Security Request */
       p_cb->local_i_key &= p_cb->peer_i_key;
       p_cb->local_r_key &= p_cb->peer_r_key;
       p_cb->selected_association_model = smp_select_association_model(p_cb);
@@ -553,7 +553,8 @@ void smp_proc_pair_cmd(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
            (p_cb->selected_association_model ==
             SMP_MODEL_SEC_CONN_JUSTWORKS))) {
         SMP_TRACE_ERROR(
-            "%s: pairing failed - slave requires secure connection only mode",
+            "%s: pairing failed - peripheral requires secure connection only "
+            "mode",
             __func__);
         tSMP_INT_DATA smp_int_data;
         smp_int_data.status = SMP_PAIR_AUTH_FAIL;
@@ -772,15 +773,16 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   SMP_TRACE_DEBUG("%s", __func__);
   /* rejecting BR pairing request over non-SC BR link */
-  if (!p_dev_rec->new_encryption_key_is_p256 && p_cb->role == HCI_ROLE_SLAVE) {
+  if (!p_dev_rec->new_encryption_key_is_p256 &&
+      p_cb->role == HCI_ROLE_PERIPHERAL) {
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = SMP_XTRANS_DERIVE_NOT_ALLOW;
     smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
     return;
   }
 
-  /* erase all keys if it is slave proc pairing req*/
-  if (p_dev_rec && (p_cb->role == HCI_ROLE_SLAVE))
+  /* erase all keys if it is peripheral proc pairing req*/
+  if (p_dev_rec && (p_cb->role == HCI_ROLE_PERIPHERAL))
     btm_sec_clear_ble_keys(p_dev_rec);
 
   p_cb->flags |= SMP_PAIR_FLAG_ENC_AFTER_PAIR;
@@ -813,7 +815,7 @@ void smp_br_process_pairing_command(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   p_cb->local_i_key = p_cb->peer_i_key;
   p_cb->local_r_key = p_cb->peer_r_key;
 
-  if (p_cb->role == HCI_ROLE_SLAVE) {
+  if (p_cb->role == HCI_ROLE_PERIPHERAL) {
     p_dev_rec->new_encryption_key_is_p256 = false;
     /* shortcut to skip Security Grant step */
     p_cb->cb_evt = SMP_BR_KEYS_REQ_EVT;
@@ -899,7 +901,7 @@ void smp_br_select_next_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s role=%d (0-central) r_keys=0x%x i_keys=0x%x", __func__,
                   p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
-  if (p_cb->role == HCI_ROLE_SLAVE ||
+  if (p_cb->role == HCI_ROLE_PERIPHERAL ||
       (!p_cb->local_r_key && p_cb->role == HCI_ROLE_CENTRAL)) {
     smp_key_pick_key(p_cb, p_data);
   }
@@ -937,7 +939,7 @@ void smp_proc_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   smp_key_distribution(p_cb, NULL);
 }
 
-/** process central ID from slave device */
+/** process central ID from peripheral device */
 void smp_proc_central_id(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   uint8_t* p = p_data->p_data;
   tBTM_LE_KEY_VALUE le_key;
@@ -1063,7 +1065,7 @@ void smp_proc_compare(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     if (p_cb->peer_enc_size < p_cb->loc_enc_size)
       p_cb->loc_enc_size = p_cb->peer_enc_size;
 
-    if (p_cb->role == HCI_ROLE_SLAVE)
+    if (p_cb->role == HCI_ROLE_PERIPHERAL)
       smp_sm_event(p_cb, SMP_RAND_EVT, NULL);
     else {
       /* central device always use received i/r key as keys to distribute */
@@ -1198,7 +1200,8 @@ void smp_check_auth_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     if (p_cb->flags & SMP_PAIR_FLAG_ENC_AFTER_PAIR)
       smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
     /* if enc failed for old security information */
-    /* if central device, clean up and abck to idle; slave device do nothing */
+    /* if central device, clean up and abck to idle; peripheral device do
+     * nothing */
     else if (p_cb->role == HCI_ROLE_CENTRAL) {
       smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
     }
@@ -1210,8 +1213,8 @@ void smp_check_auth_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  Pick a key distribution function based on the key mask.
  ******************************************************************************/
 void smp_key_pick_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  uint8_t key_to_dist =
-      (p_cb->role == HCI_ROLE_SLAVE) ? p_cb->local_r_key : p_cb->local_i_key;
+  uint8_t key_to_dist = (p_cb->role == HCI_ROLE_PERIPHERAL) ? p_cb->local_r_key
+                                                            : p_cb->local_i_key;
   uint8_t i = 0;
 
   SMP_TRACE_DEBUG("%s key_to_dist=0x%x", __func__, key_to_dist);
@@ -1234,7 +1237,7 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s role=%d (0-central) r_keys=0x%x i_keys=0x%x", __func__,
                   p_cb->role, p_cb->local_r_key, p_cb->local_i_key);
 
-  if (p_cb->role == HCI_ROLE_SLAVE ||
+  if (p_cb->role == HCI_ROLE_PERIPHERAL ||
       (!p_cb->local_r_key && p_cb->role == HCI_ROLE_CENTRAL)) {
     smp_key_pick_key(p_cb, p_data);
   }
@@ -1251,7 +1254,7 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         /*
          * Instead of declaring authorization complete immediately,
          * delay the event from being sent by SMP_DELAYED_AUTH_TIMEOUT_MS.
-         * This allows the slave to send over Pairing Failed if the
+         * This allows the peripheral to send over Pairing Failed if the
          * last key is rejected.  During this waiting window, the
          * state should remain in SMP_STATE_BOND_PENDING.
          */
@@ -1371,13 +1374,13 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
 /*******************************************************************************
  * Function     smp_process_io_response
- * Description  process IO response for a slave device.
+ * Description  process IO response for a peripheral device.
  ******************************************************************************/
 void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   SMP_TRACE_DEBUG("%s", __func__);
   if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
-    /* pairing started by local (slave) Security Request */
+    /* pairing started by local (peripheral) Security Request */
     smp_set_state(SMP_STATE_SEC_REQ_PENDING);
     smp_send_cmd(SMP_OPCODE_SEC_REQ, p_cb);
   } else /* plan to send pairing respond */
@@ -1389,8 +1392,8 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         (!(p_cb->le_secure_connections_mode_is_used) ||
          (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS))) {
       SMP_TRACE_ERROR(
-          "Slave requires secure connection only mode "
-          "but it can't be provided -> Slave fails pairing");
+          "Peripheral requires secure connection only mode "
+          "but it can't be provided -> Peripheral fails pairing");
       tSMP_INT_DATA smp_int_data;
       smp_int_data.status = SMP_PAIR_AUTH_FAIL;
       smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
@@ -1409,11 +1412,12 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 }
 
 /*******************************************************************************
- * Function     smp_br_process_slave_keys_response
- * Description  process application keys response for a slave device
+ * Function     smp_br_process_peripheral_keys_response
+ * Description  process application keys response for a peripheral device
  *              (BR/EDR transport).
  ******************************************************************************/
-void smp_br_process_slave_keys_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_br_process_peripheral_keys_response(tSMP_CB* p_cb,
+                                             tSMP_INT_DATA* p_data) {
   smp_br_send_pair_response(p_cb, NULL);
 }
 
@@ -1473,7 +1477,8 @@ void smp_idle_terminate(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *              saved.
  *              Actions:
  *              - invokes DHKey computation;
- *              - on slave side invokes sending local public key to the peer.
+ *              - on peripheral side invokes sending local public key to the
+ *peer.
  *              - invokes SC phase 1 process.
  ******************************************************************************/
 void smp_both_have_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
@@ -1482,8 +1487,8 @@ void smp_both_have_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   /* invokes DHKey computation */
   smp_compute_dhkey(p_cb);
 
-  /* on slave side invokes sending local public key to the peer */
-  if (p_cb->role == HCI_ROLE_SLAVE) smp_send_pair_public_key(p_cb, NULL);
+  /* on peripheral side invokes sending local public key to the peer */
+  if (p_cb->role == HCI_ROLE_PERIPHERAL) smp_send_pair_public_key(p_cb, NULL);
 
   smp_sm_event(p_cb, SMP_SC_DHKEY_CMPLT_EVT, NULL);
 }
@@ -1547,20 +1552,20 @@ void smp_process_local_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   switch (p_cb->selected_association_model) {
     case SMP_MODEL_SEC_CONN_JUSTWORKS:
     case SMP_MODEL_SEC_CONN_NUM_COMP:
-      if (p_cb->role == HCI_ROLE_SLAVE) {
-        /* slave calculates and sends local commitment */
+      if (p_cb->role == HCI_ROLE_PERIPHERAL) {
+        /* peripheral calculates and sends local commitment */
         smp_calculate_local_commitment(p_cb);
         smp_send_commitment(p_cb, NULL);
-        /* slave has to wait for peer nonce */
+        /* peripheral has to wait for peer nonce */
         smp_set_state(SMP_STATE_WAIT_NONCE);
       } else /* i.e. central */
       {
         if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM) {
-          /* slave commitment is already received, send local nonce, wait for
-           * remote nonce*/
+          /* peripheral commitment is already received, send local nonce, wait
+           * for remote nonce*/
           SMP_TRACE_DEBUG(
               "central in assoc mode = %d "
-              "already rcvd slave commitment - race condition",
+              "already rcvd peripheral commitment - race condition",
               p_cb->selected_association_model);
           p_cb->flags &= ~SMP_PAIR_FLAG_HAVE_PEER_COMM;
           smp_send_rand(p_cb, NULL);
@@ -1574,7 +1579,7 @@ void smp_process_local_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
       if (p_cb->role == HCI_ROLE_CENTRAL) {
         smp_send_commitment(p_cb, NULL);
-      } else /* slave */
+      } else /* peripheral */
       {
         if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_COMM) {
           /* central commitment is already received */
@@ -1620,7 +1625,7 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   // PTS Testing failure modes (for LT)
   if ((p_cb->cert_failure == SMP_NUMERIC_COMPAR_FAIL) &&
       (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) &&
-      (p_cb->role == HCI_ROLE_SLAVE)) {
+      (p_cb->role == HCI_ROLE_PERIPHERAL)) {
     SMP_TRACE_ERROR("%s failure case = %d", __func__, p_cb->cert_failure);
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = SMP_NUMERIC_COMPAR_FAIL;
@@ -1642,7 +1647,7 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           break;
         }
       } else {
-        /* slave sends local nonce */
+        /* peripheral sends local nonce */
         smp_send_rand(p_cb, NULL);
       }
 
@@ -1676,7 +1681,7 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         break;
       }
 
-      if (p_cb->role == HCI_ROLE_SLAVE) {
+      if (p_cb->role == HCI_ROLE_PERIPHERAL) {
         smp_send_rand(p_cb, NULL);
       }
 
@@ -1690,7 +1695,7 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
       break;
     case SMP_MODEL_SEC_CONN_OOB:
-      if (p_cb->role == HCI_ROLE_SLAVE) {
+      if (p_cb->role == HCI_ROLE_PERIPHERAL) {
         smp_send_rand(p_cb, NULL);
       }
 
@@ -1730,7 +1735,7 @@ void smp_match_dhkey_checks(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   if (p_cb->peer_enc_size < p_cb->loc_enc_size)
     p_cb->loc_enc_size = p_cb->peer_enc_size;
 
-  if (p_cb->role == HCI_ROLE_SLAVE) {
+  if (p_cb->role == HCI_ROLE_PERIPHERAL) {
     smp_sm_event(p_cb, SMP_PAIR_DHKEY_CHCK_EVT, NULL);
   } else {
     /* central device always use received i/r key as keys to distribute */
@@ -1758,8 +1763,8 @@ void smp_move_to_secure_connections_phase2(tSMP_CB* p_cb,
  * Description  generates event if dhkey check from the peer is already
  *              received.
  *
- * Note         It is supposed to be used on slave to prevent race condition.
- *              It is supposed to be called after slave dhkey check is
+ * Note         It is supposed to be used on peripheral to prevent race
+ *condition. It is supposed to be called after peripheral dhkey check is
  *              calculated.
  ******************************************************************************/
 void smp_phase_2_dhkey_checks_are_present(tSMP_CB* p_cb,
@@ -1775,7 +1780,7 @@ void smp_phase_2_dhkey_checks_are_present(tSMP_CB* p_cb,
  * Description  generates SMP_BOTH_PUBL_KEYS_RCVD_EVT event when both local and
  *              central public keys are available.
  *
- * Note         on the slave it is used to prevent race condition.
+ * Note         on the peripheral it is used to prevent race condition.
  *
  ******************************************************************************/
 void smp_wait_for_both_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
@@ -1783,7 +1788,7 @@ void smp_wait_for_both_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   if ((p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY) &&
       (p_cb->flags & SMP_PAIR_FLAG_HAVE_LOCAL_PUBL_KEY)) {
-    if ((p_cb->role == HCI_ROLE_SLAVE) &&
+    if ((p_cb->role == HCI_ROLE_PERIPHERAL) &&
         ((p_cb->req_oob_type == SMP_OOB_LOCAL) ||
          (p_cb->req_oob_type == SMP_OOB_BOTH))) {
       smp_set_state(SMP_STATE_PUBLIC_KEY_EXCH);
@@ -1920,8 +1925,8 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function         smp_link_encrypted
  *
  * Description      This function is called when link is encrypted and notified
- *                  to the slave device. Proceed to to send LTK, DIV and ER to
- *                  central if bonding the devices.
+ *                  to the peripheral device. Proceed to to send LTK, DIV and ER
+ *to central if bonding the devices.
  *
  *
  * Returns          void

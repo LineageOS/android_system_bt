@@ -281,7 +281,7 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
   if (SMP_OPCODE_PAIRING_REQ == cmd) {
     if ((p_cb->state == SMP_STATE_IDLE) &&
         (p_cb->br_state == SMP_BR_STATE_IDLE)) {
-      p_cb->role = HCI_ROLE_SLAVE;
+      p_cb->role = HCI_ROLE_PERIPHERAL;
       p_cb->smp_over_br = true;
       p_cb->pairing_bda = bd_addr;
     } else if (bd_addr != p_cb->pairing_bda) {

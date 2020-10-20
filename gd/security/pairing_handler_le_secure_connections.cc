@@ -70,7 +70,7 @@ std::variant<PairingFailure, KeyExchangeResult> PairingHandlerLe::ExchangePublic
   }
 
   if (!IAmCentral(i)) {
-    LOG_INFO("Slave sends out public key");
+    LOG_INFO("Peripheral sends out public key");
     // Send pairing public key
     SendL2capPacket(i, std::move(myPublicKey));
   }
@@ -259,7 +259,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsOutOfBand(const Initial
     rb = localR;
     Nb = GenerateRandom<16>();
 
-    LOG_INFO("Slave waits for random");
+    LOG_INFO("Peripheral waits for random");
     auto random = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random)) {
       return std::get<PairingFailure>(random);
@@ -352,7 +352,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
       // Compute confirm
       Cbi = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nbi, ri);
 
-      LOG_INFO("Slave waits for the Cai");
+      LOG_INFO("Peripheral waits for the Cai");
       auto confirm = WaitPairingConfirm();
       if (std::holds_alternative<PairingFailure>(confirm)) {
         return std::get<PairingFailure>(confirm);
@@ -360,10 +360,10 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsPasskeyEntry(const Init
       Cai = std::get<PairingConfirmView>(confirm).GetConfirmValue();
 
       // Send Pairing Confirm
-      LOG_INFO("Slave sends confirmation");
+      LOG_INFO("Peripheral sends confirmation");
       SendL2capPacket(i, PairingConfirmBuilder::Create(Cbi));
 
-      LOG_INFO("Slave waits for random");
+      LOG_INFO("Peripheral waits for random");
       auto random = WaitPairingRandom();
       if (std::holds_alternative<PairingFailure>(random)) {
         return std::get<PairingFailure>(random);
@@ -461,10 +461,10 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const Initial
     Cb = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nb, 0);
 
     // Send Pairing Confirm
-    LOG_INFO("Slave sends confirmation");
+    LOG_INFO("Peripheral sends confirmation");
     SendL2capPacket(i, PairingConfirmBuilder::Create(Cb));
 
-    LOG_INFO("Slave waits for random");
+    LOG_INFO("Peripheral waits for random");
     auto random = WaitPairingRandom();
     if (std::holds_alternative<PairingFailure>(random)) {
       return std::get<PairingFailure>(random);

@@ -30,7 +30,7 @@ typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 typedef struct {
   uint16_t min_conn_int;
   uint16_t max_conn_int;
-  uint16_t slave_latency;
+  uint16_t peripheral_latency;
   uint16_t supervision_tout;
 
 } tBTM_LE_CONN_PRAMS;
@@ -63,7 +63,7 @@ typedef struct {
   uint8_t term_service_name[BT_MAX_SERVICE_NAME_LEN + 1];
 } tBTM_SEC_SERV_REC;
 
-/* LE Security information of device in Slave Role */
+/* LE Security information of device in Peripheral Role */
 typedef struct {
   Octet16 irk;   /* peer diverified identity root */
   Octet16 pltk;  /* peer long term key */
@@ -73,7 +73,7 @@ typedef struct {
   Octet16 lcsrk; /* local SRK peer device used to secured sign local data  */
 
   BT_OCTET8 rand;        /* random vector for LTK generation */
-  uint16_t ediv;         /* LTK diversifier of this slave device */
+  uint16_t ediv;         /* LTK diversifier of this peripheral device */
   uint16_t div;          /* local DIV  to generate local LTK=d1(ER,DIV,0) and
                             CSRK=d1(ER,DIV,1)  */
   uint8_t sec_level;     /* local pairing security level */
@@ -107,7 +107,7 @@ typedef struct {
   tADDRESS_TYPE active_addr_type;
 
   tBTM_LE_KEY_TYPE key_type; /* bit mask of valid key types in record */
-  tBTM_SEC_BLE_KEYS keys;    /* LE device security info in slave rode */
+  tBTM_SEC_BLE_KEYS keys;    /* LE device security info in peripheral rode */
 } tBTM_SEC_BLE;
 
 enum : uint16_t {

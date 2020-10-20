@@ -842,7 +842,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
   /* restore role switch policy, if role switch failed */
   if ((HCI_SUCCESS != app_id) &&
       (BTM_GetRole(peer_addr, &cur_role) == BTM_SUCCESS) &&
-      (cur_role == HCI_ROLE_SLAVE)) {
+      (cur_role == HCI_ROLE_PERIPHERAL)) {
     BTM_unblock_role_switch_for(peer_addr);
   }
 
@@ -941,7 +941,7 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
  * Function         bta_av_switch_if_needed
  *
  * Description      This function checks if there is another existing AV
- *                  channel that is local as slave role.
+ *                  channel that is local as peripheral role.
  *                  If so, role switch and remove it from link policy.
  *
  * Returns          true, if role switch is done

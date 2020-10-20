@@ -126,8 +126,8 @@ bool Link::CheckConnectionParameters(
 
 void Link::SendConnectionParameterUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency,
                                          uint16_t supervision_timeout, uint16_t min_ce_length, uint16_t max_ce_length) {
-  if (acl_connection_->GetRole() == hci::Role::SLAVE) {
-    // TODO: If both LL central and slave support 4.1, use HCI command directly
+  if (acl_connection_->GetRole() == hci::Role::PERIPHERAL) {
+    // TODO: If both LL central and peripheral support 4.1, use HCI command directly
     signalling_manager_.SendConnectionParameterUpdateRequest(conn_interval_min, conn_interval_max, conn_latency,
                                                              supervision_timeout);
     return;

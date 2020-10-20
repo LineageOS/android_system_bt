@@ -58,7 +58,7 @@ class AclBuilderTest : public ::testing::Test {
 TEST(AclBuilderTest, buildAclCount) {
   uint16_t handle = 0x0314;
   PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
-  BroadcastFlag broadcast_flag = BroadcastFlag::ACTIVE_SLAVE_BROADCAST;
+  BroadcastFlag broadcast_flag = BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST;
 
   std::unique_ptr<RawBuilder> count_payload = std::make_unique<RawBuilder>();
   count_payload->AddOctets(counting_bytes);
