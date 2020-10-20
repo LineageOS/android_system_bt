@@ -338,8 +338,15 @@ class LeAdvertisingManagerTest : public ::testing::Test {
 
   class MockAdvertisingCallback : public AdvertisingCallback {
    public:
-    MOCK_METHOD3(OnAdvertisingSetStarted, void(uint8_t advertiser_id, int8_t tx_power, AdvertisingStatus status));
-    MOCK_METHOD3(onAdvertisingEnabled, void(uint8_t advertiser_id, bool enable, uint8_t status));
+    MOCK_METHOD4(
+        OnAdvertisingSetStarted, void(int reg_id, uint8_t advertiser_id, int8_t tx_power, AdvertisingStatus status));
+    MOCK_METHOD3(OnAdvertisingEnabled, void(uint8_t advertiser_id, bool enable, uint8_t status));
+    MOCK_METHOD2(OnAdvertisingDataSet, void(uint8_t advertiser_id, uint8_t status));
+    MOCK_METHOD2(OnScanResponseDataSet, void(uint8_t advertiser_id, uint8_t status));
+    MOCK_METHOD3(OnAdvertisingParametersUpdated, void(uint8_t advertiser_id, int8_t tx_power, uint8_t status));
+    MOCK_METHOD2(OnPeriodicAdvertisingParametersUpdated, void(uint8_t advertiser_id, uint8_t status));
+    MOCK_METHOD2(OnPeriodicAdvertisingDataSet, void(uint8_t advertiser_id, uint8_t status));
+    MOCK_METHOD3(OnPeriodicAdvertisingEnabled, void(uint8_t advertiser_id, bool enable, uint8_t status));
   } mock_advertising_callback_;
 };
 
@@ -393,7 +400,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
       OpCode::LE_SET_ADVERTISING_ENABLE,
   };
   EXPECT_CALL(
-      mock_advertising_callback_, onAdvertisingEnabled(id, true, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+      mock_advertising_callback_, OnAdvertisingEnabled(id, true, AdvertisingCallback::AdvertisingStatus::SUCCESS));
 
   std::vector<uint8_t> success_vector{static_cast<uint8_t>(ErrorCode::SUCCESS)};
   auto result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
@@ -411,7 +418,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
   result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
   EXPECT_CALL(
-      mock_advertising_callback_, onAdvertisingEnabled(id, false, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+      mock_advertising_callback_, OnAdvertisingEnabled(id, false, AdvertisingCallback::AdvertisingStatus::SUCCESS));
   test_hci_layer_->IncomingEvent(LeSetAdvertisingEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
   sync_client_handler();
 }
@@ -475,11 +482,12 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   advertising_config.sid = 0x01;
 
   auto last_command_future = test_hci_layer_->GetCommandFuture(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE);
-  auto id = le_advertising_manager_->ExtendedCreateAdvertiser(advertising_config, scan_callback,
-                                                              set_terminated_callback, client_handler_);
+  auto id = le_advertising_manager_->ExtendedCreateAdvertiser(
+      0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   EXPECT_CALL(
-      mock_advertising_callback_, OnAdvertisingSetStarted(id, -23, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+      mock_advertising_callback_,
+      OnAdvertisingSetStarted(0x00, id, -23, AdvertisingCallback::AdvertisingStatus::SUCCESS));
   std::vector<OpCode> adv_opcodes = {
       OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS,
       OpCode::LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE,
@@ -508,7 +516,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
   EXPECT_CALL(
-      mock_advertising_callback_, onAdvertisingEnabled(id, false, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+      mock_advertising_callback_, OnAdvertisingEnabled(id, false, AdvertisingCallback::AdvertisingStatus::SUCCESS));
   test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
   sync_client_handler();
 }
