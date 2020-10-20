@@ -211,8 +211,8 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChanne
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid);
   if (channel != nullptr) {
     RefreshRefCount();
+    channel->local_initiated_ = false;
   }
-  channel->local_initiated_ = false;
   return channel;
 }
 
