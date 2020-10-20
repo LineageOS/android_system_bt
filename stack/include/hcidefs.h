@@ -489,7 +489,7 @@ constexpr uint8_t HCI_LE_STATES_HI_DUTY_DIR_ADV_BIT = 3;
 constexpr uint8_t HCI_LE_STATES_PASS_SCAN_BIT = 4;
 constexpr uint8_t HCI_LE_STATES_ACTIVE_SCAN_BIT = 5;
 constexpr uint8_t HCI_LE_STATES_INIT_BIT = 6;
-constexpr uint8_t HCI_LE_STATES_SLAVE_BIT = 7;
+constexpr uint8_t HCI_LE_STATES_PERIPHERAL_BIT = 7;
 constexpr uint8_t HCI_LE_STATES_NON_CONN_ADV_PASS_SCAN_BIT = 8;
 constexpr uint8_t HCI_LE_STATES_SCAN_ADV_PASS_SCAN_BIT = 9;
 constexpr uint8_t HCI_LE_STATES_CONN_ADV_PASS_SCAN_BIT = 10;
@@ -502,14 +502,14 @@ constexpr uint8_t HCI_LE_STATES_NON_CONN_INIT_BIT = 16;
 constexpr uint8_t HCI_LE_STATES_SCAN_ADV_INIT_BIT = 17;
 constexpr uint8_t HCI_LE_STATES_NON_CONN_ADV_CENTRAL_BIT = 18;
 constexpr uint8_t HCI_LE_STATES_SCAN_ADV_CENTRAL_BIT = 19;
-constexpr uint8_t HCI_LE_STATES_NON_CONN_ADV_SLAVE_BIT = 20;
-constexpr uint8_t HCI_LE_STATES_SCAN_ADV_SLAVE_BIT = 21;
+constexpr uint8_t HCI_LE_STATES_NON_CONN_ADV_PERIPHERAL_BIT = 20;
+constexpr uint8_t HCI_LE_STATES_SCAN_ADV_PERIPHERAL_BIT = 21;
 constexpr uint8_t HCI_LE_STATES_PASS_SCAN_INIT_BIT = 22;
 constexpr uint8_t HCI_LE_STATES_ACTIVE_SCAN_INIT_BIT = 23;
 constexpr uint8_t HCI_LE_STATES_PASS_SCAN_CENTRAL_BIT = 24;
 constexpr uint8_t HCI_LE_STATES_ACTIVE_SCAN_CENTRAL_BIT = 25;
-constexpr uint8_t HCI_LE_STATES_PASS_SCAN_SLAVE_BIT = 26;
-constexpr uint8_t HCI_LE_STATES_ACTIVE_SCAN_SLAVE_BIT = 27;
+constexpr uint8_t HCI_LE_STATES_PASS_SCAN_PERIPHERAL_BIT = 26;
+constexpr uint8_t HCI_LE_STATES_ACTIVE_SCAN_PERIPHERAL_BIT = 27;
 constexpr uint8_t HCI_LE_STATES_INIT_CENTRAL_BIT = 28;
 constexpr uint8_t HCI_LE_STATES_LOW_DUTY_DIR_ADV_BIT = 29;
 constexpr uint8_t HCI_LE_STATES_LO_DUTY_DIR_ADV_PASS_SCAN_BIT = 30;
@@ -520,10 +520,10 @@ constexpr uint8_t HCI_LE_STATES_LO_DUTY_DIR_ADV_INIT_BIT = 34;
 constexpr uint8_t HCI_LE_STATES_CONN_ADV_CENTRAL_BIT = 35;
 constexpr uint8_t HCI_LE_STATES_HI_DUTY_DIR_ADV_CENTRAL_BIT = 36;
 constexpr uint8_t HCI_LE_STATES_LO_DUTY_DIR_ADV_CENTRAL_BIT = 37;
-constexpr uint8_t HCI_LE_STATES_CONN_ADV_SLAVE_BIT = 38;
-constexpr uint8_t HCI_LE_STATES_HI_DUTY_DIR_ADV_SLAVE_BIT = 39;
-constexpr uint8_t HCI_LE_STATES_LO_DUTY_DIR_ADV_SLAVE_BIT = 40;
-constexpr uint8_t HCI_LE_STATES_INIT_CENTRAL_SLAVE_BIT = 41;
+constexpr uint8_t HCI_LE_STATES_CONN_ADV_PERIPHERAL_BIT = 38;
+constexpr uint8_t HCI_LE_STATES_HI_DUTY_DIR_ADV_PERIPHERAL_BIT = 39;
+constexpr uint8_t HCI_LE_STATES_LO_DUTY_DIR_ADV_PERIPHERAL_BIT = 40;
+constexpr uint8_t HCI_LE_STATES_INIT_CENTRAL_PERIPHERAL_BIT = 41;
 
 /*
  *  Definitions for HCI Events
@@ -697,7 +697,7 @@ constexpr uint8_t HCI_LE_STATES_INIT_CENTRAL_SLAVE_BIT = 41;
 /* HCI role defenitions */
 enum : uint8_t {
   HCI_ROLE_CENTRAL = 0x00,
-  HCI_ROLE_SLAVE = 0x01,
+  HCI_ROLE_PERIPHERAL = 0x01,
   HCI_ROLE_UNKNOWN = 0xff,
 };
 typedef uint8_t hci_role_t;
@@ -705,8 +705,8 @@ inline std::string RoleText(hci_role_t role) {
   switch (role) {
     case HCI_ROLE_CENTRAL:
       return std::string("central");
-    case HCI_ROLE_SLAVE:
-      return std::string("slave");
+    case HCI_ROLE_PERIPHERAL:
+      return std::string("peripheral");
     default:
       return std::string("unknown");
   }
@@ -761,7 +761,7 @@ inline std::string RoleText(hci_role_t role) {
 
 /* Policy settings status */
 #define HCI_DISABLE_ALL_LM_MODES 0x0000
-#define HCI_ENABLE_CENTRAL_SLAVE_SWITCH 0x0001
+#define HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH 0x0001
 #define HCI_ENABLE_HOLD_MODE 0x0002
 #define HCI_ENABLE_SNIFF_MODE 0x0004
 #define HCI_ENABLE_PARK_MODE 0x0008
@@ -952,8 +952,8 @@ typedef struct {
 #define HCI_ESCO_EV4_SUPPORTED(x) ((x)[4] & 0x01)
 #define HCI_ESCO_EV5_SUPPORTED(x) ((x)[4] & 0x02)
 #define HCI_LMP_ABSENCE_MASKS_SUPPORTED(x) ((x)[4] & 0x04)
-#define HCI_LMP_AFH_CAP_SLAVE_SUPPORTED(x) ((x)[4] & 0x08)
-#define HCI_LMP_AFH_CLASS_SLAVE_SUPPORTED(x) ((x)[4] & 0x10)
+#define HCI_LMP_AFH_CAP_PERIPHERAL_SUPPORTED(x) ((x)[4] & 0x08)
+#define HCI_LMP_AFH_CLASS_PERIPHERAL_SUPPORTED(x) ((x)[4] & 0x10)
 #define HCI_BREDR_NOT_SPT_SUPPORTED(x) ((x)[4] & 0x20)
 #define HCI_LE_SPT_SUPPORTED(x) ((x)[4] & 0x40)
 #define HCI_3_SLOT_EDR_ACL_SUPPORTED(x) ((x)[4] & 0x80)
@@ -989,9 +989,9 @@ typedef struct {
 
 /* LMP features encoding - page 2 */
 #define HCI_CSB_CENTRAL_SUPPORTED(x) ((x)[0] & 0x01)
-#define HCI_CSB_SLAVE_SUPPORTED(x) ((x)[0] & 0x02)
+#define HCI_CSB_PERIPHERAL_SUPPORTED(x) ((x)[0] & 0x02)
 #define HCI_SYNC_TRAIN_CENTRAL_SUPPORTED(x) ((x)[0] & 0x04)
-#define HCI_SYNC_SCAN_SLAVE_SUPPORTED(x) ((x)[0] & 0x08)
+#define HCI_SYNC_SCAN_PERIPHERAL_SUPPORTED(x) ((x)[0] & 0x08)
 #define HCI_INQ_RESP_NOTIF_SUPPORTED(x) ((x)[0] & 0x10)
 
 #define HCI_SC_CTRLR_SUPPORTED(x) ((x)[1] & 0x01)
@@ -1001,7 +1001,7 @@ typedef struct {
 #define HCI_LE_ENCRYPTION_SUPPORTED(x) ((x)[0] & 0x01)
 #define HCI_LE_CONN_PARAM_REQ_SUPPORTED(x) ((x)[0] & 0x02)
 #define HCI_LE_EXT_REJ_IND_SUPPORTED(x) ((x)[0] & 0x04)
-#define HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(x) ((x)[0] & 0x08)
+#define HCI_LE_PERIPHERAL_INIT_FEAT_EXC_SUPPORTED(x) ((x)[0] & 0x08)
 #define HCI_LE_DATA_LEN_EXT_SUPPORTED(x) ((x)[0] & 0x20)
 #define HCI_LE_ENHANCED_PRIVACY_SUPPORTED(x) ((x)[0] & 0x40)
 #define HCI_LE_EXT_SCAN_FILTER_POLICY_SUPPORTED(x) ((x)[0] & 0x80)
@@ -1013,7 +1013,7 @@ typedef struct {
 #define HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER(x) ((x)[3] & 0x01)
 #define HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT(x) ((x)[3] & 0x02)
 #define HCI_LE_CIS_CENTRAL(x) ((x)[3] & 0x10)
-#define HCI_LE_CIS_SLAVE(x) ((x)[3] & 0x20)
+#define HCI_LE_CIS_PERIPHERAL(x) ((x)[3] & 0x20)
 #define HCI_LE_ISO_BROADCASTER(x) ((x)[3] & 0x40)
 #define HCI_LE_SYNCHRONIZED_RECEIVER(x) ((x)[3] & 0x80)
 
@@ -1228,13 +1228,13 @@ typedef struct {
 #define HCI_TRUNCATED_PAGE_SUPPORTED(x) ((x)[30] & 0x40)
 #define HCI_TRUNCATED_PAGE_CANCEL_SUPPORTED(x) ((x)[30] & 0x80)
 
-#define HCI_SET_CONLESS_SLAVE_BRCST_SUPPORTED(x) ((x)[31] & 0x01)
-#define HCI_SET_CONLESS_SLAVE_BRCST_RECEIVE_SUPPORTED(x) ((x)[31] & 0x02)
+#define HCI_SET_CONLESS_PERIPHERAL_BRCST_SUPPORTED(x) ((x)[31] & 0x01)
+#define HCI_SET_CONLESS_PERIPHERAL_BRCST_RECEIVE_SUPPORTED(x) ((x)[31] & 0x02)
 #define HCI_START_SYNC_TRAIN_SUPPORTED(x) ((x)[31] & 0x04)
 #define HCI_RECEIVE_SYNC_TRAIN_SUPPORTED(x) ((x)[31] & 0x08)
 #define HCI_SET_RESERVED_LT_ADDR_SUPPORTED(x) ((x)[31] & 0x10)
 #define HCI_DELETE_RESERVED_LT_ADDR_SUPPORTED(x) ((x)[31] & 0x20)
-#define HCI_SET_CONLESS_SLAVE_BRCST_DATA_SUPPORTED(x) ((x)[31] & 0x40)
+#define HCI_SET_CONLESS_PERIPHERAL_BRCST_DATA_SUPPORTED(x) ((x)[31] & 0x40)
 #define HCI_READ_SYNC_TRAIN_PARAM_SUPPORTED(x) ((x)[31] & 0x80)
 
 #define HCI_WRITE_SYNC_TRAIN_PARAM_SUPPORTED(x) ((x)[32] & 0x01)

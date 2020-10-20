@@ -35,8 +35,10 @@ struct Controller::impl {
   void Start(hci::HciLayer* hci) {
     hci_ = hci;
     Handler* handler = module_.GetHandler();
-    hci_->RegisterEventHandler(
-        EventCode::NUMBER_OF_COMPLETED_PACKETS, handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
+    if (common::InitFlags::GdAclEnabled()) {
+      hci_->RegisterEventHandler(
+          EventCode::NUMBER_OF_COMPLETED_PACKETS, handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
+    }
 
     le_set_event_mask(kDefaultLeEventMask);
     set_event_mask(kDefaultEventMask);
@@ -907,7 +909,7 @@ LOCAL_LE_FEATURE_ACCESSOR(SupportsBlePeriodicAdvertising, 13)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBlePeriodicAdvertisingSyncTransferSender, 24)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBlePeriodicAdvertisingSyncTransferRecipient, 25)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBleConnectedIsochronousStreamCentral, 28)
-LOCAL_LE_FEATURE_ACCESSOR(SupportsBleConnectedIsochronousStreamSlave, 29)
+LOCAL_LE_FEATURE_ACCESSOR(SupportsBleConnectedIsochronousStreamPeripheral, 29)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBleIsochronousBroadcaster, 30)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBleSynchronizedReceiver, 31)
 

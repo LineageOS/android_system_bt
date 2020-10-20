@@ -240,8 +240,8 @@ Phase1ResultOrFailure PairingHandlerLe::ExchangePairingFeature(const InitialInfo
     LOG_INFO("Waiting for Pairing Response");
     auto response = WaitPairingResponse();
 
-    /* There is a potential collision where the slave initiates the pairing at the same time we initiate it, by sending
-     * security request. */
+    /* There is a potential collision where the peripheral initiates the pairing at the same time we initiate it, by
+     * sending security request. */
     if (std::holds_alternative<PairingFailure>(response) &&
         std::get<PairingFailure>(response).received_code_ == Code::SECURITY_REQUEST) {
       LOG_INFO("Received security request, waiting for Pairing Response again...");
@@ -265,7 +265,7 @@ Phase1ResultOrFailure PairingHandlerLe::ExchangePairingFeature(const InitialInfo
 
     if (i.remotely_initiated) {
       if (!i.pairing_request.has_value()) {
-        return PairingFailure("You must pass PairingRequest as a initial information to slave!");
+        return PairingFailure("You must pass PairingRequest as a initial information to peripheral!");
       }
 
       pairing_request = i.pairing_request.value();

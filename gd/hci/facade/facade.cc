@@ -111,10 +111,13 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
 
   class TestAclBuilder : public AclPacketBuilder {
    public:
-    explicit TestAclBuilder(uint16_t handle, uint8_t packet_boundary_flag, uint8_t broadcast_flag,
-                            std::vector<uint8_t> payload)
-        : AclPacketBuilder(0xbad, PacketBoundaryFlag::CONTINUING_FRAGMENT, BroadcastFlag::ACTIVE_SLAVE_BROADCAST),
-          handle_(handle), pb_flag_(packet_boundary_flag), b_flag_(broadcast_flag), bytes_(std::move(payload)) {}
+    explicit TestAclBuilder(
+        uint16_t handle, uint8_t packet_boundary_flag, uint8_t broadcast_flag, std::vector<uint8_t> payload)
+        : AclPacketBuilder(0xbad, PacketBoundaryFlag::CONTINUING_FRAGMENT, BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST),
+          handle_(handle),
+          pb_flag_(packet_boundary_flag),
+          b_flag_(broadcast_flag),
+          bytes_(std::move(payload)) {}
 
     size_t size() const override {
       return bytes_.size();

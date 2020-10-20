@@ -2157,10 +2157,10 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
     bool need_policy_change = false;
 
     /* there's AV activity on this link */
-    if (new_role == HCI_ROLE_SLAVE && bta_dm_cb.device_list.count > 1 &&
+    if (new_role == HCI_ROLE_PERIPHERAL && bta_dm_cb.device_list.count > 1 &&
         hci_status == HCI_SUCCESS) {
       /* more than one connections and the AV connection is role switched
-       * to slave
+       * to peripheral
        * switch it back to central and remove the switch policy */
       BTM_SwitchRole(bd_addr, HCI_ROLE_CENTRAL);
       need_policy_change = true;
@@ -2543,7 +2543,7 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
             delayed to avoid the collision with link encryption setup */
 
           if (bta_dm_cb.device_list.peer_device[i].pref_role !=
-                  BTA_SLAVE_ROLE_ONLY &&
+                  BTA_PERIPHERAL_ROLE_ONLY &&
               !delay_role_switch) {
             BTM_SwitchRole(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
                            HCI_ROLE_CENTRAL);
@@ -3442,13 +3442,13 @@ void bta_dm_ble_confirm_reply(const RawAddress& bd_addr, bool accept) {
 /** This function set the preferred connection parameters */
 void bta_dm_ble_set_conn_params(const RawAddress& bd_addr,
                                 uint16_t conn_int_min, uint16_t conn_int_max,
-                                uint16_t slave_latency,
+                                uint16_t peripheral_latency,
                                 uint16_t supervision_tout) {
   L2CA_AdjustConnectionIntervals(&conn_int_min, &conn_int_max,
                                  BTM_BLE_CONN_INT_MIN);
 
-  BTM_BleSetPrefConnParams(bd_addr, conn_int_min, conn_int_max, slave_latency,
-                           supervision_tout);
+  BTM_BleSetPrefConnParams(bd_addr, conn_int_min, conn_int_max,
+                           peripheral_latency, supervision_tout);
 }
 
 /** This function update LE connection parameters */

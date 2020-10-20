@@ -39,8 +39,8 @@
 extern "C" {
 #endif
 
-/** The maximum number of active slaves in a piconet. */
-#define OI_BT_MAX_ACTIVE_SLAVES 7
+/** The maximum number of active peripherals in a piconet. */
+#define OI_BT_MAX_ACTIVE_PERIPHERALS 7
 
 /**
  * @name Data types for working with UUIDs

@@ -546,14 +546,15 @@ void BTM_BleSetConnScanParams(uint32_t scan_interval, uint32_t scan_window);
  * Parameters:      bd_addr          - BD address of the peripheral
  *                  min_conn_int     - minimum preferred connection interval
  *                  max_conn_int     - maximum preferred connection interval
- *                  slave_latency    - preferred slave latency
+ *                  peripheral_latency    - preferred peripheral latency
  *                  supervision_tout - preferred supervision timeout
  *
  * Returns          void
  *
  ******************************************************************************/
 void BTM_BleSetPrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
-                              uint16_t max_conn_int, uint16_t slave_latency,
+                              uint16_t max_conn_int,
+                              uint16_t peripheral_latency,
                               uint16_t supervision_tout);
 
 /*******************************************************************************
@@ -1133,7 +1134,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
  * Function         BTM_SwitchRole
  *
  * Description      This function is called to switch role between central and
- *                  slave.  If role is already set it will do nothing.
+ *                  peripheral.  If role is already set it will do nothing.
  *
  * Returns          BTM_SUCCESS if already in specified role.
  *                  BTM_CMD_STARTED if command issued to controller.

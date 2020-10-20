@@ -5,12 +5,12 @@ Qualified Design ID: 83953
 
 Protocol / Profile | Version | Roles
 -------------------+---------+-------
-L2CAP              | 4.2     | Initiator, Acceptor, LE Central, LE Slave
+L2CAP              | 4.2     | Initiator, Acceptor, LE Central, LE Peripheral
 SDP                | 4.2     | Server, Client
 GAP                | 4.2     | BR/EDR, LE Central, LE Periperhal, LE Observer, LE Broadcaster
 GATT               | 4.2     | Client, Server; LE and BR/EDR
 ATT                | 4.2     | Client, Server; LE and BR/EDR
-SM                 | 4.2     | Central (Initiator), Slave (Responder)
+SM                 | 4.2     | Central (Initiator), Peripheral (Responder)
 AVCTP              | 1.4     | Controller, Target
 AVDTP              | 1.2     | Source, Initiator, Acceptor
 BNEP               | 1.0     |

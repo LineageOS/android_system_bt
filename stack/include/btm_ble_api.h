@@ -336,7 +336,7 @@ extern void BTM_BleLoadLocalKeys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
  * Parameters:      bd_addr          - BD address of the peripheral
  *                  min_conn_int     - minimum preferred connection interval
  *                  max_conn_int     - maximum preferred connection interval
- *                  slave_latency    - preferred slave latency
+ *                  peripheral_latency    - preferred peripheral latency
  *                  supervision_tout - preferred supervision timeout
  *
  * Returns          void
@@ -345,7 +345,7 @@ extern void BTM_BleLoadLocalKeys(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
 extern void BTM_BleSetPrefConnParams(const RawAddress& bd_addr,
                                      uint16_t min_conn_int,
                                      uint16_t max_conn_int,
-                                     uint16_t slave_latency,
+                                     uint16_t peripheral_latency,
                                      uint16_t supervision_tout);
 
 /******************************************************************************

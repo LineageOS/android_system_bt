@@ -121,7 +121,7 @@ MAP_TO_GD(supports_simultaneous_le_bredr, SupportsSimultaneousLeBrEdr)
 MAP_TO_GD(supports_interlaced_inquiry_scan, SupportsInterlacedInquiryScan)
 MAP_TO_GD(supports_rssi_with_inquiry_results, SupportsRssiWithInquiryResults)
 MAP_TO_GD(supports_extended_inquiry_response, SupportsExtendedInquiryResponse)
-MAP_TO_GD(supports_central_slave_role_switch, SupportsRoleSwitch)
+MAP_TO_GD(supports_central_peripheral_role_switch, SupportsRoleSwitch)
 MAP_TO_GD(supports_3_slot_packets, Supports3SlotPackets)
 MAP_TO_GD(supports_5_slot_packets, Supports5SlotPackets)
 MAP_TO_GD(supports_classic_2m_phy, SupportsClassic2mPhy)
@@ -165,8 +165,8 @@ MAP_TO_GD(supports_ble_periodic_advertising_sync_transfer_recipient,
           SupportsBlePeriodicAdvertisingSyncTransferRecipient)
 MAP_TO_GD(supports_ble_connected_isochronous_stream_central,
           SupportsBleConnectedIsochronousStreamCentral)
-MAP_TO_GD(supports_ble_connected_isochronous_stream_slave,
-          SupportsBleConnectedIsochronousStreamSlave)
+MAP_TO_GD(supports_ble_connected_isochronous_stream_peripheral,
+          SupportsBleConnectedIsochronousStreamPeripheral)
 MAP_TO_GD(supports_ble_isochronous_broadcaster,
           SupportsBleIsochronousBroadcaster)
 MAP_TO_GD(supports_ble_synchronized_receiver, SupportsBleSynchronizedReceiver)
@@ -278,7 +278,7 @@ static const controller_t interface = {
     supports_interlaced_inquiry_scan,
     supports_rssi_with_inquiry_results,
     supports_extended_inquiry_response,
-    supports_central_slave_role_switch,
+    supports_central_peripheral_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
     supports_3_slot_packets,
@@ -318,7 +318,7 @@ static const controller_t interface = {
     supports_ble_periodic_advertising_sync_transfer_sender,
     supports_ble_periodic_advertising_sync_transfer_recipient,
     supports_ble_connected_isochronous_stream_central,
-    supports_ble_connected_isochronous_stream_slave,
+    supports_ble_connected_isochronous_stream_peripheral,
     supports_ble_isochronous_broadcaster,
     supports_ble_synchronized_receiver,
 

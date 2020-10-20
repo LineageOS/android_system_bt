@@ -1007,7 +1007,7 @@ void bluetooth::shim::BTM_BleSetConnScanParams(uint32_t scan_interval,
 void bluetooth::shim::BTM_BleSetPrefConnParams(const RawAddress& bd_addr,
                                                uint16_t min_conn_int,
                                                uint16_t max_conn_int,
-                                               uint16_t slave_latency,
+                                               uint16_t peripheral_latency,
                                                uint16_t supervision_tout) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
 }

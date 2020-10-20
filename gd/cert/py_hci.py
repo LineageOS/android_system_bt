@@ -143,7 +143,7 @@ class PyHci(Closable):
 
         self.send_command_with_status(
             hci_packets.AcceptConnectionRequestBuilder(connection_request.get().GetBdAddr(),
-                                                       hci_packets.AcceptConnectionRequestRole.REMAIN_SLAVE))
+                                                       hci_packets.AcceptConnectionRequestRole.REMAIN_PERIPHERAL))
         return self.complete_connection()
 
     def complete_connection(self):

@@ -1906,9 +1906,9 @@ void DualModeController::LeSetCigParameters(CommandPacketView command) {
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeSetCigParameters(
       command_view.GetCigId(), command_view.GetSduIntervalMToS(),
-      command_view.GetSduIntervalSToM(), command_view.GetSlavesClockAccuracy(),
-      command_view.GetPacking(), command_view.GetFraming(),
-      command_view.GetMaxTransportLatencyMToS(),
+      command_view.GetSduIntervalSToM(),
+      command_view.GetPeripheralsClockAccuracy(), command_view.GetPacking(),
+      command_view.GetFraming(), command_view.GetMaxTransportLatencyMToS(),
       command_view.GetMaxTransportLatencySToM(), command_view.GetCisConfig());
 }
 

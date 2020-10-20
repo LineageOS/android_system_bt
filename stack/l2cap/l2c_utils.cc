@@ -2051,8 +2051,8 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
     if (p_lcb_cur == p_lcb) continue;
     if (!p_lcb_cur->in_use) continue;
     if (BTM_IsScoActiveByBdaddr(p_lcb_cur->remote_bd_addr)) {
-      L2CAP_TRACE_DEBUG("%s Central slave switch not allowed when SCO active",
-                        __func__);
+      L2CAP_TRACE_DEBUG(
+          "%s Central peripheral switch not allowed when SCO active", __func__);
       continue;
     }
     if (p_lcb->IsLinkRoleCentral()) continue;
@@ -2222,7 +2222,8 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
       LMP_COMPID_BROADCOM) {
     /* Called from above L2CAP through API; send VSC if changed */
     if ((!reset_after_rs && (priority != p_lcb->acl_priority)) ||
-        /* Called because of a central/slave role switch; if high resend VSC */
+        /* Called because of a central/peripheral role switch; if high resend
+           VSC */
         (reset_after_rs && p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)) {
       pp = command;
 
@@ -2734,7 +2735,7 @@ void l2cu_send_peer_credit_based_conn_req(tL2C_CCB* p_ccb) {
 
   p_buf = l2cu_build_header(p_lcb,
                             L2CAP_CMD_CREDIT_BASED_CONN_REQ_MIN_LEN +
-                                2 * p_lcb->pending_ecoc_connection_cids.size(),
+                                2 * p_lcb->pending_ecoc_conn_cnt,
                             L2CAP_CMD_CREDIT_BASED_CONN_REQ, p_ccb->local_id);
   if (p_buf == NULL) {
     L2CAP_TRACE_WARNING("%s - no buffer", __func__);
@@ -2751,14 +2752,15 @@ void l2cu_send_peer_credit_based_conn_req(tL2C_CCB* p_ccb) {
   L2CAP_TRACE_DEBUG(
       "%s PSM:0x%04x mtu:%d mps:%d initial_credit:%d, cids_cnt %d", __func__,
       p_ccb->p_rcb->real_psm, mtu, mps, initial_credit,
-      p_lcb->pending_ecoc_connection_cids.size());
+      p_lcb->pending_ecoc_conn_cnt);
 
   UINT16_TO_STREAM(p, p_ccb->p_rcb->real_psm);
   UINT16_TO_STREAM(p, mtu);
   UINT16_TO_STREAM(p, mps);
   UINT16_TO_STREAM(p, initial_credit);
 
-  for (uint16_t cid : p_lcb->pending_ecoc_connection_cids) {
+  for (int i = 0; i < p_lcb->pending_ecoc_conn_cnt; i++) {
+    uint16_t cid = p_lcb->pending_ecoc_connection_cids[i];
     L2CAP_TRACE_DEBUG("\n\t cid: ", cid);
     UINT16_TO_STREAM(p, cid);
   }
@@ -2856,9 +2858,8 @@ void l2cu_send_peer_credit_based_conn_res(tL2C_CCB* p_ccb,
   uint8_t* p;
 
   L2CAP_TRACE_DEBUG("%s", __func__);
-  uint8_t rsp_len =
-      L2CAP_CMD_CREDIT_BASED_CONN_RES_MIN_LEN +
-      p_ccb->p_lcb->pending_ecoc_connection_cids.size() * sizeof(uint16_t);
+  uint8_t rsp_len = L2CAP_CMD_CREDIT_BASED_CONN_RES_MIN_LEN +
+                    p_ccb->p_lcb->pending_ecoc_conn_cnt * sizeof(uint16_t);
 
   p_buf = l2cu_build_header(p_ccb->p_lcb, rsp_len,
                             L2CAP_CMD_CREDIT_BASED_CONN_RES, p_ccb->remote_id);
@@ -2891,7 +2892,8 @@ void l2cu_send_peer_credit_based_conn_res(tL2C_CCB* p_ccb,
    * the stack.
    * If there is valid cid, we need to verify if it is accepted by upper layer.
    */
-  for (uint16_t cid : p_ccb->p_lcb->pending_ecoc_connection_cids) {
+  for (int i = 0; i < p_ccb->p_lcb->pending_ecoc_conn_cnt; i++) {
+    uint16_t cid = p_ccb->p_lcb->pending_ecoc_connection_cids[i];
     if (cid == 0) {
       UINT16_TO_STREAM(p, 0);
       continue;

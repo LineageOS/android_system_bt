@@ -79,7 +79,7 @@ void acl_ble_connection_complete(const tBLE_BD_ADDR& address_with_type,
 
   btm_ble_update_mode_operation(role, &address_with_type.bda, HCI_SUCCESS);
 
-  if (role == HCI_ROLE_SLAVE)
+  if (role == HCI_ROLE_PERIPHERAL)
     btm_ble_advertiser_notify_terminated_legacy(HCI_SUCCESS, handle);
 }
 
@@ -102,12 +102,13 @@ void acl_ble_enhanced_connection_complete(
         address_with_type.bda, peer_rpa, tBTM_SEC_BLE::BTM_BLE_ADDR_RRA);
   btm_ble_update_mode_operation(role, &address_with_type.bda, HCI_SUCCESS);
 
-  if (role == HCI_ROLE_SLAVE)
+  if (role == HCI_ROLE_PERIPHERAL)
     btm_ble_advertiser_notify_terminated_legacy(HCI_SUCCESS, handle);
 }
 
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
-                             uint16_t handle, bool enhanced, uint8_t status) {
+                             uint16_t handle, bool enhanced,
+                             tHCI_STATUS status) {
   if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
     btm_cb.ble_ctr_cb.set_connection_state_idle();
     btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);

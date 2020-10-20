@@ -394,7 +394,7 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
         case HCI_BLE_READ_REMOTE_FEAT_CMPL_EVT:
           btm_ble_read_remote_features_complete(p);
           break;
-        case HCI_BLE_LTK_REQ_EVT: /* received only at slave device */
+        case HCI_BLE_LTK_REQ_EVT: /* received only at peripheral device */
           btu_ble_proc_ltk_req(p);
           break;
         case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:
@@ -961,7 +961,7 @@ static void btu_hcif_connection_comp_evt(uint8_t* p, uint8_t evt_len) {
   }
 
   if (link_type == HCI_LINK_TYPE_ACL) {
-    btm_acl_connected(bda, handle, status, enc_mode);
+    btm_acl_connected(bda, handle, static_cast<tHCI_STATUS>(status), enc_mode);
   } else {
     memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
     /* esco_data.link_type = HCI_LINK_TYPE_SCO; already zero */
@@ -1022,7 +1022,7 @@ static void btu_hcif_disconnection_comp_evt(uint8_t* p) {
   }
 
   /* Notify security manager */
-  btm_sec_disconnected(handle, reason);
+  btm_sec_disconnected(handle, static_cast<tHCI_STATUS>(reason));
 }
 
 /*******************************************************************************
@@ -1400,7 +1400,8 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
     case HCI_CREATE_CONNECTION:
       if (status != HCI_SUCCESS) {
         STREAM_TO_BDADDR(bd_addr, p_cmd);
-        btm_acl_connected(bd_addr, HCI_INVALID_HANDLE, status, 0);
+        btm_acl_connected(bd_addr, HCI_INVALID_HANDLE,
+                          static_cast<tHCI_STATUS>(status), 0);
       }
       break;
     case HCI_AUTHENTICATION_REQUESTED:
