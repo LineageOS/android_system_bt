@@ -292,6 +292,14 @@ class ClassicShimAclConnection
         lmp_version, manufacturer_name, sub_version);
   }
 
+  void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number,
+                                            uint8_t max_page_number,
+                                            uint64_t features) {
+    LOG_INFO(
+        "UNIMPLEMENTED page_number:%hhu max_page_number:%hu features:0x%lx",
+        page_number, max_page_number, static_cast<unsigned long>(features));
+  }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_classic_link_interface_t interface_;
