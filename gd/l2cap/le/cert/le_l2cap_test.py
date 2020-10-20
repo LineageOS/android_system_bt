@@ -155,8 +155,8 @@ class LeL2capTest(GdBaseTestClass):
     @metadata(pts_test_id="L2CAP/LE/CPU/BV-01-C", pts_test_name="Send Connection Parameter Update Request")
     def test_send_connection_parameter_update_request(self):
         """
-        Verify that the IUT is able to send the connection parameter update Request to Lower Tester when acting as a slave device.
-        NOTE: This is an optional feature. Also if both LL central and slave supports 4.1+ connection parameter update, this should happen in LL only, not L2CAP
+        Verify that the IUT is able to send the connection parameter update Request to Lower Tester when acting as a peripheral device.
+        NOTE: This is an optional feature. Also if both LL central and peripheral supports 4.1+ connection parameter update, this should happen in LL only, not L2CAP
         NOTE: Currently we need to establish at least one dynamic channel to allow update.
         """
         self._setup_link_from_cert()
@@ -193,7 +193,7 @@ class LeL2capTest(GdBaseTestClass):
     @metadata(pts_test_id="L2CAP/LE/CPU/BI-02-C", pts_test_name="Reject Connection Parameter Update Request")
     def test_reject_connection_parameter_update_request(self):
         """
-        Verify that the IUT is able to reject a request for connection parameter update in slave mode.
+        Verify that the IUT is able to reject a request for connection parameter update in peripheral mode.
         """
         self._setup_link_from_cert()
         self.cert_l2cap.get_control_channel().send(

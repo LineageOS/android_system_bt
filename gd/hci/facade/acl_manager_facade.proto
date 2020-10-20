@@ -31,7 +31,7 @@ message PolicyMsg {
 
 enum NewRole {
   CENTRAL = 0;
-  SLAVE = 1;
+  PERIPHERAL = 1;
 }
 
 message RoleMsg {

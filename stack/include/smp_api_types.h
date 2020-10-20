@@ -146,7 +146,7 @@ typedef uint8_t tSMP_SEC_LEVEL;
 /* SMP key types */
 #define SMP_SEC_KEY_TYPE_ENC (1 << 0)  /* encryption key */
 #define SMP_SEC_KEY_TYPE_ID (1 << 1)   /* identity key */
-#define SMP_SEC_KEY_TYPE_CSRK (1 << 2) /* slave CSRK */
+#define SMP_SEC_KEY_TYPE_CSRK (1 << 2) /* peripheral CSRK */
 #define SMP_SEC_KEY_TYPE_LK (1 << 3)   /* BR/EDR link key */
 typedef uint8_t tSMP_KEYS;
 
