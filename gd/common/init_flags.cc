@@ -31,6 +31,7 @@ bool InitFlags::gd_core_enabled = false;
 bool InitFlags::gd_advertising_enabled = false;
 bool InitFlags::gd_security_enabled = false;
 bool InitFlags::gd_acl_enabled = false;
+bool InitFlags::gd_l2cap_enabled = false;
 bool InitFlags::gd_hci_enabled = false;
 bool InitFlags::gd_controller_enabled = false;
 bool InitFlags::gatt_robust_caching_enabled = false;
@@ -64,6 +65,7 @@ void InitFlags::Load(const char** flags) {
     ParseBoolFlag(flag_pair, "INIT_gd_advertising", &gd_advertising_enabled);
     ParseBoolFlag(flag_pair, "INIT_gd_security", &gd_security_enabled);
     ParseBoolFlag(flag_pair, "INIT_gd_acl", &gd_acl_enabled);
+    ParseBoolFlag(flag_pair, "INIT_gd_l2cap", &gd_l2cap_enabled);
     ParseBoolFlag(flag_pair, "INIT_gd_hci", &gd_hci_enabled);
     ParseBoolFlag(flag_pair, "INIT_gd_controller", &gd_controller_enabled);
     ParseBoolFlag(flag_pair, "INIT_gatt_robust_caching", &gatt_robust_caching_enabled);
