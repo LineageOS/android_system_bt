@@ -247,7 +247,8 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       }
       case OpCode::READ_REMOTE_EXTENDED_FEATURES: {
         GET_CONNECTION(ReadRemoteExtendedFeaturesView::Create(command_view));
-        connection->second.connection_->ReadRemoteExtendedFeatures();
+        uint8_t page_number = 0;
+        connection->second.connection_->ReadRemoteExtendedFeatures(page_number);
         return ::grpc::Status::OK;
       }
       default:
@@ -501,6 +502,14 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
           lmp_version,
           manufacturer_name,
           sub_version);
+    }
+    void OnReadRemoteExtendedFeaturesComplete(
+        uint8_t page_number, uint8_t max_page_number, uint64_t features) override {
+      LOG_INFO(
+          "OnReadRemoteExtendedFeaturesComplete page_number:%hhu max_page_number:%hhu features:0x%lx",
+          page_number,
+          max_page_number,
+          static_cast<unsigned long>(features));
     }
 
     uint16_t handle_;
