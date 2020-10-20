@@ -59,3 +59,29 @@ bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
 uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
   return l2cap_interface->DataWrite(cid, p_data);
 }
+
+uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO &cb_info, uint16_t sec_level) {
+  return l2cap_interface->RegisterLECoc(psm, cb_info, sec_level);
+}
+
+void L2CA_DeregisterLECoc(uint16_t psm) {
+  return l2cap_interface->DeregisterLECoc(psm);
+}
+
+std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
+                                const RawAddress& bd_addr,
+                                tL2CAP_LE_CFG_INFO* p_cfg) {
+  return l2cap_interface->ConnectCreditBasedReq(psm, bd_addr, p_cfg);
+}
+
+bool L2CA_ConnectCreditBasedRsp(const RawAddress& bd_addr, uint8_t id,
+                                       std::vector<uint16_t> &lcids,
+                                       uint16_t result,
+                                       tL2CAP_LE_CFG_INFO* p_cfg) {
+  return l2cap_interface->ConnectCreditBasedRsp(bd_addr, id, lcids, result, p_cfg);
+}
+
+bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bd_addr, std::vector<uint16_t> &lcids,
+                                      tL2CAP_LE_CFG_INFO* peer_cfg) {
+  return l2cap_interface->ReconfigCreditBasedConnsReq(bd_addr, lcids, peer_cfg);
+}
