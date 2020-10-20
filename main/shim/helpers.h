@@ -116,6 +116,10 @@ inline BT_HDR* MakeLegacyBtHdrPacket(
   return buffer;
 }
 
+inline uint8_t ToLegacyRole(hci::Role role) {
+  return static_cast<uint8_t>(role);
+}
+
 inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
   switch (reason) {
     case hci::ErrorCode::SUCCESS:
