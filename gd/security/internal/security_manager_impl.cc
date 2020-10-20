@@ -403,7 +403,11 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
   auto record = this->security_database_.FindOrCreate(remote);
   record->CancelPairing();
   security_database_.SaveRecordsToStorage();
-  UpdateLinkSecurityCondition(remote);
+  // Only call update link if we need to
+  auto policy_callback_entry = enforce_security_policy_callback_map_.find(remote);
+  if (policy_callback_entry != enforce_security_policy_callback_map_.end()) {
+    UpdateLinkSecurityCondition(remote);
+  }
 }
 
 void SecurityManagerImpl::OnL2capRegistrationCompleteLe(
@@ -743,94 +747,59 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
     l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback) {
   if (IsSecurityRequirementSatisfied(remote, policy)) {
     // Notify client immediately if already satisfied
-    result_callback.Invoke(true);
+    std::move(result_callback).Invoke(true);
     return;
   }
 
-  hci::AuthenticationRequirements authentication_requirements = kDefaultAuthenticationRequirements;
-
+  // At this point we don't meet the security requirements; must pair
   auto record = this->security_database_.FindOrCreate(remote);
-  bool need_to_pair = false;
+  hci::AuthenticationRequirements authentication_requirements = kDefaultAuthenticationRequirements;
+  enforce_security_policy_callback_map_[remote] = {policy, std::move(result_callback)};
 
   switch (policy) {
     case l2cap::classic::SecurityPolicy::BEST:
     case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
-      if (!record->IsPaired() || record->IsTemporary()) {
-        need_to_pair = true;
-      } else if (record->IsAuthenticated()) {
-        // if paired with MITM, only encryption is missing, so we just need to wait for encryption change callback
-      } else {
-        // We have an unauthenticated link key, so we need to pair again with MITM
-        // Need to pair again with MITM
-        need_to_pair = true;
-        authentication_requirements = hci::AuthenticationRequirements::GENERAL_BONDING_MITM_PROTECTION;
-        if (record->RequiresMitmProtection()) {
-          // Workaround for headset: If no MITM is needed during pairing, we don't mandate authenticated LK
-          // TODO(b/165671060): Use IO cap to check whether we can waive authenticated LK requirement
-          need_to_pair = false;
-        }
-      }
+      // Force MITM requirement locally
+      authentication_requirements = hci::AuthenticationRequirements::GENERAL_BONDING_MITM_PROTECTION;
       break;
     case l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
-      if (!record->IsPaired()) {
-        need_to_pair = true;
-        authentication_requirements = hci::AuthenticationRequirements::NO_BONDING;
-      } else {
-        // just need to wait for encryption change callback
-      }
+      authentication_requirements = hci::AuthenticationRequirements::GENERAL_BONDING;
       break;
     default:
+      // This will never happen because of check in IsSecurityRequirementSatisfied
       return;
   }
 
-  auto entry = enforce_security_policy_callback_map_.find(remote);
-  if (entry != enforce_security_policy_callback_map_.end()) {
-    LOG_WARN("Callback already pending for remote: '%s' !", remote.ToString().c_str());
-  } else {
-    enforce_security_policy_callback_map_[remote] = {policy, std::move(result_callback)};
-  }
-
-  if (need_to_pair && !record->IsPairing()) {
-    LOG_WARN("Dispatch #3");
-    DispatchPairingHandler(
-        record,
-        true,
-        this->local_io_capability_,
-        this->local_oob_data_present_,
-        std::as_const(authentication_requirements));
-  }
+  LOG_WARN("Dispatch #3");
+  DispatchPairingHandler(
+      record,
+      true,
+      this->local_io_capability_,
+      this->local_oob_data_present_,
+      std::as_const(authentication_requirements));
 }
 
 void SecurityManagerImpl::UpdateLinkSecurityCondition(hci::AddressWithType remote) {
-  auto record = this->security_database_.FindOrCreate(remote);
   auto entry = enforce_security_policy_callback_map_.find(remote);
   if (entry == enforce_security_policy_callback_map_.end()) {
-    LOG_ERROR("No security reuest pending for %s", remote.ToString().c_str());
+    LOG_ERROR("No L2CAP security policy callback pending for %s", remote.ToString().c_str());
     return;
   }
-
-  auto policy = entry->second.policy_;
-
-  if (IsSecurityRequirementSatisfied(remote, policy)) {
-    entry->second.callback_.Invoke(true);
-    enforce_security_policy_callback_map_.erase(entry);
-  }
+  std::move(entry->second.callback_).Invoke(IsSecurityRequirementSatisfied(remote, entry->second.policy_));
+  enforce_security_policy_callback_map_.erase(entry);
 }
 
 bool SecurityManagerImpl::IsSecurityRequirementSatisfied(
     hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy) {
   auto record = security_database_.FindOrCreate(remote);
-
   switch (policy) {
     case l2cap::classic::SecurityPolicy::BEST:
     case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
       return (record->IsPaired() && record->IsAuthenticated());
     case l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
       return record->IsPaired();
-    case l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
-      return true;
     default:
-      return false;
+      return true;
   }
 }
 
@@ -838,7 +807,11 @@ void SecurityManagerImpl::EnforceSecurityPolicy(
     hci::AddressWithType remote,
     l2cap::classic::SecurityPolicy policy,
     l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback) {
-  this->InternalEnforceSecurityPolicy(remote, policy, std::move(result_callback));
+  LOG_INFO("Attempting to enforce security policy");
+  auto record = security_database_.FindOrCreate(remote);
+  if (!record->IsPairing()) {
+    this->InternalEnforceSecurityPolicy(remote, policy, std::move(result_callback));
+  }
 }
 
 void SecurityManagerImpl::EnforceLeSecurityPolicy(
