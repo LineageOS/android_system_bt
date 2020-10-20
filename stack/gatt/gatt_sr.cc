@@ -30,10 +30,13 @@
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
+#include "stack/eatt/eatt.h"
 #define GATT_MTU_REQ_MIN_LEN 2
 
 using base::StringPrintf;
 using bluetooth::Uuid;
+using bluetooth::eatt::EattExtension;
+using bluetooth::eatt::EattChannel;
 
 /*******************************************************************************
  *
@@ -47,7 +50,15 @@ using bluetooth::Uuid;
  ******************************************************************************/
 uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
                              uint16_t handle) {
-  tGATT_SR_CMD* p_cmd = &tcb.sr_cmd;
+  tGATT_SR_CMD* p_cmd;
+
+  if (cid == tcb.att_lcid) {
+    p_cmd = &tcb.sr_cmd;
+  } else {
+    EattChannel* channel =
+        EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+    p_cmd = &channel->server_outstanding_cmd_;
+  }
 
   uint32_t trans_id = 0;
 
@@ -81,7 +92,14 @@ uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
  * Returns          true if empty, false if there is pending command.
  *
  ******************************************************************************/
-bool gatt_sr_cmd_empty(tGATT_TCB& tcb) { return (tcb.sr_cmd.op_code == 0); }
+bool gatt_sr_cmd_empty(tGATT_TCB& tcb, uint16_t cid) {
+  if (cid == tcb.att_lcid) return (tcb.sr_cmd.op_code == 0);
+
+  EattChannel* channel =
+      EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+
+  return (channel->server_outstanding_cmd_.op_code == 0);
+}
 
 /*******************************************************************************
  *
@@ -92,19 +110,30 @@ bool gatt_sr_cmd_empty(tGATT_TCB& tcb) { return (tcb.sr_cmd.op_code == 0); }
  * Returns          void
  *
  ******************************************************************************/
-void gatt_dequeue_sr_cmd(tGATT_TCB& tcb) {
+void gatt_dequeue_sr_cmd(tGATT_TCB& tcb, uint16_t cid) {
+  tGATT_SR_CMD* p_cmd;
+
+  if (cid == tcb.att_lcid) {
+    p_cmd = &tcb.sr_cmd;
+  } else {
+    EattChannel* channel =
+        EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
+
+    p_cmd = &channel->server_outstanding_cmd_;
+  }
+
   /* Double check in case any buffers are queued */
-  VLOG(1) << "gatt_dequeue_sr_cmd";
-  if (tcb.sr_cmd.p_rsp_msg)
-    LOG(ERROR) << "free tcb.sr_cmd.p_rsp_msg = " << tcb.sr_cmd.p_rsp_msg;
-  osi_free_and_reset((void**)&tcb.sr_cmd.p_rsp_msg);
+  VLOG(1) << "gatt_dequeue_sr_cmd cid: " << loghex(cid);
+  if (p_cmd->p_rsp_msg)
+    LOG(ERROR) << "free tcb.sr_cmd.p_rsp_msg = "
+               << p_cmd->p_rsp_msg;
+  osi_free_and_reset((void**)&p_cmd->p_rsp_msg);
 
-  while (!fixed_queue_is_empty(tcb.sr_cmd.multi_rsp_q))
-    osi_free(fixed_queue_try_dequeue(tcb.sr_cmd.multi_rsp_q));
-  fixed_queue_free(tcb.sr_cmd.multi_rsp_q, NULL);
-  memset(&tcb.sr_cmd, 0, sizeof(tGATT_SR_CMD));
+  while (!fixed_queue_is_empty(p_cmd->multi_rsp_q))
+    osi_free(fixed_queue_try_dequeue(p_cmd->multi_rsp_q));
+  fixed_queue_free(p_cmd->multi_rsp_q, NULL);
+  memset(p_cmd, 0, sizeof(tGATT_SR_CMD));
 }
-
 /*******************************************************************************
  *
  * Function         process_read_multi_rsp
@@ -271,7 +300,7 @@ tGATT_STATUS gatt_sr_process_app_rsp(tGATT_TCB& tcb, tGATT_IF gatt_if,
                                      sr_res_p->handle, false);
     }
 
-    gatt_dequeue_sr_cmd(tcb);
+    gatt_dequeue_sr_cmd(tcb, sr_res_p->cid);
   }
 
   VLOG(1) << __func__ << " ret_code=" << +ret_code;
@@ -364,8 +393,9 @@ void gatt_process_read_multi_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
   uint8_t sec_flag, key_size;
 
   VLOG(1) << __func__;
-  tcb.sr_cmd.multi_req.num_handles = 0;
 
+  tGATT_READ_MULTI* multi_req = gatt_sr_get_read_multi(tcb, cid);
+  multi_req->num_handles = 0;
   gatt_sr_get_sec_info(tcb.peer_bda, tcb.transport, &sec_flag, &key_size);
 
 #if (GATT_CONFORMANCE_TESTING == TRUE)
@@ -382,13 +412,12 @@ void gatt_process_read_multi_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
   }
 #endif
 
-  while (ll >= 2 &&
-         tcb.sr_cmd.multi_req.num_handles < GATT_MAX_READ_MULTI_HANDLES) {
+  while (ll >= 2 && multi_req->num_handles < GATT_MAX_READ_MULTI_HANDLES) {
     STREAM_TO_UINT16(handle, p);
 
     auto it = gatt_sr_find_i_rcb_by_handle(handle);
     if (it != gatt_cb.srv_list_info->end()) {
-      tcb.sr_cmd.multi_req.handles[tcb.sr_cmd.multi_req.num_handles++] = handle;
+      multi_req->handles[multi_req->num_handles++] = handle;
 
       /* check read permission */
       err = gatts_read_attr_perm_check(it->p_db, false, handle, sec_flag,
@@ -409,20 +438,19 @@ void gatt_process_read_multi_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
     LOG(ERROR) << "max attribute handle reached in ReadMultiple Request.";
   }
 
-  if (tcb.sr_cmd.multi_req.num_handles == 0) err = GATT_INVALID_HANDLE;
+  if (multi_req->num_handles == 0) err = GATT_INVALID_HANDLE;
 
   if (err == GATT_SUCCESS) {
-    trans_id =
-        gatt_sr_enqueue_cmd(tcb, cid, op_code, tcb.sr_cmd.multi_req.handles[0]);
+    trans_id = gatt_sr_enqueue_cmd(tcb, cid, op_code, multi_req->handles[0]);
     if (trans_id != 0) {
       tGATT_SR_CMD* sr_cmd_p = gatt_sr_get_cmd_by_cid(tcb, cid);
 
       gatt_sr_reset_cback_cnt(tcb,
                               cid); /* read multiple use multi_rsp_q's count*/
 
-      for (ll = 0; ll < tcb.sr_cmd.multi_req.num_handles; ll++) {
+      for (ll = 0; ll < multi_req->num_handles; ll++) {
         tGATTS_RSP* p_msg = (tGATTS_RSP*)osi_calloc(sizeof(tGATTS_RSP));
-        handle = tcb.sr_cmd.multi_req.handles[ll];
+        handle = multi_req->handles[ll];
         auto it = gatt_sr_find_i_rcb_by_handle(handle);
 
         p_msg->attr_value.handle = handle;
@@ -1186,7 +1214,7 @@ void gatts_process_value_conf(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code) {
     return;
   }
 
-  alarm_cancel(tcb.conf_timer);
+  gatt_stop_conf_timer(tcb, cid);
 
   bool continue_processing = gatts_proc_ind_ack(tcb, handle);
 
@@ -1209,7 +1237,7 @@ void gatt_server_handle_client_req(tGATT_TCB& tcb, uint16_t cid,
                                    uint8_t op_code, uint16_t len,
                                    uint8_t* p_data) {
   /* there is pending command, discard this one */
-  if (!gatt_sr_cmd_empty(tcb) && op_code != GATT_HANDLE_VALUE_CONF) return;
+  if (!gatt_sr_cmd_empty(tcb, cid) && op_code != GATT_HANDLE_VALUE_CONF) return;
 
   /* the size of the message may not be bigger than the local max PDU size*/
   /* The message has to be smaller than the agreed MTU, len does not include op

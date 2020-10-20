@@ -33,12 +33,16 @@ uint16_t get_iso_data_size(void) {
 uint8_t get_iso_buffer_count(void) {
   return controller_interface->GetIsoBufferCount();
 }
+uint16_t get_acl_data_size_ble(void) {
+  return controller_interface->GetAclDataSizeBle();
+}
 
 const controller_t* controller_get_interface() {
   static controller_t* controller_instance = new controller_t();
 
   controller_instance->get_iso_data_size = &get_iso_data_size;
   controller_instance->get_iso_buffer_count = &get_iso_buffer_count;
+  controller_instance->get_acl_data_size_ble = &get_acl_data_size_ble;
 
   return controller_instance;
 }
