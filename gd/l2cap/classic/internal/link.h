@@ -83,7 +83,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
 
   virtual void ReadRemoteSupportedFeatures();
 
-  virtual void ReadRemoteExtendedFeatures(uint8_t page_number);
+  virtual void ReadRemoteExtendedFeatures();
 
   virtual void ReadClockOffset();
 
@@ -175,7 +175,6 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   void OnRoleChange(hci::Role new_role) override;
   void OnDisconnection(hci::ErrorCode reason) override;
   void OnReadRemoteVersionInformationComplete(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
-  void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features);
 
   struct EncryptionChangeListener {
     Cid cid;
