@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "osi/test/AllocationTestHarness.h"
+#include "stack/test/common/mock_eatt.h"
 #include "stack/gatt/gatt_int.h"
 #undef LOG_TAG
 #include "stack/gatt/gatt_sr.cc"
@@ -170,6 +171,7 @@ class GattSrTest : public AllocationTestHarness {
     memset(&el_, 0, sizeof(el_));
 
     tcb_.trans_id = 0x12345677;
+    tcb_.att_lcid = L2CAP_ATT_CID;
     el_.gatt_if = 1;
     gatt_cb.cl_rcb[el_.gatt_if - 1].in_use = true;
     gatt_cb.cl_rcb[el_.gatt_if - 1].app_cb.p_req_cb =

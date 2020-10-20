@@ -460,7 +460,7 @@ tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
   tGATT_STATUS cmd_status = attp_send_sr_msg(*p_tcb, cid, p_msg);
   if (cmd_status == GATT_SUCCESS || cmd_status == GATT_CONGESTED) {
     *indicate_handle_p = indication.handle;
-    gatt_start_conf_timer(p_tcb);
+    gatt_start_conf_timer(p_tcb, cid);
   }
   return cmd_status;
 }
@@ -509,7 +509,7 @@ tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
   tGATT_SR_MSG gatt_sr_msg;
   gatt_sr_msg.attr_value = notif;
 
-  uint16_t cid = gatt_tcb_get_att_cid(*p_tcb);
+  uint16_t cid = gatt_tcb_get_att_cid(*p_tcb, p_reg->eatt_support);
 
   BT_HDR* p_buf =
       attp_build_sr_msg(*p_tcb, GATT_HANDLE_VALUE_NOTIF, &gatt_sr_msg);
@@ -903,14 +903,13 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t cid) {
     return GATT_SUCCESS;
   }
 
-  /*TODO Introduce timer per CID */
-  alarm_cancel(p_tcb->ind_ack_timer);
+  gatt_stop_ind_ack_timer(p_tcb, cid);
 
   VLOG(1) << "notif_count= " << p_tcb->ind_count;
   /* send confirmation now */
   tGATT_STATUS ret = attp_send_cl_confirmation_msg(*p_tcb, cid);
 
-  p_tcb->ind_count = 0;
+
 
   return ret;
 }

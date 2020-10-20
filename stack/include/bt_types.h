@@ -248,6 +248,7 @@ typedef struct {
 #define BT_PSM_UDI_CP \
   0x001D /* Unrestricted Digital Information Profile C-Plane  */
 #define BT_PSM_ATT 0x001F /* Attribute Protocol  */
+#define BT_PSM_EATT 0x0027
 
 /* These macros extract the HCI opcodes from a buffer
  */
