@@ -21,6 +21,7 @@
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/hci_error_code.h"
 #include "types/raw_address.h"
 
 // Note: From stack/include/btm_api.h
@@ -291,8 +292,8 @@ uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
                                      tBT_TRANSPORT transport);
 
 uint16_t acl_get_link_supervision_timeout();
-uint8_t acl_get_disconnect_reason();
-void acl_set_disconnect_reason(uint8_t acl_disc_reason);
+tHCI_STATUS acl_get_disconnect_reason();
+void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
 
 bool acl_is_role_switch_allowed();
 
