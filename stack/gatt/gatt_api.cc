@@ -32,6 +32,7 @@
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
+#include "osi/include/log.h"
 #include "stack/gatt/connection_manager.h"
 #include "types/bt_transport.h"
 
@@ -1089,7 +1090,8 @@ void GATT_StartIf(tGATT_IF gatt_if) {
   uint16_t conn_id;
   tBT_TRANSPORT transport;
 
-  VLOG(1) << __func__ << " gatt_if=" << +gatt_if;
+  LOG_DEBUG("Starting GATT interface gatt_if_:%hu", gatt_if);
+
   p_reg = gatt_get_regcb(gatt_if);
   if (p_reg != NULL) {
     start_idx = 0;
@@ -1131,7 +1133,8 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
                   tBT_TRANSPORT transport, bool opportunistic,
                   uint8_t initiating_phys) {
-  LOG(INFO) << __func__ << ": gatt_if=" << +gatt_if << ", address=" << bd_addr;
+  LOG(INFO) << __func__ << ": gatt_if=" << +gatt_if << ", address=" << bd_addr
+            << " is_direct=" << std::boolalpha << is_direct << std::noboolalpha;
 
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
