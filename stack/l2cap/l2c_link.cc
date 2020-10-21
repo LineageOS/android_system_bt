@@ -1233,6 +1233,51 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
   }
 }
 
+void l2c_packets_completed(uint16_t handle, uint16_t num_sent) {
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
+  if (p_lcb == nullptr) {
+    LOG_WARN("Received l2c packets completed for unknown ACL");
+    return;
+  }
+  p_lcb->update_outstanding_packets(num_sent);
+
+  switch (p_lcb->transport) {
+    case BT_TRANSPORT_BR_EDR:
+      l2cb.controller_xmit_window += num_sent;
+      if (p_lcb->is_round_robin_scheduling())
+        l2cb.update_outstanding_classic_packets(num_sent);
+      break;
+    case BT_TRANSPORT_LE:
+      l2cb.controller_le_xmit_window += num_sent;
+      if (p_lcb->is_round_robin_scheduling())
+        l2cb.update_outstanding_le_packets(num_sent);
+      break;
+    default:
+      LOG_ERROR("Unknown transport received:%u", p_lcb->transport);
+      return;
+  }
+
+  l2c_link_check_send_pkts(p_lcb, 0, NULL);
+
+  if (p_lcb->is_high_priority()) {
+    switch (p_lcb->transport) {
+      case BT_TRANSPORT_LE:
+        if (l2cb.ble_check_round_robin &&
+            l2cb.is_ble_round_robin_quota_available())
+          l2c_link_check_send_pkts(NULL, 0, NULL);
+        break;
+      case BT_TRANSPORT_BR_EDR:
+        if (l2cb.check_round_robin &&
+            l2cb.is_classic_round_robin_quota_available()) {
+          l2c_link_check_send_pkts(NULL, 0, NULL);
+        }
+        break;
+      default:
+        break;
+    }
+  }
+}
+
 /*******************************************************************************
  *
  * Function         l2c_link_segments_xmitted
