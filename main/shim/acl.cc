@@ -50,6 +50,9 @@ using namespace bluetooth;
 namespace {
 
 using HciHandle = uint16_t;
+using PageNumber = uint8_t;
+
+constexpr PageNumber kRemoteExtendedFeaturesPageZero = 0;
 
 using SendDataUpwards = void (*const)(BT_HDR*);
 using OnDisconnect = std::function<void(HciHandle, hci::ErrorCode reason)>;
@@ -106,9 +109,8 @@ class ShimAclConnection {
   }
 
   virtual ~ShimAclConnection() {
-    queue_up_end_->UnregisterDequeue();
     ASSERT_LOG(queue_.empty(), "Shim ACL queue still has outgoing packets");
-    UnregisterEnqueue();
+    ASSERT_LOG(is_disconnected_, "Shim Acl was not properly disconnected");
   }
 
   void EnqueuePacket(std::unique_ptr<bluetooth::packet::RawBuilder> packet) {
@@ -143,25 +145,37 @@ class ShimAclConnection {
   const uint16_t handle_{kInvalidHciHandle};
   os::Handler* handler_;
 
+  void UnregisterEnqueue() {
+    if (!is_enqueue_registered_) return;
+    is_enqueue_registered_ = false;
+    queue_up_end_->UnregisterEnqueue();
+  }
+
+  void Disconnect() {
+    ASSERT_LOG(!is_disconnected_, "Cannot disconnect multiple times");
+    is_disconnected_ = true;
+    UnregisterEnqueue();
+    queue_up_end_->UnregisterDequeue();
+  }
+
+  virtual void ReadRemoteControllerInformation() = 0;
+
  private:
   SendDataUpwards send_data_upwards_;
   hci::acl_manager::AclConnection::QueueUpEnd* queue_up_end_;
 
   std::queue<std::unique_ptr<bluetooth::packet::RawBuilder>> queue_;
   bool is_enqueue_registered_{false};
+  bool is_disconnected_{false};
 
   void RegisterEnqueue() {
+    ASSERT_LOG(!is_disconnected_,
+               "Unable to send data over disconnected channel");
     if (is_enqueue_registered_) return;
     is_enqueue_registered_ = true;
     queue_up_end_->RegisterEnqueue(
         handler_, common::Bind(&ShimAclConnection::handle_enqueue,
                                common::Unretained(this)));
-  }
-
-  void UnregisterEnqueue() {
-    if (!is_enqueue_registered_) return;
-    is_enqueue_registered_ = false;
-    queue_up_end_->UnregisterEnqueue();
   }
 
   virtual void RegisterCallbacks() = 0;
@@ -186,12 +200,18 @@ class ClassicShimAclConnection
     connection_->RegisterCallbacks(this, handler_);
   }
 
+  void ReadRemoteControllerInformation() override {
+    connection_->ReadRemoteVersionInformation();
+    connection_->ReadRemoteExtendedFeatures(kRemoteExtendedFeaturesPageZero);
+  }
+
   void OnConnectionPacketTypeChanged(uint16_t packet_type) override {
     TRY_POSTING_ON_MAIN(interface_.on_packet_type_changed, packet_type);
   }
 
   void OnAuthenticationComplete() override {
-    TRY_POSTING_ON_MAIN(interface_.on_authentication_complete);
+    TRY_POSTING_ON_MAIN(interface_.on_authentication_complete, handle_,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS));
   }
 
   void OnEncryptionChange(hci::EncryptionEnabled enabled) override {
@@ -276,28 +296,32 @@ class ClassicShimAclConnection
   }
 
   void OnRoleChange(hci::Role new_role) override {
-    LOG_INFO("%s UNIMPLEMENTED", __func__);
+    TRY_POSTING_ON_MAIN(interface_.on_role_change,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS),
+                        ToRawAddress(connection_->GetAddress()),
+                        ToLegacyRole(new_role));
   }
 
   void OnDisconnection(hci::ErrorCode reason) override {
-    connection_.reset();
+    Disconnect();
     on_disconnect_(handle_, reason);
   }
 
   void OnReadRemoteVersionInformationComplete(uint8_t lmp_version,
                                               uint16_t manufacturer_name,
                                               uint16_t sub_version) override {
-    LOG_INFO(
-        "UNIMPLEMENTED lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
-        lmp_version, manufacturer_name, sub_version);
+    TRY_POSTING_ON_MAIN(interface_.on_read_remote_version_information_complete,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        lmp_version, manufacturer_name, sub_version);
   }
 
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number,
                                             uint8_t max_page_number,
-                                            uint64_t features) {
-    LOG_INFO(
-        "UNIMPLEMENTED page_number:%hhu max_page_number:%hu features:0x%lx",
-        page_number, max_page_number, static_cast<unsigned long>(features));
+                                            uint64_t features) override {
+    TRY_POSTING_ON_MAIN(interface_.on_read_remote_extended_features_complete,
+                        handle_, page_number, max_page_number, features);
+    if (page_number != max_page_number)
+      connection_->ReadRemoteExtendedFeatures(page_number + 1);
   }
 
  private:
@@ -325,6 +349,10 @@ class LeShimAclConnection
     connection_->RegisterCallbacks(this, handler_);
   }
 
+  void ReadRemoteControllerInformation() override {
+    // TODO Issue LeReadRemoteFeatures Command
+  }
+
   void OnConnectionUpdate(uint16_t connection_interval,
                           uint16_t connection_latency,
                           uint16_t supervision_timeout) {
@@ -338,7 +366,7 @@ class LeShimAclConnection
   }
 
   void OnDisconnection(hci::ErrorCode reason) {
-    connection_.reset();
+    Disconnect();
     on_disconnect_(handle_, reason);
   }
 
@@ -432,6 +460,8 @@ void bluetooth::shim::legacy::Acl::WriteData(
 
 void bluetooth::shim::legacy::Acl::CreateClassicConnection(
     const bluetooth::hci::Address& address) {
+  LOG_DEBUG("Initiate the creation of a classic connection %s",
+            address.ToString().c_str());
   GetAclManager()->CreateConnection(address);
 }
 
@@ -439,25 +469,37 @@ void bluetooth::shim::legacy::Acl::CreateLeConnection(
     const bluetooth::hci::AddressWithType& address_with_type) {
   GetAclManager()->AddDeviceToConnectList(address_with_type);
   GetAclManager()->CreateLeConnection(address_with_type);
+  LOG_DEBUG("Started Le device to connection %s",
+            address_with_type.ToString().c_str());
 }
 
 void bluetooth::shim::legacy::Acl::CancelLeConnection(
     const bluetooth::hci::AddressWithType& address_with_type) {
+  LOG_DEBUG("Terminate and cancel a le connection %s",
+            address_with_type.ToString().c_str());
   GetAclManager()->CancelLeConnect(address_with_type);
 }
 
 void bluetooth::shim::legacy::Acl::OnClassicLinkDisconnected(
     HciHandle handle, hci::ErrorCode reason) {
-  tHCI_STATUS status = ToLegacyHciErrorCode(reason);
-  TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_disconnected, handle,
-                      status);
+  tHCI_STATUS legacy_reason = ToLegacyHciErrorCode(reason);
+  LOG_DEBUG("Classic link disconnected handle:%hu reason:%s", handle,
+            hci_error_code_text(legacy_reason).c_str());
+  TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_disconnected,
+                      ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle,
+                      legacy_reason);
+  pimpl_->handle_to_classic_connection_map_.erase(handle);
 }
 
 void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
                                                         hci::ErrorCode reason) {
-  tHCI_STATUS status = ToLegacyHciErrorCode(reason);
-  TRY_POSTING_ON_MAIN(acl_interface_.connection.le.on_disconnected, handle,
-                      status);
+  tHCI_STATUS legacy_reason = ToLegacyHciErrorCode(reason);
+  LOG_DEBUG("Le link disconnected handle:%hu reason:%s", handle,
+            hci_error_code_text(legacy_reason).c_str());
+  TRY_POSTING_ON_MAIN(acl_interface_.connection.le.on_disconnected,
+                      ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle,
+                      legacy_reason);
+  pimpl_->handle_to_le_connection_map_.erase(handle);
 }
 
 void bluetooth::shim::legacy::Acl::OnConnectSuccess(
@@ -474,6 +516,8 @@ void bluetooth::shim::legacy::Acl::OnConnectSuccess(
                     std::placeholders::_1, std::placeholders::_2),
           acl_interface_.link.classic, handler_, std::move(connection)));
   pimpl_->handle_to_classic_connection_map_[handle]->RegisterCallbacks();
+  pimpl_->handle_to_classic_connection_map_[handle]
+      ->ReadRemoteControllerInformation();
 
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_connected, bd_addr,
                       handle, HCI_SUCCESS, false);
@@ -482,6 +526,8 @@ void bluetooth::shim::legacy::Acl::OnConnectSuccess(
 void bluetooth::shim::legacy::Acl::OnConnectFail(hci::Address address,
                                                  hci::ErrorCode reason) {
   const RawAddress bd_addr = ToRawAddress(address);
+  LOG_WARN("Classic ACL connection failed peer:%s reason:%s",
+           address.ToString().c_str(), hci::ErrorCodeText(reason).c_str());
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_failed, bd_addr,
                       kInvalidHciHandle, HCI_SUCCESS, false);
 }
@@ -502,10 +548,11 @@ void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
                   acl_interface_.link.le, handler_, std::move(connection)));
   pimpl_->handle_to_le_connection_map_[handle]->RegisterCallbacks();
 
+  pimpl_->handle_to_le_connection_map_[handle]
+      ->ReadRemoteControllerInformation();
+
   tBLE_BD_ADDR legacy_address_with_type =
       ToLegacyAddressWithType(address_with_type);
-
-  bool match = false; /* TODO Was address resolved with known record ? */
 
   uint16_t conn_interval = 36; /* TODO Default to 45 msec*/
   uint16_t conn_latency = 0;   /* TODO Default to zero events */
@@ -517,7 +564,7 @@ void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
 
   TRY_POSTING_ON_MAIN(
       acl_interface_.connection.le.on_connected, legacy_address_with_type,
-      handle, static_cast<uint8_t>(connection_role), match, conn_interval,
+      handle, static_cast<uint8_t>(connection_role), conn_interval,
       conn_latency, conn_timeout, local_rpa, peer_rpa, peer_addr_type);
 }
 
