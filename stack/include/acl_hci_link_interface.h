@@ -53,3 +53,4 @@ void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 void acl_rcv_acl_data(BT_HDR* p_msg);
 void acl_link_segments_xmitted(BT_HDR* p_msg);
 void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len);
+void acl_packets_completed(uint16_t handle, uint16_t num_packets);
