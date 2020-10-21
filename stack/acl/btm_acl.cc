@@ -113,7 +113,7 @@ static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
-static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
+static void btm_sec_set_peer_sec_caps(bool ssp_supported, bool sc_supported,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
 static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
@@ -407,7 +407,12 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
       const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
       /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
-      btm_sec_set_peer_sec_caps(p_acl, p_dev_rec);
+      bool ssp_supported =
+          HCI_SSP_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]);
+      bool secure_connections_supported =
+          HCI_SC_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]);
+      btm_sec_set_peer_sec_caps(ssp_supported, secure_connections_supported,
+                                p_dev_rec);
 
       if (req_pend) {
         /* Request for remaining Security Features (if any) */
@@ -891,7 +896,12 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
   const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
   /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
-  btm_sec_set_peer_sec_caps(p_acl_cb, p_dev_rec);
+  bool ssp_supported =
+      HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
+  bool secure_connections_supported =
+      HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
+  btm_sec_set_peer_sec_caps(ssp_supported, secure_connections_supported,
+                            p_dev_rec);
 
   if (req_pend) {
     /* Request for remaining Security Features (if any) */
@@ -2586,14 +2596,13 @@ void btm_ble_refresh_local_resolvable_private_addr(
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
+void btm_sec_set_peer_sec_caps(bool ssp_supported, bool sc_supported,
                                tBTM_SEC_DEV_REC* p_dev_rec) {
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
-      HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1])) {
+      ssp_supported) {
     p_dev_rec->sm4 = BTM_SM4_TRUE;
-    p_dev_rec->remote_supports_secure_connections =
-        (HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]));
+    p_dev_rec->remote_supports_secure_connections = sc_supported;
   } else {
     p_dev_rec->sm4 = BTM_SM4_KNOWN;
     p_dev_rec->remote_supports_secure_connections = false;
