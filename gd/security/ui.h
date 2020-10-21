@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include <unordered_map>
-
 #include "hci/address_with_type.h"
 
 namespace bluetooth {
@@ -45,17 +43,35 @@ class ConfirmationData {
     return numeric_value_;
   }
 
-  void PutExtraData(std::string key, std::string value) {
-    extra_data_map_.emplace(key, value);
+  hci::IoCapability GetRemoteIoCaps() const {
+    return remote_io_caps_;
+  }
+  void SetRemoteIoCaps(hci::IoCapability remote_io_caps) {
+    remote_io_caps_ = remote_io_caps;
   }
 
-  std::string GetExtraData(std::string key) {
-    auto entry = extra_data_map_.find(key);
-    if (entry == extra_data_map_.end()) {
-      LOG_WARN("Unknown key '%s'", key.c_str());
-      return "No Data Set for Key";
-    }
-    return entry->second;
+  hci::AuthenticationRequirements GetRemoteAuthReqs() const {
+    return remote_auth_reqs_;
+  }
+
+  void SetRemoteAuthReqs(hci::AuthenticationRequirements remote_auth_reqs) {
+    remote_auth_reqs_ = remote_auth_reqs;
+  }
+
+  hci::OobDataPresent GetRemoteOobDataPresent() const {
+    return remote_oob_data_present_;
+  }
+
+  void SetRemoteOobDataPresent(hci::OobDataPresent remote_oob_data_present) {
+    remote_oob_data_present_ = remote_oob_data_present;
+  }
+
+  bool IsJustWorks() const {
+    return just_works_;
+  }
+
+  void SetJustWorks(bool just_works) {
+    just_works_ = just_works;
   }
 
  private:
@@ -66,7 +82,10 @@ class ConfirmationData {
 
   // TODO(optedoblivion): Revisit after shim/BTA layer is gone
   // Extra data is a hack to get data from the module to the shim
-  std::unordered_map<std::string, std::string> extra_data_map_;
+  hci::IoCapability remote_io_caps_ = hci::IoCapability::DISPLAY_YES_NO;
+  hci::AuthenticationRequirements remote_auth_reqs_ = hci::AuthenticationRequirements::DEDICATED_BONDING;
+  hci::OobDataPresent remote_oob_data_present_ = hci::OobDataPresent::NOT_PRESENT;
+  bool just_works_ = false;
 };
 
 // Through this interface we talk to the user, asking for confirmations/acceptance.
