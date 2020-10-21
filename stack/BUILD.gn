@@ -98,6 +98,7 @@ static_library("stack") {
     "btm/btm_sec.cc",
     "btu/btu_hcif.cc",
     "btu/btu_task.cc",
+    "eatt/eatt.cc",
     "gap/gap_ble.cc",
     "gap/gap_conn.cc",
     "gatt/att_protocol.cc",
@@ -166,6 +167,7 @@ static_library("stack") {
     "gap",
     "pan",
     "bnep",
+    "eatt",
     "hid",
     "sdp",
     "smp",
@@ -208,6 +210,7 @@ executable("stack_unittests") {
   include_dirs = [
     "include",
     "//",
+    "//bta/eatt",
     "//bta/include",
     "//bta/sys",
     "//btcore/include",

@@ -98,8 +98,8 @@ void Link::ReadRemoteSupportedFeatures() {
   acl_connection_->ReadRemoteSupportedFeatures();
 }
 
-void Link::ReadRemoteExtendedFeatures() {
-  acl_connection_->ReadRemoteExtendedFeatures();
+void Link::ReadRemoteExtendedFeatures(uint8_t page_number) {
+  acl_connection_->ReadRemoteExtendedFeatures(page_number);
 }
 
 void Link::ReadClockOffset() {
@@ -211,8 +211,8 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChanne
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid);
   if (channel != nullptr) {
     RefreshRefCount();
+    channel->local_initiated_ = false;
   }
-  channel->local_initiated_ = false;
   return channel;
 }
 
@@ -403,6 +403,13 @@ void Link::OnReadRemoteVersionInformationComplete(
       lmp_version,
       manufacturer_name,
       sub_version);
+}
+void Link::OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) {
+  LOG_INFO(
+      "UNIMPLEMENTED page_number:%hhu max_page_number:%hhu sub_version:0x%lx",
+      page_number,
+      max_page_number,
+      static_cast<unsigned long>(features));
 }
 
 void Link::AddEncryptionChangeListener(EncryptionChangeListener listener) {

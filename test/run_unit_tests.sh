@@ -14,6 +14,7 @@ known_tests=(
   net_test_btif_profile_queue
   net_test_btif_config_cache
   net_test_device
+  net_test_eatt
   net_test_hci
   net_test_stack
   net_test_stack_multi_adv
