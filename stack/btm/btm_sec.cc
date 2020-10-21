@@ -1890,18 +1890,6 @@ void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc) {
     return;
   }
 
-  /* Security guys wants us not to allow connection from not paired devices */
-
-  /* Check if connection is allowed for only paired devices */
-  if (btm_cb.connect_only_paired) {
-    if (!p_dev_rec || !(p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
-      BTM_TRACE_EVENT(
-          "Security Manager: connect request from non-paired device");
-      btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
-      return;
-    }
-  }
-
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
       (btm_cb.pairing_bda == bda)) {
