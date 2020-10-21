@@ -66,7 +66,6 @@ tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm);
 
 static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec);
-static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_collision_timeout(void* data);
 static void btm_restore_mode(void);
 static void btm_sec_pairing_timeout(void* data);
@@ -4289,7 +4288,8 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
       (p_dev_rec->hci_handle != HCI_INVALID_HANDLE)) {
     BTM_TRACE_EVENT("Security Manager: Start encryption");
 
-    btm_sec_start_encryption(p_dev_rec);
+    btsnd_hcic_set_conn_encrypt(p_dev_rec->hci_handle, true);
+    p_dev_rec->sec_state = BTM_SEC_STATE_ENCRYPTING;
     return (BTM_CMD_STARTED);
   }
 
@@ -4342,18 +4342,6 @@ static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec) {
 static void btm_sec_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec) {
   p_dev_rec->sec_state = BTM_SEC_STATE_AUTHENTICATING;
   btsnd_hcic_auth_request(p_dev_rec->hci_handle);
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_start_encryption
- *
- * Description      This function is called to start encryption
- *
- ******************************************************************************/
-static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec) {
-  btsnd_hcic_set_conn_encrypt(p_dev_rec->hci_handle, true);
-  p_dev_rec->sec_state = BTM_SEC_STATE_ENCRYPTING;
 }
 
 /*******************************************************************************
