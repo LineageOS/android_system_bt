@@ -106,6 +106,21 @@ void acl_ble_enhanced_connection_complete(
     btm_ble_advertiser_notify_terminated_legacy(HCI_SUCCESS, handle);
 }
 
+void acl_ble_enhanced_connection_complete_from_shim(
+    const tBLE_BD_ADDR& address_with_type, uint16_t handle, uint8_t role,
+    bool match, uint16_t conn_interval, uint16_t conn_latency,
+    uint16_t conn_timeout, const RawAddress& local_rpa,
+    const RawAddress& peer_rpa, uint8_t peer_addr_type) {
+  acl_ble_enhanced_connection_complete(
+      address_with_type, handle, role, match, conn_interval, conn_latency,
+      conn_timeout, local_rpa, peer_rpa, peer_addr_type);
+
+  // The legacy stack continues the LE connection after the read remote version
+  // complete has been received.
+  l2cble_notify_le_connection(address_with_type.bda);
+  l2cble_use_preferred_conn_params(address_with_type.bda);
+}
+
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
                              uint16_t handle, bool enhanced,
                              tHCI_STATUS status) {
