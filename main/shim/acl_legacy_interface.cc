@@ -26,7 +26,7 @@ namespace legacy {
 const acl_interface_t GetAclInterface() {
   acl_interface_t acl_interface{
       .on_send_data_upwards = acl_rcv_acl_data,
-      .on_packets_completed = nullptr,
+      .on_packets_completed = acl_packets_completed,
 
       .connection.classic.on_connected = btm_acl_connected,
       .connection.classic.on_failed = btm_acl_connected,
