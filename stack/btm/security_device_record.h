@@ -302,9 +302,6 @@ typedef struct {
                              name */
   uint8_t link_key_type;  /* Type of key used in pairing   */
 
-#define BTM_MAX_PRE_SM4_LKEY_TYPE \
-  BTM_LKEY_TYPE_REMOTE_UNIT /* the link key type used by legacy pairing */
-
 #define BTM_SM4_UNKNOWN 0x00
 #define BTM_SM4_KNOWN 0x10
 #define BTM_SM4_TRUE 0x11
