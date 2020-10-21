@@ -85,9 +85,17 @@ namespace security {
 namespace {
 Address ADDRESS_CENTRAL{{0x26, 0x64, 0x76, 0x86, 0xab, 0xba}};
 AddressType ADDRESS_TYPE_CENTRAL = AddressType::RANDOM_DEVICE_ADDRESS;
+Address IDENTITY_ADDRESS_CENTRAL{{0x12, 0x34, 0x56, 0x78, 0x90, 0xaa}};
+AddressType IDENTITY_ADDRESS_TYPE_CENTRAL = AddressType::PUBLIC_DEVICE_ADDRESS;
+crypto_toolbox::Octet16 IRK_CENTRAL = {
+    0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f};
 
 Address ADDRESS_PERIPHERAL{{0x33, 0x58, 0x24, 0x76, 0x11, 0x89}};
 AddressType ADDRESS_TYPE_PERIPHERAL = AddressType::RANDOM_DEVICE_ADDRESS;
+Address IDENTITY_ADDRESS_PERIPHERAL{{0x21, 0x43, 0x65, 0x87, 0x09, 0x44}};
+AddressType IDENTITY_ADDRESS_TYPE_PERIPHERAL = AddressType::PUBLIC_DEVICE_ADDRESS;
+crypto_toolbox::Octet16 IRK_PERIPHERAL = {
+    0x0f, 0x0e, 0x0d, 0x0c, 0x0b, 0x0a, 0x09, 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01};
 
 std::optional<PairingResultOrFailure> pairing_result_central;
 std::optional<PairingResultOrFailure> pairing_result_peripheral;
@@ -167,6 +175,8 @@ class PairingHandlerPairTest : public testing::Test {
     central_setup = {
         .my_role = hci::Role::CENTRAL,
         .my_connection_address = {ADDRESS_CENTRAL, ADDRESS_TYPE_CENTRAL},
+        .my_identity_address = {IDENTITY_ADDRESS_CENTRAL, IDENTITY_ADDRESS_TYPE_CENTRAL},
+        .my_identity_resolving_key = IRK_CENTRAL,
 
         .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                                   .oob_data_flag = OobDataFlag::NOT_PRESENT,
@@ -190,6 +200,9 @@ class PairingHandlerPairTest : public testing::Test {
         .my_role = hci::Role::PERIPHERAL,
 
         .my_connection_address = {ADDRESS_PERIPHERAL, ADDRESS_TYPE_PERIPHERAL},
+        .my_identity_address = {IDENTITY_ADDRESS_PERIPHERAL, IDENTITY_ADDRESS_TYPE_PERIPHERAL},
+        .my_identity_resolving_key = IRK_PERIPHERAL,
+
         .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                                   .oob_data_flag = OobDataFlag::NOT_PRESENT,
                                   .auth_req = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc,
@@ -336,12 +349,26 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works) {
 
   EXPECT_TRUE(std::holds_alternative<PairingResult>(pairing_result_central.value()));
   EXPECT_TRUE(std::holds_alternative<PairingResult>(pairing_result_peripheral.value()));
+
+  auto central_result = std::get<PairingResult>(pairing_result_central.value());
+  ASSERT_EQ(central_result.distributed_keys.remote_identity_address->GetAddress(), IDENTITY_ADDRESS_PERIPHERAL);
+  ASSERT_EQ(
+      central_result.distributed_keys.remote_identity_address->GetAddressType(), IDENTITY_ADDRESS_TYPE_PERIPHERAL);
+  ASSERT_EQ(*central_result.distributed_keys.remote_irk, IRK_PERIPHERAL);
+
+  auto peripheral_result = std::get<PairingResult>(pairing_result_peripheral.value());
+  ASSERT_EQ(peripheral_result.distributed_keys.remote_identity_address->GetAddress(), IDENTITY_ADDRESS_CENTRAL);
+  ASSERT_EQ(
+      peripheral_result.distributed_keys.remote_identity_address->GetAddressType(), IDENTITY_ADDRESS_TYPE_CENTRAL);
+  ASSERT_EQ(*peripheral_result.distributed_keys.remote_irk, IRK_CENTRAL);
 }
 
 TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_peripheral_initiated) {
   central_setup = {
       .my_role = hci::Role::CENTRAL,
       .my_connection_address = {ADDRESS_CENTRAL, ADDRESS_TYPE_CENTRAL},
+      .my_identity_address = {IDENTITY_ADDRESS_CENTRAL, IDENTITY_ADDRESS_TYPE_CENTRAL},
+      .my_identity_resolving_key = IRK_CENTRAL,
       .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                                 .oob_data_flag = OobDataFlag::NOT_PRESENT,
                                 .auth_req = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc,
@@ -362,6 +389,8 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_peripheral_ini
   peripheral_setup = {
       .my_role = hci::Role::PERIPHERAL,
       .my_connection_address = {ADDRESS_PERIPHERAL, ADDRESS_TYPE_PERIPHERAL},
+      .my_identity_address = {IDENTITY_ADDRESS_PERIPHERAL, IDENTITY_ADDRESS_TYPE_PERIPHERAL},
+      .my_identity_resolving_key = IRK_PERIPHERAL,
       .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                                 .oob_data_flag = OobDataFlag::NOT_PRESENT,
                                 .auth_req = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc,
