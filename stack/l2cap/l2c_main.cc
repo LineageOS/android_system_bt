@@ -904,7 +904,7 @@ void l2c_process_held_packets(bool timed_out) {
  *
  ******************************************************************************/
 void l2c_init(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     // L2CAP init should be handled by GD stack manager
     return;
   }
@@ -954,7 +954,7 @@ void l2c_init(void) {
 }
 
 void l2c_free(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     // L2CAP cleanup should be handled by GD stack manager
     return;
   }
