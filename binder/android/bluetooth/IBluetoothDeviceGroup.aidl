@@ -47,9 +47,10 @@ interface IBluetoothDeviceGroup {
   void unregisterGroupClientApp(in int appId);
   void startGroupDiscovery(in int appId, in int groupId);
   void stopGroupDiscovery(in int appId, in int groupId);
-  List<DeviceGroup> getDiscoveredGroups();
-  DeviceGroup getDeviceGroup(in int groupId);
-  int getRemoteDeviceGroupId (in BluetoothDevice device, in ParcelUuid uuid);
+  List<DeviceGroup> getDiscoveredGroups(in boolean mPublicAddr);
+  DeviceGroup getDeviceGroup(in int groupId, in boolean mPublicAddr);
+  int getRemoteDeviceGroupId (in BluetoothDevice device, in ParcelUuid uuid,
+                              in boolean mPublicAddr);
   boolean isGroupDiscoveryInProgress(in int groupId);
   void setExclusiveAccess(in int appId, in int groupId, in List<BluetoothDevice> devices,
                           in int value);
