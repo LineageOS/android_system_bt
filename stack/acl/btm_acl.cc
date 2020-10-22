@@ -677,7 +677,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     if (p_dev_rec != NULL) {
       if (p_dev_rec->rs_disc_pending == BTM_SEC_DISC_PENDING) {
         LOG_WARN("Issuing delayed HCI_Disconnect!!!");
-        btsnd_hcic_disconnect(p_dev_rec->hci_handle, HCI_ERR_PEER_USER);
+        btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
       }
       LOG_WARN("tBTM_SEC_DEV:0x%x rs_disc_pending=%d", PTR_TO_UINT(p_dev_rec),
                p_dev_rec->rs_disc_pending);
