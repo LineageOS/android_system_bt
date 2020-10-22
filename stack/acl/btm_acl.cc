@@ -1287,7 +1287,7 @@ uint16_t btm_get_acl_disc_reason_code(void) {
  ******************************************************************************/
 uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                               tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::BTM_GetHCIConnHandle(remote_bda, transport);
   }
 
