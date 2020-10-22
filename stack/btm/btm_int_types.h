@@ -249,7 +249,6 @@ typedef struct {
   uint32_t dev_rec_count; /* Counter used for device record timestamp */
   uint8_t security_mode;
   bool pairing_disabled;
-  bool connect_only_paired;
   bool security_mode_changed; /* mode changed during bonding */
   bool pin_type_changed;      /* pin type changed during bonding */
   bool sec_req_pending;       /*   true if a request is pending */

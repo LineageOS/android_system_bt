@@ -38,7 +38,6 @@
 #include "rfcdefs.h"
 #include "sdp_api.h"
 
-#include "btm_sec.h"
 #include "stack/include/btm_api_types.h"
 
 #define error(fmt, ...) \
