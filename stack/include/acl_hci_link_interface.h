@@ -27,6 +27,8 @@
 void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc);
 void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode);
+void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
+                          tHCI_STATUS reason);
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable);
 void btm_acl_paging(BT_HDR* p, const RawAddress& dest);

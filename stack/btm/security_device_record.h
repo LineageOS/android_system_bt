@@ -178,7 +178,7 @@ typedef struct {
                                uint8_t pin_length);
   friend void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res,
                                uint8_t pin_len, uint8_t* p_pin);
-  friend void btm_sec_auth_complete(uint16_t handle, uint8_t status);
+  friend void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status);
   friend void btm_sec_connected(const RawAddress& bda, uint16_t handle,
                                 uint8_t status, uint8_t enc_mode);
   friend void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
