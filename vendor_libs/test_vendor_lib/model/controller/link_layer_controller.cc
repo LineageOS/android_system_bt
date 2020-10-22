@@ -1437,6 +1437,10 @@ void LinkLayerController::AuthenticateRemoteStage1(const Address& peer,
     case PairingType::INPUT_PIN:
       send_event_(bluetooth::hci::UserPasskeyRequestBuilder::Create(peer));
       break;
+    case PairingType::OUT_OF_BAND:
+      LOG_INFO("Oob data request for %s", peer.ToString().c_str());
+      send_event_(bluetooth::hci::RemoteOobDataRequestBuilder::Create(peer));
+      break;
     default:
       LOG_ALWAYS_FATAL("Invalid PairingType %d",
                        static_cast<int>(pairing_type));
@@ -1521,14 +1525,25 @@ ErrorCode LinkLayerController::IoCapabilityRequestNegativeReply(
   return ErrorCode::SUCCESS;
 }
 
-ErrorCode LinkLayerController::UserConfirmationRequestReply(
-    const Address& peer) {
-  if (security_manager_.GetAuthenticationAddress() != peer) {
-    return ErrorCode::AUTHENTICATION_FAILURE;
-  }
-  // TODO: Key could be calculated here.
-  std::array<uint8_t, 16> key_vec{1, 2,  3,  4,  5,  6,  7,  8,
-                                  9, 10, 11, 12, 13, 14, 15, 16};
+void LinkLayerController::SaveKeyAndAuthenticate(uint8_t key_type,
+                                                 const Address& peer) {
+  std::array<uint8_t, 16> key_vec{'k',
+                                  'e',
+                                  'y',
+                                  ' ',
+                                  'U',
+                                  5,
+                                  6,
+                                  7,
+                                  8,
+                                  9,
+                                  10,
+                                  11,
+                                  12,
+                                  13,
+                                  static_cast<uint8_t>(key_id_ >> 8u),
+                                  static_cast<uint8_t>(key_id_)};
+  key_id_ += 1;
   security_manager_.WriteKey(peer, key_vec);
 
   security_manager_.AuthenticationRequestFinished();
@@ -1545,6 +1560,31 @@ ErrorCode LinkLayerController::UserConfirmationRequestReply(
 
   ScheduleTask(milliseconds(15),
                [this, peer]() { AuthenticateRemoteStage2(peer); });
+}
+
+ErrorCode LinkLayerController::PinCodeRequestReply(const Address& peer,
+                                                   std::vector<uint8_t> pin) {
+  if (security_manager_.GetAuthenticationAddress() != peer) {
+    return ErrorCode::AUTHENTICATION_FAILURE;
+  }
+  SaveKeyAndAuthenticate('P', peer);
+  return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::PinCodeRequestNegativeReply(
+    const Address& peer) {
+  if (security_manager_.GetAuthenticationAddress() != peer) {
+    return ErrorCode::AUTHENTICATION_FAILURE;
+  }
+  return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::UserConfirmationRequestReply(
+    const Address& peer) {
+  if (security_manager_.GetAuthenticationAddress() != peer) {
+    return ErrorCode::AUTHENTICATION_FAILURE;
+  }
+  SaveKeyAndAuthenticate('U', peer);
   return ErrorCode::SUCCESS;
 }
 
@@ -1553,6 +1593,7 @@ ErrorCode LinkLayerController::UserConfirmationRequestNegativeReply(
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return ErrorCode::AUTHENTICATION_FAILURE;
   }
+  security_manager_.AuthenticationRequestFinished();
 
   ScheduleTask(milliseconds(5), [this, peer]() {
     send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
@@ -1568,6 +1609,8 @@ ErrorCode LinkLayerController::UserPasskeyRequestReply(const Address& peer,
     return ErrorCode::AUTHENTICATION_FAILURE;
   }
   LOG_INFO("TODO:Do something with the passkey %06d", numeric_value);
+  SaveKeyAndAuthenticate('P', peer);
+
   return ErrorCode::SUCCESS;
 }
 
@@ -1576,16 +1619,25 @@ ErrorCode LinkLayerController::UserPasskeyRequestNegativeReply(
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return ErrorCode::AUTHENTICATION_FAILURE;
   }
+  security_manager_.AuthenticationRequestFinished();
+
+  ScheduleTask(milliseconds(5), [this, peer]() {
+    send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
+        ErrorCode::AUTHENTICATION_FAILURE, peer));
+  });
+
   return ErrorCode::SUCCESS;
 }
 
 ErrorCode LinkLayerController::RemoteOobDataRequestReply(
-    const Address& peer, const std::vector<uint8_t>& c,
-    const std::vector<uint8_t>& r) {
+    const Address& peer, const std::array<uint8_t, 16>& c,
+    const std::array<uint8_t, 16>& r) {
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return ErrorCode::AUTHENTICATION_FAILURE;
   }
   LOG_INFO("TODO:Do something with the OOB data c=%d r=%d", c[0], r[0]);
+  SaveKeyAndAuthenticate('o', peer);
+
   return ErrorCode::SUCCESS;
 }
 
@@ -1594,6 +1646,28 @@ ErrorCode LinkLayerController::RemoteOobDataRequestNegativeReply(
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return ErrorCode::AUTHENTICATION_FAILURE;
   }
+  security_manager_.AuthenticationRequestFinished();
+
+  ScheduleTask(milliseconds(5), [this, peer]() {
+    send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
+        ErrorCode::AUTHENTICATION_FAILURE, peer));
+  });
+
+  return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::RemoteOobExtendedDataRequestReply(
+    const Address& peer, const std::array<uint8_t, 16>& c192,
+    const std::array<uint8_t, 16>& r192, const std::array<uint8_t, 16>& c256,
+    const std::array<uint8_t, 16>& r256) {
+  if (security_manager_.GetAuthenticationAddress() != peer) {
+    return ErrorCode::AUTHENTICATION_FAILURE;
+  }
+  LOG_INFO(
+      "TODO:Do something with the OOB data c192=%d r192=%d c256=%d r256=%d",
+      c192[0], r192[0], c256[0], r256[0]);
+  SaveKeyAndAuthenticate('O', peer);
+
   return ErrorCode::SUCCESS;
 }
 
@@ -1900,6 +1974,49 @@ ErrorCode LinkLayerController::WriteDefaultLinkPolicySettings(
 
 uint16_t LinkLayerController::ReadDefaultLinkPolicySettings() {
   return default_link_policy_settings_;
+}
+
+void LinkLayerController::ReadLocalOobData() {
+  std::array<uint8_t, 16> c_array(
+      {'c', ' ', 'a', 'r', 'r', 'a', 'y', ' ', '0', '0', '0', '0', '0', '0',
+       static_cast<uint8_t>((oob_id_ % 0x10000) >> 8u),
+       static_cast<uint8_t>(oob_id_ % 0x100)});
+
+  std::array<uint8_t, 16> r_array(
+      {'r', ' ', 'a', 'r', 'r', 'a', 'y', ' ', '0', '0', '0', '0', '0', '0',
+       static_cast<uint8_t>((oob_id_ % 0x10000) >> 8u),
+       static_cast<uint8_t>(oob_id_ % 0x100)});
+
+  send_event_(bluetooth::hci::ReadLocalOobDataCompleteBuilder::Create(
+      1, ErrorCode::SUCCESS, c_array, r_array));
+  oob_id_ += 1;
+}
+
+void LinkLayerController::ReadLocalOobExtendedData() {
+  std::array<uint8_t, 16> c_192_array(
+      {'c', ' ', 'a', 'r', 'r', 'a', 'y', ' ', '1', '9', '2', '0', '0', '0',
+       static_cast<uint8_t>((oob_id_ % 0x10000) >> 8u),
+       static_cast<uint8_t>(oob_id_ % 0x100)});
+
+  std::array<uint8_t, 16> r_192_array(
+      {'r', ' ', 'a', 'r', 'r', 'a', 'y', ' ', '1', '9', '2', '0', '0', '0',
+       static_cast<uint8_t>((oob_id_ % 0x10000) >> 8u),
+       static_cast<uint8_t>(oob_id_ % 0x100)});
+
+  std::array<uint8_t, 16> c_256_array(
+      {'c', ' ', 'a', 'r', 'r', 'a', 'y', ' ', '2', '5', '6', '0', '0', '0',
+       static_cast<uint8_t>((oob_id_ % 0x10000) >> 8u),
+       static_cast<uint8_t>(oob_id_ % 0x100)});
+
+  std::array<uint8_t, 16> r_256_array(
+      {'r', ' ', 'a', 'r', 'r', 'a', 'y', ' ', '2', '5', '6', '0', '0', '0',
+       static_cast<uint8_t>((oob_id_ % 0x10000) >> 8u),
+       static_cast<uint8_t>(oob_id_ % 0x100)});
+
+  send_event_(bluetooth::hci::ReadLocalOobExtendedDataCompleteBuilder::Create(
+      1, ErrorCode::SUCCESS, c_192_array, r_192_array, c_256_array,
+      r_256_array));
+  oob_id_ += 1;
 }
 
 ErrorCode LinkLayerController::FlowSpecification(
