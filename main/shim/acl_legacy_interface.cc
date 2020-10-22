@@ -55,7 +55,8 @@ const acl_interface_t GetAclInterface() {
       .link.classic.on_read_link_quality_complete = nullptr,
       .link.classic.on_read_link_supervision_timeout_complete = nullptr,
       .link.classic.on_read_remote_version_information_complete = nullptr,
-      .link.classic.on_read_remote_extended_features_complete = nullptr,
+      .link.classic.on_read_remote_extended_features_complete =
+          acl_process_extended_features,
       .link.classic.on_read_rssi_complete = nullptr,
       .link.classic.on_read_transmit_power_level_complete = nullptr,
       .link.classic.on_role_change = btm_acl_role_changed,
