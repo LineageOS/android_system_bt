@@ -226,7 +226,7 @@ static bool event_already_registered_in_hci_layer(
       return bluetooth::shim::is_gd_hci_enabled();
     case bluetooth::hci::EventCode::LE_META_EVENT:
     case bluetooth::hci::EventCode::DISCONNECTION_COMPLETE:
-      return bluetooth::shim::is_gd_shim_enabled();
+      return bluetooth::shim::is_gd_acl_enabled();
     default:
       return false;
   }
