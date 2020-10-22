@@ -26,17 +26,18 @@
 
 #include "bt_common.h"
 #include "bt_utils.h"
-#include "eatt.h"
 #include "btif_storage.h"
 #include "btm_ble_int.h"
 #include "btm_int.h"
 #include "connection_manager.h"
 #include "device/include/interop.h"
+#include "eatt.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/include/l2cap_acl_interface.h"
 
 using base::StringPrintf;
 using bluetooth::eatt::EattExtension;
@@ -204,7 +205,7 @@ bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
   }
 
   p_tcb->att_lcid = L2CAP_ATT_CID;
-  return connection_manager::direct_connect_add(gatt_if, rem_bda);
+  return acl_create_le_connection_with_id(gatt_if, rem_bda);
 }
 
 /*******************************************************************************

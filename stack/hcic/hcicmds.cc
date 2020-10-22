@@ -104,27 +104,17 @@ void btsnd_hcic_create_conn(const RawAddress& dest, uint16_t packet_types,
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
-#ifndef BT_10A
   p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_CREATE_CONN;
-#else
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_CREATE_CONN - 1;
-#endif
   p->offset = 0;
 
   UINT16_TO_STREAM(pp, HCI_CREATE_CONNECTION);
-#ifndef BT_10A
   UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CREATE_CONN);
-#else
-  UINT8_TO_STREAM(pp, (HCIC_PARAM_SIZE_CREATE_CONN - 1));
-#endif
   BDADDR_TO_STREAM(pp, dest);
   UINT16_TO_STREAM(pp, packet_types);
   UINT8_TO_STREAM(pp, page_scan_rep_mode);
   UINT8_TO_STREAM(pp, page_scan_mode);
   UINT16_TO_STREAM(pp, clock_offset);
-#if !defined(BT_10A)
   UINT8_TO_STREAM(pp, allow_switch);
-#endif
   btm_acl_paging(p, dest);
 }
 

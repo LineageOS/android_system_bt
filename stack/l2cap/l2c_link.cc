@@ -332,7 +332,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
     /* There can be a case when we rejected PIN code authentication */
     /* otherwise save a new reason */
     if (acl_get_disconnect_reason() != HCI_ERR_HOST_REJECT_SECURITY) {
-      acl_set_disconnect_reason(reason);
+      acl_set_disconnect_reason(static_cast<tHCI_STATUS>(reason));
     }
 
     p_lcb->SetDisconnectReason(acl_get_disconnect_reason());
