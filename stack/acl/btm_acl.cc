@@ -2948,3 +2948,28 @@ void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
   }
   bluetooth::hci::IsoManager::GetInstance()->HandleNumComplDataPkts(p, evt_len);
 }
+
+void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
+                                   uint8_t max_page_number, uint64_t features) {
+  if (current_page_number > HCI_EXT_FEATURES_PAGE_MAX) {
+    LOG_WARN("Unable to process current_page_number:%hhu", current_page_number);
+    return;
+  }
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+  memcpy(p_acl->peer_lmp_feature_pages[current_page_number],
+         (uint8_t*)&features, sizeof(uint64_t));
+  LOG_DEBUG(
+      "Copied extended feature pages handle:%hu current_page_number:%hhu "
+      "max_page_number:%hhu features:%s",
+      handle, current_page_number, max_page_number,
+      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number])
+          .c_str());
+
+  if (max_page_number == current_page_number) {
+    btm_process_remote_ext_features(p_acl, max_page_number);
+  }
+}
