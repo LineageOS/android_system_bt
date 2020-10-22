@@ -316,14 +316,10 @@ void l2c_link_sec_comp2(const RawAddress& p_bda,
  *
  ******************************************************************************/
 bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
-  tL2C_LCB* p_lcb;
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
   tL2C_CCB* p_ccb;
   bool status = true;
   bool lcb_is_free = true;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-
-  /* See if we have a link control block for the connection */
-  p_lcb = l2cu_find_lcb_by_handle(handle);
 
   /* If we don't have one, maybe an SCO link. Send to MM */
   if (!p_lcb) {
@@ -378,11 +374,10 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
         list_remove(p_lcb->link_xmit_data_q, p_buf);
         osi_free(p_buf);
       }
-      transport = p_lcb->transport;
       /* for LE link, always drop and re-open to ensure to get LE remote feature
        */
       if (p_lcb->transport == BT_TRANSPORT_LE) {
-        btm_acl_removed(p_lcb->remote_bd_addr, p_lcb->transport);
+        btm_acl_removed(handle);
       } else {
         /* If we are going to re-use the LCB without dropping it, release all
         fixed channels
