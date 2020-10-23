@@ -179,7 +179,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   /* Tell BTM Acl management the link was removed */
   if ((p_lcb->link_state == LST_CONNECTED) ||
       (p_lcb->link_state == LST_DISCONNECTING))
-    btm_acl_removed(p_lcb->remote_bd_addr, p_lcb->transport);
+    btm_acl_removed(p_lcb->Handle());
 
   /* Release any held buffers */
   if (p_lcb->link_xmit_data_q) {
