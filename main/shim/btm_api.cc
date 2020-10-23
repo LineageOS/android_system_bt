@@ -909,7 +909,6 @@ uint8_t bluetooth::shim::BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len,
 }
 
 bool bluetooth::shim::BTM_SecAddBleDevice(const RawAddress& bd_addr,
-                                          BD_NAME bd_name,
                                           tBT_DEVICE_TYPE dev_type,
                                           tBLE_ADDR_TYPE addr_type) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
