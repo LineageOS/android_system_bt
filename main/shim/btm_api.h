@@ -394,15 +394,14 @@ uint8_t BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len, uint8_t uuid_size,
  *                  for a LE device stored in the NVRAM.
  *
  * Parameters:      bd_addr          - BD address of the peer
- *                  bd_name          - Name of the peer device. NULL if unknown.
  *                  dev_type         - Remote device's device type.
  *                  addr_type        - LE device address type.
  *
  * Returns          true if added OK, else false
  *
  ******************************************************************************/
-bool BTM_SecAddBleDevice(const RawAddress& bd_addr, BD_NAME bd_name,
-                         tBT_DEVICE_TYPE dev_type, tBLE_ADDR_TYPE addr_type);
+bool BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
+                         tBLE_ADDR_TYPE addr_type);
 
 /*******************************************************************************
  *
