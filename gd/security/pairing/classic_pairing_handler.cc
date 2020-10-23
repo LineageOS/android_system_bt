@@ -27,36 +27,36 @@ namespace pairing {
 void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, numeric_value);
-  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
-  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
-  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
+  data.SetRemoteIoCaps(remote_io_capability_);
+  data.SetRemoteAuthReqs(remote_authentication_requirements_);
+  data.SetRemoteOobDataPresent(remote_oob_present_);
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayConfirmValue, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo() {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
-  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
-  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
-  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
+  data.SetRemoteIoCaps(remote_io_capability_);
+  data.SetRemoteAuthReqs(remote_authentication_requirements_);
+  data.SetRemoteOobDataPresent(remote_oob_present_);
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayYesNoDialog, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_, passkey);
-  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
-  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
-  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
+  data.SetRemoteIoCaps(remote_io_capability_);
+  data.SetRemoteAuthReqs(remote_authentication_requirements_);
+  data.SetRemoteOobDataPresent(remote_oob_present_);
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayPasskey, data);
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
   ASSERT(user_interface_handler_ != nullptr);
   ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
-  data.PutExtraData("remote_io_caps", hci::IoCapabilityText(remote_io_capability_));
-  data.PutExtraData("remote_auth_reqs", hci::AuthenticationRequirementsText(remote_authentication_requirements_));
-  data.PutExtraData("remote_oob_data_present", hci::OobDataPresentText(remote_oob_present_));
+  data.SetRemoteIoCaps(remote_io_capability_);
+  data.SetRemoteAuthReqs(remote_authentication_requirements_);
+  data.SetRemoteOobDataPresent(remote_oob_present_);
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayEnterPasskeyDialog, data);
 }
 
