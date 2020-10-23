@@ -1565,13 +1565,13 @@ void btm_ble_update_inq_result(tINQ_DB_ENT* p_i, uint8_t addr_type,
   if ((p_cur->flag & BTM_BLE_BREDR_NOT_SPT) == 0 &&
       !ble_evt_type_is_directed(evt_type)) {
     if (p_cur->ble_addr_type != BLE_ADDR_RANDOM) {
-      LOG_INFO("NOT_BR_EDR support bit not set, treat device as DUMO");
+      LOG_VERBOSE("NOT_BR_EDR support bit not set, treat device as DUMO");
       p_cur->device_type |= BT_DEVICE_TYPE_DUMO;
     } else {
-      LOG_INFO("Random address, treat device as LE only");
+      LOG_VERBOSE("Random address, treat device as LE only");
     }
   } else {
-    LOG_INFO("NOT_BR/EDR support bit set, treat device as LE only");
+    LOG_VERBOSE("NOT_BR/EDR support bit set, treat device as LE only");
   }
 }
 
