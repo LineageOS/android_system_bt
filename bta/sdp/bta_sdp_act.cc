@@ -28,19 +28,9 @@
 #include "bta_sdp_api.h"
 #include "bta_sdp_int.h"
 #include "bta_sys.h"
+#include "btif_sock_sdp.h"
 #include "osi/include/allocator.h"
 #include "sdp_api.h"
-
-/*****************************************************************************
- *  Constants
- ****************************************************************************/
-
-static const Uuid UUID_OBEX_OBJECT_PUSH = Uuid::From16Bit(0x1105);
-static const Uuid UUID_PBAP_PSE = Uuid::From16Bit(0x112F);
-static const Uuid UUID_MAP_MAS = Uuid::From16Bit(0x1132);
-static const Uuid UUID_MAP_MNS = Uuid::From16Bit(0x1133);
-static const Uuid UUID_SAP = Uuid::From16Bit(0x112D);
-static const Uuid UUID_DIP = Uuid::From16Bit(0x1200);
 
 static void bta_create_mns_sdp_record(bluetooth_sdp_record* record,
                                       tSDP_DISC_REC* p_rec) {
