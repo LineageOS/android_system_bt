@@ -482,23 +482,22 @@ void bluetooth::shim::legacy::Acl::CancelLeConnection(
 
 void bluetooth::shim::legacy::Acl::OnClassicLinkDisconnected(
     HciHandle handle, hci::ErrorCode reason) {
-  tHCI_STATUS legacy_reason = ToLegacyHciErrorCode(reason);
   LOG_DEBUG("Classic link disconnected handle:%hu reason:%s", handle,
-            hci_error_code_text(legacy_reason).c_str());
+            ErrorCodeText(reason).c_str());
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_disconnected,
                       ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle,
-                      legacy_reason);
+                      ToLegacyHciErrorCode(reason));
   pimpl_->handle_to_classic_connection_map_.erase(handle);
 }
 
 void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
                                                         hci::ErrorCode reason) {
-  tHCI_STATUS legacy_reason = ToLegacyHciErrorCode(reason);
   LOG_DEBUG("Le link disconnected handle:%hu reason:%s", handle,
-            hci_error_code_text(legacy_reason).c_str());
+            ErrorCodeText(reason).c_str());
+  pimpl_->handle_to_le_connection_map_.erase(handle);
   TRY_POSTING_ON_MAIN(acl_interface_.connection.le.on_disconnected,
                       ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle,
-                      legacy_reason);
+                      ToLegacyHciErrorCode(reason));
   pimpl_->handle_to_le_connection_map_.erase(handle);
 }
 

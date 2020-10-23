@@ -759,13 +759,6 @@ inline std::string RoleText(hci_role_t role) {
 /* Definitions for Write Secure Connections Host Support */
 #define HCI_SC_MODE_ENABLED 0x01
 
-/* Policy settings status */
-#define HCI_DISABLE_ALL_LM_MODES 0x0000
-#define HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH 0x0001
-#define HCI_ENABLE_HOLD_MODE 0x0002
-#define HCI_ENABLE_SNIFF_MODE 0x0004
-#define HCI_ENABLE_PARK_MODE 0x0008
-
 /* Filters that are sent in set filter command */
 #define HCI_FILTER_CONNECTION_SETUP 0x02
 
