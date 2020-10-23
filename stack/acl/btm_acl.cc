@@ -2763,7 +2763,7 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,
                                    bool is_bonding) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
+    return bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
   }
 
   const bool controller_supports_role_switch =
