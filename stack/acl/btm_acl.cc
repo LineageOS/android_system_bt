@@ -456,8 +456,13 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
+void btm_acl_removed(uint16_t handle) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  RawAddress bda = p_acl->remote_addr;
+  tBT_TRANSPORT transport = p_acl->transport;
+  if (transport == BT_TRANSPORT_LE) {
+    bda = p_acl->conn_addr;
+  }
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
