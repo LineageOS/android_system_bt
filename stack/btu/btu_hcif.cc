@@ -1041,7 +1041,7 @@ static void btu_hcif_authentication_comp_evt(uint8_t* p) {
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
 
-  btm_sec_auth_complete(handle, status);
+  btm_sec_auth_complete(handle, static_cast<tHCI_STATUS>(status));
 }
 
 /*******************************************************************************
@@ -1408,7 +1408,8 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       if (status != HCI_SUCCESS) {
         // Device refused to start authentication
         // This is treated as an authentication failure
-        btm_sec_auth_complete(HCI_INVALID_HANDLE, status);
+        btm_sec_auth_complete(HCI_INVALID_HANDLE,
+                              static_cast<tHCI_STATUS>(status));
       }
       break;
     case HCI_SET_CONN_ENCRYPTION:
