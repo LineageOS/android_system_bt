@@ -206,7 +206,7 @@ typedef struct {
                                      uint8_t encr_enable);
   friend void btm_acl_init(void);
   friend void btm_acl_process_sca_cmpl_pkt(uint8_t evt_len, uint8_t* p);
-  friend void btm_acl_role_changed(uint8_t hci_status,
+  friend void btm_acl_role_changed(tHCI_STATUS hci_status,
                                    const RawAddress& bd_addr, uint8_t new_role);
   friend void btm_acl_update_conn_addr(uint16_t conn_handle,
                                        const RawAddress& address);

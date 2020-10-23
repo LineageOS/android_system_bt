@@ -70,7 +70,7 @@ struct StackAclBtmAcl {
   void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
   void btm_set_default_link_policy(uint16_t settings);
-  void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+  void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                             uint8_t new_role);
 };
 
@@ -1383,7 +1383,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
+void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
                                           const RawAddress& bd_addr,
                                           uint8_t new_role) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
@@ -1446,7 +1446,7 @@ void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
   }
 }
 
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                           uint8_t new_role) {
   if (hci_status == HCI_SUCCESS) {
     l2c_link_role_changed(&bd_addr, new_role, hci_status);
