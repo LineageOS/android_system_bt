@@ -104,7 +104,7 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
   /* See if we have a link control block for the remote device */
   p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
 
-  /* If we don't have one, create one and accept the connection. */
+  /* If we do not have one, create one and accept the connection. */
   if (!p_lcb || !BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
     LOG(WARNING) << __func__ << " - unknown BD_ADDR " << rem_bda;
     return (false);
@@ -264,7 +264,7 @@ bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
   /* See if we have a link control block for the remote device */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
 
-  /* If we don't have one, create one. this is auto connection complete. */
+  /* If we do not have one, create one. this is auto connection complete. */
   if (!p_lcb) {
     p_lcb = l2cu_allocate_lcb(bda, false, BT_TRANSPORT_LE);
     if (!p_lcb) {
@@ -946,7 +946,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       /* validate the parameters */
       if (mtu < L2CAP_LE_MIN_MTU || mps < L2CAP_LE_MIN_MPS ||
           mps > L2CAP_LE_MAX_MPS) {
-        L2CAP_TRACE_ERROR("L2CAP don't like the params");
+        L2CAP_TRACE_ERROR("L2CAP do not like the params");
         l2cu_reject_ble_connection(p_ccb, id, L2CAP_CONN_NO_RESOURCES);
         break;
       }
@@ -1014,7 +1014,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         if (p_ccb->peer_conn_cfg.mtu < L2CAP_LE_MIN_MTU ||
             p_ccb->peer_conn_cfg.mps < L2CAP_LE_MIN_MPS ||
             p_ccb->peer_conn_cfg.mps > L2CAP_LE_MAX_MPS) {
-          L2CAP_TRACE_ERROR("L2CAP don't like the params");
+          L2CAP_TRACE_ERROR("L2CAP do not like the params");
           con_info.l2cap_result = L2CAP_LE_RESULT_NO_RESOURCES;
           l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_RSP_NEG, &con_info);
           break;
@@ -1222,8 +1222,8 @@ void l2c_ble_link_adjust_allocation(void) {
       } else {
         /* Safety check in case we switched to round-robin with something
          * outstanding */
-        /* if sent_not_acked is added into round_robin_unacked then don't add it
-         * again */
+        /* if sent_not_acked is added into round_robin_unacked then do not add
+         * it again */
         /* l2cap keeps updating sent_not_acked for exiting from round robin */
         if ((p_lcb->link_xmit_quota > 0) && (qq == 0))
           l2cb.ble_round_robin_unacked += p_lcb->sent_not_acked;

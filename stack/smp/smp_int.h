@@ -488,19 +488,6 @@ extern void smp_start_nonce_generation(tSMP_CB* p_cb);
 extern bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb);
 extern bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb);
 
-#if (SMP_DEBUG == TRUE)
-extern void smp_debug_print_nbyte_little_endian(uint8_t* p,
-                                                const char* key_name,
-                                                uint8_t len);
-
-inline void smp_debug_print_nbyte_little_endian(const Octet16& p,
-                                                const char* key_name,
-                                                uint8_t len) {
-  smp_debug_print_nbyte_little_endian(const_cast<uint8_t*>(p.data()), key_name,
-                                      len);
-}
-#endif
-
 extern void print128(const Octet16& x, const uint8_t* key_name);
 extern void smp_xor_128(Octet16* a, const Octet16& b);
 

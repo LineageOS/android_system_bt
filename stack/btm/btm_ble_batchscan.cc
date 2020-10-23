@@ -123,7 +123,7 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(uint8_t len, uint8_t* p) {
                     adv_data.advertiser_state);
 
     // Make sure the device is known
-    BTM_SecAddBleDevice(adv_data.bd_addr, NULL, BT_DEVICE_TYPE_BLE,
+    BTM_SecAddBleDevice(adv_data.bd_addr, BT_DEVICE_TYPE_BLE,
                         adv_data.addr_type);
 
     ble_advtrack_cb.p_track_cback(&adv_data);
