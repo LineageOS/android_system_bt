@@ -3410,7 +3410,7 @@ void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
  ******************************************************************************/
 void bta_dm_add_ble_device(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                            tBT_DEVICE_TYPE dev_type) {
-  if (!BTM_SecAddBleDevice(bd_addr, NULL, dev_type, addr_type)) {
+  if (!BTM_SecAddBleDevice(bd_addr, dev_type, addr_type)) {
     LOG(ERROR) << "BTA_DM: Error adding BLE Device for device " << bd_addr;
   }
 }
