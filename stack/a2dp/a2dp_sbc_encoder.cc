@@ -328,11 +328,11 @@ static void a2dp_sbc_encoder_update(uint16_t peer_mtu,
 
     if (s16BitPool < 0) s16BitPool = 0;
 
-    LOG_INFO("%s: bitpool candidate: %d (%d kbps)", __func__, s16BitPool,
-             p_encoder_params->u16BitRate);
+    LOG_VERBOSE("%s: bitpool candidate: %d (%d kbps)", __func__, s16BitPool,
+                p_encoder_params->u16BitRate);
 
     if (s16BitPool > max_bitpool) {
-      LOG_INFO("%s: computed bitpool too large (%d)", __func__, s16BitPool);
+      LOG_VERBOSE("%s: computed bitpool too large (%d)", __func__, s16BitPool);
       /* Decrease bitrate */
       p_encoder_params->u16BitRate -= A2DP_SBC_BITRATE_STEP;
       /* Record that we have decreased the bitrate */
