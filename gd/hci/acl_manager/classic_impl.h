@@ -466,7 +466,9 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   void on_read_remote_supported_features_complete(EventPacketView packet) {
     auto view = ReadRemoteSupportedFeaturesCompleteView::Create(packet);
     ASSERT_LOG(view.IsValid(), "Read remote supported features packet invalid");
-    LOG_INFO("UNIMPLEMENTED called");
+    uint16_t handle = view.GetConnectionHandle();
+    auto& acl_connection = acl_connections_.find(handle)->second;
+    acl_connection.connection_management_callbacks_->OnReadRemoteExtendedFeaturesComplete(0, 1, view.GetLmpFeatures());
   }
 
   void on_read_remote_extended_features_complete(EventPacketView packet) {
