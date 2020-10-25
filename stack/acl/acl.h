@@ -221,12 +221,15 @@ typedef struct {
   friend void btm_read_automatic_flush_timeout_complete(uint8_t* p);
   friend void btm_read_failed_contact_counter_complete(uint8_t* p);
   friend void btm_read_link_quality_complete(uint8_t* p);
-  friend void btm_read_remote_ext_features_complete(uint8_t* p,
-                                                    uint8_t evt_len);
+  friend void btm_read_remote_ext_features_complete(uint16_t handle,
+                                                    uint8_t page_num,
+                                                    uint8_t max_page,
+                                                    uint8_t* features);
   friend void btm_read_remote_ext_features_failed(uint8_t status,
                                                   uint16_t handle);
-  friend void btm_read_remote_features_complete(uint8_t* p);
-  friend void btm_read_remote_version_complete(uint8_t* p);
+  friend void btm_read_remote_features_complete(uint16_t handle,
+                                                uint8_t* features);
+  friend void btm_read_remote_version_complete_raw(uint8_t* p);
   friend void btm_read_rssi_complete(uint8_t* p);
   friend void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 
