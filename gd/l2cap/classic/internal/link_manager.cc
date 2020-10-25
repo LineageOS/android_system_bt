@@ -170,7 +170,10 @@ void LinkManager::handle_link_security_ensure_encrypted(hci::Address remote) {
 class LinkSecurityInterfaceImpl : public LinkSecurityInterface {
  public:
   LinkSecurityInterfaceImpl(os::Handler* handler, LinkManager* link_manager, Link* link)
-      : handler_(handler), link_manager_(link_manager), remote_(link->GetDevice().GetAddress()) {}
+      : handler_(handler),
+        link_manager_(link_manager),
+        remote_(link->GetDevice().GetAddress()),
+        acl_handle_(link->GetAclHandle()) {}
 
   hci::Address GetRemoteAddress() override {
     return remote_;
@@ -196,9 +199,14 @@ class LinkSecurityInterfaceImpl : public LinkSecurityInterface {
     handler_->CallOn(link_manager_, &LinkManager::handle_link_security_ensure_encrypted, remote_);
   }
 
+  uint16_t GetAclHandle() override {
+    return acl_handle_;
+  }
+
   os::Handler* handler_;
   LinkManager* link_manager_;
   hci::Address remote_;
+  uint16_t acl_handle_;
 };
 
 void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) {
@@ -212,6 +220,9 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclC
   ASSERT(link != nullptr);
   link->SendInformationRequest(InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED);
   link->SendInformationRequest(InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED);
+  link->ReadRemoteVersionInformation();
+  link->ReadRemoteSupportedFeatures();
+  link->ReadRemoteExtendedFeatures(1);
 
   // Allocate and distribute channels for all registered fixed channel services
   auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
@@ -286,6 +297,7 @@ void LinkManager::OnAuthenticationComplete(hci::Address device) {
         link_security_interface_listener_, &LinkSecurityInterfaceListener::OnAuthenticationComplete, device);
   }
 }
+
 void LinkManager::OnEncryptionChange(hci::Address device, hci::EncryptionEnabled enabled) {
   if (link_security_interface_listener_handler_ != nullptr) {
     link_security_interface_listener_handler_->CallOn(
@@ -293,6 +305,32 @@ void LinkManager::OnEncryptionChange(hci::Address device, hci::EncryptionEnabled
         &LinkSecurityInterfaceListener::OnEncryptionChange,
         device,
         enabled == hci::EncryptionEnabled::ON || enabled == hci::EncryptionEnabled::BR_EDR_AES_CCM);
+  }
+}
+
+void LinkManager::OnReadRemoteVersionInformation(
+    hci::Address device, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+  if (link_security_interface_listener_handler_ != nullptr) {
+    link_security_interface_listener_handler_->CallOn(
+        link_security_interface_listener_,
+        &LinkSecurityInterfaceListener::OnReadRemoteVersionInformation,
+        device,
+        lmp_version,
+        manufacturer_name,
+        sub_version);
+  }
+}
+
+void LinkManager::OnReadRemoteExtendedFeatures(
+    hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features) {
+  if (link_security_interface_listener_handler_ != nullptr) {
+    link_security_interface_listener_handler_->CallOn(
+        link_security_interface_listener_,
+        &LinkSecurityInterfaceListener::OnReadRemoteExtendedFeatures,
+        device,
+        page_number,
+        max_page_number,
+        features);
   }
 }
 
