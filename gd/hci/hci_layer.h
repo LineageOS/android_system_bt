@@ -69,11 +69,13 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   virtual AclConnectionInterface* GetAclConnectionInterface(
       common::ContextualCallback<void(EventPacketView)> event_handler,
-      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect);
+      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
+      common::ContextualCallback<void(uint16_t, uint8_t, uint16_t, uint16_t)> on_read_remote_version_complete);
 
   virtual LeAclConnectionInterface* GetLeAclConnectionInterface(
       common::ContextualCallback<void(LeMetaEventView)> event_handler,
-      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect);
+      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
+      common::ContextualCallback<void(uint16_t, uint8_t, uint16_t, uint16_t)> on_read_remote_version_complete);
 
   virtual LeAdvertisingInterface* GetLeAdvertisingInterface(
       common::ContextualCallback<void(LeMetaEventView)> event_handler);
@@ -97,6 +99,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   void Stop() override;
 
   virtual void Disconnect(uint16_t handle, ErrorCode reason);
+  virtual void ReadRemoteVersion(uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version);
   virtual void RegisterLeMetaEventHandler(common::ContextualCallback<void(EventPacketView)> event_handler);
 
  private:
@@ -124,7 +127,9 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   };
 
   std::list<common::ContextualCallback<void(uint16_t, ErrorCode)>> disconnect_handlers_;
+  std::list<common::ContextualCallback<void(uint16_t, uint8_t, uint16_t, uint16_t)>> read_remote_version_handlers_;
   void on_disconnection_complete(EventPacketView event_view);
+  void on_read_remote_version_complete(EventPacketView event_view);
 
   // Interfaces
   CommandInterfaceImpl<ConnectionManagementCommandBuilder> acl_connection_manager_interface_{*this};

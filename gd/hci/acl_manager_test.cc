@@ -631,9 +631,13 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
   class MockLeConnectionManagementCallbacks : public LeConnectionManagementCallbacks {
    public:
     MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
-    MOCK_METHOD3(OnConnectionUpdate,
-                 void(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout));
+    MOCK_METHOD3(
+        OnConnectionUpdate,
+        void(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout));
     MOCK_METHOD4(OnDataLengthChange, void(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time));
+    MOCK_METHOD3(
+        OnReadRemoteVersionInformationComplete,
+        void(uint8_t version, uint16_t manufacturer_name, uint16_t sub_version));
   } mock_le_connection_management_callbacks_;
 };
 

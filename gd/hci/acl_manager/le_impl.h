@@ -52,7 +52,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     controller_ = controller;
     handler_ = handler;
     le_acl_connection_interface_ = hci_layer_->GetLeAclConnectionInterface(
-        handler_->BindOn(this, &le_impl::on_le_event), handler_->BindOn(this, &le_impl::on_le_disconnect));
+        handler_->BindOn(this, &le_impl::on_le_event),
+        handler_->BindOn(this, &le_impl::on_le_disconnect),
+        handler_->BindOn(this, &le_impl::on_le_read_remote_version_information));
     le_address_manager_ = new LeAddressManager(
         common::Bind(&le_impl::enqueue_command, common::Unretained(this)),
         handler_,
@@ -251,6 +253,15 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     auto& connection = le_acl_connections_.find(handle)->second;
     connection.le_connection_management_callbacks_->OnConnectionUpdate(
         complete_view.GetConnInterval(), complete_view.GetConnLatency(), complete_view.GetSupervisionTimeout());
+  }
+
+  void on_le_read_remote_version_information(
+      uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
+    auto connection = le_acl_connections_.find(handle);
+    if (connection != le_acl_connections_.end()) {
+      connection->second.le_connection_management_callbacks_->OnReadRemoteVersionInformationComplete(
+          version, manufacturer_name, sub_version);
+    }
   }
 
   void enqueue_command(std::unique_ptr<CommandPacketBuilder> command_packet) {
