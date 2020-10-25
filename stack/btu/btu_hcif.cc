@@ -297,13 +297,13 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_encryption_key_refresh_cmpl_evt(p);
       break;
     case HCI_READ_RMT_FEATURES_COMP_EVT:
-      btm_read_remote_features_complete(p);
+      btm_read_remote_features_complete_raw(p);
       break;
     case HCI_READ_RMT_EXT_FEATURES_COMP_EVT:
       btu_hcif_read_rmt_ext_features_comp_evt(p, hci_evt_len);
       break;
     case HCI_READ_RMT_VERSION_COMP_EVT:
-      btm_read_remote_version_complete(p);
+      btm_read_remote_version_complete_raw(p);
       break;
     case HCI_COMMAND_COMPLETE_EVT:
       LOG_ERROR(
@@ -1147,7 +1147,7 @@ static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
   STREAM_TO_UINT8(status, p_cur);
 
   if (status == HCI_SUCCESS)
-    btm_read_remote_ext_features_complete(p, evt_len);
+    btm_read_remote_ext_features_complete_raw(p, evt_len);
   else {
     STREAM_TO_UINT16(handle, p_cur);
     btm_read_remote_ext_features_failed(status, handle);
