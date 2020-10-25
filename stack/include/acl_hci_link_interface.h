@@ -45,10 +45,17 @@ void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset);
 void btm_read_automatic_flush_timeout_complete(uint8_t* p);
 void btm_read_failed_contact_counter_complete(uint8_t* p);
 void btm_read_link_quality_complete(uint8_t* p);
-void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len);
+void btm_read_remote_ext_features_complete_raw(uint8_t* p, uint8_t evt_len);
+void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num,
+                                           uint8_t max_page, uint8_t* features);
 void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle);
-void btm_read_remote_features_complete(uint8_t* p);
-void btm_read_remote_version_complete(uint8_t* p);
+void btm_read_remote_features_complete_raw(uint8_t* p);
+void btm_read_remote_features_complete(uint16_t handle, uint8_t* features);
+void btm_read_remote_version_complete_raw(uint8_t* p);
+void btm_read_remote_version_complete(uint8_t status, uint16_t handle,
+                                      uint8_t lmp_version,
+                                      uint16_t manufacturer,
+                                      uint16_t lmp_subversion);
 void btm_read_rssi_complete(uint8_t* p);
 void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 
