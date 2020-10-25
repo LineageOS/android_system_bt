@@ -183,6 +183,10 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   };
   void AddEncryptionChangeListener(EncryptionChangeListener);
 
+  uint16_t GetAclHandle() const {
+    return acl_handle_;
+  }
+
  private:
   friend class DumpsysHelper;
   void connect_to_pending_dynamic_channels();
@@ -200,6 +204,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   std::unordered_map<Cid, PendingDynamicChannelConnection> local_cid_to_pending_dynamic_channel_connection_map_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   ClassicSignallingManager signalling_manager_;
+  uint16_t acl_handle_;
   Mtu remote_connectionless_mtu_ = kMinimumClassicMtu;
   bool remote_extended_feature_received_ = false;
   bool remote_supports_ertm_ = false;
