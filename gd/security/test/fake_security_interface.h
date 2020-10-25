@@ -41,6 +41,9 @@ class FakeLinkSecurityInterface : public l2cap::classic::LinkSecurityInterface {
   void Disconnect() override {
     listener_->OnLinkDisconnected(address_);
   }
+  uint16_t GetAclHandle() override {
+    return 0;
+  }
 
  private:
   l2cap::classic::LinkSecurityInterfaceListener* listener_ = nullptr;
