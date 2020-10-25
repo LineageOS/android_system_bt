@@ -80,6 +80,9 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
 
   void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) override;
 
+  void OnReadRemoteVersionInformationComplete(
+      uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override;
+
   virtual void Disconnect();
 
   // Handles connection parameter update request from remote

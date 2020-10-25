@@ -286,6 +286,9 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
       event_stream_->OnIncomingEvent(disconnection);
     }
 
+    void OnReadRemoteVersionInformationComplete(
+        uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {}
+
     LeConnectionManagementCallbacks* GetCallbacks() {
       return this;
     }

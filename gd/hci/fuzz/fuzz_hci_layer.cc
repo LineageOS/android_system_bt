@@ -37,13 +37,17 @@ hci::LeSecurityInterface* FuzzHciLayer::GetLeSecurityInterface(
 
 hci::AclConnectionInterface* FuzzHciLayer::GetAclConnectionInterface(
     ContextualCallback<void(hci::EventPacketView)> event_handler,
-    ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect) {
+    ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
+    ContextualCallback<void(uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
+        on_read_remote_version) {
   return &acl_connection_interface_;
 }
 
 hci::LeAclConnectionInterface* FuzzHciLayer::GetLeAclConnectionInterface(
     ContextualCallback<void(hci::LeMetaEventView)> event_handler,
-    ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect) {
+    ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
+    ContextualCallback<void(uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
+        on_read_remote_version) {
   return &le_acl_connection_interface_;
 }
 
