@@ -34,6 +34,7 @@
 #include "hcidefs.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 #include "stack/btm/btm_sec.h"
@@ -178,7 +179,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   /* Tell BTM Acl management the link was removed */
   if ((p_lcb->link_state == LST_CONNECTED) ||
       (p_lcb->link_state == LST_DISCONNECTING))
-    btm_acl_removed(p_lcb->remote_bd_addr, p_lcb->transport);
+    btm_acl_removed(p_lcb->Handle());
 
   /* Release any held buffers */
   if (p_lcb->link_xmit_data_q) {
@@ -2275,6 +2276,11 @@ void l2cu_set_non_flushable_pbf(bool is_supported) {
  *
  ******************************************************************************/
 void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    // GD L2cap will enforce security when condition changed
+    return;
+  }
+
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tL2C_CCB* p_next_ccb;

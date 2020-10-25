@@ -70,7 +70,7 @@ struct StackAclBtmAcl {
   void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
   void btm_set_default_link_policy(uint16_t settings);
-  void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+  void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                             uint8_t new_role);
 };
 
@@ -101,6 +101,15 @@ typedef struct {
     controller_get_interface()->supports_encryption_pause())        \
        ? true                                                       \
        : false)
+
+/* Policy settings status */
+typedef enum : uint16_t {
+  HCI_DISABLE_ALL_LM_MODES = 0,
+  HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH = (1u << 0),
+  HCI_ENABLE_HOLD_MODE = (1u << 1),
+  HCI_ENABLE_SNIFF_MODE = (1u << 2),
+  HCI_ENABLE_PARK_MODE = (1u << 3),
+} tLINK_POLICY;
 
 extern tBTM_CB btm_cb;
 
@@ -456,8 +465,13 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
+void btm_acl_removed(uint16_t handle) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  RawAddress bda = p_acl->remote_addr;
+  tBT_TRANSPORT transport = p_acl->transport;
+  if (transport == BT_TRANSPORT_LE) {
+    bda = p_acl->conn_addr;
+  }
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
@@ -1287,7 +1301,7 @@ uint16_t btm_get_acl_disc_reason_code(void) {
  ******************************************************************************/
 uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                               tBT_TRANSPORT transport) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::BTM_GetHCIConnHandle(remote_bda, transport);
   }
 
@@ -1424,7 +1438,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
+void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
                                           const RawAddress& bd_addr,
                                           uint8_t new_role) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
@@ -1487,7 +1501,7 @@ void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
   }
 }
 
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                           uint8_t new_role) {
   if (hci_status == HCI_SUCCESS) {
     l2c_link_role_changed(&bd_addr, new_role, hci_status);
@@ -2804,7 +2818,7 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,
                                    bool is_bonding) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
+    return bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
   }
 
   const bool controller_supports_role_switch =
@@ -2988,4 +3002,29 @@ void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
     l2c_link_process_num_completed_pkts(p, evt_len);
   }
   bluetooth::hci::IsoManager::GetInstance()->HandleNumComplDataPkts(p, evt_len);
+}
+
+void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
+                                   uint8_t max_page_number, uint64_t features) {
+  if (current_page_number > HCI_EXT_FEATURES_PAGE_MAX) {
+    LOG_WARN("Unable to process current_page_number:%hhu", current_page_number);
+    return;
+  }
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+  memcpy(p_acl->peer_lmp_feature_pages[current_page_number],
+         (uint8_t*)&features, sizeof(uint64_t));
+  LOG_DEBUG(
+      "Copied extended feature pages handle:%hu current_page_number:%hhu "
+      "max_page_number:%hhu features:%s",
+      handle, current_page_number, max_page_number,
+      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number])
+          .c_str());
+
+  if (max_page_number == current_page_number) {
+    btm_process_remote_ext_features(p_acl, max_page_number);
+  }
 }

@@ -37,7 +37,7 @@ const acl_interface_t GetAclInterface() {
       .connection.le.on_failed = acl_ble_connection_fail,
       .connection.le.on_disconnected = btm_acl_disconnected,
 
-      .link.classic.on_authentication_complete = nullptr,
+      .link.classic.on_authentication_complete = btm_sec_auth_complete,
       .link.classic.on_change_connection_link_key_complete = nullptr,
       .link.classic.on_encryption_change = nullptr,
       .link.classic.on_flow_specification_complete = nullptr,
@@ -55,10 +55,11 @@ const acl_interface_t GetAclInterface() {
       .link.classic.on_read_link_quality_complete = nullptr,
       .link.classic.on_read_link_supervision_timeout_complete = nullptr,
       .link.classic.on_read_remote_version_information_complete = nullptr,
-      .link.classic.on_read_remote_extended_features_complete = nullptr,
+      .link.classic.on_read_remote_extended_features_complete =
+          acl_process_extended_features,
       .link.classic.on_read_rssi_complete = nullptr,
       .link.classic.on_read_transmit_power_level_complete = nullptr,
-      .link.classic.on_role_change = nullptr,
+      .link.classic.on_role_change = btm_acl_role_changed,
       .link.classic.on_role_discovery_complete = nullptr,
 
       .link.le.on_connection_update = nullptr,

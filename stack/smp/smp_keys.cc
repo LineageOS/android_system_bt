@@ -23,9 +23,6 @@
  ******************************************************************************/
 #include "bt_target.h"
 
-#if (SMP_DEBUG == TRUE)
-#include <stdio.h>
-#endif
 #include <base/bind.h>
 #include <string.h>
 #include "bt_utils.h"
@@ -59,25 +56,6 @@ static void smp_process_private_key(tSMP_CB* p_cb);
 
 void smp_debug_print_nbyte_little_endian(uint8_t* p, const char* key_name,
                                          uint8_t len) {
-#if (SMP_DEBUG == TRUE)
-  int ind;
-  int col_count = 32;
-  int row_count;
-  uint8_t p_buf[512];
-
-  SMP_TRACE_DEBUG("%s(LSB ~ MSB):", key_name);
-  memset(p_buf, 0, sizeof(p_buf));
-  row_count = len % col_count ? len / col_count + 1 : len / col_count;
-
-  ind = 0;
-  for (int row = 0; row < row_count; row++) {
-    for (int column = 0, x = 0; (ind < len) && (column < col_count);
-         column++, ind++) {
-      x += snprintf((char*)&p_buf[x], sizeof(p_buf) - x, "%02x ", p[ind]);
-    }
-    SMP_TRACE_DEBUG("  [%03d]: %s", row * col_count, p_buf);
-  }
-#endif
 }
 
 inline void smp_debug_print_nbyte_little_endian(const Octet16& p,
@@ -89,25 +67,6 @@ inline void smp_debug_print_nbyte_little_endian(const Octet16& p,
 
 void smp_debug_print_nbyte_big_endian(uint8_t* p, const char* key_name,
                                       uint8_t len) {
-#if (SMP_DEBUG == TRUE)
-  uint8_t p_buf[512];
-
-  SMP_TRACE_DEBUG("%s(MSB ~ LSB):", key_name);
-  memset(p_buf, 0, sizeof(p_buf));
-
-  int ind = 0;
-  int ncols = 32; /* num entries in one line */
-  int nrows;      /* num lines */
-
-  nrows = len % ncols ? len / ncols + 1 : len / ncols;
-  for (int row = 0; row < nrows; row++) {
-    for (int col = 0, x = 0; (ind < len) && (col < ncols); col++, ind++) {
-      x += snprintf((char*)&p_buf[len - x - 1], sizeof(p_buf) - (len - x - 1),
-                    "%02x ", p[ind]);
-    }
-    SMP_TRACE_DEBUG("[%03d]: %s", row * ncols, p_buf);
-  }
-#endif
 }
 
 /** This function is called to process a passkey. */
@@ -474,9 +433,6 @@ static void smp_process_stk(tSMP_CB* p_cb, Octet16* p) {
   tSMP_KEY key;
 
   SMP_TRACE_DEBUG("smp_process_stk ");
-#if (SMP_DEBUG == TRUE)
-  SMP_TRACE_ERROR("STK Generated");
-#endif
   smp_mask_enc_key(p_cb->loc_enc_size, p);
 
   key.key_type = SMP_KEY_TYPE_STK;
@@ -915,10 +871,6 @@ void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
                                          p_cb->local_random, iocap, b, a);
 
   SMP_TRACE_EVENT("peer DHKey check calculation is completed");
-#if (SMP_DEBUG == TRUE)
-  smp_debug_print_nbyte_little_endian(param_buf, "peer DHKey check",
-                                      OCTET16_LEN);
-#endif
   key.key_type = SMP_KEY_TYPE_PEER_DHK_CHCK;
   key.p_data = param_buf.data();
   tSMP_INT_DATA smp_int_data;

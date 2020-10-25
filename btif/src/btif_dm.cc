@@ -1863,7 +1863,7 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, int transport,
     if (address_type == BLE_ADDR_PUBLIC || address_type == BLE_ADDR_RANDOM) {
       // bd_addr->address is already reversed, so use it instead of
       // oob_data->le_bt_dev_addr
-      BTM_SecAddBleDevice(bd_addr, NULL, BT_DEVICE_TYPE_BLE, address_type);
+      BTM_SecAddBleDevice(bd_addr, BT_DEVICE_TYPE_BLE, address_type);
     }
   }
 

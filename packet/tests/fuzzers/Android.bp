@@ -40,7 +40,7 @@ cc_fuzz {
         "system/bt/packet/tests/avrcp",
         "system/bt/packet/base",
     ],
-    //system/core/base/include/android-base"
+    //system/libbase/include/android-base"
     srcs: [
         "change_path_req_fuzzer.cc",
 
