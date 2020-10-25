@@ -71,7 +71,6 @@ bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
     case bluetooth::hci::OpCode::REMOTE_NAME_REQUEST:
     case bluetooth::hci::OpCode::READ_REMOTE_SUPPORTED_FEATURES:
     case bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES:
-    case bluetooth::hci::OpCode::READ_REMOTE_VERSION_INFORMATION:
     case bluetooth::hci::OpCode::READ_CLOCK_OFFSET:
     case bluetooth::hci::OpCode::SETUP_SYNCHRONOUS_CONNECTION:
     case bluetooth::hci::OpCode::ACCEPT_SYNCHRONOUS_CONNECTION:
@@ -226,6 +225,7 @@ static bool event_already_registered_in_hci_layer(
       return bluetooth::shim::is_gd_hci_enabled();
     case bluetooth::hci::EventCode::LE_META_EVENT:
     case bluetooth::hci::EventCode::DISCONNECTION_COMPLETE:
+    case bluetooth::hci::EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE:
       return bluetooth::shim::is_gd_acl_enabled();
     default:
       return false;
