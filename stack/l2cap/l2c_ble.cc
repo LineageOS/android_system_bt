@@ -1566,19 +1566,18 @@ tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
                                            uint16_t psm, bool is_originator,
                                            tL2CAP_SEC_CBACK* p_callback,
                                            void* p_ref_data) {
-  L2CAP_TRACE_DEBUG("%s", __func__);
   tL2CAP_LE_RESULT_CODE result;
   tL2C_LCB* p_lcb = NULL;
 
   if (!p_callback) {
-    L2CAP_TRACE_ERROR("%s No callback function", __func__);
+    LOG_ERROR("No callback function");
     return L2CAP_LE_RESULT_NO_RESOURCES;
   }
 
   p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
 
   if (!p_lcb) {
-    L2CAP_TRACE_ERROR("%s Security check for unknown device", __func__);
+    LOG_ERROR("Security check for unknown device");
     p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_UNKNOWN_ADDR);
     return L2CAP_LE_RESULT_NO_RESOURCES;
   }
@@ -1586,6 +1585,7 @@ tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
   tL2CAP_SEC_DATA* p_buf =
       (tL2CAP_SEC_DATA*)osi_malloc((uint16_t)sizeof(tL2CAP_SEC_DATA));
   if (!p_buf) {
+    LOG_ERROR("No resources for connection");
     p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_NO_RESOURCES);
     return L2CAP_LE_RESULT_NO_RESOURCES;
   }
