@@ -306,7 +306,7 @@ typedef struct t_l2c_ccb {
   uint16_t remote_credit_count;
 
   /* used to indicate that ECOC is used */
-  bool ecoc;
+  bool ecoc{false};
   bool reconfig_started;
 } tL2C_CCB;
 
