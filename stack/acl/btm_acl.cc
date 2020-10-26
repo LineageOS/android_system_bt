@@ -393,7 +393,10 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   /* if BR/EDR do something more */
   if (transport == BT_TRANSPORT_BR_EDR) {
     btsnd_hcic_read_rmt_clk_offset(hci_handle);
-    btsnd_hcic_rmt_ver_req(hci_handle);
+    if (!bluetooth::shim::is_gd_l2cap_enabled()) {
+      // GD L2cap reads this automatically
+      btsnd_hcic_rmt_ver_req(hci_handle);
+    }
   }
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
@@ -844,7 +847,7 @@ void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
   }
 }
 
-void btm_read_remote_version_complete(uint8_t* p) {
+void btm_read_remote_version_complete_raw(uint8_t* p) {
   uint8_t status;
   uint16_t handle;
   uint8_t lmp_version;
@@ -857,6 +860,14 @@ void btm_read_remote_version_complete(uint8_t* p) {
   STREAM_TO_UINT16(manufacturer, p);
   STREAM_TO_UINT16(lmp_subversion, p);
 
+  btm_read_remote_version_complete(status, handle, lmp_version, manufacturer,
+                                   lmp_version);
+}
+
+void btm_read_remote_version_complete(uint8_t status, uint16_t handle,
+                                      uint8_t lmp_version,
+                                      uint16_t manufacturer,
+                                      uint16_t lmp_subversion) {
   btm_process_remote_version_complete(status, handle, lmp_version, manufacturer,
                                       lmp_subversion);
   maybe_chain_more_commands_after_read_remote_version_complete(status, handle);
@@ -952,6 +963,10 @@ void StackAclBtmAcl::btm_read_remote_features(uint16_t handle) {
   /* first send read remote supported features HCI command */
   /* because we don't know whether the remote support extended feature command
    */
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    // GD L2cap reads this automatically
+    return;
+  }
   btsnd_hcic_rmt_features_req(handle);
 }
 
@@ -966,6 +981,10 @@ void StackAclBtmAcl::btm_read_remote_features(uint16_t handle) {
  *
  ******************************************************************************/
 void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    // GD L2cap reads this automatically
+    return;
+  }
   btsnd_hcic_rmt_ext_features(handle, page_number);
 }
 
@@ -979,11 +998,9 @@ void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_remote_features_complete(uint8_t* p) {
-  tACL_CONN* p_acl_cb;
+void btm_read_remote_features_complete_raw(uint8_t* p) {
   uint8_t status;
   uint16_t handle;
-  uint8_t acl_idx;
 
   STREAM_TO_UINT8(status, p);
 
@@ -995,16 +1012,20 @@ void btm_read_remote_features_complete(uint8_t* p) {
 
   STREAM_TO_UINT16(handle, p);
 
-  acl_idx = btm_handle_to_acl_index(handle);
+  btm_read_remote_features_complete(handle, p);
+}
+
+void btm_read_remote_features_complete(uint16_t handle, uint8_t* features) {
+  uint16_t acl_idx = btm_handle_to_acl_index(handle);
   if (acl_idx >= MAX_L2CAP_LINKS) {
     LOG_WARN("Unable to find active acl");
     return;
   }
 
-  p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
+  tACL_CONN* p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
 
   /* Copy the received features page */
-  STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[0], p,
+  STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[0], features,
                   HCI_FEATURE_BYTES_PER_PAGE);
 
   if ((HCI_LMP_EXTENDED_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0])) &&
@@ -1036,11 +1057,9 @@ void btm_read_remote_features_complete(uint8_t* p) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len) {
-  tACL_CONN* p_acl_cb;
+void btm_read_remote_ext_features_complete_raw(uint8_t* p, uint8_t evt_len) {
   uint8_t page_num, max_page;
   uint16_t handle;
-  uint8_t acl_idx;
 
   if (evt_len < HCI_EXT_FEATURES_SUCCESS_EVT_LEN) {
     android_errorWriteLog(0x534e4554, "141552859");
@@ -1052,13 +1071,6 @@ void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(page_num, p);
   STREAM_TO_UINT8(max_page, p);
-
-  /* Validate parameters */
-  acl_idx = btm_handle_to_acl_index(handle);
-  if (acl_idx >= MAX_L2CAP_LINKS) {
-    LOG_WARN("Unable to find active acl");
-    return;
-  }
 
   if (max_page > HCI_EXT_FEATURES_PAGE_MAX) {
     LOG_WARN("Too many max pages read page=%d unknown", max_page);
@@ -1075,10 +1087,24 @@ void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len) {
     LOG_WARN("num_page=%d, max_page=%d invalid", page_num, max_page);
   }
 
-  p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
+  btm_read_remote_ext_features_complete(handle, page_num, max_page, p);
+}
+
+void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num,
+                                           uint8_t max_page,
+                                           uint8_t* features) {
+  /* Validate parameters */
+  uint16_t acl_idx = btm_handle_to_acl_index(handle);
+
+  if (acl_idx >= MAX_L2CAP_LINKS) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+
+  auto* p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
 
   /* Copy the received features page */
-  STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[page_num], p,
+  STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[page_num], features,
                   HCI_FEATURE_BYTES_PER_PAGE);
 
   /* If there is the next remote features page and
