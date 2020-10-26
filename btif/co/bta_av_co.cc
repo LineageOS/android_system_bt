@@ -2207,10 +2207,19 @@ bool bta_av_co_set_codec_audio_config(
   return bta_av_co_cb.SetCodecAudioConfig(codec_audio_config);
 }
 
-bool bta_av_co_content_protect_is_active(const RawAddress& peer_address) {
+btav_a2dp_scmst_info_t bta_av_co_get_scmst_info(
+    const RawAddress& peer_address) {
   BtaAvCoPeer* p_peer = bta_av_co_cb.FindPeer(peer_address);
   CHECK(p_peer != nullptr);
-  return p_peer->ContentProtectActive();
+  btav_a2dp_scmst_info_t scmst_info{};
+  scmst_info.enable_status = BTAV_A2DP_SCMST_DISABLED;
+
+  if (p_peer->ContentProtectActive()) {
+    scmst_info.enable_status = BTAV_A2DP_SCMST_ENABLED;
+    scmst_info.cp_header = bta_av_co_cb.ContentProtectFlag();
+  }
+
+  return scmst_info;
 }
 
 void btif_a2dp_codec_debug_dump(int fd) { bta_av_co_cb.DebugDump(fd); }
