@@ -94,6 +94,9 @@ typedef struct {
                                uint16_t supervision_timeout);
   void (*on_data_length_change)(uint16_t tx_octets, uint16_t tx_time,
                                 uint16_t rx_octets, uint16_t rx_time);
+  void (*on_read_remote_version_information_complete)(
+      tHCI_STATUS status, uint16_t handle, uint8_t lmp_version,
+      uint16_t manufacturer_name, uint16_t sub_version);
 } acl_le_link_interface_t;
 
 typedef struct {

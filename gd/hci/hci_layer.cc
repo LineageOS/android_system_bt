@@ -332,23 +332,48 @@ void HciLayer::Disconnect(uint16_t handle, ErrorCode reason) {
   }
 }
 
+void HciLayer::on_read_remote_version_complete(EventPacketView event_view) {
+  auto view = ReadRemoteVersionInformationCompleteView::Create(event_view);
+  ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");
+  if (view.GetStatus() != ErrorCode::SUCCESS) {
+    auto status = view.GetStatus();
+    std::string error_code = ErrorCodeText(status);
+    LOG_ERROR("Received on_read_remote_version_information_complete with error code %s", error_code.c_str());
+    return;
+  }
+  uint16_t handle = view.GetConnectionHandle();
+  ReadRemoteVersion(handle, view.GetVersion(), view.GetManufacturerName(), view.GetSubVersion());
+}
+
+void HciLayer::ReadRemoteVersion(uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
+  for (auto callback : read_remote_version_handlers_) {
+    callback.Invoke(handle, version, manufacturer_name, sub_version);
+  }
+}
+
 AclConnectionInterface* HciLayer::GetAclConnectionInterface(
     ContextualCallback<void(EventPacketView)> event_handler,
-    ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect) {
+    ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect,
+    ContextualCallback<void(uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
+        on_read_remote_version) {
   for (const auto event : AclConnectionEvents) {
     RegisterEventHandler(event, event_handler);
   }
   disconnect_handlers_.push_back(on_disconnect);
+  read_remote_version_handlers_.push_back(on_read_remote_version);
   return &acl_connection_manager_interface_;
 }
 
 LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
     ContextualCallback<void(LeMetaEventView)> event_handler,
-    ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect) {
+    ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect,
+    ContextualCallback<void(uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
+        on_read_remote_version) {
   for (const auto event : LeConnectionManagementEvents) {
     RegisterLeEventHandler(event, event_handler);
   }
   disconnect_handlers_.push_back(on_disconnect);
+  read_remote_version_handlers_.push_back(on_read_remote_version);
   return &le_acl_connection_manager_interface_;
 }
 
@@ -399,6 +424,9 @@ void HciLayer::Start() {
   if (bluetooth::common::InitFlags::GdAclEnabled()) {
     RegisterEventHandler(
         EventCode::DISCONNECTION_COMPLETE, handler->BindOn(this, &HciLayer::on_disconnection_complete));
+    RegisterEventHandler(
+        EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
+        handler->BindOn(this, &HciLayer::on_read_remote_version_complete));
   }
   auto drop_packet = handler->BindOn(impl_, &impl::drop);
   RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);

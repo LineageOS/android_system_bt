@@ -36,16 +36,28 @@ using RetransmissionAndFlowControlMode = DynamicChannelConfigurationOption::Retr
 using ConnectionResult = DynamicChannelManager::ConnectionResult;
 using ConnectionResultCode = DynamicChannelManager::ConnectionResultCode;
 
-Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection,
-           l2cap::internal::ParameterProvider* parameter_provider,
-           DynamicChannelServiceManagerImpl* dynamic_service_manager,
-           FixedChannelServiceManagerImpl* fixed_service_manager, LinkManager* link_manager)
-    : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
+Link::Link(
+    os::Handler* l2cap_handler,
+    std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection,
+    l2cap::internal::ParameterProvider* parameter_provider,
+    DynamicChannelServiceManagerImpl* dynamic_service_manager,
+    FixedChannelServiceManagerImpl* fixed_service_manager,
+    LinkManager* link_manager)
+    : l2cap_handler_(l2cap_handler),
+      acl_connection_(std::move(acl_connection)),
       data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
-      parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
-      fixed_service_manager_(fixed_service_manager), link_manager_(link_manager),
-      signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
-                          &dynamic_channel_allocator_, fixed_service_manager_) {
+      parameter_provider_(parameter_provider),
+      dynamic_service_manager_(dynamic_service_manager),
+      fixed_service_manager_(fixed_service_manager),
+      link_manager_(link_manager),
+      signalling_manager_(
+          l2cap_handler_,
+          this,
+          &data_pipeline_manager_,
+          dynamic_service_manager_,
+          &dynamic_channel_allocator_,
+          fixed_service_manager_),
+      acl_handle_(acl_connection_->GetHandle()) {
   ASSERT(l2cap_handler_ != nullptr);
   ASSERT(acl_connection_ != nullptr);
   ASSERT(parameter_provider_ != nullptr);
@@ -403,6 +415,7 @@ void Link::OnReadRemoteVersionInformationComplete(
       lmp_version,
       manufacturer_name,
       sub_version);
+  link_manager_->OnReadRemoteVersionInformation(GetDevice().GetAddress(), lmp_version, manufacturer_name, sub_version);
 }
 void Link::OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) {
   LOG_INFO(
@@ -410,6 +423,7 @@ void Link::OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max
       page_number,
       max_page_number,
       static_cast<unsigned long>(features));
+  link_manager_->OnReadRemoteExtendedFeatures(GetDevice().GetAddress(), page_number, max_page_number, features);
 }
 
 void Link::AddEncryptionChangeListener(EncryptionChangeListener listener) {

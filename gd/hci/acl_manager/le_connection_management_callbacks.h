@@ -30,6 +30,8 @@ class LeConnectionManagementCallbacks {
                                   uint16_t supervision_timeout) = 0;
   virtual void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) = 0;
   virtual void OnDisconnection(ErrorCode reason) = 0;
+  virtual void OnReadRemoteVersionInformationComplete(
+      uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) = 0;
 };
 
 }  // namespace acl_manager

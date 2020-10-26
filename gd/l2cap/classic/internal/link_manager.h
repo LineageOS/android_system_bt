@@ -67,6 +67,10 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   virtual void OnDisconnect(hci::Address device, hci::ErrorCode status);
   void OnAuthenticationComplete(hci::Address device);
   void OnEncryptionChange(hci::Address device, hci::EncryptionEnabled enabled);
+  void OnReadRemoteVersionInformation(
+      hci::Address device, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
+  void OnReadRemoteExtendedFeatures(
+      hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features);
 
   // FixedChannelManager methods
 

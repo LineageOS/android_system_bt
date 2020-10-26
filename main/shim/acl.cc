@@ -365,6 +365,14 @@ class LeShimAclConnection
                         rx_octets, rx_time);
   }
 
+  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version,
+                                              uint16_t manufacturer_name,
+                                              uint16_t sub_version) override {
+    TRY_POSTING_ON_MAIN(interface_.on_read_remote_version_information_complete,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        lmp_version, manufacturer_name, sub_version);
+  }
+
   void OnDisconnection(hci::ErrorCode reason) {
     Disconnect();
     on_disconnect_(handle_, reason);

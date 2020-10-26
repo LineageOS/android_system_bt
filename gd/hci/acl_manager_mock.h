@@ -43,6 +43,9 @@ class MockClassicAclConnection : public ClassicAclConnection {
   MOCK_METHOD(Address, GetAddress, (), (const, override));
   MOCK_METHOD(bool, Disconnect, (DisconnectReason reason), (override));
   MOCK_METHOD(void, RegisterCallbacks, (ConnectionManagementCallbacks * callbacks, os::Handler* handler), (override));
+  MOCK_METHOD(bool, ReadRemoteVersionInformation, (), (override));
+  MOCK_METHOD(bool, ReadRemoteSupportedFeatures, (), (override));
+  MOCK_METHOD(bool, ReadRemoteExtendedFeatures, (uint8_t), (override));
 
   QueueUpEnd* GetAclQueueEnd() const override {
     return acl_queue_.GetUpEnd();

@@ -46,9 +46,10 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
     controller_ = controller;
     handler_ = handler;
     should_accept_connection_ = common::Bind([](Address, ClassOfDevice) { return true; });
-    acl_connection_interface_ =
-        hci_layer_->GetAclConnectionInterface(handler_->BindOn(this, &classic_impl::on_classic_event),
-                                              handler_->BindOn(this, &classic_impl::on_classic_disconnect));
+    acl_connection_interface_ = hci_layer_->GetAclConnectionInterface(
+        handler_->BindOn(this, &classic_impl::on_classic_event),
+        handler_->BindOn(this, &classic_impl::on_classic_disconnect),
+        handler_->BindOn(this, &classic_impl::on_read_remote_version_information));
   }
 
   ~classic_impl() override {
@@ -97,9 +98,6 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
         break;
       case EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE:
         on_read_remote_extended_features_complete(event_packet);
-        break;
-      case EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE:
-        on_read_remote_version_information_complete(event_packet);
         break;
       case EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED:
         on_link_supervision_timeout_changed(event_packet);
@@ -448,19 +446,13 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
     acl_connection.connection_management_callbacks_->OnFlushOccurred();
   }
 
-  void on_read_remote_version_information_complete(EventPacketView packet) {
-    auto view = ReadRemoteVersionInformationCompleteView::Create(packet);
-    ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");
-    if (view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_remote_version_information_complete with error code %s", error_code.c_str());
-      return;
+  void on_read_remote_version_information(
+      uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
+    auto acl_connection = acl_connections_.find(handle);
+    if (acl_connection != acl_connections_.end()) {
+      acl_connection->second.connection_management_callbacks_->OnReadRemoteVersionInformationComplete(
+          version, manufacturer_name, sub_version);
     }
-    uint16_t handle = view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    acl_connection.connection_management_callbacks_->OnReadRemoteVersionInformationComplete(
-        view.GetVersion(), view.GetManufacturerName(), view.GetSubVersion());
   }
 
   void on_read_remote_supported_features_complete(EventPacketView packet) {
