@@ -150,7 +150,8 @@ tBT_A2DP_OFFLOAD generateArbitrarytA2dpOffload(FuzzedDataProvider* fdp) {
 
   retval.codec_type = fdp->ConsumeIntegral<uint32_t>();
   retval.max_latency = fdp->ConsumeIntegral<uint16_t>();
-  retval.scms_t_enable = fdp->ConsumeIntegral<uint16_t>();
+  std::vector<uint8_t> scms_t_enable = fdp->ConsumeBytes<uint8_t>(2);
+  memcpy(&retval.scms_t_enable[0], scms_t_enable.data(), scms_t_enable.size());
   retval.sample_rate = fdp->ConsumeIntegral<uint32_t>();
   retval.bits_per_sample = fdp->ConsumeIntegral<uint8_t>();
   retval.ch_mode = fdp->ConsumeIntegral<uint8_t>();
