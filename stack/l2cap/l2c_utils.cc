@@ -1452,6 +1452,7 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
   p_ccb->rx_data_rate = L2CAP_CHNL_DATA_RATE_LOW;
 
   p_ccb->is_flushable = false;
+  p_ccb->ecoc = false;
 
   alarm_free(p_ccb->l2c_ccb_timer);
   p_ccb->l2c_ccb_timer = alarm_new("l2c.l2c_ccb_timer");
