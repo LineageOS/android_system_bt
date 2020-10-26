@@ -100,7 +100,7 @@ const tBTA_AV_CO_FUNCTS bta_av_a2dp_cos = {bta_av_co_audio_init,
                                            bta_av_co_audio_source_data_path,
                                            bta_av_co_audio_delay,
                                            bta_av_co_audio_update_mtu,
-                                           bta_av_co_content_protect_is_active};
+                                           bta_av_co_get_scmst_info};
 
 /* these tables translate AVDT events to SSM events */
 static const uint16_t bta_av_stream_evt_ok[] = {
@@ -3021,7 +3021,8 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb,
 
   UINT32_TO_STREAM(p_param, offload_start->codec_type);
   UINT16_TO_STREAM(p_param, offload_start->max_latency);
-  UINT16_TO_STREAM(p_param, offload_start->scms_t_enable);
+  ARRAY_TO_STREAM(p_param, offload_start->scms_t_enable,
+                  static_cast<int>(offload_start->scms_t_enable.size()));
   UINT32_TO_STREAM(p_param, offload_start->sample_rate);
   UINT8_TO_STREAM(p_param, offload_start->bits_per_sample);
   UINT8_TO_STREAM(p_param, offload_start->ch_mode);
@@ -3179,10 +3180,14 @@ static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
   p_a2dp_offload->mtu = mtu;
   p_a2dp_offload->acl_hdl =
       BTM_GetHCIConnHandle(p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
-  p_a2dp_offload->scms_t_enable =
-      p_scb->p_cos->cp_is_active(p_scb->PeerAddress());
-  APPL_TRACE_DEBUG("%s: scms_t_enable =%d", __func__,
-                   p_a2dp_offload->scms_t_enable);
+  btav_a2dp_scmst_info_t scmst_info =
+      p_scb->p_cos->get_scmst_info(p_scb->PeerAddress());
+  p_a2dp_offload->scms_t_enable[0] = scmst_info.enable_status;
+  p_a2dp_offload->scms_t_enable[1] = scmst_info.cp_header;
+  APPL_TRACE_DEBUG(
+      "%s: SCMS-T_enable status: %d, "
+      "SCMS-T header (if it's enabled): 0x%02x",
+      __func__, scmst_info.enable_status, scmst_info.cp_header);
 
   switch (A2DP_GetTrackSampleRate(p_scb->cfg.codec_info)) {
     case 44100:
