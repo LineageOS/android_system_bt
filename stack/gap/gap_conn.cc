@@ -248,7 +248,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    p_ccb->psm = L2CA_RegisterLECoc(psm, conn.reg_info, security);
+    p_ccb->psm =
+        L2CA_RegisterLECoc(psm, conn.reg_info, security, p_ccb->local_coc_cfg);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);
