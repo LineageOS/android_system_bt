@@ -42,7 +42,7 @@ struct EattExtension::impl {
     reg_info_.pL2CA_Error_Cb = eatt_error_cb;
     reg_info_.pL2CA_DataInd_Cb = eatt_data_ind;
 
-    if (L2CA_RegisterLECoc(BT_PSM_EATT, reg_info_, BTM_SEC_NONE) == 0) {
+    if (L2CA_RegisterLECoc(BT_PSM_EATT, reg_info_, BTM_SEC_NONE, {}) == 0) {
       LOG(ERROR) << __func__ << " cannot register EATT";
     } else {
       eatt_impl_ = std::make_unique<eatt_impl>();

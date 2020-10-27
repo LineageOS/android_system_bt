@@ -167,8 +167,8 @@ static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
  */
 struct tL2CAP_LE_CFG_INFO {
   uint16_t result; /* Only used in confirm messages */
-  uint16_t mtu;
-  uint16_t mps;
+  uint16_t mtu = 100;
+  uint16_t mps = 100;
   uint16_t credits = L2CAP_LE_CREDIT_DEFAULT;
 };
 
@@ -409,7 +409,7 @@ extern uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr);
  ******************************************************************************/
 extern uint16_t L2CA_RegisterLECoc(uint16_t psm,
                                    const tL2CAP_APPL_INFO& p_cb_info,
-                                   uint16_t sec_level);
+                                   uint16_t sec_level, tL2CAP_LE_CFG_INFO cfg);
 
 /*******************************************************************************
  *
