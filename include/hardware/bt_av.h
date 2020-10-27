@@ -108,6 +108,11 @@ typedef enum {
   BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO = 0x1 << 1
 } btav_a2dp_codec_channel_mode_t;
 
+typedef enum {
+  BTAV_A2DP_SCMST_DISABLED = 0x00,
+  BTAV_A2DP_SCMST_ENABLED = 0x01
+} btav_a2dp_scmst_enable_status_t;
+
 /*
  * Structure for representing codec capability or configuration.
  * It is used for configuring A2DP codec preference, and for reporting back
@@ -236,6 +241,11 @@ typedef struct {
     return result;
   }
 } btav_a2dp_codec_config_t;
+
+typedef struct {
+  btav_a2dp_scmst_enable_status_t enable_status;
+  uint8_t cp_header;
+} btav_a2dp_scmst_info_t;
 
 /** Callback for connection state change.
  *  state will have one of the values from btav_connection_state_t
