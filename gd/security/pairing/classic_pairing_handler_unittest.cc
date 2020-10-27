@@ -70,6 +70,17 @@ class FakeSecurityManagerChannel : public channel::SecurityManagerChannel {
   }
 };
 
+class TestUI : public UI {
+ public:
+  ~TestUI() override {}
+  void DisplayPairingPrompt(const hci::AddressWithType& address, std::string name) override {}
+  void Cancel(const hci::AddressWithType& address) override {}
+  void DisplayConfirmValue(ConfirmationData data) override {}
+  void DisplayYesNoDialog(ConfirmationData data) override {}
+  void DisplayEnterPasskeyDialog(ConfirmationData data) override {}
+  void DisplayPasskey(ConfirmationData data) override {}
+};
+
 class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
  public:
   explicit SecurityManagerChannelCallback(pairing::ClassicPairingHandler* pairing_handler)
@@ -143,6 +154,8 @@ class ClassicPairingHandlerTest : public ::testing::Test {
     handler_ = fake_registry_.GetTestModuleHandler(&FakeHciLayer::Factory);
     channel_ = new FakeSecurityManagerChannel(handler_, hci_layer_);
     security_record_ = std::make_shared<record::SecurityRecord>(device_);
+    user_interface_ = new TestUI();
+    user_interface_handler_ = handler_;
     pairing_handler_ = new pairing::ClassicPairingHandler(
         channel_,
         security_record_,
@@ -162,6 +175,7 @@ class ClassicPairingHandlerTest : public ::testing::Test {
     channel_->SetChannelListener(nullptr);
     synchronize();
     fake_registry_.StopAll();
+    delete user_interface_;
     delete pairing_handler_;
     delete channel_;
     delete channel_callback_;
