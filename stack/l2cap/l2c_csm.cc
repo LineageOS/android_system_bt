@@ -603,6 +603,9 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
         alarm_cancel(p_ccb->l2c_ccb_timer);
         p_ccb->chnl_state = CST_OPEN;
         l2c_csm_indicate_connection_open(p_ccb);
+        p_ccb->local_conn_cfg = p_ccb->p_rcb->coc_cfg;
+        p_ccb->remote_credit_count = p_ccb->p_rcb->coc_cfg.credits;
+        l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
       } else {
         p_ccb->chnl_state = CST_CONFIG;
         alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
