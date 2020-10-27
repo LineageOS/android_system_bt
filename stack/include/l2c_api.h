@@ -441,21 +441,6 @@ extern uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
 
 /*******************************************************************************
  *
- * Function         L2CA_ConnectLECocRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP LE COC connection, for which they had gotten a connect
- *                  indication callback.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-extern bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
-                                 uint16_t lcid, uint16_t result,
-                                 uint16_t status, tL2CAP_LE_CFG_INFO* p_cfg);
-
-/*******************************************************************************
- *
  *  Function         L2CA_GetPeerLECocConfig
  *
  *  Description      Get peers configuration for LE Connection Oriented Channel.
