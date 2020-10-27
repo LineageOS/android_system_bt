@@ -341,6 +341,12 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // NOTE(optedoblivion) BTA needs a callback for when auto accepting JustWorks
+            // If we auto accept from the ClassicPairingHandler in GD then we won't
+            // get a callback to this shim function.
+            // We will have to call it anyway until we eliminate the need
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
@@ -353,6 +359,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
@@ -374,6 +382,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
@@ -444,6 +454,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
@@ -461,6 +473,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
@@ -474,6 +488,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
@@ -487,6 +503,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
@@ -500,6 +518,8 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           if (!GetRecord()->RequiresMitmProtection()) {
             GetChannel()->SendCommand(
                 hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+            // TODO(optedoblivion): REMOVE WHEN SHIM LEAVES
+            NotifyUiDisplayYesNo();
           } else {
             GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
                 GetRecord()->GetPseudoAddress()->GetAddress()));
