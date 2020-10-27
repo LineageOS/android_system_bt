@@ -502,7 +502,7 @@ void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
 
 void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
                              uint16_t latency, uint16_t timeout,
-                             tGATT_STATUS status) {
+                             tHCI_STATUS status) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) return;
 
@@ -515,7 +515,8 @@ void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
     if (p_reg->in_use && p_reg->app_cb.p_conn_update_cb) {
       uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
       (*p_reg->app_cb.p_conn_update_cb)(p_reg->gatt_if, conn_id, interval,
-                                        latency, timeout, status);
+                                        latency, timeout,
+                                        static_cast<tGATT_STATUS>(status));
     }
   }
 }
