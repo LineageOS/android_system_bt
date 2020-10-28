@@ -24,6 +24,7 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/l2cap.h"
+#include "main/shim/stack.h"
 #include "osi/include/allocator.h"
 
 static bluetooth::shim::legacy::L2cap shim_l2cap;
@@ -109,45 +110,6 @@ bool bluetooth::shim::L2CA_DisconnectReq(uint16_t cid) {
   return shim_l2cap.DisconnectRequest(cid);
 }
 
-/**
- * Le Connection Oriented Channel APIs
- */
-uint16_t bluetooth::shim::L2CA_RegisterLECoc(uint16_t psm,
-                                             const tL2CAP_APPL_INFO& callbacks,
-                                             uint16_t sec_level) {
-  LOG_INFO("UNIMPLEMENTED %s psm:%hd", __func__, psm);
-  return 0;
-}
-
-void bluetooth::shim::L2CA_DeregisterLECoc(uint16_t psm) {
-  LOG_INFO("UNIMPLEMENTED %s psm:%hd", __func__, psm);
-}
-
-uint16_t bluetooth::shim::L2CA_ConnectLECocReq(uint16_t psm,
-                                               const RawAddress& p_bd_addr,
-                                               tL2CAP_LE_CFG_INFO* p_cfg) {
-  LOG_INFO("UNIMPLEMENTED %s psm:%hd addr:%s p_cfg:%p", __func__, psm,
-           p_bd_addr.ToString().c_str(), p_cfg);
-  return 0;
-}
-
-bool bluetooth::shim::L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr,
-                                           uint8_t id, uint16_t lcid,
-                                           uint16_t result, uint16_t status,
-                                           tL2CAP_LE_CFG_INFO* p_cfg) {
-  LOG_INFO(
-      "UNIMPLEMENTED %s addr:%s id:%hhd lcid:%hd result:%hd status:%hd "
-      "p_cfg:%p",
-      __func__, p_bd_addr.ToString().c_str(), id, lcid, result, status, p_cfg);
-  return false;
-}
-
-bool bluetooth::shim::L2CA_GetPeerLECocConfig(uint16_t lcid,
-                                              tL2CAP_LE_CFG_INFO* peer_cfg) {
-  LOG_INFO("UNIMPLEMENTED %s lcid:%hd peer_cfg:%p", __func__, lcid, peer_cfg);
-  return false;
-}
-
 bool bluetooth::shim::L2CA_ReconfigCreditBasedConnsReq(
     const RawAddress& bd_addr, std::vector<uint16_t>& lcids,
     tL2CAP_LE_CFG_INFO* p_cfg) {
@@ -200,6 +162,9 @@ bool bluetooth::shim::L2CA_GetPeerFeatures(const RawAddress& bd_addr,
 }
 
 using bluetooth::hci::AddressWithType;
+using bluetooth::l2cap::le::DynamicChannel;
+using bluetooth::l2cap::le::DynamicChannelManager;
+using bluetooth::l2cap::le::DynamicChannelService;
 using bluetooth::l2cap::le::FixedChannel;
 using bluetooth::l2cap::le::FixedChannelManager;
 using bluetooth::l2cap::le::FixedChannelService;
@@ -423,4 +388,270 @@ bool bluetooth::shim::L2CA_IsLinkEstablished(const RawAddress& bd_addr,
                                              tBT_TRANSPORT transport) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   return true;
+}
+
+// LE COC Shim Helper
+
+uint16_t cid_token_counter_ = 1;
+
+struct LeCocChannelInfo {
+  uint16_t psm;
+  RawAddress remote;
+};
+std::unordered_map<uint16_t, LeCocChannelInfo> cid_token_to_channel_map_;
+
+uint16_t add_cid_token_entry(uint16_t psm, RawAddress remote) {
+  uint16_t new_token = cid_token_counter_;
+  cid_token_to_channel_map_[new_token] = {psm, remote};
+  cid_token_counter_++;
+  if (cid_token_counter_ == 0) cid_token_counter_++;
+  return new_token;
+}
+
+void remove_cid_token_entry(uint16_t cid_token) {
+  cid_token_to_channel_map_.erase(cid_token);
+}
+
+uint16_t find_cid_token_by_psm_address(uint16_t psm, RawAddress remote) {
+  for (const auto& entry : cid_token_to_channel_map_) {
+    if (entry.second.psm == psm && entry.second.remote == remote) {
+      return entry.first;
+    }
+  }
+  LOG(ERROR) << __func__ << "Can't find channel";
+  return 0;
+}
+
+struct LeDynamicChannelHelper {
+  LeDynamicChannelHelper(uint16_t psm, tL2CAP_APPL_INFO appl_info)
+      : psm_(psm), appl_info_(appl_info) {}
+
+  uint16_t psm_;
+  tL2CAP_APPL_INFO appl_info_;
+
+  void Register() {
+    bluetooth::shim::GetL2capLeModule()
+        ->GetDynamicChannelManager()
+        ->RegisterService(
+            psm_, {}, {},
+            bluetooth::common::BindOnce(
+                &LeDynamicChannelHelper::on_registration_complete,
+                bluetooth::common::Unretained(this)),
+            bluetooth::common::Bind(&LeDynamicChannelHelper::on_channel_open,
+                                    bluetooth::common::Unretained(this)),
+            bluetooth::shim::GetGdShimHandler());
+  }
+
+  void on_registration_complete(
+      DynamicChannelManager::RegistrationResult result,
+      std::unique_ptr<DynamicChannelService> service) {
+    if (result != DynamicChannelManager::RegistrationResult::SUCCESS) {
+      LOG(ERROR) << "Channel is not registered. psm=" << +psm_ << (int)result;
+      return;
+    }
+    channel_service_ = std::move(service);
+  }
+
+  std::unique_ptr<DynamicChannelService> channel_service_ = nullptr;
+
+  void Connect(bluetooth::hci::AddressWithType device) {
+    if (channel_service_ == nullptr) {
+      return;
+    }
+    initiated_by_us_[device] = true;
+    bluetooth::shim::GetL2capLeModule()
+        ->GetDynamicChannelManager()
+        ->ConnectChannel(
+            device, {}, psm_,
+            bluetooth::common::Bind(&LeDynamicChannelHelper::on_channel_open,
+                                    bluetooth::common::Unretained(this)),
+            bluetooth::common::Bind(
+                &LeDynamicChannelHelper::on_outgoing_connection_fail,
+                bluetooth::common::Unretained(this)),
+            bluetooth::shim::GetGdShimHandler());
+  }
+
+  void Disconnect(bluetooth::hci::AddressWithType device) {
+    if (channel_service_ == nullptr) {
+      return;
+    }
+    if (channels_.count(device) == 0) {
+      return;
+    }
+    channels_[device]->Close();
+  }
+
+  void Unregister() {
+    if (channel_service_ != nullptr) {
+      channel_service_->Unregister(
+          bluetooth::common::BindOnce(&LeDynamicChannelHelper::on_unregistered,
+                                      bluetooth::common::Unretained(this)),
+          bluetooth::shim::GetGdShimHandler());
+      channel_service_ = nullptr;
+    }
+  }
+
+  void on_unregistered() {}
+
+  void on_channel_close(bluetooth::hci::AddressWithType device,
+                        bluetooth::hci::ErrorCode error_code) {
+    channel_enqueue_buffer_[device] = nullptr;
+    channels_[device]->GetQueueUpEnd()->UnregisterDequeue();
+    channels_[device] = nullptr;
+    auto address = bluetooth::ToRawAddress(device.GetAddress());
+    auto cid_token = find_cid_token_by_psm_address(psm_, address);
+    (appl_info_.pL2CA_DisconnectInd_Cb)(cid_token, false);
+    remove_cid_token_entry(cid_token);
+    initiated_by_us_.erase(device);
+  }
+
+  void on_channel_open(std::unique_ptr<DynamicChannel> channel) {
+    auto device = channel->GetDevice();
+    channel->RegisterOnCloseCallback(
+        bluetooth::shim::GetGdShimHandler()->BindOnceOn(
+            this, &LeDynamicChannelHelper::on_channel_close, device));
+    channel_enqueue_buffer_[device] = std::make_unique<
+        bluetooth::os::EnqueueBuffer<bluetooth::packet::BasePacketBuilder>>(
+        channel->GetQueueUpEnd());
+    channel->GetQueueUpEnd()->RegisterDequeue(
+        bluetooth::shim::GetGdShimHandler(),
+        bluetooth::common::Bind(&LeDynamicChannelHelper::on_incoming_data,
+                                bluetooth::common::Unretained(this), device));
+    channels_[device] = std::move(channel);
+
+    auto address = bluetooth::ToRawAddress(device.GetAddress());
+    if (initiated_by_us_[device]) {
+      auto cid_token = find_cid_token_by_psm_address(psm_, address);
+      appl_info_.pL2CA_ConnectCfm_Cb(cid_token, 0);
+    } else {
+      auto cid_token = add_cid_token_entry(psm_, address);
+      appl_info_.pL2CA_ConnectInd_Cb(address, cid_token, psm_, 0);
+    }
+  }
+
+  void on_incoming_data(bluetooth::hci::AddressWithType remote) {
+    auto channel = channels_.find(remote);
+    if (channel == channels_.end()) {
+      LOG_ERROR("Channel is not open");
+      return;
+    }
+    auto packet = channel->second->GetQueueUpEnd()->TryDequeue();
+    std::vector<uint8_t> packet_vector(packet->begin(), packet->end());
+    BT_HDR* buffer =
+        static_cast<BT_HDR*>(osi_calloc(packet_vector.size() + sizeof(BT_HDR)));
+    std::copy(packet_vector.begin(), packet_vector.end(), buffer->data);
+    buffer->len = packet_vector.size();
+    auto address = bluetooth::ToRawAddress(remote.GetAddress());
+    auto cid_token = find_cid_token_by_psm_address(psm_, address);
+    appl_info_.pL2CA_DataInd_Cb(cid_token, buffer);
+  }
+
+  void on_outgoing_connection_fail(
+      DynamicChannelManager::ConnectionResult result) {
+    LOG(ERROR) << "Outgoing connection failed";
+  }
+
+  bool send(AddressWithType remote,
+            std::unique_ptr<bluetooth::packet::BasePacketBuilder> packet) {
+    auto buffer = channel_enqueue_buffer_.find(remote);
+    if (buffer == channel_enqueue_buffer_.end() || buffer->second == nullptr) {
+      LOG(ERROR) << "Channel is not open";
+      return false;
+    }
+    buffer->second->Enqueue(std::move(packet),
+                            bluetooth::shim::GetGdShimHandler());
+    return true;
+  }
+
+  std::unordered_map<AddressWithType, std::unique_ptr<DynamicChannel>>
+      channels_;
+  std::unordered_map<AddressWithType,
+                     std::unique_ptr<bluetooth::os::EnqueueBuffer<
+                         bluetooth::packet::BasePacketBuilder>>>
+      channel_enqueue_buffer_;
+  std::unordered_map<AddressWithType, uint16_t> cid_map_;
+  std::unordered_map<AddressWithType, bool> initiated_by_us_;
+};
+
+std::unordered_map<uint16_t, std::unique_ptr<LeDynamicChannelHelper>>
+    le_dynamic_channel_helper_map_;
+
+/**
+ * Le Connection Oriented Channel APIs
+ */
+uint16_t bluetooth::shim::L2CA_RegisterLECoc(uint16_t psm,
+                                             const tL2CAP_APPL_INFO& callbacks,
+                                             uint16_t sec_level) {
+  if (le_dynamic_channel_helper_map_.count(psm) != 0) {
+    LOG(ERROR) << __func__ << "Already registered psm: " << psm;
+    return 0;
+  }
+  le_dynamic_channel_helper_map_[psm] =
+      std::make_unique<LeDynamicChannelHelper>(psm, callbacks);
+  le_dynamic_channel_helper_map_[psm]->Register();
+  return psm;
+}
+
+void bluetooth::shim::L2CA_DeregisterLECoc(uint16_t psm) {
+  if (le_dynamic_channel_helper_map_.count(psm) == 0) {
+    LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    return;
+  }
+  le_dynamic_channel_helper_map_[psm]->Unregister();
+  le_dynamic_channel_helper_map_.erase(psm);
+}
+
+uint16_t bluetooth::shim::L2CA_ConnectLECocReq(uint16_t psm,
+                                               const RawAddress& p_bd_addr,
+                                               tL2CAP_LE_CFG_INFO* p_cfg) {
+  if (le_dynamic_channel_helper_map_.count(psm) == 0) {
+    LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    return 0;
+  }
+  le_dynamic_channel_helper_map_[psm]->Connect(
+      ToAddressWithType(p_bd_addr, Btm::GetAddressType(p_bd_addr)));
+  return add_cid_token_entry(psm, p_bd_addr);
+}
+
+bool bluetooth::shim::L2CA_GetPeerLECocConfig(uint16_t lcid,
+                                              tL2CAP_LE_CFG_INFO* peer_cfg) {
+  // TODO(hsz): Implement me with real value
+  peer_cfg->mps = 1000;
+  peer_cfg->mtu = 1000;
+  return true;
+}
+
+bool bluetooth::shim::L2CA_DisconnectLECocReq(uint16_t cid) {
+  if (cid_token_to_channel_map_.count(cid) == 0) {
+    LOG(ERROR) << __func__ << "Invalid cid: " << cid;
+    return false;
+  }
+  auto psm = cid_token_to_channel_map_[cid].psm;
+  auto remote = cid_token_to_channel_map_[cid].remote;
+  if (le_dynamic_channel_helper_map_.count(psm) == 0) {
+    LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    return false;
+  }
+  le_dynamic_channel_helper_map_[psm]->Disconnect(
+      bluetooth::ToAddressWithType(remote, Btm::GetAddressType(remote)));
+  return true;
+}
+
+uint8_t bluetooth::shim::L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data) {
+  if (cid_token_to_channel_map_.count(cid) == 0) {
+    LOG(ERROR) << __func__ << "Invalid cid: " << cid;
+    return 0;
+  }
+  auto psm = cid_token_to_channel_map_[cid].psm;
+  auto remote = cid_token_to_channel_map_[cid].remote;
+  if (le_dynamic_channel_helper_map_.count(psm) == 0) {
+    LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    return 0;
+  }
+  auto len = p_data->len;
+  auto* data = p_data->data + p_data->offset;
+  return le_dynamic_channel_helper_map_[psm]->send(
+             ToAddressWithType(remote, Btm::GetAddressType(remote)),
+             MakeUniquePacket(data, len)) *
+         len;
 }
