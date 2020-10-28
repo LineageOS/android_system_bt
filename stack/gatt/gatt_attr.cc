@@ -331,7 +331,7 @@ static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
                                bool connected, tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport) {
   VLOG(1) << __func__ << ": from " << bda << " connected: " << connected
-          << ", conn_id: " << loghex(conn_id) << "reason: " << loghex(reason);
+          << ", conn_id: " << loghex(conn_id);
 
   tGATT_PROFILE_CLCB* p_clcb =
       gatt_profile_find_clcb_by_bd_addr(bda, transport);

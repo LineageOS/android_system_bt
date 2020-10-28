@@ -223,7 +223,6 @@ typedef union {
   uint8_t* p_data; /* uint8_t type data pointer */
   tSMP_KEY key;
   uint8_t status;
-  uint16_t reason;
   uint32_t passkey;
   tSMP_OOB_DATA_TYPE req_oob_type;
 } tSMP_INT_DATA;
