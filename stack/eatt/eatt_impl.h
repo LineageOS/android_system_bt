@@ -93,7 +93,6 @@ struct eatt_impl {
 
   void remove_channel_by_cid(eatt_device* eatt_dev, uint16_t lcid) {
     eatt_dev->eatt_channels.erase(lcid);
-    eatt_dev->eatt_tcb_->eatt--;
 
     if (eatt_dev->eatt_channels.size() == 0) eatt_dev->eatt_tcb_ = NULL;
   }
@@ -240,7 +239,14 @@ struct eatt_impl {
 
   void eatt_l2cap_disconnect_ind(uint16_t lcid, bool please_confirm) {
     LOG(INFO) << __func__ << " cid: " << loghex(lcid);
-    remove_channel_by_cid(lcid);
+    eatt_device* eatt_dev = find_device_by_cid(lcid);
+    if (!eatt_dev) {
+      LOG(ERROR) << __func__ << " unknown cid: " << loghex(lcid);
+      return;
+    }
+
+    eatt_dev->eatt_tcb_->eatt--;
+    remove_channel_by_cid(eatt_dev, lcid);
   }
 
   void eatt_l2cap_data_ind(uint16_t lcid, BT_HDR* data_p) {
