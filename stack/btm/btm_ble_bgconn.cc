@@ -211,10 +211,18 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   if (p_dev_rec != NULL && p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
     if (to_add) {
       if (!p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
+        LOG_DEBUG(
+            "Adding known device record into acceptlist with identity "
+            "device:%s",
+            p_dev_rec->ble.identity_address_with_type.bda.ToString().c_str());
         background_connection_add(
             p_dev_rec->ble.identity_address_with_type.type,
             p_dev_rec->ble.identity_address_with_type.bda);
       } else {
+        LOG_DEBUG(
+            "Adding known device record into acceptlist without identity "
+            "device:%s",
+            bd_addr.ToString().c_str());
         background_connection_add(p_dev_rec->ble.ble_addr_type, bd_addr);
 
         if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
@@ -226,9 +234,17 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
       p_dev_rec->ble.in_controller_list |= BTM_ACCEPTLIST_BIT;
     } else {
       if (!p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
+        LOG_DEBUG(
+            "Removing known device record into acceptlist with identity "
+            "device:%s",
+            p_dev_rec->ble.identity_address_with_type.bda.ToString().c_str());
         background_connection_remove(
             p_dev_rec->ble.identity_address_with_type.bda);
       } else {
+        LOG_DEBUG(
+            "Removing known device record into acceptlist without identity "
+            "device:%s",
+            bd_addr.ToString().c_str());
         background_connection_remove(bd_addr);
 
         if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
@@ -463,7 +479,7 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
 
   if (background_connections_count() ==
       controller_get_interface()->get_ble_acceptlist_size()) {
-    BTM_TRACE_ERROR("%s Acceptlist full, unable to add device", __func__);
+    LOG_ERROR("Unable to add device to acceptlist since it is full");
     return false;
   }
 
