@@ -96,12 +96,19 @@ class EattTest : public testing::Test {
       }
       i++;
     }
+
+    ASSERT_TRUE(test_tcb.eatt == num_of_accepted_connections);
   }
 
   void DisconnectEattDevice(void) {
     EXPECT_CALL(l2cap_interface_, DisconnectRequest(_))
         .Times(connected_cids_.size());
     eatt_instance_->Disconnect(test_address);
+
+    for (uint16_t cid : connected_cids_)
+      l2cap_app_info_.pL2CA_DisconnectInd_Cb(cid, true);
+
+    ASSERT_TRUE(test_tcb.eatt == 0);
   }
 
   void SetUp() override {
