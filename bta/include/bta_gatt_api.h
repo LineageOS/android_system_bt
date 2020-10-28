@@ -190,7 +190,6 @@ typedef struct {
 } tBTA_GATTC_OPEN;
 
 typedef struct {
-  tGATT_STATUS status;
   uint16_t conn_id;
   tGATT_IF client_if;
   RawAddress remote_bda;
