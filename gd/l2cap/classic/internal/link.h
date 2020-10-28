@@ -187,6 +187,10 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
     return acl_handle_;
   }
 
+  hci::Role GetRole() const {
+    return role_;
+  }
+
  private:
   friend class DumpsysHelper;
   void connect_to_pending_dynamic_channels();
@@ -206,6 +210,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   ClassicSignallingManager signalling_manager_;
   uint16_t acl_handle_;
   Mtu remote_connectionless_mtu_ = kMinimumClassicMtu;
+  hci::Role role_ = hci::Role::CENTRAL;
   bool remote_extended_feature_received_ = false;
   bool remote_supports_ertm_ = false;
   bool remote_supports_fcs_ = false;
