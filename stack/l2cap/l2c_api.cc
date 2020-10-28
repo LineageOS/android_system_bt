@@ -891,6 +891,8 @@ bool L2CA_DisconnectReq(uint16_t cid) {
   return (true);
 }
 
+bool L2CA_DisconnectLECocReq(uint16_t cid) { return L2CA_DisconnectReq(cid); }
+
 bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_GetRemoteCid(lcid, rcid);
@@ -1455,6 +1457,10 @@ uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
 
   L2CAP_TRACE_API("L2CA_DataWrite()  CID: 0x%04x  Len: %d", cid, p_data->len);
   return l2c_data_write(cid, p_data, L2CAP_FLUSHABLE_CH_BASED);
+}
+
+uint8_t L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data) {
+  return L2CA_DataWrite(cid, p_data);
 }
 
 /*******************************************************************************
