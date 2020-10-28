@@ -356,8 +356,10 @@ class LeShimAclConnection
   void OnConnectionUpdate(uint16_t connection_interval,
                           uint16_t connection_latency,
                           uint16_t supervision_timeout) {
-    TRY_POSTING_ON_MAIN(interface_.on_connection_update, connection_interval,
-                        connection_latency, supervision_timeout);
+    TRY_POSTING_ON_MAIN(interface_.on_connection_update,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        connection_interval, connection_latency,
+                        supervision_timeout);
   }
   void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time,
                           uint16_t rx_octets, uint16_t rx_time) {

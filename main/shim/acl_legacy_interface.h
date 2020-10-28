@@ -89,7 +89,8 @@ typedef struct {
 } acl_classic_link_interface_t;
 
 typedef struct {
-  void (*on_connection_update)(uint16_t connection_interval,
+  void (*on_connection_update)(tHCI_STATUS status, uint16_t handle,
+                               uint16_t connection_interval,
                                uint16_t connection_latency,
                                uint16_t supervision_timeout);
   void (*on_data_length_change)(uint16_t tx_octets, uint16_t tx_time,
