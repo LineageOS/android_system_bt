@@ -36,3 +36,6 @@ void acl_ble_enhanced_connection_complete_from_shim(
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
                              uint16_t handle, bool enhanced,
                              tHCI_STATUS status);
+void acl_ble_update_event_received(tHCI_STATUS status, uint16_t handle,
+                                   uint16_t interval, uint16_t latency,
+                                   uint16_t timeout);
