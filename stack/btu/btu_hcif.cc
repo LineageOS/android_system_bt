@@ -37,6 +37,7 @@
 #include "osi/include/log.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/acl_hci_link_interface.h"
+#include "stack/include/ble_acl_interface.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/btu.h"
