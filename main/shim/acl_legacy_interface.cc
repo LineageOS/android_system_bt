@@ -62,7 +62,7 @@ const acl_interface_t GetAclInterface() {
       .link.classic.on_role_change = btm_acl_role_changed,
       .link.classic.on_role_discovery_complete = nullptr,
 
-      .link.le.on_connection_update = nullptr,
+      .link.le.on_connection_update = acl_ble_update_event_received,
       .link.le.on_data_length_change = nullptr,
   };
   return acl_interface;
