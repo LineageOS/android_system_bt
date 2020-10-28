@@ -71,6 +71,7 @@ bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
     case bluetooth::hci::OpCode::REMOTE_NAME_REQUEST:
     case bluetooth::hci::OpCode::READ_REMOTE_SUPPORTED_FEATURES:
     case bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES:
+    case bluetooth::hci::OpCode::READ_REMOTE_VERSION_INFORMATION:
     case bluetooth::hci::OpCode::READ_CLOCK_OFFSET:
     case bluetooth::hci::OpCode::SETUP_SYNCHRONOUS_CONNECTION:
     case bluetooth::hci::OpCode::ACCEPT_SYNCHRONOUS_CONNECTION:

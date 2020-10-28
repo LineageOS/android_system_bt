@@ -248,7 +248,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    p_ccb->psm = L2CA_RegisterLECoc(psm, conn.reg_info, security);
+    p_ccb->psm =
+        L2CA_RegisterLECoc(psm, conn.reg_info, security, p_ccb->local_coc_cfg);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);
@@ -616,9 +617,6 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
   p_ccb->connection_id = l2cap_cid;
 
   if (p_ccb->transport == BT_TRANSPORT_LE) {
-    L2CA_ConnectLECocRsp(bd_addr, l2cap_id, l2cap_cid, L2CAP_CONN_OK,
-                         L2CAP_CONN_OK, &p_ccb->local_coc_cfg);
-
     /* get the remote coc configuration */
     L2CA_GetPeerLECocConfig(l2cap_cid, &p_ccb->peer_coc_cfg);
     p_ccb->rem_mtu_size = p_ccb->peer_coc_cfg.mtu;

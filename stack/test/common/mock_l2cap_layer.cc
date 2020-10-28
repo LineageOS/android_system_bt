@@ -60,7 +60,8 @@ uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
   return l2cap_interface->DataWrite(cid, p_data);
 }
 
-uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO &cb_info, uint16_t sec_level) {
+uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& cb_info,
+                            uint16_t sec_level, tL2CAP_LE_CFG_INFO cfg) {
   return l2cap_interface->RegisterLECoc(psm, cb_info, sec_level);
 }
 

@@ -370,7 +370,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
  *
  ******************************************************************************/
 uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
-                            uint16_t sec_level) {
+                            uint16_t sec_level, tL2CAP_LE_CFG_INFO cfg) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info, sec_level);
   }
@@ -425,6 +425,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
 
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
+  p_rcb->coc_cfg = cfg;
 
   return vpsm;
 }
@@ -570,69 +571,6 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
 
   /* Return the local CID as our handle */
   return p_ccb->local_cid;
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_ConnectLECocRsp
- *
- * Description      Higher layers call this function to accept an incoming
- *                  L2CAP COC connection, for which they had gotten an connect
- *                  indication callback.
- *
- * Returns          true for success, false for failure
- *
- ******************************************************************************/
-bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
-                          uint16_t lcid, uint16_t result, uint16_t status,
-                          tL2CAP_LE_CFG_INFO* p_cfg) {
-  if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_ConnectLECocRsp(p_bd_addr, id, lcid, result,
-                                                 status, p_cfg);
-  }
-
-  VLOG(1) << __func__ << " BDA: " << p_bd_addr
-          << StringPrintf(" CID: 0x%04x Result: %d Status: %d", lcid, result,
-                          status);
-
-  /* First, find the link control block */
-  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_LE);
-  if (p_lcb == NULL) {
-    /* No link. Get an LCB and start link establishment */
-    L2CAP_TRACE_WARNING("%s no LCB", __func__);
-    return false;
-  }
-
-  /* Now, find the channel control block */
-  tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(p_lcb, lcid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("%s no CCB", __func__);
-    return false;
-  }
-
-  /* The IDs must match */
-  if (p_ccb->remote_id != id) {
-    L2CAP_TRACE_WARNING("%s bad id. Expected: %d  Got: %d", __func__,
-                        p_ccb->remote_id, id);
-    return false;
-  }
-
-  if (p_cfg) {
-    p_ccb->local_conn_cfg = *p_cfg;
-    p_ccb->remote_credit_count = p_cfg->credits;
-  }
-
-  if (result == L2CAP_CONN_OK)
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP, NULL);
-  else {
-    tL2C_CONN_INFO conn_info;
-    conn_info.bd_addr = p_bd_addr;
-    conn_info.l2cap_result = result;
-    conn_info.l2cap_status = status;
-    l2c_csm_execute(p_ccb, L2CEVT_L2CA_CONNECT_RSP_NEG, &conn_info);
-  }
-
-  return true;
 }
 
 /*******************************************************************************
