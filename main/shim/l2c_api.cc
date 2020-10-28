@@ -524,6 +524,10 @@ struct LeDynamicChannelHelper {
       auto cid_token = find_cid_token_by_psm_address(psm_, address);
       appl_info_.pL2CA_ConnectCfm_Cb(cid_token, 0);
     } else {
+      if (appl_info_.pL2CA_ConnectInd_Cb == nullptr) {
+        Disconnect(device);
+        return;
+      }
       auto cid_token = add_cid_token_entry(psm_, address);
       appl_info_.pL2CA_ConnectInd_Cb(address, cid_token, psm_, 0);
     }
