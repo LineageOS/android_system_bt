@@ -50,6 +50,7 @@ class LinkLayerController {
   void StartSimplePairing(const Address& address);
   void AuthenticateRemoteStage1(const Address& address, PairingType pairing_type);
   void AuthenticateRemoteStage2(const Address& address);
+  void SaveKeyAndAuthenticate(uint8_t key_type, const Address& peer);
   ErrorCode LinkKeyRequestReply(const Address& address,
                                 const std::array<uint8_t, 16>& key);
   ErrorCode LinkKeyRequestNegativeReply(const Address& address);
@@ -58,15 +59,22 @@ class LinkLayerController {
                                      uint8_t authentication_requirements);
   ErrorCode IoCapabilityRequestNegativeReply(const Address& peer,
                                              ErrorCode reason);
+  ErrorCode PinCodeRequestReply(const Address& peer, std::vector<uint8_t> pin);
+  ErrorCode PinCodeRequestNegativeReply(const Address& peer);
   ErrorCode UserConfirmationRequestReply(const Address& peer);
   ErrorCode UserConfirmationRequestNegativeReply(const Address& peer);
   ErrorCode UserPasskeyRequestReply(const Address& peer,
                                     uint32_t numeric_value);
   ErrorCode UserPasskeyRequestNegativeReply(const Address& peer);
   ErrorCode RemoteOobDataRequestReply(const Address& peer,
-                                      const std::vector<uint8_t>& c,
-                                      const std::vector<uint8_t>& r);
+                                      const std::array<uint8_t, 16>& c,
+                                      const std::array<uint8_t, 16>& r);
   ErrorCode RemoteOobDataRequestNegativeReply(const Address& peer);
+  ErrorCode RemoteOobExtendedDataRequestReply(
+      const Address& peer, const std::array<uint8_t, 16>& c_192,
+      const std::array<uint8_t, 16>& r_192,
+      const std::array<uint8_t, 16>& c_256,
+      const std::array<uint8_t, 16>& r_256);
   void HandleSetConnectionEncryption(const Address& address, uint16_t handle, uint8_t encryption_enable);
   ErrorCode SetConnectionEncryption(uint16_t handle, uint8_t encryption_enable);
   void HandleAuthenticationRequest(const Address& address, uint16_t handle);
@@ -313,6 +321,9 @@ class LinkLayerController {
   ErrorCode WriteDefaultLinkPolicySettings(uint16_t settings);
   uint16_t ReadDefaultLinkPolicySettings();
 
+  void ReadLocalOobData();
+  void ReadLocalOobExtendedData();
+
   void HandleIso(bluetooth::hci::IsoPacketView iso);
 
  protected:
@@ -404,6 +415,9 @@ class LinkLayerController {
   std::function<void(std::shared_ptr<model::packets::LinkLayerPacketBuilder>,
                      Phy::Type phy_type)>
       send_to_remote_;
+
+  uint32_t oob_id_ = 1;
+  uint32_t key_id_ = 1;
 
   // LE state
   std::vector<uint8_t> le_event_mask_;
