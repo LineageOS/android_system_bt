@@ -136,3 +136,14 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
   btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, &address_with_type.bda,
                                 status);
 }
+
+void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
+                             uint16_t latency, uint16_t timeout,
+                             tHCI_STATUS status);
+void acl_ble_update_event_received(tHCI_STATUS status, uint16_t handle,
+                                   uint16_t interval, uint16_t latency,
+                                   uint16_t timeout) {
+  l2cble_process_conn_update_evt(handle, status, interval, latency, timeout);
+
+  gatt_notify_conn_update(handle & 0x0FFF, interval, latency, timeout, status);
+}

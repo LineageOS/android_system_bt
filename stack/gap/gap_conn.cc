@@ -317,8 +317,13 @@ uint16_t GAP_ConnClose(uint16_t gap_handle) {
 
   if (p_ccb) {
     /* Check if we have a connection ID */
-    if (p_ccb->con_state != GAP_CCB_STATE_LISTENING)
-      L2CA_DisconnectReq(p_ccb->connection_id);
+    if (p_ccb->con_state != GAP_CCB_STATE_LISTENING) {
+      if (p_ccb->transport == BT_TRANSPORT_LE) {
+        L2CA_DisconnectLECocReq(p_ccb->connection_id);
+      } else {
+        L2CA_DisconnectReq(p_ccb->connection_id);
+      }
+    }
 
     gap_release_ccb(p_ccb);
 
@@ -430,7 +435,12 @@ static bool gap_try_write_queued_data(tGAP_CCB* p_ccb) {
   /* Send the buffer through L2CAP */
   BT_HDR* p_buf;
   while ((p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->tx_queue)) != NULL) {
-    uint8_t status = L2CA_DataWrite(p_ccb->connection_id, p_buf);
+    uint8_t status;
+    if (p_ccb->transport == BT_TRANSPORT_LE) {
+      status = L2CA_LECocDataWrite(p_ccb->connection_id, p_buf);
+    } else {
+      status = L2CA_DataWrite(p_ccb->connection_id, p_buf);
+    }
 
     if (status == L2CAP_DW_CONGESTED) {
       p_ccb->is_congested = true;
@@ -604,7 +614,11 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
     LOG(WARNING) << "*******";
 
     /* Disconnect because it is an unexpected connection */
-    L2CA_DisconnectReq(l2cap_cid);
+    if (p_ccb->transport == BT_TRANSPORT_LE) {
+      L2CA_DisconnectLECocReq(l2cap_cid);
+    } else {
+      L2CA_DisconnectReq(l2cap_cid);
+    }
     return;
   }
 
@@ -661,22 +675,10 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb) {
  * Returns          void
  *
  ******************************************************************************/
-static void gap_sec_check_complete(const RawAddress*, tBT_TRANSPORT,
-                                   void* p_ref_data, uint8_t res) {
-  tGAP_CCB* p_ccb = (tGAP_CCB*)p_ref_data;
-
-  DVLOG(1) << StringPrintf(
-      "gap_sec_check_complete conn_state:%d, conn_flags:0x%x, status:%d",
-      p_ccb->con_state, p_ccb->con_flags, res);
+static void gap_sec_check_complete(tGAP_CCB* p_ccb) {
   if (p_ccb->con_state == GAP_CCB_STATE_IDLE) return;
-
-  if (res == BTM_SUCCESS) {
-    p_ccb->con_flags |= GAP_CCB_FLAGS_SEC_DONE;
-    gap_checks_con_flags(p_ccb);
-  } else {
-    /* security failed - disconnect the channel */
-    L2CA_DisconnectReq(p_ccb->connection_id);
-  }
+  p_ccb->con_flags |= GAP_CCB_FLAGS_SEC_DONE;
+  gap_checks_con_flags(p_ccb);
 }
 
 static void gap_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
@@ -712,7 +714,7 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   if ((p_ccb->con_flags & GAP_CCB_FLAGS_SEC_DONE) == 0 &&
       p_ccb->transport != BT_TRANSPORT_LE) {
     // Assume security check is done by L2cap
-    gap_sec_check_complete(nullptr, BT_TRANSPORT_BR_EDR, p_ccb, BTM_SUCCESS);
+    gap_sec_check_complete(p_ccb);
   }
 
   /* If the connection response contains success status, then */

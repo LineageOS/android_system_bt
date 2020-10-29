@@ -96,12 +96,19 @@ class EattTest : public testing::Test {
       }
       i++;
     }
+
+    ASSERT_TRUE(test_tcb.eatt == num_of_accepted_connections);
   }
 
   void DisconnectEattDevice(void) {
     EXPECT_CALL(l2cap_interface_, DisconnectRequest(_))
         .Times(connected_cids_.size());
     eatt_instance_->Disconnect(test_address);
+
+    for (uint16_t cid : connected_cids_)
+      l2cap_app_info_.pL2CA_DisconnectInd_Cb(cid, true);
+
+    ASSERT_TRUE(test_tcb.eatt == 0);
   }
 
   void SetUp() override {
@@ -191,10 +198,7 @@ TEST_F(EattTest, ConnectFailedSlaveOnTheLink) {
               ConnectCreditBasedReq(BT_PSM_EATT, test_address, _))
       .Times(0);
 
-  /* This shall be HCI_ROLE_PERIPHERAL when it gets there
-   * TODO: fix when merge conflic fixed, go/aog/1459349
-   */
-  hci_role_ = 0x01;
+  hci_role_ = HCI_ROLE_PERIPHERAL;
   eatt_instance_->Connect(test_address);
 
   /* Back to default btm role */

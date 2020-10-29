@@ -507,6 +507,8 @@ extern bool L2CA_ConnectCreditBasedRsp(const RawAddress& p_bd_addr, uint8_t id,
  ******************************************************************************/
 extern bool L2CA_DisconnectReq(uint16_t cid);
 
+extern bool L2CA_DisconnectLECocReq(uint16_t cid);
+
 /*******************************************************************************
  *
  * Function         L2CA_DataWrite
@@ -520,6 +522,8 @@ extern bool L2CA_DisconnectReq(uint16_t cid);
  *
  ******************************************************************************/
 extern uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data);
+
+extern uint8_t L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data);
 
 // Given a local channel identifier, |lcid|, this function returns the bound
 // remote channel identifier, |rcid|. If

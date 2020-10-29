@@ -37,6 +37,7 @@
 #include "osi/include/log.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/acl_hci_link_interface.h"
+#include "stack/include/ble_acl_interface.h"
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/btu.h"
@@ -1704,7 +1705,7 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
 
 extern void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
                                     uint16_t latency, uint16_t timeout,
-                                    tGATT_STATUS status);
+                                    tHCI_STATUS status);
 
 static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
   /* LE connection update has completed successfully as a central. */
@@ -1722,10 +1723,8 @@ static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
   STREAM_TO_UINT16(latency, p);
   STREAM_TO_UINT16(timeout, p);
 
-  l2cble_process_conn_update_evt(handle, status, interval, latency, timeout);
-
-  gatt_notify_conn_update(handle & 0x0FFF, interval, latency, timeout,
-                          static_cast<tGATT_STATUS>(status));
+  acl_ble_update_event_received(static_cast<tHCI_STATUS>(status), handle,
+                                interval, latency, timeout);
 }
 
 static void btu_ble_proc_ltk_req(uint8_t* p) {
