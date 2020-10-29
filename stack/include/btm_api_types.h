@@ -26,6 +26,7 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/smp_api_types.h"
+#include "types/ble_address_with_type.h"
 #include "types/bt_transport.h"
 
 /* Device name of peer (may be truncated to save space in BTM database) */
