@@ -46,3 +46,7 @@ void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
                        p_buf->len - HCI_DATA_PREAMBLE_SIZE);
   Stack::GetInstance()->GetAcl()->WriteData(handle, std::move(packet));
 }
+
+void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
+  Stack::GetInstance()->GetAcl()->ConfigureLePrivacy(is_le_privacy_enabled);
+}
