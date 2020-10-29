@@ -747,6 +747,9 @@ struct tBLE_BD_ADDR {
     return (other & ~kBleAddressIdentityBit) ==
            (type & ~kBleAddressIdentityBit);
   }
+  std::string ToString() const {
+    return std::string(bda.ToString() + "[" + AddressTypeText(type) + "]");
+  }
 };
 #endif
 
