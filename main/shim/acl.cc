@@ -477,7 +477,6 @@ void bluetooth::shim::legacy::Acl::CreateClassicConnection(
 
 void bluetooth::shim::legacy::Acl::CreateLeConnection(
     const bluetooth::hci::AddressWithType& address_with_type) {
-  GetAclManager()->AddDeviceToConnectList(address_with_type);
   GetAclManager()->CreateLeConnection(address_with_type);
   LOG_DEBUG("Started Le device to connection %s",
             address_with_type.ToString().c_str());
