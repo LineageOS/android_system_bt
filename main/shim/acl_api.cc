@@ -20,6 +20,7 @@
 #include "main/shim/acl_api.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 void bluetooth::shim::ACL_CreateClassicConnection(
