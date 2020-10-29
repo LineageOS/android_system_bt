@@ -1033,7 +1033,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
     LOG_INFO("Disconnected att_id:%hhu transport:%s reason:%s", gattc_if,
              BtTransportText(transport).c_str(),
              hci_error_code_text(reason).c_str());
-    btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, reason);
+    btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, GATT_CONN_UNKNOWN);
   }
 
   tBTA_GATTC_DATA* p_buf =

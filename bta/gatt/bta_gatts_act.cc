@@ -593,13 +593,12 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
   tBTA_GATTS_RCB* p_reg;
 
   VLOG(1) << __func__ << "  bda=" << bdaddr << " gatt_if= " << gatt_if
-          << ", conn_id=" << loghex(conn_id) << " connected=" << connected
-          << ", reason=" << loghex(reason);
+          << ", conn_id=" << loghex(conn_id) << " connected=" << connected;
 
   if (connected)
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_UNKNOWN);
   else
-    btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, reason);
+    btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, GATT_CONN_UNKNOWN);
 
   p_reg = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
@@ -614,7 +613,6 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
 
     cb_data.conn.conn_id = conn_id;
     cb_data.conn.server_if = gatt_if;
-    cb_data.conn.reason = reason;
     cb_data.conn.transport = transport;
     cb_data.conn.remote_bda = bdaddr;
     (*p_reg->p_cback)(evt, &cb_data);
