@@ -3722,8 +3722,14 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
 
   if (transport == BT_TRANSPORT_LE) {
     p_dev_rec->ble_hci_handle = HCI_INVALID_HANDLE;
-    p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED);
+    p_dev_rec->sec_flags &= ~(BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED |
+                              BTM_SEC_ROLE_SWITCHED);
     p_dev_rec->enc_key_size = 0;
+
+    if ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) == 0) {
+      p_dev_rec->sec_flags &=
+          ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
+    }
 
     // This is for chips that don't support being in connected and advertising
     // state at same time.
