@@ -93,7 +93,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
 
 #define SET_HANDLER(opcode, method)                                \
   active_hci_commands_[opcode] = [this](CommandPacketView param) { \
-    method(param);                                                 \
+    method(std::move(param));                                      \
   };
   SET_HANDLER(OpCode::RESET, Reset);
   SET_HANDLER(OpCode::READ_BUFFER_SIZE, ReadBufferSize);
@@ -120,10 +120,23 @@ DualModeController::DualModeController(const std::string& properties_filename, u
               UserConfirmationRequestReply);
   SET_HANDLER(OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY,
               UserConfirmationRequestNegativeReply);
+  SET_HANDLER(OpCode::USER_PASSKEY_REQUEST_REPLY, UserPasskeyRequestReply);
+  SET_HANDLER(OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY,
+              UserPasskeyRequestNegativeReply);
+  SET_HANDLER(OpCode::PIN_CODE_REQUEST_REPLY, PinCodeRequestReply);
+  SET_HANDLER(OpCode::PIN_CODE_REQUEST_NEGATIVE_REPLY,
+              PinCodeRequestNegativeReply);
+  SET_HANDLER(OpCode::REMOTE_OOB_DATA_REQUEST_REPLY, RemoteOobDataRequestReply);
+  SET_HANDLER(OpCode::REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY,
+              RemoteOobDataRequestNegativeReply);
   SET_HANDLER(OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY,
               IoCapabilityRequestNegativeReply);
+  SET_HANDLER(OpCode::REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY,
+              RemoteOobExtendedDataRequestReply);
   SET_HANDLER(OpCode::READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL,
               ReadInquiryResponseTransmitPowerLevel);
+  SET_HANDLER(OpCode::READ_LOCAL_OOB_DATA, ReadLocalOobData);
+  SET_HANDLER(OpCode::READ_LOCAL_OOB_EXTENDED_DATA, ReadLocalOobExtendedData);
   SET_HANDLER(OpCode::WRITE_SIMPLE_PAIRING_MODE, WriteSimplePairingMode);
   SET_HANDLER(OpCode::WRITE_LE_HOST_SUPPORT, WriteLeHostSupport);
   SET_HANDLER(OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT,
@@ -659,6 +672,39 @@ void DualModeController::UserConfirmationRequestNegativeReply(
   send_event_(std::move(packet));
 }
 
+void DualModeController::PinCodeRequestReply(CommandPacketView command) {
+  auto command_view = gd_hci::PinCodeRequestReplyView::Create(
+      gd_hci::SecurityCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+
+  Address peer = command_view.GetBdAddr();
+  uint8_t pin_length = command_view.GetPinCodeLength();
+  std::array<uint8_t, 16> pin = command_view.GetPinCode();
+  ErrorCode status = ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
+  if (pin_length >= 1 && pin_length <= 0x10) {
+    status = link_layer_controller_.PinCodeRequestReply(
+        peer, std::vector<uint8_t>(pin.begin(), pin.begin() + pin_length));
+  }
+
+  send_event_(bluetooth::hci::PinCodeRequestReplyCompleteBuilder::Create(
+      kNumCommandPackets, status, peer));
+}
+
+void DualModeController::PinCodeRequestNegativeReply(
+    CommandPacketView command) {
+  auto command_view = gd_hci::PinCodeRequestNegativeReplyView::Create(
+      gd_hci::SecurityCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+
+  Address peer = command_view.GetBdAddr();
+
+  auto status = link_layer_controller_.PinCodeRequestNegativeReply(peer);
+  auto packet =
+      bluetooth::hci::PinCodeRequestNegativeReplyCompleteBuilder::Create(
+          kNumCommandPackets, status, peer);
+
+  send_event_(std::move(packet));
+}
 void DualModeController::UserPasskeyRequestReply(CommandPacketView command) {
   auto command_view = gd_hci::UserPasskeyRequestReplyView::Create(
       gd_hci::SecurityCommandView::Create(command));
@@ -697,17 +743,12 @@ void DualModeController::RemoteOobDataRequestReply(CommandPacketView command) {
   ASSERT(command_view.IsValid());
 
   Address peer = command_view.GetBdAddr();
-  std::array<uint8_t, 16> c = command_view.GetC();
-  std::array<uint8_t, 16> r = command_view.GetR();
 
   auto status = link_layer_controller_.RemoteOobDataRequestReply(
-      peer, std::vector<uint8_t>(c.begin(), c.end()),
-      std::vector<uint8_t>(r.begin(), r.end()));
-  auto packet =
-      bluetooth::hci::RemoteOobDataRequestReplyCompleteBuilder::Create(
-          kNumCommandPackets, status, peer);
+      peer, command_view.GetC(), command_view.GetR());
 
-  send_event_(std::move(packet));
+  send_event_(bluetooth::hci::RemoteOobDataRequestReplyCompleteBuilder::Create(
+      kNumCommandPackets, status, peer));
 }
 
 void DualModeController::RemoteOobDataRequestNegativeReply(
@@ -744,6 +785,23 @@ void DualModeController::IoCapabilityRequestNegativeReply(
   send_event_(std::move(packet));
 }
 
+void DualModeController::RemoteOobExtendedDataRequestReply(
+    CommandPacketView command) {
+  auto command_view = gd_hci::RemoteOobExtendedDataRequestReplyView::Create(
+      gd_hci::SecurityCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+
+  Address peer = command_view.GetBdAddr();
+
+  auto status = link_layer_controller_.RemoteOobExtendedDataRequestReply(
+      peer, command_view.GetC192(), command_view.GetR192(),
+      command_view.GetC256(), command_view.GetR256());
+
+  send_event_(
+      bluetooth::hci::RemoteOobExtendedDataRequestReplyCompleteBuilder::Create(
+          kNumCommandPackets, status, peer));
+}
+
 void DualModeController::ReadInquiryResponseTransmitPowerLevel(
     CommandPacketView command) {
   auto command_view = gd_hci::ReadInquiryResponseTransmitPowerLevelView::Create(
@@ -755,6 +813,18 @@ void DualModeController::ReadInquiryResponseTransmitPowerLevel(
       bluetooth::hci::ReadInquiryResponseTransmitPowerLevelCompleteBuilder::
           Create(kNumCommandPackets, ErrorCode::SUCCESS, tx_power);
   send_event_(std::move(packet));
+}
+
+void DualModeController::ReadLocalOobData(CommandPacketView command) {
+  auto command_view = gd_hci::ReadLocalOobDataView::Create(
+      gd_hci::SecurityCommandView::Create(command));
+  link_layer_controller_.ReadLocalOobData();
+}
+
+void DualModeController::ReadLocalOobExtendedData(CommandPacketView command) {
+  auto command_view = gd_hci::ReadLocalOobExtendedDataView::Create(
+      gd_hci::SecurityCommandView::Create(command));
+  link_layer_controller_.ReadLocalOobExtendedData();
 }
 
 void DualModeController::WriteSimplePairingMode(CommandPacketView command) {
