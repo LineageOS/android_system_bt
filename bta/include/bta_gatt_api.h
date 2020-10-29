@@ -352,7 +352,6 @@ typedef struct {
   tGATT_IF server_if;
   RawAddress remote_bda;
   uint16_t conn_id;
-  tBTA_GATT_REASON reason; /* report disconnect reason */
   tBT_TRANSPORT transport;
 } tBTA_GATTS_CONN;
 
