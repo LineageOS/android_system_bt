@@ -57,6 +57,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void WriteData(uint16_t hci_handle,
                  std::unique_ptr<bluetooth::packet::RawBuilder> packet);
 
+  void ConfigureLePrivacy(bool is_le_privacy_enabled);
+
  protected:
   void on_incoming_acl_credits(uint16_t handle, uint16_t credits);
   void write_data_sync(uint16_t hci_handle,
