@@ -23,9 +23,9 @@ namespace bluetooth {
 namespace shim {
 
 void ACL_CancelClassicConnection(const RawAddress& raw_address);
-void ACL_CancelLeConnection(const RawAddress& raw_address);
+void ACL_CancelLeConnection(const tBLE_BD_ADDR& legacy_address_with_type);
 void ACL_CreateClassicConnection(const RawAddress& raw_address);
-void ACL_CreateLeConnection(const RawAddress& raw_address);
+void ACL_CreateLeConnection(const tBLE_BD_ADDR& legacy_address_with_type);
 void ACL_WriteData(uint16_t handle, const BT_HDR* p_buf);
 
 }  // namespace shim

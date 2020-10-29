@@ -28,14 +28,16 @@ void bluetooth::shim::ACL_CreateClassicConnection(
   Stack::GetInstance()->GetAcl()->CreateClassicConnection(address);
 }
 
-void bluetooth::shim::ACL_CreateLeConnection(const RawAddress& raw_address) {
-  auto address_with_type = ToAddressWithType(raw_address, BLE_ADDR_RANDOM);
-  Stack::GetInstance()->GetAcl()->CreateLeConnection(address_with_type);
+void bluetooth::shim::ACL_CreateLeConnection(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  Stack::GetInstance()->GetAcl()->CreateLeConnection(
+      ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
 
-void bluetooth::shim::ACL_CancelLeConnection(const RawAddress& raw_address) {
-  auto address_with_type = ToAddressWithType(raw_address, BLE_ADDR_RANDOM);
-  Stack::GetInstance()->GetAcl()->CancelLeConnection(address_with_type);
+void bluetooth::shim::ACL_CancelLeConnection(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  Stack::GetInstance()->GetAcl()->CancelLeConnection(
+      ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
 
 void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
