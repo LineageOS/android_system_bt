@@ -20,6 +20,7 @@
 #define SMP_API_TYPES_H
 
 #include "bt_target.h"
+#include "types/ble_address_with_type.h"
 
 /* SMP command code */
 #define SMP_OPCODE_PAIRING_REQ 0x01
