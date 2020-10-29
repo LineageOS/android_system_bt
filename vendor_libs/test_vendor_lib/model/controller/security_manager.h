@@ -33,6 +33,7 @@ enum class PairingType : uint8_t {
   DISPLAY_PIN,
   DISPLAY_AND_CONFIRM,
   INPUT_PIN,
+  OUT_OF_BAND,
   INVALID = 0xff,
 };
 
@@ -91,13 +92,13 @@ class SecurityManager {
 
   bool peer_capabilities_valid_{false};
   IoCapabilityType peer_io_capability_{IoCapabilityType::DISPLAY_ONLY};
-  bool peer_oob_present_flag_{false};
+  uint8_t peer_oob_present_flag_{0};
   AuthenticationType peer_authentication_requirements_{
       AuthenticationType::NO_BONDING};
 
   bool host_capabilities_valid_{false};
   IoCapabilityType host_io_capability_{IoCapabilityType::DISPLAY_ONLY};
-  bool host_oob_present_flag_{false};
+  uint8_t host_oob_present_flag_{0};
   AuthenticationType host_authentication_requirements_{
       AuthenticationType::NO_BONDING};
 
