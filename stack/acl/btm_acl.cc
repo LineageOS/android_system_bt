@@ -2951,7 +2951,11 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
 
 bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    bluetooth::shim::ACL_CreateLeConnection(bd_addr);
+    tBLE_BD_ADDR address_with_type{
+        .bda = bd_addr,
+        .type = BLE_ADDR_RANDOM,
+    };
+    bluetooth::shim::ACL_CreateLeConnection(address_with_type);
     return true;
   }
   return connection_manager::direct_connect_add(id, bd_addr);
@@ -2963,7 +2967,11 @@ bool acl_create_le_connection(const RawAddress& bd_addr) {
 
 void acl_cancel_le_connection(const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    return bluetooth::shim::ACL_CancelLeConnection(bd_addr);
+    tBLE_BD_ADDR address_with_type{
+        .bda = bd_addr,
+        .type = BLE_ADDR_RANDOM,
+    };
+    return bluetooth::shim::ACL_CancelLeConnection(address_with_type);
   }
   connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, bd_addr);
 }
