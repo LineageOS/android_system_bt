@@ -110,7 +110,6 @@ static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
         smp_sm_event(p_cb, SMP_L2CAP_CONN_EVT, NULL);
       }
     } else {
-      int_data.reason = reason;
       /* Disconnected while doing security */
       smp_sm_event(p_cb, SMP_L2CAP_DISCONN_EVT, &int_data);
     }
@@ -237,7 +236,6 @@ static void smp_br_connect_callback(uint16_t channel, const RawAddress& bd_addr,
       smp_br_state_machine_event(p_cb, SMP_BR_L2CAP_CONN_EVT, NULL);
     }
   } else {
-    int_data.reason = reason;
     /* Disconnected while doing security */
     smp_br_state_machine_event(p_cb, SMP_BR_L2CAP_DISCONN_EVT, &int_data);
   }
