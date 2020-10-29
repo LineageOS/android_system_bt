@@ -1133,9 +1133,6 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
                   tBT_TRANSPORT transport, bool opportunistic,
                   uint8_t initiating_phys) {
-  LOG(INFO) << __func__ << ": gatt_if=" << +gatt_if << ", address=" << bd_addr
-            << " is_direct=" << std::boolalpha << is_direct << std::noboolalpha;
-
   /* Make sure app is registered */
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (!p_reg) {
@@ -1160,8 +1157,12 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
 
   bool ret;
   if (is_direct) {
+    LOG_DEBUG("Starting direct connect gatt_if=%u address=%s", gatt_if,
+              bd_addr.ToString().c_str());
     ret = gatt_act_connect(p_reg, bd_addr, transport, initiating_phys);
   } else {
+    LOG_DEBUG("Starting background connect gatt_if=%u address=%s", gatt_if,
+              bd_addr.ToString().c_str());
     if (!BTM_BackgroundConnectAddressKnown(bd_addr)) {
       //  RPA can rotate, causing address to "expire" in the background
       //  connection list. RPA is allowed for direct connect, as such request
