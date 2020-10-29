@@ -17,6 +17,7 @@
 #pragma once
 
 #include "stack/include/bt_types.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {
