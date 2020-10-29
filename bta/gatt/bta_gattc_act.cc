@@ -512,7 +512,6 @@ void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
     cb_data.close.client_if = p_clcb->p_rcb->client_if;
     cb_data.close.conn_id = p_data->hdr.layer_specific;
     cb_data.close.remote_bda = p_clcb->bda;
-    cb_data.close.status = GATT_ERROR;
     cb_data.close.reason = BTA_GATT_CONN_NONE;
 
     LOG(WARNING) << __func__ << ": conn_id=" << loghex(cb_data.close.conn_id)
@@ -533,7 +532,6 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   cb_data.close.client_if = p_clcb->p_rcb->client_if;
   cb_data.close.conn_id = p_clcb->bta_conn_id;
   cb_data.close.reason = p_clcb->reason;
-  cb_data.close.status = p_clcb->status;
   cb_data.close.remote_bda = p_clcb->bda;
 
   if (p_clcb->transport == BT_TRANSPORT_BR_EDR)
@@ -542,9 +540,8 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   bta_gattc_clcb_dealloc(p_clcb);
 
   if (p_data->hdr.event == BTA_GATTC_API_CLOSE_EVT) {
-    cb_data.close.status = GATT_Disconnect(p_data->hdr.layer_specific);
+    GATT_Disconnect(p_data->hdr.layer_specific);
   } else if (p_data->hdr.event == BTA_GATTC_INT_DISCONN_EVT) {
-    cb_data.close.status = static_cast<tGATT_STATUS>(p_data->int_conn.reason);
     cb_data.close.reason = p_data->int_conn.reason;
   }
 
