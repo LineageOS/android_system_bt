@@ -68,6 +68,12 @@ inline hci::AddressWithType ToAddressWithType(const RawAddress& legacy_address,
   return hci::AddressWithType{address, type};
 }
 
+inline hci::AddressWithType ToAddressWithTypeFromLegacy(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  return ToAddressWithType(legacy_address_with_type.bda,
+                           legacy_address_with_type.type);
+}
+
 inline tBLE_BD_ADDR ToLegacyAddressWithType(
     const hci::AddressWithType& address_with_type) {
   tBLE_BD_ADDR legacy_address_with_type;
