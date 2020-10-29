@@ -3138,8 +3138,8 @@ packet LeSetPeriodicAdvertisingDataComplete : CommandComplete (command_op_code =
 }
 
 packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
-  advertising_handle : 8,
   enable : Enable,
+  advertising_handle : 8,
 }
 
 packet LeSetPeriodicAdvertisingEnableComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
