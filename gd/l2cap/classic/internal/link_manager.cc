@@ -203,6 +203,10 @@ class LinkSecurityInterfaceImpl : public LinkSecurityInterface {
     return acl_handle_;
   }
 
+  hci::Role GetRole() override {
+    return link_manager_->GetLink(remote_)->GetRole();
+  }
+
   os::Handler* handler_;
   LinkManager* link_manager_;
   hci::Address remote_;
