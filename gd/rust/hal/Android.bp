@@ -1,0 +1,14 @@
+rust_library {
+    name: "libbt_hal",
+    crate_name: "bt_hal",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libbt_packet",
+        "libbytes",
+        "libfutures",
+        "libthiserror",
+        "libtokio",
+    ],
+    host_supported: true,
+}
