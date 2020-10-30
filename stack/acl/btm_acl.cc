@@ -576,10 +576,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
   }
   /* some devices do not support switch while encryption is on */
   else {
-    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bd_addr);
-    if ((p_dev_rec != NULL) &&
-        ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
-        !BTM_EPR_AVAILABLE(p_acl)) {
+    if (p_acl->is_encrypted && !BTM_EPR_AVAILABLE(p_acl)) {
       /* bypass turning off encryption if change link key is already doing it */
       p_acl->set_encryption_off();
       p_acl->set_switch_role_encryption_off();
@@ -616,6 +613,8 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     p = &btm_cb.acl_cb_.acl_db[xx];
   else
     return;
+
+  p->is_encrypted = encr_enable;
 
   /* Process Role Switch if active */
   if (p->is_switch_role_encryption_off()) {
