@@ -839,17 +839,6 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
     return;
   }
 
-  if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
-      p_dev_rec->is_originator) {
-    uint8_t status = btm_sec_execute_procedure(p_dev_rec);
-    if (status != BTM_CMD_STARTED) {
-      LOG_WARN("Security procedure not started! status:%s",
-               hci_error_code_text(status).c_str());
-      btm_sec_dev_rec_cback_event(p_dev_rec, status, false);
-    }
-  }
-  const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
   /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
   bool ssp_supported =
       HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
@@ -861,10 +850,6 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                             secure_connections_supported,
                             role_switch_supported);
 
-  if (req_pend) {
-    /* Request for remaining Security Features (if any) */
-    l2cu_resubmit_pending_sec_req(&p_acl_cb->remote_addr);
-  }
 }
 
 /*******************************************************************************
@@ -2550,6 +2535,18 @@ void btm_sec_set_peer_sec_caps(tBTM_SEC_DEV_REC* p_dev_rec, bool ssp_supported,
   p_dev_rec->remote_feature_received = true;
   p_dev_rec->remote_supports_hci_role_switch = hci_role_switch_supported;
 
+  uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
+
+  if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
+      p_dev_rec->is_originator) {
+    uint8_t status = btm_sec_execute_procedure(p_dev_rec);
+    if (status != BTM_CMD_STARTED) {
+      LOG_WARN("Security procedure not started! status:%s",
+               hci_error_code_text(status).c_str());
+      btm_sec_dev_rec_cback_event(p_dev_rec, status, false);
+    }
+  }
+
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
       ssp_supported) {
@@ -2564,6 +2561,11 @@ void btm_sec_set_peer_sec_caps(tBTM_SEC_DEV_REC* p_dev_rec, bool ssp_supported,
     LOG_DEBUG("Now device in SC Only mode, waiting for peer remote features!");
     btm_io_capabilities_req(p_dev_rec->bd_addr);
     p_dev_rec->remote_features_needed = false;
+  }
+
+  if (req_pend) {
+    /* Request for remaining Security Features (if any) */
+    l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
   }
 }
 
