@@ -5562,8 +5562,12 @@ static bool btm_sec_queue_encrypt_request(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_set_peer_sec_caps(bool ssp_supported, bool sc_supported,
-                               tBTM_SEC_DEV_REC* p_dev_rec) {
+void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
+                               bool sc_supported) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return;
+
+  /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
       ssp_supported) {

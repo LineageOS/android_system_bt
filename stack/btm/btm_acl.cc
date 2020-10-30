@@ -260,13 +260,12 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
 
           const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
-          /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
           bool ssp_supported =
               HCI_SSP_HOST_SUPPORTED(p->peer_lmp_feature_pages[1]);
           bool secure_connections_supported =
               HCI_SC_HOST_SUPPORTED(p->peer_lmp_feature_pages[1]);
-          btm_sec_set_peer_sec_caps(ssp_supported, secure_connections_supported,
-                                    p_dev_rec);
+          btm_sec_set_peer_sec_caps(hci_handle, ssp_supported,
+                                    secure_connections_supported);
 
 
           BTM_TRACE_API("%s: pend:%d", __func__, req_pend);
@@ -963,13 +962,12 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
   }
   const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
-  /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
   bool ssp_supported =
       HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
   bool secure_connections_supported =
       HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
-  btm_sec_set_peer_sec_caps(ssp_supported, secure_connections_supported,
-                            p_dev_rec);
+  btm_sec_set_peer_sec_caps(handle, ssp_supported,
+                            secure_connections_supported);
 
   BTM_TRACE_API("%s: pend:%d", __func__, req_pend);
   if (req_pend) {
