@@ -703,7 +703,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
   }
 }
 
-void check_link_policy(uint16_t* settings) {
+static void check_link_policy(uint16_t* settings) {
   const controller_t* controller = controller_get_interface();
 
   if ((*settings & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
@@ -1395,11 +1395,6 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
  *
  ******************************************************************************/
 void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset) {
-  uint8_t xx;
-  /* Look up the connection by handle and set the current mode */
-  xx = btm_handle_to_acl_index(hci_handle);
-  if (xx < MAX_L2CAP_LINKS)
-    btm_cb.acl_cb_.acl_db[xx].clock_offset = clock_offset;
 }
 
 /*******************************************************************************
