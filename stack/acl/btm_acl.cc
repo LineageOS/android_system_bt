@@ -586,7 +586,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
     } else {
       btsnd_hcic_switch_role(remote_bd_addr, new_role);
       p_acl->set_switch_role_in_progress();
-      if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
+      p_acl->rs_disc_pending = BTM_SEC_RS_PENDING;
     }
   }
 
@@ -609,7 +609,6 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable) {
   tACL_CONN* p;
   uint8_t xx;
-  tBTM_SEC_DEV_REC* p_dev_rec;
 
   xx = btm_handle_to_acl_index(handle);
   /* don't assume that we can never get a bad hci_handle */
@@ -630,9 +629,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     }
 
     btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
-    p_dev_rec = btm_find_dev(p->remote_addr);
-    if (p_dev_rec != NULL) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
-
+    p->rs_disc_pending = BTM_SEC_RS_PENDING;
   }
   /* Finished enabling Encryption after role switch */
   else if (p->is_switch_role_encryption_on()) {
@@ -646,16 +643,11 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 
     /* If a disconnect is pending, issue it now that role switch has completed
      */
-    p_dev_rec = btm_find_dev(p->remote_addr);
-    if (p_dev_rec != NULL) {
-      if (p_dev_rec->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-        LOG_WARN("Issuing delayed HCI_Disconnect!!!");
-        btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
-      }
-      LOG_WARN("tBTM_SEC_DEV:0x%x rs_disc_pending=%d", PTR_TO_UINT(p_dev_rec),
-               p_dev_rec->rs_disc_pending);
-      p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
+    if (p->rs_disc_pending == BTM_SEC_DISC_PENDING) {
+      LOG_WARN("Issuing delayed HCI_Disconnect!!!");
+      btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
     }
+    p->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
 }
 
@@ -1463,15 +1455,12 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
   BTA_dm_report_role_change(bd_addr, new_role, hci_status);
 
   /* If a disconnect is pending, issue it now that role switch has completed */
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec != nullptr) {
-    if (p_dev_rec->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-      LOG_WARN("peer %s Issuing delayed HCI_Disconnect!!!",
-               bd_addr.ToString().c_str());
-      btsnd_hcic_disconnect(p_dev_rec->hci_handle, HCI_ERR_PEER_USER);
-    }
-    p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
+  if (p_acl->rs_disc_pending == BTM_SEC_DISC_PENDING) {
+    LOG_WARN("peer %s Issuing delayed HCI_Disconnect!!!",
+             bd_addr.ToString().c_str());
+    btsnd_hcic_disconnect(p_acl->hci_handle, HCI_ERR_PEER_USER);
   }
+  p_acl->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 }
 
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
@@ -2143,12 +2132,14 @@ void btm_read_link_quality_complete(uint8_t* p) {
 tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   uint16_t hci_handle = BTM_GetHCIConnHandle(bd_addr, transport);
   tBTM_STATUS status = BTM_SUCCESS;
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
+  if (p_acl == nullptr) return BTM_UNKNOWN_ADDR;
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
   /* Role Switch is pending, postpone until completed */
-  if (p_dev_rec && (p_dev_rec->rs_disc_pending == BTM_SEC_RS_PENDING)) {
-    p_dev_rec->rs_disc_pending = BTM_SEC_DISC_PENDING;
+  if (p_dev_rec && (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING)) {
+    p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
   } else /* otherwise can disconnect right away */
   {
     if (hci_handle != HCI_INVALID_HANDLE && p_dev_rec &&
@@ -2208,7 +2199,7 @@ void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
     {
       if (p->is_switch_role_mode_change()) {
         p->set_switch_role_in_progress();
-        if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
+        p->rs_disc_pending = BTM_SEC_RS_PENDING;
         btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
       }
     }
@@ -2847,6 +2838,23 @@ void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   }
   p_acl->disconnect_reason = reason;
   btsnd_hcic_disconnect(p_acl->hci_handle, reason);
+}
+
+void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
+
+  /* If a role switch is in progress, delay the HCI Disconnect to avoid
+   * controller problem */
+  if (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING) {
+    BTM_TRACE_DEBUG(
+        "RS in progress - Set DISC Pending flag in btm_sec_send_hci_disconnect "
+        "to delay disconnect");
+    p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
+  }
+  /* Tear down the HCI link */
+  else {
+    btsnd_hcic_disconnect(conn_handle, reason);
+  }
 }
 
 constexpr uint16_t kDataPacketEventBrEdr = (BT_EVT_TO_LM_HCI_ACL);

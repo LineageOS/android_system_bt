@@ -338,6 +338,8 @@ void btm_acl_removed(uint16_t handle);
 void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                     uint8_t reason);
 
+void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason);
+
 bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda);
 
 void btm_acl_set_paging(bool value);
