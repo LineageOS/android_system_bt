@@ -2420,8 +2420,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
   BTM_TRACE_EVENT("%s: State: %s", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state));
 
-  BTM_TRACE_DEBUG("%s:Security mode: %d, Num Read Remote Feat pages: %d",
-                  __func__, btm_cb.security_mode, p_dev_rec->num_read_pages);
+  BTM_TRACE_DEBUG("%s:Security mode: %d", __func__, btm_cb.security_mode);
 
   p_dev_rec->sm4 |= BTM_SM4_TRUE;
 
