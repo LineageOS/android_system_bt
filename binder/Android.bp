@@ -40,6 +40,7 @@ cc_library_shared {
         "android/bluetooth/le/IAdvertisingSetCallback.aidl",
         "android/bluetooth/le/IPeriodicAdvertisingCallback.aidl",
         "android/bluetooth/le/IScannerCallback.aidl"
+        "android/bluetooth/IBluetoothConnectionCallback.aidl",
         */
     ],
     export_include_dirs: ["./"],
@@ -115,5 +116,6 @@ filegroup {
         "android/bluetooth/le/IAdvertisingSetCallback.aidl",
         "android/bluetooth/le/IPeriodicAdvertisingCallback.aidl",
         "android/bluetooth/le/IScannerCallback.aidl",
+        "android/bluetooth/IBluetoothConnectionCallback.aidl",
     ],
 }
