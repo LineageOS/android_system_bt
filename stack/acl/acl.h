@@ -66,7 +66,6 @@ typedef struct {
     return is_transport_ble() || is_transport_br_edr();
   }
 
-  uint16_t clock_offset;
   uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
   uint16_t link_policy;
