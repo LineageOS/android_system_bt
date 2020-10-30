@@ -1157,20 +1157,7 @@ static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
       break;
   }
 
-  /* If a role switch is in progress, delay the HCI Disconnect to avoid
-   * controller problem */
-  if (p_dev_rec->rs_disc_pending == BTM_SEC_RS_PENDING &&
-      p_dev_rec->hci_handle == conn_handle) {
-    BTM_TRACE_DEBUG(
-        "RS in progress - Set DISC Pending flag in btm_sec_send_hci_disconnect "
-        "to delay disconnect");
-    p_dev_rec->rs_disc_pending = BTM_SEC_DISC_PENDING;
-    status = BTM_SUCCESS;
-  }
-  /* Tear down the HCI link */
-  else {
-    btsnd_hcic_disconnect(conn_handle, reason);
-  }
+  acl_disconnect_after_role_switch(conn_handle, reason);
 
   return status;
 }
@@ -3424,7 +3411,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
               btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
             }
           }
-          p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
           return;
         } else {
           l2cu_update_lcb_4_bonding(p_dev_rec->bd_addr, true);
@@ -3436,10 +3422,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   }
 
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
-
-  p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
-
-  p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
   addr_matched = (btm_cb.pairing_bda == bda);
 
@@ -3676,12 +3658,6 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
 
   transport =
       (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
-
-  p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
-
-  LOG_INFO("clearing pending flag handle:%d reason:%s", handle,
-           hci_error_code_text(reason).c_str());
-  p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
   /* clear unused flags */
   p_dev_rec->sm4 &= BTM_SM4_TRUE;

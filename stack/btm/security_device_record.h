@@ -356,18 +356,4 @@ typedef struct {
   tBTM_SEC_BLE ble;
   tBTM_LE_CONN_PRAMS conn_params;
 
-#define BTM_SEC_RS_NOT_PENDING 0 /* Role Switch not in progress */
-#define BTM_SEC_RS_PENDING 1     /* Role Switch in progress */
-#define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
-  uint8_t rs_disc_pending;
-  bool is_role_switch_idle() const {
-    return rs_disc_pending == BTM_SEC_RS_NOT_PENDING;
-  }
-  bool is_role_switch_pending() const {
-    return rs_disc_pending == BTM_SEC_RS_PENDING;
-  }
-  bool is_role_switch_disconnecting() const {
-    return rs_disc_pending == BTM_SEC_DISC_PENDING;
-  }
-
 } tBTM_SEC_DEV_REC;
