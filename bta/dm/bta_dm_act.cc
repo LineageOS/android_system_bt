@@ -607,12 +607,11 @@ void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
   if (msg->link_key_known) p_lc = &msg->link_key;
 
   if (bluetooth::shim::is_gd_security_enabled()) {
-    bluetooth::shim::BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name,
-                                      msg->features, p_lc, msg->key_type,
-                                      msg->pin_length);
+    bluetooth::shim::BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, nullptr,
+                                      p_lc, msg->key_type, msg->pin_length);
   } else {
     auto add_result =
-        BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, msg->features, p_lc,
+        BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, nullptr, p_lc,
                          msg->key_type, msg->pin_length);
     if (!add_result) {
       LOG(ERROR) << "BTA_DM: Error adding device " << msg->bd_addr;
