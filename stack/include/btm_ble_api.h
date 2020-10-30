@@ -597,4 +597,17 @@ extern void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys,
 
 extern void btm_ble_multi_adv_cleanup(void);
 
+/*******************************************************************************
+ *
+ * Function         btm_ble_get_acl_remote_addr
+ *
+ * Description      This function reads the active remote address used for the
+ *                  connection.
+ *
+ * Returns          success return true, otherwise false.
+ *
+ ******************************************************************************/
+bool btm_ble_get_acl_remote_addr(uint16_t hci_handle, RawAddress& conn_addr,
+                                 tBLE_ADDR_TYPE* p_addr_type);
+
 #endif
