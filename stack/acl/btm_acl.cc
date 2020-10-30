@@ -407,27 +407,6 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     return;
   }
 
-  if (transport != BT_TRANSPORT_LE) {
-    /* If remote features already known, copy them and continue connection
-     * setup */
-    if ((p_dev_rec->num_read_pages) &&
-        (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
-      memcpy(p_acl->peer_lmp_feature_pages, p_dev_rec->feature_pages,
-             (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
-
-      /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
-      bool ssp_supported =
-          HCI_SSP_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]);
-      bool secure_connections_supported =
-          HCI_SC_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]);
-      btm_sec_set_peer_sec_caps(ssp_supported, secure_connections_supported,
-                                p_dev_rec);
-
-      internal_.btm_establish_continue(p_acl);
-      return;
-    }
-  }
-
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_get_acl_remote_addr(*p_dev_rec, p_acl->active_remote_addr,
                                 &p_acl->active_remote_addr_type);
