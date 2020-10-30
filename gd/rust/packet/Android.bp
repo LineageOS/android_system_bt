@@ -1,0 +1,15 @@
+rust_library {
+    name: "libbt_packet",
+    // has rustc warnings
+    crate_name: "bt_packet",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libbytes",
+        "libnum_traits",
+    ],
+    proc_macros: [
+        "libnum_derive",
+    ],
+    host_supported: true,
+}
