@@ -323,6 +323,7 @@ typedef struct {
   /* "Secure Connections Only" mode and it receives */
   /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
   /* it knows peer's support for Secure Connections */
+  bool remote_feature_received = false;
 
   uint16_t ble_hci_handle; /* use in DUMO connection */
   uint16_t get_ble_hci_handle() const { return ble_hci_handle; }

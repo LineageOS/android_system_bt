@@ -279,16 +279,7 @@ bool btm_dev_support_role_switch(const RawAddress& bd_addr) {
     return true;
   }
 
-  /* If the feature field is all zero, we never received them */
-  bool feature_empty = true;
-  for (int xx = 0; xx < BD_FEATURES_LEN; xx++) {
-    if (p_dev_rec->feature_pages[0][xx] != 0x00) {
-      feature_empty = false; /* at least one is != 0 */
-      break;
-    }
-  }
-
-  if (feature_empty) {
+  if (!p_dev_rec->remote_feature_received) {
     BTM_TRACE_DEBUG(
         "%s Unknown peer capabilities, assuming peer supports role switch",
         __func__);
