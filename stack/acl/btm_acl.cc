@@ -874,10 +874,8 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   uint8_t page_idx;
 
-  /* Make sure we have the record to save remote features information */
-  if (p_dev_rec == NULL) {
-    /* Get a new device; might be doing dedicated bonding */
-    p_dev_rec = btm_find_or_alloc_dev(p_acl_cb->remote_addr);
+  if (p_dev_rec == nullptr) {
+    return;
   }
 
   p_acl_cb->num_read_pages = num_read_pages;
