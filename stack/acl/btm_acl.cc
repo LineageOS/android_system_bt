@@ -487,18 +487,6 @@ void btm_acl_removed(uint16_t handle) {
     BTA_dm_acl_down(bda, transport);
   }
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  if (p_dev_rec == nullptr) {
-    LOG_WARN("Device security record not found");
-  } else {
-    if (p_acl->transport == BT_TRANSPORT_LE) {
-      p_dev_rec->sec_flags &= ~(BTM_SEC_LE_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
-      if ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) == 0) {
-        p_dev_rec->sec_flags &=
-            ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
-      }
-    }
-  }
   memset(p_acl, 0, sizeof(tACL_CONN));
 }
 
