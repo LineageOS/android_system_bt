@@ -414,8 +414,6 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
         (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
       memcpy(p_acl->peer_lmp_feature_pages, p_dev_rec->feature_pages,
              (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
-      // TODO We do not need to store the pages read here
-      p_acl->num_read_pages = p_dev_rec->num_read_pages;
 
       const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 
@@ -878,7 +876,6 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
     return;
   }
 
-  p_acl_cb->num_read_pages = num_read_pages;
   p_dev_rec->num_read_pages = num_read_pages;
 
   /* Move the pages to placeholder */
@@ -939,7 +936,6 @@ void StackAclBtmAcl::btm_read_remote_features(uint16_t handle) {
   }
 
   p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
-  p_acl_cb->num_read_pages = 0;
   memset(p_acl_cb->peer_lmp_feature_pages, 0,
          sizeof(p_acl_cb->peer_lmp_feature_pages));
 
