@@ -100,22 +100,7 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
   }
 
   p_dev_rec->num_read_pages = 0;
-  if (features) {
-    bool found = false;
-    memcpy(p_dev_rec->feature_pages, features,
-           sizeof(p_dev_rec->feature_pages));
-    for (int i = HCI_EXT_FEATURES_PAGE_MAX; !found && i >= 0; i--) {
-      for (int j = 0; j < HCI_FEATURE_BYTES_PER_PAGE; j++) {
-        if (p_dev_rec->feature_pages[i][j] != 0) {
-          found = true;
-          p_dev_rec->num_read_pages = i + 1;
-          break;
-        }
-      }
-    }
-  } else {
-    memset(p_dev_rec->feature_pages, 0, sizeof(p_dev_rec->feature_pages));
-  }
+  memset(p_dev_rec->feature_pages, 0, sizeof(p_dev_rec->feature_pages));
 
   if (p_link_key) {
     VLOG(2) << __func__ << ": BDA: " << bd_addr;
