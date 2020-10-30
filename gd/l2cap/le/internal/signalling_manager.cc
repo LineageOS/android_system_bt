@@ -259,10 +259,11 @@ void LeSignallingManager::on_security_result_for_incoming(Psm psm, PendingConnec
                            LeCreditBasedConnectionResponseResult::SUCCESS);
   auto* data_controller = reinterpret_cast<l2cap::internal::LeCreditBasedDataController*>(
       data_pipeline_manager_->GetDataController(new_channel->GetCid()));
-  data_controller->SetMtu(std::min(request.mtu, local_mtu));
+  auto actual_mtu = std::min(request.mtu, local_mtu);
+  data_controller->SetMtu(actual_mtu);
   data_controller->SetMps(std::min(request.max_pdu_size, local_mps));
   data_controller->OnCredit(request.initial_credits);
-  auto user_channel = std::make_unique<DynamicChannel>(new_channel, handler_, link_);
+  auto user_channel = std::make_unique<DynamicChannel>(new_channel, handler_, link_, actual_mtu);
   dynamic_service_manager_->GetService(psm)->NotifyChannelCreation(std::move(user_channel));
 }
 
@@ -295,10 +296,12 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
   }
   auto* data_controller = reinterpret_cast<l2cap::internal::LeCreditBasedDataController*>(
       data_pipeline_manager_->GetDataController(new_channel->GetCid()));
-  data_controller->SetMtu(std::min(mtu, command_just_sent_.mtu_));
+  auto actual_mtu = std::min(mtu, command_just_sent_.mtu_);
+  data_controller->SetMtu(actual_mtu);
   data_controller->SetMps(std::min(mps, command_just_sent_.mps_));
   data_controller->OnCredit(initial_credits);
-  std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(new_channel, handler_, link_);
+  std::unique_ptr<DynamicChannel> user_channel =
+      std::make_unique<DynamicChannel>(new_channel, handler_, link_, actual_mtu);
   dynamic_service_manager_->GetService(command_just_sent_.psm_)->NotifyChannelCreation(std::move(user_channel));
 }
 

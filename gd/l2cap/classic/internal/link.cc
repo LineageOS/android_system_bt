@@ -369,7 +369,7 @@ void Link::OnFlushOccurred() {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 void Link::OnRoleDiscoveryComplete(hci::Role current_role) {
-  LOG_INFO("UNIMPLEMENTED %s current_role:%s", __func__, hci::RoleText(current_role).c_str());
+  role_ = current_role;
 }
 void Link::OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) {
   LOG_INFO("UNIMPLEMENTED %s link_policy_settings:0x%x", __func__, link_policy_settings);

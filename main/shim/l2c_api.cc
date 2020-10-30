@@ -524,6 +524,10 @@ struct LeDynamicChannelHelper {
       auto cid_token = find_cid_token_by_psm_address(psm_, address);
       appl_info_.pL2CA_ConnectCfm_Cb(cid_token, 0);
     } else {
+      if (appl_info_.pL2CA_ConnectInd_Cb == nullptr) {
+        Disconnect(device);
+        return;
+      }
       auto cid_token = add_cid_token_entry(psm_, address);
       appl_info_.pL2CA_ConnectInd_Cb(address, cid_token, psm_, 0);
     }
@@ -561,6 +565,13 @@ struct LeDynamicChannelHelper {
     buffer->second->Enqueue(std::move(packet),
                             bluetooth::shim::GetGdShimHandler());
     return true;
+  }
+
+  uint16_t GetMtu(AddressWithType remote) {
+    if (channels_.count(remote) == 0) {
+      return 0;
+    }
+    return static_cast<uint16_t>(channels_[remote]->GetMtu());
   }
 
   std::unordered_map<AddressWithType, std::unique_ptr<DynamicChannel>>
@@ -613,12 +624,22 @@ uint16_t bluetooth::shim::L2CA_ConnectLECocReq(uint16_t psm,
   return add_cid_token_entry(psm, p_bd_addr);
 }
 
-bool bluetooth::shim::L2CA_GetPeerLECocConfig(uint16_t lcid,
+bool bluetooth::shim::L2CA_GetPeerLECocConfig(uint16_t cid,
                                               tL2CAP_LE_CFG_INFO* peer_cfg) {
-  // TODO(hsz): Implement me with real value
-  peer_cfg->mps = 1000;
-  peer_cfg->mtu = 1000;
-  return true;
+  if (cid_token_to_channel_map_.count(cid) == 0) {
+    LOG(ERROR) << __func__ << "Invalid cid: " << cid;
+    return false;
+  }
+  auto psm = cid_token_to_channel_map_[cid].psm;
+  auto remote = cid_token_to_channel_map_[cid].remote;
+  if (le_dynamic_channel_helper_map_.count(psm) == 0) {
+    LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    return false;
+  }
+  auto mtu = le_dynamic_channel_helper_map_[psm]->GetMtu(
+      bluetooth::ToAddressWithType(remote, Btm::GetAddressType(remote)));
+  peer_cfg->mtu = mtu;
+  return mtu;
 }
 
 bool bluetooth::shim::L2CA_DisconnectLECocReq(uint16_t cid) {

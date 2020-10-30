@@ -117,6 +117,7 @@ enum OpCode : 16 {
   IO_CAPABILITY_REQUEST_NEGATIVE_REPLY = 0x0434,
   ENHANCED_SETUP_SYNCHRONOUS_CONNECTION = 0x043D,
   ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION = 0x043E,
+  REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY = 0x0445,
 
   // LINK_POLICY
   HOLD_MODE = 0x0801,
@@ -523,6 +524,7 @@ enum OpCodeIndex : 16 {
   ENHANCED_SETUP_SYNCHRONOUS_CONNECTION = 293,
   ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION = 294,
   READ_LOCAL_SUPPORTED_CODECS_V1 = 295,
+  REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY = 321,
   READ_SECURE_CONNECTIONS_HOST_SUPPORT = 322,
   WRITE_SECURE_CONNECTIONS_HOST_SUPPORT = 323,
   READ_LOCAL_OOB_EXTENDED_DATA = 326,
@@ -1202,6 +1204,19 @@ packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (op_code = ENHA
 
 packet EnhancedAcceptSynchronousConnection : ScoConnectionCommand (op_code = ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION) {
   _payload_,  // placeholder (unimplemented)
+}
+
+packet RemoteOobExtendedDataRequestReply : SecurityCommand (op_code = REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY) {
+  bd_addr : Address,
+  c_192 : 8[16],
+  r_192 : 8[16],
+  c_256 : 8[16],
+  r_256 : 8[16],
+}
+
+packet RemoteOobExtendedDataRequestReplyComplete : CommandComplete (command_op_code = REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY) {
+  status : ErrorCode,
+  bd_addr : Address,
 }
 
 
@@ -3138,8 +3153,8 @@ packet LeSetPeriodicAdvertisingDataComplete : CommandComplete (command_op_code =
 }
 
 packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
-  advertising_handle : 8,
   enable : Enable,
+  advertising_handle : 8,
 }
 
 packet LeSetPeriodicAdvertisingEnableComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
