@@ -75,6 +75,11 @@ struct assembler {
   void on_incoming_packet(AclPacketView packet) {
     PacketView<kLittleEndian> payload = packet.GetPayload();
     auto payload_size = payload.size();
+    auto broadcast_flag = packet.GetBroadcastFlag();
+    if (broadcast_flag == BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST) {
+      LOG_WARN("Dropping broadcast from remote");
+      return;
+    }
     auto packet_boundary_flag = packet.GetPacketBoundaryFlag();
     if (packet_boundary_flag == PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE) {
       LOG_ERROR("Controller is not allowed to send FIRST_NON_AUTOMATICALLY_FLUSHABLE to host except loopback mode");
