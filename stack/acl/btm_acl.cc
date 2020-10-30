@@ -497,9 +497,6 @@ void btm_acl_removed(uint16_t handle) {
         p_dev_rec->sec_flags &=
             ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
       }
-    } else {
-      p_dev_rec->sec_flags &=
-          ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
     }
   }
   memset(p_acl, 0, sizeof(tACL_CONN));
