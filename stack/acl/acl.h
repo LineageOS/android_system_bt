@@ -100,6 +100,7 @@ typedef struct {
   }
 
  public:
+  bool is_encrypted = false;
   uint8_t link_role;
   uint8_t lmp_version;
   uint8_t switch_role_failed_attempts;
