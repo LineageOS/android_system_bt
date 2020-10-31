@@ -61,6 +61,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
     } break;
     case AddressPolicy::USE_NON_RESOLVABLE_ADDRESS:
     case AddressPolicy::USE_RESOLVABLE_ADDRESS:
+      le_address_ = fixed_address;
       rotation_irk_ = rotation_irk;
       minimum_rotation_time_ = minimum_rotation_time;
       maximum_rotation_time_ = maximum_rotation_time;
