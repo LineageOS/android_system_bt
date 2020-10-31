@@ -444,8 +444,6 @@ TEST_F(LeAddressManagerWithSingleClientTest, register_during_command_complete) {
   AllocateClients(1);
   test_hci_layer_->SetCommandFuture();
   le_address_manager_->Register(clients[1].get());
-  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
-  test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   clients[0].get()->WaitForResume();
   clients[1].get()->WaitForResume();
 }
