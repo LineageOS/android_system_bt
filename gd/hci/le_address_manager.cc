@@ -65,11 +65,6 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       minimum_rotation_time_ = minimum_rotation_time;
       maximum_rotation_time_ = maximum_rotation_time;
       address_rotation_alarm_ = std::make_unique<os::Alarm>(handler_);
-      if (!registered_clients_.empty()) {
-        // clients registered and paused before the policy set, rotate random address and resume
-        // clients after set random address complete
-        handler_->BindOnceOn(this, &LeAddressManager::rotate_random_address).Invoke();
-      }
       break;
     case AddressPolicy::POLICY_NOT_SET:
       LOG_ALWAYS_FATAL("invalid parameters");
