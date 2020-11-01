@@ -64,7 +64,7 @@ std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle) {
 
 std::unique_ptr<AclPacketBuilder> NextAclPacket(uint16_t handle) {
   PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
-  BroadcastFlag broadcast_flag = BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST;
+  BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
   return AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, NextPayload(handle));
 }
 

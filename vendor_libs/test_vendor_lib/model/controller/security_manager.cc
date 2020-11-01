@@ -91,7 +91,7 @@ void SecurityManager::SetPeerIoCapability(const Address& addr, uint8_t io_capabi
     peer_io_capability_ = IoCapabilityType::INVALID;
     peer_capabilities_valid_ = false;
   }
-  peer_oob_present_flag_ = (oob_present_flag == 1);
+  peer_oob_present_flag_ = oob_present_flag;
   if (authentication_requirements <= static_cast<uint8_t>(AuthenticationType::GENERAL_BONDING_MITM)) {
     peer_authentication_requirements_ = static_cast<AuthenticationType>(authentication_requirements);
   } else {
@@ -105,11 +105,12 @@ void SecurityManager::SetLocalIoCapability(const Address& peer, uint8_t io_capab
   ASSERT(peer == peer_address_);
   ASSERT_LOG(io_capability <= static_cast<uint8_t>(IoCapabilityType::NO_INPUT_NO_OUTPUT), "io_capability = %d",
              static_cast<int>(io_capability));
-  ASSERT_LOG(oob_present_flag <= 1, "oob_present_flag = %hhx ", oob_present_flag);
+  ASSERT_LOG(oob_present_flag <= 3, "oob_present_flag = %hhx ",
+             oob_present_flag);
   ASSERT_LOG(authentication_requirements <= static_cast<uint8_t>(AuthenticationType::GENERAL_BONDING_MITM),
              "authentication_requirements = %d", static_cast<int>(authentication_requirements));
   host_io_capability_ = static_cast<IoCapabilityType>(io_capability);
-  host_oob_present_flag_ = (oob_present_flag == 1);
+  host_oob_present_flag_ = oob_present_flag;
   host_authentication_requirements_ = static_cast<AuthenticationType>(authentication_requirements);
   host_capabilities_valid_ = true;
 }
@@ -131,6 +132,13 @@ PairingType SecurityManager::GetSimplePairingType() {
                             (peer_authentication_requirements_ == AuthenticationType::GENERAL_BONDING_MITM);
   if (!(peer_requires_mitm || host_requires_mitm)) {
     return PairingType::AUTO_CONFIRMATION;
+  }
+  if (peer_oob_present_flag_ != 0 || host_oob_present_flag_ != 0) {
+    if (peer_oob_present_flag_ != host_oob_present_flag_) {
+      return PairingType::INVALID;
+    } else {
+      return PairingType::OUT_OF_BAND;
+    }
   }
   LOG_INFO("%s: host does%s require peer does%s require MITM",
            peer_address_.ToString().c_str(), host_requires_mitm ? "" : "n't",

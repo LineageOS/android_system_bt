@@ -150,16 +150,15 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   if (GetRecord()->IsPaired()) {
-    auto packet = hci::LinkKeyRequestReplyBuilder::Create(
-        GetRecord()->GetPseudoAddress()->GetAddress(), GetRecord()->GetLinkKey());
     LOG_INFO("Sending: LINK_KEY_REQUEST_REPLY");
-    this->GetChannel()->SendCommand(std::move(packet));
+    this->GetChannel()->SendCommand(hci::LinkKeyRequestReplyBuilder::Create(
+        GetRecord()->GetPseudoAddress()->GetAddress(), GetRecord()->GetLinkKey()));
     last_status_ = hci::ErrorCode::SUCCESS;
     Cancel();
   } else {
-    auto packet = hci::LinkKeyRequestNegativeReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress());
     LOG_INFO("Sending: LINK_KEY_REQUEST_NEGATIVE_REPLY");
-    this->GetChannel()->SendCommand(std::move(packet));
+    this->GetChannel()->SendCommand(
+        hci::LinkKeyRequestNegativeReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
   }
 }
 
@@ -176,7 +175,7 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   hci::IoCapability io_capability = local_io_capability_;
-  hci::OobDataPresent oob_present = hci::OobDataPresent::NOT_PRESENT;
+  hci::OobDataPresent oob_present = local_oob_present_;
   hci::AuthenticationRequirements authentication_requirements = local_authentication_requirements_;
   auto reply_packet = hci::IoCapabilityRequestReplyBuilder::Create(
       GetRecord()->GetPseudoAddress()->GetAddress(), io_capability, oob_present, authentication_requirements);

@@ -241,7 +241,6 @@ void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
   }
 
   memset(msg->bd_name, 0, BD_NAME_LEN + 1);
-  memset(msg->features, 0, sizeof(msg->features));
   msg->pin_length = pin_length;
 
   do_in_main_thread(FROM_HERE,

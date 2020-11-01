@@ -127,8 +127,6 @@ typedef struct {
   bool link_key_known;
   bool dc_known;
   BD_NAME bd_name;
-  uint8_t
-      features[HCI_FEATURE_BYTES_PER_PAGE * (HCI_EXT_FEATURES_PAGE_MAX + 1)];
   uint8_t pin_length;
 } tBTA_DM_API_ADD_DEVICE;
 

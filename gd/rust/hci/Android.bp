@@ -1,0 +1,56 @@
+rust_library {
+    name: "libbt_hci",
+    crate_name: "bt_hci",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libbt_hal",
+        "libbt_packet",
+        "libbytes",
+        "libfutures",
+        "libgrpcio",
+        "libhci_layer_facade_proto",
+        "libnum_traits",
+        "libthiserror",
+        "libtokio",
+        "libprotobuf",
+    ],
+    proc_macros: [
+        "libnum_derive",
+    ],
+    host_supported: true,
+}
+
+rust_binary {
+    name: "hci_facade_client",
+    crate_name: "hci_facade_client",
+    srcs: ["src/facade/hci_facade_client.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libbt_hal",
+        "libbt_hci",
+        "libbytes",
+        "libfutures",
+        "libgrpcio",
+        "libprotobuf",
+        "libtokio",
+    ],
+    host_supported: true,
+}
+
+rust_binary {
+    name: "hci_facade_main",
+    crate_name: "hci_facade_main",
+    srcs: ["src/facade/hci_facade_main.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libbt_hal",
+        "libbt_hci",
+        "libbytes",
+        "libfutures",
+        "libgrpcio",
+        "libprotobuf",
+        "libtokio",
+    ],
+    host_supported: true,
+}

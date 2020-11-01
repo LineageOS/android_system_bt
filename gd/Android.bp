@@ -762,3 +762,12 @@ cc_library_host_shared {
     ],
     rtti: true,
 }
+
+rust_protobuf {
+    name: "libhci_layer_facade_proto",
+    crate_name: "hci_layer_facade_proto",
+    proto: "hci/facade/facade.proto",
+    proto_flags: ["-Iexternal/protobuf/src/"],
+    source_stem: "facade",
+    host_supported: true,
+}

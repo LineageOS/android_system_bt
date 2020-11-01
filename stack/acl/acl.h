@@ -66,7 +66,6 @@ typedef struct {
     return is_transport_ble() || is_transport_br_edr();
   }
 
-  uint16_t clock_offset;
   uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
   uint16_t link_policy;
@@ -101,10 +100,15 @@ typedef struct {
   }
 
  public:
+  bool is_encrypted = false;
   uint8_t link_role;
   uint8_t lmp_version;
-  uint8_t num_read_pages;
   uint8_t switch_role_failed_attempts;
+
+#define BTM_SEC_RS_NOT_PENDING 0 /* Role Switch not in progress */
+#define BTM_SEC_RS_PENDING 1     /* Role Switch in progress */
+#define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
+  uint8_t rs_disc_pending = BTM_SEC_RS_NOT_PENDING;
 
  private:
   uint8_t switch_role_state_;

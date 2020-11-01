@@ -20,6 +20,7 @@
 #include "main/shim/acl_api.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 void bluetooth::shim::ACL_CreateClassicConnection(
@@ -28,14 +29,16 @@ void bluetooth::shim::ACL_CreateClassicConnection(
   Stack::GetInstance()->GetAcl()->CreateClassicConnection(address);
 }
 
-void bluetooth::shim::ACL_CreateLeConnection(const RawAddress& raw_address) {
-  auto address_with_type = ToAddressWithType(raw_address, BLE_ADDR_RANDOM);
-  Stack::GetInstance()->GetAcl()->CreateLeConnection(address_with_type);
+void bluetooth::shim::ACL_CreateLeConnection(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  Stack::GetInstance()->GetAcl()->CreateLeConnection(
+      ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
 
-void bluetooth::shim::ACL_CancelLeConnection(const RawAddress& raw_address) {
-  auto address_with_type = ToAddressWithType(raw_address, BLE_ADDR_RANDOM);
-  Stack::GetInstance()->GetAcl()->CancelLeConnection(address_with_type);
+void bluetooth::shim::ACL_CancelLeConnection(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  Stack::GetInstance()->GetAcl()->CancelLeConnection(
+      ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
 
 void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
@@ -43,4 +46,8 @@ void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
       MakeUniquePacket(p_buf->data + p_buf->offset + HCI_DATA_PREAMBLE_SIZE,
                        p_buf->len - HCI_DATA_PREAMBLE_SIZE);
   Stack::GetInstance()->GetAcl()->WriteData(handle, std::move(packet));
+}
+
+void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
+  Stack::GetInstance()->GetAcl()->ConfigureLePrivacy(is_le_privacy_enabled);
 }

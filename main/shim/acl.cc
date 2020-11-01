@@ -422,23 +422,6 @@ bluetooth::shim::legacy::Acl::Acl(os::Handler* handler,
   GetAclManager()->RegisterLeCallbacks(this, handler_);
   GetController()->RegisterCompletedMonitorAclPacketsCallback(
       handler->BindOn(this, &Acl::on_incoming_acl_credits));
-
-  // TODO(b/161543441): read the privacy policy from device-specific
-  // configuration, and IRK from config file.
-  hci::LeAddressManager::AddressPolicy address_policy =
-      hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
-  hci::AddressWithType empty_address_with_type(
-      hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-  crypto_toolbox::Octet16 rotation_irk = {0x44, 0xfb, 0x4b, 0x8d, 0x6c, 0x58,
-                                          0x21, 0x0c, 0xf9, 0x3d, 0xda, 0xf1,
-                                          0x64, 0xa3, 0xbb, 0x7f};
-  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
-  auto minimum_rotation_time = std::chrono::minutes(7);
-  auto maximum_rotation_time = std::chrono::minutes(15);
-
-  GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
-      address_policy, empty_address_with_type, rotation_irk,
-      minimum_rotation_time, maximum_rotation_time);
 }
 
 bluetooth::shim::legacy::Acl::~Acl() {
@@ -477,7 +460,6 @@ void bluetooth::shim::legacy::Acl::CreateClassicConnection(
 
 void bluetooth::shim::legacy::Acl::CreateLeConnection(
     const bluetooth::hci::AddressWithType& address_with_type) {
-  GetAclManager()->AddDeviceToConnectList(address_with_type);
   GetAclManager()->CreateLeConnection(address_with_type);
   LOG_DEBUG("Started Le device to connection %s",
             address_with_type.ToString().c_str());
@@ -590,4 +572,29 @@ void bluetooth::shim::legacy::Acl::OnLeConnectFail(
 
   TRY_POSTING_ON_MAIN(acl_interface_.connection.le.on_failed,
                       legacy_address_with_type, handle, enhanced, status);
+}
+
+void bluetooth::shim::legacy::Acl::ConfigureLePrivacy(
+    bool is_le_privacy_enabled) {
+  LOG_INFO("Configuring Le privacy:%s",
+           (is_le_privacy_enabled) ? "true" : "false");
+  ASSERT_LOG(is_le_privacy_enabled,
+             "Gd shim does not support unsecure le privacy");
+
+  // TODO(b/161543441): read the privacy policy from device-specific
+  // configuration, and IRK from config file.
+  hci::LeAddressManager::AddressPolicy address_policy =
+      hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
+  hci::AddressWithType empty_address_with_type(
+      hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+  crypto_toolbox::Octet16 rotation_irk = {0x44, 0xfb, 0x4b, 0x8d, 0x6c, 0x58,
+                                          0x21, 0x0c, 0xf9, 0x3d, 0xda, 0xf1,
+                                          0x64, 0xa3, 0xbb, 0x7f};
+  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
+  auto minimum_rotation_time = std::chrono::minutes(7);
+  auto maximum_rotation_time = std::chrono::minutes(15);
+
+  GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
+      address_policy, empty_address_with_type, rotation_irk,
+      minimum_rotation_time, maximum_rotation_time);
 }

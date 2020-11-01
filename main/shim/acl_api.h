@@ -17,16 +17,18 @@
 #pragma once
 
 #include "stack/include/bt_types.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {
 namespace shim {
 
 void ACL_CancelClassicConnection(const RawAddress& raw_address);
-void ACL_CancelLeConnection(const RawAddress& raw_address);
+void ACL_CancelLeConnection(const tBLE_BD_ADDR& legacy_address_with_type);
 void ACL_CreateClassicConnection(const RawAddress& raw_address);
-void ACL_CreateLeConnection(const RawAddress& raw_address);
+void ACL_CreateLeConnection(const tBLE_BD_ADDR& legacy_address_with_type);
 void ACL_WriteData(uint16_t handle, const BT_HDR* p_buf);
+void ACL_ConfigureLePrivacy(bool is_le_privacy_enabled);
 
 }  // namespace shim
 }  // namespace bluetooth

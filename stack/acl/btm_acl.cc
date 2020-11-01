@@ -407,35 +407,6 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     return;
   }
 
-  if (transport != BT_TRANSPORT_LE) {
-    /* If remote features already known, copy them and continue connection
-     * setup */
-    if ((p_dev_rec->num_read_pages) &&
-        (p_dev_rec->num_read_pages <= (HCI_EXT_FEATURES_PAGE_MAX + 1))) {
-      memcpy(p_acl->peer_lmp_feature_pages, p_dev_rec->feature_pages,
-             (HCI_FEATURE_BYTES_PER_PAGE * p_dev_rec->num_read_pages));
-      // TODO We do not need to store the pages read here
-      p_acl->num_read_pages = p_dev_rec->num_read_pages;
-
-      const uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
-      /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
-      bool ssp_supported =
-          HCI_SSP_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]);
-      bool secure_connections_supported =
-          HCI_SC_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]);
-      btm_sec_set_peer_sec_caps(ssp_supported, secure_connections_supported,
-                                p_dev_rec);
-
-      if (req_pend) {
-        /* Request for remaining Security Features (if any) */
-        l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
-      }
-      internal_.btm_establish_continue(p_acl);
-      return;
-    }
-  }
-
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_get_acl_remote_addr(*p_dev_rec, p_acl->active_remote_addr,
                                 &p_acl->active_remote_addr_type);
@@ -487,21 +458,6 @@ void btm_acl_removed(uint16_t handle) {
     BTA_dm_acl_down(bda, transport);
   }
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  if (p_dev_rec == nullptr) {
-    LOG_WARN("Device security record not found");
-  } else {
-    if (p_acl->transport == BT_TRANSPORT_LE) {
-      p_dev_rec->sec_flags &= ~(BTM_SEC_LE_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
-      if ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) == 0) {
-        p_dev_rec->sec_flags &=
-            ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
-      }
-    } else {
-      p_dev_rec->sec_flags &=
-          ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
-    }
-  }
   memset(p_acl, 0, sizeof(tACL_CONN));
 }
 
@@ -620,17 +576,14 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
   }
   /* some devices do not support switch while encryption is on */
   else {
-    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bd_addr);
-    if ((p_dev_rec != NULL) &&
-        ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
-        !BTM_EPR_AVAILABLE(p_acl)) {
+    if (p_acl->is_encrypted && !BTM_EPR_AVAILABLE(p_acl)) {
       /* bypass turning off encryption if change link key is already doing it */
       p_acl->set_encryption_off();
       p_acl->set_switch_role_encryption_off();
     } else {
       btsnd_hcic_switch_role(remote_bd_addr, new_role);
       p_acl->set_switch_role_in_progress();
-      if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
+      p_acl->rs_disc_pending = BTM_SEC_RS_PENDING;
     }
   }
 
@@ -653,7 +606,6 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable) {
   tACL_CONN* p;
   uint8_t xx;
-  tBTM_SEC_DEV_REC* p_dev_rec;
 
   xx = btm_handle_to_acl_index(handle);
   /* don't assume that we can never get a bad hci_handle */
@@ -661,6 +613,8 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     p = &btm_cb.acl_cb_.acl_db[xx];
   else
     return;
+
+  p->is_encrypted = encr_enable;
 
   /* Process Role Switch if active */
   if (p->is_switch_role_encryption_off()) {
@@ -674,9 +628,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     }
 
     btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
-    p_dev_rec = btm_find_dev(p->remote_addr);
-    if (p_dev_rec != NULL) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
-
+    p->rs_disc_pending = BTM_SEC_RS_PENDING;
   }
   /* Finished enabling Encryption after role switch */
   else if (p->is_switch_role_encryption_on()) {
@@ -690,20 +642,15 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 
     /* If a disconnect is pending, issue it now that role switch has completed
      */
-    p_dev_rec = btm_find_dev(p->remote_addr);
-    if (p_dev_rec != NULL) {
-      if (p_dev_rec->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-        LOG_WARN("Issuing delayed HCI_Disconnect!!!");
-        btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
-      }
-      LOG_WARN("tBTM_SEC_DEV:0x%x rs_disc_pending=%d", PTR_TO_UINT(p_dev_rec),
-               p_dev_rec->rs_disc_pending);
-      p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
+    if (p->rs_disc_pending == BTM_SEC_DISC_PENDING) {
+      LOG_WARN("Issuing delayed HCI_Disconnect!!!");
+      btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
     }
+    p->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
 }
 
-void check_link_policy(uint16_t* settings) {
+static void check_link_policy(uint16_t* settings) {
   const controller_t* controller = controller_get_interface();
 
   if ((*settings & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
@@ -889,13 +836,10 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   uint8_t page_idx;
 
-  /* Make sure we have the record to save remote features information */
-  if (p_dev_rec == NULL) {
-    /* Get a new device; might be doing dedicated bonding */
-    p_dev_rec = btm_find_or_alloc_dev(p_acl_cb->remote_addr);
+  if (p_dev_rec == nullptr) {
+    return;
   }
 
-  p_acl_cb->num_read_pages = num_read_pages;
   p_dev_rec->num_read_pages = num_read_pages;
 
   /* Move the pages to placeholder */
@@ -956,7 +900,6 @@ void StackAclBtmAcl::btm_read_remote_features(uint16_t handle) {
   }
 
   p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
-  p_acl_cb->num_read_pages = 0;
   memset(p_acl_cb->peer_lmp_feature_pages, 0,
          sizeof(p_acl_cb->peer_lmp_feature_pages));
 
@@ -1395,11 +1338,6 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
  *
  ******************************************************************************/
 void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset) {
-  uint8_t xx;
-  /* Look up the connection by handle and set the current mode */
-  xx = btm_handle_to_acl_index(hci_handle);
-  if (xx < MAX_L2CAP_LINKS)
-    btm_cb.acl_cb_.acl_db[xx].clock_offset = clock_offset;
 }
 
 /*******************************************************************************
@@ -1516,15 +1454,12 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
   BTA_dm_report_role_change(bd_addr, new_role, hci_status);
 
   /* If a disconnect is pending, issue it now that role switch has completed */
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec != nullptr) {
-    if (p_dev_rec->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-      LOG_WARN("peer %s Issuing delayed HCI_Disconnect!!!",
-               bd_addr.ToString().c_str());
-      btsnd_hcic_disconnect(p_dev_rec->hci_handle, HCI_ERR_PEER_USER);
-    }
-    p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
+  if (p_acl->rs_disc_pending == BTM_SEC_DISC_PENDING) {
+    LOG_WARN("peer %s Issuing delayed HCI_Disconnect!!!",
+             bd_addr.ToString().c_str());
+    btsnd_hcic_disconnect(p_acl->hci_handle, HCI_ERR_PEER_USER);
   }
+  p_acl->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 }
 
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
@@ -2196,12 +2131,14 @@ void btm_read_link_quality_complete(uint8_t* p) {
 tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   uint16_t hci_handle = BTM_GetHCIConnHandle(bd_addr, transport);
   tBTM_STATUS status = BTM_SUCCESS;
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
+  if (p_acl == nullptr) return BTM_UNKNOWN_ADDR;
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
   /* Role Switch is pending, postpone until completed */
-  if (p_dev_rec && (p_dev_rec->rs_disc_pending == BTM_SEC_RS_PENDING)) {
-    p_dev_rec->rs_disc_pending = BTM_SEC_DISC_PENDING;
+  if (p_dev_rec && (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING)) {
+    p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
   } else /* otherwise can disconnect right away */
   {
     if (hci_handle != HCI_INVALID_HANDLE && p_dev_rec &&
@@ -2261,7 +2198,7 @@ void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
     {
       if (p->is_switch_role_mode_change()) {
         p->set_switch_role_in_progress();
-        if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
+        p->rs_disc_pending = BTM_SEC_RS_PENDING;
         btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
       }
     }
@@ -2902,6 +2839,23 @@ void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   btsnd_hcic_disconnect(p_acl->hci_handle, reason);
 }
 
+void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
+
+  /* If a role switch is in progress, delay the HCI Disconnect to avoid
+   * controller problem */
+  if (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING) {
+    BTM_TRACE_DEBUG(
+        "RS in progress - Set DISC Pending flag in btm_sec_send_hci_disconnect "
+        "to delay disconnect");
+    p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
+  }
+  /* Tear down the HCI link */
+  else {
+    btsnd_hcic_disconnect(conn_handle, reason);
+  }
+}
+
 constexpr uint16_t kDataPacketEventBrEdr = (BT_EVT_TO_LM_HCI_ACL);
 constexpr uint16_t kDataPacketEventBle =
     (BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID);
@@ -2951,7 +2905,11 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
 
 bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    bluetooth::shim::ACL_CreateLeConnection(bd_addr);
+    tBLE_BD_ADDR address_with_type{
+        .bda = bd_addr,
+        .type = BLE_ADDR_RANDOM,
+    };
+    bluetooth::shim::ACL_CreateLeConnection(address_with_type);
     return true;
   }
   return connection_manager::direct_connect_add(id, bd_addr);
@@ -2963,7 +2921,11 @@ bool acl_create_le_connection(const RawAddress& bd_addr) {
 
 void acl_cancel_le_connection(const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    return bluetooth::shim::ACL_CancelLeConnection(bd_addr);
+    tBLE_BD_ADDR address_with_type{
+        .bda = bd_addr,
+        .type = BLE_ADDR_RANDOM,
+    };
+    return bluetooth::shim::ACL_CancelLeConnection(address_with_type);
   }
   connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, bd_addr);
 }

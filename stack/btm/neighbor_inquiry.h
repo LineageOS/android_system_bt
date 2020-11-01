@@ -20,6 +20,7 @@
 
 #include "osi/include/alarm.h"
 #include "stack/include/btm_api_types.h"
+#include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
 /* Discoverable modes */
