@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "common/callback.h"
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "module.h"
@@ -60,6 +61,15 @@ class ExtendedAdvertisingConfig : public AdvertisingConfig {
   ExtendedAdvertisingConfig(const AdvertisingConfig& config);
 };
 
+class PeriodicAdvertisingParameters {
+ public:
+  uint16_t min_interval;
+  uint16_t max_interval;
+  uint16_t properties;
+
+  enum AdvertisingProperty { INCLUDE_TX_POWER = 0x06 };
+};
+
 using AdvertiserId = uint8_t;
 
 class AdvertisingCallback {
@@ -89,6 +99,7 @@ class LeAdvertisingManager : public bluetooth::Module {
  public:
   static constexpr AdvertiserId kInvalidId = 0xFF;
   static constexpr uint8_t kInvalidHandle = 0xFF;
+  static constexpr uint8_t kAdvertisingSetIdMask = 0x0F;
   LeAdvertisingManager();
 
   size_t GetNumberOfAdvertisingInstances() const;
@@ -105,7 +116,19 @@ class LeAdvertisingManager : public bluetooth::Module {
       const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
       os::Handler* handler);
 
-  void RemoveAdvertiser(AdvertiserId id);
+  void SetParameters(AdvertiserId advertiser_id, ExtendedAdvertisingConfig config);
+
+  void SetData(AdvertiserId advertiser_id, bool set_scan_rsp, std::vector<GapData> data);
+
+  void EnableAdvertiser(AdvertiserId advertiser_id, bool enable, uint16_t duration, uint8_t maxExtAdvEvents);
+
+  void SetPeriodicParameters(AdvertiserId advertiser_id, PeriodicAdvertisingParameters periodic_advertising_parameters);
+
+  void SetPeriodicData(AdvertiserId advertiser_id, std::vector<GapData> data);
+
+  void EnablePeriodicAdvertising(AdvertiserId advertiser_id, bool enable);
+
+  void RemoveAdvertiser(AdvertiserId advertiser_id);
 
   void RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback);
 
