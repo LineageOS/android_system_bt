@@ -262,7 +262,8 @@ static bool subevent_already_registered_in_le_hci_layer(
     case bluetooth::hci::SubeventCode::ENHANCED_CONNECTION_COMPLETE:
     case bluetooth::hci::SubeventCode::PHY_UPDATE_COMPLETE:
     case bluetooth::hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
-      return bluetooth::shim::is_gd_acl_enabled();
+      return bluetooth::shim::is_gd_acl_enabled() ||
+             bluetooth::shim::is_gd_advertising_enabled();
 
     case bluetooth::hci::SubeventCode::READ_REMOTE_FEATURES_COMPLETE:
     case bluetooth::hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE:
@@ -293,6 +294,7 @@ static bool subevent_already_registered_in_le_hci_layer(
     case bluetooth::hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::LONG_TERM_KEY_REQUEST:
+      return bluetooth::shim::is_gd_advertising_enabled();
     default:
       return false;
   }
