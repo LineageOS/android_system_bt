@@ -23,6 +23,7 @@
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/address_with_type.h"
 #include "os/log.h"
+#include "os/rand.h"
 #include "security/initial_informations.h"
 #include "security/internal/security_manager_impl.h"
 #include "security/pairing_handler_le.h"
@@ -77,17 +78,33 @@ void SecurityManagerImpl::Init() {
   ASSERT_LOG(storage_module_ != nullptr, "Storage module must not be null!");
   security_database_.LoadRecordsFromStorage();
 
-  // TODO(b/161543441): read the privacy policy from device-specific configuration, and IRK from config file.
+  storage::AdapterConfig adapter_config = storage_module_->GetAdapterConfig();
+  if (!adapter_config.GetLeIdentityResolvingKey()) {
+    auto mutation = storage_module_->Modify();
+    mutation.Add(adapter_config.SetLeIdentityResolvingKey(bluetooth::os::GenerateRandom<16>()));
+    mutation.Commit();
+  }
+
+  Address controllerAddress = controller_->GetMacAddress();
+  if (!adapter_config.GetAddress() || adapter_config.GetAddress().value() != controllerAddress) {
+    auto mutation = storage_module_->Modify();
+    mutation.Add(adapter_config.SetAddress(controllerAddress));
+    mutation.Commit();
+  }
+
+  local_identity_address_ =
+      hci::AddressWithType(adapter_config.GetAddress().value(), hci::AddressType::PUBLIC_DEVICE_ADDRESS);
+  local_identity_resolving_key_ = adapter_config.GetLeIdentityResolvingKey().value().bytes;
+
   hci::LeAddressManager::AddressPolicy address_policy = hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
   hci::AddressWithType address_with_type(hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-  crypto_toolbox::Octet16 irk = {
-      0x44, 0xfb, 0x4b, 0x8d, 0x6c, 0x58, 0x21, 0x0c, 0xf9, 0x3d, 0xda, 0xf1, 0x64, 0xa3, 0xbb, 0x7f};
+
   /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
   auto minimum_rotation_time = std::chrono::minutes(7);
   auto maximum_rotation_time = std::chrono::minutes(15);
 
   acl_manager_->SetPrivacyPolicyForInitiatorAddress(
-      address_policy, address_with_type, irk, minimum_rotation_time, maximum_rotation_time);
+      address_policy, address_with_type, local_identity_resolving_key_, minimum_rotation_time, maximum_rotation_time);
 }
 
 void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
@@ -492,6 +509,8 @@ void SecurityManagerImpl::OnSmpCommandLe(hci::AddressWithType device) {
     InitialInformations initial_informations{
         .my_role = my_role,
         .my_connection_address = channel->GetLinkOptions()->GetLocalAddress(),
+        .my_identity_address = local_identity_address_,
+        .my_identity_resolving_key = local_identity_resolving_key_,
         /*TODO: properly obtain capabilities from device-specific storage*/
         .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                   .oob_data_flag = local_le_oob_data_present_,
@@ -562,6 +581,8 @@ void SecurityManagerImpl::ConnectionIsReadyStartPairing(LeFixedChannelEntry* sto
   InitialInformations initial_informations{
       .my_role = channel->GetLinkOptions()->GetRole(),
       .my_connection_address = channel->GetLinkOptions()->GetLocalAddress(),
+      .my_identity_address = local_identity_address_,
+      .my_identity_resolving_key = local_identity_resolving_key_,
       /*TODO: properly obtain capabilities from device-specific storage*/
       .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                 .oob_data_flag = local_le_oob_data_present_,
@@ -624,6 +645,7 @@ SecurityManagerImpl::SecurityManagerImpl(
     channel::SecurityManagerChannel* security_manager_channel,
     hci::HciLayer* hci_layer,
     hci::AclManager* acl_manager,
+    hci::Controller* controller,
     storage::StorageModule* storage_module,
     neighbor::NameDbModule* name_db_module)
     : security_handler_(security_handler),
@@ -633,6 +655,7 @@ SecurityManagerImpl::SecurityManagerImpl(
           hci_layer->GetLeSecurityInterface(security_handler_->BindOn(this, &SecurityManagerImpl::OnHciLeEvent))),
       security_manager_channel_(security_manager_channel),
       acl_manager_(acl_manager),
+      controller_(controller),
       storage_module_(storage_module),
       security_record_storage_(storage_module, security_handler),
       security_database_(security_record_storage_),
