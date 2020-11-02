@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "hci/acl_manager.h"
+#include "hci/controller.h"
 #include "l2cap/classic/security_enforcement_interface.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "l2cap/le/security_enforcement_interface.h"
@@ -58,6 +59,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
       channel::SecurityManagerChannel* security_manager_channel,
       hci::HciLayer* hci_layer,
       hci::AclManager* acl_manager,
+      hci::Controller* controller,
       storage::StorageModule* storage_module,
       neighbor::NameDbModule* name_db_module);
 
@@ -217,6 +219,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnPairingFinished(bluetooth::security::PairingResultOrFailure pairing_result);
   void OnHciLeEvent(hci::LeMetaEventView event);
   LeFixedChannelEntry* FindStoredLeChannel(const hci::AddressWithType& device);
+  LeFixedChannelEntry* FindStoredLeChannel(uint8_t connection_handle);
   bool EraseStoredLeChannel(const hci::AddressWithType& device);
   void InternalEnforceSecurityPolicy(
       hci::AddressWithType remote,
@@ -233,6 +236,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_;
   hci::AclManager* acl_manager_;
+  hci::Controller* controller_;
   storage::StorageModule* storage_module_ __attribute__((unused));
   record::SecurityRecordStorage security_record_storage_;
   record::SecurityRecordDatabase security_database_;
@@ -250,6 +254,8 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   std::optional<crypto_toolbox::Octet16> remote_oob_data_le_sc_c_;
   std::optional<crypto_toolbox::Octet16> remote_oob_data_le_sc_r_;
   std::optional<FacadeDisconnectCallback> facade_disconnect_callback_;
+  hci::AddressWithType local_identity_address_;
+  crypto_toolbox::Octet16 local_identity_resolving_key_;
 
   struct PendingSecurityEnforcementEntry {
     l2cap::classic::SecurityPolicy policy_;

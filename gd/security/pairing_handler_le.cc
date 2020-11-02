@@ -208,7 +208,8 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
 
   i.OnPairingFinished(PairingResult{
       .connection_address = i.remote_connection_address,
-      .distributed_keys = std::get<DistributedKeys>(keyExchangeStatus),
+      .distributed_keys = distributed_keys,
+      .key_size = key_size,
   });
 
   LOG_INFO("Pairing finished successfully.");
@@ -340,9 +341,10 @@ DistributedKeysOrFailure PairingHandlerLe::DistributeKeys(const InitialInformati
   uint16_t my_ediv = bluetooth::os::GenerateRandom();
   std::array<uint8_t, 8> my_rand = bluetooth::os::GenerateRandom<8>();
 
-  Octet16 my_irk = {0x01};
-  Address my_identity_address;
-  AddrType my_identity_address_type = AddrType::PUBLIC;
+  Octet16 my_irk = i.my_identity_resolving_key;
+  Address my_identity_address = i.my_identity_address.GetAddress();
+  AddrType my_identity_address_type =
+      static_cast<bluetooth::security::AddrType>(i.my_identity_address.GetAddressType());
   Octet16 my_signature_key{0};
 
   if (IAmCentral(i)) {
