@@ -79,6 +79,9 @@ struct InitialInformations {
   hci::Role my_role;
   hci::AddressWithType my_connection_address;
 
+  hci::AddressWithType my_identity_address;
+  crypto_toolbox::Octet16 my_identity_resolving_key;
+
   /* My capabilities, as in pairing request/response */
   struct {
     IoCapability io_capability;
