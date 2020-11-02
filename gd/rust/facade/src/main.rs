@@ -5,7 +5,7 @@ extern crate clap;
 use clap::{App, Arg};
 
 fn main() {
-    let matches = App::new("rusty_bluetooth_stack_with_facade")
+    let matches = App::new("bluetooth_with_facades")
         .about("The bluetooth stack, with testing facades enabled and exposed via gRPC.")
         .arg(
             Arg::with_name("root-server-port")
