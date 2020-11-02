@@ -134,6 +134,9 @@ class PairingHandlerUnitTest : public testing::Test {
 InitialInformations initial_informations{
     .my_role = hci::Role::CENTRAL,
     .my_connection_address = {{}, hci::AddressType::PUBLIC_DEVICE_ADDRESS},
+    .my_identity_address = {{}, hci::AddressType::PUBLIC_DEVICE_ADDRESS},
+    .my_identity_resolving_key =
+        {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f},
 
     .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                               .oob_data_flag = OobDataFlag::NOT_PRESENT,
@@ -271,6 +274,9 @@ TEST_F(PairingHandlerUnitTest, test_secure_connections_just_works) {
 InitialInformations initial_informations_trsi{
     .my_role = hci::Role::CENTRAL,
     .my_connection_address = hci::AddressWithType(),
+    .my_identity_address = {{}, hci::AddressType::PUBLIC_DEVICE_ADDRESS},
+    .my_identity_resolving_key =
+        {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f},
 
     .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                               .oob_data_flag = OobDataFlag::NOT_PRESENT,
@@ -310,6 +316,9 @@ TEST_F(PairingHandlerUnitTest, test_remote_peripheral_initiating) {
 InitialInformations initial_informations_trmi{
     .my_role = hci::Role::PERIPHERAL,
     .my_connection_address = hci::AddressWithType(),
+    .my_identity_address = {{}, hci::AddressType::PUBLIC_DEVICE_ADDRESS},
+    .my_identity_resolving_key =
+        {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f},
 
     .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                               .oob_data_flag = OobDataFlag::NOT_PRESENT,
