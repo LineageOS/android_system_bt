@@ -82,17 +82,41 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
   void SetParameters(uint8_t advertiser_id, AdvertiseParameters params,
                      ParametersCallback cb) override {
     LOG(INFO) << __func__ << " in shim layer";
+    bluetooth::hci::ExtendedAdvertisingConfig config{};
+    parse_parameter(config, params);
+    bluetooth::shim::GetAdvertising()->SetParameters(advertiser_id, config);
   }
 
   void SetData(int advertiser_id, bool set_scan_rsp, vector<uint8_t> data,
                StatusCallback cb) override {
     LOG(INFO) << __func__ << " in shim layer";
+
+    size_t offset = 0;
+    std::vector<GapData> advertising_data = {};
+
+    while (offset < data.size()) {
+      GapData gap_data;
+      uint8_t len = data[offset];
+      auto begin = data.begin() + offset;
+      auto end = begin + len + 1;  // 1 byte for len
+      auto data_copy = std::make_shared<std::vector<uint8_t>>(begin, end);
+      bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian> packet(
+          data_copy);
+      GapData::Parse(&gap_data, packet.begin());
+      advertising_data.push_back(gap_data);
+      offset += len + 1;  // 1 byte for len
+    }
+
+    bluetooth::shim::GetAdvertising()->SetData(advertiser_id, set_scan_rsp,
+                                               advertising_data);
   }
 
   void Enable(uint8_t advertiser_id, bool enable, StatusCallback cb,
               uint16_t duration, uint8_t maxExtAdvEvents,
               StatusCallback timeout_cb) override {
     LOG(INFO) << __func__ << " in shim layer";
+    bluetooth::shim::GetAdvertising()->EnableAdvertiser(
+        advertiser_id, enable, duration, maxExtAdvEvents);
   }
 
   // nobody use this function
@@ -160,16 +184,43 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
       int advertiser_id, PeriodicAdvertisingParameters periodic_params,
       StatusCallback cb) override {
     LOG(INFO) << __func__ << " in shim layer";
+    bluetooth::hci::PeriodicAdvertisingParameters parameters;
+    parameters.max_interval = periodic_params.max_interval;
+    parameters.min_interval = periodic_params.min_interval;
+    parameters.properties = periodic_params.periodic_advertising_properties;
+    bluetooth::shim::GetAdvertising()->SetPeriodicParameters(advertiser_id,
+                                                             parameters);
   }
 
   void SetPeriodicAdvertisingData(int advertiser_id, std::vector<uint8_t> data,
                                   StatusCallback cb) override {
     LOG(INFO) << __func__ << " in shim layer";
+
+    size_t offset = 0;
+    std::vector<GapData> advertising_data = {};
+
+    while (offset < data.size()) {
+      GapData gap_data;
+      uint8_t len = data[offset];
+      auto begin = data.begin() + offset;
+      auto end = begin + len + 1;  // 1 byte for len
+      auto data_copy = std::make_shared<std::vector<uint8_t>>(begin, end);
+      bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian> packet(
+          data_copy);
+      GapData::Parse(&gap_data, packet.begin());
+      advertising_data.push_back(gap_data);
+      offset += len + 1;  // 1 byte for len
+    }
+
+    bluetooth::shim::GetAdvertising()->SetPeriodicData(advertiser_id,
+                                                       advertising_data);
   }
 
   void SetPeriodicAdvertisingEnable(int advertiser_id, bool enable,
                                     StatusCallback cb) override {
     LOG(INFO) << __func__ << " in shim layer";
+    bluetooth::shim::GetAdvertising()->EnablePeriodicAdvertising(advertiser_id,
+                                                                 enable);
   }
 
   void RegisterCallbacks(AdvertisingCallbacks* callbacks) {
