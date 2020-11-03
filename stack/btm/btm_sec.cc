@@ -2398,7 +2398,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p);
 
   if ((btm_cb.security_mode == BTM_SEC_MODE_SC) &&
-      (p_dev_rec->num_read_pages == 0)) {
+      (!p_dev_rec->remote_feature_received)) {
     BTM_TRACE_EVENT("%s: Device security mode is SC only.",
                     "To continue need to know remote features.", __func__);
 
