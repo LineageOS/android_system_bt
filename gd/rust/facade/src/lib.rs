@@ -8,8 +8,8 @@ pub mod empty {
     pub use protobuf::well_known_types::Empty;
 }
 
-pub use bt_facade_rootservice_proto::rootservice;
 pub use bt_facade_common_proto::common;
+pub use bt_facade_rootservice_proto::rootservice;
 
 use tokio::runtime::Runtime;
 
