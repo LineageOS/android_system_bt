@@ -179,7 +179,7 @@ TEST_F(BluetoothTest, AdapterCleanupDuringDiscovery) {
   ASSERT_TRUE(bt_callbacks != nullptr);
 
   for (int i = 0; i < kTestRepeatCount; ++i) {
-    bt_interface()->init(bt_callbacks, false, false, 0);
+    bt_interface()->init(bt_callbacks, false, false, 0, false);
     EXPECT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_ON) << "Adapter did not turn on.";
