@@ -3390,9 +3390,7 @@ static void bta_dm_ble_id_key_cback(uint8_t key_type,
  ******************************************************************************/
 void bta_dm_add_blekey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE blekey,
                        tBTM_LE_KEY_TYPE key_type) {
-  if (!BTM_SecAddBleKey(bd_addr, (tBTM_LE_KEY_VALUE*)&blekey, key_type)) {
-    LOG(ERROR) << "BTA_DM: Error adding BLE Key for device " << bd_addr;
-  }
+  BTM_SecAddBleKey(bd_addr, (tBTM_LE_KEY_VALUE*)&blekey, key_type);
 }
 
 /*******************************************************************************

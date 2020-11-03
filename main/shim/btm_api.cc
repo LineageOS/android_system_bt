@@ -914,12 +914,11 @@ void bluetooth::shim::BTM_SecAddBleDevice(const RawAddress& bd_addr,
   LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
-bool bluetooth::shim::BTM_SecAddBleKey(const RawAddress& bd_addr,
+void bluetooth::shim::BTM_SecAddBleKey(const RawAddress& bd_addr,
                                        tBTM_LE_KEY_VALUE* p_le_key,
                                        tBTM_LE_KEY_TYPE key_type) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_le_key != nullptr);
-  return false;
 }
 
 void bluetooth::shim::BTM_BleLoadLocalKeys(uint8_t key_type,
