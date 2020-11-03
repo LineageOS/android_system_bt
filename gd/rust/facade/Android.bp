@@ -20,7 +20,10 @@ rust_binary {
     edition: "2018",
     rustlibs: [
       "libclap",
-      "libbluetooth_with_facades"
+      "libbluetooth_with_facades",
+      "libfutures",
+      "libgrpcio",
+      "libtokio",
     ],
     host_supported: true,
 }
