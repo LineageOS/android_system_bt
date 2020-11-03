@@ -168,8 +168,8 @@ class TestHciLayer : public HciLayer {
 
   ConnectionManagementCommandView GetLastCommandPacket(OpCode op_code) {
     if (!command_queue_.empty() && command_future_ != nullptr) {
-      command_promise_.reset();
       command_future_.reset();
+      command_promise_.reset();
     } else if (command_future_ != nullptr) {
       auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
       EXPECT_NE(std::future_status::timeout, result);
