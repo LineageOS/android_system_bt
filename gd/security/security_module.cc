@@ -44,6 +44,7 @@ struct SecurityModule::impl {
       l2cap::classic::L2capClassicModule* l2cap_classic_module,
       hci::HciLayer* hci_layer,
       hci::AclManager* acl_manager,
+      hci::Controller* controller,
       storage::StorageModule* storage_module,
       neighbor::NameDbModule* name_db_module)
       : security_handler_(security_handler),
@@ -52,6 +53,7 @@ struct SecurityModule::impl {
         security_manager_channel_(new channel::SecurityManagerChannel(security_handler_, hci_layer)),
         hci_layer_(hci_layer),
         acl_manager_(acl_manager),
+        controller_(controller),
         storage_module_(storage_module),
         l2cap_security_interface_(&security_manager_impl, security_handler),
         name_db_module_(name_db_module) {
@@ -67,6 +69,7 @@ struct SecurityModule::impl {
   channel::SecurityManagerChannel* security_manager_channel_;
   hci::HciLayer* hci_layer_;
   hci::AclManager* acl_manager_;
+  hci::Controller* controller_;
   storage::StorageModule* storage_module_;
   L2capSecurityModuleInterface l2cap_security_interface_;
   neighbor::NameDbModule* name_db_module_;
@@ -76,6 +79,7 @@ struct SecurityModule::impl {
                                                       security_manager_channel_,
                                                       hci_layer_,
                                                       acl_manager_,
+                                                      controller_,
                                                       storage_module_,
                                                       name_db_module_};
 
@@ -91,6 +95,7 @@ void SecurityModule::ListDependencies(ModuleList* list) {
   list->add<l2cap::classic::L2capClassicModule>();
   list->add<hci::HciLayer>();
   list->add<hci::AclManager>();
+  list->add<hci::Controller>();
   list->add<storage::StorageModule>();
   list->add<neighbor::NameDbModule>();
 }
@@ -102,6 +107,7 @@ void SecurityModule::Start() {
       GetDependency<l2cap::classic::L2capClassicModule>(),
       GetDependency<hci::HciLayer>(),
       GetDependency<hci::AclManager>(),
+      GetDependency<hci::Controller>(),
       GetDependency<storage::StorageModule>(),
       GetDependency<neighbor::NameDbModule>());
 

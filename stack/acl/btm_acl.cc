@@ -115,7 +115,6 @@ extern tBTM_CB btm_cb;
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
-static void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
@@ -2168,27 +2167,20 @@ uint8_t BTM_SetTraceLevel(uint8_t new_level) {
   return (btm_cb.trace_level);
 }
 
-/*******************************************************************************
- *
- * Function         btm_cont_rswitch
- *
- * Description      This function is called to continue processing an active
- *                  role switch. It first disables encryption if enabled and
- *                  EPR is not supported
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
+void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
+  tACL_CONN* p = internal_.acl_get_connection_from_handle(hci_handle);
+  if (p == nullptr) {
+    LOG_WARN("Role switch received but with no active ACL");
+    return;
+  }
+
   /* Check to see if encryption needs to be turned off if pending
-     change of link key or role switch */
+   change of link key or role switch */
   if (p->is_switch_role_mode_change()) {
     /* Must turn off Encryption first if necessary */
     /* Some devices do not support switch or change of link key while encryption
      * is on */
-    if (p_dev_rec != NULL &&
-        ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
-        !BTM_EPR_AVAILABLE(p)) {
+    if (p->is_encrypted && !BTM_EPR_AVAILABLE(p)) {
       p->set_encryption_off();
       if (p->is_switch_role_mode_change()) {
         p->set_switch_role_encryption_off();
@@ -2203,15 +2195,6 @@ void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
       }
     }
   }
-}
-
-void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
-  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
-  if (p_acl == nullptr) {
-    LOG_WARN("Role switch received but with no active ACL");
-    return;
-  }
-  btm_cont_rswitch(p_acl, btm_find_dev(p_acl->remote_addr));
 }
 
 /*******************************************************************************
