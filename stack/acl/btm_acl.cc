@@ -874,7 +874,7 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
 
   if (req_pend) {
     /* Request for remaining Security Features (if any) */
-    l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
+    l2cu_resubmit_pending_sec_req(&p_acl_cb->remote_addr);
   }
 }
 
@@ -2557,6 +2557,7 @@ void btm_ble_refresh_local_resolvable_private_addr(
  ******************************************************************************/
 void btm_sec_set_peer_sec_caps(bool ssp_supported, bool sc_supported,
                                tBTM_SEC_DEV_REC* p_dev_rec) {
+  p_dev_rec->remote_feature_received = true;
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
       ssp_supported) {
