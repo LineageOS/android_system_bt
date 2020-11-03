@@ -15,8 +15,11 @@ use futures::stream::StreamExt;
 
 use bluetooth_with_facades::RootFacadeService;
 
+use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr};
 use std::sync::Arc;
 use std::sync::Mutex;
+
+use tokio::net::TcpStream;
 
 use tokio::runtime::Runtime;
 
@@ -67,8 +70,15 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
         .build()
         .unwrap();
 
+    indicate_started(signal_port).await;
     sigint.next().await;
     block_on(server.shutdown()).unwrap();
+}
+
+async fn indicate_started(signal_port: u16) {
+    let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), signal_port);
+    let stream = TcpStream::connect(address).await.unwrap();
+    stream.shutdown(Shutdown::Both).unwrap();
 }
 
 // TODO: remove as this is a temporary nix-based hack to catch SIGINT
