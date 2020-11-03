@@ -50,10 +50,8 @@
  *                  dev_type         - Remote device's device type.
  *                  addr_type        - LE device address type.
  *
- * Returns          true if added OK, else false
- *
  ******************************************************************************/
-extern bool BTM_SecAddBleDevice(const RawAddress& bd_addr,
+extern void BTM_SecAddBleDevice(const RawAddress& bd_addr,
                                 tBT_DEVICE_TYPE dev_type,
                                 tBLE_ADDR_TYPE addr_type);
 
