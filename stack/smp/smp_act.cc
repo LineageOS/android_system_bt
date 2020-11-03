@@ -18,6 +18,7 @@
 
 #include <log/log.h>
 #include <string.h>
+#include "btif_api.h"
 #include "btif_common.h"
 #include "device/include/interop.h"
 #include "include/bt_target.h"
@@ -1249,17 +1250,27 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         p = (tSMP_INT_DATA*)&failure;
         int_evt = SMP_AUTH_CMPL_EVT;
       } else {
-        p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
-        SMP_TRACE_EVENT("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) ",
-                        p_cb->sec_level);
+        if (!is_atv_device() &&
+            (p_cb->local_io_capability == SMP_IO_CAP_IO ||
+             p_cb->local_io_capability == SMP_IO_CAP_KBDISP)) {
+          /* display consent dialog if this device has a display */
+          SMP_TRACE_DEBUG("ENCRYPTION_ONLY showing Consent Dialog");
+          p_cb->cb_evt = SMP_CONSENT_REQ_EVT;
+          smp_set_state(SMP_STATE_WAIT_NONCE);
+          smp_sm_event(p_cb, SMP_SC_DSPL_NC_EVT, NULL);
+        } else {
+          p_cb->sec_level = SMP_SEC_UNAUTHENTICATE;
+          SMP_TRACE_EVENT("p_cb->sec_level =%d (SMP_SEC_UNAUTHENTICATE) ",
+                          p_cb->sec_level);
 
-        key.key_type = SMP_KEY_TYPE_TK;
-        key.p_data = p_cb->tk;
-        p = (tSMP_INT_DATA*)&key;
+          key.key_type = SMP_KEY_TYPE_TK;
+          key.p_data = p_cb->tk;
+          p = (tSMP_INT_DATA*)&key;
 
-        memset(p_cb->tk, 0, BT_OCTET16_LEN);
-        /* TK, ready  */
-        int_evt = SMP_KEY_READY_EVT;
+          memset(p_cb->tk, 0, BT_OCTET16_LEN);
+          /* TK, ready  */
+          int_evt = SMP_KEY_READY_EVT;
+        }
       }
       break;
 
@@ -1601,8 +1612,18 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       }
 
       if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
-        /* go directly to phase 2 */
-        smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
+        if (!is_atv_device() &&
+            (p_cb->local_io_capability == SMP_IO_CAP_IO ||
+             p_cb->local_io_capability == SMP_IO_CAP_KBDISP)) {
+          /* display consent dialog */
+          SMP_TRACE_DEBUG("JUST WORKS showing Consent Dialog");
+          p_cb->cb_evt = SMP_CONSENT_REQ_EVT;
+          smp_set_state(SMP_STATE_WAIT_NONCE);
+          smp_sm_event(p_cb, SMP_SC_DSPL_NC_EVT, NULL);
+        } else {
+          /* go directly to phase 2 */
+          smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
+        }
       } else /* numeric comparison */
       {
         smp_set_state(SMP_STATE_WAIT_NONCE);
