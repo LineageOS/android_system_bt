@@ -259,8 +259,6 @@ typedef struct {
 
   tBTM_BD_NAME sec_bd_name; /* User friendly name of the device. (may be
                                truncated to save space in dev_rec table) */
-  BD_FEATURES feature_pages[HCI_EXT_FEATURES_PAGE_MAX +
-                            1]; /* Features supported by the device */
   uint8_t num_read_pages;
 
   uint8_t sec_state;          /* Operating state                    */
@@ -323,6 +321,7 @@ typedef struct {
   /* "Secure Connections Only" mode and it receives */
   /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
   /* it knows peer's support for Secure Connections */
+  bool remote_supports_hci_role_switch = false;
   bool remote_feature_received = false;
 
   uint16_t ble_hci_handle; /* use in DUMO connection */
