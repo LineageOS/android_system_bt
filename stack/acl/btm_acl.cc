@@ -833,7 +833,6 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t num_read_pages) {
   uint16_t handle = p_acl_cb->hci_handle;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  uint8_t page_idx;
 
   if (p_dev_rec == nullptr) {
     return;
@@ -841,17 +840,8 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
 
   p_dev_rec->num_read_pages = num_read_pages;
 
-  /* Move the pages to placeholder */
-  for (page_idx = 0; page_idx < num_read_pages; page_idx++) {
-    if (page_idx > HCI_EXT_FEATURES_PAGE_MAX) {
-      LOG_WARN("Received more extended page features than allowed page=%d",
-               page_idx);
-      break;
-    }
-    memcpy(p_dev_rec->feature_pages[page_idx],
-           p_acl_cb->peer_lmp_feature_pages[page_idx],
-           HCI_FEATURE_BYTES_PER_PAGE);
-  }
+  p_dev_rec->remote_supports_hci_role_switch =
+      HCI_SWITCH_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
 
   if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
       p_dev_rec->is_originator) {
