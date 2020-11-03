@@ -249,6 +249,44 @@ bool SMP_PairCancel(const RawAddress& bd_addr) {
 void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
   SMP_TRACE_EVENT("SMP_SecurityGrant ");
 
+  // If just showing consent dialog, send response
+  if (smp_cb.cb_evt == SMP_CONSENT_REQ_EVT) {
+    // If JUSTWORKS, this is used to display the consent dialog
+    if (smp_cb.selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
+      if (res == SMP_SUCCESS) {
+        smp_sm_event(&smp_cb, SMP_SC_NC_OK_EVT, NULL);
+      } else {
+        SMP_TRACE_WARNING("%s() - Consent dialog fails for JUSTWORKS",
+                          __func__);
+        /* send pairing failure */
+        tSMP_INT_DATA smp_int_data;
+        smp_int_data.status = SMP_NUMERIC_COMPAR_FAIL;
+        smp_sm_event(&smp_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+      }
+    } else if (smp_cb.selected_association_model == SMP_MODEL_ENCRYPTION_ONLY) {
+      if (res == SMP_SUCCESS) {
+        smp_cb.sec_level = SMP_SEC_UNAUTHENTICATE;
+
+        tSMP_KEY key;
+        tSMP_INT_DATA smp_int_data;
+        key.key_type = SMP_KEY_TYPE_TK;
+        key.p_data = smp_cb.tk.data();
+        smp_int_data.key = key;
+
+        smp_cb.tk = {0};
+        smp_sm_event(&smp_cb, SMP_KEY_READY_EVT, &smp_int_data);
+      } else {
+        SMP_TRACE_WARNING("%s() - Consent dialog fails for ENCRYPTION_ONLY",
+                          __func__);
+        /* send pairing failure */
+        tSMP_INT_DATA smp_int_data;
+        smp_int_data.status = SMP_NUMERIC_COMPAR_FAIL;
+        smp_sm_event(&smp_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+      }
+    }
+    return;
+  }
+
   if (smp_cb.smp_over_br) {
     if (smp_cb.br_state != SMP_BR_STATE_WAIT_APP_RSP ||
         smp_cb.cb_evt != SMP_SEC_REQUEST_EVT || smp_cb.pairing_bda != bd_addr) {
