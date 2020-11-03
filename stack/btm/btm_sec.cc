@@ -2434,10 +2434,6 @@ void btm_io_capabilities_req(const RawAddress& p) {
   evt_data.oob_data = BTM_OOB_NONE;
   evt_data.auth_req = BTM_AUTH_SP_NO;
 
-  uint8_t err_code = 0;
-  bool is_orig = true;
-  uint8_t callback_rc = BTM_SUCCESS;
-
   BTM_TRACE_EVENT("%s: State: %s", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state));
  
@@ -2450,6 +2446,8 @@ void btm_io_capabilities_req(const RawAddress& p) {
                   btm_pair_state_descr(btm_cb.pairing_state),
                   btm_cb.pairing_flags);
 
+  uint8_t err_code = 0;
+  bool is_orig = true;
   switch (btm_cb.pairing_state) {
     /* initiator connecting */
     case BTM_PAIR_STATE_IDLE:
@@ -2539,7 +2537,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
 
   btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS);
 
-  callback_rc = BTM_SUCCESS;
+  uint8_t callback_rc = BTM_SUCCESS;
   if (p_dev_rec->sm4 & BTM_SM4_UPGRADE) {
     p_dev_rec->sm4 &= ~BTM_SM4_UPGRADE;
 
