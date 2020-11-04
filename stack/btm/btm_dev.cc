@@ -99,8 +99,6 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
             BTM_MAX_REM_BD_NAME_LEN + 1);
   }
 
-  p_dev_rec->num_read_pages = 0;
-
   if (p_link_key) {
     VLOG(2) << __func__ << ": BDA: " << bd_addr;
     p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_KNOWN;

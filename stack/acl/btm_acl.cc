@@ -838,8 +838,6 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
     return;
   }
 
-  p_dev_rec->num_read_pages = num_read_pages;
-
   p_dev_rec->remote_supports_hci_role_switch =
       HCI_SWITCH_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
 
