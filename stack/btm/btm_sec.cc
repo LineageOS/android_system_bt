@@ -3720,6 +3720,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
               << p_dev_rec->bd_addr;
 
     bta_dm_remove_device(p_dev_rec->bd_addr);
+    return;
   }
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
