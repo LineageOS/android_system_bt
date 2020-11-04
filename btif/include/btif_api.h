@@ -134,6 +134,18 @@ int get_niap_config_compare_result(void);
 
 /*******************************************************************************
  *
+ * Function         is_atv_device
+ *
+ * Description      Returns true if the local device is an Android TV
+ *                  device, false if it is not.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool is_atv_device(void);
+
+/*******************************************************************************
+ *
  * Function         btif_get_adapter_properties
  *
  * Description      Fetches all local adapter properties
