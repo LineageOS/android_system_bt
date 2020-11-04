@@ -577,11 +577,8 @@ static void gatt_cl_op_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
       }
 
       /* Notify user if eatt is supported */
-#if 0
       bool eatt_supported =
           supported_feat_mask & BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK;
-#endif
-      bool eatt_supported = false;  // TODO Requires passing more tests
       gatt_attr_send_is_eatt_cb(conn_id, operation_callback_data,
                                 eatt_supported);
 
