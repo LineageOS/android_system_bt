@@ -122,8 +122,8 @@ static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
-static void btm_sec_set_peer_sec_caps(tBTM_SEC_DEV_REC* p_dev_rec,
-                                      bool ssp_supported, bool sc_supported,
+static void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
+                                      bool sc_supported,
                                       bool hci_role_switch_supported);
 static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
@@ -832,24 +832,15 @@ void btm_read_remote_version_complete(uint8_t status, uint16_t handle,
  ******************************************************************************/
 void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t num_read_pages) {
-  uint16_t handle = p_acl_cb->hci_handle;
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-
-  if (p_dev_rec == nullptr) {
-    return;
-  }
-
-  /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
   bool ssp_supported =
       HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
   bool secure_connections_supported =
       HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
   bool role_switch_supported =
       HCI_SWITCH_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
-  btm_sec_set_peer_sec_caps(p_dev_rec, ssp_supported,
+  btm_sec_set_peer_sec_caps(p_acl_cb->hci_handle, ssp_supported,
                             secure_connections_supported,
                             role_switch_supported);
-
 }
 
 /*******************************************************************************
@@ -2529,9 +2520,12 @@ void btm_ble_refresh_local_resolvable_private_addr(
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_set_peer_sec_caps(tBTM_SEC_DEV_REC* p_dev_rec, bool ssp_supported,
+void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
                                bool sc_supported,
                                bool hci_role_switch_supported) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return;
+
   p_dev_rec->remote_feature_received = true;
   p_dev_rec->remote_supports_hci_role_switch = hci_role_switch_supported;
 
@@ -2547,6 +2541,7 @@ void btm_sec_set_peer_sec_caps(tBTM_SEC_DEV_REC* p_dev_rec, bool ssp_supported,
     }
   }
 
+  /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
       ssp_supported) {
