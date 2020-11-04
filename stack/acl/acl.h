@@ -70,8 +70,6 @@ typedef struct {
   uint16_t hci_handle;
   uint16_t link_policy;
   uint16_t link_super_tout;
-  uint16_t lmp_subversion;
-  uint16_t manufacturer;
   uint16_t pkt_types_mask;
   tBLE_ADDR_TYPE active_remote_addr_type;
   tBLE_ADDR_TYPE conn_addr_type;
@@ -102,7 +100,6 @@ typedef struct {
  public:
   bool is_encrypted = false;
   uint8_t link_role;
-  uint8_t lmp_version;
   uint8_t switch_role_failed_attempts;
 
   struct {
