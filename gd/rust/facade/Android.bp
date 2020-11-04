@@ -1,0 +1,10 @@
+rust_binary {
+    name: "rusty_bluetooth_stack_with_facade",
+    crate_name: "rusty_bt_stack_with_facade",
+    srcs: ["src/main.rs"],
+    edition: "2018",
+    rustlibs: [
+      "libclap",
+    ],
+    host_supported: true,
+}
