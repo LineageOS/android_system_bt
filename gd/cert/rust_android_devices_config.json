@@ -1,0 +1,55 @@
+{   "_description": "Bluetooth cert testing",
+    "testbed":
+    [
+        {
+            "_description": "Two Android devices cert testbed",
+            "name": "AndroidDeviceCert",
+            "GdDevice":
+            [
+                {
+                    "grpc_port": "8898",
+                    "grpc_root_server_port": "8896",
+                    "signal_port": "8894",
+                    "label": "cert",
+                    "serial_number": "CERT",
+                    "name": "Cert Device",
+                    "cmd":
+                    [
+                        "adb",
+                        "-s",
+                        "$(serial_number)",
+                        "shell",
+                        "/system/bin/bluetooth_with_facadas",
+                        "--grpc-port=$(grpc_port)",
+                        "--root-server-port=$(grpc_root_server_port)",
+                        "--btsnoop=/data/misc/bluetooth/logs/btsnoop_hci.log",
+                        "--btconfig=/data/misc/bluedroid/bt_config.conf",
+                        "--signal-port=$(signal_port)"
+                    ]
+                },
+                {
+                    "grpc_port": "8899",
+                    "grpc_root_server_port": "8897",
+                    "signal_port": "8895",
+                    "label": "dut",
+                    "serial_number": "DUT",
+                    "name": "DUT Device",
+                    "cmd":
+                    [
+                        "adb",
+                        "-s",
+                        "$(serial_number)",
+                        "shell",
+                        "/system/bin/bluetooth_with_facades",
+                        "--grpc-port=$(grpc_port)",
+                        "--root-server-port=$(grpc_root_server_port)",
+                        "--btsnoop=/data/misc/bluetooth/logs/btsnoop_hci.log",
+                        "--btconfig=/data/misc/bluedroid/bt_config.conf",
+                        "--signal-port=$(signal_port)"
+                    ]
+                }
+            ]
+        }
+    ],
+    "logpath": "/tmp/logs"
+}

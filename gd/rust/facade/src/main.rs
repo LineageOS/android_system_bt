@@ -52,6 +52,21 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
                 .default_value("8895")
                 .takes_value(true),
         )
+        .arg(
+            Arg::with_name("rootcanal-port")
+                .long("rootcanal-port")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("btsnoop")
+                .long("btsnoop")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("btconfig")
+                .long("btconfig")
+                .takes_value(true),
+        )
         .get_matches();
 
     let root_server_port = value_t!(matches, "root-server-port", u16).unwrap();
@@ -69,6 +84,7 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
         .bind("0.0.0.0", root_server_port)
         .build()
         .unwrap();
+    server.start();
 
     indicate_started(signal_port).await;
     sigint.next().await;
