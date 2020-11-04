@@ -1,10 +1,29 @@
+rust_library {
+    name: "libbluetooth_with_facades",
+    crate_name: "bluetooth_with_facades",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+      "libbt_facade_rootservice_proto",
+      "libbt_facade_common_proto",
+      "libfutures",
+      "libgrpcio",
+      "libprotobuf",
+      "libtokio",
+    ],
+    host_supported: true,
+}
+
 rust_binary {
-    name: "rusty_bluetooth_stack_with_facade",
-    crate_name: "rusty_bt_stack_with_facade",
+    name: "bluetooth_with_facades",
     srcs: ["src/main.rs"],
     edition: "2018",
     rustlibs: [
       "libclap",
+      "libbluetooth_with_facades",
+      "libfutures",
+      "libgrpcio",
+      "libtokio",
     ],
     host_supported: true,
 }
