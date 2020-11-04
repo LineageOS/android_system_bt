@@ -75,11 +75,6 @@ const tBTA_DM_CFG bta_dm_cfg = {
 #define BTA_HH_ROLE BTA_ANY_ROLE
 #endif
 
-#ifndef BTA_AV_ROLE
-/* By default, AV role (backward BTA_CENTRAL_ROLE_PREF) */
-#define BTA_AV_ROLE BTA_CENTRAL_ROLE_PREF
-#endif
-
 #ifndef BTA_PANU_ROLE
 /* By default, AV role (backward BTA_CENTRAL_ROLE_PREF) */
 #define BTA_PANU_ROLE BTA_PERIPHERAL_ROLE_ONLY
@@ -102,7 +97,7 @@ const tBTA_DM_RM bta_dm_rm_cfg[] = {
     {BTA_ID_PAN, BTA_APP_ID_PAN_MULTI, BTA_CENTRAL_ROLE_ONLY},
     {BTA_ID_PAN, BTUI_PAN_ID_PANU, BTA_PANU_ROLE},
     {BTA_ID_HH, BTA_ALL_APP_ID, BTA_HH_ROLE},
-    {BTA_ID_AV, BTA_ALL_APP_ID, BTA_AV_ROLE}};
+    {BTA_ID_AV, BTA_ALL_APP_ID, BTA_CENTRAL_ROLE_PREF}};
 
 const tBTA_DM_CFG* p_bta_dm_cfg = &bta_dm_cfg;
 
