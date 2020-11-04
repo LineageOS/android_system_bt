@@ -833,7 +833,6 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t num_read_pages) {
   uint16_t handle = p_acl_cb->hci_handle;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  uint8_t page_idx;
 
   if (p_dev_rec == nullptr) {
     return;
@@ -841,17 +840,8 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
 
   p_dev_rec->num_read_pages = num_read_pages;
 
-  /* Move the pages to placeholder */
-  for (page_idx = 0; page_idx < num_read_pages; page_idx++) {
-    if (page_idx > HCI_EXT_FEATURES_PAGE_MAX) {
-      LOG_WARN("Received more extended page features than allowed page=%d",
-               page_idx);
-      break;
-    }
-    memcpy(p_dev_rec->feature_pages[page_idx],
-           p_acl_cb->peer_lmp_feature_pages[page_idx],
-           HCI_FEATURE_BYTES_PER_PAGE);
-  }
+  p_dev_rec->remote_supports_hci_role_switch =
+      HCI_SWITCH_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0]);
 
   if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
       p_dev_rec->is_originator) {
@@ -874,7 +864,7 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
 
   if (req_pend) {
     /* Request for remaining Security Features (if any) */
-    l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
+    l2cu_resubmit_pending_sec_req(&p_acl_cb->remote_addr);
   }
 }
 
@@ -2557,6 +2547,7 @@ void btm_ble_refresh_local_resolvable_private_addr(
  ******************************************************************************/
 void btm_sec_set_peer_sec_caps(bool ssp_supported, bool sc_supported,
                                tBTM_SEC_DEV_REC* p_dev_rec) {
+  p_dev_rec->remote_feature_received = true;
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
       ssp_supported) {

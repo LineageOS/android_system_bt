@@ -32,9 +32,9 @@ namespace hci {
 const ModuleFactory LeAdvertisingManager::Factory = ModuleFactory([]() { return new LeAdvertisingManager(); });
 
 enum class AdvertisingApiType {
-  LE_4_0 = 1,
+  LEGACY = 1,
   ANDROID_HCI = 2,
-  LE_5_0 = 3,
+  EXTENDED = 3,
 };
 
 struct Advertiser {
@@ -103,11 +103,11 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     if (controller_->IsSupported(hci::OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS)) {
-      advertising_api_type_ = AdvertisingApiType::LE_5_0;
+      advertising_api_type_ = AdvertisingApiType::EXTENDED;
     } else if (controller_->IsSupported(hci::OpCode::LE_MULTI_ADVT)) {
       advertising_api_type_ = AdvertisingApiType::ANDROID_HCI;
     } else {
-      advertising_api_type_ = AdvertisingApiType::LE_4_0;
+      advertising_api_type_ = AdvertisingApiType::LEGACY;
     }
   }
 
@@ -184,7 +184,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       address_manager_registered = false;
       paused = false;
     }
-    if (advertising_api_type_ == AdvertisingApiType::LE_5_0) {
+    if (advertising_api_type_ == AdvertisingApiType::EXTENDED) {
       le_advertising_interface_->EnqueueCommand(
           hci::LeRemoveAdvertisingSetBuilder::Create(advertiser_id),
           module_handler_->BindOnce(impl::check_status<LeRemoveAdvertisingSetCompleteView>));
@@ -206,7 +206,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     switch (advertising_api_type_) {
-      case (AdvertisingApiType::LE_4_0): {
+      case (AdvertisingApiType::LEGACY): {
         le_advertising_interface_->EnqueueCommand(
             hci::LeSetAdvertisingParametersBuilder::Create(
                 config.interval_min,
@@ -276,7 +276,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         curr_set.advertising_handle_ = id;
         enabled_sets_[id] = curr_set;
       } break;
-      case (AdvertisingApiType::LE_5_0): {
+      case (AdvertisingApiType::EXTENDED): {
         ExtendedAdvertisingConfig new_config = config;
         new_config.legacy_pdus = true;
 
@@ -299,7 +299,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       os::Handler* handler) {
     id_map_[id] = reg_id;
 
-    if (advertising_api_type_ != AdvertisingApiType::LE_5_0) {
+    if (advertising_api_type_ != AdvertisingApiType::EXTENDED) {
       create_advertiser(id, config, scan_callback, set_terminated_callback, handler);
       return;
     }
@@ -429,7 +429,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     // then the Controller will return the error code Command Disallowed (0x0C).
     // Thus, we should disable it before removing it.
     switch (advertising_api_type_) {
-      case (AdvertisingApiType::LE_4_0):
+      case (AdvertisingApiType::LEGACY):
         le_advertising_interface_->EnqueueCommand(
             hci::LeSetAdvertisingEnableBuilder::Create(Enable::DISABLED),
             module_handler_->BindOnce(impl::check_status<LeSetAdvertisingEnableCompleteView>));
@@ -439,7 +439,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
             hci::LeMultiAdvtSetEnableBuilder::Create(Enable::DISABLED, advertiser_id),
             module_handler_->BindOnce(impl::check_status<LeMultiAdvtCompleteView>));
         break;
-      case (AdvertisingApiType::LE_5_0): {
+      case (AdvertisingApiType::EXTENDED): {
         le_advertising_interface_->EnqueueCommand(
             hci::LeSetExtendedAdvertisingEnableBuilder::Create(Enable::DISABLED, enabled_vector),
             module_handler_->BindOnce(impl::check_status<LeSetExtendedAdvertisingEnableCompleteView>));
@@ -456,13 +456,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void set_parameters(AdvertiserId advertiser_id, ExtendedAdvertisingConfig config) {
     switch (advertising_api_type_) {
-      case (AdvertisingApiType::LE_4_0): {
+      case (AdvertisingApiType::LEGACY): {
         // TODO
       } break;
       case (AdvertisingApiType::ANDROID_HCI): {
         // TODO
       } break;
-      case (AdvertisingApiType::LE_5_0): {
+      case (AdvertisingApiType::EXTENDED): {
         // sid must be in range 0x00 to 0x0F. Since no controller supports more than
         // 16 advertisers, it's safe to make sid equal to id.
         config.sid = advertiser_id % kAdvertisingSetIdMask;
@@ -539,13 +539,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void set_data(AdvertiserId advertiser_id, bool set_scan_rsp, std::vector<GapData> data) {
     switch (advertising_api_type_) {
-      case (AdvertisingApiType::LE_4_0): {
+      case (AdvertisingApiType::LEGACY): {
         // TODO
       } break;
       case (AdvertisingApiType::ANDROID_HCI): {
         // TODO
       } break;
-      case (AdvertisingApiType::LE_5_0): {
+      case (AdvertisingApiType::EXTENDED): {
         // TODO(b/149221472): Support fragmentation
         auto operation = Operation::COMPLETE_ADVERTISEMENT;
         auto fragment_preference = FragmentPreference::CONTROLLER_SHOULD_NOT;
@@ -575,13 +575,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     Enable enable_value = enable ? Enable::ENABLED : Enable::DISABLED;
 
     switch (advertising_api_type_) {
-      case (AdvertisingApiType::LE_4_0): {
+      case (AdvertisingApiType::LEGACY): {
         // TODO
       } break;
       case (AdvertisingApiType::ANDROID_HCI): {
         // TODO
       } break;
-      case (AdvertisingApiType::LE_5_0): {
+      case (AdvertisingApiType::EXTENDED): {
         le_advertising_interface_->EnqueueCommand(
             hci::LeSetExtendedAdvertisingEnableBuilder::Create(enable_value, enabled_sets),
             module_handler_->BindOnceOn(
@@ -648,7 +648,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       }
 
       switch (advertising_api_type_) {
-        case (AdvertisingApiType::LE_4_0): {
+        case (AdvertisingApiType::LEGACY): {
           le_advertising_interface_->EnqueueCommand(
               hci::LeSetAdvertisingEnableBuilder::Create(Enable::DISABLED),
               module_handler_->BindOnceOn(
@@ -667,7 +667,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
             }
           }
         } break;
-        case (AdvertisingApiType::LE_5_0): {
+        case (AdvertisingApiType::EXTENDED): {
           if (enabled_sets.size() != 0) {
             le_advertising_interface_->EnqueueCommand(
                 hci::LeSetExtendedAdvertisingEnableBuilder::Create(Enable::DISABLED, enabled_sets),
@@ -695,7 +695,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       }
 
       switch (advertising_api_type_) {
-        case (AdvertisingApiType::LE_4_0): {
+        case (AdvertisingApiType::LEGACY): {
           le_advertising_interface_->EnqueueCommand(
               hci::LeSetAdvertisingEnableBuilder::Create(Enable::ENABLED),
               module_handler_->BindOnceOn(
@@ -714,7 +714,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
             }
           }
         } break;
-        case (AdvertisingApiType::LE_5_0): {
+        case (AdvertisingApiType::EXTENDED): {
           if (enabled_sets.size() != 0) {
             le_advertising_interface_->EnqueueCommand(
                 hci::LeSetExtendedAdvertisingEnableBuilder::Create(Enable::ENABLED, enabled_sets),

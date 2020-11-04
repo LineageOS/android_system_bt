@@ -701,8 +701,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
                                       uint8_t* p_pin) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_STATUS status;
-  uint8_t* p_features;
-  uint8_t ii;
   VLOG(1) << __func__ << " BDA: " << bd_addr;
 
   BTM_TRACE_DEBUG("%s: Transport used %d, bd_addr=%s", __func__, transport,
@@ -787,14 +785,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
       btm_cb.pin_type_changed = true;
       btsnd_hcic_write_pin_type(HCI_PIN_TYPE_FIXED);
     }
-  }
-
-  for (ii = 0; ii <= HCI_EXT_FEATURES_PAGE_MAX; ii++) {
-    p_features = p_dev_rec->feature_pages[ii];
-    BTM_TRACE_EVENT("  remote_features page[%1d] = %02x-%02x-%02x-%02x", ii,
-                    p_features[0], p_features[1], p_features[2], p_features[3]);
-    BTM_TRACE_EVENT("                              %02x-%02x-%02x-%02x",
-                    p_features[4], p_features[5], p_features[6], p_features[7]);
   }
 
   BTM_TRACE_EVENT("BTM_SecBond: Remote sm4: 0x%x  HCI Handle: 0x%04x",
@@ -2415,7 +2405,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p);
 
   if ((btm_cb.security_mode == BTM_SEC_MODE_SC) &&
-      (p_dev_rec->num_read_pages == 0)) {
+      (!p_dev_rec->remote_feature_received)) {
     BTM_TRACE_EVENT("%s: Device security mode is SC only.",
                     "To continue need to know remote features.", __func__);
 
@@ -2436,7 +2426,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
 
   BTM_TRACE_EVENT("%s: State: %s", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state));
- 
+
   BTM_TRACE_DEBUG("%s:Security mode: %d, Num Read Remote Feat pages: %d",
                   __func__, btm_cb.security_mode, p_dev_rec->num_read_pages);
 

@@ -100,7 +100,6 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
   }
 
   p_dev_rec->num_read_pages = 0;
-  memset(p_dev_rec->feature_pages, 0, sizeof(p_dev_rec->feature_pages));
 
   if (p_link_key) {
     VLOG(2) << __func__ << ": BDA: " << bd_addr;
@@ -274,21 +273,12 @@ bool btm_dev_support_role_switch(const RawAddress& bd_addr) {
     return false;
   }
 
-  if (HCI_SWITCH_SUPPORTED(p_dev_rec->feature_pages[0])) {
+  if (p_dev_rec->remote_supports_hci_role_switch) {
     BTM_TRACE_DEBUG("%s Peer controller supports role switch", __func__);
     return true;
   }
 
-  /* If the feature field is all zero, we never received them */
-  bool feature_empty = true;
-  for (int xx = 0; xx < BD_FEATURES_LEN; xx++) {
-    if (p_dev_rec->feature_pages[0][xx] != 0x00) {
-      feature_empty = false; /* at least one is != 0 */
-      break;
-    }
-  }
-
-  if (feature_empty) {
+  if (!p_dev_rec->remote_feature_received) {
     BTM_TRACE_DEBUG(
         "%s Unknown peer capabilities, assuming peer supports role switch",
         __func__);

@@ -36,9 +36,9 @@ constexpr uint16_t kDefaultLeScanInterval = 4800;
 const ModuleFactory LeScanningManager::Factory = ModuleFactory([]() { return new LeScanningManager(); });
 
 enum class ScanApiType {
-  LE_4_0 = 1,
+  LEGACY = 1,
   ANDROID_HCI = 2,
-  LE_5_0 = 3,
+  EXTENDED = 3,
 };
 
 struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {
@@ -59,11 +59,11 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     le_scanning_interface_ = hci_layer_->GetLeScanningInterface(
         module_handler_->BindOn(this, &LeScanningManager::impl::handle_scan_results));
     if (controller_->IsSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS)) {
-      api_type_ = ScanApiType::LE_5_0;
+      api_type_ = ScanApiType::EXTENDED;
     } else if (controller_->IsSupported(OpCode::LE_EXTENDED_SCAN_PARAMS)) {
       api_type_ = ScanApiType::ANDROID_HCI;
     } else {
-      api_type_ = ScanApiType::LE_4_0;
+      api_type_ = ScanApiType::LEGACY;
     }
     configure_scan();
   }
@@ -128,7 +128,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     uint8_t phys_in_use = 1;
 
     switch (api_type_) {
-      case ScanApiType::LE_5_0:
+      case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(hci::LeSetExtendedScanParametersBuilder::Create(
                                                    own_address_type_, filter_policy_, phys_in_use, parameter_vector),
                                                module_handler_->BindOnce(impl::check_status));
@@ -140,7 +140,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
             module_handler_->BindOnce(impl::check_status));
 
         break;
-      case ScanApiType::LE_4_0:
+      case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
             hci::LeSetScanParametersBuilder::Create(LeScanType::ACTIVE, interval_ms_, window_ms_, own_address_type_,
                                                     filter_policy_),
@@ -164,14 +164,14 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
 
     switch (api_type_) {
-      case ScanApiType::LE_5_0:
+      case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
             hci::LeSetExtendedScanEnableBuilder::Create(Enable::ENABLED,
                                                         FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
             module_handler_->BindOnce(impl::check_status));
         break;
       case ScanApiType::ANDROID_HCI:
-      case ScanApiType::LE_4_0:
+      case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
             hci::LeSetScanEnableBuilder::Create(Enable::ENABLED, Enable::DISABLED /* filter duplicates */),
             module_handler_->BindOnce(impl::check_status));
@@ -190,7 +190,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
     registered_callback_->Handler()->Post(std::move(on_stopped));
     switch (api_type_) {
-      case ScanApiType::LE_5_0:
+      case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
             hci::LeSetExtendedScanEnableBuilder::Create(Enable::DISABLED,
                                                         FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
@@ -198,7 +198,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
         registered_callback_ = nullptr;
         break;
       case ScanApiType::ANDROID_HCI:
-      case ScanApiType::LE_4_0:
+      case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
             hci::LeSetScanEnableBuilder::Create(Enable::DISABLED, Enable::DISABLED /* filter duplicates */),
             module_handler_->BindOnce(impl::check_status));
