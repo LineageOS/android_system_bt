@@ -97,6 +97,7 @@ static void smp_update_key_mask(tSMP_CB* p_cb, uint8_t key_type, bool recv) {
 void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   tSMP_EVT_DATA cb_data;
   tSMP_STATUS callback_rc;
+  uint8_t remote_lmp_version = 0;
   if (p_cb->p_callback && p_cb->cb_evt != 0) {
     switch (p_cb->cb_evt) {
       case SMP_IO_CAP_REQ_EVT:
@@ -165,9 +166,12 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
             p_cb->loc_auth_req |= SMP_SC_SUPPORT_BIT;
           }
 
+          BTM_ReadRemoteVersion(p_cb->pairing_bda, &remote_lmp_version, nullptr,
+                                nullptr);
+
           if (!p_cb->secure_connections_only_mode_required &&
               (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
-               lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_4_2) ||
+               remote_lmp_version < HCI_PROTO_VERSION_4_2 ||
                interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
                                   (const RawAddress*)&p_cb->pairing_bda))) {
             p_cb->loc_auth_req &= ~SMP_SC_SUPPORT_BIT;
@@ -176,7 +180,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
             p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
           }
 
-          if (lmp_version_below(p_cb->pairing_bda, HCI_PROTO_VERSION_5_0)) {
+          if (remote_lmp_version < HCI_PROTO_VERSION_5_0) {
             p_cb->loc_auth_req &= ~SMP_H7_SUPPORT_BIT;
           }
 

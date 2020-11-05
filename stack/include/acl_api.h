@@ -214,8 +214,6 @@ void btm_set_packet_types_from_address(const RawAddress& bda,
                                        tBT_TRANSPORT transport,
                                        uint16_t pkt_types);
 
-bool lmp_version_below(const RawAddress& bda, uint8_t version);
-
 bool acl_br_edr_is_role_central(const RawAddress& bda);
 bool acl_ble_is_role_central(const RawAddress& bda);
 
