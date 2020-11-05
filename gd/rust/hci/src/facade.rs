@@ -1,6 +1,10 @@
 //! HCI layer facade
 
-pub mod protos;
+mod facade_grpc;
+
+use hci_layer_facade_proto::facade;
+use facade_grpc::{HciLayerFacade, create_hci_layer_facade};
+use facade::*;
 
 use futures::sink::SinkExt;
 use tokio::runtime::Runtime;
@@ -21,9 +25,12 @@ pub struct HciLayerFacadeService {
     pub rt: Arc<Runtime>,
 }
 
-use protos::empty::Empty;
-use protos::facade::*;
-use protos::hci_layer_facade_grpc::{HciLayerFacade, create_hci_layer_facade};
+/// Refer to the following on why we are doing this and for possible solutions:
+/// https://github.com/tikv/grpc-rs/issues/276
+pub mod empty {
+    pub use protobuf::well_known_types::Empty;
+}
+use empty::Empty;
 
 impl HciLayerFacadeService {
     /// Create a new instance of HCI layer facade service
