@@ -2098,15 +2098,12 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl == nullptr) return BTM_UNKNOWN_ADDR;
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-
   /* Role Switch is pending, postpone until completed */
-  if (p_dev_rec && (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING)) {
+  if (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING) {
     p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
   } else /* otherwise can disconnect right away */
   {
-    if (hci_handle != HCI_INVALID_HANDLE && p_dev_rec &&
-        p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) {
+    if (hci_handle != HCI_INVALID_HANDLE) {
       btsnd_hcic_disconnect(hci_handle, HCI_ERR_PEER_USER);
     } else {
       status = BTM_UNKNOWN_ADDR;
