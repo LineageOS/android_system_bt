@@ -2295,21 +2295,6 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
   }
 }
 
-bool lmp_version_below(const RawAddress& bda, uint8_t version) {
-  const tACL_CONN* acl = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_LE);
-  if (acl == nullptr) {
-    LOG_INFO("Unable to get LMP version as no le acl exists to device");
-    return false;
-  }
-  if (acl->lmp_version == 0) {
-    LOG_INFO("Unable to get LMP version as value has not been set");
-    return false;
-  }
-  LOG_DEBUG("Requested LMP version:%hhu acl_version:%hhu", version,
-            acl->lmp_version);
-  return acl->lmp_version < version;
-}
-
 bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport) {
   tACL_CONN* p = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
   if (p == nullptr) {
