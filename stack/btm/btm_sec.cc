@@ -4772,3 +4772,57 @@ static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   return true;
 }
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_set_peer_sec_caps
+ *
+ * Description      This function is called to set sm4 and rmt_sec_caps fields
+ *                  based on the available peer device features.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
+                               bool sc_supported,
+                               bool hci_role_switch_supported) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return;
+
+  p_dev_rec->remote_feature_received = true;
+  p_dev_rec->remote_supports_hci_role_switch = hci_role_switch_supported;
+
+  uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
+
+  if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
+      p_dev_rec->is_originator) {
+    uint8_t status = btm_sec_execute_procedure(p_dev_rec);
+    if (status != BTM_CMD_STARTED) {
+      LOG_WARN("Security procedure not started! status:%s",
+               hci_error_code_text(status).c_str());
+      btm_sec_dev_rec_cback_event(p_dev_rec, status, false);
+    }
+  }
+
+  /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+  if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
+       btm_cb.security_mode == BTM_SEC_MODE_SC) &&
+      ssp_supported) {
+    p_dev_rec->sm4 = BTM_SM4_TRUE;
+    p_dev_rec->remote_supports_secure_connections = sc_supported;
+  } else {
+    p_dev_rec->sm4 = BTM_SM4_KNOWN;
+    p_dev_rec->remote_supports_secure_connections = false;
+  }
+
+  if (p_dev_rec->remote_features_needed) {
+    LOG_DEBUG("Now device in SC Only mode, waiting for peer remote features!");
+    btm_io_capabilities_req(p_dev_rec->bd_addr);
+    p_dev_rec->remote_features_needed = false;
+  }
+
+  if (req_pend) {
+    /* Request for remaining Security Features (if any) */
+    l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
+  }
+}
