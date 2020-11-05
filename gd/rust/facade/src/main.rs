@@ -72,15 +72,11 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
     let root_server_port = value_t!(matches, "root-server-port", u16).unwrap();
     let grpc_port = value_t!(matches, "grpc-port", u16).unwrap();
     let signal_port = value_t!(matches, "signal-port", u16).unwrap();
-
-    println!(
-        "root server port: {}, grpc port: {}, signal port {}",
-        root_server_port, grpc_port, signal_port
-    );
+    let rootcanal_port = value_t!(matches, "rootcanal-port", u16).ok();
 
     let env = Arc::new(Environment::new(2));
     let mut server = ServerBuilder::new(env)
-        .register_service(RootFacadeService::create(rt))
+        .register_service(RootFacadeService::create(rt, grpc_port, rootcanal_port))
         .bind("0.0.0.0", root_server_port)
         .build()
         .unwrap();
