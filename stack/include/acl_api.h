@@ -110,7 +110,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
 
 /*******************************************************************************
  *
- * Function         BTM_SwitchRole
+ * Function         BTM_SwitchRoleToCentral
  *
  * Description      This function is called to switch role between central and
  *                  peripheral.  If role is already set it will do nothing.
@@ -124,7 +124,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
  *                                       role switching
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role);
+tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr);
 
 /*******************************************************************************
  *
