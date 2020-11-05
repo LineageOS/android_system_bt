@@ -390,6 +390,10 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
     connecting_le_.insert(address_with_type);
 
+    if (initiator_filter_policy == InitiatorFilterPolicy::USE_CONNECT_LIST) {
+      address_with_type = AddressWithType();
+    }
+
     if (controller_->IsSupported(OpCode::LE_EXTENDED_CREATE_CONNECTION)) {
       LeCreateConnPhyScanParameters tmp;
       tmp.scan_interval_ = le_scan_interval;
