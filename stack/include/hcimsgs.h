@@ -925,8 +925,9 @@ struct EXT_CIS_CREATE_CFG {
   uint16_t acl_conn_handle;
 };
 
-extern void btsnd_hcic_create_cis(uint8_t num_cis,
-                                  const EXT_CIS_CREATE_CFG* cis_create_cfg);
+extern void btsnd_hcic_create_cis(
+    uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_create_cfg,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 extern void btsnd_hcic_remove_cig(
     uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb);

@@ -2478,11 +2478,18 @@ enum AddressType : 8 {
   RANDOM_IDENTITY_ADDRESS = 0x03,
 }
 
+enum OwnAddressType : 8 {
+  PUBLIC_DEVICE_ADDRESS = 0x00,
+  RANDOM_DEVICE_ADDRESS = 0x01,
+  RESOLVABLE_OR_PUBLIC_ADDRESS = 0x02,
+  RESOLVABLE_OR_RANDOM_ADDRESS = 0x03,
+}
+
 packet LeSetAdvertisingParameters : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_PARAMETERS) {
   interval_min : 16,
   interval_max : 16,
   type : AdvertisingType,
-  own_address_type : AddressType,
+  own_address_type : OwnAddressType,
   peer_address_type : PeerAddressType,
   peer_address : Address,
   channel_map : 8,
@@ -2540,13 +2547,6 @@ enum LeScanningFilterPolicy : 8 {
   CONNECT_LIST_ONLY = 0x01,
   CHECK_INITIATORS_IDENTITY = 0x02,
   CONNECT_LIST_AND_INITIATORS_IDENTITY = 0x03,
-}
-
-enum OwnAddressType : 8 {
-  PUBLIC_DEVICE_ADDRESS = 0x00,
-  RANDOM_DEVICE_ADDRESS = 0x01,
-  RESOLVABLE_OR_PUBLIC_ADDRESS = 0x02,
-  RESOLVABLE_OR_RANDOM_ADDRESS = 0x03,
 }
 
 packet LeSetScanParameters : LeScanningCommand (op_code = LE_SET_SCAN_PARAMETERS) {
@@ -3753,7 +3753,7 @@ packet LeMultiAdvtParam : LeMultiAdvt (sub_cmd = SET_PARAM) {
   interval_min : 16,
   interval_max : 16,
   type : AdvertisingType,
-  own_address_type : AddressType,
+  own_address_type : OwnAddressType,
   peer_address_type : PeerAddressType,
   peer_address : Address,
   channel_map : 8,
