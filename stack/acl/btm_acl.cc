@@ -576,7 +576,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
       p->set_switch_role_switching();
     }
 
-    btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
+    btsnd_hcic_switch_role(p->remote_addr, HCI_ROLE_CENTRAL);
     p->rs_disc_pending = BTM_SEC_RS_PENDING;
   }
   /* Finished enabling Encryption after role switch */
@@ -2101,7 +2101,7 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
       if (p->is_switch_role_mode_change()) {
         p->set_switch_role_in_progress();
         p->rs_disc_pending = BTM_SEC_RS_PENDING;
-        btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
+        btsnd_hcic_switch_role(p->remote_addr, HCI_ROLE_CENTRAL);
       }
     }
   }
