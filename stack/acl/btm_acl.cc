@@ -2316,7 +2316,8 @@ bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
 }
 
-bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
+bool acl_refresh_remote_address(const RawAddress& identity_address,
+                                tBLE_ADDR_TYPE identity_address_type,
                                 const RawAddress& bda, tBLE_ADDR_TYPE rra_type,
                                 const RawAddress& rpa) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_LE);
@@ -2328,9 +2329,8 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
   if (rra_type == tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO) {
     /* use identity address, resolvable_private_addr is empty */
     if (rpa.IsEmpty()) {
-      p_acl->active_remote_addr_type =
-          p_sec_rec->ble.identity_address_with_type.type;
-      p_acl->active_remote_addr = p_sec_rec->ble.identity_address_with_type.bda;
+      p_acl->active_remote_addr_type = identity_address_type;
+      p_acl->active_remote_addr = identity_address;
     } else {
       p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
       p_acl->active_remote_addr = rpa;

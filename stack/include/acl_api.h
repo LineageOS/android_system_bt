@@ -222,7 +222,8 @@ bool acl_ble_is_role_central(const RawAddress& bda);
 
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x);
 
-bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_dev_rec,
+bool acl_refresh_remote_address(const RawAddress& identity_address,
+                                tBLE_ADDR_TYPE identity_address_type,
                                 const RawAddress& remote_bda, uint8_t rra_type,
                                 const RawAddress& rpa);
 
