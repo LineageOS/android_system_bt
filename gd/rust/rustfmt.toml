@@ -1,3 +1,3 @@
 edition = "2018"
-width_heuristics = "Max"
+#width_heuristics = "Max" uncomment out once main rustfmt supports this option
 newline_style = "Unix"
