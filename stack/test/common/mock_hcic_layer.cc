@@ -46,8 +46,9 @@ void btsnd_hcic_remove_cig(uint8_t cig_id,
   hcic_interface->RemoveCig(cig_id, std::move(cb));
 }
 
-void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg) {
-  hcic_interface->CreateCis(num_cis, cis_cfg);
+void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
+                           base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  hcic_interface->CreateCis(num_cis, cis_cfg, std::move(cb));
 }
 
 void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
