@@ -89,8 +89,8 @@ class DualL2capTest(GdBaseTestClass):
             advertisement=[gap_data],
             interval_min=512,
             interval_max=768,
-            event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
-            address_type=common.RANDOM_DEVICE_ADDRESS,
+            advertising_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
+            own_address_type=common.USE_RANDOM_DEVICE_ADDRESS,
             channel_map=7,
             filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)

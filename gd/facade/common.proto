@@ -13,6 +13,13 @@ enum BluetoothAddressTypeEnum {
   RANDOM_IDENTITY_ADDRESS = 0x3;
 }
 
+enum BluetoothOwnAddressTypeEnum {
+  USE_PUBLIC_DEVICE_ADDRESS = 0x0;
+  USE_RANDOM_DEVICE_ADDRESS = 0x1;
+  RESOLVABLE_OR_PUBLIC_ADDRESS = 0x2;
+  RESOLVABLE_OR_RANDOM_ADDRESS = 0x3;
+}
+
 message BluetoothAddressWithType {
   BluetoothAddress address = 1;
   BluetoothAddressTypeEnum type = 2;
