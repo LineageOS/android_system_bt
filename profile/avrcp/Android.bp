@@ -98,4 +98,9 @@ cc_fuzz {
     corpus: [
         "tests/avrcp_device_fuzz/corpus/*",
     ],
+    target: {
+        darwin: {
+            enabled: false,
+        },
+    },
 }
