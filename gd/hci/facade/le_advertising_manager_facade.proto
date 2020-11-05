@@ -38,8 +38,8 @@ message AdvertisingConfig {
   int32 interval_min = 4;
   // Unit: number of Bluetooth slots in 0.125 ms increment
   int32 interval_max = 5;
-  AdvertisingEventType event_type = 6;
-  bluetooth.facade.BluetoothAddressTypeEnum address_type = 7;
+  AdvertisingEventType advertising_type = 6;
+  bluetooth.facade.BluetoothOwnAddressTypeEnum own_address_type = 7;
   bluetooth.facade.BluetoothPeerAddressTypeEnum peer_address_type = 8;
   bluetooth.facade.BluetoothAddress peer_address = 9;
   int32 channel_map = 10;
