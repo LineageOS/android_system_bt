@@ -4826,3 +4826,10 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
     l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
   }
 }
+
+// Return DEV_CLASS (uint8_t[3]) of bda
+const uint8_t* btm_get_dev_class(const RawAddress& bda) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
+  if (p_dev_rec == nullptr) return nullptr;
+  return p_dev_rec->dev_class;
+}
