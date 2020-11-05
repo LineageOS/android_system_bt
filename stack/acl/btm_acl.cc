@@ -1321,9 +1321,8 @@ void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset) {
 void btm_blacklist_role_change_device(const RawAddress& bd_addr,
                                       uint8_t hci_status) {
   tACL_CONN* p = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
-  if (!p || !p_dev_rec) {
+  if (!p) {
     LOG_WARN("Unable to find active acl");
     return;
   }
@@ -1335,10 +1334,10 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
   /* check for carkits */
   const uint32_t cod_audio_device =
       (BTM_COD_SERVICE_AUDIO | BTM_COD_MAJOR_AUDIO) << 8;
+  const uint8_t* dev_class = btm_get_dev_class(bd_addr);
+  if (dev_class == nullptr) return;
   const uint32_t cod =
-      ((p_dev_rec->dev_class[0] << 16) | (p_dev_rec->dev_class[1] << 8) |
-       p_dev_rec->dev_class[2]) &
-      0xffffff;
+      ((dev_class[0] << 16) | (dev_class[1] << 8) | dev_class[2]) & 0xffffff;
   if ((hci_status != HCI_SUCCESS) &&
       (p->is_switch_role_switching_or_in_progress()) &&
       ((cod & cod_audio_device) == cod_audio_device) &&
@@ -2167,7 +2166,6 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
  *
  ******************************************************************************/
 void btm_acl_resubmit_page(void) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
   BT_HDR* p_buf;
   uint8_t* pp;
   /* If there were other page request schedule can start the next one */
@@ -2180,10 +2178,8 @@ void btm_acl_resubmit_page(void) {
     RawAddress bda;
     STREAM_TO_BDADDR(bda, pp);
 
-    p_dev_rec = btm_find_or_alloc_dev(bda);
-
-    btm_cb.connecting_bda = p_dev_rec->bd_addr;
-    memcpy(btm_cb.connecting_dc, p_dev_rec->dev_class, DEV_CLASS_LEN);
+    btm_cb.connecting_bda = bda;
+    memcpy(btm_cb.connecting_dc, btm_get_dev_class(bda), DEV_CLASS_LEN);
 
     btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p_buf);
   } else {
@@ -2216,16 +2212,13 @@ void btm_acl_reset_paging(void) {
  *
  ******************************************************************************/
 void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
-
   if (!BTM_IsAclConnectionUp(bda, BT_TRANSPORT_BR_EDR)) {
     VLOG(1) << "connecting_bda: " << btm_cb.connecting_bda;
     if (btm_cb.paging && bda == btm_cb.connecting_bda) {
       fixed_queue_enqueue(btm_cb.page_queue, p);
     } else {
-      p_dev_rec = btm_find_or_alloc_dev(bda);
-      btm_cb.connecting_bda = p_dev_rec->bd_addr;
-      memcpy(btm_cb.connecting_dc, p_dev_rec->dev_class, DEV_CLASS_LEN);
+      btm_cb.connecting_bda = bda;
+      memcpy(btm_cb.connecting_dc, btm_get_dev_class(bda), DEV_CLASS_LEN);
 
       btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
     }
