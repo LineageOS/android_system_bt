@@ -91,6 +91,12 @@ fluoride_defaults {
     static_libs: [
         "libbluetooth_gd",
     ],
+    target: {
+        darwin: {
+            // libstatslog -> libbinder doesn't build on mac
+            enabled: false,
+        },
+    },
 }
 
 // Enables code coverage for a set of source files. Must be combined with
