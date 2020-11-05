@@ -94,7 +94,7 @@ void btm_ble_create_ll_conn_complete(uint8_t status) {
   }
 }
 
-static bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
+bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
   bool is_in_security_db = false;
   tBLE_ADDR_TYPE peer_addr_type = *bda_type;
   bool addr_is_rpa =

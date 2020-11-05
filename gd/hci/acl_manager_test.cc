@@ -43,6 +43,7 @@ using packet::PacketView;
 using packet::RawBuilder;
 
 constexpr std::chrono::seconds kTimeout = std::chrono::seconds(2);
+const AddressWithType empty_address_with_type = hci::AddressWithType();
 
 PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
   auto bytes = std::make_shared<std::vector<uint8_t>>();
@@ -168,8 +169,8 @@ class TestHciLayer : public HciLayer {
 
   ConnectionManagementCommandView GetLastCommandPacket(OpCode op_code) {
     if (!command_queue_.empty() && command_future_ != nullptr) {
-      command_promise_.reset();
       command_future_.reset();
+      command_promise_.reset();
     } else if (command_future_ != nullptr) {
       auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
       EXPECT_NE(std::future_status::timeout, result);
@@ -317,7 +318,6 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     acl_manager_ = static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
-    // Verify LE Set Random Address was sent during setup
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
@@ -336,6 +336,8 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     ASSERT_TRUE(set_random_address_packet.IsValid());
     my_initiating_address =
         AddressWithType(set_random_address_packet.GetRandomAddress(), AddressType::RANDOM_DEVICE_ADDRESS);
+    // Verify LE Set Random Address was sent during setup
+    test_hci_layer_->GetLastCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
     test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   }
 
@@ -352,6 +354,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   os::Handler* client_handler_ = nullptr;
   Address remote;
   AddressWithType my_initiating_address;
+  const bool use_connect_list_ = true;  // gd currently only supports connect list
 
   std::future<void> GetConnectionFuture() {
     ASSERT_LOG(mock_connection_callback_.connection_promise_ == nullptr, "Promises promises ... Only one at a time");
@@ -582,8 +585,13 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
     auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
     ASSERT_TRUE(command_view.IsValid());
-    EXPECT_EQ(command_view.GetPeerAddress(), remote);
-    EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
+    if (use_connect_list_) {
+      ASSERT_EQ(command_view.GetPeerAddress(), empty_address_with_type.GetAddress());
+      ASSERT_EQ(command_view.GetPeerAddressType(), empty_address_with_type.GetAddressType());
+    } else {
+      ASSERT_EQ(command_view.GetPeerAddress(), remote);
+      ASSERT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
+    }
 
     test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
 
@@ -659,7 +667,11 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
   auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
   ASSERT_TRUE(command_view.IsValid());
-  EXPECT_EQ(command_view.GetPeerAddress(), remote);
+  if (use_connect_list_) {
+    ASSERT_EQ(command_view.GetPeerAddress(), hci::Address::kEmpty);
+  } else {
+    ASSERT_EQ(command_view.GetPeerAddress(), remote);
+  }
   EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
 
   test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
@@ -1223,15 +1235,17 @@ class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
+    test_hci_layer_->SetCommandFuture();
     fake_registry_.Start<AclManager>(&thread_);
     acl_manager_ = static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
-    // Verify LE Set Random Address was sent during setup
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     crypto_toolbox::Octet16 irk = {};
+    acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
+    acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
     auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
     acl_manager_->SetPrivacyPolicyForInitiatorAddress(
@@ -1240,8 +1254,9 @@ class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
         irk,
         minimum_rotation_time,
         maximum_rotation_time);
-    acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
-    acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
+
+    test_hci_layer_->GetLastCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
+    test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   }
 };
 
