@@ -109,8 +109,8 @@ class LeSecurityTest(GdBaseTestClass):
             advertisement=[gap_data],
             interval_min=512,
             interval_max=768,
-            event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
-            address_type=self.cert_address.type,
+            advertising_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
+            own_address_type=common.USE_PUBLIC_DEVICE_ADDRESS,
             channel_map=7,
             filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
@@ -126,8 +126,8 @@ class LeSecurityTest(GdBaseTestClass):
             advertisement=[gap_data],
             interval_min=512,
             interval_max=768,
-            event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
-            address_type=self.dut_address.type,
+            advertising_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
+            own_address_type=common.USE_PUBLIC_DEVICE_ADDRESS,
             channel_map=7,
             filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
