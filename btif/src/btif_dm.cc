@@ -404,16 +404,10 @@ bool check_cod_hid(const RawAddress* remote_bdaddr) {
  *
  ******************************************************************************/
 bool check_sdp_bl(const RawAddress* remote_bdaddr) {
-  uint16_t manufacturer = 0;
-  uint8_t lmp_ver = 0;
-  uint16_t lmp_subver = 0;
   bt_property_t prop_name;
   bt_remote_version_t info;
 
   if (remote_bdaddr == NULL) return false;
-
-  /* fetch additional info about remote device used in iop query */
-  BTM_ReadRemoteVersion(*remote_bdaddr, &lmp_ver, &manufacturer, &lmp_subver);
 
   /* if not available yet, try fetching from config database */
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_REMOTE_VERSION_INFO,
@@ -423,7 +417,7 @@ bool check_sdp_bl(const RawAddress* remote_bdaddr) {
       BT_STATUS_SUCCESS) {
     return false;
   }
-  manufacturer = info.manufacturer;
+  uint16_t manufacturer = info.manufacturer;
 
   for (unsigned int i = 0; i < ARRAY_SIZE(sdp_blacklist); i++) {
     if (manufacturer == sdp_blacklist[i].manufact_id) return true;
