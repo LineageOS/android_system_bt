@@ -43,7 +43,7 @@ enum btm_acl_swkey_state_t {
 };
 
 /* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
- * function) in response to BTM_SwitchRole call.
+ * function) in response to BTM_SwitchRoleToCentral call.
  */
 typedef struct {
   RawAddress remote_bd_addr; /* Remote BD addr involved with the switch */
