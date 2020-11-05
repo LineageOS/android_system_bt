@@ -127,7 +127,7 @@ static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
 static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
-static bool btm_ble_get_acl_remote_addr(const tBTM_SEC_DEV_REC& p_dev_rec,
+static bool btm_ble_get_acl_remote_addr(uint16_t hci_handle,
                                         RawAddress& conn_addr,
                                         tBLE_ADDR_TYPE* p_addr_type);
 
@@ -264,30 +264,38 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
  * Returns          success return true, otherwise false.
  *
  ******************************************************************************/
-static bool btm_ble_get_acl_remote_addr(const tBTM_SEC_DEV_REC& p_dev_rec,
+static bool btm_ble_get_acl_remote_addr(uint16_t hci_handle,
                                         RawAddress& conn_addr,
                                         tBLE_ADDR_TYPE* p_addr_type) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) {
+    LOG_WARN("Unable to find security device record hci_handle:%hu",
+             hci_handle);
+    // TODO Release acl resource
+    return false;
+  }
+
   bool st = true;
 
-  switch (p_dev_rec.ble.active_addr_type) {
+  switch (p_dev_rec->ble.active_addr_type) {
     case tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO:
-      conn_addr = p_dev_rec.bd_addr;
-      *p_addr_type = p_dev_rec.ble.ble_addr_type;
+      conn_addr = p_dev_rec->bd_addr;
+      *p_addr_type = p_dev_rec->ble.ble_addr_type;
       break;
 
     case tBTM_SEC_BLE::BTM_BLE_ADDR_RRA:
-      conn_addr = p_dev_rec.ble.cur_rand_addr;
+      conn_addr = p_dev_rec->ble.cur_rand_addr;
       *p_addr_type = BLE_ADDR_RANDOM;
       break;
 
     case tBTM_SEC_BLE::BTM_BLE_ADDR_STATIC:
-      conn_addr = p_dev_rec.ble.identity_address_with_type.bda;
-      *p_addr_type = p_dev_rec.ble.identity_address_with_type.type;
+      conn_addr = p_dev_rec->ble.identity_address_with_type.bda;
+      *p_addr_type = p_dev_rec->ble.identity_address_with_type.type;
       break;
 
     default:
       LOG_WARN("Unable to find record with active address type: %d",
-               p_dev_rec.ble.active_addr_type);
+               p_dev_rec->ble.active_addr_type);
       st = false;
       break;
   }
@@ -399,16 +407,8 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     }
   }
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
-  if (p_dev_rec == nullptr) {
-    LOG_WARN("Unable to find security device record hci_handle:%hu",
-             hci_handle);
-    // TODO Release acl resource
-    return;
-  }
-
   if (transport == BT_TRANSPORT_LE) {
-    btm_ble_get_acl_remote_addr(*p_dev_rec, p_acl->active_remote_addr,
+    btm_ble_get_acl_remote_addr(hci_handle, p_acl->active_remote_addr,
                                 &p_acl->active_remote_addr_type);
 
     if (controller_get_interface()
