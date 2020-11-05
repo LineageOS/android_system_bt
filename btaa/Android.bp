@@ -1,0 +1,16 @@
+// libbtaa static library for target
+// ========================================================
+cc_library_static {
+    name: "libbtaa",
+    defaults: ["fluoride_defaults"],
+    local_include_dirs: [
+        "include",
+    ],
+    srcs: [
+        "src/activity_attribution.cc",
+    ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
+    ],
+}

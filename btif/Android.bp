@@ -109,9 +109,10 @@ cc_library_static {
     ],
     whole_static_libs: [
         "avrcp-target-service",
-        "libaudio-a2dp-hw-utils",
         "lib-bt-packets",
+        "libaudio-a2dp-hw-utils",
         "libbt-audio-hal-interface",
+        "libbtaa",
     ],
     cflags: [
         "-DBUILDCFG",
