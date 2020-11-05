@@ -12,7 +12,7 @@ pub use bt_facade_common_proto::common;
 pub use bt_facade_rootservice_proto::rootservice;
 
 use bt_hal::rootcanal_hal::{RootcanalConfig, RootcanalHal};
-use bt_hci::facade::hci_facade_server::HciLayerFacadeService;
+use bt_hci::facade::HciLayerFacadeService;
 use bt_hci::Hci;
 
 use tokio::runtime::Runtime;
