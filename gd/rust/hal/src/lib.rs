@@ -2,6 +2,7 @@
 //! Supports sending HCI commands to the HAL and receving
 //! HCI events from the HAL
 pub mod rootcanal_hal;
+pub mod facade;
 
 use thiserror::Error;
 use tokio::sync::mpsc;

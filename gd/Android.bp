@@ -772,6 +772,14 @@ rust_protobuf {
     host_supported: true,
 }
 
+rust_grpcio {
+    name: "libbt_hal_proto",
+    crate_name: "bt_hal_proto",
+    proto: "hal/facade.proto",
+    source_stem: "facade",
+    host_supported: true,
+}
+
 rust_protobuf {
     name: "libbt_facade_rootservice_proto",
     crate_name: "bt_facade_rootservice_proto",
