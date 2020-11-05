@@ -609,14 +609,15 @@ enum {
 };
 typedef uint8_t tBTM_SP_EVT;
 
-#define BTM_IO_CAP_OUT 0    /* DisplayOnly */
-#define BTM_IO_CAP_IO 1     /* DisplayYesNo */
-#define BTM_IO_CAP_IN 2     /* KeyboardOnly */
-#define BTM_IO_CAP_NONE 3   /* NoInputNoOutput */
-#define BTM_IO_CAP_KBDISP 4 /* Keyboard display */
-#define BTM_IO_CAP_MAX 5
-#define BTM_IO_CAP_UNKNOWN 0xFF /* Unknown value */
-
+enum : uint8_t {
+  BTM_IO_CAP_OUT = 0,    /* DisplayOnly */
+  BTM_IO_CAP_IO = 1,     /* DisplayYesNo */
+  BTM_IO_CAP_IN = 2,     /* KeyboardOnly */
+  BTM_IO_CAP_NONE = 3,   /* NoInputNoOutput */
+  BTM_IO_CAP_KBDISP = 4, /* Keyboard display */
+  BTM_IO_CAP_MAX = 5,
+  BTM_IO_CAP_UNKNOWN = 0xFF /* Unknown value */
+};
 typedef uint8_t tBTM_IO_CAP;
 
 #define BTM_MAX_PASSKEY_VAL (999999)
