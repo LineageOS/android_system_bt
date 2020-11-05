@@ -8,8 +8,10 @@ pub mod empty {
     pub use protobuf::well_known_types::Empty;
 }
 
-pub use bt_facade_common_proto::common;
-pub use bt_facade_rootservice_proto::rootservice;
+use bt_facade_common_proto::common;
+use bt_facade_rootservice_proto::rootservice;
+use rootservice::*;
+use rootservice_grpc::{create_root_facade, RootFacade};
 
 use bt_hal::rootcanal_hal::{RootcanalConfig, RootcanalHal};
 use bt_hci::facade::HciLayerFacadeService;
@@ -28,14 +30,9 @@ use futures::executor::block_on;
 /// Bluetooth testing root facade service
 #[derive(Clone)]
 pub struct RootFacadeService {
-    /// Tokio runtime
     rt: Arc<Runtime>,
     manager: FacadeServiceManager,
 }
-
-use bt_facade_rootservice_proto::rootservice::*;
-use rootservice_grpc::create_root_facade;
-use rootservice_grpc::RootFacade;
 
 impl RootFacadeService {
     /// Create a new instance of the root facade service

@@ -2,6 +2,13 @@
 
 mod facade_grpc;
 
+/// Refer to the following on why we are doing this and for possible solutions:
+/// https://github.com/tikv/grpc-rs/issues/276
+pub mod empty {
+    pub use protobuf::well_known_types::Empty;
+}
+use empty::Empty;
+
 use hci_layer_facade_proto::facade;
 use facade_grpc::{HciLayerFacade, create_hci_layer_facade};
 use facade::*;
@@ -19,18 +26,9 @@ use std::sync::Arc;
 /// HCI layer facade service
 #[derive(Clone)]
 pub struct HciLayerFacadeService {
-    /// HCI interface
-    pub hci_exports: HciExports,
-    /// Tokio runtime
-    pub rt: Arc<Runtime>,
+    hci_exports: HciExports,
+    rt: Arc<Runtime>,
 }
-
-/// Refer to the following on why we are doing this and for possible solutions:
-/// https://github.com/tikv/grpc-rs/issues/276
-pub mod empty {
-    pub use protobuf::well_known_types::Empty;
-}
-use empty::Empty;
 
 impl HciLayerFacadeService {
     /// Create a new instance of HCI layer facade service
