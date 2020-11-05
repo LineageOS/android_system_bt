@@ -76,10 +76,8 @@ class TestHciLayer : public HciLayer {
       auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
       EXPECT_NE(std::future_status::timeout, result);
     }
-    if (command_queue_.empty()) {
-      return ConnectionManagementCommandView::Create(
-          CommandPacketView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>())));
-    }
+    ASSERT_LOG(
+        !command_queue_.empty(), "Expecting command %s but command queue was empty", OpCodeText(op_code).c_str());
     CommandPacketView command_packet_view = GetLastCommand();
     EXPECT_TRUE(command_packet_view.IsValid());
     EXPECT_EQ(command_packet_view.GetOpCode(), op_code);
@@ -446,8 +444,6 @@ TEST_F(LeAddressManagerWithSingleClientTest, register_during_command_complete) {
   AllocateClients(1);
   test_hci_layer_->SetCommandFuture();
   le_address_manager_->Register(clients[1].get());
-  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
-  test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   clients[0].get()->WaitForResume();
   clients[1].get()->WaitForResume();
 }

@@ -62,6 +62,9 @@
 #include "stack/include/sco_hci_link_interface.h"
 #include "types/raw_address.h"
 
+void gatt_find_in_device_record(const RawAddress& bd_addr,
+                                tBLE_BD_ADDR* address_with_type);
+
 struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
@@ -2882,6 +2885,9 @@ bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr) {
         .bda = bd_addr,
         .type = BLE_ADDR_RANDOM,
     };
+    gatt_find_in_device_record(bd_addr, &address_with_type);
+    LOG_DEBUG("Creating le connection to:%s",
+              address_with_type.ToString().c_str());
     bluetooth::shim::ACL_CreateLeConnection(address_with_type);
     return true;
   }
