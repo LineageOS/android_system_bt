@@ -169,8 +169,6 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
       offset += len + 1;  // 1 byte for len
     }
 
-    config.operation = bluetooth::hci::Operation::COMPLETE_ADVERTISEMENT;
-
     bluetooth::hci::AdvertiserId id =
         bluetooth::shim::GetAdvertising()->ExtendedCreateAdvertiser(
             reg_id, config, scan_callback, set_terminated_callback,
