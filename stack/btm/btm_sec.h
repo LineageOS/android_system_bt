@@ -764,3 +764,17 @@ void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
  *
  ******************************************************************************/
 bool btm_sec_is_a_bonded_dev(const RawAddress& bda);
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_set_peer_sec_caps
+ *
+ * Description      This function is called to set sm4 and rmt_sec_caps fields
+ *                  based on the available peer device features.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
+                               bool sc_supported,
+                               bool hci_role_switch_supported);
