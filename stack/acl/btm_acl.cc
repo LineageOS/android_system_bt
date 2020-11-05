@@ -62,6 +62,9 @@
 #include "stack/include/sco_hci_link_interface.h"
 #include "types/raw_address.h"
 
+void gatt_find_in_device_record(const RawAddress& bd_addr,
+                                tBLE_BD_ADDR* address_with_type);
+
 struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
@@ -122,9 +125,6 @@ static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
-static void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
-                                      bool sc_supported,
-                                      bool hci_role_switch_supported);
 static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
 static bool btm_ble_get_acl_remote_addr(const tBTM_SEC_DEV_REC& p_dev_rec,
@@ -2098,15 +2098,12 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl == nullptr) return BTM_UNKNOWN_ADDR;
 
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-
   /* Role Switch is pending, postpone until completed */
-  if (p_dev_rec && (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING)) {
+  if (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING) {
     p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
   } else /* otherwise can disconnect right away */
   {
-    if (hci_handle != HCI_INVALID_HANDLE && p_dev_rec &&
-        p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) {
+    if (hci_handle != HCI_INVALID_HANDLE) {
       btsnd_hcic_disconnect(hci_handle, HCI_ERR_PEER_USER);
     } else {
       status = BTM_UNKNOWN_ADDR;
@@ -2295,21 +2292,6 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
   }
 }
 
-bool lmp_version_below(const RawAddress& bda, uint8_t version) {
-  const tACL_CONN* acl = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_LE);
-  if (acl == nullptr) {
-    LOG_INFO("Unable to get LMP version as no le acl exists to device");
-    return false;
-  }
-  if (acl->lmp_version == 0) {
-    LOG_INFO("Unable to get LMP version as value has not been set");
-    return false;
-  }
-  LOG_DEBUG("Requested LMP version:%hhu acl_version:%hhu", version,
-            acl->lmp_version);
-  return acl->lmp_version < version;
-}
-
 bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport) {
   tACL_CONN* p = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
   if (p == nullptr) {
@@ -2331,7 +2313,8 @@ bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
 }
 
-bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
+bool acl_refresh_remote_address(const RawAddress& identity_address,
+                                tBLE_ADDR_TYPE identity_address_type,
                                 const RawAddress& bda, tBLE_ADDR_TYPE rra_type,
                                 const RawAddress& rpa) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_LE);
@@ -2343,9 +2326,8 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
   if (rra_type == tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO) {
     /* use identity address, resolvable_private_addr is empty */
     if (rpa.IsEmpty()) {
-      p_acl->active_remote_addr_type =
-          p_sec_rec->ble.identity_address_with_type.type;
-      p_acl->active_remote_addr = p_sec_rec->ble.identity_address_with_type.bda;
+      p_acl->active_remote_addr_type = identity_address_type;
+      p_acl->active_remote_addr = identity_address;
     } else {
       p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
       p_acl->active_remote_addr = rpa;
@@ -2507,60 +2489,6 @@ void btm_ble_refresh_local_resolvable_private_addr(
     } else {
       p_acl->conn_addr = local_rpa;
     }
-  }
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_set_peer_sec_caps
- *
- * Description      This function is called to set sm4 and rmt_sec_caps fields
- *                  based on the available peer device features.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
-                               bool sc_supported,
-                               bool hci_role_switch_supported) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
-  if (p_dev_rec == nullptr) return;
-
-  p_dev_rec->remote_feature_received = true;
-  p_dev_rec->remote_supports_hci_role_switch = hci_role_switch_supported;
-
-  uint8_t req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
-
-  if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
-      p_dev_rec->is_originator) {
-    uint8_t status = btm_sec_execute_procedure(p_dev_rec);
-    if (status != BTM_CMD_STARTED) {
-      LOG_WARN("Security procedure not started! status:%s",
-               hci_error_code_text(status).c_str());
-      btm_sec_dev_rec_cback_event(p_dev_rec, status, false);
-    }
-  }
-
-  /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
-  if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
-       btm_cb.security_mode == BTM_SEC_MODE_SC) &&
-      ssp_supported) {
-    p_dev_rec->sm4 = BTM_SM4_TRUE;
-    p_dev_rec->remote_supports_secure_connections = sc_supported;
-  } else {
-    p_dev_rec->sm4 = BTM_SM4_KNOWN;
-    p_dev_rec->remote_supports_secure_connections = false;
-  }
-
-  if (p_dev_rec->remote_features_needed) {
-    LOG_DEBUG("Now device in SC Only mode, waiting for peer remote features!");
-    btm_io_capabilities_req(p_dev_rec->bd_addr);
-    p_dev_rec->remote_features_needed = false;
-  }
-
-  if (req_pend) {
-    /* Request for remaining Security Features (if any) */
-    l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
   }
 }
 
@@ -2882,6 +2810,9 @@ bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr) {
         .bda = bd_addr,
         .type = BLE_ADDR_RANDOM,
     };
+    gatt_find_in_device_record(bd_addr, &address_with_type);
+    LOG_DEBUG("Creating le connection to:%s",
+              address_with_type.ToString().c_str());
     bluetooth::shim::ACL_CreateLeConnection(address_with_type);
     return true;
   }

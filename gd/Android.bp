@@ -771,3 +771,21 @@ rust_protobuf {
     source_stem: "facade",
     host_supported: true,
 }
+
+rust_protobuf {
+    name: "libbt_facade_rootservice_proto",
+    crate_name: "bt_facade_rootservice_proto",
+    proto: "facade/rootservice.proto",
+    proto_flags: ["-Iexternal/protobuf/src/"],
+    source_stem: "rootservice",
+    host_supported: true,
+}
+
+rust_protobuf {
+    name: "libbt_facade_common_proto",
+    crate_name: "bt_facade_common_proto",
+    proto: "facade/common.proto",
+    proto_flags: ["-Iexternal/protobuf/src/"],
+    source_stem: "common",
+    host_supported: true,
+}
