@@ -455,7 +455,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
 
 /*******************************************************************************
  *
- * Function         BTM_SwitchRole
+ * Function         BTM_SwitchRoleToCentral
  *
  * Description      This function is called to switch role between central and
  *                  peripheral.  If role is already set it will do nothing.
@@ -470,7 +470,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *                  BTM_BUSY if the previous command is not completed
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
+tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
   if (!controller_get_interface()->supports_central_peripheral_role_switch()) {
     LOG_INFO("Local controller does not support role switching");
     return BTM_MODE_UNSUPPORTED;
@@ -483,7 +483,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
     return BTM_UNKNOWN_ADDR;
   }
 
-  if (p_acl->link_role == new_role) {
+  if (p_acl->link_role == HCI_ROLE_CENTRAL) {
     LOG_INFO("Requested role is already in effect");
     return BTM_SUCCESS;
   }
@@ -530,7 +530,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
       p_acl->set_encryption_off();
       p_acl->set_switch_role_encryption_off();
     } else {
-      btsnd_hcic_switch_role(remote_bd_addr, new_role);
+      btsnd_hcic_switch_role(remote_bd_addr, HCI_ROLE_CENTRAL);
       p_acl->set_switch_role_in_progress();
       p_acl->rs_disc_pending = BTM_SEC_RS_PENDING;
     }
