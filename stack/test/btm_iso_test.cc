@@ -143,7 +143,8 @@ class IsoManagerTest : public Test {
 
     // Default mock CreateCis action
     ON_CALL(hcic_interface_, CreateCis)
-        .WillByDefault([](uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg) {
+        .WillByDefault([](uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
+                          base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
           for (const EXT_CIS_CREATE_CFG* cis = cis_cfg; num_cis != 0;
                num_cis--, cis++) {
             std::vector<uint8_t> buf(28);
@@ -755,10 +756,12 @@ TEST_F(IsoManagerTest, EstablishCisHciCall) {
   }
 
   EXPECT_CALL(hcic_interface_,
-              CreateCis(2, iso_matchers::EqPointedArray(
-                               params.conn_pairs.data(),
-                               params.conn_pairs.size() *
-                                   sizeof(params.conn_pairs.data()[0]))))
+              CreateCis(2,
+                        iso_matchers::EqPointedArray(
+                            params.conn_pairs.data(),
+                            params.conn_pairs.size() *
+                                sizeof(params.conn_pairs.data()[0])),
+                        _))
       .Times(1);
   IsoManager::GetInstance()->EstablishCis(params);
 }
@@ -796,8 +799,8 @@ TEST_F(IsoManagerDeathTest, EstablishCisInvalidResponsePacket) {
       volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
 
   ON_CALL(hcic_interface_, CreateCis)
-      .WillByDefault([this](uint8_t num_cis,
-                            const EXT_CIS_CREATE_CFG* cis_cfg) {
+      .WillByDefault([this](uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
+                            base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
         for (auto& handle : volatile_test_cig_create_cmpl_evt_.conn_handles) {
           std::vector<uint8_t> buf(27);
           uint8_t* p = buf.data();
@@ -833,14 +836,53 @@ TEST_F(IsoManagerDeathTest, EstablishCisInvalidResponsePacket) {
       ::testing::KilledBySignal(SIGABRT), "Invalid packet length");
 }
 
+TEST_F(IsoManagerTest, EstablishCisInvalidCommandStatus) {
+  IsoManager::GetInstance()->CreateCig(
+      volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
+  uint16_t invalid_status = 0x0001;
+
+  ON_CALL(hcic_interface_, CreateCis)
+      .WillByDefault([invalid_status](
+                         uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
+                         base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+        std::move(cb).Run((uint8_t*)&invalid_status, sizeof(invalid_status));
+        return 0;
+      });
+
+  EXPECT_CALL(
+      *cig_callbacks_,
+      OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisEstablishCmpl, _))
+      .Times(kDefaultCigParams.cis_cfgs.size())
+      .WillRepeatedly([this, invalid_status](uint8_t type, void* data) {
+        bluetooth::hci::iso_manager::cis_establish_cmpl_evt* evt =
+            static_cast<bluetooth::hci::iso_manager::cis_establish_cmpl_evt*>(
+                data);
+
+        ASSERT_EQ(evt->status, invalid_status);
+        ASSERT_TRUE(
+            std::find(volatile_test_cig_create_cmpl_evt_.conn_handles.begin(),
+                      volatile_test_cig_create_cmpl_evt_.conn_handles.end(),
+                      evt->cis_conn_hdl) !=
+            volatile_test_cig_create_cmpl_evt_.conn_handles.end());
+      });
+
+  // Establish all CISes
+  bluetooth::hci::iso_manager::cis_establish_params params;
+  for (auto& handle : volatile_test_cig_create_cmpl_evt_.conn_handles) {
+    params.conn_pairs.push_back({handle, 1});
+  }
+  IsoManager::GetInstance()->EstablishCis(params);
+}
+
 TEST_F(IsoManagerTest, EstablishCisInvalidStatus) {
   IsoManager::GetInstance()->CreateCig(
       volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
   uint8_t invalid_status = 0x01;
 
   ON_CALL(hcic_interface_, CreateCis)
-      .WillByDefault([this, invalid_status](uint8_t num_cis,
-                                            const EXT_CIS_CREATE_CFG* cis_cfg) {
+      .WillByDefault([this, invalid_status](
+                         uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
+                         base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
         for (auto& handle : volatile_test_cig_create_cmpl_evt_.conn_handles) {
           std::vector<uint8_t> buf(28);
           uint8_t* p = buf.data();
