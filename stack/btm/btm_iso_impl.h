@@ -172,6 +172,29 @@ struct iso_impl {
                                                  base::Unretained(this)));
   }
 
+  void on_status_establish_cis(
+      struct iso_manager::cis_establish_params conn_params, uint8_t* stream,
+      uint16_t len) {
+    uint8_t status;
+
+    LOG_ASSERT(len == 2) << "Invalid packet length: " << len;
+
+    STREAM_TO_UINT16(status, stream);
+    if (status == HCI_SUCCESS) {
+      /* Wait for connection established event */
+      return;
+    }
+
+    for (auto cis : conn_params.conn_pairs) {
+      cis_establish_cmpl_evt evt;
+
+      evt.status = status;
+      evt.cis_conn_hdl = cis.cis_conn_handle;
+      evt.cig_id = 0xFF;
+      cig_callbacks_->OnCisEvent(kIsoEventCisEstablishCmpl, &evt);
+    }
+  }
+
   void establish_cis(struct iso_manager::cis_establish_params conn_params) {
     for (auto& el : conn_params.conn_pairs) {
       auto cis = GetCisIfKnown(el.cis_conn_handle);
@@ -180,7 +203,9 @@ struct iso_impl {
           << "Already connected";
     }
     btsnd_hcic_create_cis(conn_params.conn_pairs.size(),
-                          conn_params.conn_pairs.data());
+                          conn_params.conn_pairs.data(),
+                          base::BindOnce(&iso_impl::on_status_establish_cis,
+                                         base::Unretained(this), conn_params));
   }
 
   void disconnect_cis(uint16_t cis_handle, uint8_t reason) {
