@@ -325,11 +325,15 @@ void btm_ble_refresh_peer_resolvable_private_addr(
   }
 
   /* connection refresh remote address */
-  if (!acl_refresh_remote_address(p_sec_rec, p_sec_rec->bd_addr, rra_type,
-                                  rpa)) {
+  const auto& identity_address = p_sec_rec->ble.identity_address_with_type.bda;
+  auto identity_address_type = p_sec_rec->ble.identity_address_with_type.type;
+
+  if (!acl_refresh_remote_address(identity_address, identity_address_type,
+                                  p_sec_rec->bd_addr, rra_type, rpa)) {
     // Try looking up the pseudo random address
-    if (!acl_refresh_remote_address(p_sec_rec, p_sec_rec->ble.pseudo_addr,
-                                    rra_type, rpa)) {
+    if (!acl_refresh_remote_address(identity_address, identity_address_type,
+                                    p_sec_rec->ble.pseudo_addr, rra_type,
+                                    rpa)) {
       LOG_ERROR("%s Unknown device to refresh remote device", __func__);
     }
   }
