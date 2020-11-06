@@ -19,9 +19,11 @@
 #pragma once
 
 #include <aidl/android/system/suspend/BnSuspendCallback.h>
+#include <aidl/android/system/suspend/BnWakelockCallback.h>
 #include <hardware/bt_activity_attribution.h>
 
 using aidl::android::system::suspend::BnSuspendCallback;
+using aidl::android::system::suspend::BnWakelockCallback;
 using Status = ::ndk::ScopedAStatus;
 
 namespace bluetooth {
@@ -32,6 +34,12 @@ class ActivityAttribution {
 
   static void CleanUp();
   static void Initialize(ActivityAttributionCallbacks* callbacks);
+};
+
+class WakelockCallback : public BnWakelockCallback {
+ public:
+  Status notifyAcquired(void) override;
+  Status notifyReleased(void) override;
 };
 
 class WakeupCallback : public BnSuspendCallback {

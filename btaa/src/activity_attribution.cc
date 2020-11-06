@@ -29,6 +29,8 @@ using namespace ndk;
 namespace bluetooth {
 namespace activity_attribution {
 
+static const std::string kBtWakelockName("hal_bluetooth_lock");
+
 class ActivityAttributionImpl;
 static std::shared_ptr<ISuspendControlService> controlService;
 static std::unique_ptr<ActivityAttributionImpl> instance;
@@ -38,6 +40,8 @@ class ActivityAttributionImpl : public ActivityAttribution {
   ~ActivityAttributionImpl() override = default;
   ActivityAttributionImpl(ActivityAttributionCallbacks* callbacks);
 
+  void onWakelockAcquired(void);
+  void onWakelockReleased(void);
   void onWakeup(bool success, const std::vector<std::string>& wakeupReasons);
 
  private:
@@ -48,8 +52,22 @@ ActivityAttributionImpl::ActivityAttributionImpl(
     ActivityAttributionCallbacks* callbacks)
     : mCallbacks(callbacks) {}
 
+void ActivityAttributionImpl::onWakelockAcquired(void) {}
+
+void ActivityAttributionImpl::onWakelockReleased(void) {}
+
 void ActivityAttributionImpl::onWakeup(
     bool success, const std::vector<std::string>& wakeupReasons) {}
+
+Status WakelockCallback::notifyAcquired(void) {
+  instance->onWakelockAcquired();
+  return Status::ok();
+}
+
+Status WakelockCallback::notifyReleased(void) {
+  instance->onWakelockReleased();
+  return Status::ok();
+}
 
 Status WakeupCallback::notifyWakeup(
     bool success, const std::vector<std::string>& wakeupReasons) {
@@ -79,6 +97,13 @@ void ActivityAttribution::Initialize(ActivityAttributionCallbacks* callbacks) {
       SharedRefBase::make<WakeupCallback>(), &is_registered);
   if (!is_registered || !register_callback_status.isOk()) {
     LOG(ERROR) << __func__ << " Fail to register wakeup callback";
+    return;
+  }
+
+  register_callback_status = controlService->registerWakelockCallback(
+      SharedRefBase::make<WakelockCallback>(), kBtWakelockName, &is_registered);
+  if (!is_registered || !register_callback_status.isOk()) {
+    LOG(ERROR) << __func__ << " Fail to register wakelock callback";
     return;
   }
 }
