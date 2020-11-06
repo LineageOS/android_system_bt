@@ -35,10 +35,12 @@
 #define APPLY_START_FLAG(handle) (((handle)&0xCFFF) | 0x2000)
 #define SUB_EVENT(event) ((event)&MSG_SUB_EVT_MASK)
 #define GET_BOUNDARY_FLAG(handle) (((handle) >> 12) & 0x0003)
+#define GET_BROADCAST_FLAG(handle) (((handle) >> 14) & 0x0003)
 
 #define HANDLE_MASK 0x0FFF
 #define START_PACKET_BOUNDARY 2
 #define CONTINUATION_PACKET_BOUNDARY 1
+#define POINT_TO_POINT 0
 #define L2CAP_HEADER_PDU_LEN_SIZE 2
 #define L2CAP_HEADER_CID_SIZE 2
 #define L2CAP_HEADER_SIZE (L2CAP_HEADER_PDU_LEN_SIZE + L2CAP_HEADER_CID_SIZE)
@@ -131,7 +133,15 @@ static void reassemble_and_dispatch(BT_HDR* packet) {
     CHECK(acl_length == packet->len - HCI_ACL_PREAMBLE_SIZE);
 
     uint8_t boundary_flag = GET_BOUNDARY_FLAG(handle);
+    uint8_t broadcast_flag = GET_BROADCAST_FLAG(handle);
     handle = handle & HANDLE_MASK;
+
+    if (broadcast_flag != POINT_TO_POINT) {
+      LOG_WARN(LOG_TAG, "dropping broadcast packet");
+      android_errorWriteLog(0x534e4554, "169327567");
+      buffer_allocator->free(packet);
+      return;
+    }
 
     if (boundary_flag == START_PACKET_BOUNDARY) {
       if (acl_length < 2) {
