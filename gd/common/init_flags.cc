@@ -98,6 +98,10 @@ void InitFlags::Load(const char** flags) {
   if (gd_acl_enabled && !gd_controller_enabled) {
     gd_controller_enabled = true;
   }
+  if (gd_l2cap_enabled) {
+    gd_acl_enabled = false;
+    gd_hci_enabled = true;
+  }
   if (gd_controller_enabled && !gd_hci_enabled) {
     gd_hci_enabled = true;
   }
