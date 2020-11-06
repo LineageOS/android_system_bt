@@ -17,6 +17,7 @@
 #define LOG_TAG "bt_shim_l2cap"
 
 #include "main/shim/l2c_api.h"
+#include "gd/l2cap/classic/l2cap_classic_module.h"
 #include "gd/l2cap/le/l2cap_le_module.h"
 #include "gd/os/log.h"
 #include "gd/os/queue.h"
@@ -26,8 +27,158 @@
 #include "main/shim/l2cap.h"
 #include "main/shim/stack.h"
 #include "osi/include/allocator.h"
+#include "stack/btm/btm_sec.h"
+#include "stack/include/acl_hci_link_interface.h"
+#include "stack/include/btm_api.h"
 
 static bluetooth::shim::legacy::L2cap shim_l2cap;
+
+// Helper: L2cap security enforcement shim
+
+std::unordered_map<intptr_t,
+                   bluetooth::common::ContextualOnceCallback<void(bool)>>
+    security_enforce_callback_map = {};
+
+class SecurityEnforcementShim
+    : public bluetooth::l2cap::classic::SecurityEnforcementInterface {
+ public:
+  static void security_enforce_result_callback(const RawAddress* bd_addr,
+                                               tBT_TRANSPORT trasnport,
+                                               void* p_ref_data,
+                                               tBTM_STATUS result) {
+    intptr_t counter = (intptr_t)p_ref_data;
+    if (security_enforce_callback_map.count(counter) == 0) {
+      LOG_ERROR("Received unexpected callback");
+      return;
+    }
+
+    auto& callback = security_enforce_callback_map[counter];
+    std::move(callback).Invoke(result == BTM_SUCCESS);
+    security_enforce_callback_map.erase(counter);
+  }
+
+  void Enforce(bluetooth::hci::AddressWithType remote,
+               bluetooth::l2cap::classic::SecurityPolicy policy,
+               ResultCallback result_callback) override {
+    uint16_t sec_mask = 0;
+    switch (policy) {
+      case bluetooth::l2cap::classic::SecurityPolicy::
+          _SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
+        result_callback.Invoke(true);
+        return;
+      case bluetooth::l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
+        sec_mask = BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
+                   BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT;
+        break;
+      case bluetooth::l2cap::classic::SecurityPolicy::BEST:
+      case bluetooth::l2cap::classic::SecurityPolicy::
+          AUTHENTICATED_ENCRYPTED_TRANSPORT:
+        sec_mask = BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
+                   BTM_SEC_IN_MITM | BTM_SEC_OUT_AUTHENTICATE |
+                   BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_MITM;
+        break;
+    }
+    auto bd_addr = bluetooth::ToRawAddress(remote.GetAddress());
+    security_enforce_callback_map[security_enforce_callback_counter_] =
+        std::move(result_callback);
+    btm_sec_l2cap_access_req_by_requirement(
+        bd_addr, sec_mask, true, security_enforce_result_callback,
+        (void*)security_enforce_callback_counter_);
+    security_enforce_callback_counter_++;
+  }
+
+  intptr_t security_enforce_callback_counter_ = 100;
+} security_enforcement_shim_;
+
+class SecurityListenerShim
+    : public bluetooth::l2cap::classic::LinkSecurityInterfaceListener {
+ public:
+  void OnLinkConnected(
+      std::unique_ptr<bluetooth::l2cap::classic::LinkSecurityInterface>
+          interface) override {
+    auto bda = bluetooth::ToRawAddress(interface->GetRemoteAddress());
+
+    uint16_t handle = interface->GetAclHandle();
+    address_to_handle_[bda] = handle;
+    btm_acl_connected(bda, handle, HCI_SUCCESS, 0);
+    address_to_interface_[bda] = std::move(interface);
+  }
+
+  void OnAuthenticationComplete(bluetooth::hci::Address remote) override {
+    auto bda = bluetooth::ToRawAddress(remote);
+    uint16_t handle = address_to_handle_[bda];
+    btm_sec_auth_complete(handle, HCI_SUCCESS);
+  }
+
+  void OnLinkDisconnected(bluetooth::hci::Address remote) override {
+    auto bda = bluetooth::ToRawAddress(remote);
+    uint16_t handle = address_to_handle_[bda];
+    btm_acl_disconnected(HCI_SUCCESS, handle, HCI_ERR_PEER_USER);
+    address_to_handle_.erase(bda);
+    address_to_interface_.erase(bda);
+  }
+
+  void OnEncryptionChange(bluetooth::hci::Address remote,
+                          bool encrypted) override {
+    auto bda = bluetooth::ToRawAddress(remote);
+    uint16_t handle = address_to_handle_[bda];
+    btm_sec_encrypt_change(handle, HCI_SUCCESS, encrypted);
+  }
+
+  void OnReadRemoteVersionInformation(bluetooth::hci::Address remote,
+                                      uint8_t lmp_version,
+                                      uint16_t manufacturer_name,
+                                      uint16_t sub_version) override {
+    auto bda = bluetooth::ToRawAddress(remote);
+    uint16_t handle = address_to_handle_[bda];
+
+    btm_read_remote_version_complete(HCI_SUCCESS, handle, lmp_version,
+                                     manufacturer_name, sub_version);
+  }
+
+  void OnReadRemoteExtendedFeatures(bluetooth::hci::Address remote,
+                                    uint8_t page_number,
+                                    uint8_t max_page_number,
+                                    uint64_t features) override {
+    auto bda = bluetooth::ToRawAddress(remote);
+    uint16_t handle = address_to_handle_[bda];
+    uint8_t* features_array = (uint8_t*)&features;
+    if (page_number == 0) {
+      btm_read_remote_features_complete(handle, features_array);
+    } else {
+      btm_read_remote_ext_features_complete(handle, page_number,
+                                            max_page_number, features_array);
+    }
+  }
+
+  void UpdateLinkHoldForSecurity(RawAddress remote, bool is_bonding) {
+    if (address_to_interface_.count(remote) == 0) {
+      return;
+    }
+    if (is_bonding) {
+      address_to_interface_[remote]->Hold();
+    } else {
+      address_to_interface_[remote]->Release();
+    }
+  }
+
+  std::unordered_map<RawAddress, uint16_t> address_to_handle_;
+  std::unordered_map<
+      RawAddress,
+      std::unique_ptr<bluetooth::l2cap::classic::LinkSecurityInterface>>
+      address_to_interface_;
+} security_listener_shim_;
+
+bluetooth::l2cap::classic::SecurityInterface* security_interface_ = nullptr;
+
+void bluetooth::shim::L2CA_UseLegacySecurityModule() {
+  LOG_INFO("GD L2cap is using legacy security module");
+  bluetooth::shim::GetL2capClassicModule()->InjectSecurityEnforcementInterface(
+      &security_enforcement_shim_);
+  security_interface_ =
+      bluetooth::shim::GetL2capClassicModule()->GetSecurityInterface(
+          bluetooth::shim::GetGdShimHandler(), &security_listener_shim_);
+}
 
 /**
  * Classic Service Registration APIs
@@ -388,6 +539,16 @@ bool bluetooth::shim::L2CA_IsLinkEstablished(const RawAddress& bd_addr,
                                              tBT_TRANSPORT transport) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   return true;
+}
+
+void bluetooth::shim::L2CA_ConnectForSecurity(const RawAddress& bd_addr) {
+  security_interface_->InitiateConnectionForSecurity(
+      bluetooth::ToGdAddress(bd_addr));
+}
+
+void bluetooth::shim::L2CA_SetBondingState(const RawAddress& bd_addr,
+                                           bool is_bonding) {
+  security_listener_shim_.UpdateLinkHoldForSecurity(bd_addr, is_bonding);
 }
 
 // LE COC Shim Helper
