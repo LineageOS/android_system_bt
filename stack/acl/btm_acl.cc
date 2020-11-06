@@ -2542,7 +2542,7 @@ bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle) {
   if (p_acl == nullptr) {
     return false;
   }
-  return HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
+  return HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features);
 }
 
 bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle) {
