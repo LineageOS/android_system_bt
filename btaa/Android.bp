@@ -9,6 +9,10 @@ cc_library_static {
     srcs: [
         "src/activity_attribution.cc",
     ],
+    shared_libs: [
+        "android.system.suspend.control-ndk",
+        "libbinder_ndk",
+    ],
     apex_available: [
         "//apex_available:platform",
         "com.android.bluetooth.updatable",

@@ -18,7 +18,11 @@
 
 #pragma once
 
+#include <aidl/android/system/suspend/BnSuspendCallback.h>
 #include <hardware/bt_activity_attribution.h>
+
+using aidl::android::system::suspend::BnSuspendCallback;
+using Status = ::ndk::ScopedAStatus;
 
 namespace bluetooth {
 namespace activity_attribution {
@@ -28,6 +32,12 @@ class ActivityAttribution {
 
   static void CleanUp();
   static void Initialize(ActivityAttributionCallbacks* callbacks);
+};
+
+class WakeupCallback : public BnSuspendCallback {
+ public:
+  Status notifyWakeup(bool success,
+                      const std::vector<std::string>& wakeupReasons) override;
 };
 
 }  // namespace activity_attribution
