@@ -430,7 +430,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
           p_inq->scan_type, (uint16_t)scan_interval, (uint16_t)scan_window,
           btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, BTM_BLE_DEFAULT_SFP);
 
-      status = btm_ble_start_scan();
+      btm_ble_start_scan();
     }
 
     if (status == BTM_CMD_STARTED) {
@@ -1172,7 +1172,7 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
     /* enable IRK list */
     btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
     p_ble_cb->inq_var.scan_type = BTM_BLE_SCAN_MODE_ACTI;
-    status = btm_ble_start_scan();
+    btm_ble_start_scan();
   } else if ((p_ble_cb->inq_var.scan_interval !=
               BTM_BLE_LOW_LATENCY_SCAN_INT) ||
              (p_ble_cb->inq_var.scan_window != BTM_BLE_LOW_LATENCY_SCAN_WIN)) {
@@ -1923,7 +1923,7 @@ void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* data) {
  * Returns          void
  *
  ******************************************************************************/
-tBTM_STATUS btm_ble_start_scan(void) {
+void btm_ble_start_scan() {
   tBTM_BLE_INQ_CB* p_inq = &btm_cb.ble_ctr_cb.inq_var;
   /* start scan, disable duplicate filtering */
   btm_send_hci_scan_enable(BTM_BLE_SCAN_ENABLE, BTM_BLE_DUPLICATE_DISABLE);
@@ -1932,8 +1932,6 @@ tBTM_STATUS btm_ble_start_scan(void) {
     btm_ble_set_topology_mask(BTM_BLE_STATE_ACTIVE_SCAN_BIT);
   else
     btm_ble_set_topology_mask(BTM_BLE_STATE_PASSIVE_SCAN_BIT);
-
-  return BTM_CMD_STARTED;
 }
 
 /*******************************************************************************
