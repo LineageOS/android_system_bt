@@ -908,11 +908,10 @@ uint8_t bluetooth::shim::BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len,
   return 0;
 }
 
-bool bluetooth::shim::BTM_SecAddBleDevice(const RawAddress& bd_addr,
+void bluetooth::shim::BTM_SecAddBleDevice(const RawAddress& bd_addr,
                                           tBT_DEVICE_TYPE dev_type,
                                           tBLE_ADDR_TYPE addr_type) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
 }
 
 bool bluetooth::shim::BTM_SecAddBleKey(const RawAddress& bd_addr,
