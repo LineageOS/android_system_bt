@@ -370,11 +370,13 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   }
 }
 
-void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
-  uint8_t idx = btm_handle_to_acl_index(conn_handle);
-  if (idx != MAX_L2CAP_LINKS) {
-    btm_cb.acl_cb_.acl_db[idx].conn_addr = address;
+void btm_acl_update_conn_addr(uint16_t handle, const RawAddress& address) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
   }
+  p_acl->conn_addr = address;
 }
 
 /*******************************************************************************
