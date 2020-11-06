@@ -22,6 +22,8 @@
 #include <android/binder_manager.h>
 #include <base/logging.h>
 
+#include "btsnoop_mem.h"
+
 using aidl::android::system::suspend::ISuspendCallback;
 using aidl::android::system::suspend::ISuspendControlService;
 using namespace ndk;
@@ -40,6 +42,8 @@ class ActivityAttributionImpl : public ActivityAttribution {
   ~ActivityAttributionImpl() override = default;
   ActivityAttributionImpl(ActivityAttributionCallbacks* callbacks);
 
+  static void onHciCaptured(const uint16_t type, const uint8_t* data,
+                            const size_t length, const uint64_t timestamp_us);
   void onWakelockAcquired(void);
   void onWakelockReleased(void);
   void onWakeup(bool success, const std::vector<std::string>& wakeupReasons);
@@ -51,6 +55,11 @@ class ActivityAttributionImpl : public ActivityAttribution {
 ActivityAttributionImpl::ActivityAttributionImpl(
     ActivityAttributionCallbacks* callbacks)
     : mCallbacks(callbacks) {}
+
+void ActivityAttributionImpl::onHciCaptured(const uint16_t type,
+                                            const uint8_t* data,
+                                            const size_t length,
+                                            const uint64_t timestamp_us) {}
 
 void ActivityAttributionImpl::onWakelockAcquired(void) {}
 
@@ -85,6 +94,8 @@ void ActivityAttribution::Initialize(ActivityAttributionCallbacks* callbacks) {
     return;
   }
   instance.reset(new ActivityAttributionImpl(callbacks));
+
+  activity_attribution_set_callback(instance->onHciCaptured);
 
   controlService = ISuspendControlService::fromBinder(
       SpAIBinder(AServiceManager_getService("suspend_control")));

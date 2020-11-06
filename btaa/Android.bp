@@ -3,11 +3,19 @@
 cc_library_static {
     name: "libbtaa",
     defaults: ["fluoride_defaults"],
+    include_dirs: [
+        "system/bt",
+        "system/bt/hci/include",
+        "system/bt/stack/include",
+    ],
     local_include_dirs: [
         "include",
     ],
     srcs: [
         "src/activity_attribution.cc",
+    ],
+    static_libs: [
+        "libbt-hci",
     ],
     shared_libs: [
         "android.system.suspend.control-ndk",
