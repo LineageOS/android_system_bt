@@ -53,7 +53,7 @@ extern void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
 /******************************************************************************/
 /* External Function to be called by other modules                            */
 /******************************************************************************/
-bool BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
+void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
                          tBLE_ADDR_TYPE addr_type) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_SecAddBleDevice(bd_addr, dev_type, addr_type);
@@ -94,8 +94,6 @@ bool BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
     BTM_TRACE_DEBUG("InqDb  device_type =0x%x  addr_type=0x%x",
                     p_info->results.device_type, p_info->results.ble_addr_type);
   }
-
-  return true;
 }
 
 /*******************************************************************************
