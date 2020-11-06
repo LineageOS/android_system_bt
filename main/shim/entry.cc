@@ -81,6 +81,12 @@ L2cap* GetL2cap() {
   return Stack::GetInstance()->GetStackManager()->GetInstance<L2cap>();
 }
 
+l2cap::classic::L2capClassicModule* GetL2capClassicModule() {
+  return Stack::GetInstance()
+      ->GetStackManager()
+      ->GetInstance<bluetooth::l2cap::classic::L2capClassicModule>();
+}
+
 bluetooth::l2cap::le::L2capLeModule* GetL2capLeModule() {
   return Stack::GetInstance()
       ->GetStackManager()
