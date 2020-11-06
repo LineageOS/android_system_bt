@@ -212,8 +212,6 @@ typedef struct {
   friend void btm_acl_process_sca_cmpl_pkt(uint8_t evt_len, uint8_t* p);
   friend void btm_acl_role_changed(tHCI_STATUS hci_status,
                                    const RawAddress& bd_addr, uint8_t new_role);
-  friend void btm_acl_update_conn_addr(uint16_t conn_handle,
-                                       const RawAddress& address);
   friend void btm_pm_proc_cmd_status(uint8_t status);
   friend void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                                       uint8_t mode, uint16_t interval);
