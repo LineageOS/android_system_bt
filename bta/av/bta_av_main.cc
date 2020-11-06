@@ -1010,11 +1010,7 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
         __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, role,
         bta_av_cb.conn_audio, bits, bta_av_cb.features);
     if (HCI_ROLE_CENTRAL != role &&
-        (A2DP_BitsSet(bta_av_cb.conn_audio) > bits ||
-         (bta_av_cb.features & BTA_AV_FEAT_CENTRAL))) {
-      if (bta_av_cb.features & BTA_AV_FEAT_CENTRAL)
-        BTM_block_role_switch_for(p_scb->PeerAddress());
-
+        (A2DP_BitsSet(bta_av_cb.conn_audio) > bits)) {
       tBTM_STATUS status = BTM_SwitchRoleToCentral(p_scb->PeerAddress());
       if (status != BTM_CMD_STARTED) {
         /* can not switch role on SCB - start the timer on SCB */
