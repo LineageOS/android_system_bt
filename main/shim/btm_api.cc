@@ -908,19 +908,17 @@ uint8_t bluetooth::shim::BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len,
   return 0;
 }
 
-bool bluetooth::shim::BTM_SecAddBleDevice(const RawAddress& bd_addr,
+void bluetooth::shim::BTM_SecAddBleDevice(const RawAddress& bd_addr,
                                           tBT_DEVICE_TYPE dev_type,
                                           tBLE_ADDR_TYPE addr_type) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
 }
 
-bool bluetooth::shim::BTM_SecAddBleKey(const RawAddress& bd_addr,
+void bluetooth::shim::BTM_SecAddBleKey(const RawAddress& bd_addr,
                                        tBTM_LE_KEY_VALUE* p_le_key,
                                        tBTM_LE_KEY_TYPE key_type) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_le_key != nullptr);
-  return false;
 }
 
 void bluetooth::shim::BTM_BleLoadLocalKeys(uint8_t key_type,
@@ -1345,54 +1343,3 @@ tBTM_STATUS bluetooth::shim::BTM_SetDeviceClass(DEV_CLASS dev_class) {
   LOG_WARN("Unimplemented");
   return BTM_SUCCESS;
 }
-
-static std::unordered_map<intptr_t,
-                          bluetooth::common::ContextualOnceCallback<void(bool)>>
-    security_enforce_callback_map;
-static intptr_t security_enforce_callback_counter = 0;
-
-static void security_enforce_result_callback(const RawAddress* bd_addr,
-                                             tBT_TRANSPORT trasnport,
-                                             void* p_ref_data,
-                                             tBTM_STATUS result) {
-  intptr_t counter = (intptr_t)p_ref_data;
-  if (security_enforce_callback_map.count(security_enforce_callback_counter) ==
-      0) {
-    LOG(ERROR) << __func__ << "Unknown callback";
-    return;
-  }
-  auto& callback = security_enforce_callback_map[counter];
-  std::move(callback).Invoke(result == BTM_SUCCESS);
-  security_enforce_callback_map.erase(counter);
-}
-
-class SecurityEnforcementShim
-    : public bluetooth::l2cap::classic::SecurityEnforcementInterface {
- public:
-  void Enforce(bluetooth::hci::AddressWithType remote,
-               bluetooth::l2cap::classic::SecurityPolicy policy,
-               ResultCallback result_callback) override {
-    uint16_t sec_mask = 0;
-    switch (policy) {
-      case bluetooth::l2cap::classic::SecurityPolicy::
-          _SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
-        break;
-      case bluetooth::l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
-        sec_mask = BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
-                   BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT;
-        break;
-      case bluetooth::l2cap::classic::SecurityPolicy::BEST:
-      case bluetooth::l2cap::classic::SecurityPolicy::
-          AUTHENTICATED_ENCRYPTED_TRANSPORT:
-        sec_mask = BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
-                   BTM_SEC_IN_MITM | BTM_SEC_OUT_AUTHENTICATE |
-                   BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_MITM;
-        break;
-    }
-    auto bd_addr = bluetooth::ToRawAddress(remote.GetAddress());
-    btm_sec_l2cap_access_req_by_requirement(
-        bd_addr, sec_mask, true, security_enforce_result_callback,
-        (void*)security_enforce_callback_counter);
-    security_enforce_callback_counter++;
-  }
-};

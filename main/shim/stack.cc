@@ -41,6 +41,8 @@
 
 #include "main/shim/acl_legacy_interface.h"
 #include "main/shim/hci_layer.h"
+#include "main/shim/helpers.h"
+#include "main/shim/l2c_api.h"
 #include "main/shim/le_advertising_manager.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
@@ -82,6 +84,11 @@ void Stack::StartEverything() {
   if (common::InitFlags::GdAclEnabled()) {
     modules.add<hci::AclManager>();
   }
+  if (common::InitFlags::GdL2capEnabled()) {
+    modules.add<l2cap::classic::L2capClassicModule>();
+    modules.add<l2cap::le::L2capLeModule>();
+    modules.add<shim::L2cap>();
+  }
   if (common::InitFlags::GdSecurityEnabled()) {
     modules.add<security::SecurityModule>();
   }
@@ -91,8 +98,6 @@ void Stack::StartEverything() {
   if (common::InitFlags::GdCoreEnabled()) {
     modules.add<att::AttModule>();
     modules.add<hci::LeScanningManager>();
-    modules.add<l2cap::classic::L2capClassicModule>();
-    modules.add<l2cap::le::L2capLeModule>();
     modules.add<neighbor::ConnectabilityModule>();
     modules.add<neighbor::DiscoverabilityModule>();
     modules.add<neighbor::InquiryModule>();
@@ -101,9 +106,9 @@ void Stack::StartEverything() {
     modules.add<neighbor::PageModule>();
     modules.add<neighbor::ScanModule>();
     modules.add<storage::StorageModule>();
-    modules.add<shim::L2cap>();
   }
   Start(&modules);
+  is_running_ = true;
   // Make sure the leaf modules are started
   ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
   ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
@@ -112,7 +117,6 @@ void Stack::StartEverything() {
     btm_ = new Btm(stack_handler_,
                    stack_manager_.GetInstance<neighbor::InquiryModule>());
   }
-  is_running_ = true;
   if (common::InitFlags::GdAclEnabled()) {
     if (!common::InitFlags::GdCoreEnabled()) {
       acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface());
@@ -124,6 +128,10 @@ void Stack::StartEverything() {
 
   if (common::InitFlags::GdAdvertisingEnabled()) {
     bluetooth::shim::init_advertising_manager();
+  }
+  if (common::InitFlags::GdL2capEnabled() &&
+      !common::InitFlags::GdCoreEnabled()) {
+    L2CA_UseLegacySecurityModule();
   }
 }
 
