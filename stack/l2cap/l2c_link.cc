@@ -28,6 +28,8 @@
 #include <cstdint>
 
 #include "device/include/controller.h"
+#include "main/shim/l2c_api.h"
+#include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
@@ -124,6 +126,9 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
 
 void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                             const RawAddress& p_bda) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return;
+  }
   tL2C_CONN_INFO ci;
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -316,6 +321,11 @@ void l2c_link_sec_comp2(const RawAddress& p_bda,
  *
  ******************************************************************************/
 bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    btm_acl_removed(handle);
+    return false;
+  }
+
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
   tL2C_CCB* p_ccb;
   bool status = true;
@@ -1137,6 +1147,9 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
  *
  ******************************************************************************/
 void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return;
+  }
   uint8_t num_handles, xx;
   uint16_t handle;
   uint16_t num_sent;

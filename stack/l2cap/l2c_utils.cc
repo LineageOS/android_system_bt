@@ -34,6 +34,7 @@
 #include "hcidefs.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
@@ -1476,6 +1477,10 @@ tL2C_CCB* l2cu_allocate_ccb(tL2C_LCB* p_lcb, uint16_t cid) {
  *
  ******************************************************************************/
 bool l2cu_start_post_bond_timer(uint16_t handle) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return true;
+  }
+
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
 
   if (!p_lcb) return (true);
