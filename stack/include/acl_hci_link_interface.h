@@ -52,7 +52,7 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle);
 void btm_read_remote_features_complete_raw(uint8_t* p);
 void btm_read_remote_features_complete(uint16_t handle, uint8_t* features);
 void btm_read_remote_version_complete_raw(uint8_t* p);
-void btm_read_remote_version_complete(uint8_t status, uint16_t handle,
+void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
                                       uint8_t lmp_version,
                                       uint16_t manufacturer,
                                       uint16_t lmp_subversion);
