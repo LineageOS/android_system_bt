@@ -166,8 +166,13 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
             p_cb->loc_auth_req |= SMP_SC_SUPPORT_BIT;
           }
 
-          BTM_ReadRemoteVersion(p_cb->pairing_bda, &remote_lmp_version, nullptr,
-                                nullptr);
+          if (!BTM_ReadRemoteVersion(p_cb->pairing_bda, &remote_lmp_version,
+                                     nullptr, nullptr)) {
+            LOG_WARN(
+                "SMP Unable to determine remote security authentication "
+                "remote_lmp_version:%hu",
+                remote_lmp_version);
+          }
 
           if (!p_cb->secure_connections_only_mode_required &&
               (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
