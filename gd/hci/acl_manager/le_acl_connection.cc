@@ -132,6 +132,10 @@ bool LeAclConnection::LeConnectionUpdate(uint16_t conn_interval_min, uint16_t co
   return true;
 }
 
+bool LeAclConnection::ReadRemoteVersionInformation() {
+  return false;
+}
+
 bool LeAclConnection::check_connection_parameters(
     uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency, uint16_t supervision_timeout) {
   if (conn_interval_min < 0x0006 || conn_interval_min > 0x0C80 || conn_interval_max < 0x0006 ||
