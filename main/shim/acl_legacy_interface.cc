@@ -54,7 +54,8 @@ const acl_interface_t GetAclInterface() {
       .link.classic.on_read_link_policy_settings_complete = nullptr,
       .link.classic.on_read_link_quality_complete = nullptr,
       .link.classic.on_read_link_supervision_timeout_complete = nullptr,
-      .link.classic.on_read_remote_version_information_complete = nullptr,
+      .link.classic.on_read_remote_version_information_complete =
+          btm_read_remote_version_complete,
       .link.classic.on_read_remote_extended_features_complete =
           acl_process_extended_features,
       .link.classic.on_read_rssi_complete = nullptr,
@@ -64,6 +65,8 @@ const acl_interface_t GetAclInterface() {
 
       .link.le.on_connection_update = acl_ble_update_event_received,
       .link.le.on_data_length_change = nullptr,
+      .link.le.on_read_remote_version_information_complete =
+          btm_read_remote_version_complete,
   };
   return acl_interface;
 }
