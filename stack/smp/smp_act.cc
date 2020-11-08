@@ -24,6 +24,7 @@
 #include "btif_storage.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int.h"
@@ -174,19 +175,21 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
                 remote_lmp_version);
           }
 
-          if (!p_cb->secure_connections_only_mode_required &&
-              (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
-               remote_lmp_version < HCI_PROTO_VERSION_4_2 ||
-               interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
-                                  (const RawAddress*)&p_cb->pairing_bda))) {
-            p_cb->loc_auth_req &= ~SMP_SC_SUPPORT_BIT;
-            p_cb->loc_auth_req &= ~SMP_KP_SUPPORT_BIT;
-            p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
-            p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
-          }
+          if (!bluetooth::shim::is_gd_acl_enabled()) {
+            if (!p_cb->secure_connections_only_mode_required &&
+                (!(p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) ||
+                 remote_lmp_version < HCI_PROTO_VERSION_4_2 ||
+                 interop_match_addr(INTEROP_DISABLE_LE_SECURE_CONNECTIONS,
+                                    (const RawAddress*)&p_cb->pairing_bda))) {
+              p_cb->loc_auth_req &= ~SMP_SC_SUPPORT_BIT;
+              p_cb->loc_auth_req &= ~SMP_KP_SUPPORT_BIT;
+              p_cb->local_i_key &= ~SMP_SEC_KEY_TYPE_LK;
+              p_cb->local_r_key &= ~SMP_SEC_KEY_TYPE_LK;
+            }
 
-          if (remote_lmp_version < HCI_PROTO_VERSION_5_0) {
-            p_cb->loc_auth_req &= ~SMP_H7_SUPPORT_BIT;
+            if (remote_lmp_version < HCI_PROTO_VERSION_5_0) {
+              p_cb->loc_auth_req &= ~SMP_H7_SUPPORT_BIT;
+            }
           }
 
           LOG_DEBUG(
