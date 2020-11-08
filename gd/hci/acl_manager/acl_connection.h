@@ -34,6 +34,8 @@ class AclConnection {
     return handle_;
   }
 
+  virtual bool ReadRemoteVersionInformation() = 0;
+
   using Queue = common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder>;
   using QueueUpEnd = common::BidiQueueEnd<BasePacketBuilder, PacketView<kLittleEndian>>;
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
