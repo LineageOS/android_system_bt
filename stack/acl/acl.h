@@ -105,6 +105,13 @@ typedef struct {
   uint8_t lmp_version;
   uint8_t switch_role_failed_attempts;
 
+  struct {
+    uint8_t lmp_version{0};
+    uint16_t lmp_subversion{0};
+    uint16_t manufacturer{0};
+    bool valid{false};
+  } remote_version_info;
+
 #define BTM_SEC_RS_NOT_PENDING 0 /* Role Switch not in progress */
 #define BTM_SEC_RS_PENDING 1     /* Role Switch in progress */
 #define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
