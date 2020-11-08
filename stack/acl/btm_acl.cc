@@ -758,11 +758,11 @@ void btm_read_remote_version_complete_raw(uint8_t* p) {
   STREAM_TO_UINT16(manufacturer, p);
   STREAM_TO_UINT16(lmp_subversion, p);
 
-  btm_read_remote_version_complete(status, handle, lmp_version, manufacturer,
-                                   lmp_version);
+  btm_read_remote_version_complete(static_cast<tHCI_STATUS>(status), handle,
+                                   lmp_version, manufacturer, lmp_version);
 }
 
-void btm_read_remote_version_complete(uint8_t status, uint16_t handle,
+void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
                                       uint8_t lmp_version,
                                       uint16_t manufacturer,
                                       uint16_t lmp_subversion) {
