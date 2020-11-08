@@ -1496,17 +1496,20 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
 
 bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
                            uint16_t* manufacturer, uint16_t* lmp_sub_version) {
-  tACL_CONN* p = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
-  if (p == NULL) {
-    LOG_WARN("Unable to find active acl");
-    return false;
+  const tACL_CONN* p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_LE);
+    if (p_acl == nullptr) {
+      LOG_WARN("Unable to find active acl");
+      return false;
+    }
   }
 
-  if (lmp_version) *lmp_version = p->lmp_version;
+  if (lmp_version) *lmp_version = p_acl->lmp_version;
 
-  if (manufacturer) *manufacturer = p->manufacturer;
+  if (manufacturer) *manufacturer = p_acl->manufacturer;
 
-  if (lmp_sub_version) *lmp_sub_version = p->lmp_subversion;
+  if (lmp_sub_version) *lmp_sub_version = p_acl->lmp_subversion;
 
   return true;
 }
