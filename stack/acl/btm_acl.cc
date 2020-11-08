@@ -734,10 +734,10 @@ void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
   }
 
   if (status == HCI_SUCCESS) {
-    p_acl_cb->lmp_version = lmp_version;
-    p_acl_cb->manufacturer = manufacturer;
-    p_acl_cb->lmp_subversion = lmp_subversion;
-
+    p_acl_cb->remote_version_info.lmp_version = lmp_version;
+    p_acl_cb->remote_version_info.manufacturer = manufacturer;
+    p_acl_cb->remote_version_info.lmp_subversion = lmp_subversion;
+    p_acl_cb->remote_version_info.valid = true;
     bluetooth::common::LogRemoteVersionInfo(handle, status, lmp_version,
                                             manufacturer, lmp_subversion);
   } else {
@@ -1505,11 +1505,17 @@ bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
     }
   }
 
-  if (lmp_version) *lmp_version = p_acl->lmp_version;
+  if (!p_acl->remote_version_info.valid) {
+    LOG_WARN("Remote version information is invalid");
+    return false;
+  }
 
-  if (manufacturer) *manufacturer = p_acl->manufacturer;
+  if (lmp_version) *lmp_version = p_acl->remote_version_info.lmp_version;
 
-  if (lmp_sub_version) *lmp_sub_version = p_acl->lmp_subversion;
+  if (manufacturer) *manufacturer = p_acl->remote_version_info.manufacturer;
+
+  if (lmp_sub_version)
+    *lmp_sub_version = p_acl->remote_version_info.lmp_subversion;
 
   return true;
 }
