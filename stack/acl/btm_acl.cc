@@ -1494,20 +1494,12 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return (pkt_size);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_ReadRemoteVersion
- *
- * Returns          If connected report peer device info
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
-                                  uint16_t* manufacturer,
-                                  uint16_t* lmp_sub_version) {
+bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
+                           uint16_t* manufacturer, uint16_t* lmp_sub_version) {
   tACL_CONN* p = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
   if (p == NULL) {
     LOG_WARN("Unable to find active acl");
-    return (BTM_UNKNOWN_ADDR);
+    return false;
   }
 
   if (lmp_version) *lmp_version = p->lmp_version;
@@ -1516,7 +1508,7 @@ tBTM_STATUS BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
 
   if (lmp_sub_version) *lmp_sub_version = p->lmp_subversion;
 
-  return (BTM_SUCCESS);
+  return true;
 }
 
 /*******************************************************************************
