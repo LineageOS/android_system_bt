@@ -73,6 +73,7 @@ CERT_TEST_VENV=${ANDROID_BUILD_TOP}/out/dist/bluetooth_venv
 OUT_TARGET="${ANDROID_BUILD_TOP}/out/target"
 TEST_CONFIG="${ANDROID_BUILD_TOP}/system/bt/gd/cert/android_devices_config.json"
 TEST_FILTER="-tf ${ANDROID_BUILD_TOP}/system/bt/gd/cert/all_cert_testcases"
+BUILD_TARGET="bluetooth_stack_with_facade"
 
 CLEAN_VENV=false
 GOTTA_GO_FAST=false
@@ -150,6 +151,16 @@ function parse_options {
         TEST_CONFIG="${key#*=}"
         shift # past argument
         ;;
+        --rust)
+        BUILD_TARGET="bluetooth_with_facades"
+        TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/rust_android_devices_config.json
+        shift # past argument
+        ;;
+        --rhost)
+        BUILD_TARGET="bluetooth_with_facades"
+        TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/rust_host_config.json
+        shift # past argument
+        ;;
         # This will log everything to both log file and stdout
         --verbose)
         VERBOSE_MODE=true
@@ -167,7 +178,7 @@ function parse_options {
     if [[ -n "$1" ]] ; then
       TEST_FILTER="-tc $1"
     fi
-    
+
     INSTALL_ARGS="--reuse-acts"
     if [ "$CLEAN_VENV" == true ] ; then
       echo -e "${YELLOW}Cleaning up existing virtualenv${NOCOLOR}"
@@ -182,9 +193,9 @@ function parse_options {
 }
 
 function soong_build {
-    $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"modules-in-a-dir" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" dist bluetooth_stack_with_facade
+    $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"modules-in-a-dir" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" dist $BUILD_TARGET
     if [[ $? -ne 0 ]] ; then
-        echo "Failed to build bluetooth_stack_with_facade"
+        echo "Failed to build ${BUILD_TARGET}"
         exit 1
     fi
 }
