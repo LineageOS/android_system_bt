@@ -401,12 +401,11 @@ tBTM_STATUS BTM_CancelRemoteDeviceName(void);
  *
  * Description      This function is called to read a remote device's version
  *
- * Returns          BTM_SUCCESS if successful, otherwise an error
+ * Returns          true if data valid, false otherwise
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
-                                  uint16_t* manufacturer,
-                                  uint16_t* lmp_sub_version);
+bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
+                           uint16_t* manufacturer, uint16_t* lmp_sub_version);
 
 /*******************************************************************************
  *

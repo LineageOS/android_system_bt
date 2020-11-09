@@ -734,10 +734,10 @@ void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
   }
 
   if (status == HCI_SUCCESS) {
-    p_acl_cb->lmp_version = lmp_version;
-    p_acl_cb->manufacturer = manufacturer;
-    p_acl_cb->lmp_subversion = lmp_subversion;
-
+    p_acl_cb->remote_version_info.lmp_version = lmp_version;
+    p_acl_cb->remote_version_info.manufacturer = manufacturer;
+    p_acl_cb->remote_version_info.lmp_subversion = lmp_subversion;
+    p_acl_cb->remote_version_info.valid = true;
     bluetooth::common::LogRemoteVersionInfo(handle, status, lmp_version,
                                             manufacturer, lmp_subversion);
   } else {
@@ -758,11 +758,11 @@ void btm_read_remote_version_complete_raw(uint8_t* p) {
   STREAM_TO_UINT16(manufacturer, p);
   STREAM_TO_UINT16(lmp_subversion, p);
 
-  btm_read_remote_version_complete(status, handle, lmp_version, manufacturer,
-                                   lmp_version);
+  btm_read_remote_version_complete(static_cast<tHCI_STATUS>(status), handle,
+                                   lmp_version, manufacturer, lmp_version);
 }
 
-void btm_read_remote_version_complete(uint8_t status, uint16_t handle,
+void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
                                       uint8_t lmp_version,
                                       uint16_t manufacturer,
                                       uint16_t lmp_subversion) {
@@ -1494,29 +1494,30 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return (pkt_size);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_ReadRemoteVersion
- *
- * Returns          If connected report peer device info
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
-                                  uint16_t* manufacturer,
-                                  uint16_t* lmp_sub_version) {
-  tACL_CONN* p = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
-  if (p == NULL) {
-    LOG_WARN("Unable to find active acl");
-    return (BTM_UNKNOWN_ADDR);
+bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
+                           uint16_t* manufacturer, uint16_t* lmp_sub_version) {
+  const tACL_CONN* p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_LE);
+    if (p_acl == nullptr) {
+      LOG_WARN("Unable to find active acl");
+      return false;
+    }
   }
 
-  if (lmp_version) *lmp_version = p->lmp_version;
+  if (!p_acl->remote_version_info.valid) {
+    LOG_WARN("Remote version information is invalid");
+    return false;
+  }
 
-  if (manufacturer) *manufacturer = p->manufacturer;
+  if (lmp_version) *lmp_version = p_acl->remote_version_info.lmp_version;
 
-  if (lmp_sub_version) *lmp_sub_version = p->lmp_subversion;
+  if (manufacturer) *manufacturer = p_acl->remote_version_info.manufacturer;
 
-  return (BTM_SUCCESS);
+  if (lmp_sub_version)
+    *lmp_sub_version = p_acl->remote_version_info.lmp_subversion;
+
+  return true;
 }
 
 /*******************************************************************************
