@@ -4827,9 +4827,8 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
   }
 }
 
-// Return DEV_CLASS (uint8_t[3]) of bda
+// Return DEV_CLASS (uint8_t[3]) of bda. If record doesn't exist, create one.
 const uint8_t* btm_get_dev_class(const RawAddress& bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  if (p_dev_rec == nullptr) return nullptr;
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
   return p_dev_rec->dev_class;
 }
