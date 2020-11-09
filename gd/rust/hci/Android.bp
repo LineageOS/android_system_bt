@@ -20,37 +20,3 @@ rust_library {
     ],
     host_supported: true,
 }
-
-rust_binary {
-    name: "hci_facade_client",
-    crate_name: "hci_facade_client",
-    srcs: ["src/facade/hci_facade_client.rs"],
-    edition: "2018",
-    rustlibs: [
-        "libbt_hal",
-        "libbt_hci",
-        "libbytes",
-        "libfutures",
-        "libgrpcio",
-        "libprotobuf",
-        "libtokio",
-    ],
-    host_supported: true,
-}
-
-rust_binary {
-    name: "hci_facade_main",
-    crate_name: "hci_facade_main",
-    srcs: ["src/facade/hci_facade_main.rs"],
-    edition: "2018",
-    rustlibs: [
-        "libbt_hal",
-        "libbt_hci",
-        "libbytes",
-        "libfutures",
-        "libgrpcio",
-        "libprotobuf",
-        "libtokio",
-    ],
-    host_supported: true,
-}
