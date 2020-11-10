@@ -127,16 +127,19 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
 
   ::grpc::Status CreateAdvertiser(::grpc::ServerContext* context, const CreateAdvertiserRequest* request,
                                   CreateAdvertiserResponse* response) override {
-    hci::AdvertisingConfig config = {};
+    hci::ExtendedAdvertisingConfig config = {};
     if (!AdvertisingConfigFromProto(request->config(), &config)) {
       LOG_WARN("Error parsing advertising config %s", request->SerializeAsString().c_str());
       response->set_advertiser_id(LeAdvertisingManager::kInvalidId);
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Error while parsing advertising config");
     }
     LeAdvertiser le_advertiser(config);
-    auto advertiser_id = le_advertising_manager_->CreateAdvertiser(
-        config, common::Bind(&LeAdvertiser::ScanCallback, common::Unretained(&le_advertiser)),
-        common::Bind(&LeAdvertiser::TerminatedCallback, common::Unretained(&le_advertiser)), facade_handler_);
+    auto advertiser_id = le_advertising_manager_->ExtendedCreateAdvertiser(
+        -1,
+        config,
+        common::Bind(&LeAdvertiser::ScanCallback, common::Unretained(&le_advertiser)),
+        common::Bind(&LeAdvertiser::TerminatedCallback, common::Unretained(&le_advertiser)),
+        facade_handler_);
     if (advertiser_id != LeAdvertisingManager::kInvalidId) {
       le_advertiser.SetAdvertiserId(advertiser_id);
       le_advertisers_.push_back(le_advertiser);
