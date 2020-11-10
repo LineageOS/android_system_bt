@@ -396,17 +396,12 @@ void btm_acl_removed(uint16_t handle) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-  RawAddress bda = p_acl->remote_addr;
-  tBT_TRANSPORT transport = p_acl->transport;
-  if (transport == BT_TRANSPORT_LE) {
-    bda = p_acl->conn_addr;
-  }
   p_acl->in_use = false;
 
   /* Only notify if link up has had a chance to be issued */
   if (p_acl->link_up_issued) {
     p_acl->link_up_issued = false;
-    BTA_dm_acl_down(bda, transport);
+    BTA_dm_acl_down(p_acl->remote_addr, p_acl->transport);
   }
 
   memset(p_acl, 0, sizeof(tACL_CONN));
