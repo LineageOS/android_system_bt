@@ -1831,7 +1831,7 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     }
   }
   /* Reload mtu from a previously accepted config request */
-  else if (p_ccb->peer_cfg.mtu_present) {
+  else if (p_ccb->peer_cfg.mtu_present && !(p_ccb->config_done & IB_CFG_DONE)) {
     p_cfg->mtu_present = true;
     p_cfg->mtu = p_ccb->peer_cfg.mtu;
   }
@@ -1848,7 +1848,8 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     }
   }
   /* Reload flush_to from a previously accepted config request */
-  else if (p_ccb->peer_cfg.flush_to_present) {
+  else if (p_ccb->peer_cfg.flush_to_present &&
+           !(p_ccb->config_done & IB_CFG_DONE)) {
     p_cfg->flush_to_present = true;
     p_cfg->flush_to = p_ccb->peer_cfg.flush_to;
   }
@@ -1868,7 +1869,7 @@ uint8_t l2cu_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     }
   }
   /* Reload QOS from a previously accepted config request */
-  else if (p_ccb->peer_cfg.qos_present) {
+  else if (p_ccb->peer_cfg.qos_present && !(p_ccb->config_done & IB_CFG_DONE)) {
     p_cfg->qos_present = true;
     p_cfg->qos = p_ccb->peer_cfg.qos;
   }

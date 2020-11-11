@@ -1033,12 +1033,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     case L2CEVT_L2CA_CONFIG_RSP: /* Upper layer config rsp   */
       l2cu_process_our_cfg_rsp(p_ccb, p_cfg);
 
-      /* Local config done; clear cached configuration in case reconfig takes
-       * place later */
-      p_ccb->peer_cfg.mtu_present = false;
-      p_ccb->peer_cfg.flush_to_present = false;
-      p_ccb->peer_cfg.qos_present = false;
-
       p_ccb->config_done |= IB_CFG_DONE;
 
       if (p_ccb->config_done & OB_CFG_DONE) {
@@ -1178,6 +1172,10 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       tempstate = p_ccb->chnl_state;
       tempcfgdone = p_ccb->config_done;
       p_ccb->chnl_state = CST_CONFIG;
+      // clear cached configuration in case reconfig takes place later
+      p_ccb->peer_cfg.mtu_present = false;
+      p_ccb->peer_cfg.flush_to_present = false;
+      p_ccb->peer_cfg.qos_present = false;
       p_ccb->config_done &= ~IB_CFG_DONE;
 
       alarm_set_on_mloop(p_ccb->l2c_ccb_timer, L2CAP_CHNL_CFG_TIMEOUT_MS,
