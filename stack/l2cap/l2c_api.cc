@@ -80,6 +80,11 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
         psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu, required_remote_mtu);
   }
 
+  const bool config_cfm_cb = (p_cb_info.pL2CA_ConfigCfm_Cb != nullptr);
+  const bool config_ind_cb = (p_cb_info.pL2CA_ConfigInd_Cb != nullptr);
+  const bool data_ind_cb = (p_cb_info.pL2CA_DataInd_Cb != nullptr);
+  const bool disconnect_ind_cb = (p_cb_info.pL2CA_DisconnectInd_Cb != nullptr);
+
   tL2C_RCB* p_rcb;
   uint16_t vpsm = psm;
 
@@ -90,9 +95,11 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   **             for here because it is possible to be only a client
   **             or only a server.
   */
-  if ((!p_cb_info.pL2CA_ConfigCfm_Cb) || (!p_cb_info.pL2CA_ConfigInd_Cb) ||
-      (!p_cb_info.pL2CA_DataInd_Cb) || (!p_cb_info.pL2CA_DisconnectInd_Cb)) {
-    L2CAP_TRACE_ERROR("L2CAP - no cb registering PSM: 0x%04x", psm);
+  if (!config_cfm_cb || !data_ind_cb || !disconnect_ind_cb) {
+    LOG_ERROR(
+        "L2CAP - no cb registering PSM: 0x%04x cfg_cfm:%u cfg_ind:%u"
+        " data_ind:%u discon_int:%u",
+        psm, config_cfm_cb, config_ind_cb, data_ind_cb, disconnect_ind_cb);
     return (0);
   }
 
