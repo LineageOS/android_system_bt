@@ -5,27 +5,41 @@ use bt_hal_proto::facade::*;
 use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
 
 use tokio::runtime::Runtime;
+use tokio::sync::mpsc;
+use tokio::sync::Mutex;
 
+use futures::sink::SinkExt;
 use grpcio::*;
 
 use std::sync::Arc;
+
+use crate::HalExports;
+
+use bt_packet::{HciCommand, HciEvent};
 
 /// HCI HAL facade service
 #[derive(Clone)]
 pub struct HciHalFacadeService {
     rt: Arc<Runtime>,
+    cmd_tx: mpsc::UnboundedSender<HciCommand>,
+    evt_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
 }
 
 impl HciHalFacadeService {
     /// Create a new instance of HCI HAL facade service
-    pub fn create(rt: Arc<Runtime>) -> grpcio::Service {
-        create_hci_hal_facade(Self { rt })
+    pub fn create(hal_exports: HalExports, rt: Arc<Runtime>) -> grpcio::Service {
+        create_hci_hal_facade(Self {
+            rt,
+            cmd_tx: hal_exports.cmd_tx,
+            evt_rx: Arc::new(Mutex::new(hal_exports.evt_rx)),
+        })
     }
 }
 
 impl HciHalFacade for HciHalFacadeService {
-    fn send_command(&mut self, _ctx: RpcContext<'_>, _cmd: Command, _sink: UnarySink<Empty>) {
-        unimplemented!()
+    fn send_command(&mut self, _ctx: RpcContext<'_>, mut cmd: Command, sink: UnarySink<Empty>) {
+        self.cmd_tx.send(cmd.take_payload().into()).unwrap();
+        sink.success(Empty::default());
     }
 
     fn send_acl(&mut self, _ctx: RpcContext<'_>, _acl: AclPacket, _sink: UnarySink<Empty>) {
@@ -40,8 +54,20 @@ impl HciHalFacade for HciHalFacadeService {
         unimplemented!()
     }
 
-    fn stream_events(&mut self, _ctx: RpcContext<'_>, _: Empty, _sink: ServerStreamingSink<Event>) {
-        unimplemented!()
+    fn stream_events(
+        &mut self,
+        _ctx: RpcContext<'_>,
+        _: Empty,
+        mut sink: ServerStreamingSink<Event>,
+    ) {
+        let evt_rx = self.evt_rx.clone();
+        self.rt.spawn(async move {
+            while let Some(event) = evt_rx.lock().await.recv().await {
+                let mut output = Event::default();
+                output.set_payload(event.to_vec());
+                sink.send((output, WriteFlags::default())).await.unwrap();
+            }
+        });
     }
 
     fn stream_acl(
