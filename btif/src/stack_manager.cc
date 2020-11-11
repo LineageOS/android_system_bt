@@ -291,6 +291,11 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
 
   future_await(local_hack_future);
 
+  gatt_free();
+  l2c_free();
+  sdp_free();
+  btm_free();
+
   if (bluetooth::shim::is_any_gd_enabled()) {
     LOG_INFO("%s Gd shim module disabled", __func__);
     module_shut_down(get_module(GD_SHIM_MODULE));
@@ -303,11 +308,6 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   main_thread_shut_down();
 
   module_clean_up(get_module(BTE_LOGMSG_MODULE));
-
-  gatt_free();
-  l2c_free();
-  sdp_free();
-  btm_free();
 
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
