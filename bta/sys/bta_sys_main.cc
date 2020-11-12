@@ -84,7 +84,7 @@ void BTA_sys_signal_hw_error() {
  * Returns          void
  *
  ******************************************************************************/
-void bta_sys_event(BT_HDR* p_msg) {
+static void bta_sys_event(BT_HDR* p_msg) {
   uint8_t id;
   bool freebuf = true;
 
