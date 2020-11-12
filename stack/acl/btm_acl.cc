@@ -2686,13 +2686,14 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
   /* If a role switch is in progress, delay the HCI Disconnect to avoid
    * controller problem */
   if (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING) {
-    BTM_TRACE_DEBUG(
-        "RS in progress - Set DISC Pending flag in btm_sec_send_hci_disconnect "
+    LOG_DEBUG(
+        "Role switch in progress - Set DISC Pending flag in "
+        "btm_sec_send_hci_disconnect "
         "to delay disconnect");
     p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
-  }
-  /* Tear down the HCI link */
-  else {
+  } else {
+    LOG_DEBUG("Sending acl disconnect reason:%s [%hu]",
+              hci_error_code_text(reason).c_str(), reason);
     btsnd_hcic_disconnect(conn_handle, reason);
   }
 }
