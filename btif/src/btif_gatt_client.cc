@@ -149,7 +149,7 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
 
     case BTA_GATTC_CLOSE_EVT: {
       HAL_CBACK(bt_gatt_callbacks, client->close_cb, p_data->close.conn_id,
-                p_data->status, p_data->close.client_if,
+                p_data->close.status, p_data->close.client_if,
                 p_data->close.remote_bda);
       break;
     }
