@@ -567,7 +567,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       /* Check how many channels remote side wants. */
       num_of_channels = (p_pkt_end - p) / sizeof(uint16_t);
 
-      L2CAP_TRACE_DEBUG(
+      LOG_DEBUG(
           "Recv L2CAP_CMD_CREDIT_BASED_CONN_REQ with "
           "mtu = %d, "
           "mps = %d, "
@@ -576,8 +576,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           mtu, mps, initial_credit, num_of_channels);
 
       if (p_lcb->pending_ecoc_conn_cnt > 0) {
-        L2CAP_TRACE_WARNING(
-            "L2CAP - L2CAP_CMD_CREDIT_BASED_CONN_REQ collision:");
+        LOG_WARN("L2CAP - L2CAP_CMD_CREDIT_BASED_CONN_REQ collision:");
         l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
                                           L2CAP_LE_RESULT_NO_RESOURCES);
         return;
@@ -588,17 +587,15 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       /* Check PSM Support */
       p_rcb = l2cu_find_ble_rcb_by_psm(con_info.psm);
       if (p_rcb == NULL) {
-        L2CAP_TRACE_WARNING("L2CAP - rcvd conn req for unknown PSM: 0x%04x",
-                            con_info.psm);
+        LOG_WARN("L2CAP - rcvd conn req for unknown PSM: 0x%04x", con_info.psm);
         l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
                                           L2CAP_LE_RESULT_NO_PSM);
         return;
       }
 
       if (!p_rcb->api.pL2CA_CreditBasedConnectInd_Cb) {
-        L2CAP_TRACE_WARNING(
-            "L2CAP - rcvd conn req for outgoing-only connection PSM: %d",
-            con_info.psm);
+        LOG_WARN("L2CAP - rcvd conn req for outgoing-only connection PSM: %d",
+                 con_info.psm);
         l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
                                           L2CAP_CONN_NO_PSM);
         return;
@@ -607,7 +604,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       /* validate the parameters */
       if (mtu < L2CAP_CREDIT_BASED_MIN_MTU ||
           mps < L2CAP_CREDIT_BASED_MIN_MPS || mps > L2CAP_LE_MAX_MPS) {
-        L2CAP_TRACE_ERROR("L2CAP don't like the params");
+        LOG_ERROR("L2CAP don't like the params");
         l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
                                           L2CAP_LE_RESULT_INVALID_PARAMETERS);
         return;
@@ -619,8 +616,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         STREAM_TO_UINT16(rcid, p);
         temp_p_ccb = l2cu_find_ccb_by_remote_cid(p_lcb, rcid);
         if (temp_p_ccb) {
-          L2CAP_TRACE_WARNING(
-              "L2CAP - rcvd conn req for duplicated cid: 0x%04x", rcid);
+          LOG_WARN("L2CAP - rcvd conn req for duplicated cid: 0x%04x", rcid);
           p_lcb->pending_ecoc_connection_cids[i] = 0;
           p_lcb->pending_l2cap_result =
               L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED;
@@ -628,7 +624,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           /* Allocate a ccb for this.*/
           temp_p_ccb = l2cu_allocate_ccb(p_lcb, 0);
           if (temp_p_ccb == NULL) {
-            L2CAP_TRACE_ERROR("L2CAP - unable to allocate CCB");
+            LOG_ERROR("L2CAP - unable to allocate CCB");
             p_lcb->pending_ecoc_connection_cids[i] = 0;
             p_lcb->pending_l2cap_result = L2CAP_LE_RESULT_NO_RESOURCES;
             continue;
@@ -662,12 +658,13 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       }
 
       if (!lead_cid_set) {
-        L2CAP_TRACE_ERROR("L2CAP - unable to allocate CCB");
+        LOG_ERROR("L2CAP - unable to allocate CCB");
         l2cu_reject_credit_based_conn_req(p_lcb, id, num_of_channels,
                                           p_lcb->pending_l2cap_result);
         return;
       }
 
+      LOG_DEBUG("L2CAP - processing peer credit based connect request");
       l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CREDIT_BASED_CONNECT_REQ, NULL);
       break;
     }
