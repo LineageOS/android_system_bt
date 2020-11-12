@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1d62357b_095e3687",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 18220
+      },
+      "writtenOn": "2020-11-12T04:08:38Z",
+      "side": 1,
+      "message": "I guess you mean qualified here?",
+      "revId": "3041b4ee03600770ef863e0260b9461c762414fd",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
