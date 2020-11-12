@@ -42,7 +42,7 @@ class PyHal(Closable):
         return self.acl_stream
 
     def send_hci_command(self, command):
-        self.device.hal.SendCommand(hal_facade.Command(payload=bytes(command)))
+        self.device.hal.SendCommand(hal_facade.Command(payload=bytes(command.Serialize())))
 
     def send_acl(self, acl):
         self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl)))
