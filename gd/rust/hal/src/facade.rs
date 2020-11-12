@@ -15,7 +15,7 @@ use std::sync::Arc;
 
 use crate::HalExports;
 
-use bt_packet::{HciCommand, HciEvent};
+use bt_packet::{HciCommand, HciEvent, RawPacket};
 
 /// HCI HAL facade service
 #[derive(Clone)]
@@ -23,6 +23,8 @@ pub struct HciHalFacadeService {
     rt: Arc<Runtime>,
     cmd_tx: mpsc::UnboundedSender<HciCommand>,
     evt_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
+    acl_tx: mpsc::UnboundedSender<RawPacket>,
+    acl_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
 }
 
 impl HciHalFacadeService {
@@ -32,6 +34,8 @@ impl HciHalFacadeService {
             rt,
             cmd_tx: hal_exports.cmd_tx,
             evt_rx: Arc::new(Mutex::new(hal_exports.evt_rx)),
+            acl_tx: hal_exports.acl_tx,
+            acl_rx: Arc::new(Mutex::new(hal_exports.acl_rx)),
         })
     }
 }
@@ -42,8 +46,9 @@ impl HciHalFacade for HciHalFacadeService {
         sink.success(Empty::default());
     }
 
-    fn send_acl(&mut self, _ctx: RpcContext<'_>, _acl: AclPacket, _sink: UnarySink<Empty>) {
-        unimplemented!()
+    fn send_acl(&mut self, _ctx: RpcContext<'_>, mut acl: AclPacket, sink: UnarySink<Empty>) {
+        self.acl_tx.send(acl.take_payload().into()).unwrap();
+        sink.success(Empty::default());
     }
 
     fn send_sco(&mut self, _ctx: RpcContext<'_>, _sco: ScoPacket, _sink: UnarySink<Empty>) {
@@ -74,9 +79,16 @@ impl HciHalFacade for HciHalFacadeService {
         &mut self,
         _ctx: RpcContext<'_>,
         _: Empty,
-        _sink: ServerStreamingSink<AclPacket>,
+        mut sink: ServerStreamingSink<AclPacket>,
     ) {
-        unimplemented!()
+        let acl_rx = self.acl_rx.clone();
+        self.rt.spawn(async move {
+            while let Some(acl) = acl_rx.lock().await.recv().await {
+                let mut output = AclPacket::default();
+                output.set_payload(acl.to_vec());
+                sink.send((output, WriteFlags::default())).await.unwrap();
+            }
+        });
     }
 
     fn stream_sco(

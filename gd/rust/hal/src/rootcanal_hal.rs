@@ -2,19 +2,19 @@
 //! This connects to "rootcanal" which provides a simulated
 //! Bluetooth chip as well as a simulated environment.
 
-use bytes::{BufMut, BytesMut};
+use bytes::{BufMut, Bytes, BytesMut};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
+use tokio::select;
 
 use tokio::runtime::Runtime;
 
-use futures::stream::StreamExt;
 use tokio::sync::mpsc;
 
-use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType};
+use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType, RawPacket};
 
 use std::sync::Arc;
 
@@ -30,7 +30,10 @@ pub struct RootcanalConfig {
 impl RootcanalConfig {
     /// Create a rootcanal config
     pub fn new(port: u16, server_address: &str) -> Self {
-        Self { port, server_address: String::from(server_address) }
+        Self {
+            port,
+            server_address: String::from(server_address),
+        }
     }
 }
 
@@ -40,7 +43,11 @@ pub struct RootcanalHal;
 
 impl RootcanalHal {
     /// Send HCI events received from the HAL to the HCI layer
-    async fn dispatch_incoming<R>(evt_tx: mpsc::UnboundedSender<HciEvent>, reader: R) -> Result<()>
+    async fn dispatch_incoming<R>(
+        evt_tx: mpsc::UnboundedSender<HciEvent>,
+        acl_tx: mpsc::UnboundedSender<RawPacket>,
+        reader: R,
+    ) -> Result<()>
     where
         R: AsyncReadExt + Unpin,
     {
@@ -58,6 +65,8 @@ impl RootcanalHal {
             header.unsplit(payload);
             if h4_type[0] == HciPacketType::Event as u8 {
                 evt_tx.send(header.freeze()).unwrap();
+            } else if h4_type[0] == HciPacketType::Acl as u8 {
+                acl_tx.send(header.freeze()).unwrap();
             }
         }
     }
@@ -65,17 +74,38 @@ impl RootcanalHal {
     /// Send commands received from the HCI later to rootcanal
     async fn dispatch_outgoing<W>(
         mut cmd_rx: mpsc::UnboundedReceiver<HciCommand>,
+        mut acl_rx: mpsc::UnboundedReceiver<RawPacket>,
         mut writer: W,
     ) -> Result<()>
     where
         W: AsyncWriteExt + Unpin,
     {
-        while let Some(next_cmd) = cmd_rx.next().await {
-            let mut command = BytesMut::with_capacity(next_cmd.len() + 1);
-            command.put_u8(HciPacketType::Command as u8);
-            command.extend(next_cmd);
-            writer.write_all(&command[..]).await?;
+        loop {
+            select! {
+                Some(cmd) = cmd_rx.recv() => {
+                    Self::write_with_type(&mut writer, HciPacketType::Command, cmd).await?;
+                }
+                Some(acl) = acl_rx.recv() => {
+                    Self::write_with_type(&mut writer, HciPacketType::Acl, acl).await?;
+                }
+                else => {
+                    break;
+                }
+            }
         }
+
+        Ok(())
+    }
+
+    async fn write_with_type<W>(writer: &mut W, t: HciPacketType, b: Bytes) -> Result<()>
+    where
+        W: AsyncWriteExt + Unpin,
+    {
+        let mut data = BytesMut::with_capacity(b.len() + 1);
+        data.put_u8(t as u8);
+        data.extend(b);
+        writer.write_all(&data[..]).await?;
+
         Ok(())
     }
 
@@ -87,8 +117,8 @@ impl RootcanalHal {
         let stream = TcpStream::connect(&socket_addr).await?;
         let (reader, writer) = stream.into_split();
 
-        rt.spawn(Self::dispatch_incoming(hal.evt_tx, reader));
-        rt.spawn(Self::dispatch_outgoing(hal.cmd_rx, writer));
+        rt.spawn(Self::dispatch_incoming(hal.evt_tx, hal.acl_tx, reader));
+        rt.spawn(Self::dispatch_outgoing(hal.cmd_rx, hal.acl_rx, writer));
         Ok(hal_exports)
     }
 }
