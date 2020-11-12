@@ -581,8 +581,8 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       .conn_id = p_clcb->conn_id, .auth_req = GATT_AUTH_REQ_NONE,
   };
 
-  LOG(ERROR) << StringPrintf("value resp op_code = %s len = %d",
-                             gatt_dbg_op_name(op_code), len);
+  VLOG(1) << StringPrintf("value resp op_code = %s len = %d",
+                          gatt_dbg_op_name(op_code), len);
 
   if (len < GATT_PREP_WRITE_RSP_MIN_LEN) {
     LOG(ERROR) << "illegal prepare write response length, discard";
