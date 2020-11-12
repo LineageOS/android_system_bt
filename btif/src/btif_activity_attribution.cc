@@ -20,6 +20,7 @@
 
 #include <hardware/bt_activity_attribution.h>
 
+#include "btaa/include/activity_attribution.h"
 #include "btif/include/btif_common.h"
 #include "stack/include/btu.h"
 
@@ -37,6 +38,7 @@ class ActivityAttributionInterfaceImpl : public ActivityAttributionCallbacks,
 
   void Init(ActivityAttributionCallbacks* callbacks) override {
     this->callbacks = callbacks;
+    ActivityAttribution::Initialize(this);
   }
 
   void OnWakeup(Activity activity, const RawAddress& address) override {
@@ -46,7 +48,9 @@ class ActivityAttributionInterfaceImpl : public ActivityAttributionCallbacks,
                                      Unretained(callbacks), activity, address));
   }
 
-  void Cleanup(void) override {}
+  void Cleanup(void) override {
+    do_in_main_thread(FROM_HERE, Bind(&ActivityAttribution::CleanUp));
+  }
 
  private:
   ActivityAttributionCallbacks* callbacks;
