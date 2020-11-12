@@ -157,7 +157,6 @@ void bta_set_forward_hw_failures(bool value);
 void BTA_sys_signal_hw_error();
 
 extern void bta_sys_init(void);
-extern void bta_sys_event(BT_HDR* p_msg);
 extern void bta_sys_register(uint8_t id, const tBTA_SYS_REG* p_reg);
 extern void bta_sys_deregister(uint8_t id);
 extern bool bta_sys_is_register(uint8_t id);
