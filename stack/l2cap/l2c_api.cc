@@ -877,14 +877,14 @@ bool L2CA_DisconnectReq(uint16_t cid) {
 
   tL2C_CCB* p_ccb;
 
-  L2CAP_TRACE_API("L2CA_DisconnectReq()  CID: 0x%04x", cid);
-
   /* Find the channel control block. We don't know the link it is on. */
   p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
   if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_disc_req, CID: %d", cid);
+    LOG_WARN("L2CAP - no CCB for L2CA_disc_req, CID: %d", cid);
     return (false);
   }
+
+  LOG_DEBUG("L2CAP Local disconnect request CID: 0x%04x", cid);
 
   l2c_csm_execute(p_ccb, L2CEVT_L2CA_DISCONNECT_REQ, NULL);
 
