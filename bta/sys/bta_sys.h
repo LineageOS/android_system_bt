@@ -92,6 +92,8 @@ inline std::string BtaIdSysText(tBTA_SYS_ID sys_id) {
   switch (sys_id) {
     case BTA_ID_HD:
       return std::string("Hid Device");
+    case BTA_ID_GATTC:
+      return std::string("Gatt client");
     default:
       return std::string("Unknown");
   }
