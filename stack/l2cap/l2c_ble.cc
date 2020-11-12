@@ -651,6 +651,9 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
           /*This is going to be our lead p_ccb for state machine */
           if (!lead_cid_set) {
             p_ccb = temp_p_ccb;
+            p_ccb->local_conn_cfg.mtu = L2CAP_SDU_LENGTH_LE_MAX;
+            p_ccb->local_conn_cfg.mps =
+                controller_get_interface()->get_acl_data_size_ble();
             p_lcb->pending_lead_cid = p_ccb->local_cid;
             lead_cid_set = true;
           }
