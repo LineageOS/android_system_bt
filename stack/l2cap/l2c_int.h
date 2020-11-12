@@ -93,70 +93,70 @@ typedef enum {
  * of the events may seem a bit strange, but they are taken from
  * the Bluetooth specification.
 */
-/* Lower layer */
-#define L2CEVT_LP_CONNECT_CFM 0       /* connect confirm */
-#define L2CEVT_LP_CONNECT_CFM_NEG 1   /* connect confirm (failed) */
-#define L2CEVT_LP_CONNECT_IND 2       /* connect indication */
-#define L2CEVT_LP_DISCONNECT_IND 3    /* disconnect indication */
+enum : uint16_t {
+  /* Lower layer */
+  L2CEVT_LP_CONNECT_CFM = 0,     /* connect confirm */
+  L2CEVT_LP_CONNECT_CFM_NEG = 1, /* connect confirm (failed) */
+  L2CEVT_LP_CONNECT_IND = 2,     /* connect indication */
+  L2CEVT_LP_DISCONNECT_IND = 3,  /* disconnect indication */
 
-/* Security */
-#define L2CEVT_SEC_COMP 7     /* cleared successfully */
-#define L2CEVT_SEC_COMP_NEG 8 /* procedure failed */
+  /* Security */
+  L2CEVT_SEC_COMP = 7,     /* cleared successfully */
+  L2CEVT_SEC_COMP_NEG = 8, /* procedure failed */
 
-/* Peer connection */
-#define L2CEVT_L2CAP_CONNECT_REQ 10     /* request */
-#define L2CEVT_L2CAP_CONNECT_RSP 11     /* response */
-#define L2CEVT_L2CAP_CONNECT_RSP_PND 12 /* response pending */
-#define L2CEVT_L2CAP_CONNECT_RSP_NEG 13 /* response (failed) */
+  /* Peer connection */
+  L2CEVT_L2CAP_CONNECT_REQ = 10,     /* request */
+  L2CEVT_L2CAP_CONNECT_RSP = 11,     /* response */
+  L2CEVT_L2CAP_CONNECT_RSP_PND = 12, /* response pending */
+  L2CEVT_L2CAP_CONNECT_RSP_NEG = 13, /* response (failed) */
 
-/* Peer configuration */
-#define L2CEVT_L2CAP_CONFIG_REQ 14     /* request */
-#define L2CEVT_L2CAP_CONFIG_RSP 15     /* response */
-#define L2CEVT_L2CAP_CONFIG_RSP_NEG 16 /* response (failed) */
+  /* Peer configuration */
+  L2CEVT_L2CAP_CONFIG_REQ = 14,     /* request */
+  L2CEVT_L2CAP_CONFIG_RSP = 15,     /* response */
+  L2CEVT_L2CAP_CONFIG_RSP_NEG = 16, /* response (failed) */
 
-#define L2CEVT_L2CAP_DISCONNECT_REQ 17 /* Peer disconnect request */
-#define L2CEVT_L2CAP_DISCONNECT_RSP 18 /* Peer disconnect response */
-#define L2CEVT_L2CAP_INFO_RSP 19       /* Peer information response */
-#define L2CEVT_L2CAP_DATA 20           /* Peer data */
+  L2CEVT_L2CAP_DISCONNECT_REQ = 17, /* Peer disconnect request */
+  L2CEVT_L2CAP_DISCONNECT_RSP = 18, /* Peer disconnect response */
+  L2CEVT_L2CAP_INFO_RSP = 19,       /* Peer information response */
+  L2CEVT_L2CAP_DATA = 20,           /* Peer data */
 
-/* Upper layer */
-#define L2CEVT_L2CA_CONNECT_REQ 21     /* connect request */
-#define L2CEVT_L2CA_CONNECT_RSP 22     /* connect response */
-#define L2CEVT_L2CA_CONNECT_RSP_NEG 23 /* connect response (failed)*/
-#define L2CEVT_L2CA_CONFIG_REQ 24      /* config request */
-#define L2CEVT_L2CA_CONFIG_RSP 25      /* config response */
-#define L2CEVT_L2CA_DISCONNECT_REQ 27  /* disconnect request */
-#define L2CEVT_L2CA_DISCONNECT_RSP 28  /* disconnect response */
-#define L2CEVT_L2CA_DATA_READ 29       /* data read */
-#define L2CEVT_L2CA_DATA_WRITE 30      /* data write */
+  /* Upper layer */
+  L2CEVT_L2CA_CONNECT_REQ = 21,     /* connect request */
+  L2CEVT_L2CA_CONNECT_RSP = 22,     /* connect response */
+  L2CEVT_L2CA_CONNECT_RSP_NEG = 23, /* connect response (failed)*/
+  L2CEVT_L2CA_CONFIG_REQ = 24,      /* config request */
+  L2CEVT_L2CA_CONFIG_RSP = 25,      /* config response */
+  L2CEVT_L2CA_DISCONNECT_REQ = 27,  /* disconnect request */
+  L2CEVT_L2CA_DISCONNECT_RSP = 28,  /* disconnect response */
+  L2CEVT_L2CA_DATA_READ = 29,       /* data read */
+  L2CEVT_L2CA_DATA_WRITE = 30,      /* data write */
 
-#define L2CEVT_TIMEOUT 32         /* Timeout */
-#define L2CEVT_SEC_RE_SEND_CMD 33 /* btm_sec has enough info to proceed */
+  L2CEVT_TIMEOUT = 32,         /* Timeout */
+  L2CEVT_SEC_RE_SEND_CMD = 33, /* btm_sec has enough info to proceed */
 
-#define L2CEVT_ACK_TIMEOUT 34 /* RR delay timeout */
+  L2CEVT_ACK_TIMEOUT = 34, /* RR delay timeout */
 
-#define L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT                                  \
-  35                                             /* Upper layer credit packet \
-                                                    */
-/* Peer credit based connection */
-#define L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT 36 /* credit packet */
-#define L2CEVT_L2CAP_CREDIT_BASED_CONNECT_REQ \
-  37 /* credit based connection request */
-#define L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP \
-  38 /* accepted credit based connection */
-#define L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG \
-  39 /* rejected credit based connection */
-#define L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_REQ \
-  40 /* credit based reconfig request*/
-#define L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_RSP \
-  41 /* credit based reconfig response */
+  L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT = 35, /* Upper layer credit packet \
+                                              */
+  /* Peer credit based connection */
+  L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT = 36, /* credit packet */
+  L2CEVT_L2CAP_CREDIT_BASED_CONNECT_REQ =
+      37, /* credit based connection request */
+  L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP =
+      38, /* accepted credit based connection */
+  L2CEVT_L2CAP_CREDIT_BASED_CONNECT_RSP_NEG =
+      39, /* rejected credit based connection */
+  L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_REQ =
+      40, /* credit based reconfig request*/
+  L2CEVT_L2CAP_CREDIT_BASED_RECONFIG_RSP =
+      41, /* credit based reconfig response */
 
-/* Upper layer credit based connection */
-#define L2CEVT_L2CA_CREDIT_BASED_CONNECT_REQ 42 /* connect request */
-#define L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP 43 /* connect response */
-#define L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP_NEG \
-  44                                             /* connect response (failed)*/
-#define L2CEVT_L2CA_CREDIT_BASED_RECONFIG_REQ 45 /* reconfig request */
+  /* Upper layer credit based connection */
+  L2CEVT_L2CA_CREDIT_BASED_CONNECT_REQ = 42,     /* connect request */
+  L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP = 43,     /* connect response */
+  L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP_NEG = 44, /* connect response (failed)*/
+  L2CEVT_L2CA_CREDIT_BASED_RECONFIG_REQ = 45,    /* reconfig request */
+};
 
 /* Constants for LE Dynamic PSM values */
 #define LE_DYNAMIC_PSM_START 0x0080
