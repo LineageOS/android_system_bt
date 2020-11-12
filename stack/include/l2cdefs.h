@@ -131,6 +131,34 @@ typedef enum : uint8_t {
   L2CAP_LE_RESULT_INVALID_PARAMETERS = 0x0C
 } tL2CAP_LE_RESULT_CODE;
 
+inline std::string l2cap_le_result_code_text(
+    const tL2CAP_LE_RESULT_CODE& code) {
+  switch (code) {
+    case L2CAP_LE_RESULT_CONN_OK:
+      return std::string("le connection success");
+    case L2CAP_LE_RESULT_NO_PSM:
+      return std::string("le no psm service");
+    case L2CAP_LE_RESULT_NO_RESOURCES:
+      return std::string("le no resources");
+    case L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION:
+      return std::string("le authentication failed");
+    case L2CAP_LE_RESULT_INSUFFICIENT_AUTHORIZATION:
+      return std::string("le authorization failed");
+    case L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP_KEY_SIZE:
+      return std::string("le encryption key size failed");
+    case L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP:
+      return std::string("le encryption failed");
+    case L2CAP_LE_RESULT_INVALID_SOURCE_CID:
+      return std::string("le invalid source channel identifier");
+    case L2CAP_LE_RESULT_SOURCE_CID_ALREADY_ALLOCATED:
+      return std::string("le source channel identifier busy");
+    case L2CAP_LE_RESULT_UNACCEPTABLE_PARAMETERS:
+      return std::string("le unacceptable parameters");
+    case L2CAP_LE_RESULT_INVALID_PARAMETERS:
+      return std::string("invalid parameters");
+  }
+}
+
 /* Credit based reconfig results code */
 #define L2CAP_RECONFIG_SUCCEED 0
 #define L2CAP_RECONFIG_REDUCTION_MTU_NO_ALLOWED 1
