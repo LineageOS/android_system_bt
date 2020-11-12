@@ -31,8 +31,7 @@
 #include <base/threading/thread.h>
 #include <errno.h>
 #include <hardware/bluetooth.h>
-#include <stdlib.h>
-#include <string.h>
+#include <string>
 #include "device/include/controller.h"
 
 #include "btif_common.h"
@@ -128,7 +127,7 @@ std::string bta_gattc_event_text(const tBTA_GATTC_EVT& event) {
   }
 }
 
-void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
+static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
   LOG_DEBUG("Event %s [%d]",
             bta_gattc_event_text(static_cast<tBTA_GATTC_EVT>(event)).c_str(),
             event);
@@ -240,7 +239,9 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
   }
 }
 
-void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
+static void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
+  LOG_DEBUG(" gatt client callback event:%s [%d]",
+            GattClientEventText(event).c_str(), event);
   bt_status_t status =
       btif_transfer_context(btif_gattc_upstreams_evt, (uint16_t)event,
                             (char*)p_data, sizeof(tBTA_GATTC), NULL);
@@ -260,7 +261,7 @@ void btm_read_rssi_cb(void* p_void) {
  *  Client API Functions
  ******************************************************************************/
 
-bt_status_t btif_gattc_register_app(const Uuid& uuid) {
+static bt_status_t btif_gattc_register_app(const Uuid& uuid) {
   CHECK_BTGATT_INIT();
 
   return do_in_jni_thread(Bind(
@@ -282,11 +283,11 @@ bt_status_t btif_gattc_register_app(const Uuid& uuid) {
       uuid, false));
 }
 
-void btif_gattc_unregister_app_impl(int client_if) {
+static void btif_gattc_unregister_app_impl(int client_if) {
   BTA_GATTC_AppDeregister(client_if);
 }
 
-bt_status_t btif_gattc_unregister_app(int client_if) {
+static bt_status_t btif_gattc_unregister_app(int client_if) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(&btif_gattc_unregister_app_impl, client_if));
 }
@@ -351,9 +352,9 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
                  initiating_phys);
 }
 
-bt_status_t btif_gattc_open(int client_if, const RawAddress& bd_addr,
-                            bool is_direct, int transport, bool opportunistic,
-                            int initiating_phys) {
+static bt_status_t btif_gattc_open(int client_if, const RawAddress& bd_addr,
+                                   bool is_direct, int transport,
+                                   bool opportunistic, int initiating_phys) {
   CHECK_BTGATT_INIT();
   // Closure will own this value and free it.
   return do_in_jni_thread(Bind(&btif_gattc_open_impl, client_if, bd_addr,
@@ -372,19 +373,21 @@ void btif_gattc_close_impl(int client_if, RawAddress address, int conn_id) {
   BTA_GATTC_CancelOpen(client_if, address, false);
 }
 
-bt_status_t btif_gattc_close(int client_if, const RawAddress& bd_addr,
-                             int conn_id) {
+static bt_status_t btif_gattc_close(int client_if, const RawAddress& bd_addr,
+                                    int conn_id) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
       Bind(&btif_gattc_close_impl, client_if, bd_addr, conn_id));
 }
 
-bt_status_t btif_gattc_refresh(int client_if, const RawAddress& bd_addr) {
+static bt_status_t btif_gattc_refresh(int client_if,
+                                      const RawAddress& bd_addr) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(&BTA_GATTC_Refresh, bd_addr));
 }
 
-bt_status_t btif_gattc_search_service(int conn_id, const Uuid* filter_uuid) {
+static bt_status_t btif_gattc_search_service(int conn_id,
+                                             const Uuid* filter_uuid) {
   CHECK_BTGATT_INIT();
 
   if (filter_uuid) {
@@ -397,7 +400,7 @@ bt_status_t btif_gattc_search_service(int conn_id, const Uuid* filter_uuid) {
   }
 }
 
-void btif_gattc_discover_service_by_uuid(int conn_id, const Uuid& uuid) {
+static void btif_gattc_discover_service_by_uuid(int conn_id, const Uuid& uuid) {
   do_in_jni_thread(Bind(&BTA_GATTC_DiscoverServiceByUuid, conn_id, uuid));
 }
 
@@ -410,7 +413,7 @@ void btif_gattc_get_gatt_db_impl(int conn_id) {
   osi_free(db);
 }
 
-bt_status_t btif_gattc_get_gatt_db(int conn_id) {
+static bt_status_t btif_gattc_get_gatt_db(int conn_id) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(&btif_gattc_get_gatt_db_impl, conn_id));
 }
@@ -431,7 +434,8 @@ void read_char_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
                    base::Owned(params));
 }
 
-bt_status_t btif_gattc_read_char(int conn_id, uint16_t handle, int auth_req) {
+static bt_status_t btif_gattc_read_char(int conn_id, uint16_t handle,
+                                        int auth_req) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(&BTA_GATTC_ReadCharacteristic, conn_id, handle,
                                auth_req, read_char_cb, nullptr));
@@ -454,9 +458,11 @@ void read_using_char_uuid_cb(uint16_t conn_id, tGATT_STATUS status,
                    base::Owned(params));
 }
 
-bt_status_t btif_gattc_read_using_char_uuid(int conn_id, const Uuid& uuid,
-                                            uint16_t s_handle,
-                                            uint16_t e_handle, int auth_req) {
+static bt_status_t btif_gattc_read_using_char_uuid(int conn_id,
+                                                   const Uuid& uuid,
+                                                   uint16_t s_handle,
+                                                   uint16_t e_handle,
+                                                   int auth_req) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(&BTA_GATTC_ReadUsingCharUuid, conn_id, uuid,
                                s_handle, e_handle, auth_req,
@@ -476,8 +482,8 @@ void read_desc_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
   CLI_CBACK_IN_JNI(read_descriptor_cb, conn_id, status, params);
 }
 
-bt_status_t btif_gattc_read_char_descr(int conn_id, uint16_t handle,
-                                       int auth_req) {
+static bt_status_t btif_gattc_read_char_descr(int conn_id, uint16_t handle,
+                                              int auth_req) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(Bind(&BTA_GATTC_ReadCharDescr, conn_id, handle,
                                auth_req, read_desc_cb, nullptr));
@@ -488,8 +494,9 @@ void write_char_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
   CLI_CBACK_IN_JNI(write_characteristic_cb, conn_id, status, handle);
 }
 
-bt_status_t btif_gattc_write_char(int conn_id, uint16_t handle, int write_type,
-                                  int auth_req, vector<uint8_t> value) {
+static bt_status_t btif_gattc_write_char(int conn_id, uint16_t handle,
+                                         int write_type, int auth_req,
+                                         vector<uint8_t> value) {
   CHECK_BTGATT_INIT();
 
   if (value.size() > BTGATT_MAX_ATTR_LEN) value.resize(BTGATT_MAX_ATTR_LEN);
@@ -504,8 +511,9 @@ void write_descr_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
   CLI_CBACK_IN_JNI(write_descriptor_cb, conn_id, status, handle);
 }
 
-bt_status_t btif_gattc_write_char_descr(int conn_id, uint16_t handle,
-                                        int auth_req, vector<uint8_t> value) {
+static bt_status_t btif_gattc_write_char_descr(int conn_id, uint16_t handle,
+                                               int auth_req,
+                                               vector<uint8_t> value) {
   CHECK_BTGATT_INIT();
 
   if (value.size() > BTGATT_MAX_ATTR_LEN) value.resize(BTGATT_MAX_ATTR_LEN);
@@ -515,15 +523,15 @@ bt_status_t btif_gattc_write_char_descr(int conn_id, uint16_t handle,
                                nullptr));
 }
 
-bt_status_t btif_gattc_execute_write(int conn_id, int execute) {
+static bt_status_t btif_gattc_execute_write(int conn_id, int execute) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
       Bind(&BTA_GATTC_ExecuteWrite, conn_id, (uint8_t)execute));
 }
 
-void btif_gattc_reg_for_notification_impl(tGATT_IF client_if,
-                                          const RawAddress& bda,
-                                          uint16_t handle) {
+static void btif_gattc_reg_for_notification_impl(tGATT_IF client_if,
+                                                 const RawAddress& bda,
+                                                 uint16_t handle) {
   tGATT_STATUS status =
       BTA_GATTC_RegisterForNotifications(client_if, bda, handle);
 
@@ -542,9 +550,9 @@ bt_status_t btif_gattc_reg_for_notification(int client_if,
            bd_addr, handle));
 }
 
-void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if,
-                                            const RawAddress& bda,
-                                            uint16_t handle) {
+static void btif_gattc_dereg_for_notification_impl(tGATT_IF client_if,
+                                                   const RawAddress& bda,
+                                                   uint16_t handle) {
   tGATT_STATUS status =
       BTA_GATTC_DeregisterForNotifications(client_if, bda, handle);
 
@@ -563,8 +571,8 @@ bt_status_t btif_gattc_dereg_for_notification(int client_if,
            client_if, bd_addr, handle));
 }
 
-bt_status_t btif_gattc_read_remote_rssi(int client_if,
-                                        const RawAddress& bd_addr) {
+static bt_status_t btif_gattc_read_remote_rssi(int client_if,
+                                               const RawAddress& bd_addr) {
   CHECK_BTGATT_INIT();
   rssi_request_client_if = client_if;
 
@@ -572,16 +580,15 @@ bt_status_t btif_gattc_read_remote_rssi(int client_if,
       Bind(base::IgnoreResult(&BTM_ReadRSSI), bd_addr, btm_read_rssi_cb));
 }
 
-bt_status_t btif_gattc_configure_mtu(int conn_id, int mtu) {
+static bt_status_t btif_gattc_configure_mtu(int conn_id, int mtu) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
       Bind(base::IgnoreResult(&BTA_GATTC_ConfigureMTU), conn_id, mtu));
 }
 
-void btif_gattc_conn_parameter_update_impl(RawAddress addr, int min_interval,
-                                           int max_interval, int latency,
-                                           int timeout, uint16_t min_ce_len,
-                                           uint16_t max_ce_len) {
+static void btif_gattc_conn_parameter_update_impl(
+    RawAddress addr, int min_interval, int max_interval, int latency,
+    int timeout, uint16_t min_ce_len, uint16_t max_ce_len) {
   if (BTA_DmGetConnectionState(addr))
     BTA_DmBleUpdateConnectionParams(addr, min_interval, max_interval, latency,
                                     timeout, min_ce_len, max_ce_len);
@@ -601,16 +608,16 @@ bt_status_t btif_gattc_conn_parameter_update(const RawAddress& bd_addr,
       min_interval, max_interval, latency, timeout, min_ce_len, max_ce_len));
 }
 
-bt_status_t btif_gattc_set_preferred_phy(const RawAddress& bd_addr,
-                                         uint8_t tx_phy, uint8_t rx_phy,
-                                         uint16_t phy_options) {
+static bt_status_t btif_gattc_set_preferred_phy(const RawAddress& bd_addr,
+                                                uint8_t tx_phy, uint8_t rx_phy,
+                                                uint16_t phy_options) {
   CHECK_BTGATT_INIT();
   do_in_main_thread(FROM_HERE,
                     Bind(&BTM_BleSetPhy, bd_addr, tx_phy, rx_phy, phy_options));
   return BT_STATUS_SUCCESS;
 }
 
-bt_status_t btif_gattc_read_phy(
+static bt_status_t btif_gattc_read_phy(
     const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
@@ -619,7 +626,7 @@ bt_status_t btif_gattc_read_phy(
   return BT_STATUS_SUCCESS;
 }
 
-int btif_gattc_get_device_type(const RawAddress& bd_addr) {
+static int btif_gattc_get_device_type(const RawAddress& bd_addr) {
   int device_type = 0;
 
   if (btif_config_get_int(bd_addr.ToString().c_str(), "DevType", &device_type))
@@ -627,8 +634,8 @@ int btif_gattc_get_device_type(const RawAddress& bd_addr) {
   return 0;
 }
 
-bt_status_t btif_gattc_test_command(int command,
-                                    const btgatt_test_params_t& params) {
+static bt_status_t btif_gattc_test_command(int command,
+                                           const btgatt_test_params_t& params) {
   return btif_gattc_test_command_impl(command, &params);
 }
 
