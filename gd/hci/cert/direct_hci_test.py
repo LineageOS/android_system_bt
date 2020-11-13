@@ -99,10 +99,6 @@ class DirectHciTest(GdBaseTestClass):
             handle=int(handle), packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=acl)
         self.dut.hci.SendAcl(acl_msg)
 
-    def send_hal_acl_data(self, handle, pb_flag, b_flag, acl):
-        acl_msg = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(acl))
-        self.cert_hal.send_acl(acl_msg.Serialize())
-
     def test_local_hci_cmd_and_event(self):
         # Loopback mode responds with ACL and SCO connection complete
         self.dut_hci.register_for_events(EventCode.LOOPBACK_COMMAND)
@@ -271,7 +267,7 @@ class DirectHciTest(GdBaseTestClass):
         # Send ACL Data
         self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                               BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.send_hal_acl_data(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+        self.cert_hal.send_acl(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                                BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(
@@ -374,7 +370,7 @@ class DirectHciTest(GdBaseTestClass):
         # Send ACL Data
         self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                               BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.send_hal_acl_data(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+        self.cert_hal.send_acl(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                                BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
@@ -414,7 +410,7 @@ class DirectHciTest(GdBaseTestClass):
         # Send ACL Data
         self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                               BroadcastFlag.POINT_TO_POINT, bytes(b'This is just SomeAclData'))
-        self.send_hal_acl_data(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+        self.cert_hal.send_acl(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                                BroadcastFlag.POINT_TO_POINT, bytes(b'This is just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)

@@ -50,14 +50,6 @@ class SimpleHalTest(GdBaseTestClass):
         self.cert_hal.close()
         super().teardown_test()
 
-    def send_cert_acl_data(self, handle, pb_flag, b_flag, acl):
-        acl_msg = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(acl))
-        self.cert_hal.send_acl(acl_msg.Serialize())
-
-    def send_dut_acl_data(self, handle, pb_flag, b_flag, acl):
-        acl_msg = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(acl))
-        self.dut_hal.send_acl(acl_msg.Serialize())
-
     def test_fetch_hci_event(self):
         self.dut_hal.send_hci_command(
             hci_packets.LeAddDeviceToConnectListBuilder(hci_packets.ConnectListAddressType.RANDOM, '0C:05:04:03:02:01'))
@@ -232,10 +224,10 @@ class SimpleHalTest(GdBaseTestClass):
         dut_handle = conn_handle
 
         # Send ACL Data
-        self.send_dut_acl_data(dut_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                               hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.send_cert_acl_data(cert_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                                hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
+        self.dut_hal.send_acl(dut_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+                              hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
+        self.cert_hal.send_acl(cert_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+                               hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hal.get_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
