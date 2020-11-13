@@ -215,52 +215,10 @@ class DirectHciTest(GdBaseTestClass):
                                               OwnAddressType.RANDOM_DEVICE_ADDRESS, AddressType.RANDOM_DEVICE_ADDRESS,
                                               '0D:05:04:03:02:01', 1, [phy_scan_params]))
 
-        # DUT Advertises
-        advertising_handle = 0
-        self.dut_hci.send_command_with_complete(
-            LeSetExtendedAdvertisingLegacyParametersBuilder(
-                advertising_handle,
-                LegacyAdvertisingProperties.ADV_IND,
-                400,
-                450,
-                7,
-                OwnAddressType.RANDOM_DEVICE_ADDRESS,
-                PeerAddressType.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                '00:00:00:00:00:00',
-                AdvertisingFilterPolicy.ALL_DEVICES,
-                0xF8,
-                1,  #SID
-                Enable.DISABLED  # Scan request notification
-            ))
-
-        self.dut_hci.send_command_with_complete(
-            LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0D:05:04:03:02:01'))
-
-        gap_name = GapData()
-        gap_name.data_type = GapDataType.COMPLETE_LOCAL_NAME
-        gap_name.data = list(bytes(b'Im_The_DUT'))
-
-        self.dut_hci.send_command_with_complete(
-            LeSetExtendedAdvertisingDataBuilder(advertising_handle, Operation.COMPLETE_ADVERTISEMENT,
-                                                FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_name]))
-
-        gap_short_name = GapData()
-        gap_short_name.data_type = GapDataType.SHORTENED_LOCAL_NAME
-        gap_short_name.data = list(bytes(b'Im_The_D'))
-
-        self.dut_hci.send_command_with_complete(
-            LeSetExtendedAdvertisingScanResponseBuilder(advertising_handle, Operation.COMPLETE_ADVERTISEMENT,
-                                                        FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_short_name]))
-
-        enabled_set = EnabledSet()
-        enabled_set.advertising_handle = advertising_handle
-        enabled_set.duration = 0
-        enabled_set.max_extended_advertising_events = 0
-        self.dut_hci.send_command_with_complete(LeSetExtendedAdvertisingEnableBuilder(Enable.ENABLED, [enabled_set]))
-
-        # Check for success of Enable
-        assertThat(self.dut_hci.get_event_stream()).emits(
-            HciMatchers.CommandComplete(OpCode.LE_SET_EXTENDED_ADVERTISING_ENABLE))
+        advertisement = self.dut_hci.create_advertisement(0, '0D:05:04:03:02:01')
+        advertisement.set_data(b'Im_The_DUT')
+        advertisement.set_scan_response(b'Im_The_D')
+        advertisement.start()
 
         (dut_handle, cert_handle) = self._verify_le_connection_complete()
 
