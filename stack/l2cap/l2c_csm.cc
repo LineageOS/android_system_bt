@@ -23,7 +23,7 @@
  ******************************************************************************/
 #define LOG_TAG "l2c_csm"
 
-#include <string.h>
+#include <string>
 
 #include "bt_common.h"
 #include "bt_target.h"
@@ -99,6 +99,29 @@ static void l2c_csm_indicate_connection_open(tL2C_CCB* p_ccb) {
   }
 }
 
+static std::string channel_state_text(const tL2C_CHNL_STATE& state) {
+  switch (state) {
+    case CST_CLOSED: /* Channel is in closed state */
+      return std::string("closed");
+    case CST_ORIG_W4_SEC_COMP: /* Originator waits security clearence */
+      return std::string("security pending(orig)");
+    case CST_TERM_W4_SEC_COMP: /* Acceptor waits security clearence */
+      return std::string("security pending(term)");
+    case CST_W4_L2CAP_CONNECT_RSP: /* Waiting for peer connect response */
+      return std::string("wait connect response from peer");
+    case CST_W4_L2CA_CONNECT_RSP: /* Waiting for upper layer connect rsp */
+      return std::string("wait connect response from upper");
+    case CST_CONFIG: /* Negotiating configuration */
+      return std::string("configuring");
+    case CST_OPEN: /* Data transfer state */
+      return std::string("open");
+    case CST_W4_L2CAP_DISCONNECT_RSP: /* Waiting for peer disconnect rsp */
+      return std::string("wait disconnect response from peer");
+    case CST_W4_L2CA_DISCONNECT_RSP: /* Waiting for upper layer disc rsp */
+      return std::string("wait disconnect response from upper");
+  }
+}
+
 /*******************************************************************************
  *
  * Function         l2c_csm_execute
@@ -114,7 +137,9 @@ void l2c_csm_execute(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     return;
   }
 
-  LOG_DEBUG("chnl_state=%d, event=%d", p_ccb->chnl_state, event);
+  LOG_DEBUG("Entry chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 
   switch (p_ccb->chnl_state) {
     case CST_CLOSED:
@@ -334,6 +359,9 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       l2cu_release_ccb(p_ccb);
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -427,6 +455,9 @@ static void l2c_csm_orig_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
       l2cu_release_ccb(p_ccb);
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -554,6 +585,9 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
                                false, &l2c_link_sec_comp, p_ccb);
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -708,6 +742,9 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       }
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -854,6 +891,9 @@ static void l2c_csm_w4_l2ca_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       l2c_csm_send_config_req(p_ccb);
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -1122,6 +1162,9 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       (*disconnect_ind)(local_cid, false);
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -1304,6 +1347,9 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       }
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -1342,6 +1388,9 @@ static void l2c_csm_w4_l2cap_disconnect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       osi_free(p_data);
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
@@ -1392,6 +1441,9 @@ static void l2c_csm_w4_l2ca_disconnect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       osi_free(p_data);
       break;
   }
+  LOG_DEBUG("Exit chnl_state=%s [%d], event=%s [%d]",
+            channel_state_text(p_ccb->chnl_state).c_str(), p_ccb->chnl_state,
+            l2c_csm_get_event_name(event), event);
 }
 
 /*******************************************************************************
