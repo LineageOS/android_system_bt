@@ -431,7 +431,7 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, startup_teardown) {}
 TEST_F(LeExtendedAdvertisingManagerTest, startup_teardown) {}
 
 TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
-  AdvertisingConfig advertising_config{};
+  ExtendedAdvertisingConfig advertising_config{};
   advertising_config.advertising_type = AdvertisingType::ADV_IND;
   advertising_config.own_address_type = OwnAddressType::PUBLIC_DEVICE_ADDRESS;
   std::vector<GapData> gap_data{};
@@ -446,8 +446,8 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
   advertising_config.scan_response = gap_data;
 
   auto last_command_future = test_hci_layer_->GetCommandFuture(OpCode::LE_SET_ADVERTISING_ENABLE);
-  auto id = le_advertising_manager_->CreateAdvertiser(advertising_config, scan_callback, set_terminated_callback,
-                                                      client_handler_);
+  auto id = le_advertising_manager_->ExtendedCreateAdvertiser(
+      0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   std::vector<OpCode> adv_opcodes = {
       OpCode::LE_SET_ADVERTISING_PARAMETERS,
@@ -479,7 +479,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
 }
 
 TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
-  AdvertisingConfig advertising_config{};
+  ExtendedAdvertisingConfig advertising_config{};
   advertising_config.advertising_type = AdvertisingType::ADV_IND;
   advertising_config.own_address_type = OwnAddressType::PUBLIC_DEVICE_ADDRESS;
   std::vector<GapData> gap_data{};
@@ -494,8 +494,8 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
   advertising_config.scan_response = gap_data;
 
   auto next_command_future = test_hci_layer_->GetSubCommandFuture(SubOcf::SET_ENABLE);
-  auto id = le_advertising_manager_->CreateAdvertiser(advertising_config, scan_callback, set_terminated_callback,
-                                                      client_handler_);
+  auto id = le_advertising_manager_->ExtendedCreateAdvertiser(
+      0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   std::vector<SubOcf> sub_ocf = {
       SubOcf::SET_PARAM, SubOcf::SET_DATA, SubOcf::SET_SCAN_RESP, SubOcf::SET_RANDOM_ADDR, SubOcf::SET_ENABLE,
