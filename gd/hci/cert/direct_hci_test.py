@@ -323,17 +323,6 @@ class DirectHciTest(GdBaseTestClass):
         # LeConnectionComplete
         self._verify_le_connection_complete()
 
-    def _verify_connection_complete(self):
-        cert_connection_complete_capture = HalCaptures.ConnectionCompleteCapture()
-        assertThat(self.cert_hal.get_hci_event_stream()).emits(cert_connection_complete_capture)
-        cert_handle = cert_connection_complete_capture.get().GetConnectionHandle()
-
-        dut_connection_complete_capture = HciCaptures.ConnectionCompleteCapture()
-        assertThat(self.dut_hci.get_event_stream()).emits(dut_connection_complete_capture)
-        dut_handle = dut_connection_complete_capture.get().GetConnectionHandle()
-
-        return (dut_handle, cert_handle)
-
     def test_connection_dut_connects(self):
         self.dut_hci.send_command_with_complete(WritePageTimeoutBuilder(0x4000))
 
@@ -344,32 +333,15 @@ class DirectHciTest(GdBaseTestClass):
         assertThat(self.cert_hal.get_hci_event_stream()).emits(cert_read_bd_addr_capture)
         address = cert_read_bd_addr_capture.get().GetBdAddr()
 
-        self.cert_hal.send_hci_command(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hal.enable_inquiry_and_page_scan()
 
-        # DUT Connects
-        self.dut_hci.send_command_with_status(
-            CreateConnectionBuilder(
-                address,
-                0xcc18,  # Packet Type
-                PageScanRepetitionMode.R0,
-                0,
-                ClockOffsetValid.INVALID,
-                CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH))
-
-        # Cert Accepts
-        connect_request_capture = HalCaptures.ConnectionRequestCapture()
-        assertThat(self.cert_hal.get_hci_event_stream()).emits(connect_request_capture, timeout=timedelta(seconds=20))
-        connection_request = connect_request_capture.get()
-        self.cert_hal.send_hci_command(
-            AcceptConnectionRequestBuilder(connection_request.GetBdAddr(),
-                                           AcceptConnectionRequestRole.REMAIN_PERIPHERAL))
-
-        (dut_handle, cert_handle) = self._verify_connection_complete()
+        self.dut_hci.initiate_connection(address)
+        cert_acl = self.cert_hal.accept_connection()
+        dut_acl = self.dut_hci.complete_connection()
 
         # Send ACL Data
-        self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                              BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.cert_hal.send_acl_first(cert_handle, bytes(b'Just SomeMoreAclData'))
+        dut_acl.send_first(b'Just SomeAclData')
+        cert_acl.send_first(b'Just SomeMoreAclData')
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.data)
@@ -377,38 +349,16 @@ class DirectHciTest(GdBaseTestClass):
     def test_connection_cert_connects(self):
         self.cert_hal.send_hci_command(WritePageTimeoutBuilder(0x4000))
 
-        # DUT Enables scans and gets its address
-        self.dut_hci.send_command_with_complete(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))
-        self.dut_hci.send_command_with_complete(ReadBdAddrBuilder())
+        self.dut_hci.enable_inquiry_and_page_scan()
+        address = self.dut_hci.read_own_address()
 
-        read_bd_addr_capture = HciCaptures.ReadBdAddrCompleteCapture()
-        assertThat(self.dut_hci.get_event_stream()).emits(read_bd_addr_capture)
-        address = read_bd_addr_capture.get().GetBdAddr()
-
-        # Cert Connects
-        self.cert_hal.send_hci_command(
-            CreateConnectionBuilder(
-                address,
-                0xcc18,  # Packet Type
-                PageScanRepetitionMode.R0,
-                0,
-                ClockOffsetValid.INVALID,
-                CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH))
-
-        # DUT Accepts
-        connection_request_capture = HciCaptures.ConnectionRequestCapture()
-        assertThat(self.dut_hci.get_event_stream()).emits(connection_request_capture, timeout=timedelta(seconds=20))
-        connection_request = connection_request_capture.get()
-        self.dut_hci.send_command_with_status(
-            AcceptConnectionRequestBuilder(connection_request.GetBdAddr(),
-                                           AcceptConnectionRequestRole.REMAIN_PERIPHERAL))
-
-        (dut_handle, cert_handle) = self._verify_connection_complete()
+        self.cert_hal.initiate_connection(address)
+        dut_acl = self.dut_hci.accept_connection()
+        cert_acl = self.cert_hal.complete_connection()
 
         # Send ACL Data
-        self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                              BroadcastFlag.POINT_TO_POINT, bytes(b'This is just SomeAclData'))
-        self.cert_hal.send_acl_first(cert_handle, bytes(b'This is just SomeMoreAclData'))
+        dut_acl.send_first(b'This is just SomeAclData')
+        cert_acl.send_first(b'This is just SomeMoreAclData')
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.data)

@@ -115,7 +115,7 @@ class PyHci(Closable):
     def initiate_connection(self, remote_addr):
         self.send_command_with_status(
             hci_packets.CreateConnectionBuilder(
-                remote_addr.decode('utf-8'),
+                remote_addr if isinstance(remote_addr, str) else remote_addr.decode('utf-8'),
                 0xcc18,  # Packet Type
                 hci_packets.PageScanRepetitionMode.R1,
                 0x0,
