@@ -5,11 +5,11 @@ rust_library {
     edition: "2018",
     rustlibs: [
         "libbt_hal",
+        "libbt_hci_proto",
         "libbt_packet",
         "libbytes",
         "libfutures",
         "libgrpcio",
-        "libhci_layer_facade_proto",
         "libnum_traits",
         "libthiserror",
         "libtokio",
