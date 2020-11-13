@@ -108,6 +108,10 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     return num_instances_;
   }
 
+  AdvertisingApiType get_advertising_api_type() const {
+    return advertising_api_type_;
+  }
+
   void register_advertising_callback(AdvertisingCallback* advertising_callback) {
     advertising_callbacks_ = advertising_callback;
   }
@@ -184,10 +188,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
   }
 
-  void create_advertiser(AdvertiserId id, const AdvertisingConfig& config,
-                         const common::Callback<void(Address, AddressType)>& scan_callback,
-                         const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
-                         os::Handler* handler) {
+  void create_advertiser(
+      AdvertiserId id,
+      const AdvertisingConfig config,
+      const common::Callback<void(Address, AddressType)>& scan_callback,
+      const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+      os::Handler* handler) {
     advertising_sets_[id].scan_callback = scan_callback;
     advertising_sets_[id].set_terminated_callback = set_terminated_callback;
     advertising_sets_[id].handler = handler;
@@ -270,15 +276,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         enabled_sets_[id] = curr_set;
       } break;
       case (AdvertisingApiType::EXTENDED): {
-        ExtendedAdvertisingConfig new_config = config;
-        new_config.legacy_pdus = true;
-
-        // sid must be in range 0x00 to 0x0F. Since no controller supports more than
-        // 16 advertisers, it's safe to make sid equal to id.
-
-        new_config.sid = id % kAdvertisingSetIdMask;
-        // TODO remove, always call create_advertiser via create_extended_advertiser
-        create_extended_advertiser(0x00, id, new_config, scan_callback, set_terminated_callback, handler);
+        LOG_WARN("Unexpected AdvertisingApiType EXTENDED");
       } break;
     }
   }
@@ -286,7 +284,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   void create_extended_advertiser(
       int reg_id,
       AdvertiserId id,
-      const ExtendedAdvertisingConfig& config,
+      const ExtendedAdvertisingConfig config,
       const common::Callback<void(Address, AddressType)>& scan_callback,
       const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
       os::Handler* handler) {
@@ -921,9 +919,11 @@ size_t LeAdvertisingManager::GetNumberOfAdvertisingInstances() const {
   return pimpl_->GetNumberOfAdvertisingInstances();
 }
 
-AdvertiserId LeAdvertisingManager::CreateAdvertiser(
-    const AdvertisingConfig& config, const common::Callback<void(Address, AddressType)>& scan_callback,
-    const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback, os::Handler* handler) {
+AdvertiserId LeAdvertisingManager::create_advertiser(
+    const AdvertisingConfig config,
+    const common::Callback<void(Address, AddressType)>& scan_callback,
+    const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+    os::Handler* handler) {
   if (config.peer_address == Address::kEmpty) {
     if (config.own_address_type == hci::OwnAddressType::RESOLVABLE_OR_PUBLIC_ADDRESS ||
         config.own_address_type == hci::OwnAddressType::RESOLVABLE_OR_RANDOM_ADDRESS) {
@@ -947,10 +947,15 @@ AdvertiserId LeAdvertisingManager::CreateAdvertiser(
 
 AdvertiserId LeAdvertisingManager::ExtendedCreateAdvertiser(
     int reg_id,
-    const ExtendedAdvertisingConfig& config,
+    const ExtendedAdvertisingConfig config,
     const common::Callback<void(Address, AddressType)>& scan_callback,
     const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
     os::Handler* handler) {
+  AdvertisingApiType advertising_api_type = pimpl_->get_advertising_api_type();
+  if (advertising_api_type != AdvertisingApiType::EXTENDED) {
+    return create_advertiser(config, scan_callback, set_terminated_callback, handler);
+  };
+
   if (config.directed) {
     if (config.peer_address == Address::kEmpty) {
       LOG_INFO("Peer address can not be empty for directed advertising");

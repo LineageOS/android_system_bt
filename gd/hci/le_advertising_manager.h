@@ -102,14 +102,9 @@ class LeAdvertisingManager : public bluetooth::Module {
 
   size_t GetNumberOfAdvertisingInstances() const;
 
-  // Return -1 if the advertiser was not created, otherwise the advertiser ID.
-  AdvertiserId CreateAdvertiser(const AdvertisingConfig& config,
-                                const common::Callback<void(Address, AddressType)>& scan_callback,
-                                const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
-                                os::Handler* handler);
   AdvertiserId ExtendedCreateAdvertiser(
       int reg_id,
-      const ExtendedAdvertisingConfig& config,
+      const ExtendedAdvertisingConfig config,
       const common::Callback<void(Address, AddressType)>& scan_callback,
       const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
       os::Handler* handler);
@@ -145,6 +140,12 @@ class LeAdvertisingManager : public bluetooth::Module {
   std::string ToString() const override;
 
  private:
+  // Return -1 if the advertiser was not created, otherwise the advertiser ID.
+  AdvertiserId create_advertiser(
+      const AdvertisingConfig config,
+      const common::Callback<void(Address, AddressType)>& scan_callback,
+      const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+      os::Handler* handler);
   struct impl;
   std::unique_ptr<impl> pimpl_;
   DISALLOW_COPY_AND_ASSIGN(LeAdvertisingManager);
