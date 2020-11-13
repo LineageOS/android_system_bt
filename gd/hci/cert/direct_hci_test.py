@@ -244,39 +244,16 @@ class DirectHciTest(GdBaseTestClass):
                                               OwnAddressType.RANDOM_DEVICE_ADDRESS, AddressType.RANDOM_DEVICE_ADDRESS,
                                               'BA:D5:A4:A3:A2:A1', 1, [phy_scan_params]))
 
-        # CERT Advertises
-        advertising_handle = 1
-        self.cert_hal.send_hci_command(
-            LeSetExtendedAdvertisingLegacyParametersBuilder(
-                advertising_handle,
-                LegacyAdvertisingProperties.ADV_IND,
-                512,
-                768,
-                7,
-                OwnAddressType.RANDOM_DEVICE_ADDRESS,
-                PeerAddressType.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                'A6:A5:A4:A3:A2:A1',
-                AdvertisingFilterPolicy.ALL_DEVICES,
-                0x7F,
-                0,  # SID
-                Enable.DISABLED  # Scan request notification
-            ))
-
-        self.cert_hal.send_hci_command(
-            LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0C:05:04:03:02:01'))
-
-        gap_name = GapData()
-        gap_name.data_type = GapDataType.COMPLETE_LOCAL_NAME
-        gap_name.data = list(bytes(b'Im_A_Cert'))
-
-        self.cert_hal.send_hci_command(
-            LeSetExtendedAdvertisingDataBuilder(advertising_handle, Operation.COMPLETE_ADVERTISEMENT,
-                                                FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_name]))
-        enabled_set = EnabledSet()
-        enabled_set.advertising_handle = 1
-        enabled_set.duration = 0
-        enabled_set.max_extended_advertising_events = 0
-        self.cert_hal.send_hci_command(LeSetExtendedAdvertisingEnableBuilder(Enable.ENABLED, [enabled_set]))
+        advertisement = self.cert_hal.create_advertisement(
+            1,
+            '0C:05:04:03:02:01',
+            min_interval=512,
+            max_interval=768,
+            peer_address='A6:A5:A4:A3:A2:A1',
+            tx_power=0x7f,
+            sid=0)
+        advertisement.set_data(b'Im_A_Cert')
+        advertisement.start()
 
         # LeConnectionComplete
         self._verify_le_connection_complete()

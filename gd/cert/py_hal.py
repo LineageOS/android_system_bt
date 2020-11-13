@@ -30,6 +30,26 @@ from bluetooth_packets_python3 import RawBuilder
 from bluetooth_packets_python3.hci_packets import BroadcastFlag
 from bluetooth_packets_python3.hci_packets import PacketBoundaryFlag
 from bluetooth_packets_python3 import hci_packets
+from cert.matchers import HciMatchers
+from bluetooth_packets_python3.hci_packets import FilterDuplicates
+from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingLegacyParametersBuilder
+from bluetooth_packets_python3.hci_packets import LegacyAdvertisingProperties
+from bluetooth_packets_python3.hci_packets import PeerAddressType
+from bluetooth_packets_python3.hci_packets import AdvertisingFilterPolicy
+from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingRandomAddressBuilder
+from bluetooth_packets_python3.hci_packets import GapData
+from bluetooth_packets_python3.hci_packets import GapDataType
+from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingDataBuilder
+from bluetooth_packets_python3.hci_packets import Operation
+from bluetooth_packets_python3.hci_packets import OwnAddressType
+from bluetooth_packets_python3.hci_packets import LeScanningFilterPolicy
+from bluetooth_packets_python3.hci_packets import Enable
+from bluetooth_packets_python3.hci_packets import FragmentPreference
+from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingScanResponseBuilder
+from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingEnableBuilder
+from bluetooth_packets_python3.hci_packets import LeSetExtendedScanEnableBuilder
+from bluetooth_packets_python3.hci_packets import EnabledSet
+from bluetooth_packets_python3.hci_packets import OpCode
 
 
 class PyHalAclConnection(IEventStream):
@@ -48,6 +68,47 @@ class PyHalAclConnection(IEventStream):
 
     def get_event_queue(self):
         return self.our_acl_stream.get_event_queue()
+
+
+class PyHalAdvertisement(object):
+
+    def __init__(self, handle, py_hal):
+        self.handle = handle
+        self.py_hal = py_hal
+
+    def set_data(self, complete_name):
+        data = GapData()
+        data.data_type = GapDataType.COMPLETE_LOCAL_NAME
+        data.data = list(bytes(complete_name))
+        self.py_hal.send_hci_command(
+            LeSetExtendedAdvertisingDataBuilder(self.handle, Operation.COMPLETE_ADVERTISEMENT,
+                                                FragmentPreference.CONTROLLER_SHOULD_NOT, [data]))
+
+    def set_scan_response(self, shortened_name):
+        data = GapData()
+        data.data_type = GapDataType.SHORTENED_LOCAL_NAME
+        data.data = list(bytes(shortened_name))
+        self.py_hal.send_hci_command(
+            LeSetExtendedAdvertisingScanResponseBuilder(self.handle, Operation.COMPLETE_ADVERTISEMENT,
+                                                        FragmentPreference.CONTROLLER_SHOULD_NOT, [data]))
+
+    def start(self):
+        enabled_set = EnabledSet()
+        enabled_set.advertising_handle = self.handle
+        enabled_set.duration = 0
+        enabled_set.max_extended_advertising_events = 0
+        self.py_hal.send_hci_command(LeSetExtendedAdvertisingEnableBuilder(Enable.ENABLED, [enabled_set]))
+        assertThat(self.py_hal.get_hci_event_stream()).emits(
+            HciMatchers.CommandComplete(OpCode.LE_SET_EXTENDED_ADVERTISING_ENABLE))
+
+    def stop(self):
+        enabled_set = EnabledSet()
+        enabled_set.advertising_handle = self.handle
+        enabled_set.duration = 0
+        enabled_set.max_extended_advertising_events = 0
+        self.py_hal.send_hci_command(LeSetExtendedAdvertisingEnableBuilder(Enable.DISABLED, [enabled_set]))
+        assertThat(self.py_hal.get_hci_event_stream()).emits(
+            HciMatchers.CommandComplete(OpCode.LE_SET_EXTENDED_ADVERTISING_ENABLE))
 
 
 class PyHal(Closable):
@@ -114,3 +175,26 @@ class PyHal(Closable):
 
         handle = connection_complete.get().GetConnectionHandle()
         return PyHalAclConnection(handle, self.acl_stream, self.device)
+
+    def create_advertisement(self,
+                             handle,
+                             own_address,
+                             properties=LegacyAdvertisingProperties.ADV_IND,
+                             min_interval=400,
+                             max_interval=450,
+                             channel_map=7,
+                             own_address_type=OwnAddressType.RANDOM_DEVICE_ADDRESS,
+                             peer_address_type=PeerAddressType.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+                             peer_address='00:00:00:00:00:00',
+                             filter_policy=AdvertisingFilterPolicy.ALL_DEVICES,
+                             tx_power=0xF8,
+                             sid=1,
+                             scan_request_notification=Enable.DISABLED):
+
+        self.send_hci_command(
+            LeSetExtendedAdvertisingLegacyParametersBuilder(handle, properties, min_interval, max_interval, channel_map,
+                                                            own_address_type, peer_address_type, peer_address,
+                                                            filter_policy, tx_power, sid, scan_request_notification))
+
+        self.send_hci_command(LeSetExtendedAdvertisingRandomAddressBuilder(handle, own_address))
+        return PyHalAdvertisement(handle, self)

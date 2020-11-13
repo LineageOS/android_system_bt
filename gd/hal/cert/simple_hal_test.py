@@ -94,48 +94,20 @@ class SimpleHalTest(GdBaseTestClass):
             hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
                                                        hci_packets.FilterDuplicates.DISABLED, 0, 0))
 
-        # CERT Advertises
-        advertising_handle = 0
-        self.cert_hal.send_hci_command(
-            hci_packets.LeSetExtendedAdvertisingLegacyParametersBuilder(
-                advertising_handle,
-                hci_packets.LegacyAdvertisingProperties.ADV_IND,
-                512,
-                768,
-                7,
-                hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
-                hci_packets.PeerAddressType.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                'A6:A5:A4:A3:A2:A1',
-                hci_packets.AdvertisingFilterPolicy.ALL_DEVICES,
-                0x7F,
-                0,  # SID
-                hci_packets.Enable.DISABLED  # Scan request notification
-            ))
-
-        self.cert_hal.send_hci_command(
-            hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0C:05:04:03:02:01'))
-
-        gap_name = hci_packets.GapData()
-        gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-        gap_name.data = list(bytes(b'Im_A_Cert'))
-
-        self.cert_hal.send_hci_command(
-            hci_packets.LeSetExtendedAdvertisingDataBuilder(
-                advertising_handle, hci_packets.Operation.COMPLETE_ADVERTISEMENT,
-                hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_name]))
-        enabled_set = hci_packets.EnabledSet()
-        enabled_set.advertising_handle = advertising_handle
-        enabled_set.duration = 0
-        enabled_set.max_extended_advertising_events = 0
-        self.cert_hal.send_hci_command(
-            hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.ENABLED, [enabled_set]))
+        advertisement = self.cert_hal.create_advertisement(
+            0,
+            '0C:05:04:03:02:01',
+            min_interval=512,
+            max_interval=768,
+            peer_address='A6:A5:A4:A3:A2:A1',
+            tx_power=0x7f,
+            sid=1)
+        advertisement.set_data(b'Im_A_Cert')
+        advertisement.start()
 
         assertThat(self.dut_hal.get_hci_event_stream()).emits(lambda packet: b'Im_A_Cert' in packet.payload)
 
-        # Disable Advertising
-        self.cert_hal.send_hci_command(
-            hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.DISABLED, [enabled_set]))
-
+        advertisement.stop()
         # Disable Scanning
         self.dut_hal.send_hci_command(
             hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
