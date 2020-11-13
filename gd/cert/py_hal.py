@@ -19,6 +19,8 @@ from cert.event_stream import EventStream
 from cert.closable import Closable
 from cert.closable import safeClose
 from hal import facade_pb2 as hal_facade
+from bluetooth_packets_python3.hci_packets import WriteScanEnableBuilder
+from bluetooth_packets_python3.hci_packets import ScanEnable
 
 
 class PyHal(Closable):
@@ -46,3 +48,6 @@ class PyHal(Closable):
 
     def send_acl(self, acl):
         self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl)))
+
+    def enable_inquiry_and_page_scan(self):
+        self.send_hci_command(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))

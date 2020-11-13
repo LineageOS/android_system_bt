@@ -114,7 +114,7 @@ class DirectHciTest(GdBaseTestClass):
     def test_inquiry_from_dut(self):
         self.dut_hci.register_for_events(EventCode.INQUIRY_RESULT)
 
-        self.cert_hal.send_hci_command(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hal.enable_inquiry_and_page_scan()
         lap = Lap()
         lap.lap = 0x33
         self.dut_hci.send_command_with_status(InquiryBuilder(lap, 0x30, 0xff))
