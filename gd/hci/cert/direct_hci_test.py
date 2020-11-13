@@ -43,9 +43,6 @@ class DirectHciTest(GdBaseTestClass):
         self.cert_hal.close()
         super().teardown_test()
 
-    def send_hal_hci_command(self, command):
-        self.cert_hal.send_hci_command(command)
-
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
         acl_msg = hci_facade.AclPacket(
             handle=int(handle), packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=acl)
@@ -77,7 +74,7 @@ class DirectHciTest(GdBaseTestClass):
     def test_inquiry_from_dut(self):
         self.dut_hci.register_for_events(hci_packets.EventCode.INQUIRY_RESULT)
 
-        self.send_hal_hci_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hal.send_hci_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
         lap = hci_packets.Lap()
         lap.lap = 0x33
         self.dut_hci.send_command_with_status(hci_packets.InquiryBuilder(lap, 0x30, 0xff))
@@ -105,7 +102,7 @@ class DirectHciTest(GdBaseTestClass):
 
         # CERT Advertises
         advertising_handle = 0
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingLegacyParametersBuilder(
                 advertising_handle,
                 hci_packets.LegacyAdvertisingProperties.ADV_IND,
@@ -121,13 +118,13 @@ class DirectHciTest(GdBaseTestClass):
                 hci_packets.Enable.DISABLED  # Scan request notification
             ))
 
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0C:05:04:03:02:01'))
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
         gap_name.data = list(bytes(b'Im_A_Cert'))
 
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingDataBuilder(
                 advertising_handle, hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                 hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_name]))
@@ -136,7 +133,7 @@ class DirectHciTest(GdBaseTestClass):
         gap_short_name.data_type = hci_packets.GapDataType.SHORTENED_LOCAL_NAME
         gap_short_name.data = list(bytes(b'Im_A_C'))
 
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
                 advertising_handle, hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                 hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_short_name]))
@@ -145,12 +142,12 @@ class DirectHciTest(GdBaseTestClass):
         enabled_set.advertising_handle = 0
         enabled_set.duration = 0
         enabled_set.max_extended_advertising_events = 0
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.ENABLED, [enabled_set]))
 
         assertThat(self.dut_hci.get_le_event_stream()).emits(lambda packet: b'Im_A_Cert' in packet.payload)
 
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.DISABLED, [enabled_set]))
         self.dut_hci.send_command_with_complete(
             hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.DISABLED,
@@ -185,9 +182,9 @@ class DirectHciTest(GdBaseTestClass):
         self.dut_hci.register_for_le_events(hci_packets.SubeventCode.ADVERTISING_SET_TERMINATED)
         self.dut_hci.register_for_le_events(hci_packets.SubeventCode.ENHANCED_CONNECTION_COMPLETE)
         # Cert Connects
-        self.send_hal_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
+        self.cert_hal.send_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
         phy_scan_params = DirectHciTest._create_phy_scan_params()
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeExtendedCreateConnectionBuilder(
                 hci_packets.InitiatorFilterPolicy.USE_PEER_ADDRESS, hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
                 hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, '0D:05:04:03:02:01', 1, [phy_scan_params]))
@@ -270,7 +267,7 @@ class DirectHciTest(GdBaseTestClass):
 
         # CERT Advertises
         advertising_handle = 1
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingLegacyParametersBuilder(
                 advertising_handle,
                 hci_packets.LegacyAdvertisingProperties.ADV_IND,
@@ -286,14 +283,14 @@ class DirectHciTest(GdBaseTestClass):
                 hci_packets.Enable.DISABLED  # Scan request notification
             ))
 
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0C:05:04:03:02:01'))
 
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
         gap_name.data = list(bytes(b'Im_A_Cert'))
 
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingDataBuilder(
                 advertising_handle, hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                 hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_name]))
@@ -301,7 +298,7 @@ class DirectHciTest(GdBaseTestClass):
         enabled_set.advertising_handle = 1
         enabled_set.duration = 0
         enabled_set.max_extended_advertising_events = 0
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.ENABLED, [enabled_set]))
 
         # LeConnectionComplete
@@ -322,13 +319,13 @@ class DirectHciTest(GdBaseTestClass):
         self.dut_hci.send_command_with_complete(hci_packets.WritePageTimeoutBuilder(0x4000))
 
         # CERT Enables scans and gets its address
-        self.send_hal_hci_command(hci_packets.ReadBdAddrBuilder())
+        self.cert_hal.send_hci_command(hci_packets.ReadBdAddrBuilder())
 
         cert_read_bd_addr_capture = HalCaptures.ReadBdAddrCompleteCapture()
         assertThat(self.cert_hal.get_hci_event_stream()).emits(cert_read_bd_addr_capture)
         address = cert_read_bd_addr_capture.get().GetBdAddr()
 
-        self.send_hal_hci_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hal.send_hci_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
 
         # DUT Connects
         self.dut_hci.send_command_with_status(
@@ -344,7 +341,7 @@ class DirectHciTest(GdBaseTestClass):
         connect_request_capture = HalCaptures.ConnectionRequestCapture()
         assertThat(self.cert_hal.get_hci_event_stream()).emits(connect_request_capture, timeout=timedelta(seconds=20))
         connection_request = connect_request_capture.get()
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.AcceptConnectionRequestBuilder(connection_request.GetBdAddr(),
                                                        hci_packets.AcceptConnectionRequestRole.REMAIN_PERIPHERAL))
 
@@ -360,7 +357,7 @@ class DirectHciTest(GdBaseTestClass):
         assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.data)
 
     def test_connection_cert_connects(self):
-        self.send_hal_hci_command(hci_packets.WritePageTimeoutBuilder(0x4000))
+        self.cert_hal.send_hci_command(hci_packets.WritePageTimeoutBuilder(0x4000))
 
         # DUT Enables scans and gets its address
         self.dut_hci.send_command_with_complete(
@@ -372,7 +369,7 @@ class DirectHciTest(GdBaseTestClass):
         address = read_bd_addr_capture.get().GetBdAddr()
 
         # Cert Connects
-        self.send_hal_hci_command(
+        self.cert_hal.send_hci_command(
             hci_packets.CreateConnectionBuilder(
                 address,
                 0xcc18,  # Packet Type
