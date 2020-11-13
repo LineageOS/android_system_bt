@@ -326,14 +326,8 @@ class DirectHciTest(GdBaseTestClass):
     def test_connection_dut_connects(self):
         self.dut_hci.send_command_with_complete(WritePageTimeoutBuilder(0x4000))
 
-        # CERT Enables scans and gets its address
-        self.cert_hal.send_hci_command(ReadBdAddrBuilder())
-
-        cert_read_bd_addr_capture = HalCaptures.ReadBdAddrCompleteCapture()
-        assertThat(self.cert_hal.get_hci_event_stream()).emits(cert_read_bd_addr_capture)
-        address = cert_read_bd_addr_capture.get().GetBdAddr()
-
         self.cert_hal.enable_inquiry_and_page_scan()
+        address = self.cert_hal.read_own_address()
 
         self.dut_hci.initiate_connection(address)
         cert_acl = self.cert_hal.accept_connection()

@@ -80,6 +80,12 @@ class PyHal(Closable):
     def send_acl_first(self, handle, data):
         self.send_acl(handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE, BroadcastFlag.POINT_TO_POINT, data)
 
+    def read_own_address(self):
+        self.send_hci_command(hci_packets.ReadBdAddrBuilder())
+        read_bd_addr = HciCaptures.ReadBdAddrCompleteCapture()
+        assertThat(self.hci_event_stream).emits(read_bd_addr)
+        return read_bd_addr.get().GetBdAddr()
+
     def enable_inquiry_and_page_scan(self):
         self.send_hci_command(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))
 
