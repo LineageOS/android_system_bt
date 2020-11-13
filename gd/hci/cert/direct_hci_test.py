@@ -267,8 +267,7 @@ class DirectHciTest(GdBaseTestClass):
         # Send ACL Data
         self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                               BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.cert_hal.send_acl(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                               BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
+        self.cert_hal.send_acl_first(cert_handle, bytes(b'Just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(
             lambda packet: logging.debug(packet.payload) or b'SomeAclData' in packet.payload)
@@ -370,8 +369,7 @@ class DirectHciTest(GdBaseTestClass):
         # Send ACL Data
         self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                               BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.cert_hal.send_acl(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                               BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
+        self.cert_hal.send_acl_first(cert_handle, bytes(b'Just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.data)
@@ -410,8 +408,7 @@ class DirectHciTest(GdBaseTestClass):
         # Send ACL Data
         self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                               BroadcastFlag.POINT_TO_POINT, bytes(b'This is just SomeAclData'))
-        self.cert_hal.send_acl(cert_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                               BroadcastFlag.POINT_TO_POINT, bytes(b'This is just SomeMoreAclData'))
+        self.cert_hal.send_acl_first(cert_handle, bytes(b'This is just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.data)

@@ -23,6 +23,8 @@ from bluetooth_packets_python3.hci_packets import WriteScanEnableBuilder
 from bluetooth_packets_python3.hci_packets import ScanEnable
 from bluetooth_packets_python3.hci_packets import AclPacketBuilder
 from bluetooth_packets_python3 import RawBuilder
+from bluetooth_packets_python3.hci_packets import BroadcastFlag
+from bluetooth_packets_python3.hci_packets import PacketBoundaryFlag
 
 
 class PyHal(Closable):
@@ -51,6 +53,9 @@ class PyHal(Closable):
     def send_acl(self, handle, pb_flag, b_flag, data):
         acl = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(data))
         self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl.Serialize())))
+
+    def send_acl_first(self, handle, data):
+        self.send_acl(handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE, BroadcastFlag.POINT_TO_POINT, data)
 
     def enable_inquiry_and_page_scan(self):
         self.send_hci_command(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))

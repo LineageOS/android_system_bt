@@ -224,10 +224,8 @@ class SimpleHalTest(GdBaseTestClass):
         dut_handle = conn_handle
 
         # Send ACL Data
-        self.dut_hal.send_acl(dut_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                              hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.cert_hal.send_acl(cert_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                               hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
+        self.dut_hal.send_acl_first(dut_handle, bytes(b'Just SomeAclData'))
+        self.cert_hal.send_acl_first(cert_handle, bytes(b'Just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hal.get_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
