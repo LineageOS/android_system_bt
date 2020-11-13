@@ -35,9 +35,9 @@ class PyHciAclConnection(IEventStream):
         self.our_acl_stream = FilteringEventStream(acl_stream, None)
 
     def send(self, pb_flag, b_flag, data):
-        acl_msg = hci_facade.AclMsg(
+        acl_msg = hci_facade.AclPacket(
             handle=self.handle, packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=data)
-        self.device.hci.SendAclData(acl_msg)
+        self.device.hci.SendAcl(acl_msg)
 
     def send_first(self, data):
         self.send(hci_packets.PacketBoundaryFlag.FIRST_AUTOMATICALLY_FLUSHABLE,
@@ -64,22 +64,13 @@ class PyHci(Closable):
             want this if you are testing HCI itself.
         """
         self.device = device
-        self._setup_event_stream()
-        self._setup_le_event_stream()
+        self.event_stream = EventStream(self.device.hci.StreamEvents(empty_proto.Empty()))
+        self.le_event_stream = EventStream(self.device.hci.StreamLeSubevents(empty_proto.Empty()))
         if acl_streaming:
             self.register_for_events(hci_packets.EventCode.ROLE_CHANGE, hci_packets.EventCode.CONNECTION_REQUEST,
                                      hci_packets.EventCode.CONNECTION_COMPLETE,
                                      hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-            self._setup_acl_stream()
-
-    def _setup_event_stream(self):
-        self.event_stream = EventStream(self.device.hci.FetchEvents(empty_proto.Empty()))
-
-    def _setup_le_event_stream(self):
-        self.le_event_stream = EventStream(self.device.hci.FetchLeSubevents(empty_proto.Empty()))
-
-    def _setup_acl_stream(self):
-        self.acl_stream = EventStream(self.device.hci.FetchAclPackets(empty_proto.Empty()))
+            self.acl_stream = EventStream(self.device.hci.StreamAcl(empty_proto.Empty()))
 
     def close(self):
         safeClose(self.event_stream)
@@ -99,23 +90,17 @@ class PyHci(Closable):
 
     def register_for_events(self, *event_codes):
         for event_code in event_codes:
-            msg = hci_facade.EventCodeMsg(code=int(event_code))
-            self.device.hci.RegisterEventHandler(msg)
+            self.device.hci.RequestEvent(hci_facade.EventRequest(code=int(event_code)))
 
     def register_for_le_events(self, *event_codes):
         for event_code in event_codes:
-            msg = hci_facade.EventCodeMsg(code=int(event_code))
-            self.device.hci.RegisterLeEventHandler(msg)
+            self.device.hci.RequestLeSubevent(hci_facade.EventRequest(code=int(event_code)))
 
     def send_command_with_complete(self, command):
-        cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
-        self.device.hci.EnqueueCommandWithComplete(cmd)
+        self.device.hci.SendCommandWithComplete(hci_facade.Command(payload=bytes(command.Serialize())))
 
     def send_command_with_status(self, command):
-        cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
-        self.device.hci.EnqueueCommandWithStatus(cmd)
+        self.device.hci.SendCommandWithStatus(hci_facade.Command(payload=bytes(command.Serialize())))
 
     def enable_inquiry_and_page_scan(self):
         self.send_command_with_complete(

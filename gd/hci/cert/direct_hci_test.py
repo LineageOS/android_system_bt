@@ -47,9 +47,9 @@ class DirectHciTest(GdBaseTestClass):
         self.cert_hal.send_hci_command(command)
 
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
-        acl_msg = hci_facade.AclMsg(
+        acl_msg = hci_facade.AclPacket(
             handle=int(handle), packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=acl)
-        self.dut.hci.SendAclData(acl_msg)
+        self.dut.hci.SendAcl(acl_msg)
 
     def send_hal_acl_data(self, handle, pb_flag, b_flag, acl):
         lower = handle & 0xff
@@ -72,7 +72,7 @@ class DirectHciTest(GdBaseTestClass):
         self.dut_hci.send_command_with_complete(cmd2loop)
 
         looped_bytes = bytes(cmd2loop.Serialize())
-        assertThat(self.dut_hci.get_event_stream()).emits(lambda packet: looped_bytes in packet.event)
+        assertThat(self.dut_hci.get_event_stream()).emits(lambda packet: looped_bytes in packet.payload)
 
     def test_inquiry_from_dut(self):
         self.dut_hci.register_for_events(hci_packets.EventCode.INQUIRY_RESULT)
@@ -148,7 +148,7 @@ class DirectHciTest(GdBaseTestClass):
         self.send_hal_hci_command(
             hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.ENABLED, [enabled_set]))
 
-        assertThat(self.dut_hci.get_le_event_stream()).emits(lambda packet: b'Im_A_Cert' in packet.event)
+        assertThat(self.dut_hci.get_le_event_stream()).emits(lambda packet: b'Im_A_Cert' in packet.payload)
 
         self.send_hal_hci_command(
             hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.DISABLED, [enabled_set]))
