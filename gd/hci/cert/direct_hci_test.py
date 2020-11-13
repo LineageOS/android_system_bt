@@ -74,6 +74,8 @@ from bluetooth_packets_python3.hci_packets import PacketBoundaryFlag
 from bluetooth_packets_python3.hci_packets import ResetBuilder
 from bluetooth_packets_python3.hci_packets import Lap
 from bluetooth_packets_python3.hci_packets import OpCode
+from bluetooth_packets_python3.hci_packets import AclPacketBuilder
+from bluetooth_packets_python3 import RawBuilder
 
 
 class DirectHciTest(GdBaseTestClass):
@@ -98,14 +100,8 @@ class DirectHciTest(GdBaseTestClass):
         self.dut.hci.SendAcl(acl_msg)
 
     def send_hal_acl_data(self, handle, pb_flag, b_flag, acl):
-        lower = handle & 0xff
-        upper = (handle >> 8) & 0xf
-        upper = upper | int(pb_flag) & 0x3
-        upper = upper | ((int(b_flag) & 0x3) << 2)
-        lower_length = len(acl) & 0xff
-        upper_length = (len(acl) & 0xff00) >> 8
-        concatenated = bytes([lower, upper, lower_length, upper_length] + list(acl))
-        self.cert_hal.send_acl(concatenated)
+        acl_msg = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(acl))
+        self.cert_hal.send_acl(acl_msg.Serialize())
 
     def test_local_hci_cmd_and_event(self):
         # Loopback mode responds with ACL and SCO connection complete
