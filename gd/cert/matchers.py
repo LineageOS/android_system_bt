@@ -163,6 +163,11 @@ class HciMatchers(object):
     def RemoteOobDataRequest():
         return lambda event: HciMatchers.EventWithCode(EventCode.REMOTE_OOB_DATA_REQUEST)
 
+    @staticmethod
+    def LoopbackOf(packet):
+        data = bytes(hci_packets.LoopbackCommandBuilder(packet).Serialize())
+        return lambda event: data == event.payload
+
 
 class NeighborMatchers(object):
 

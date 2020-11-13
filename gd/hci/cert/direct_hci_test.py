@@ -110,13 +110,10 @@ class DirectHciTest(GdBaseTestClass):
     def test_local_hci_cmd_and_event(self):
         # Loopback mode responds with ACL and SCO connection complete
         self.dut_hci.register_for_events(EventCode.LOOPBACK_COMMAND)
-
         self.dut_hci.send_command_with_complete(WriteLoopbackModeBuilder(LoopbackMode.ENABLE_LOCAL))
 
         self.dut_hci.send_command_with_complete(ReadLocalNameBuilder())
-
-        looped_bytes = bytes(ReadLocalNameBuilder().Serialize())
-        assertThat(self.dut_hci.get_event_stream()).emits(lambda packet: looped_bytes in packet.payload)
+        assertThat(self.dut_hci.get_event_stream()).emits(HciMatchers.LoopbackOf(ReadLocalNameBuilder()))
 
     def test_inquiry_from_dut(self):
         self.dut_hci.register_for_events(EventCode.INQUIRY_RESULT)
