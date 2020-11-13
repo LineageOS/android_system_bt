@@ -25,6 +25,8 @@ from facade import rootservice_pb2 as facade_rootservice_pb2
 from hal import facade_pb2 as hal_facade_pb2
 from bluetooth_packets_python3 import hci_packets
 import bluetooth_packets_python3 as bt_packets
+from bluetooth_packets_python3.hci_packets import AclPacketBuilder
+from bluetooth_packets_python3 import RawBuilder
 
 _GRPC_TIMEOUT = 10
 
@@ -49,24 +51,12 @@ class SimpleHalTest(GdBaseTestClass):
         super().teardown_test()
 
     def send_cert_acl_data(self, handle, pb_flag, b_flag, acl):
-        lower = handle & 0xff
-        upper = (handle >> 8) & 0xf
-        upper = upper | int(pb_flag) & 0x3
-        upper = upper | ((int(b_flag) & 0x3) << 2)
-        lower_length = len(acl) & 0xff
-        upper_length = (len(acl) & 0xff00) >> 8
-        concatenated = bytes([lower, upper, lower_length, upper_length] + list(acl))
-        self.cert_hal.send_acl(concatenated)
+        acl_msg = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(acl))
+        self.cert_hal.send_acl(acl_msg.Serialize())
 
     def send_dut_acl_data(self, handle, pb_flag, b_flag, acl):
-        lower = handle & 0xff
-        upper = (handle >> 8) & 0xf
-        upper = upper | int(pb_flag) & 0x3
-        upper = upper | ((int(b_flag) & 0x3) << 2)
-        lower_length = len(acl) & 0xff
-        upper_length = (len(acl) & 0xff00) >> 8
-        concatenated = bytes([lower, upper, lower_length, upper_length] + list(acl))
-        self.dut_hal.send_acl(concatenated)
+        acl_msg = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(acl))
+        self.dut_hal.send_acl(acl_msg.Serialize())
 
     def test_fetch_hci_event(self):
         self.dut_hal.send_hci_command(
