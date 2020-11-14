@@ -88,8 +88,6 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   tL2C_RCB* p_rcb;
   uint16_t vpsm = psm;
 
-  L2CAP_TRACE_API("L2CAP - L2CA_Register() called for PSM: 0x%04x", psm);
-
   /* Verify that the required callback info has been filled in
   **      Note:  Connection callbacks are required but not checked
   **             for here because it is possible to be only a client
@@ -105,7 +103,7 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
 
   /* Verify PSM is valid */
   if (L2C_INVALID_PSM(psm)) {
-    L2CAP_TRACE_ERROR("L2CAP - invalid PSM value, PSM: 0x%04x", psm);
+    LOG_ERROR("L2CAP - invalid PSM value, PSM: 0x%04x", psm);
     return (0);
   }
 
@@ -117,8 +115,7 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
       if (p_rcb == NULL) break;
     }
 
-    L2CAP_TRACE_API("L2CA_Register - Real PSM: 0x%04x  Virtual PSM: 0x%04x",
-                    psm, vpsm);
+    LOG_DEBUG("L2CAP - Real PSM: 0x%04x  Virtual PSM: 0x%04x", psm, vpsm);
   }
 
   /* If registration block already there, just overwrite it */
@@ -126,12 +123,13 @@ uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
   if (p_rcb == NULL) {
     p_rcb = l2cu_allocate_rcb(vpsm);
     if (p_rcb == NULL) {
-      L2CAP_TRACE_WARNING("L2CAP - no RCB available, PSM: 0x%04x  vPSM: 0x%04x",
-                          psm, vpsm);
+      LOG_WARN("L2CAP - no RCB available, PSM: 0x%04x  vPSM: 0x%04x", psm,
+               vpsm);
       return (0);
     }
   }
 
+  LOG_INFO("L2CAP Registered service classic PSM: 0x%04x", psm);
   p_rcb->log_packets = enable_snoop;
   p_rcb->api = p_cb_info;
   p_rcb->real_psm = psm;
