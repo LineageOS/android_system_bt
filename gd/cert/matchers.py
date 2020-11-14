@@ -14,6 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import logging
 import bluetooth_packets_python3 as bt_packets
 import logging
 
@@ -165,7 +166,11 @@ class HciMatchers(object):
 
     @staticmethod
     def LoopbackOf(packet):
-        data = bytes(hci_packets.LoopbackCommandBuilder(packet).Serialize())
+        return HciMatchers.Exactly(hci_packets.LoopbackCommandBuilder(packet))
+
+    @staticmethod
+    def Exactly(packet):
+        data = bytes(packet.Serialize())
         return lambda event: data == event.payload
 
 

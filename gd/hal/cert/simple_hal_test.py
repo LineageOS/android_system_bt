@@ -20,6 +20,7 @@ from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from cert.truth import assertThat
 from cert.py_hal import PyHal
+from cert.matchers import HciMatchers
 from google.protobuf import empty_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
 from hal import facade_pb2 as hal_facade_pb2
@@ -50,12 +51,12 @@ class SimpleHalTest(GdBaseTestClass):
         self.cert_hal.close()
         super().teardown_test()
 
-    def test_fetch_hci_event(self):
+    def test_stream_events(self):
         self.dut_hal.send_hci_command(
             hci_packets.LeAddDeviceToConnectListBuilder(hci_packets.ConnectListAddressType.RANDOM, '0C:05:04:03:02:01'))
-        event = hci_packets.LeAddDeviceToConnectListCompleteBuilder(1, hci_packets.ErrorCode.SUCCESS)
 
-        assertThat(self.dut_hal.get_hci_event_stream()).emits(lambda packet: bytes(event.Serialize()) in packet.payload)
+        assertThat(self.dut_hal.get_hci_event_stream()).emits(
+            HciMatchers.Exactly(hci_packets.LeAddDeviceToConnectListCompleteBuilder(1, hci_packets.ErrorCode.SUCCESS)))
 
     def test_loopback_hci_command(self):
         self.dut_hal.send_hci_command(hci_packets.WriteLoopbackModeBuilder(hci_packets.LoopbackMode.ENABLE_LOCAL))
@@ -64,8 +65,7 @@ class SimpleHalTest(GdBaseTestClass):
                                                               '0C:05:04:03:02:01')
         self.dut_hal.send_hci_command(command)
 
-        assertThat(
-            self.dut_hal.get_hci_event_stream()).emits(lambda packet: bytes(command.Serialize()) in packet.payload)
+        assertThat(self.dut_hal.get_hci_event_stream()).emits(HciMatchers.LoopbackOf(command))
 
     def test_inquiry_from_dut(self):
         self.cert_hal.send_hci_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
