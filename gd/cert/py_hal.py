@@ -147,6 +147,10 @@ class PyHal(Closable):
         assertThat(self.hci_event_stream).emits(read_bd_addr)
         return read_bd_addr.get().GetBdAddr()
 
+    def reset(self):
+        self.send_hci_command(hci_packets.ResetBuilder())
+        assertThat(self.hci_event_stream).emits(HciMatchers.CommandComplete(OpCode.RESET))
+
     def enable_inquiry_and_page_scan(self):
         self.send_hci_command(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))
 

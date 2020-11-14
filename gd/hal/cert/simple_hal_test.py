@@ -42,8 +42,8 @@ class SimpleHalTest(GdBaseTestClass):
         self.dut_hal = PyHal(self.dut)
         self.cert_hal = PyHal(self.cert)
 
-        self.dut_hal.send_hci_command(hci_packets.ResetBuilder())
-        self.cert_hal.send_hci_command(hci_packets.ResetBuilder())
+        self.dut_hal.reset()
+        self.cert_hal.reset()
 
     def teardown_test(self):
         self.dut_hal.close()
