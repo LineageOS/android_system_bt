@@ -87,10 +87,10 @@ class HciMatchers(object):
 
     @staticmethod
     def _extract_matching_le_event(packet_bytes, subevent_code):
-        event = hci_packets.LeMetaEventView(
-            HciMatchers._extract_matching_event(packet_bytes, hci_packets.EventCode.LE_META_EVENT))
-        if event is None:
+        inner_event = HciMatchers._extract_matching_event(packet_bytes, hci_packets.EventCode.LE_META_EVENT)
+        if inner_event is None:
             return None
+        event = hci_packets.LeMetaEventView(inner_event)
         if event.GetSubeventCode() != subevent_code:
             return None
         return event
@@ -105,12 +105,16 @@ class HciMatchers(object):
 
     @staticmethod
     def _extract_le_connection_complete(packet_bytes):
-        event = hci_packets.LeConnectionCompleteView(
-            HciMatchers._extract_matching_le_event(packet_bytes, hci_packets.SubeventCode.CONNECTION_COMPLETE))
-        if event is not None:
-            return event
-        return hci_packets.LeEnhancedConnectionCompleteView(
-            HciMatchers._extract_matching_le_event(packet_bytes, hci_packets.SubeventCode.ENHANCED_CONNECTION_COMPLETE))
+        inner_event = HciMatchers._extract_matching_le_event(packet_bytes, hci_packets.SubeventCode.CONNECTION_COMPLETE)
+        if inner_event is not None:
+            return hci_packets.LeConnectionCompleteView(inner_event)
+
+        inner_event = HciMatchers._extract_matching_le_event(packet_bytes,
+                                                             hci_packets.SubeventCode.ENHANCED_CONNECTION_COMPLETE)
+        if inner_event is not None:
+            return hci_packets.LeEnhancedConnectionCompleteView(inner_event)
+
+        return None
 
     @staticmethod
     def LogEventCode():

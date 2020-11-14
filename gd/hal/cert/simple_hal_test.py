@@ -21,6 +21,7 @@ from cert.event_stream import EventStream
 from cert.truth import assertThat
 from cert.py_hal import PyHal
 from cert.matchers import HciMatchers
+from cert.captures import HciCaptures
 from google.protobuf import empty_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
 from hal import facade_pb2 as hal_facade_pb2
@@ -136,28 +137,11 @@ class SimpleHalTest(GdBaseTestClass):
         advertisement.set_scan_response(b'Im_The_D')
         advertisement.start()
 
-        conn_handle = 0xfff
+        cert_acl = self.cert_hal.complete_le_connection()
+        dut_acl = self.dut_hal.complete_le_connection()
 
-        def payload_handle(packet):
-            packet_bytes = packet.payload
-            if b'\x3e\x13\x01\x00' in packet_bytes:
-                nonlocal conn_handle
-                cc_view = hci_packets.LeConnectionCompleteView(
-                    hci_packets.LeMetaEventView(
-                        hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
-                conn_handle = cc_view.GetConnectionHandle()
-                return True
-            return False
-
-        assertThat(self.cert_hal.get_hci_event_stream()).emits(payload_handle)
-        cert_handle = conn_handle
-        conn_handle = 0xfff
-        assertThat(self.dut_hal.get_hci_event_stream()).emits(payload_handle)
-        dut_handle = conn_handle
-
-        # Send ACL Data
-        self.dut_hal.send_acl_first(dut_handle, bytes(b'Just SomeAclData'))
-        self.cert_hal.send_acl_first(cert_handle, bytes(b'Just SomeMoreAclData'))
+        dut_acl.send_first(b'Just SomeAclData')
+        cert_acl.send_first(b'Just SomeMoreAclData')
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hal.get_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
@@ -192,8 +176,5 @@ class SimpleHalTest(GdBaseTestClass):
         advertisement.set_data(b'Im_A_Cert')
         advertisement.start()
 
-        # LeConnectionComplete
-        assertThat(self.cert_hal.get_hci_event_stream()).emits(
-            lambda packet: b'\x3e\x13\x01\x00' in packet.payload, timeout=timedelta(seconds=20))
-        assertThat(self.dut_hal.get_hci_event_stream()).emits(
-            lambda packet: b'\x3e\x13\x01\x00' in packet.payload, timeout=timedelta(seconds=20))
+        assertThat(self.cert_hal.get_hci_event_stream()).emits(HciMatchers.LeConnectionComplete())
+        assertThat(self.dut_hal.get_hci_event_stream()).emits(HciMatchers.LeConnectionComplete())

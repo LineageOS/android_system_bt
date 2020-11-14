@@ -180,6 +180,13 @@ class PyHal(Closable):
         handle = connection_complete.get().GetConnectionHandle()
         return PyHalAclConnection(handle, self.acl_stream, self.device)
 
+    def complete_le_connection(self):
+        connection_complete = HciCaptures.LeConnectionCompleteCapture()
+        assertThat(self.hci_event_stream).emits(connection_complete)
+
+        handle = connection_complete.get().GetConnectionHandle()
+        return PyHalAclConnection(handle, self.acl_stream, self.device)
+
     def create_advertisement(self,
                              handle,
                              own_address,
