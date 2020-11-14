@@ -150,6 +150,27 @@ class PyHal(Closable):
     def set_random_le_address(self, addr):
         self.send_hci_command(hci_packets.LeSetRandomAddressBuilder(addr))
 
+    def set_scan_parameters(self):
+        phy_scan_params = hci_packets.PhyScanParameters()
+        phy_scan_params.le_scan_interval = 6553
+        phy_scan_params.le_scan_window = 6553
+        phy_scan_params.le_scan_type = hci_packets.LeScanType.ACTIVE
+
+        self.send_hci_command(
+            hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
+                                                           hci_packets.LeScanningFilterPolicy.ACCEPT_ALL, 1,
+                                                           [phy_scan_params]))
+
+    def start_scanning(self):
+        self.send_hci_command(
+            hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
+                                                       hci_packets.FilterDuplicates.DISABLED, 0, 0))
+
+    def stop_scanning(self):
+        self.send_hci_command(
+            hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.DISABLED,
+                                                       hci_packets.FilterDuplicates.DISABLED, 0, 0))
+
     def reset(self):
         self.send_hci_command(hci_packets.ResetBuilder())
         assertThat(self.hci_event_stream).emits(HciMatchers.CommandComplete(OpCode.RESET))

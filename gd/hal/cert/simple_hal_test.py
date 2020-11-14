@@ -81,19 +81,9 @@ class SimpleHalTest(GdBaseTestClass):
 
     def test_le_ad_scan_cert_advertises(self):
         self.dut_hal.set_random_le_address('0D:05:04:03:02:01')
-        # DUT scans
-        phy_scan_params = hci_packets.PhyScanParameters()
-        phy_scan_params.le_scan_interval = 6553
-        phy_scan_params.le_scan_window = 6553
-        phy_scan_params.le_scan_type = hci_packets.LeScanType.ACTIVE
 
-        self.dut_hal.send_hci_command(
-            hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
-                                                           hci_packets.LeScanningFilterPolicy.ACCEPT_ALL, 1,
-                                                           [phy_scan_params]))
-        self.dut_hal.send_hci_command(
-            hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
-                                                       hci_packets.FilterDuplicates.DISABLED, 0, 0))
+        self.dut_hal.set_scan_parameters()
+        self.dut_hal.start_scanning()
 
         advertisement = self.cert_hal.create_advertisement(
             0,
@@ -109,10 +99,8 @@ class SimpleHalTest(GdBaseTestClass):
         assertThat(self.dut_hal.get_hci_event_stream()).emits(lambda packet: b'Im_A_Cert' in packet.payload)
 
         advertisement.stop()
-        # Disable Scanning
-        self.dut_hal.send_hci_command(
-            hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
-                                                       hci_packets.FilterDuplicates.DISABLED, 0, 0))
+
+        self.dut_hal.stop_scanning()
 
     def test_le_connection_dut_advertises(self):
         # Cert Connects
