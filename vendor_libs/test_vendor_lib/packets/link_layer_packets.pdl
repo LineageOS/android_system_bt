@@ -41,6 +41,11 @@ enum PacketType : 8 {
     ISO = 0x22,
     ISO_CONNECTION_REQUEST = 0x23,
     ISO_CONNECTION_RESPONSE = 0x24,
+    OOB_DATA = 0x25,
+    OOB_DATA_RESPONSE = 0x26,
+    PASSKEY = 0x27,
+    PASSKEY_FAILED = 0x28,
+    KEYPRESS_NOTIFICATION = 0x29,
 }
 
 packet LinkLayerPacket {
@@ -298,4 +303,36 @@ packet IsoConnectionResponse  : LinkLayerPacket (type = ISO_CONNECTION_RESPONSE)
   _reserved_ : 4,
   requester_acl_handle : 12,
   _reserved_ : 4,
+}
+
+packet OobData : LinkLayerPacket (type = OOB_DATA){
+  c_p_194 : 8[16],
+  r_p_194 : 8[16],
+  c_p_256 : 8[16],
+  r_p_256 : 8[16],
+}
+
+packet OobDataResponse : LinkLayerPacket (type = OOB_DATA_RESPONSE){
+  matched : 1,
+  _reserved_ : 7,
+}
+
+enum PasskeyNotificationType : 8 {
+  ENTRY_STARTED = 0x00,
+  DIGIT_ENTERED = 0x01,
+  DIGIT_ERASED = 0x02,
+  CLEARED = 0x03,
+  ENTRY_COMPLETED = 0x04,
+}
+
+packet Passkey : LinkLayerPacket (type = PASSKEY){
+  passkey : 20,
+  _reserved_ : 4,
+}
+
+packet PasskeyFailed : LinkLayerPacket (type = PASSKEY_FAILED){
+}
+
+packet KeypressNotification : LinkLayerPacket (type = KEYPRESS_NOTIFICATION){
+  notification_type : PasskeyNotificationType,
 }
