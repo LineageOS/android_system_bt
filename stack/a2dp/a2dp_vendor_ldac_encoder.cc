@@ -587,8 +587,8 @@ static void a2dp_ldac_get_num_frame_iteration(uint8_t* num_of_iterations,
   a2dp_ldac_encoder_cb.ldac_feeding_state.last_frame_us = now_us;
 
   a2dp_ldac_encoder_cb.ldac_feeding_state.counter +=
-      a2dp_ldac_encoder_cb.ldac_feeding_state.bytes_per_tick * us_this_tick /
-      (A2DP_LDAC_ENCODER_INTERVAL_MS * 1000);
+      a2dp_ldac_encoder_cb.ldac_feeding_state.bytes_per_tick * (us_this_tick /
+      (float) (A2DP_LDAC_ENCODER_INTERVAL_MS * 1000));
 
   result =
       a2dp_ldac_encoder_cb.ldac_feeding_state.counter / pcm_bytes_per_frame;

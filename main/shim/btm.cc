@@ -666,9 +666,10 @@ void Btm::StartAdvertising() {
     return;
   }
 
-  hci::AdvertisingConfig config = {};
-  advertiser_id_ = GetAdvertising()->CreateAdvertiser(
-      config, common::Bind([](hci::Address, hci::AddressType) { /*OnScan*/ }),
+  hci::ExtendedAdvertisingConfig config = {};
+  advertiser_id_ = GetAdvertising()->ExtendedCreateAdvertiser(
+      0x00, config,
+      common::Bind([](hci::Address, hci::AddressType) { /*OnScan*/ }),
       common::Bind([](hci::ErrorCode, uint8_t, uint8_t) { /*OnTerminated*/ }),
       GetGdShimHandler());
   if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {

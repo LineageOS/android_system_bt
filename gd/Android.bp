@@ -763,11 +763,18 @@ cc_library_host_shared {
     rtti: true,
 }
 
-rust_protobuf {
-    name: "libhci_layer_facade_proto",
-    crate_name: "hci_layer_facade_proto",
+rust_grpcio {
+    name: "libbt_hci_proto",
+    crate_name: "bt_hci_proto",
     proto: "hci/facade/facade.proto",
-    proto_flags: ["-Iexternal/protobuf/src/"],
+    source_stem: "facade",
+    host_supported: true,
+}
+
+rust_grpcio {
+    name: "libbt_hal_proto",
+    crate_name: "bt_hal_proto",
+    proto: "hal/facade.proto",
     source_stem: "facade",
     host_supported: true,
 }
@@ -785,7 +792,6 @@ rust_protobuf {
     name: "libbt_facade_common_proto",
     crate_name: "bt_facade_common_proto",
     proto: "facade/common.proto",
-    proto_flags: ["-Iexternal/protobuf/src/"],
     source_stem: "common",
     host_supported: true,
 }
