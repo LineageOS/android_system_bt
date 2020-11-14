@@ -180,6 +180,40 @@ class PyHal(Closable):
         handle = connection_complete.get().GetConnectionHandle()
         return PyHalAclConnection(handle, self.acl_stream, self.device)
 
+    def initiate_le_connection(self, remote_addr):
+        phy_scan_params = hci_packets.LeCreateConnPhyScanParameters()
+        phy_scan_params.scan_interval = 0x60
+        phy_scan_params.scan_window = 0x30
+        phy_scan_params.conn_interval_min = 0x18
+        phy_scan_params.conn_interval_max = 0x28
+        phy_scan_params.conn_latency = 0
+        phy_scan_params.supervision_timeout = 0x1f4
+        phy_scan_params.min_ce_length = 0
+        phy_scan_params.max_ce_length = 0
+        self.send_hci_command(
+            hci_packets.LeExtendedCreateConnectionBuilder(
+                hci_packets.InitiatorFilterPolicy.USE_PEER_ADDRESS, hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
+                hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, remote_addr, 1, [phy_scan_params]))
+
+    def add_to_connect_list(self, remote_addr):
+        self.send_hci_command(
+            hci_packets.LeAddDeviceToConnectListBuilder(hci_packets.ConnectListAddressType.RANDOM, remote_addr))
+
+    def initiate_le_connection_by_connect_list(self, remote_addr):
+        phy_scan_params = hci_packets.LeCreateConnPhyScanParameters()
+        phy_scan_params.scan_interval = 0x60
+        phy_scan_params.scan_window = 0x30
+        phy_scan_params.conn_interval_min = 0x18
+        phy_scan_params.conn_interval_max = 0x28
+        phy_scan_params.conn_latency = 0
+        phy_scan_params.supervision_timeout = 0x1f4
+        phy_scan_params.min_ce_length = 0
+        phy_scan_params.max_ce_length = 0
+        self.send_hci_command(
+            hci_packets.LeExtendedCreateConnectionBuilder(
+                hci_packets.InitiatorFilterPolicy.USE_CONNECT_LIST, hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
+                hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, remote_addr, 1, [phy_scan_params]))
+
     def complete_le_connection(self):
         connection_complete = HciCaptures.LeConnectionCompleteCapture()
         assertThat(self.hci_event_stream).emits(connection_complete)

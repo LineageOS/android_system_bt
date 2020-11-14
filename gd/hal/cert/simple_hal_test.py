@@ -117,19 +117,7 @@ class SimpleHalTest(GdBaseTestClass):
     def test_le_connection_dut_advertises(self):
         # Cert Connects
         self.cert_hal.send_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
-        phy_scan_params = hci_packets.LeCreateConnPhyScanParameters()
-        phy_scan_params.scan_interval = 0x60
-        phy_scan_params.scan_window = 0x30
-        phy_scan_params.conn_interval_min = 0x18
-        phy_scan_params.conn_interval_max = 0x28
-        phy_scan_params.conn_latency = 0
-        phy_scan_params.supervision_timeout = 0x1f4
-        phy_scan_params.min_ce_length = 0
-        phy_scan_params.max_ce_length = 0
-        self.cert_hal.send_hci_command(
-            hci_packets.LeExtendedCreateConnectionBuilder(
-                hci_packets.InitiatorFilterPolicy.USE_PEER_ADDRESS, hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
-                hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, '0D:05:04:03:02:01', 1, [phy_scan_params]))
+        self.cert_hal.initiate_le_connection('0D:05:04:03:02:01')
 
         # DUT Advertises
         advertisement = self.dut_hal.create_advertisement(0, '0D:05:04:03:02:01')
@@ -147,23 +135,9 @@ class SimpleHalTest(GdBaseTestClass):
         assertThat(self.dut_hal.get_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
 
     def test_le_connect_list_connection_cert_advertises(self):
-        # DUT Connects
         self.dut_hal.send_hci_command(hci_packets.LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
-        self.dut_hal.send_hci_command(
-            hci_packets.LeAddDeviceToConnectListBuilder(hci_packets.ConnectListAddressType.RANDOM, '0C:05:04:03:02:01'))
-        phy_scan_params = hci_packets.LeCreateConnPhyScanParameters()
-        phy_scan_params.scan_interval = 0x60
-        phy_scan_params.scan_window = 0x30
-        phy_scan_params.conn_interval_min = 0x18
-        phy_scan_params.conn_interval_max = 0x28
-        phy_scan_params.conn_latency = 0
-        phy_scan_params.supervision_timeout = 0x1f4
-        phy_scan_params.min_ce_length = 0
-        phy_scan_params.max_ce_length = 0
-        self.dut_hal.send_hci_command(
-            hci_packets.LeExtendedCreateConnectionBuilder(
-                hci_packets.InitiatorFilterPolicy.USE_CONNECT_LIST, hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
-                hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, 'BA:D5:A4:A3:A2:A1', 1, [phy_scan_params]))
+        self.dut_hal.add_to_connect_list('0C:05:04:03:02:01')
+        self.dut_hal.initiate_le_connection_by_connect_list('BA:D5:A4:A3:A2:A1')
 
         advertisement = self.cert_hal.create_advertisement(
             1,
