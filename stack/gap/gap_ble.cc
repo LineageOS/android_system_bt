@@ -59,15 +59,17 @@ void client_connect_cback(tGATT_IF, const RawAddress&, uint16_t, bool,
 void client_cmpl_cback(uint16_t, tGATTC_OPTYPE, tGATT_STATUS,
                        tGATT_CL_COMPLETE*);
 
-tGATT_CBACK gap_cback = {client_connect_cback,
-                         client_cmpl_cback,
-                         NULL,
-                         NULL,
-                         server_attr_request_cback,
-                         NULL,
-                         NULL,
-                         NULL,
-                         NULL};
+tGATT_CBACK gap_cback = {
+    .p_conn_cb = client_connect_cback,
+    .p_cmpl_cb = client_cmpl_cback,
+    .p_disc_res_cb = nullptr,
+    .p_disc_cmpl_cb = nullptr,
+    .p_req_cb = server_attr_request_cback,
+    .p_enc_cmpl_cb = nullptr,
+    .p_congestion_cb = nullptr,
+    .p_phy_update_cb = nullptr,
+    .p_conn_update_cb = nullptr,
+};
 
 constexpr int GAP_CHAR_DEV_NAME_SIZE = BD_NAME_LEN;
 constexpr int GAP_MAX_CHAR_NUM = 4;
