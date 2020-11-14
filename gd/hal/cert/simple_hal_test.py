@@ -80,8 +80,8 @@ class SimpleHalTest(GdBaseTestClass):
                                                              )
 
     def test_le_ad_scan_cert_advertises(self):
+        self.dut_hal.set_random_le_address('0D:05:04:03:02:01')
         # DUT scans
-        self.dut_hal.send_hci_command(hci_packets.LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
         phy_scan_params = hci_packets.PhyScanParameters()
         phy_scan_params.le_scan_interval = 6553
         phy_scan_params.le_scan_window = 6553
@@ -116,7 +116,7 @@ class SimpleHalTest(GdBaseTestClass):
 
     def test_le_connection_dut_advertises(self):
         # Cert Connects
-        self.cert_hal.send_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
+        self.cert_hal.set_random_le_address('0C:05:04:03:02:01')
         self.cert_hal.initiate_le_connection('0D:05:04:03:02:01')
 
         # DUT Advertises
@@ -135,7 +135,7 @@ class SimpleHalTest(GdBaseTestClass):
         assertThat(self.dut_hal.get_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
 
     def test_le_connect_list_connection_cert_advertises(self):
-        self.dut_hal.send_hci_command(hci_packets.LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
+        self.dut_hal.set_random_le_address('0D:05:04:03:02:01')
         self.dut_hal.add_to_connect_list('0C:05:04:03:02:01')
         self.dut_hal.initiate_le_connection_by_connect_list('BA:D5:A4:A3:A2:A1')
 
