@@ -57,6 +57,32 @@ class HciMatchers(object):
                 return complete
 
     @staticmethod
+    def CommandStatus(opcode=None):
+        return lambda msg: HciMatchers._is_matching_command_status(msg.payload, opcode)
+
+    @staticmethod
+    def ExtractMatchingCommandStatus(packet_bytes, opcode=None):
+        return HciMatchers._extract_matching_command_complete(packet_bytes, opcode)
+
+    @staticmethod
+    def _is_matching_command_status(packet_bytes, opcode=None):
+        return HciMatchers._extract_matching_command_status(packet_bytes, opcode) is not None
+
+    @staticmethod
+    def _extract_matching_command_status(packet_bytes, opcode=None):
+        event = HciMatchers._extract_matching_event(packet_bytes, EventCode.COMMAND_STATUS)
+        if event is None:
+            return None
+        complete = hci_packets.CommandStatusView(event)
+        if opcode is None or complete is None:
+            return complete
+        else:
+            if complete.GetCommandOpCode() != opcode:
+                return None
+            else:
+                return complete
+
+    @staticmethod
     def EventWithCode(event_code):
         return lambda msg: HciMatchers._is_matching_event(msg.payload, event_code)
 

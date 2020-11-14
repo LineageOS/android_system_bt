@@ -103,7 +103,6 @@ class SimpleHalTest(GdBaseTestClass):
         self.dut_hal.stop_scanning()
 
     def test_le_connection_dut_advertises(self):
-        # Cert Connects
         self.cert_hal.set_random_le_address('0C:05:04:03:02:01')
         self.cert_hal.initiate_le_connection('0D:05:04:03:02:01')
 
