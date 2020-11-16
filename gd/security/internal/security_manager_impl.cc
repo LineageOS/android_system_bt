@@ -127,6 +127,11 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
   }
 }
 
+void SecurityManagerImpl::CreateBondOutOfBand(
+    hci::AddressWithType device, pairing::OobData remote_p192_oob_data, pairing::OobData remote_p256_oob_data) {
+  // TODO(optedoblivion): Implement when ClassicPairingHandler is ready.
+}
+
 void SecurityManagerImpl::CreateBondLe(hci::AddressWithType address) {
   auto record = security_database_.FindOrCreate(address);
   if (record->IsPaired()) {
