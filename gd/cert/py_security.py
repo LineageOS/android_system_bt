@@ -27,6 +27,7 @@ from hci.facade import facade_pb2 as hci_facade
 
 from security.facade_pb2 import AuthenticationRequirements
 from security.facade_pb2 import AuthenticationRequirementsMessage
+from security.facade_pb2 import BondMsgType
 from security.facade_pb2 import SecurityPolicyMessage
 from security.facade_pb2 import IoCapabilities
 from security.facade_pb2 import IoCapabilityMessage
@@ -129,6 +130,9 @@ class PySecurity(Closable):
         """
         pass
 
+    def enable_secure_connections(self):
+        pass
+
     def accept_pairing(self, cert_address, reply_boolean):
         """
             Here we pass, but in cert we perform pairing flow tasks.
@@ -169,7 +173,8 @@ class PySecurity(Closable):
         """
         logging.debug("DUT: Waiting for Bond Event")
         assertThat(self._bond_event_stream).emits(
-            lambda event: event.message_type == expected_bond_event or logging.info("DUT: %s" % event.message_type))
+            lambda event: event.message_type == expected_bond_event or logging.info("DUT: Actual Bond Event: %s" % event.message_type)
+        )
 
     def wait_for_enforce_security_event(self, expected_enforce_security_event):
         """
