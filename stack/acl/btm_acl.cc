@@ -624,6 +624,10 @@ static void check_link_policy(uint16_t* settings) {
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy) {
   conn->link_policy = policy;
   check_link_policy(&conn->link_policy);
+  if ((conn->link_policy & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
+      interop_match_addr(INTEROP_DISABLE_SNIFF, &(conn->remote_addr))) {
+    conn->link_policy &= (~HCI_ENABLE_SNIFF_MODE);
+  }
   btsnd_hcic_write_policy_set(conn->hci_handle, conn->link_policy);
 }
 
