@@ -11,14 +11,27 @@ use tokio::net::TcpStream;
 use tokio::select;
 
 use tokio::runtime::Runtime;
-
 use tokio::sync::mpsc;
+use gddi::{module, provides};
 
 use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType, RawPacket};
 
 use std::sync::Arc;
 
 use crate::{Hal, HalExports, Result, H4_HEADER_SIZE};
+
+module! {
+    rootcanal_hal,
+    providers {
+        HalExports => provide_rootcanal_hal,
+    }
+}
+
+#[provides]
+async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> HalExports {
+    // Temporarily unwrap, until GDDI supports returning Result types
+    RootcanalHal::start(config, rt).await.unwrap()
+}
 
 /// Rootcanal configuration
 #[derive(Clone, Debug, Default)]
