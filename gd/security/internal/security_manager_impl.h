@@ -30,6 +30,7 @@
 #include "security/channel/security_manager_channel.h"
 #include "security/initial_informations.h"
 #include "security/pairing/classic_pairing_handler.h"
+#include "security/pairing/oob_data.h"
 #include "security/pairing_handler_le.h"
 #include "security/record/security_record.h"
 #include "security/record/security_record_database.h"
@@ -85,6 +86,18 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
    * @param address device address we want to bond with
    */
   void CreateBond(hci::AddressWithType address);
+
+  /**
+   * Initiates bond over Classic transport with device, if not bonded yet.
+   *
+   * Allows for OobData to be passed in for use while pairing
+   *
+   * @param address device address we want to bond with
+   * @param remote_p192_oob_data P192 data given to the stack
+   * @param remote_p256_oob_data P256 data given to the stack
+   */
+  void CreateBondOutOfBand(
+      hci::AddressWithType address, pairing::OobData remote_p192_oob_data, pairing::OobData remote_p256_oob_data);
 
   /**
    * Initiates bond over Low Energy transport with device, if not bonded yet.
