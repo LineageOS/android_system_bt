@@ -64,6 +64,20 @@ class HalCaptures(object):
 class HciCaptures(object):
 
     @staticmethod
+    def ReadLocalOobDataCompleteCapture():
+        return Capture(
+            HciMatchers.CommandComplete(hci_packets.OpCode.READ_LOCAL_OOB_DATA),
+            lambda packet: HciMatchers.ExtractMatchingCommandComplete(packet.event, hci_packets.OpCode.READ_LOCAL_OOB_DATA)
+        )
+
+    @staticmethod
+    def ReadLocalOobExtendedDataCompleteCapture():
+        return Capture(
+            HciMatchers.CommandComplete(hci_packets.OpCode.READ_LOCAL_OOB_EXTENDED_DATA),
+            lambda packet: HciMatchers.ExtractMatchingCommandComplete(packet.event, hci_packets.OpCode.READ_LOCAL_OOB_EXTENDED_DATA)
+        )
+
+    @staticmethod
     def ReadBdAddrCompleteCapture():
         return Capture(
             HciMatchers.CommandComplete(hci_packets.OpCode.READ_BD_ADDR),
@@ -94,6 +108,12 @@ class HciCaptures(object):
     def LeConnectionCompleteCapture():
         return Capture(HciMatchers.LeConnectionComplete(),
                        lambda packet: HciMatchers.ExtractLeConnectionComplete(packet.event))
+
+    @staticmethod
+    def SimplePairingCompleteCapture():
+        return Capture(HciMatchers.EventWithCode(hci_packets.EventCode.SIMPLE_PAIRING_COMPLETE),
+            lambda packet: hci_packets.SimplePairingCompleteView(
+                HciMatchers.ExtractEventWithCode(packet.event, hci_packets.EventCode.SIMPLE_PAIRING_COMPLETE)))
 
 
 class L2capCaptures(object):
