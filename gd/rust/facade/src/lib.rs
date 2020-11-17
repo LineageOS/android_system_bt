@@ -13,6 +13,7 @@ use bt_facade_rootservice_proto::rootservice;
 use rootservice::*;
 use rootservice_grpc::{create_root_facade, RootFacade};
 
+use bt_hal::facade::HciHalFacadeService;
 use bt_hal::rootcanal_hal::{RootcanalConfig, RootcanalHal};
 use bt_hci::facade::HciLayerFacadeService;
 use bt_hci::Hci;
@@ -138,23 +139,39 @@ impl FacadeServiceManager {
     // layers. Will be cleaned up soon.
     async fn start_internal(
         rt: &Arc<Runtime>,
-        _req: StartStackRequest,
+        req: StartStackRequest,
         grpc_port: u16,
         rootcanal_port: Option<u16>,
     ) -> Server {
-        let env = Arc::new(Environment::new(2));
         let hal_exports = RootcanalHal::start(
             RootcanalConfig::new(rootcanal_port.unwrap(), "127.0.0.1"),
             Arc::clone(&rt),
         )
         .await
         .unwrap();
-        let hci_exports = Hci::start(hal_exports, Arc::clone(&rt));
-        let mut server = ServerBuilder::new(env)
-            .register_service(HciLayerFacadeService::create(hci_exports, Arc::clone(&rt)))
-            .bind("0.0.0.0", grpc_port)
-            .build()
-            .unwrap();
+        let mut services = Vec::new();
+        match req.get_module_under_test() {
+            BluetoothModule::HAL => {
+                services.push(HciHalFacadeService::create(Arc::clone(&rt)));
+            }
+            BluetoothModule::HCI => {
+                let hci_exports = Hci::start(hal_exports, Arc::clone(&rt));
+                services.push(HciLayerFacadeService::create(hci_exports, Arc::clone(&rt)));
+            }
+            _ => unimplemented!()
+        }
+
+        FacadeServiceManager::start_server(services, grpc_port)
+    }
+
+    fn start_server(services: Vec<grpcio::Service>, grpc_port: u16) -> Server {
+        let env = Arc::new(Environment::new(2));
+        let mut builder = ServerBuilder::new(env).bind("0.0.0.0", grpc_port);
+        for service in services {
+            builder = builder.register_service(service);
+        }
+
+        let mut server = builder.build().unwrap();
         server.start();
         server
     }
