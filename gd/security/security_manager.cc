@@ -36,6 +36,16 @@ void SecurityManager::CreateBond(hci::AddressWithType device) {
                                            std::forward<hci::AddressWithType>(device)));
 }
 
+void SecurityManager::CreateBondOutOfBand(
+    hci::AddressWithType device, pairing::OobData remote_p192_oob_data, pairing::OobData remote_p256_oob_data) {
+  security_handler_->Post(common::BindOnce(
+      &internal::SecurityManagerImpl::CreateBondOutOfBand,
+      common::Unretained(security_manager_impl_),
+      std::forward<hci::AddressWithType>(device),
+      remote_p192_oob_data,
+      remote_p256_oob_data));
+}
+
 void SecurityManager::CreateBondLe(hci::AddressWithType device) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::CreateBondLe,
                                            common::Unretained(security_manager_impl_),
