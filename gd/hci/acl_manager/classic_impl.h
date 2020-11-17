@@ -18,7 +18,6 @@
 
 #include "common/bind.h"
 #include "hci/acl_manager/assembler.h"
-#include "hci/acl_manager/disconnector_for_le.h"
 #include "hci/acl_manager/event_checkers.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/controller.h"
@@ -38,7 +37,7 @@ struct acl_connection {
   ConnectionManagementCallbacks* connection_management_callbacks_ = nullptr;
 };
 
-struct classic_impl : public DisconnectorForLe, public security::ISecurityManagerListener {
+struct classic_impl : public security::ISecurityManagerListener {
   classic_impl(HciLayer* hci_layer, Controller* controller, os::Handler* handler,
                RoundRobinScheduler* round_robin_scheduler)
       : hci_layer_(hci_layer), controller_(controller), round_robin_scheduler_(round_robin_scheduler) {
