@@ -222,6 +222,16 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
                                                        advertising_data);
   }
 
+  void CreateBIG(int advertiser_id, CreateBIGParameters create_big_params,
+                 CreateBIGCallback cb) override {
+    LOG(INFO) << __func__ << " in shim layer";
+  }
+
+  void TerminateBIG(int advertiser_id, int big_handle, int reason,
+                    TerminateBIGCallback cb) override {
+    LOG(INFO) << __func__ << " in shim layer";
+  }
+
   void SetPeriodicAdvertisingEnable(int advertiser_id, bool enable,
                                     StatusCallback cb) override {
     LOG(INFO) << __func__ << " in shim layer";
