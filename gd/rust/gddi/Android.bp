@@ -5,4 +5,5 @@ rust_library {
     host_supported: true,
     edition: "2018",
     proc_macros: ["libgddi_macros"],
+    rustlibs: ["libtokio"],
 }

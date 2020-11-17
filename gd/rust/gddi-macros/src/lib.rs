@@ -28,7 +28,7 @@ pub fn provides(_attr: TokenStream, item: TokenStream) -> TokenStream {
 
     let emitted_code = quote! {
         // Injecting wrapper
-        fn #injected_ident(registry: std::sync::Arc<gddi::Registry>) -> std::pin::Pin<Box<dyn std::future::Future<Output = Box<dyn std::any::Any>>>> {
+        fn #injected_ident(registry: std::sync::Arc<gddi::Registry>) -> std::pin::Pin<gddi::ProviderFutureBox> {
             Box::pin(async move {
                 // Create a local variable for each argument, to ensure they get generated in a
                 // deterministic order (compiler complains otherwise)
@@ -139,11 +139,11 @@ pub fn module(item: TokenStream) -> TokenStream {
     let submodule_idents = module.submodules.iter();
     let emitted_code = quote! {
         #[doc(hidden)]
-        pub fn #init_ident(registry: &mut gddi::Registry) {
+        pub fn #init_ident(builder: &mut gddi::RegistryBuilder) {
             // Register all providers on this module
-            #(registry.register_provider::<#types>(Box::new(#provider_idents));)*
+            #(builder.register_provider::<#types>(Box::new(#provider_idents));)*
             // Register all submodules on this module
-            #(registry.register_module(#submodule_idents);)*
+            #(builder.register_module(#submodule_idents);)*
         }
     };
     emitted_code.into()
