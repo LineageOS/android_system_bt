@@ -18,7 +18,7 @@ service SecurityModuleFacade {
   rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetLeAuthRequirements(LeAuthRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetLeMaximumEncryptionKeySize(LeMaximumEncryptionKeySizeMessage) returns (google.protobuf.Empty) {}
-  rpc GetOutOfBandData(google.protobuf.Empty) returns (OobDataMessage) {}
+  rpc GetLeOutOfBandData(google.protobuf.Empty) returns (OobDataMessage) {}
   rpc SetOutOfBandData(OobDataMessage) returns (google.protobuf.Empty) {}
   rpc SetLeOobDataPresent(LeOobDataPresentMessage) returns (google.protobuf.Empty) {}
   rpc SetLeInitiatorAddressPolicy(hci.PrivacyPolicy) returns (google.protobuf.Empty) {}

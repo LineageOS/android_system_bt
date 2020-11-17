@@ -299,13 +299,13 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status GetOutOfBandData(
+  ::grpc::Status GetLeOutOfBandData(
       ::grpc::ServerContext* context,
       const ::google::protobuf::Empty* request,
       ::bluetooth::security::OobDataMessage* response) override {
     std::array<uint8_t, 16> le_sc_c;
     std::array<uint8_t, 16> le_sc_r;
-    security_module_->GetFacadeConfigurationApi()->GetOutOfBandData(&le_sc_c, &le_sc_r);
+    security_module_->GetFacadeConfigurationApi()->GetLeOutOfBandData(&le_sc_c, &le_sc_r);
 
     std::string le_sc_c_str(17, '\0');
     std::copy(le_sc_c.begin(), le_sc_c.end(), le_sc_c_str.data());

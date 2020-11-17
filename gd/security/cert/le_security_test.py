@@ -831,7 +831,7 @@ class LeSecurityTest(GdBaseTestClass):
             self._prepare_cert_for_connection()
 
             if dut_oob_flag == LeOobDataFlag.PRESENT:
-                oobdata = self.cert.security.GetOutOfBandData(empty_proto.Empty())
+                oobdata = self.cert.security.GetLeOutOfBandData(empty_proto.Empty())
                 self.dut.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.cert_address,
@@ -839,7 +839,7 @@ class LeSecurityTest(GdBaseTestClass):
                         random_value=oobdata.random_value))
 
             if cert_oob_flag == LeOobDataFlag.PRESENT:
-                oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
+                oobdata = self.dut.security.GetLeOutOfBandData(empty_proto.Empty())
                 self.cert.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.dut_address,
@@ -898,7 +898,7 @@ class LeSecurityTest(GdBaseTestClass):
             self._prepare_dut_for_connection()
 
             if dut_oob_flag == LeOobDataFlag.PRESENT:
-                oobdata = self.cert.security.GetOutOfBandData(empty_proto.Empty())
+                oobdata = self.cert.security.GetLeOutOfBandData(empty_proto.Empty())
                 self.dut.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.cert_address,
@@ -906,7 +906,7 @@ class LeSecurityTest(GdBaseTestClass):
                         random_value=oobdata.random_value))
 
             if cert_oob_flag == LeOobDataFlag.PRESENT:
-                oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
+                oobdata = self.dut.security.GetLeOutOfBandData(empty_proto.Empty())
                 self.cert.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.dut_address,
@@ -965,14 +965,14 @@ class LeSecurityTest(GdBaseTestClass):
 
             self._prepare_dut_for_connection()
 
-            oobdata = self.cert.security.GetOutOfBandData(empty_proto.Empty())
+            oobdata = self.cert.security.GetLeOutOfBandData(empty_proto.Empty())
             self.dut.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.cert_address,
                     confirmation_value=oobdata.confirmation_value,
                     random_value=oobdata.random_value))
 
-            oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
+            oobdata = self.dut.security.GetLeOutOfBandData(empty_proto.Empty())
             self.cert.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.dut_address,
@@ -1036,14 +1036,14 @@ class LeSecurityTest(GdBaseTestClass):
 
             self._prepare_cert_for_connection()
 
-            oobdata = self.cert.security.GetOutOfBandData(empty_proto.Empty())
+            oobdata = self.cert.security.GetLeOutOfBandData(empty_proto.Empty())
             self.dut.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.cert_address,
                     confirmation_value=oobdata.confirmation_value,
                     random_value=oobdata.random_value))
 
-            oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
+            oobdata = self.dut.security.GetLeOutOfBandData(empty_proto.Empty())
             self.cert.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.dut_address,

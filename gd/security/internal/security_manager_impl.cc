@@ -749,7 +749,7 @@ void SecurityManagerImpl::SetLeOobDataPresent(OobDataFlag data_present) {
   this->local_le_oob_data_present_ = data_present;
 }
 
-void SecurityManagerImpl::GetOutOfBandData(
+void SecurityManagerImpl::GetLeOutOfBandData(
     std::array<uint8_t, 16>* confirmation_value, std::array<uint8_t, 16>* random_value) {
   local_le_oob_data_ = std::make_optional<MyOobData>(PairingHandlerLe::GenerateOobData());
   *confirmation_value = local_le_oob_data_.value().c;
