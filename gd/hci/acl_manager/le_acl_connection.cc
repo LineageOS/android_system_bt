@@ -23,9 +23,8 @@ namespace acl_manager {
 
 class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
  public:
-  LeAclConnectionTracker(LeAclConnectionInterface* le_acl_connection_interface,
-                         common::OnceCallback<void(DisconnectReason reason)> disconnect)
-      : le_acl_connection_interface_(le_acl_connection_interface), do_disconnect_(std::move(disconnect)) {}
+  LeAclConnectionTracker(LeAclConnectionInterface* le_acl_connection_interface)
+      : le_acl_connection_interface_(le_acl_connection_interface) {}
   ~LeAclConnectionTracker() override {
     ASSERT(queued_callbacks_.empty());
   }
@@ -66,16 +65,14 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
 #undef SAVE_OR_CALL
 
   LeAclConnectionInterface* le_acl_connection_interface_;
-  common::OnceCallback<void(DisconnectReason)> do_disconnect_;
   os::Handler* client_handler_ = nullptr;
   LeConnectionManagementCallbacks* client_callbacks_ = nullptr;
   std::list<common::OnceClosure> queued_callbacks_;
 };
 
 struct LeAclConnection::impl {
-  impl(LeAclConnectionInterface* le_acl_connection_interface, std::shared_ptr<Queue> queue,
-       common::OnceCallback<void(DisconnectReason)> disconnect)
-      : queue_(std::move(queue)), tracker(le_acl_connection_interface, std::move(disconnect)) {}
+  impl(LeAclConnectionInterface* le_acl_connection_interface, std::shared_ptr<Queue> queue)
+      : queue_(std::move(queue)), tracker(le_acl_connection_interface) {}
   LeConnectionManagementCallbacks* GetEventCallbacks() {
     ASSERT(!callbacks_given_);
     callbacks_given_ = true;
@@ -91,12 +88,18 @@ LeAclConnection::LeAclConnection()
     : AclConnection(), local_address_(Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS),
       remote_address_(Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS) {}
 
-LeAclConnection::LeAclConnection(std::shared_ptr<Queue> queue, LeAclConnectionInterface* le_acl_connection_interface,
-                                 common::OnceCallback<void(DisconnectReason)> disconnect, uint16_t handle,
-                                 AddressWithType local_address, AddressWithType remote_address, Role role)
-    : AclConnection(queue->GetUpEnd(), handle), local_address_(local_address), remote_address_(remote_address),
+LeAclConnection::LeAclConnection(
+    std::shared_ptr<Queue> queue,
+    LeAclConnectionInterface* le_acl_connection_interface,
+    uint16_t handle,
+    AddressWithType local_address,
+    AddressWithType remote_address,
+    Role role)
+    : AclConnection(queue->GetUpEnd(), handle),
+      local_address_(local_address),
+      remote_address_(remote_address),
       role_(role) {
-  pimpl_ = new LeAclConnection::impl(le_acl_connection_interface, std::move(queue), std::move(disconnect));
+  pimpl_ = new LeAclConnection::impl(le_acl_connection_interface, std::move(queue));
 }
 
 LeAclConnection::~LeAclConnection() {
@@ -109,7 +112,18 @@ void LeAclConnection::RegisterCallbacks(LeConnectionManagementCallbacks* callbac
 }
 
 void LeAclConnection::Disconnect(DisconnectReason reason) {
-  common::BindOnce(std::move(pimpl_->tracker.do_disconnect_), reason).Run();
+  pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
+      DisconnectBuilder::Create(handle_, reason),
+      pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
+        ASSERT(status.IsValid());
+        ASSERT(status.GetCommandOpCode() == OpCode::DISCONNECT);
+        auto disconnect_status = DisconnectStatusView::Create(status);
+        ASSERT(disconnect_status.IsValid());
+        auto error_code = disconnect_status.GetStatus();
+        if (error_code != ErrorCode::SUCCESS) {
+          LOG_INFO("Disconnect status %s", ErrorCodeText(error_code).c_str());
+        }
+      }));
 }
 
 LeConnectionManagementCallbacks* LeAclConnection::GetEventCallbacks() {
