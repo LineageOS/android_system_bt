@@ -50,11 +50,11 @@ class FacadeConfigurationApi {
   void SetLeAuthRequirements(uint8_t auth_req);
   void SetLeMaximumEncryptionKeySize(uint8_t maximum_encryption_key_size);
   void SetLeOobDataPresent(OobDataFlag oob_present);
-  void GetOutOfBandData(std::array<uint8_t, 16>* le_sc_confirmation_value, std::array<uint8_t, 16>* le_sc_random_value);
+  void GetOutOfBandData(std::array<uint8_t, 16>* confirmation_value, std::array<uint8_t, 16>* random_value);
   void SetOutOfBandData(
       hci::AddressWithType remote_address,
-      std::array<uint8_t, 16> le_sc_confirmation_value,
-      std::array<uint8_t, 16> le_sc_random_value);
+      std::array<uint8_t, 16> confirmation_value,
+      std::array<uint8_t, 16> random_value);
 
  protected:
   FacadeConfigurationApi(os::Handler* security_handler, internal::SecurityManagerImpl* security_manager_impl)

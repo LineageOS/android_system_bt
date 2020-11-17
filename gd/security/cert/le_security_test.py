@@ -835,16 +835,16 @@ class LeSecurityTest(GdBaseTestClass):
                 self.dut.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.cert_address,
-                        le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                        le_sc_random_value=oobdata.le_sc_random_value))
+                        confirmation_value=oobdata.confirmation_value,
+                        random_value=oobdata.random_value))
 
             if cert_oob_flag == LeOobDataFlag.PRESENT:
                 oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
                 self.cert.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.dut_address,
-                        le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                        le_sc_random_value=oobdata.le_sc_random_value))
+                        confirmation_value=oobdata.confirmation_value,
+                        random_value=oobdata.random_value))
 
             self.dut.security.SetLeIoCapability(KEYBOARD_ONLY)
             self.dut.security.SetLeOobDataPresent(dut_oob_flag)
@@ -902,16 +902,16 @@ class LeSecurityTest(GdBaseTestClass):
                 self.dut.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.cert_address,
-                        le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                        le_sc_random_value=oobdata.le_sc_random_value))
+                        confirmation_value=oobdata.confirmation_value,
+                        random_value=oobdata.random_value))
 
             if cert_oob_flag == LeOobDataFlag.PRESENT:
                 oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
                 self.cert.security.SetOutOfBandData(
                     OobDataMessage(
                         address=self.dut_address,
-                        le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                        le_sc_random_value=oobdata.le_sc_random_value))
+                        confirmation_value=oobdata.confirmation_value,
+                        random_value=oobdata.random_value))
 
             self.dut.security.SetLeIoCapability(KEYBOARD_ONLY)
             self.dut.security.SetLeOobDataPresent(dut_oob_flag)
@@ -969,15 +969,15 @@ class LeSecurityTest(GdBaseTestClass):
             self.dut.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.cert_address,
-                    le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                    le_sc_random_value=oobdata.le_sc_random_value))
+                    confirmation_value=oobdata.confirmation_value,
+                    random_value=oobdata.random_value))
 
             oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
             self.cert.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.dut_address,
-                    le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                    le_sc_random_value=oobdata.le_sc_random_value))
+                    confirmation_value=oobdata.confirmation_value,
+                    random_value=oobdata.random_value))
 
             self.dut.security.SetLeIoCapability(KEYBOARD_ONLY)
             self.dut.security.SetLeOobDataPresent(OOB_PRESENT)
@@ -1040,15 +1040,15 @@ class LeSecurityTest(GdBaseTestClass):
             self.dut.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.cert_address,
-                    le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                    le_sc_random_value=oobdata.le_sc_random_value))
+                    confirmation_value=oobdata.confirmation_value,
+                    random_value=oobdata.random_value))
 
             oobdata = self.dut.security.GetOutOfBandData(empty_proto.Empty())
             self.cert.security.SetOutOfBandData(
                 OobDataMessage(
                     address=self.dut_address,
-                    le_sc_confirmation_value=oobdata.le_sc_confirmation_value,
-                    le_sc_random_value=oobdata.le_sc_random_value))
+                    confirmation_value=oobdata.confirmation_value,
+                    random_value=oobdata.random_value))
 
             self.dut.security.SetLeIoCapability(KEYBOARD_ONLY)
             self.dut.security.SetLeOobDataPresent(OOB_PRESENT)

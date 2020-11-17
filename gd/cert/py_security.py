@@ -93,13 +93,13 @@ class PySecurity(Closable):
                 p192_data=OobDataMessage(
                     address=common.BluetoothAddressWithType(
                         address=common.BluetoothAddress(address=address), type=type),
-                    le_sc_confirmation_value=bytes(bytearray(p192_oob_data[0])),
-                    le_sc_random_value=bytes(bytearray(p192_oob_data[1]))),
+                    confirmation_value=bytes(bytearray(p192_oob_data[0])),
+                    random_value=bytes(bytearray(p192_oob_data[1]))),
                 p256_data=OobDataMessage(
                     address=common.BluetoothAddressWithType(
                         address=common.BluetoothAddress(address=address), type=type),
-                    le_sc_confirmation_value=bytes(bytearray(p256_oob_data[0])),
-                    le_sc_random_value=bytes(bytearray(p256_oob_data[1])))))
+                    confirmation_value=bytes(bytearray(p256_oob_data[0])),
+                    random_value=bytes(bytearray(p256_oob_data[1])))))
 
     def remove_bond(self, address, type):
         """

@@ -59,20 +59,20 @@ void FacadeConfigurationApi::SetLeOobDataPresent(OobDataFlag oob_present) {
 }
 
 void FacadeConfigurationApi::GetOutOfBandData(
-    std::array<uint8_t, 16>* le_sc_confirmation_value, std::array<uint8_t, 16>* le_sc_random_value) {
-  security_manager_impl_->GetOutOfBandData(le_sc_confirmation_value, le_sc_random_value);
+    std::array<uint8_t, 16>* confirmation_value, std::array<uint8_t, 16>* random_value) {
+  security_manager_impl_->GetOutOfBandData(confirmation_value, random_value);
 }
 
 void FacadeConfigurationApi::SetOutOfBandData(
     hci::AddressWithType remote_address,
-    std::array<uint8_t, 16> le_sc_confirmation_value,
-    std::array<uint8_t, 16> le_sc_random_value) {
+    std::array<uint8_t, 16> confirmation_value,
+    std::array<uint8_t, 16> random_value) {
   security_handler_->CallOn(
       security_manager_impl_,
       &internal::SecurityManagerImpl::SetOutOfBandData,
       remote_address,
-      le_sc_confirmation_value,
-      le_sc_random_value);
+      confirmation_value,
+      random_value);
 }
 
 void FacadeConfigurationApi::EnforceSecurityPolicy(
