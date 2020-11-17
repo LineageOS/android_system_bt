@@ -34,6 +34,20 @@ struct AdvertiseParameters {
   uint8_t scan_request_notification_enable;
 };
 
+struct CreateBIGParameters {
+  uint8_t adv_handle;
+  uint8_t num_bis;
+  uint32_t sdu_int;
+  uint16_t max_sdu;
+  uint16_t max_transport_latency;
+  uint8_t rtn;
+  uint8_t phy;
+  uint8_t packing;
+  uint8_t framing;
+  uint8_t encryption;
+  std::vector<uint8_t> broadcast_code;
+};
+
 struct PeriodicAdvertisingParameters {
   uint8_t enable;
   uint16_t min_interval;
@@ -54,7 +68,15 @@ class BleAdvertiserInterface {
                           uint8_t /* status */)>;
   using ParametersCallback =
       base::Callback<void(uint8_t /* status */, int8_t /* tx_power */)>;
-
+  using CreateBIGCallback = base::Callback<void(uint8_t /*adv_inst_id*/,
+      uint8_t /*status*/, uint8_t /*big_handle*/, uint32_t /*big_sync_delay*/,
+      uint32_t /*transport_latency_big*/, uint8_t /*phy*/, uint8_t /*nse*/,
+      uint8_t /*bn*/, uint8_t /*pto*/, uint8_t /*irc*/, uint16_t /*max_pdu*/,
+      uint16_t /*iso_int*/, uint8_t /*num_bis*/,
+      std::vector<uint16_t> /*conn_handle_list*/)>;
+  using TerminateBIGCallback =
+      base::Callback<void(uint8_t /* status */, uint8_t /* advertiser_id */,
+      uint8_t /* big_handle */, uint8_t /* reason */)>;
   /** Registers an advertiser with the stack */
   virtual void RegisterAdvertiser(IdStatusCallback) = 0;
 
@@ -102,6 +124,14 @@ class BleAdvertiserInterface {
   virtual void SetPeriodicAdvertisingData(int advertiser_id,
                                           std::vector<uint8_t> data,
                                           StatusCallback cb) = 0;
+
+  virtual void CreateBIG(
+      int advertiser_id, CreateBIGParameters create_big_params,
+      CreateBIGCallback cb) = 0;
+
+  virtual void TerminateBIG(
+      int advertiser_id, int big_handle, int reason,
+      TerminateBIGCallback cb) = 0;
 
   virtual void SetPeriodicAdvertisingEnable(int advertiser_id, bool enable,
                                             StatusCallback cb) = 0;
