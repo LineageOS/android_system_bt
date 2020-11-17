@@ -147,7 +147,13 @@ bool LeAclConnection::LeConnectionUpdate(uint16_t conn_interval_min, uint16_t co
 }
 
 bool LeAclConnection::ReadRemoteVersionInformation() {
-  return false;
+  pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
+      ReadRemoteVersionInformationBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
+        ASSERT(status.IsValid());
+        ASSERT(status.GetCommandOpCode() == OpCode::READ_REMOTE_VERSION_INFORMATION);
+      }));
+  return true;
 }
 
 bool LeAclConnection::check_connection_parameters(
