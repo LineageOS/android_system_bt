@@ -1,9 +1,8 @@
 //! BT HCI HAL facade
 
-
-use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
-use bt_hal_proto::facade::*;
 use bt_hal_proto::empty::Empty;
+use bt_hal_proto::facade::*;
+use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
 
 use tokio::runtime::Runtime;
 
@@ -25,59 +24,49 @@ impl HciHalFacadeService {
 }
 
 impl HciHalFacade for HciHalFacadeService {
-    fn send_hci_command(
+    fn send_command(&mut self, _ctx: RpcContext<'_>, _cmd: Command, _sink: UnarySink<Empty>) {
+        unimplemented!()
+    }
+
+    fn send_acl(&mut self, _ctx: RpcContext<'_>, _acl: AclPacket, _sink: UnarySink<Empty>) {
+        unimplemented!()
+    }
+
+    fn send_sco(&mut self, _ctx: RpcContext<'_>, _sco: ScoPacket, _sink: UnarySink<Empty>) {
+        unimplemented!()
+    }
+
+    fn send_iso(&mut self, _ctx: RpcContext<'_>, _iso: IsoPacket, _sink: UnarySink<Empty>) {
+        unimplemented!()
+    }
+
+    fn stream_events(&mut self, _ctx: RpcContext<'_>, _: Empty, _sink: ServerStreamingSink<Event>) {
+        unimplemented!()
+    }
+
+    fn stream_acl(
         &mut self,
         _ctx: RpcContext<'_>,
-        _cmd: HciCommandPacket,
-        _sink: UnarySink<Empty>,
+        _: Empty,
+        _sink: ServerStreamingSink<AclPacket>,
     ) {
         unimplemented!()
     }
 
-    fn send_hci_acl(&mut self, _ctx: RpcContext<'_>, _acl: HciAclPacket, _sink: UnarySink<Empty>) {
-        unimplemented!()
-    }
-
-    fn send_hci_sco(&mut self, _ctx: RpcContext<'_>, _sco: HciScoPacket, _sink: UnarySink<Empty>) {
-        unimplemented!()
-    }
-
-    fn send_hci_iso(&mut self, _ctx: RpcContext<'_>, _iso: HciIsoPacket, _sink: UnarySink<Empty>) {
-        unimplemented!()
-    }
-
-    fn fetch_hci_event(
+    fn stream_sco(
         &mut self,
         _ctx: RpcContext<'_>,
         _: Empty,
-        _sink: ServerStreamingSink<HciEventPacket>,
+        _sink: ServerStreamingSink<ScoPacket>,
     ) {
         unimplemented!()
     }
 
-    fn fetch_hci_acl(
+    fn stream_iso(
         &mut self,
         _ctx: RpcContext<'_>,
         _: Empty,
-        _sink: ServerStreamingSink<HciAclPacket>,
-    ) {
-        unimplemented!()
-    }
-
-    fn fetch_hci_sco(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        _: Empty,
-        _sink: ServerStreamingSink<HciScoPacket>,
-    ) {
-        unimplemented!()
-    }
-
-    fn fetch_hci_iso(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        _: Empty,
-        _sink: ServerStreamingSink<HciIsoPacket>,
+        _sink: ServerStreamingSink<IsoPacket>,
     ) {
         unimplemented!()
     }

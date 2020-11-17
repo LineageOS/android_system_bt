@@ -20,6 +20,7 @@ from bluetooth_packets_python3 import hci_packets
 from cert.event_stream import EventStream
 from cert.gd_base_test import GdBaseTestClass
 from cert.py_security import PySecurity
+from cert.truth import assertThat
 from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import controller_facade_pb2 as controller_facade
@@ -147,10 +148,8 @@ class SecurityTest(GdBaseTestClass):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
         self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
         self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
         self._run_ssp_numeric_comparison(
@@ -174,10 +173,8 @@ class SecurityTest(GdBaseTestClass):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
         self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
         self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
         self._run_ssp_numeric_comparison(
@@ -191,6 +188,9 @@ class SecurityTest(GdBaseTestClass):
             expected_resp_bond_event=None)
 
         self.dut_security.remove_bond(self.cert.address, common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.cert_security.remove_bond(self.cert.address, common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.dut_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+        self.cert_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
 
         self.dut_security.wait_for_disconnect_event()
         self.cert_security.wait_for_disconnect_event()
@@ -205,6 +205,14 @@ class SecurityTest(GdBaseTestClass):
             expected_resp_ui_event=None,
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
+
+        self.dut_security.remove_bond(self.cert.address, common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.cert_security.remove_bond(self.cert.address, common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.dut_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+        self.cert_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+
+        self.dut_security.wait_for_disconnect_event()
+        self.cert_security.wait_for_disconnect_event()
 
     def test_successful_dut_initiated_ssp_numeric_comparison(self):
         test_count = len(self.io_capabilities) * len(self.auth_reqs) * len(self.oob_present) * len(
@@ -232,10 +240,8 @@ class SecurityTest(GdBaseTestClass):
                                 logging.info("")
                                 self.dut_security.set_io_capabilities(dut_io_capability)
                                 self.dut_security.set_authentication_requirements(dut_auth_reqs)
-                                self.dut_security.set_oob_data(dut_oob_present)
                                 self.cert_security.set_io_capabilities(cert_io_capability)
                                 self.cert_security.set_authentication_requirements(cert_auth_reqs)
-                                self.cert_security.set_oob_data(cert_oob_present)
                                 init_ui_response = True
                                 resp_ui_response = True
                                 expected_init_ui_event = None  # None is auto accept
@@ -282,15 +288,19 @@ class SecurityTest(GdBaseTestClass):
                                     if dut_auth_reqs in self.mitm_auth_reqs or cert_auth_reqs in self.mitm_auth_reqs:
                                         expected_init_bond_event = BondMsgType.DEVICE_BOND_FAILED
 
-                                self._run_ssp_numeric_comparison(
-                                    initiator=self.dut_security,
-                                    responder=self.cert_security,
-                                    init_ui_response=init_ui_response,
-                                    resp_ui_response=resp_ui_response,
-                                    expected_init_ui_event=expected_init_ui_event,
-                                    expected_resp_ui_event=expected_resp_ui_event,
-                                    expected_init_bond_event=expected_init_bond_event,
-                                    expected_resp_bond_event=expected_resp_bond_event)
+                                if cert_oob_present == OobDataPresent.NOT_PRESENT:
+                                    self._run_ssp_numeric_comparison(
+                                        initiator=self.dut_security,
+                                        responder=self.cert_security,
+                                        init_ui_response=init_ui_response,
+                                        resp_ui_response=resp_ui_response,
+                                        expected_init_ui_event=expected_init_ui_event,
+                                        expected_resp_ui_event=expected_resp_ui_event,
+                                        expected_init_bond_event=expected_init_bond_event,
+                                        expected_resp_bond_event=expected_resp_bond_event)
+                                else:
+                                    logging.error("Code path not yet implemented")
+                                    assertThat(False).isTrue()
 
                                 self.dut_security.remove_bond(self.cert_security.get_address(),
                                                               common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
@@ -302,3 +312,79 @@ class SecurityTest(GdBaseTestClass):
 
                                 self.dut_security.wait_for_disconnect_event()
                                 self.cert_security.wait_for_disconnect_event()
+
+    def test_enable_secure_simple_pairing(self):
+        self.dut_security.enable_secure_simple_pairing()
+        self.cert_security.enable_secure_simple_pairing()
+
+    def test_enable_secure_connections(self):
+        self.dut_security.enable_secure_simple_pairing()
+        self.cert_security.enable_secure_simple_pairing()
+        self.dut_security.enable_secure_connections()
+        self.cert_security.enable_secure_connections()
+
+    def test_get_oob_data_from_controller_not_present(self):
+        oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.NOT_PRESENT)
+        assertThat(len(oob_data)).isEqualTo(4)
+        has192C = not all([i == 0 for i in oob_data[0]])
+        has192R = not all([i == 0 for i in oob_data[1]])
+        has256C = not all([i == 0 for i in oob_data[2]])
+        has256R = not all([i == 0 for i in oob_data[3]])
+        assertThat(has192C).isFalse()
+        assertThat(has192R).isFalse()
+        assertThat(has256C).isFalse()
+        assertThat(has256R).isFalse()
+
+    def test_get_oob_data_from_controller_p192_present_no_secure_connections(self):
+        oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P192_PRESENT)
+        assertThat(len(oob_data)).isEqualTo(4)
+        has192C = not all([i == 0 for i in oob_data[0]])
+        has192R = not all([i == 0 for i in oob_data[1]])
+        has256C = not all([i == 0 for i in oob_data[2]])
+        has256R = not all([i == 0 for i in oob_data[3]])
+        assertThat(has192C).isTrue()
+        assertThat(has192R).isTrue()
+        assertThat(has256C).isFalse()
+        assertThat(has256R).isFalse()
+
+    def test_get_oob_data_from_controller_p192_present(self):
+        self.cert_security.enable_secure_simple_pairing()
+        self.cert_security.enable_secure_connections()
+        oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P192_PRESENT)
+        assertThat(len(oob_data)).isEqualTo(4)
+        has192C = not all([i == 0 for i in oob_data[0]])
+        has192R = not all([i == 0 for i in oob_data[1]])
+        has256C = not all([i == 0 for i in oob_data[2]])
+        has256R = not all([i == 0 for i in oob_data[3]])
+        assertThat(has192C).isTrue()
+        assertThat(has192R).isTrue()
+        assertThat(has256C).isFalse()
+        assertThat(has256R).isFalse()
+
+    def test_get_oob_data_from_controller_p256_present(self):
+        self.cert_security.enable_secure_simple_pairing()
+        self.cert_security.enable_secure_connections()
+        oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P256_PRESENT)
+        assertThat(len(oob_data)).isEqualTo(4)
+        has192C = not all([i == 0 for i in oob_data[0]])
+        has192R = not all([i == 0 for i in oob_data[1]])
+        has256C = not all([i == 0 for i in oob_data[2]])
+        has256R = not all([i == 0 for i in oob_data[3]])
+        assertThat(has192C).isFalse()
+        assertThat(has192R).isFalse()
+        assertThat(has256C).isTrue()
+        assertThat(has256R).isTrue()
+
+    def test_get_oob_data_from_controller_p192_and_p256_present(self):
+        self.cert_security.enable_secure_simple_pairing()
+        self.cert_security.enable_secure_connections()
+        oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P192_AND_256_PRESENT)
+        assertThat(len(oob_data)).isEqualTo(4)
+        has192C = not all([i == 0 for i in oob_data[0]])
+        has192R = not all([i == 0 for i in oob_data[1]])
+        has256C = not all([i == 0 for i in oob_data[2]])
+        has256R = not all([i == 0 for i in oob_data[3]])
+        assertThat(has192C).isTrue()
+        assertThat(has192R).isTrue()
+        assertThat(has256C).isTrue()
+        assertThat(has256R).isTrue()
