@@ -155,8 +155,8 @@ class FuzzHciLayer : public HciLayer {
   os::fuzz::DevNullQueue<AclPacketBuilder>* acl_dev_null_;
   os::fuzz::FuzzInjectQueue<AclPacketView>* acl_inject_;
 
-  FuzzCommandInterface<ConnectionManagementCommandBuilder> acl_connection_interface_{};
-  FuzzCommandInterface<LeConnectionManagementCommandBuilder> le_acl_connection_interface_{};
+  FuzzCommandInterface<AclCommandBuilder> acl_connection_interface_{};
+  FuzzCommandInterface<AclCommandBuilder> le_acl_connection_interface_{};
   FuzzCommandInterface<SecurityCommandBuilder> security_interface_{};
   FuzzCommandInterface<LeSecurityCommandBuilder> le_security_interface_{};
   FuzzCommandInterface<LeAdvertisingCommandBuilder> le_advertising_interface_{};

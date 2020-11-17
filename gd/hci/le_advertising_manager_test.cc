@@ -128,12 +128,12 @@ class TestHciLayer : public HciLayer {
 
   ConnectionManagementCommandView GetCommandPacket(OpCode op_code) {
     if (command_queue_.empty()) {
-      return ConnectionManagementCommandView::Create(
-          CommandPacketView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>())));
+      return ConnectionManagementCommandView::Create(AclCommandView::Create(
+          CommandPacketView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()))));
     }
     CommandPacketView command_packet_view = CommandPacketView::Create(command_queue_.front());
     command_queue_.pop_front();
-    ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
+    auto command = ConnectionManagementCommandView::Create(AclCommandView::Create(command_packet_view));
     EXPECT_TRUE(command.IsValid());
     EXPECT_EQ(command.GetOpCode(), op_code);
 
@@ -409,7 +409,7 @@ class LeExtendedAdvertisingAPITest : public LeExtendedAdvertisingManagerTest {
     for (size_t i = 0; i < adv_opcodes.size(); i++) {
       auto packet_view = test_hci_layer_->GetCommandPacket(adv_opcodes[i]);
       CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
-      ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
+      auto command = ConnectionManagementCommandView::Create(AclCommandView::Create(command_packet_view));
       if (adv_opcodes[i] == OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
         test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingParametersCompleteBuilder::Create(
             uint8_t{1}, ErrorCode::SUCCESS, static_cast<uint8_t>(-23)));
@@ -464,7 +464,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
   for (size_t i = 0; i < adv_opcodes.size(); i++) {
     auto packet_view = test_hci_layer_->GetCommandPacket(adv_opcodes[i]);
     CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
-    ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
+    auto command = ConnectionManagementCommandView::Create(AclCommandView::Create(command_packet_view));
     test_hci_layer_->IncomingEvent(
         CommandCompleteBuilder::Create(uint8_t{1}, adv_opcodes[i], std::make_unique<RawBuilder>(success_vector)));
   }
@@ -555,7 +555,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   for (size_t i = 0; i < adv_opcodes.size(); i++) {
     auto packet_view = test_hci_layer_->GetCommandPacket(adv_opcodes[i]);
     CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
-    ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
+    auto command = ConnectionManagementCommandView::Create(AclCommandView::Create(command_packet_view));
     if (adv_opcodes[i] == OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
       test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingParametersCompleteBuilder::Create(
           uint8_t{1}, ErrorCode::SUCCESS, static_cast<uint8_t>(-23)));
