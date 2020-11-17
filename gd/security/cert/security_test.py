@@ -137,6 +137,27 @@ class SecurityTest(GdBaseTestClass):
         initiator.wait_for_bond_event(expected_init_bond_event)
         responder.wait_for_bond_event(expected_resp_bond_event)
 
+    def _run_ssp_oob(self, initiator, responder, init_ui_response, resp_ui_response, expected_init_ui_event,
+                     expected_resp_ui_event, expected_init_bond_event, expected_resp_bond_event, p192_oob_data,
+                     p256_oob_data):
+        initiator.enable_secure_simple_pairing()
+        responder.enable_secure_simple_pairing()
+        initiator.create_bond_out_of_band(responder.get_address(),
+                                          common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS, p192_oob_data,
+                                          p256_oob_data)
+        self._verify_ssp_oob(initiator, responder, init_ui_response, resp_ui_response, expected_init_ui_event,
+                             expected_resp_ui_event, expected_init_bond_event, expected_resp_bond_event, p192_oob_data,
+                             p256_oob_data)
+
+    # Verifies the events for the numeric comparion test
+    def _verify_ssp_oob(self, initiator, responder, init_ui_response, resp_ui_response, expected_init_ui_event,
+                        expected_resp_ui_event, expected_init_bond_event, expected_resp_bond_event, p192_oob_data,
+                        p256_oob_data):
+        responder.accept_oob_pairing(initiator.get_address())
+        initiator.on_user_input(responder.get_address(), init_ui_response, expected_init_ui_event)
+        initiator.wait_for_bond_event(expected_init_bond_event)
+        responder.wait_for_bond_event(expected_resp_bond_event)
+
     def test_setup_teardown(self):
         """
             Make sure our setup and teardown is sane
@@ -388,3 +409,47 @@ class SecurityTest(GdBaseTestClass):
         assertThat(has192R).isTrue()
         assertThat(has256C).isTrue()
         assertThat(has256R).isTrue()
+
+    def test_successful_dut_initiated_ssp_oob(self):
+        dut_io_capability = IoCapabilities.NO_INPUT_NO_OUTPUT
+        cert_io_capability = IoCapabilities.NO_INPUT_NO_OUTPUT
+        dut_auth_reqs = AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION
+        cert_auth_reqs = AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION
+        cert_oob_present = OobDataPresent.P192_PRESENT
+        self.dut_security.enable_secure_simple_pairing()
+        self.dut_security.enable_secure_connections()
+        self.cert_security.enable_secure_simple_pairing()
+        self.cert_security.enable_secure_connections()
+        self.dut_security.set_io_capabilities(dut_io_capability)
+        self.dut_security.set_authentication_requirements(dut_auth_reqs)
+        self.cert_security.set_io_capabilities(cert_io_capability)
+        self.cert_security.set_authentication_requirements(cert_auth_reqs)
+        init_ui_response = True
+        resp_ui_response = True
+        expected_init_ui_event = None  # None is auto accept
+        expected_resp_ui_event = None  # None is auto accept
+        expected_init_bond_event = BondMsgType.DEVICE_BONDED
+        expected_resp_bond_event = None
+        # get_oob_data returns a tuple of bytes (p192c,p192r,p256c,p256r)
+        local_oob_data = self.cert_security.get_oob_data_from_controller(cert_oob_present)
+        p192_oob_data = local_oob_data[0:2]
+        p256_oob_data = local_oob_data[2:4]
+        self._run_ssp_oob(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            init_ui_response=init_ui_response,
+            resp_ui_response=resp_ui_response,
+            expected_init_ui_event=expected_init_ui_event,
+            expected_resp_ui_event=expected_resp_ui_event,
+            expected_init_bond_event=expected_init_bond_event,
+            expected_resp_bond_event=expected_resp_bond_event,
+            p192_oob_data=p192_oob_data,
+            p256_oob_data=p256_oob_data)
+        self.dut_security.remove_bond(self.cert_security.get_address(),
+                                      common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.cert_security.remove_bond(self.dut_security.get_address(),
+                                       common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.dut_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+        self.cert_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+        self.dut_security.wait_for_disconnect_event()
+        self.cert_security.wait_for_disconnect_event()

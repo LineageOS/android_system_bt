@@ -31,6 +31,8 @@ from security.facade_pb2 import BondMsgType
 from security.facade_pb2 import SecurityPolicyMessage
 from security.facade_pb2 import IoCapabilities
 from security.facade_pb2 import IoCapabilityMessage
+from security.facade_pb2 import OobDataBondMessage
+from security.facade_pb2 import OobDataMessage
 from security.facade_pb2 import OobDataPresentMessage
 from security.facade_pb2 import UiCallbackMsg
 from security.facade_pb2 import UiCallbackType

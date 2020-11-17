@@ -308,6 +308,8 @@ void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
       break;
     case hci::OobDataPresent::P_192_PRESENT:
       LOG_INFO("P192 Present");
+      // TODO(optedoblivion): Figure this out and remove
+      secure_connections_enabled_ = false;
       if (secure_connections_enabled_) {
         GetChannel()->SendCommand(hci::RemoteOobExtendedDataRequestReplyBuilder::Create(
             GetRecord()->GetPseudoAddress()->GetAddress(),
@@ -339,7 +341,6 @@ void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
           this->remote_p192_oob_data_.GetR(),
           this->remote_p256_oob_data_.GetC(),
           this->remote_p256_oob_data_.GetR()));
-      break;
       break;
   }
 }

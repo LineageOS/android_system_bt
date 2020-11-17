@@ -138,7 +138,6 @@ class CertSecurity(PySecurity):
             :return: a tuple of bytes (192c,192r,256c,256r) with increasing security; bytes may be all 0s depending on pb_oob_data_type value
 
         """
-
         oob_data_type = self._oob_present_lookup[pb_oob_data_type]
 
         if (oob_data_type == hci_packets.OobDataPresent.NOT_PRESENT):
@@ -221,7 +220,8 @@ class CertSecurity(PySecurity):
         logging.info("Cert: Waiting for controller response")
         assertThat(self._hci_event_stream).emits(
             HciMatchers.CommandComplete(hci_packets.OpCode.WRITE_SECURE_CONNECTIONS_HOST_SUPPORT))
-        self._secure_connections_enabled = True
+        # TODO(optedoblivion): Figure this out and remove (see classic_pairing_handler.cc)
+        #self._secure_connections_enabled = True
 
     def accept_pairing(self, dut_address, reply_boolean):
         """
