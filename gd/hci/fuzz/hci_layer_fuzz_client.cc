@@ -104,12 +104,11 @@ void HciLayerFuzzClient::injectLeSecurityCommand(std::vector<uint8_t> data) {
 }
 
 void HciLayerFuzzClient::injectAclConnectionCommand(std::vector<uint8_t> data) {
-  inject_command<ConnectionManagementCommandView, ConnectionManagementCommandBuilder>(data, acl_connection_interface_);
+  inject_command<AclCommandView, AclCommandBuilder>(data, acl_connection_interface_);
 }
 
 void HciLayerFuzzClient::injectLeAclConnectionCommand(std::vector<uint8_t> data) {
-  inject_command<LeConnectionManagementCommandView, LeConnectionManagementCommandBuilder>(data,
-                                                                                          le_acl_connection_interface_);
+  inject_command<AclCommandView, AclCommandBuilder>(data, le_acl_connection_interface_);
 }
 
 void HciLayerFuzzClient::injectLeAdvertisingCommand(std::vector<uint8_t> data) {
