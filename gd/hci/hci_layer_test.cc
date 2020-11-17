@@ -586,8 +586,8 @@ TEST_F(HciTest, createConnectionTest) {
   // Check the command
   auto sent_command = hal->GetSentCommand();
   ASSERT_LT(0, sent_command.size());
-  CreateConnectionView view =
-      CreateConnectionView::Create(ConnectionManagementCommandView::Create(CommandPacketView::Create(sent_command)));
+  CreateConnectionView view = CreateConnectionView::Create(
+      ConnectionManagementCommandView::Create(AclCommandView::Create(CommandPacketView::Create(sent_command))));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(bd_addr, view.GetBdAddr());
   ASSERT_EQ(packet_type, view.GetPacketType());

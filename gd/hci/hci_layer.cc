@@ -338,7 +338,7 @@ void HciLayer::on_read_remote_version_complete(EventPacketView event_view) {
   if (view.GetStatus() != ErrorCode::SUCCESS) {
     auto status = view.GetStatus();
     std::string error_code = ErrorCodeText(status);
-    LOG_ERROR("Received on_read_remote_version_information_complete with error code %s", error_code.c_str());
+    LOG_ERROR("Received with error code %s", error_code.c_str());
     return;
   }
   uint16_t handle = view.GetConnectionHandle();
