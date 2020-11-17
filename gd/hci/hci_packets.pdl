@@ -621,12 +621,13 @@ packet CommandPacket {
 // Packets for interfaces
 
 packet DiscoveryCommand : CommandPacket { _payload_, }
-packet ConnectionManagementCommand : CommandPacket { _payload_, }
+packet AclCommand : CommandPacket { _payload_, }
+packet ConnectionManagementCommand : AclCommand { _payload_, }
 packet SecurityCommand : CommandPacket { _payload_, }
 packet ScoConnectionCommand : CommandPacket { _payload_, }
 packet LeAdvertisingCommand : CommandPacket { _payload_, }
 packet LeScanningCommand : CommandPacket { _payload_, }
-packet LeConnectionManagementCommand : CommandPacket { _payload_, }
+packet LeConnectionManagementCommand : AclCommand { _payload_, }
 packet LeSecurityCommand : CommandPacket { _payload_, }
 packet VendorCommand : CommandPacket { _payload_, }
 
@@ -888,7 +889,7 @@ enum DisconnectReason : 8 {
   UNACCEPTABLE_CONNECTION_PARAMETERS = 0x3B,
 }
 
-packet Disconnect : ConnectionManagementCommand (op_code = DISCONNECT) {
+packet Disconnect : AclCommand (op_code = DISCONNECT) {
   connection_handle : 12,
   _reserved_ : 4,
   reason : DisconnectReason,
@@ -1055,7 +1056,7 @@ packet ReadRemoteExtendedFeatures : ConnectionManagementCommand (op_code = READ_
 packet ReadRemoteExtendedFeaturesStatus : CommandStatus (command_op_code = READ_REMOTE_EXTENDED_FEATURES) {
 }
 
-packet ReadRemoteVersionInformation : ConnectionManagementCommand (op_code = READ_REMOTE_VERSION_INFORMATION) {
+packet ReadRemoteVersionInformation : AclCommand (op_code = READ_REMOTE_VERSION_INFORMATION) {
   connection_handle : 12,
   _reserved_ : 4,
 }
@@ -2301,7 +2302,7 @@ packet ReadLinkQualityComplete : CommandComplete (command_op_code = READ_LINK_QU
   link_quality : 8,
 }
 
-packet ReadRssi : ConnectionManagementCommand (op_code = READ_RSSI) {
+packet ReadRssi : AclCommand (op_code = READ_RSSI) {
   connection_handle : 12,
   _reserved_ : 4,
 }

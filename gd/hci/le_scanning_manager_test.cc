@@ -106,7 +106,7 @@ class TestHciLayer : public HciLayer {
 
   ConnectionManagementCommandView GetCommandPacket(OpCode op_code) {
     CommandPacketView command_packet_view = GetLastCommand();
-    ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
+    auto command = ConnectionManagementCommandView::Create(AclCommandView::Create(command_packet_view));
     EXPECT_TRUE(command.IsValid());
     EXPECT_EQ(command.GetOpCode(), op_code);
     return command;
