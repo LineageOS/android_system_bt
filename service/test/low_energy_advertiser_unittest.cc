@@ -68,6 +68,8 @@ class MockAdvertiserHandler : public BleAdvertiserInterface {
                void(int, PeriodicAdvertisingParameters, StatusCallback));
   MOCK_METHOD3(SetPeriodicAdvertisingData,
                void(int, std::vector<uint8_t>, StatusCallback));
+  MOCK_METHOD3(CreateBIG, void(int, CreateBIGParameters, CreateBIGCallback));
+  MOCK_METHOD4(TerminateBIG, void(int, int, int, TerminateBIGCallback));
   MOCK_METHOD3(SetPeriodicAdvertisingEnable, void(int, bool, StatusCallback));
 
  private:
