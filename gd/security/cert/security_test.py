@@ -288,15 +288,19 @@ class SecurityTest(GdBaseTestClass):
                                     if dut_auth_reqs in self.mitm_auth_reqs or cert_auth_reqs in self.mitm_auth_reqs:
                                         expected_init_bond_event = BondMsgType.DEVICE_BOND_FAILED
 
-                                self._run_ssp_numeric_comparison(
-                                    initiator=self.dut_security,
-                                    responder=self.cert_security,
-                                    init_ui_response=init_ui_response,
-                                    resp_ui_response=resp_ui_response,
-                                    expected_init_ui_event=expected_init_ui_event,
-                                    expected_resp_ui_event=expected_resp_ui_event,
-                                    expected_init_bond_event=expected_init_bond_event,
-                                    expected_resp_bond_event=expected_resp_bond_event)
+                                if cert_oob_present == OobDataPresent.NOT_PRESENT:
+                                    self._run_ssp_numeric_comparison(
+                                        initiator=self.dut_security,
+                                        responder=self.cert_security,
+                                        init_ui_response=init_ui_response,
+                                        resp_ui_response=resp_ui_response,
+                                        expected_init_ui_event=expected_init_ui_event,
+                                        expected_resp_ui_event=expected_resp_ui_event,
+                                        expected_init_bond_event=expected_init_bond_event,
+                                        expected_resp_bond_event=expected_resp_bond_event)
+                                else:
+                                    logging.error("Code path not yet implemented")
+                                    assertThat(False).isTrue()
 
                                 self.dut_security.remove_bond(self.cert_security.get_address(),
                                                               common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)

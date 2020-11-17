@@ -263,6 +263,24 @@ class CertSecurity(PySecurity):
             logging.info("Cert: Waiting for SIMPLE_PAIRING_COMPLETE")
             assertThat(self._hci_event_stream).emits(HciMatchers.SimplePairingComplete())
 
+    def accept_oob_pairing(self, dut_address):
+        logging.info("Cert: Waiting for IO_CAPABILITY_RESPONSE")
+        assertThat(self._hci_event_stream).emits(HciMatchers.IoCapabilityResponse())
+        logging.info("Cert: Waiting for IO_CAPABILITY_REQUEST")
+        assertThat(self._hci_event_stream).emits(HciMatchers.IoCapabilityRequest())
+        logging.info("Cert: Sending IO_CAPABILITY_REQUEST_REPLY")
+        oob_data_present = hci_packets.OobDataPresent.NOT_PRESENT
+        self._enqueue_hci_command(
+            hci_packets.IoCapabilityRequestReplyBuilder(
+                dut_address.decode('utf8'), self._io_caps, oob_data_present, self._auth_reqs), True)
+        assertThat(self._hci_event_stream).emits(HciMatchers.CommandComplete())
+        logging.info("Cert: Waiting for SIMPLE_PAIRING_COMPLETE")
+        ssp_complete_capture = HciCaptures.SimplePairingCompleteCapture()
+        assertThat(self._hci_event_stream).emits(ssp_complete_capture)
+        ssp_complete = ssp_complete_capture.get()
+        logging.info(ssp_complete.GetStatus())
+        assertThat(ssp_complete.GetStatus()).isEqualTo(hci_packets.ErrorCode.SUCCESS)
+
     def on_user_input(self, dut_address, reply_boolean, expected_ui_event):
         """
             Cert doesn't need the test to respond to the ui event

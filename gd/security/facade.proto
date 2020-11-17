@@ -9,6 +9,7 @@ import "hci/facade/le_initiator_address_facade.proto";
 
 service SecurityModuleFacade {
   rpc CreateBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
+  rpc CreateBondOutOfBand(OobDataBondMessage) returns (google.protobuf.Empty) {}
   rpc CreateBondLe(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc CancelBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
@@ -35,6 +36,12 @@ message OobDataMessage {
   facade.BluetoothAddressWithType address = 1;
   bytes le_sc_confirmation_value = 2;
   bytes le_sc_random_value = 3;
+}
+
+message OobDataBondMessage {
+  facade.BluetoothAddressWithType address = 1;
+  OobDataMessage p192_data = 2;
+  OobDataMessage p256_data = 3;
 }
 
 enum UiMsgType {
