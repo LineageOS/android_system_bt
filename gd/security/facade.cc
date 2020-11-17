@@ -191,15 +191,6 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetOobDataPresent(
-      ::grpc::ServerContext* context,
-      const OobDataPresentMessage* request,
-      ::google::protobuf::Empty* response) override {
-    security_module_->GetFacadeConfigurationApi()->SetOobDataPresent(
-        static_cast<hci::OobDataPresent>(request->data_present()));
-    return ::grpc::Status::OK;
-  }
-
   ::grpc::Status SetLeAuthRequirements(
       ::grpc::ServerContext* context,
       const LeAuthRequirementsMessage* request,

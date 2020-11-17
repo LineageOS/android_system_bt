@@ -41,7 +41,6 @@ class FacadeConfigurationApi {
   void SetDisconnectCallback(internal::SecurityManagerImpl::FacadeDisconnectCallback callback);
   void SetIoCapability(hci::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirement);
-  void SetOobDataPresent(hci::OobDataPresent oob_present);
   void EnforceSecurityPolicy(
       hci::AddressWithType remote,
       l2cap::classic::SecurityPolicy policy,
