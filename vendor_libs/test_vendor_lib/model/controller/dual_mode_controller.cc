@@ -285,7 +285,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
 
 void DualModeController::SniffSubrating(CommandPacketView command) {
   auto command_view = gd_hci::SniffSubratingView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   send_event_(gd_hci::SniffSubratingCompleteBuilder::Create(
@@ -487,7 +488,8 @@ void DualModeController::ReadLocalVersionInformation(
 void DualModeController::ReadRemoteVersionInformation(
     CommandPacketView command) {
   auto command_view = gd_hci::ReadRemoteVersionInformationView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
@@ -563,7 +565,8 @@ void DualModeController::ReadLocalExtendedFeatures(CommandPacketView command) {
 
 void DualModeController::ReadRemoteExtendedFeatures(CommandPacketView command) {
   auto command_view = gd_hci::ReadRemoteExtendedFeaturesView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
@@ -577,7 +580,8 @@ void DualModeController::ReadRemoteExtendedFeatures(CommandPacketView command) {
 
 void DualModeController::SwitchRole(CommandPacketView command) {
   auto command_view = gd_hci::SwitchRoleView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   auto status = link_layer_controller_.SwitchRole(
@@ -591,7 +595,8 @@ void DualModeController::SwitchRole(CommandPacketView command) {
 void DualModeController::ReadRemoteSupportedFeatures(
     CommandPacketView command) {
   auto command_view = gd_hci::ReadRemoteSupportedFeaturesView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
@@ -606,7 +611,8 @@ void DualModeController::ReadRemoteSupportedFeatures(
 
 void DualModeController::ReadClockOffset(CommandPacketView command) {
   auto command_view = gd_hci::ReadClockOffsetView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   uint16_t handle = command_view.GetConnectionHandle();
@@ -841,7 +847,8 @@ void DualModeController::WriteSimplePairingMode(CommandPacketView command) {
 
 void DualModeController::ChangeConnectionPacketType(CommandPacketView command) {
   auto command_view = gd_hci::ChangeConnectionPacketTypeView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   uint16_t handle = command_view.GetConnectionHandle();
@@ -944,7 +951,8 @@ void DualModeController::WriteInquiryScanType(CommandPacketView command) {
 
 void DualModeController::AuthenticationRequested(CommandPacketView command) {
   auto command_view = gd_hci::AuthenticationRequestedView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t handle = command_view.GetConnectionHandle();
   auto status = link_layer_controller_.AuthenticationRequested(handle);
@@ -956,7 +964,8 @@ void DualModeController::AuthenticationRequested(CommandPacketView command) {
 
 void DualModeController::SetConnectionEncryption(CommandPacketView command) {
   auto command_view = gd_hci::SetConnectionEncryptionView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t handle = command_view.GetConnectionHandle();
   uint8_t encryption_enable =
@@ -971,7 +980,8 @@ void DualModeController::SetConnectionEncryption(CommandPacketView command) {
 
 void DualModeController::ChangeConnectionLinkKey(CommandPacketView command) {
   auto command_view = gd_hci::ChangeConnectionLinkKeyView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t handle = command_view.GetConnectionHandle();
 
@@ -984,7 +994,8 @@ void DualModeController::ChangeConnectionLinkKey(CommandPacketView command) {
 
 void DualModeController::CentralLinkKey(CommandPacketView command) {
   auto command_view = gd_hci::CentralLinkKeyView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint8_t key_flag = static_cast<uint8_t>(command_view.GetKeyFlag());
 
@@ -1050,7 +1061,8 @@ void DualModeController::WritePageTimeout(CommandPacketView command) {
 
 void DualModeController::HoldMode(CommandPacketView command) {
   auto command_view = gd_hci::HoldModeView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t handle = command_view.GetConnectionHandle();
   uint16_t hold_mode_max_interval = command_view.GetHoldModeMaxInterval();
@@ -1066,7 +1078,8 @@ void DualModeController::HoldMode(CommandPacketView command) {
 
 void DualModeController::SniffMode(CommandPacketView command) {
   auto command_view = gd_hci::SniffModeView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t handle = command_view.GetConnectionHandle();
   uint16_t sniff_max_interval = command_view.GetSniffMaxInterval();
@@ -1085,7 +1098,8 @@ void DualModeController::SniffMode(CommandPacketView command) {
 
 void DualModeController::ExitSniffMode(CommandPacketView command) {
   auto command_view = gd_hci::ExitSniffModeView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   auto status =
@@ -1098,7 +1112,8 @@ void DualModeController::ExitSniffMode(CommandPacketView command) {
 
 void DualModeController::QosSetup(CommandPacketView command) {
   auto command_view = gd_hci::QosSetupView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t handle = command_view.GetConnectionHandle();
   uint8_t service_type = static_cast<uint8_t>(command_view.GetServiceType());
@@ -1119,7 +1134,8 @@ void DualModeController::QosSetup(CommandPacketView command) {
 void DualModeController::ReadDefaultLinkPolicySettings(
     CommandPacketView command) {
   auto command_view = gd_hci::ReadDefaultLinkPolicySettingsView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t settings = link_layer_controller_.ReadDefaultLinkPolicySettings();
   auto packet =
@@ -1131,7 +1147,8 @@ void DualModeController::ReadDefaultLinkPolicySettings(
 void DualModeController::WriteDefaultLinkPolicySettings(
     CommandPacketView command) {
   auto command_view = gd_hci::WriteDefaultLinkPolicySettingsView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   ErrorCode status = link_layer_controller_.WriteDefaultLinkPolicySettings(
       command_view.GetDefaultLinkPolicySettings());
@@ -1143,7 +1160,8 @@ void DualModeController::WriteDefaultLinkPolicySettings(
 
 void DualModeController::FlowSpecification(CommandPacketView command) {
   auto command_view = gd_hci::FlowSpecificationView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   uint16_t handle = command_view.GetConnectionHandle();
   uint8_t flow_direction =
@@ -1165,7 +1183,8 @@ void DualModeController::FlowSpecification(CommandPacketView command) {
 
 void DualModeController::WriteLinkPolicySettings(CommandPacketView command) {
   auto command_view = gd_hci::WriteLinkPolicySettingsView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   uint16_t handle = command_view.GetConnectionHandle();
@@ -1182,7 +1201,8 @@ void DualModeController::WriteLinkPolicySettings(CommandPacketView command) {
 void DualModeController::WriteLinkSupervisionTimeout(
     CommandPacketView command) {
   auto command_view = gd_hci::WriteLinkSupervisionTimeoutView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   uint16_t handle = command_view.GetConnectionHandle();
@@ -1393,7 +1413,8 @@ void DualModeController::InquiryCancel(CommandPacketView command) {
 
 void DualModeController::AcceptConnectionRequest(CommandPacketView command) {
   auto command_view = gd_hci::AcceptConnectionRequestView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   Address addr = command_view.GetBdAddr();
   bool try_role_switch = command_view.GetRole() ==
@@ -1407,7 +1428,8 @@ void DualModeController::AcceptConnectionRequest(CommandPacketView command) {
 
 void DualModeController::RejectConnectionRequest(CommandPacketView command) {
   auto command_view = gd_hci::RejectConnectionRequestView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   Address addr = command_view.GetBdAddr();
   uint8_t reason = static_cast<uint8_t>(command_view.GetReason());
@@ -1619,7 +1641,8 @@ void DualModeController::LeSetScanEnable(CommandPacketView command) {
 
 void DualModeController::LeCreateConnection(CommandPacketView command) {
   auto command_view = gd_hci::LeCreateConnectionView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   link_layer_controller_.SetLeScanInterval(command_view.GetLeScanInterval());
   link_layer_controller_.SetLeScanWindow(command_view.GetLeScanWindow());
@@ -1656,7 +1679,8 @@ void DualModeController::LeCreateConnection(CommandPacketView command) {
 
 void DualModeController::LeConnectionUpdate(CommandPacketView command) {
   auto command_view = gd_hci::LeConnectionUpdateView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   ErrorCode status = link_layer_controller_.LeConnectionUpdate(command_view);
 
@@ -1667,7 +1691,8 @@ void DualModeController::LeConnectionUpdate(CommandPacketView command) {
 
 void DualModeController::CreateConnection(CommandPacketView command) {
   auto command_view = gd_hci::CreateConnectionView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   Address address = command_view.GetBdAddr();
@@ -1691,7 +1716,8 @@ void DualModeController::CreateConnection(CommandPacketView command) {
 
 void DualModeController::CreateConnectionCancel(CommandPacketView command) {
   auto command_view = gd_hci::CreateConnectionCancelView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   Address address = command_view.GetBdAddr();
@@ -1705,7 +1731,8 @@ void DualModeController::CreateConnectionCancel(CommandPacketView command) {
 
 void DualModeController::Disconnect(CommandPacketView command) {
   auto command_view = gd_hci::DisconnectView::Create(
-      gd_hci::ConnectionManagementCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   uint16_t handle = command_view.GetConnectionHandle();
@@ -1720,7 +1747,8 @@ void DualModeController::Disconnect(CommandPacketView command) {
 
 void DualModeController::LeConnectionCancel(CommandPacketView command) {
   auto command_view = gd_hci::LeCreateConnectionCancelView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   ErrorCode status = link_layer_controller_.SetLeConnect(false);
   send_event_(bluetooth::hci::LeCreateConnectionCancelCompleteBuilder::Create(
@@ -1729,7 +1757,8 @@ void DualModeController::LeConnectionCancel(CommandPacketView command) {
 
 void DualModeController::LeReadConnectListSize(CommandPacketView command) {
   auto command_view = gd_hci::LeReadConnectListSizeView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   auto packet = bluetooth::hci::LeReadConnectListSizeCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS,
@@ -1739,7 +1768,8 @@ void DualModeController::LeReadConnectListSize(CommandPacketView command) {
 
 void DualModeController::LeClearConnectList(CommandPacketView command) {
   auto command_view = gd_hci::LeClearConnectListView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeConnectListClear();
   auto packet = bluetooth::hci::LeClearConnectListCompleteBuilder::Create(
@@ -1749,7 +1779,8 @@ void DualModeController::LeClearConnectList(CommandPacketView command) {
 
 void DualModeController::LeAddDeviceToConnectList(CommandPacketView command) {
   auto command_view = gd_hci::LeAddDeviceToConnectListView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   if (link_layer_controller_.LeConnectListFull()) {
@@ -1770,7 +1801,8 @@ void DualModeController::LeAddDeviceToConnectList(CommandPacketView command) {
 void DualModeController::LeRemoveDeviceFromConnectList(
     CommandPacketView command) {
   auto command_view = gd_hci::LeRemoveDeviceFromConnectListView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   uint8_t addr_type = static_cast<uint8_t>(command_view.GetAddressType());
@@ -1817,7 +1849,8 @@ void DualModeController::LeReadMaximumDataLength(CommandPacketView command) {
 
 void DualModeController::LeReadSuggestedDefaultDataLength(CommandPacketView command) {
   auto command_view = gd_hci::LeReadSuggestedDefaultDataLengthView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   send_event_(bluetooth::hci::LeReadSuggestedDefaultDataLengthCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS, kLeMaximumDataLength, kLeMaximumDataTime));
@@ -1910,7 +1943,8 @@ void DualModeController::LeSetExtendedScanEnable(CommandPacketView command) {
 
 void DualModeController::LeExtendedCreateConnection(CommandPacketView command) {
   auto command_view = gd_hci::LeExtendedCreateConnectionView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
   ASSERT_LOG(command_view.GetInitiatingPhys() == 1, "Only LE_1M is supported");
   auto params = command_view.GetPhyScanParameters();
@@ -2089,7 +2123,8 @@ void DualModeController::LeRemoveIsoDataPath(CommandPacketView command) {
 
 void DualModeController::LeReadRemoteFeatures(CommandPacketView command) {
   auto command_view = gd_hci::LeReadRemoteFeaturesView::Create(
-      gd_hci::LeConnectionManagementCommandView::Create(command));
+      gd_hci::LeConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
   uint16_t handle = command_view.GetConnectionHandle();
