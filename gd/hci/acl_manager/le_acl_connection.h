@@ -29,9 +29,13 @@ namespace acl_manager {
 class LeAclConnection : public AclConnection {
  public:
   LeAclConnection();
-  LeAclConnection(std::shared_ptr<Queue> queue, LeAclConnectionInterface* le_acl_connection_interface,
-                  common::OnceCallback<void(DisconnectReason)> disconnect, uint16_t handle,
-                  AddressWithType local_address, AddressWithType remote_address, Role role);
+  LeAclConnection(
+      std::shared_ptr<Queue> queue,
+      LeAclConnectionInterface* le_acl_connection_interface,
+      uint16_t handle,
+      AddressWithType local_address,
+      AddressWithType remote_address,
+      Role role);
   ~LeAclConnection() override;
 
   virtual AddressWithType GetLocalAddress() const {
