@@ -1,0 +1,22 @@
+rust_library {
+    name: "libbt_common",
+    crate_name: "bt_common",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libtokio",
+        "libnix",
+    ],
+    host_supported: true,
+}
+
+rust_test_host {
+    name: "libbt_common_inline_tests",
+    srcs: ["src/lib.rs"],
+    test_suites: ["general-tests"],
+    auto_gen_config: true,
+    rustlibs: [
+        "libtokio",
+        "libnix",
+    ],
+}
