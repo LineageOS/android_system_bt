@@ -44,6 +44,7 @@
 #include "include/l2cap_hci_link_interface.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "stack/acl/acl.h"
@@ -468,6 +469,10 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    bluetooth::shim::L2CA_SwitchRoleToCentral(remote_bd_addr);
+    return BTM_SUCCESS;
+  }
   if (!controller_get_interface()->supports_central_peripheral_role_switch()) {
     LOG_INFO("Local controller does not support role switching");
     return BTM_MODE_UNSUPPORTED;
