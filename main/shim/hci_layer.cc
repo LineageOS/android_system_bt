@@ -264,18 +264,20 @@ static bool subevent_already_registered_in_le_hci_layer(
     case bluetooth::hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
       return bluetooth::shim::is_gd_acl_enabled() ||
              bluetooth::shim::is_gd_advertising_enabled();
-
+    case bluetooth::hci::SubeventCode::ADVERTISING_SET_TERMINATED:
+    case bluetooth::hci::SubeventCode::SCAN_REQUEST_RECEIVED:
+      return bluetooth::shim::is_gd_advertising_enabled();
+    case bluetooth::hci::SubeventCode::SCAN_TIMEOUT:
+    case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
+    case bluetooth::hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
+    case bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
+    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_REPORT:
+    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
+    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST:
+      // TODO return bluetooth::shim::is_gd_scanning_enabled();
     case bluetooth::hci::SubeventCode::READ_REMOTE_FEATURES_COMPLETE:
     case bluetooth::hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE:
     case bluetooth::hci::SubeventCode::GENERATE_DHKEY_COMPLETE:
-    case bluetooth::hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST:
-    case bluetooth::hci::SubeventCode::SCAN_TIMEOUT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_SET_TERMINATED:
-    case bluetooth::hci::SubeventCode::SCAN_REQUEST_RECEIVED:
     case bluetooth::hci::SubeventCode::CHANNEL_SELECTION_ALGORITHM:
     case bluetooth::hci::SubeventCode::CONNECTIONLESS_IQ_REPORT:
     case bluetooth::hci::SubeventCode::CONNECTION_IQ_REPORT:
@@ -292,9 +294,7 @@ static bool subevent_already_registered_in_le_hci_layer(
     case bluetooth::hci::SubeventCode::PATH_LOSS_THRESHOLD:
     case bluetooth::hci::SubeventCode::TRANSMIT_POWER_REPORTING:
     case bluetooth::hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
-    case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::LONG_TERM_KEY_REQUEST:
-      return bluetooth::shim::is_gd_advertising_enabled();
     default:
       return false;
   }
