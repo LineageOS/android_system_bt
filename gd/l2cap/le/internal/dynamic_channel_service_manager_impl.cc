@@ -28,12 +28,7 @@ namespace internal {
 
 void DynamicChannelServiceManagerImpl::Register(Psm psm,
                                                 DynamicChannelServiceImpl::PendingRegistration pending_registration) {
-  if (!IsPsmValid(psm)) {
-    std::unique_ptr<DynamicChannelService> invalid_service(new DynamicChannelService());
-    pending_registration.user_handler_->Post(
-        common::BindOnce(std::move(pending_registration.on_registration_complete_callback_),
-                         DynamicChannelManager::RegistrationResult::FAIL_INVALID_SERVICE, std::move(invalid_service)));
-  } else if (IsServiceRegistered(psm)) {
+  if (IsServiceRegistered(psm)) {
     std::unique_ptr<DynamicChannelService> invalid_service(new DynamicChannelService());
     pending_registration.user_handler_->Post(common::BindOnce(
         std::move(pending_registration.on_registration_complete_callback_),

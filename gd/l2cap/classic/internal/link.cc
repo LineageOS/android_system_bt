@@ -402,7 +402,7 @@ void Link::OnCentralLinkKeyComplete(hci::KeyFlag key_flag) {
   LOG_INFO("UNIMPLEMENTED key_flag:%s", hci::KeyFlagText(key_flag).c_str());
 }
 void Link::OnRoleChange(hci::Role new_role) {
-  LOG_INFO("UNIMPLEMENTED role:%s", hci::RoleText(new_role).c_str());
+  role_ = new_role;
 }
 void Link::OnDisconnection(hci::ErrorCode reason) {
   OnAclDisconnected(reason);
