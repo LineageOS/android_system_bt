@@ -516,5 +516,9 @@ void L2CA_SetBondingState(const RawAddress& p_bd_addr, bool is_bonding);
 void L2CA_UseLegacySecurityModule();
 
 void L2CA_SwitchRoleToCentral(const RawAddress& addr);
+
+bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
+                            uint16_t* manufacturer, uint16_t* lmp_sub_version);
+
 }  // namespace shim
 }  // namespace bluetooth
