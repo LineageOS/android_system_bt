@@ -152,7 +152,7 @@ impl FacadeServiceManager {
         let mut services = Vec::new();
         match req.get_module_under_test() {
             BluetoothModule::HAL => {
-                services.push(HciHalFacadeService::create(Arc::clone(&rt)));
+                services.push(HciHalFacadeService::create(hal_exports, Arc::clone(&rt)));
             }
             BluetoothModule::HCI => {
                 let hci_exports = Hci::start(hal_exports, Arc::clone(&rt));
