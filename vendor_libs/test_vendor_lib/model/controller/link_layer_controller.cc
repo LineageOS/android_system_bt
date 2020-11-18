@@ -721,11 +721,6 @@ void LinkLayerController::IncomingIoCapabilityRequestPacket(
     return;
   }
 
-  security_manager_.AuthenticationRequest(peer, handle);
-
-  security_manager_.SetPeerIoCapability(peer, io_capability, oob_data_present,
-                                        authentication_requirements);
-
   auto packet = bluetooth::hci::IoCapabilityResponseBuilder::Create(
       peer, static_cast<bluetooth::hci::IoCapability>(io_capability),
       static_cast<bluetooth::hci::OobDataPresent>(oob_data_present),
@@ -733,7 +728,24 @@ void LinkLayerController::IncomingIoCapabilityRequestPacket(
           authentication_requirements));
   send_event_(std::move(packet));
 
-  StartSimplePairing(peer);
+  bool pairing_started = security_manager_.AuthenticationInProgress();
+  if (!pairing_started) {
+    security_manager_.AuthenticationRequest(peer, handle);
+    StartSimplePairing(peer);
+  }
+
+  security_manager_.SetPeerIoCapability(peer, io_capability, oob_data_present,
+                                        authentication_requirements);
+  if (pairing_started) {
+    PairingType pairing_type = security_manager_.GetSimplePairingType();
+    if (pairing_type != PairingType::INVALID) {
+      ScheduleTask(milliseconds(5), [this, peer, pairing_type]() {
+        AuthenticateRemoteStage1(peer, pairing_type);
+      });
+    } else {
+      LOG_INFO("Security Manager returned INVALID");
+    }
+  }
 }
 
 void LinkLayerController::IncomingIoCapabilityResponsePacket(
@@ -1441,6 +1453,10 @@ void LinkLayerController::AuthenticateRemoteStage1(const Address& peer,
       LOG_INFO("Oob data request for %s", peer.ToString().c_str());
       send_event_(bluetooth::hci::RemoteOobDataRequestBuilder::Create(peer));
       break;
+    case PairingType::PEER_HAS_OUT_OF_BAND:
+      LOG_INFO("Trusting that %s has OOB data", peer.ToString().c_str());
+      SaveKeyAndAuthenticate('P', peer);
+      break;
     default:
       LOG_ALWAYS_FATAL("Invalid PairingType %d",
                        static_cast<int>(pairing_type));
@@ -1531,7 +1547,7 @@ void LinkLayerController::SaveKeyAndAuthenticate(uint8_t key_type,
                                   'e',
                                   'y',
                                   ' ',
-                                  'U',
+                                  key_type,
                                   5,
                                   6,
                                   7,
