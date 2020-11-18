@@ -429,7 +429,7 @@ TEST(HciPacketsTest, testLeExtendedCreateConnection) {
       std::make_shared<std::vector<uint8_t>>(le_extended_create_connection);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeExtendedCreateConnectionView::Create(
-      LeConnectionManagementCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeConnectionManagementCommandView::Create(AclCommandView::Create(CommandPacketView::Create(packet_bytes_view))));
   ASSERT_TRUE(view.IsValid());
 }
 

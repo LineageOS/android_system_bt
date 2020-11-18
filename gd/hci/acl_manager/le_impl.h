@@ -19,7 +19,6 @@
 #include "common/bind.h"
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/acl_manager/assembler.h"
-#include "hci/acl_manager/disconnector_for_le.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/le_address_manager.h"
 #include "os/alarm.h"
@@ -44,10 +43,8 @@ struct le_acl_connection {
 };
 
 struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
-  le_impl(HciLayer* hci_layer, Controller* controller, os::Handler* handler, RoundRobinScheduler* round_robin_scheduler,
-          DisconnectorForLe* disconnector)
-      : hci_layer_(hci_layer), controller_(controller), round_robin_scheduler_(round_robin_scheduler),
-        disconnector_(disconnector) {
+  le_impl(HciLayer* hci_layer, Controller* controller, os::Handler* handler, RoundRobinScheduler* round_robin_scheduler)
+      : hci_layer_(hci_layer), controller_(controller), round_robin_scheduler_(round_robin_scheduler) {
     hci_layer_ = hci_layer;
     controller_ = controller;
     handler_ = handler;
@@ -159,12 +156,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     le_acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
                                 std::forward_as_tuple(remote_address, queue->GetDownEnd(), handler_));
     auto& connection_proxy = check_and_get_le_connection(handle);
-    auto do_disconnect =
-        common::BindOnce(&DisconnectorForLe::handle_disconnect, common::Unretained(disconnector_), handle);
     round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
-    std::unique_ptr<LeAclConnection> connection(new LeAclConnection(std::move(queue), le_acl_connection_interface_,
-                                                                    std::move(do_disconnect), handle, local_address,
-                                                                    remote_address, role));
+    std::unique_ptr<LeAclConnection> connection(new LeAclConnection(
+        std::move(queue), le_acl_connection_interface_, handle, local_address, remote_address, role));
     connection_proxy.le_connection_management_callbacks_ = connection->GetEventCallbacks();
     le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(le_client_callbacks_), remote_address,
@@ -223,11 +217,8 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
                                 std::forward_as_tuple(remote_address, queue->GetDownEnd(), handler_));
     auto& connection_proxy = check_and_get_le_connection(handle);
     round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
-    auto do_disconnect =
-        common::BindOnce(&DisconnectorForLe::handle_disconnect, common::Unretained(disconnector_), handle);
-    std::unique_ptr<LeAclConnection> connection(new LeAclConnection(std::move(queue), le_acl_connection_interface_,
-                                                                    std::move(do_disconnect), handle, local_address,
-                                                                    remote_address, role));
+    std::unique_ptr<LeAclConnection> connection(new LeAclConnection(
+        std::move(queue), le_acl_connection_interface_, handle, local_address, remote_address, role));
     connection_proxy.le_connection_management_callbacks_ = connection->GetEventCallbacks();
     le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(le_client_callbacks_), remote_address,
@@ -600,7 +591,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   std::map<uint16_t, le_acl_connection> le_acl_connections_;
   std::set<AddressWithType> connecting_le_;
   std::set<AddressWithType> canceled_connections_;
-  DisconnectorForLe* disconnector_;
   bool address_manager_registered = false;
   bool ready_to_unregister = false;
   bool pause_connection = false;

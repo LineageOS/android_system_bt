@@ -40,7 +40,7 @@ constexpr EventCode AclConnectionEvents[] = {
     EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED,
 };
 
-typedef CommandInterface<ConnectionManagementCommandBuilder> AclConnectionInterface;
+typedef CommandInterface<AclCommandBuilder> AclConnectionInterface;
 
 }  // namespace hci
 }  // namespace bluetooth

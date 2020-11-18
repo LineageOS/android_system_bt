@@ -91,7 +91,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   static const ModuleFactory Factory;
 
  protected:
-  // Lint.ThenChange(fuzz/fuzz_hci_layer.h)
+  // LINT.ThenChange(fuzz/fuzz_hci_layer.h)
   void ListDependencies(ModuleList* list) override;
 
   void Start() override;
@@ -132,8 +132,8 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   void on_read_remote_version_complete(EventPacketView event_view);
 
   // Interfaces
-  CommandInterfaceImpl<ConnectionManagementCommandBuilder> acl_connection_manager_interface_{*this};
-  CommandInterfaceImpl<LeConnectionManagementCommandBuilder> le_acl_connection_manager_interface_{*this};
+  CommandInterfaceImpl<AclCommandBuilder> acl_connection_manager_interface_{*this};
+  CommandInterfaceImpl<AclCommandBuilder> le_acl_connection_manager_interface_{*this};
   CommandInterfaceImpl<SecurityCommandBuilder> security_interface{*this};
   CommandInterfaceImpl<LeSecurityCommandBuilder> le_security_interface{*this};
   CommandInterfaceImpl<LeAdvertisingCommandBuilder> le_advertising_interface{*this};
