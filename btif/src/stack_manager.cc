@@ -291,6 +291,10 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
 
   future_await(local_hack_future);
 
+  main_thread_shut_down();
+
+  module_clean_up(get_module(BTE_LOGMSG_MODULE));
+
   gatt_free();
   l2c_free();
   sdp_free();
@@ -304,10 +308,6 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
     module_shut_down(get_module(HCI_MODULE));
     module_shut_down(get_module(BTSNOOP_MODULE));
   }
-
-  main_thread_shut_down();
-
-  module_clean_up(get_module(BTE_LOGMSG_MODULE));
 
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
