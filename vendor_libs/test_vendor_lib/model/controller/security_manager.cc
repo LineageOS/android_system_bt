@@ -134,8 +134,8 @@ PairingType SecurityManager::GetSimplePairingType() {
     return PairingType::AUTO_CONFIRMATION;
   }
   if (peer_oob_present_flag_ != 0 || host_oob_present_flag_ != 0) {
-    if (peer_oob_present_flag_ != host_oob_present_flag_) {
-      return PairingType::INVALID;
+    if (peer_oob_present_flag_ != 0) {
+      return PairingType::PEER_HAS_OUT_OF_BAND;
     } else {
       return PairingType::OUT_OF_BAND;
     }
