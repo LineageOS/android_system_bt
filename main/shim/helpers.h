@@ -208,6 +208,9 @@ inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
       return HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE;
     case hci::ErrorCode::CONTROLLER_BUSY:
       return static_cast<tHCI_STATUS>(hci::ErrorCode::CONTROLLER_BUSY);
+    case hci::ErrorCode::CONNECTION_FAILED_ESTABLISHMENT:
+      return static_cast<tHCI_STATUS>(
+          hci::ErrorCode::CONNECTION_FAILED_ESTABLISHMENT);
   }
 }
 
