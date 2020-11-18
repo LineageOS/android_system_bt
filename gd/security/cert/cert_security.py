@@ -265,7 +265,8 @@ class CertSecurity(PySecurity):
         self._enqueue_hci_command(
             hci_packets.IoCapabilityRequestReplyBuilder(
                 dut_address.decode('utf8'), self._io_caps, oob_data_present, self._auth_reqs), True)
-        assertThat(self._hci_event_stream).emits(HciMatchers.CommandComplete())
+        assertThat(self._hci_event_stream).emits(
+            HciMatchers.CommandComplete(hci_packets.OpCode.IO_CAPABILITY_REQUEST_REPLY))
         logging.info("Cert: Waiting for SIMPLE_PAIRING_COMPLETE")
         ssp_complete_capture = HciCaptures.SimplePairingCompleteCapture()
         assertThat(self._hci_event_stream).emits(ssp_complete_capture)
