@@ -837,3 +837,8 @@ uint8_t bluetooth::shim::L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data) {
              MakeUniquePacket(data, len)) *
          len;
 }
+
+void bluetooth::shim::L2CA_SwitchRoleToCentral(const RawAddress& addr) {
+  bluetooth::shim::GetAclManager()->SwitchRole(ToGdAddress(addr),
+                                               bluetooth::hci::Role::CENTRAL);
+}
