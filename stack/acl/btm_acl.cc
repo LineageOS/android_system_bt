@@ -1498,8 +1498,20 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return (pkt_size);
 }
 
+/*******************************************************************************
+ *
+ * Function         BTM_ReadRemoteVersion
+ *
+ * Returns          If connected report peer device info
+ *
+ ******************************************************************************/
 bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
                            uint16_t* manufacturer, uint16_t* lmp_sub_version) {
+  if (!bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_ReadRemoteVersion(
+        addr, lmp_version, manufacturer, lmp_sub_version);
+  }
+
   const tACL_CONN* p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_LE);
