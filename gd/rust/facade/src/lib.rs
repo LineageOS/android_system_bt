@@ -119,7 +119,7 @@ impl FacadeServiceManager {
                         registry.inject(local_rt.clone()).await;
                         if let Some(rc_port) = rootcanal_port {
                             registry
-                                .inject(RootcanalConfig::new(rc_port, "127.0.0.1"))
+                                .inject(RootcanalConfig::new("127.0.0.1", rc_port))
                                 .await;
                         }
 
