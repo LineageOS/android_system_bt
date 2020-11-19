@@ -44,6 +44,7 @@
 #include "include/l2cap_hci_link_interface.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "stack/acl/acl.h"
@@ -468,6 +469,10 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    bluetooth::shim::L2CA_SwitchRoleToCentral(remote_bd_addr);
+    return BTM_SUCCESS;
+  }
   if (!controller_get_interface()->supports_central_peripheral_role_switch()) {
     LOG_INFO("Local controller does not support role switching");
     return BTM_MODE_UNSUPPORTED;
@@ -1493,8 +1498,20 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return (pkt_size);
 }
 
+/*******************************************************************************
+ *
+ * Function         BTM_ReadRemoteVersion
+ *
+ * Returns          If connected report peer device info
+ *
+ ******************************************************************************/
 bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
                            uint16_t* manufacturer, uint16_t* lmp_sub_version) {
+  if (!bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_ReadRemoteVersion(
+        addr, lmp_version, manufacturer, lmp_sub_version);
+  }
+
   const tACL_CONN* p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     p_acl = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_LE);

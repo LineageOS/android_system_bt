@@ -182,7 +182,7 @@ struct HciLayer::impl {
   }
 
   void unregister_event(EventCode event) {
-    event_handlers_.erase(event_handlers_.find(event));
+    event_handlers_.erase(event);
   }
 
   void register_le_meta_event(ContextualCallback<void(EventPacketView)> handler) {
@@ -421,7 +421,7 @@ void HciLayer::Start() {
   RegisterEventHandler(EventCode::COMMAND_COMPLETE, handler->BindOn(impl_, &impl::on_command_complete));
   RegisterEventHandler(EventCode::COMMAND_STATUS, handler->BindOn(impl_, &impl::on_command_status));
   RegisterLeMetaEventHandler(handler->BindOn(impl_, &impl::on_le_meta_event));
-  if (bluetooth::common::InitFlags::GdAclEnabled()) {
+  if (bluetooth::common::InitFlags::GdAclEnabled() || bluetooth::common::InitFlags::GdL2capEnabled()) {
     RegisterEventHandler(
         EventCode::DISCONNECTION_COMPLETE, handler->BindOn(this, &HciLayer::on_disconnection_complete));
     RegisterEventHandler(

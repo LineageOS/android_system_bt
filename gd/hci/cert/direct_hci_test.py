@@ -36,7 +36,7 @@ class DirectHciTest(GdBaseTestClass):
         super().setup_test()
         self.dut_hci = PyHci(self.dut, acl_streaming=True)
         self.cert_hal = PyHal(self.cert)
-        self.cert_hal.send_hci_command(hci_packets.ResetBuilder().Serialize())
+        self.cert_hal.send_hci_command(hci_packets.ResetBuilder())
 
     def teardown_test(self):
         self.dut_hci.close()
@@ -44,7 +44,7 @@ class DirectHciTest(GdBaseTestClass):
         super().teardown_test()
 
     def send_hal_hci_command(self, command):
-        self.cert_hal.send_hci_command(bytes(command.Serialize()))
+        self.cert_hal.send_hci_command(command)
 
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
         acl_msg = hci_facade.AclMsg(
