@@ -25,6 +25,8 @@ from facade import rootservice_pb2 as facade_rootservice_pb2
 from hal import facade_pb2 as hal_facade_pb2
 from bluetooth_packets_python3 import hci_packets
 import bluetooth_packets_python3 as bt_packets
+from bluetooth_packets_python3.hci_packets import AclPacketBuilder
+from bluetooth_packets_python3 import RawBuilder
 
 _GRPC_TIMEOUT = 10
 
@@ -47,26 +49,6 @@ class SimpleHalTest(GdBaseTestClass):
         self.dut_hal.close()
         self.cert_hal.close()
         super().teardown_test()
-
-    def send_cert_acl_data(self, handle, pb_flag, b_flag, acl):
-        lower = handle & 0xff
-        upper = (handle >> 8) & 0xf
-        upper = upper | int(pb_flag) & 0x3
-        upper = upper | ((int(b_flag) & 0x3) << 2)
-        lower_length = len(acl) & 0xff
-        upper_length = (len(acl) & 0xff00) >> 8
-        concatenated = bytes([lower, upper, lower_length, upper_length] + list(acl))
-        self.cert_hal.send_acl(concatenated)
-
-    def send_dut_acl_data(self, handle, pb_flag, b_flag, acl):
-        lower = handle & 0xff
-        upper = (handle >> 8) & 0xf
-        upper = upper | int(pb_flag) & 0x3
-        upper = upper | ((int(b_flag) & 0x3) << 2)
-        lower_length = len(acl) & 0xff
-        upper_length = (len(acl) & 0xff00) >> 8
-        concatenated = bytes([lower, upper, lower_length, upper_length] + list(acl))
-        self.dut_hal.send_acl(concatenated)
 
     def test_fetch_hci_event(self):
         self.dut_hal.send_hci_command(
@@ -242,10 +224,8 @@ class SimpleHalTest(GdBaseTestClass):
         dut_handle = conn_handle
 
         # Send ACL Data
-        self.send_dut_acl_data(dut_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                               hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeAclData'))
-        self.send_cert_acl_data(cert_handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                                hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(b'Just SomeMoreAclData'))
+        self.dut_hal.send_acl_first(dut_handle, bytes(b'Just SomeAclData'))
+        self.cert_hal.send_acl_first(cert_handle, bytes(b'Just SomeMoreAclData'))
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
         assertThat(self.dut_hal.get_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)

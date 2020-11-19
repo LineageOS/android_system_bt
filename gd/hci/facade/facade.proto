@@ -5,39 +5,38 @@ package bluetooth.hci;
 import "google/protobuf/empty.proto";
 
 service HciLayerFacade {
-  rpc EnqueueCommandWithComplete(CommandMsg) returns (google.protobuf.Empty) {}
-  rpc EnqueueCommandWithStatus(CommandMsg) returns (google.protobuf.Empty) {}
-  rpc RegisterEventHandler(EventCodeMsg) returns (google.protobuf.Empty) {}
-  rpc RegisterLeEventHandler(LeSubeventCodeMsg) returns (google.protobuf.Empty) {}
-  rpc SendAclData(AclMsg) returns (google.protobuf.Empty) {}
-  rpc FetchEvents(google.protobuf.Empty) returns (stream EventMsg) {}
-  rpc FetchLeSubevents(google.protobuf.Empty) returns (stream LeSubeventMsg) {}
-  rpc FetchAclPackets(google.protobuf.Empty) returns (stream AclMsg) {}
+  rpc SendCommandWithComplete(Command) returns (google.protobuf.Empty) {}
+  rpc SendCommandWithStatus(Command) returns (google.protobuf.Empty) {}
+
+  rpc RequestEvent(EventRequest) returns (google.protobuf.Empty) {}
+  rpc StreamEvents(google.protobuf.Empty) returns (stream Event) {}
+
+  rpc RequestLeSubevent(EventRequest) returns (google.protobuf.Empty) {}
+  rpc StreamLeSubevents(google.protobuf.Empty) returns (stream LeSubevent) {}
+
+  rpc SendAcl(AclPacket) returns (google.protobuf.Empty) {}
+  rpc StreamAcl(google.protobuf.Empty) returns (stream AclPacket) {}
 }
 
-message CommandMsg {
-  bytes command = 1;
+message Command {
+  bytes payload = 1;
 }
 
-message EventMsg {
-  bytes event = 1;
+message Event {
+  bytes payload = 1;
 }
 
-message LeSubeventMsg {
-  bytes event = 1;
+message LeSubevent {
+  bytes payload = 1;
 }
 
-message AclMsg {
+message AclPacket {
   uint32 handle = 1;
   uint32 packet_boundary_flag = 2;
   uint32 broadcast_flag = 3;
   bytes data = 4;
 }
 
-message EventCodeMsg {
-  uint32 code = 1;
-}
-
-message LeSubeventCodeMsg {
+message EventRequest {
   uint32 code = 1;
 }

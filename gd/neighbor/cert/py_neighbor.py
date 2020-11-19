@@ -69,8 +69,8 @@ class PyNeighbor(object):
         """
         if self.remote_host_supported_features_notification_registered:
             return
-        msg = hci_facade.EventCodeMsg(code=int(hci_packets.EventCode.REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION))
-        self.device.hci.RegisterEventHandler(msg)
+        msg = hci_facade.EventRequest(code=int(hci_packets.EventCode.REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION))
+        self.device.hci.RequestEvent(msg)
         self.remote_host_supported_features_notification_registered = True
 
     def get_remote_name(self, remote_address):
