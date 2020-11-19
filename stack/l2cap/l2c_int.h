@@ -493,6 +493,16 @@ typedef struct t_l2c_linkcb {
 
   uint16_t pending_lead_cid;
   uint16_t pending_l2cap_result;
+
+  unsigned number_of_active_dynamic_channels() const {
+    unsigned cnt = 0;
+    const tL2C_CCB* cur = ccb_queue.p_first_ccb;
+    while (cur != nullptr) {
+      cnt++;
+      cur = cur->p_next_ccb;
+    }
+    return cnt;
+  }
 } tL2C_LCB;
 
 /* Define the L2CAP control structure
