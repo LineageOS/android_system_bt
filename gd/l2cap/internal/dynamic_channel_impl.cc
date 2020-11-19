@@ -33,7 +33,6 @@ DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, l2cap::
                                        os::Handler* l2cap_handler)
     : psm_(psm), cid_(cid), remote_cid_(remote_cid), link_(link), l2cap_handler_(l2cap_handler),
       device_(link->GetDevice()) {
-  ASSERT(IsPsmValid(psm_));
   ASSERT(cid_ > 0);
   ASSERT(remote_cid_ > 0);
   ASSERT(link_ != nullptr);
