@@ -50,6 +50,13 @@ bool generate_pybind11_sources_one_file(
     const std::string& root_namespace,
     size_t num_shards);
 
+bool generate_rust_source_one_file(
+    const Declarations& decls,
+    const std::filesystem::path& input_file,
+    const std::filesystem::path& include_dir,
+    const std::filesystem::path& out_dir,
+    const std::string& root_namespace);
+
 bool parse_declarations_one_file(const std::filesystem::path& input_file, Declarations* declarations) {
   void* scanner;
   yylex_init(&scanner);
@@ -139,7 +146,10 @@ int main(int argc, const char** argv) {
     }
     if (generate_rust) {
       std::cout << "generating rust" << std::endl;
-      // TODO do fun things
+      if (!generate_rust_source_one_file(declarations, input_files.front(), include_dir, out_dir, root_namespace)) {
+        std::cerr << "Didn't generate rust source for " << input_files.front() << std::endl;
+        return 5;
+      }
     } else {
       std::cout << "generating c++ and pybind11" << std::endl;
       if (!generate_cpp_headers_one_file(declarations, input_files.front(), include_dir, out_dir, root_namespace)) {
