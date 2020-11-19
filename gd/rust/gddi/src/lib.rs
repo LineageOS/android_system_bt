@@ -1,13 +1,10 @@
 //! Core dependency injection objects
 
+use std::any::{Any, TypeId};
 use std::collections::HashMap;
-
-use std::any::Any;
-use std::any::TypeId;
 use std::future::Future;
 use std::pin::Pin;
 use std::sync::Arc;
-
 use tokio::sync::Mutex;
 
 pub use gddi_macros::{module, provides};

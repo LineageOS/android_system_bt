@@ -10,26 +10,20 @@ pub mod empty {
 
 use bt_facade_common_proto::common;
 use bt_facade_rootservice_proto::rootservice;
-use rootservice::*;
-use rootservice_grpc::{create_root_facade, RootFacade};
-
 use bt_hal::facade::HciHalFacadeService;
 use bt_hal::hal_module;
 use bt_hal::rootcanal_hal::RootcanalConfig;
 use bt_hci::facade::HciLayerFacadeService;
 use bt_hci::hci_module;
-
+use futures::executor::block_on;
+use gddi::{module, Registry, RegistryBuilder};
+use grpcio::*;
+use rootservice::*;
+use rootservice_grpc::{create_root_facade, RootFacade};
+use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{channel, Sender};
 use tokio::sync::oneshot;
-
-use gddi::{module, Registry, RegistryBuilder};
-
-use grpcio::*;
-
-use std::sync::Arc;
-
-use futures::executor::block_on;
 
 module! {
     stack_module,
