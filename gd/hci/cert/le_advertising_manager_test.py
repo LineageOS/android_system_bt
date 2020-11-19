@@ -35,25 +35,25 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
         super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
     def register_for_event(self, event_code):
-        msg = hci_facade.EventCodeMsg(code=int(event_code))
-        self.cert.hci.RegisterEventHandler(msg)
+        msg = hci_facade.EventRequest(code=int(event_code))
+        self.cert.hci.RequestEvent(msg)
 
     def register_for_le_event(self, event_code):
-        msg = hci_facade.LeSubeventCodeMsg(code=int(event_code))
-        self.cert.hci.RegisterLeEventHandler(msg)
+        msg = hci_facade.EventRequest(code=int(event_code))
+        self.cert.hci.RequestLeSubevent(msg)
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
+        cmd = hci_facade.Command(payload=cmd_bytes)
         if (expect_complete):
-            self.cert.hci.EnqueueCommandWithComplete(cmd)
+            self.cert.hci.SendCommandWithComplete(cmd)
         else:
-            self.cert.hci.EnqueueCommandWithStatus(cmd)
+            self.cert.hci.SendCommandWithStatus(cmd)
 
     def test_le_ad_scan_dut_advertises(self):
         self.register_for_le_event(hci_packets.SubeventCode.ADVERTISING_REPORT)
         self.register_for_le_event(hci_packets.SubeventCode.EXTENDED_ADVERTISING_REPORT)
-        with EventStream(self.cert.hci.FetchLeSubevents(empty_proto.Empty())) as hci_le_event_stream:
+        with EventStream(self.cert.hci.StreamLeSubevents(empty_proto.Empty())) as hci_le_event_stream:
 
             # CERT Scans
             self.enqueue_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'), True)
@@ -86,7 +86,7 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
 
             create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(request)
 
-            hci_le_event_stream.assert_event_occurs(lambda packet: b'Im_The_DUT' in packet.event)
+            hci_le_event_stream.assert_event_occurs(lambda packet: b'Im_The_DUT' in packet.payload)
 
             remove_request = le_advertising_facade.RemoveAdvertiserRequest(advertiser_id=create_response.advertiser_id)
             self.dut.hci_le_advertising_manager.RemoveAdvertiser(remove_request)

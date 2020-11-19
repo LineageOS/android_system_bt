@@ -244,7 +244,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
           3,
           ClockAccuracy::PPM_20);
       LeConnectionEvent success;
-      success.set_event(builder_to_string(std::move(builder)));
+      success.set_payload(builder_to_string(std::move(builder)));
       per_connection_events_[current_connection_request_]->OnIncomingEvent(success);
     }
     current_connection_request_++;
@@ -254,7 +254,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     std::unique_ptr<BasePacketBuilder> builder = LeConnectionCompleteBuilder::Create(
         reason, 0, Role::CENTRAL, address.GetAddressType(), address.GetAddress(), 0, 0, 0, ClockAccuracy::PPM_20);
     LeConnectionEvent fail;
-    fail.set_event(builder_to_string(std::move(builder)));
+    fail.set_payload(builder_to_string(std::move(builder)));
     per_connection_events_[current_connection_request_]->OnIncomingEvent(fail);
     current_connection_request_++;
   }
@@ -283,7 +283,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
       std::unique_ptr<BasePacketBuilder> builder =
           DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle_, reason);
       LeConnectionEvent disconnection;
-      disconnection.set_event(builder_to_string(std::move(builder)));
+      disconnection.set_payload(builder_to_string(std::move(builder)));
       event_stream_->OnIncomingEvent(disconnection);
     }
 
