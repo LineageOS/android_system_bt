@@ -65,6 +65,9 @@ PYBIND11_MODULE(bluetooth_packets_python3, m) {
   py::class_<BasePacketBuilder, std::shared_ptr<BasePacketBuilder>>(m, "BasePacketBuilder");
   py::class_<RawBuilder, BasePacketBuilder, std::shared_ptr<RawBuilder>>(m, "RawBuilder")
       .def(py::init([](std::vector<uint8_t> bytes) { return std::make_unique<RawBuilder>(bytes); }))
+      .def(py::init([](std::string bytes) {
+        return std::make_unique<RawBuilder>(std::vector<uint8_t>(bytes.begin(), bytes.end()));
+      }))
       .def("Serialize", [](RawBuilder& builder) {
         std::vector<uint8_t> packet;
         BitInserter it(packet);

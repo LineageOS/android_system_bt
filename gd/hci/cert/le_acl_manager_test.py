@@ -37,8 +37,8 @@ class LeAclManagerTest(GdBaseTestClass):
     def setup_test(self):
         super().setup_test()
         self.dut_le_acl_manager = PyLeAclManager(self.dut)
-        self.cert_hci_le_event_stream = EventStream(self.cert.hci.FetchLeSubevents(empty_proto.Empty()))
-        self.cert_acl_data_stream = EventStream(self.cert.hci.FetchAclPackets(empty_proto.Empty()))
+        self.cert_hci_le_event_stream = EventStream(self.cert.hci.StreamLeSubevents(empty_proto.Empty()))
+        self.cert_acl_data_stream = EventStream(self.cert.hci.StreamAcl(empty_proto.Empty()))
 
     def teardown_test(self):
         safeClose(self.cert_hci_le_event_stream)
@@ -55,25 +55,25 @@ class LeAclManagerTest(GdBaseTestClass):
         self.dut.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(private_policy)
 
     def register_for_event(self, event_code):
-        msg = hci_facade.EventCodeMsg(code=int(event_code))
-        self.cert.hci.RegisterEventHandler(msg)
+        msg = hci_facade.EventRequest(code=int(event_code))
+        self.cert.hci.RequestEvent(msg)
 
     def register_for_le_event(self, event_code):
-        msg = hci_facade.LeSubeventCodeMsg(code=int(event_code))
-        self.cert.hci.RegisterLeEventHandler(msg)
+        msg = hci_facade.EventRequest(code=int(event_code))
+        self.cert.hci.RequestLeSubevent(msg)
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
+        cmd = hci_facade.Command(payload=cmd_bytes)
         if (expect_complete):
-            self.cert.hci.EnqueueCommandWithComplete(cmd)
+            self.cert.hci.SendCommandWithComplete(cmd)
         else:
-            self.cert.hci.EnqueueCommandWithStatus(cmd)
+            self.cert.hci.SendCommandWithStatus(cmd)
 
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
-        acl_msg = hci_facade.AclMsg(
+        acl_msg = hci_facade.AclPacket(
             handle=int(handle), packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=acl)
-        self.cert.hci.SendAclData(acl_msg)
+        self.cert.hci.SendAcl(acl_msg)
 
     def dut_connects(self, check_address):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
@@ -136,7 +136,7 @@ class LeAclManagerTest(GdBaseTestClass):
         address = hci_packets.Address()
 
         def get_handle(packet):
-            packet_bytes = packet.event
+            packet_bytes = packet.payload
             nonlocal handle
             nonlocal address
             if b'\x3e\x13\x01\x00' in packet_bytes:
@@ -255,7 +255,7 @@ class LeAclManagerTest(GdBaseTestClass):
         handle = 0xfff
 
         def get_handle(packet):
-            packet_bytes = packet.event
+            packet_bytes = packet.payload
             nonlocal handle
             if b'\x3e\x13\x01\x00' in packet_bytes:
                 cc_view = hci_packets.LeConnectionCompleteView(
