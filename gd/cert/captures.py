@@ -67,53 +67,53 @@ class HciCaptures(object):
     def ReadLocalOobDataCompleteCapture():
         return Capture(
             HciMatchers.CommandComplete(hci_packets.OpCode.READ_LOCAL_OOB_DATA),
-            lambda packet: HciMatchers.ExtractMatchingCommandComplete(packet.event, hci_packets.OpCode.READ_LOCAL_OOB_DATA)
+            lambda packet: HciMatchers.ExtractMatchingCommandComplete(packet.payload, hci_packets.OpCode.READ_LOCAL_OOB_DATA)
         )
 
     @staticmethod
     def ReadLocalOobExtendedDataCompleteCapture():
         return Capture(
             HciMatchers.CommandComplete(hci_packets.OpCode.READ_LOCAL_OOB_EXTENDED_DATA),
-            lambda packet: HciMatchers.ExtractMatchingCommandComplete(packet.event, hci_packets.OpCode.READ_LOCAL_OOB_EXTENDED_DATA)
+            lambda packet: HciMatchers.ExtractMatchingCommandComplete(packet.payload, hci_packets.OpCode.READ_LOCAL_OOB_EXTENDED_DATA)
         )
 
     @staticmethod
     def ReadBdAddrCompleteCapture():
         return Capture(
             HciMatchers.CommandComplete(hci_packets.OpCode.READ_BD_ADDR),
-            lambda packet: hci_packets.ReadBdAddrCompleteView(HciMatchers.ExtractMatchingCommandComplete(packet.event, hci_packets.OpCode.READ_BD_ADDR)))
+            lambda packet: hci_packets.ReadBdAddrCompleteView(HciMatchers.ExtractMatchingCommandComplete(packet.payload, hci_packets.OpCode.READ_BD_ADDR)))
 
     @staticmethod
     def ConnectionRequestCapture():
         return Capture(
             HciMatchers.EventWithCode(hci_packets.EventCode.CONNECTION_REQUEST),
             lambda packet: hci_packets.ConnectionRequestView(
-                HciMatchers.ExtractEventWithCode(packet.event, hci_packets.EventCode.CONNECTION_REQUEST)))
+                HciMatchers.ExtractEventWithCode(packet.payload, hci_packets.EventCode.CONNECTION_REQUEST)))
 
     @staticmethod
     def ConnectionCompleteCapture():
         return Capture(
             HciMatchers.EventWithCode(hci_packets.EventCode.CONNECTION_COMPLETE),
             lambda packet: hci_packets.ConnectionCompleteView(
-                HciMatchers.ExtractEventWithCode(packet.event, hci_packets.EventCode.CONNECTION_COMPLETE)))
+                HciMatchers.ExtractEventWithCode(packet.payload, hci_packets.EventCode.CONNECTION_COMPLETE)))
 
     @staticmethod
     def DisconnectionCompleteCapture():
         return Capture(
             HciMatchers.EventWithCode(hci_packets.EventCode.DISCONNECTION_COMPLETE),
             lambda packet: hci_packets.DisconnectionCompleteView(
-                HciMatchers.ExtractEventWithCode(packet.event, hci_packets.EventCode.DISCONNECTION_COMPLETE)))
+                HciMatchers.ExtractEventWithCode(packet.payload, hci_packets.EventCode.DISCONNECTION_COMPLETE)))
 
     @staticmethod
     def LeConnectionCompleteCapture():
         return Capture(HciMatchers.LeConnectionComplete(),
-                       lambda packet: HciMatchers.ExtractLeConnectionComplete(packet.event))
+                       lambda packet: HciMatchers.ExtractLeConnectionComplete(packet.payload))
 
     @staticmethod
     def SimplePairingCompleteCapture():
         return Capture(HciMatchers.EventWithCode(hci_packets.EventCode.SIMPLE_PAIRING_COMPLETE),
             lambda packet: hci_packets.SimplePairingCompleteView(
-                HciMatchers.ExtractEventWithCode(packet.event, hci_packets.EventCode.SIMPLE_PAIRING_COMPLETE)))
+                HciMatchers.ExtractEventWithCode(packet.payload, hci_packets.EventCode.SIMPLE_PAIRING_COMPLETE)))
 
 
 class L2capCaptures(object):

@@ -29,15 +29,15 @@ impl HciLayerFacadeService {
 }
 
 impl HciLayerFacade for HciLayerFacadeService {
-    fn enqueue_command_with_complete(
+    fn send_command_with_complete(
         &mut self,
         ctx: RpcContext<'_>,
-        mut cmd: CommandMsg,
+        mut cmd: Command,
         sink: UnarySink<Empty>,
     ) {
         self.rt.block_on(
             self.hci_exports
-                .enqueue_command_with_complete(cmd.take_command().into()),
+                .enqueue_command_with_complete(cmd.take_payload().into()),
         );
 
         let f = sink
@@ -53,15 +53,15 @@ impl HciLayerFacade for HciLayerFacadeService {
         ctx.spawn(f);
     }
 
-    fn enqueue_command_with_status(
+    fn send_command_with_status(
         &mut self,
         ctx: RpcContext<'_>,
-        mut cmd: CommandMsg,
+        mut cmd: Command,
         sink: UnarySink<Empty>,
     ) {
         self.rt.block_on(
             self.hci_exports
-                .enqueue_command_with_complete(cmd.take_command().into()),
+                .enqueue_command_with_complete(cmd.take_payload().into()),
         );
 
         let f = sink
@@ -77,10 +77,10 @@ impl HciLayerFacade for HciLayerFacadeService {
         ctx.spawn(f);
     }
 
-    fn register_event_handler(
+    fn request_event(
         &mut self,
         ctx: RpcContext<'_>,
-        code: EventCodeMsg,
+        code: EventRequest,
         sink: UnarySink<Empty>,
     ) {
         self.rt.block_on(
@@ -101,50 +101,50 @@ impl HciLayerFacade for HciLayerFacadeService {
         ctx.spawn(f);
     }
 
-    fn register_le_event_handler(
+    fn request_le_subevent(
         &mut self,
         _ctx: RpcContext<'_>,
-        _code: LeSubeventCodeMsg,
+        _code: EventRequest,
         _sink: UnarySink<Empty>,
     ) {
         unimplemented!()
     }
 
-    fn send_acl_data(&mut self, _ctx: RpcContext<'_>, _data: AclMsg, _sink: UnarySink<Empty>) {
+    fn send_acl(&mut self, _ctx: RpcContext<'_>, _data: AclPacket, _sink: UnarySink<Empty>) {
         unimplemented!()
     }
 
-    fn fetch_events(
+    fn stream_events(
         &mut self,
         _ctx: RpcContext<'_>,
         _req: Empty,
-        mut resp: ServerStreamingSink<EventMsg>,
+        mut resp: ServerStreamingSink<Event>,
     ) {
         let evt_rx = self.hci_exports.evt_rx.clone();
 
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
-                let mut evt = EventMsg::default();
-                evt.set_event(event.to_vec());
+                let mut evt = Event::default();
+                evt.set_payload(event.to_vec());
                 resp.send((evt, WriteFlags::default())).await.unwrap();
             }
         });
     }
 
-    fn fetch_le_subevents(
+    fn stream_le_subevents(
         &mut self,
         _ctx: RpcContext<'_>,
         _req: Empty,
-        mut _resp: ServerStreamingSink<LeSubeventMsg>,
+        mut _resp: ServerStreamingSink<LeSubevent>,
     ) {
         unimplemented!()
     }
 
-    fn fetch_acl_packets(
+    fn stream_acl(
         &mut self,
         _ctx: RpcContext<'_>,
         _req: Empty,
-        mut _resp: ServerStreamingSink<AclMsg>,
+        mut _resp: ServerStreamingSink<AclPacket>,
     ) {
         unimplemented!()
     }

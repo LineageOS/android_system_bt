@@ -16,9 +16,38 @@
 
 from google.protobuf import empty_pb2 as empty_proto
 from cert.event_stream import EventStream
+from cert.event_stream import FilteringEventStream
+from cert.event_stream import IEventStream
 from cert.closable import Closable
 from cert.closable import safeClose
+from cert.captures import HciCaptures
+from cert.truth import assertThat
 from hal import facade_pb2 as hal_facade
+from bluetooth_packets_python3.hci_packets import WriteScanEnableBuilder
+from bluetooth_packets_python3.hci_packets import ScanEnable
+from bluetooth_packets_python3.hci_packets import AclPacketBuilder
+from bluetooth_packets_python3 import RawBuilder
+from bluetooth_packets_python3.hci_packets import BroadcastFlag
+from bluetooth_packets_python3.hci_packets import PacketBoundaryFlag
+from bluetooth_packets_python3 import hci_packets
+
+
+class PyHalAclConnection(IEventStream):
+
+    def __init__(self, handle, acl_stream, device):
+        self.handle = int(handle)
+        self.device = device
+        self.our_acl_stream = FilteringEventStream(acl_stream, None)
+
+    def send(self, pb_flag, b_flag, data):
+        acl = AclPacketBuilder(self.handle, pb_flag, b_flag, RawBuilder(data))
+        self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl.Serialize())))
+
+    def send_first(self, data):
+        self.send(PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE, BroadcastFlag.POINT_TO_POINT, bytes(data))
+
+    def get_event_queue(self):
+        return self.our_acl_stream.get_event_queue()
 
 
 class PyHal(Closable):
@@ -44,5 +73,44 @@ class PyHal(Closable):
     def send_hci_command(self, command):
         self.device.hal.SendCommand(hal_facade.Command(payload=bytes(command.Serialize())))
 
-    def send_acl(self, acl):
-        self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl)))
+    def send_acl(self, handle, pb_flag, b_flag, data):
+        acl = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(data))
+        self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl.Serialize())))
+
+    def send_acl_first(self, handle, data):
+        self.send_acl(handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE, BroadcastFlag.POINT_TO_POINT, data)
+
+    def read_own_address(self):
+        self.send_hci_command(hci_packets.ReadBdAddrBuilder())
+        read_bd_addr = HciCaptures.ReadBdAddrCompleteCapture()
+        assertThat(self.hci_event_stream).emits(read_bd_addr)
+        return read_bd_addr.get().GetBdAddr()
+
+    def enable_inquiry_and_page_scan(self):
+        self.send_hci_command(WriteScanEnableBuilder(ScanEnable.INQUIRY_AND_PAGE_SCAN))
+
+    def initiate_connection(self, remote_addr):
+        self.send_hci_command(
+            hci_packets.CreateConnectionBuilder(
+                remote_addr if isinstance(remote_addr, str) else remote_addr.decode('utf-8'),
+                0xcc18,  # Packet Type
+                hci_packets.PageScanRepetitionMode.R1,
+                0x0,
+                hci_packets.ClockOffsetValid.INVALID,
+                hci_packets.CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH))
+
+    def accept_connection(self):
+        connection_request = HciCaptures.ConnectionRequestCapture()
+        assertThat(self.hci_event_stream).emits(connection_request)
+
+        self.send_hci_command(
+            hci_packets.AcceptConnectionRequestBuilder(connection_request.get().GetBdAddr(),
+                                                       hci_packets.AcceptConnectionRequestRole.REMAIN_PERIPHERAL))
+        return self.complete_connection()
+
+    def complete_connection(self):
+        connection_complete = HciCaptures.ConnectionCompleteCapture()
+        assertThat(self.hci_event_stream).emits(connection_complete)
+
+        handle = connection_complete.get().GetConnectionHandle()
+        return PyHalAclConnection(handle, self.acl_stream, self.device)

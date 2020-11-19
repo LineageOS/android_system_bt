@@ -6,13 +6,15 @@ import "google/protobuf/empty.proto";
 
 service HciHalFacade {
   rpc SendCommand(Command) returns (google.protobuf.Empty) {}
-  rpc SendAcl(AclPacket) returns (google.protobuf.Empty) {}
-  rpc SendSco(ScoPacket) returns (google.protobuf.Empty) {}
-  rpc SendIso(IsoPacket) returns (google.protobuf.Empty) {}
-
   rpc StreamEvents(google.protobuf.Empty) returns (stream Event) {}
+
+  rpc SendAcl(AclPacket) returns (google.protobuf.Empty) {}
   rpc StreamAcl(google.protobuf.Empty) returns (stream AclPacket) {}
+
+  rpc SendSco(ScoPacket) returns (google.protobuf.Empty) {}
   rpc StreamSco(google.protobuf.Empty) returns (stream ScoPacket) {}
+
+  rpc SendIso(IsoPacket) returns (google.protobuf.Empty) {}
   rpc StreamIso(google.protobuf.Empty) returns (stream IsoPacket) {}
 }
 
