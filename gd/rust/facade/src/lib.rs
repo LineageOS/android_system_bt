@@ -104,11 +104,7 @@ impl FacadeServiceManager {
             while let Some(cmd) = rx.recv().await {
                 match cmd {
                     LifecycleCommand::Start { req, done } => {
-                        let registry = {
-                            let mut builder = RegistryBuilder::new();
-                            builder.register_module(stack_module);
-                            Arc::new(builder.build())
-                        };
+                        let registry = Arc::new(RegistryBuilder::new().register_module(stack_module).build());
 
                         registry.inject(local_rt.clone()).await;
                         if let Some(rc_port) = rootcanal_port {

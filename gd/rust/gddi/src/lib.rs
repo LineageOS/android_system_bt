@@ -45,17 +45,19 @@ impl RegistryBuilder {
     }
 
     /// Registers a module with this registry
-    pub fn register_module<F>(&mut self, init: F)
+    pub fn register_module<F>(self, init: F) -> Self
     where
-        F: Fn(&mut Self),
+        F: Fn(Self) -> Self,
     {
-        init(self);
+        init(self)
     }
 
     /// Registers a provider function with this registry
-    pub fn register_provider<T: 'static>(&mut self, f: ProviderFnBox) {
+    pub fn register_provider<T: 'static>(mut self, f: ProviderFnBox) -> Self {
         self.providers
             .insert(TypeId::of::<T>(), Provider { f: Arc::new(f) });
+
+        self
     }
 
     /// Construct the Registry from this builder
