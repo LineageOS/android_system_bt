@@ -158,6 +158,19 @@ class SecurityTest(GdBaseTestClass):
         initiator.wait_for_bond_event(expected_init_bond_event)
         responder.wait_for_bond_event(expected_resp_bond_event)
 
+    def _run_ssp_passkey(self, initiator, responder, expected_init_bond_event, expected_resp_bond_event):
+        initiator.enable_secure_simple_pairing()
+        responder.enable_secure_simple_pairing()
+        initiator.create_bond(responder.get_address(), common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self._verify_ssp_passkey(initiator, responder, expected_init_bond_event, expected_resp_bond_event)
+
+    def _verify_ssp_passkey(self, initiator, responder, expected_init_bond_event, expected_resp_bond_event):
+        responder.send_io_caps(initiator.get_address())
+        passkey = initiator.wait_for_passkey(responder.get_address())
+        responder.input_passkey(initiator.get_address(), passkey)
+        initiator.wait_for_bond_event(expected_init_bond_event)
+        responder.wait_for_bond_event(expected_resp_bond_event)
+
     def test_setup_teardown(self):
         """
             Make sure our setup and teardown is sane
@@ -451,5 +464,34 @@ class SecurityTest(GdBaseTestClass):
                                        common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
         self.dut_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
         self.cert_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+        self.dut_security.wait_for_disconnect_event()
+        self.cert_security.wait_for_disconnect_event()
+
+    def test_successful_dut_initiated_ssp_keyboard(self):
+        dut_io_capability = IoCapabilities.DISPLAY_YES_NO_IO_CAP
+        dut_auth_reqs = AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION
+        dut_oob_present = OobDataPresent.NOT_PRESENT
+        cert_io_capability = IoCapabilities.KEYBOARD_ONLY
+        cert_auth_reqs = AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION
+        cert_oob_present = OobDataPresent.NOT_PRESENT
+        self.dut_security.set_io_capabilities(dut_io_capability)
+        self.dut_security.set_authentication_requirements(dut_auth_reqs)
+        self.cert_security.set_io_capabilities(cert_io_capability)
+        self.cert_security.set_authentication_requirements(cert_auth_reqs)
+
+        self._run_ssp_passkey(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
+            expected_resp_bond_event=BondMsgType.DEVICE_BONDED)
+
+        self.dut_security.remove_bond(self.cert_security.get_address(),
+                                      common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.cert_security.remove_bond(self.dut_security.get_address(),
+                                       common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+
+        self.dut_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+        self.cert_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+
         self.dut_security.wait_for_disconnect_event()
         self.cert_security.wait_for_disconnect_event()

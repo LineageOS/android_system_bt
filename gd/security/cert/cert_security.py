@@ -193,6 +193,43 @@ class CertSecurity(PySecurity):
             return (list(complete.GetC192()), list(complete.GetR192()), list(complete.GetC256()),
                     list(complete.GetR256()))
 
+    def input_passkey(self, address, passkey):
+        """
+            Pretend to answer the pairing dialog as a user
+        """
+        logging.info("Cert: Waiting for PASSKEY request")
+        assertThat(self._hci_event_stream).emits(HciMatchers.EventWithCode(hci_packets.EventCode.USER_PASSKEY_REQUEST))
+        logging.info("Cert: Send user input passkey %d for %s" % (passkey, address))
+        peer = address.decode('utf-8')
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.ENTRY_STARTED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.CLEARED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ERASED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.DIGIT_ENTERED), True)
+        self._enqueue_hci_command(
+            hci_packets.SendKeypressNotificationBuilder(peer, hci_packets.KeypressNotificationType.ENTRY_COMPLETED),
+            True)
+        self._enqueue_hci_command(hci_packets.UserPasskeyRequestReplyBuilder(peer, passkey), True)
+
     def send_ui_callback(self, address, callback_type, b, uid):
         """
             Pretend to answer the pairing dailog as a user
@@ -223,6 +260,15 @@ class CertSecurity(PySecurity):
         # TODO(optedoblivion): Figure this out and remove (see classic_pairing_handler.cc)
         #self._secure_connections_enabled = True
 
+    def send_io_caps(self, address):
+        logging.info("Cert: Waiting for IO_CAPABILITY_REQUEST")
+        assertThat(self._hci_event_stream).emits(HciMatchers.IoCapabilityRequest())
+        logging.info("Cert: Sending IO_CAPABILITY_REQUEST_REPLY")
+        oob_data_present = hci_packets.OobDataPresent.NOT_PRESENT
+        self._enqueue_hci_command(
+            hci_packets.IoCapabilityRequestReplyBuilder(
+                address.decode('utf8'), self._io_caps, oob_data_present, self._auth_reqs), True)
+
     def accept_pairing(self, dut_address, reply_boolean):
         """
             Here we handle the pairing events at the HCI level
@@ -231,13 +277,7 @@ class CertSecurity(PySecurity):
         assertThat(self._hci_event_stream).emits(HciMatchers.LinkKeyRequest())
         logging.info("Cert: Sending LINK_KEY_REQUEST_NEGATIVE_REPLY")
         self._enqueue_hci_command(hci_packets.LinkKeyRequestNegativeReplyBuilder(dut_address.decode('utf8')), True)
-        logging.info("Cert: Waiting for IO_CAPABILITY_REQUEST")
-        assertThat(self._hci_event_stream).emits(HciMatchers.IoCapabilityRequest())
-        logging.info("Cert: Sending IO_CAPABILITY_REQUEST_REPLY")
-        self._enqueue_hci_command(
-            hci_packets.IoCapabilityRequestReplyBuilder(
-                dut_address.decode('utf8'), self._io_caps, hci_packets.OobDataPresent.NOT_PRESENT, self._auth_reqs),
-            True)
+        self.send_io_caps(dut_address)
         logging.info("Cert: Waiting for USER_CONFIRMATION_REQUEST")
         assertThat(self._hci_event_stream).emits(HciMatchers.UserConfirmationRequest())
         logging.info("Cert: Sending Simulated User Response '%s'" % reply_boolean)
@@ -258,15 +298,7 @@ class CertSecurity(PySecurity):
     def accept_oob_pairing(self, dut_address):
         logging.info("Cert: Waiting for IO_CAPABILITY_RESPONSE")
         assertThat(self._hci_event_stream).emits(HciMatchers.IoCapabilityResponse())
-        logging.info("Cert: Waiting for IO_CAPABILITY_REQUEST")
-        assertThat(self._hci_event_stream).emits(HciMatchers.IoCapabilityRequest())
-        logging.info("Cert: Sending IO_CAPABILITY_REQUEST_REPLY")
-        oob_data_present = hci_packets.OobDataPresent.NOT_PRESENT
-        self._enqueue_hci_command(
-            hci_packets.IoCapabilityRequestReplyBuilder(
-                dut_address.decode('utf8'), self._io_caps, oob_data_present, self._auth_reqs), True)
-        assertThat(self._hci_event_stream).emits(
-            HciMatchers.CommandComplete(hci_packets.OpCode.IO_CAPABILITY_REQUEST_REPLY))
+        self.send_io_caps(dut_address)
         logging.info("Cert: Waiting for SIMPLE_PAIRING_COMPLETE")
         ssp_complete_capture = HciCaptures.SimplePairingCompleteCapture()
         assertThat(self._hci_event_stream).emits(ssp_complete_capture)
