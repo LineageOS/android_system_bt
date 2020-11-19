@@ -787,6 +787,7 @@ enum ErrorCode: 8 {
   LINK_LAYER_COLLISION = 0x23,
   ENCRYPTION_MODE_NOT_ACCEPTABLE = 0x25,
   CONTROLLER_BUSY = 0x3A,
+  CONNECTION_FAILED_ESTABLISHMENT = 0x3E,
 }
 
 // Events that are defined with their respective commands
