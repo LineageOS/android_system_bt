@@ -14,7 +14,7 @@ use rootservice::*;
 use rootservice_grpc::{create_root_facade, RootFacade};
 
 use bt_hal::facade::HciHalFacadeService;
-use bt_hal::hal_facade_module;
+use bt_hal::hal_module;
 use bt_hal::rootcanal_hal::RootcanalConfig;
 use bt_hci::facade::HciLayerFacadeService;
 use bt_hci::hci_module;
@@ -34,7 +34,7 @@ use futures::executor::block_on;
 module! {
     stack_module,
     submodules {
-        hal_facade_module,
+        hal_module,
         hci_module,
     }
 }
@@ -113,10 +113,6 @@ impl FacadeServiceManager {
                         let registry = {
                             let mut builder = RegistryBuilder::new();
                             builder.register_module(stack_module);
-                            if rootcanal_port.is_some() {
-                                builder.register_module(bt_hal::rootcanal_hal_module);
-                            }
-
                             Arc::new(builder.build())
                         };
 
