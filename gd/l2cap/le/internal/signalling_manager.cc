@@ -173,13 +173,6 @@ void LeSignallingManager::OnConnectionParameterUpdateResponse(SignalId signal_id
 
 void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid remote_cid, Mtu mtu, uint16_t mps,
                                               uint16_t initial_credits) {
-  if (!IsPsmValid(psm)) {
-    LOG_WARN("Invalid psm received from remote psm:%d remote_cid:%d", psm, remote_cid);
-    send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
-                             LeCreditBasedConnectionResponseResult::LE_PSM_NOT_SUPPORTED);
-    return;
-  }
-
   if (remote_cid == kInvalidCid) {
     LOG_WARN("Invalid remote cid received from remote psm:%d remote_cid:%d", psm, remote_cid);
     send_connection_response(signal_id, kInvalidCid, 0, 0, 0,

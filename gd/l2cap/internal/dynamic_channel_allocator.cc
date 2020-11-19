@@ -28,8 +28,6 @@ namespace l2cap {
 namespace internal {
 
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm psm, Cid remote_cid) {
-  ASSERT_LOG(IsPsmValid(psm), "Psm 0x%x is invalid", psm);
-
   if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
     LOG_INFO("Remote cid 0x%x is used", remote_cid);
     return nullptr;
@@ -54,8 +52,6 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
 
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateReservedChannel(Cid reserved_cid, Psm psm,
                                                                                      Cid remote_cid) {
-  ASSERT_LOG(IsPsmValid(psm), "Psm 0x%x is invalid", psm);
-
   if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
     LOG_INFO("Remote cid 0x%x is used", remote_cid);
     return nullptr;
