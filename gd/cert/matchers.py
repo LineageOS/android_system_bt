@@ -31,7 +31,7 @@ class HciMatchers(object):
 
     @staticmethod
     def CommandComplete(opcode=None):
-        return lambda msg: HciMatchers._is_matching_command_complete(msg.event, opcode)
+        return lambda msg: HciMatchers._is_matching_command_complete(msg.payload, opcode)
 
     @staticmethod
     def ExtractMatchingCommandComplete(packet_bytes, opcode=None):
@@ -57,7 +57,7 @@ class HciMatchers(object):
 
     @staticmethod
     def EventWithCode(event_code):
-        return lambda msg: HciMatchers._is_matching_event(msg.event, event_code)
+        return lambda msg: HciMatchers._is_matching_event(msg.payload, event_code)
 
     @staticmethod
     def ExtractEventWithCode(packet_bytes, event_code):
@@ -78,7 +78,7 @@ class HciMatchers(object):
 
     @staticmethod
     def LeEventWithCode(subevent_code):
-        return lambda msg: HciMatchers._extract_matching_le_event(msg.event, subevent_code) is not None
+        return lambda msg: HciMatchers._extract_matching_le_event(msg.payload, subevent_code) is not None
 
     @staticmethod
     def ExtractLeEventWithCode(packet_bytes, subevent_code):
@@ -96,7 +96,7 @@ class HciMatchers(object):
 
     @staticmethod
     def LeConnectionComplete():
-        return lambda msg: HciMatchers._extract_le_connection_complete(msg.event) is not None
+        return lambda msg: HciMatchers._extract_le_connection_complete(msg.payload) is not None
 
     @staticmethod
     def ExtractLeConnectionComplete(packet_bytes):
@@ -162,6 +162,11 @@ class HciMatchers(object):
     @staticmethod
     def RemoteOobDataRequest():
         return lambda event: HciMatchers.EventWithCode(EventCode.REMOTE_OOB_DATA_REQUEST)
+
+    @staticmethod
+    def LoopbackOf(packet):
+        data = bytes(hci_packets.LoopbackCommandBuilder(packet).Serialize())
+        return lambda event: data == event.payload
 
 
 class NeighborMatchers(object):
