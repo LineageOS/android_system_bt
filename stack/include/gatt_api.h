@@ -115,6 +115,69 @@ typedef enum : uint8_t {
   GATT_OP_CODE_MAX = (GATT_HANDLE_VALUE_CONF + 1),
 } tGATT_OP_CODE;
 
+inline std::string gatt_op_code_text(const tGATT_OP_CODE& op_code) {
+  switch (op_code) {
+    case GATT_RSP_ERROR:
+      return std::string("GATT_RSP_ERROR");
+    case GATT_REQ_MTU:
+      return std::string("GATT_REQ_MTU");
+    case GATT_RSP_MTU:
+      return std::string("GATT_RSP_MTU");
+    case GATT_REQ_FIND_INFO:
+      return std::string("GATT_REQ_FIND_INFO");
+    case GATT_RSP_FIND_INFO:
+      return std::string("GATT_RSP_FIND_INFO");
+    case GATT_REQ_FIND_TYPE_VALUE:
+      return std::string("GATT_REQ_FIND_TYPE_VALUE");
+    case GATT_RSP_FIND_TYPE_VALUE:
+      return std::string("GATT_RSP_FIND_TYPE_VALUE");
+    case GATT_REQ_READ_BY_TYPE:
+      return std::string("GATT_REQ_READ_BY_TYPE");
+    case GATT_RSP_READ_BY_TYPE:
+      return std::string("GATT_RSP_READ_BY_TYPE");
+    case GATT_REQ_READ:
+      return std::string("GATT_REQ_READ");
+    case GATT_RSP_READ:
+      return std::string("GATT_RSP_READ");
+    case GATT_REQ_READ_BLOB:
+      return std::string("GATT_REQ_READ_BLOB");
+    case GATT_RSP_READ_BLOB:
+      return std::string("GATT_RSP_READ_BLOB");
+    case GATT_REQ_READ_MULTI:
+      return std::string("GATT_REQ_READ_MULTI");
+    case GATT_RSP_READ_MULTI:
+      return std::string("GATT_RSP_READ_MULTI");
+    case GATT_REQ_READ_BY_GRP_TYPE:
+      return std::string("GATT_REQ_READ_BY_GRP_TYPE");
+    case GATT_RSP_READ_BY_GRP_TYPE:
+      return std::string("GATT_RSP_READ_BY_GRP_TYPE");
+    case GATT_REQ_WRITE:
+      return std::string("GATT_REQ_WRITE");
+    case GATT_RSP_WRITE:
+      return std::string("GATT_RSP_WRITE");
+    case GATT_CMD_WRITE:
+      return std::string("GATT_CMD_WRITE");
+    case GATT_REQ_PREPARE_WRITE:
+      return std::string("GATT_REQ_PREPARE_WRITE");
+    case GATT_RSP_PREPARE_WRITE:
+      return std::string("GATT_RSP_PREPARE_WRITE");
+    case GATT_REQ_EXEC_WRITE:
+      return std::string("GATT_REQ_EXEC_WRITE");
+    case GATT_RSP_EXEC_WRITE:
+      return std::string("GATT_RSP_EXEC_WRITE");
+    case GATT_HANDLE_VALUE_NOTIF:
+      return std::string("GATT_HANDLE_VALUE_NOTIF");
+    case GATT_HANDLE_VALUE_IND:
+      return std::string("GATT_HANDLE_VALUE_IND");
+    case GATT_HANDLE_VALUE_CONF:
+      return std::string("GATT_HANDLE_VALUE_CONF");
+    case GATT_SIGN_CMD_WRITE:
+      return std::string("GATT_SIGN_CMD_WRITE");
+    case GATT_OP_CODE_MAX:
+      return std::string("GATT_OP_CODE_MAX");
+  };
+}
+
 #define GATT_HANDLE_IS_VALID(x) ((x) != 0)
 
 #define GATT_CONN_UNKNOWN 0
