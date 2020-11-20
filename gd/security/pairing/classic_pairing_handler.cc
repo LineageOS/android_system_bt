@@ -153,6 +153,7 @@ void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  NotifyUiDisplayPasskeyInput();
 }
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
@@ -308,6 +309,8 @@ void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
       break;
     case hci::OobDataPresent::P_192_PRESENT:
       LOG_INFO("P192 Present");
+      // TODO(optedoblivion): Figure this out and remove
+      secure_connections_enabled_ = false;
       if (secure_connections_enabled_) {
         GetChannel()->SendCommand(hci::RemoteOobExtendedDataRequestReplyBuilder::Create(
             GetRecord()->GetPseudoAddress()->GetAddress(),
@@ -340,7 +343,6 @@ void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
           this->remote_p256_oob_data_.GetC(),
           this->remote_p256_oob_data_.GetR()));
       break;
-      break;
   }
 }
 
@@ -348,6 +350,7 @@ void ClassicPairingHandler::OnReceive(hci::UserPasskeyNotificationView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  NotifyUiDisplayPasskey(packet.GetPasskey());
 }
 
 void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
@@ -356,19 +359,19 @@ void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
   LOG_INFO("Notification Type: %s", hci::KeypressNotificationTypeText(packet.GetNotificationType()).c_str());
   switch (packet.GetNotificationType()) {
     case hci::KeypressNotificationType::ENTRY_STARTED:
-      // Get ready to keep track of key input
+      // Tell the UI to highlight the first digit
       break;
     case hci::KeypressNotificationType::DIGIT_ENTERED:
-      // Append digit to key
+      // Tell the UI to move one digit to the right
       break;
     case hci::KeypressNotificationType::DIGIT_ERASED:
-      // erase last digit from key
+      // Tell the UI to move back one digit
       break;
     case hci::KeypressNotificationType::CLEARED:
-      // erase all digits from key
+      // Tell the UI to highlight the first digit again
       break;
     case hci::KeypressNotificationType::ENTRY_COMPLETED:
-      // set full key to security record
+      // Tell the UI to hide the dialog
       break;
   }
 }
