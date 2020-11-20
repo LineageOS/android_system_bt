@@ -69,15 +69,16 @@ static void bta_gattc_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
                                         uint16_t interval, uint16_t latency,
                                         uint16_t timeout, tGATT_STATUS status);
 
-static tGATT_CBACK bta_gattc_cl_cback = {bta_gattc_conn_cback,
-                                         bta_gattc_cmpl_cback,
-                                         bta_gattc_disc_res_cback,
-                                         bta_gattc_disc_cmpl_cback,
-                                         NULL,
-                                         bta_gattc_enc_cmpl_cback,
-                                         bta_gattc_cong_cback,
-                                         bta_gattc_phy_update_cback,
-                                         bta_gattc_conn_update_cback};
+static tGATT_CBACK bta_gattc_cl_cback = {
+    .p_conn_cb = bta_gattc_conn_cback,
+    .p_cmpl_cb = bta_gattc_cmpl_cback,
+    .p_disc_res_cb = bta_gattc_disc_res_cback,
+    .p_disc_cmpl_cb = bta_gattc_disc_cmpl_cback,
+    .p_req_cb = nullptr,
+    .p_enc_cmpl_cb = bta_gattc_enc_cmpl_cback,
+    .p_congestion_cb = bta_gattc_cong_cback,
+    .p_phy_update_cb = bta_gattc_phy_update_cback,
+    .p_conn_update_cb = bta_gattc_conn_update_cback};
 
 /* opcode(tGATTC_OPTYPE) order has to be comply with internal event order */
 static uint16_t bta_gattc_opcode_to_int_evt[] = {
