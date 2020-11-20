@@ -15,7 +15,6 @@ service SecurityModuleFacade {
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc SetIoCapability(IoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
-  rpc SetOobDataPresent(OobDataPresentMessage) returns (google.protobuf.Empty) {}
   rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetLeAuthRequirements(LeAuthRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetLeMaximumEncryptionKeySize(LeMaximumEncryptionKeySizeMessage) returns (google.protobuf.Empty) {}

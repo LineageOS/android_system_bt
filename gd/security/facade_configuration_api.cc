@@ -39,10 +39,6 @@ void FacadeConfigurationApi::SetAuthenticationRequirements(hci::AuthenticationRe
       authentication_requirement);
 }
 
-void FacadeConfigurationApi::SetOobDataPresent(hci::OobDataPresent data_present) {
-  security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetOobDataPresent, data_present);
-}
-
 void FacadeConfigurationApi::SetLeIoCapability(security::IoCapability io_capability) {
   security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetLeIoCapability, io_capability);
 }

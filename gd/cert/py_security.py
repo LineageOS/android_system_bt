@@ -101,13 +101,6 @@ class PySecurity(Closable):
             auth_reqs, "ERROR"))
         self._device.security.SetAuthenticationRequirements(AuthenticationRequirementsMessage(requirement=auth_reqs))
 
-    def set_oob_data(self, data_present):
-        """
-            Set the Out-of-band data present flag for SSP pairing
-        """
-        logging.info("DUT: setting OOB data present to '%s'" % data_present)
-        self._device.security.SetOobDataPresent(OobDataPresentMessage(data_present=data_present))
-
     def send_ui_callback(self, address, callback_type, b, uid):
         """
             Send a callback from the UI as if the user pressed a button on the dialog
