@@ -38,8 +38,9 @@ void SecurityManagerImpl::DispatchPairingHandler(
     std::shared_ptr<record::SecurityRecord> record,
     bool locally_initiated,
     hci::IoCapability io_capability,
-    hci::OobDataPresent oob_present,
-    hci::AuthenticationRequirements auth_requirements) {
+    hci::AuthenticationRequirements auth_requirements,
+    pairing::OobData remote_p192_oob_data,
+    pairing::OobData remote_p256_oob_data) {
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
   auto entry = pairing_handler_map_.find(record->GetPseudoAddress()->GetAddress());
@@ -67,7 +68,8 @@ void SecurityManagerImpl::DispatchPairingHandler(
   auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(
       record->GetPseudoAddress()->GetAddress(), pairing_handler);
   pairing_handler_map_.insert(std::move(new_entry));
-  pairing_handler->Initiate(locally_initiated, io_capability, oob_present, auth_requirements);
+  pairing_handler->Initiate(
+      locally_initiated, io_capability, auth_requirements, remote_p192_oob_data, remote_p256_oob_data);
 }
 
 void SecurityManagerImpl::Init() {
@@ -108,6 +110,11 @@ void SecurityManagerImpl::Init() {
 }
 
 void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
+  this->CreateBondOutOfBand(device, pairing::OobData(), pairing::OobData());
+}
+
+void SecurityManagerImpl::CreateBondOutOfBand(
+    hci::AddressWithType device, pairing::OobData remote_p192_oob_data, pairing::OobData remote_p256_oob_data) {
   auto record = security_database_.FindOrCreate(device);
   if (record->IsPaired()) {
     // Bonded means we saved it, but the caller doesn't care
@@ -121,15 +128,11 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
           record,
           true,
           this->local_io_capability_,
-          this->local_oob_data_present_,
-          this->local_authentication_requirements_);
+          this->local_authentication_requirements_,
+          remote_p192_oob_data,
+          remote_p256_oob_data);
     }
   }
-}
-
-void SecurityManagerImpl::CreateBondOutOfBand(
-    hci::AddressWithType device, pairing::OobData remote_p192_oob_data, pairing::OobData remote_p256_oob_data) {
-  // TODO(optedoblivion): Implement when ClassicPairingHandler is ready.
 }
 
 void SecurityManagerImpl::CreateBondLe(hci::AddressWithType address) {
@@ -253,7 +256,7 @@ void SecurityManagerImpl::HandleEvent(T packet) {
     auto bd_addr = packet.GetBdAddr();
     auto event_code = packet.GetEventCode();
 
-    if (event_code != hci::EventCode::LINK_KEY_REQUEST && event_code != hci::EventCode::IO_CAPABILITY_RESPONSE) {
+    if (event_code != hci::EventCode::LINK_KEY_REQUEST) {
       LOG_ERROR("No classic pairing handler for device '%s' ready for command %s ", bd_addr.ToString().c_str(),
                 hci::EventCodeText(event_code).c_str());
       return;
@@ -268,8 +271,9 @@ void SecurityManagerImpl::HandleEvent(T packet) {
         record,
         false,
         this->local_io_capability_,
-        this->local_oob_data_present_,
-        this->local_authentication_requirements_);
+        this->local_authentication_requirements_,
+        pairing::OobData(),
+        pairing::OobData());
     entry = pairing_handler_map_.find(bd_addr);
   }
   entry->second->OnReceive(packet);
@@ -765,10 +769,6 @@ void SecurityManagerImpl::SetAuthenticationRequirements(hci::AuthenticationRequi
   this->local_authentication_requirements_ = authentication_requirements;
 }
 
-void SecurityManagerImpl::SetOobDataPresent(hci::OobDataPresent data_present) {
-  this->local_oob_data_present_ = data_present;
-}
-
 void SecurityManagerImpl::InternalEnforceSecurityPolicy(
     hci::AddressWithType remote,
     l2cap::classic::SecurityPolicy policy,
@@ -804,8 +804,9 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
       record,
       true,
       this->local_io_capability_,
-      this->local_oob_data_present_,
-      std::as_const(authentication_requirements));
+      std::as_const(authentication_requirements),
+      pairing::OobData(),
+      pairing::OobData());
 }
 
 void SecurityManagerImpl::UpdateLinkSecurityCondition(hci::AddressWithType remote) {
