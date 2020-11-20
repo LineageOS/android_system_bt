@@ -78,6 +78,27 @@ class PySecurity(Closable):
         self._device.security.CreateBond(
             common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type))
 
+    def create_bond_out_of_band(self, address, type, p192_oob_data, p256_oob_data):
+        """
+            Triggers stack under test to create bond using Out of Band method
+        """
+
+        logging.debug("DUT: Creating OOB bond to '%s' from '%s'" % (str(address), str(self._device.address)))
+
+        self._device.security.CreateBondOutOfBand(
+            OobDataBondMessage(
+                address=common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type),
+                p192_data=OobDataMessage(
+                    address=common.BluetoothAddressWithType(
+                        address=common.BluetoothAddress(address=address), type=type),
+                    le_sc_confirmation_value=bytes(bytearray(p192_oob_data[0])),
+                    le_sc_random_value=bytes(bytearray(p192_oob_data[1]))),
+                p256_data=OobDataMessage(
+                    address=common.BluetoothAddressWithType(
+                        address=common.BluetoothAddress(address=address), type=type),
+                    le_sc_confirmation_value=bytes(bytearray(p256_oob_data[0])),
+                    le_sc_random_value=bytes(bytearray(p256_oob_data[1])))))
+
     def remove_bond(self, address, type):
         """
             Removes bond from stack under test
@@ -100,13 +121,6 @@ class PySecurity(Closable):
         logging.debug("DUT: setting Authentication Requirements data to '%s'" % self._auth_reqs_name_lookup.get(
             auth_reqs, "ERROR"))
         self._device.security.SetAuthenticationRequirements(AuthenticationRequirementsMessage(requirement=auth_reqs))
-
-    def set_oob_data(self, data_present):
-        """
-            Set the Out-of-band data present flag for SSP pairing
-        """
-        logging.info("DUT: setting OOB data present to '%s'" % data_present)
-        self._device.security.SetOobDataPresent(OobDataPresentMessage(data_present=data_present))
 
     def send_ui_callback(self, address, callback_type, b, uid):
         """
@@ -134,6 +148,14 @@ class PySecurity(Closable):
         pass
 
     def accept_pairing(self, cert_address, reply_boolean):
+        """
+            Here we pass, but in cert we perform pairing flow tasks.
+            This was added here in order to be more dynamic, but the stack
+            under test will handle the pairing flow.
+        """
+        pass
+
+    def accept_oob_pairing(self, cert_address, reply_boolean, p192_data, p256_data):
         """
             Here we pass, but in cert we perform pairing flow tasks.
             This was added here in order to be more dynamic, but the stack

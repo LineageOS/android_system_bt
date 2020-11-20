@@ -130,15 +130,15 @@ PairingType SecurityManager::GetSimplePairingType() {
   bool peer_requires_mitm = (peer_authentication_requirements_ == AuthenticationType::NO_BONDING_MITM) ||
                             (peer_authentication_requirements_ == AuthenticationType::DEDICATED_BONDING_MITM) ||
                             (peer_authentication_requirements_ == AuthenticationType::GENERAL_BONDING_MITM);
-  if (!(peer_requires_mitm || host_requires_mitm)) {
-    return PairingType::AUTO_CONFIRMATION;
-  }
   if (peer_oob_present_flag_ != 0 || host_oob_present_flag_ != 0) {
-    if (peer_oob_present_flag_ != 0) {
+    if (host_oob_present_flag_ == 0) {
       return PairingType::PEER_HAS_OUT_OF_BAND;
     } else {
       return PairingType::OUT_OF_BAND;
     }
+  }
+  if (!(peer_requires_mitm || host_requires_mitm)) {
+    return PairingType::AUTO_CONFIRMATION;
   }
   LOG_INFO("%s: host does%s require peer does%s require MITM",
            peer_address_.ToString().c_str(), host_requires_mitm ? "" : "n't",

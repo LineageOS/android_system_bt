@@ -63,6 +63,8 @@ class L2capClassicModule : public bluetooth::Module {
    */
   virtual SecurityInterface* GetSecurityInterface(os::Handler* handler, LinkSecurityInterfaceListener* listener);
 
+  friend security::SecurityModule;
+
  protected:
   void ListDependencies(ModuleList* list) override;
 
@@ -77,8 +79,6 @@ class L2capClassicModule : public bluetooth::Module {
  private:
   struct impl;
   std::unique_ptr<impl> pimpl_;
-
-  friend security::SecurityModule;
 
   DISALLOW_COPY_AND_ASSIGN(L2capClassicModule);
 };
