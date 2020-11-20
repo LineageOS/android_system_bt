@@ -449,6 +449,12 @@ static void gatt_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
         p_clcb->ccc_result++;
       }
       break;
+
+    case GATT_DISC_SRVC_ALL:
+    case GATT_DISC_INC_SRVC:
+    case GATT_DISC_MAX:
+      LOG_ERROR("Illegal discovery item handled");
+      break;
   }
 }
 
