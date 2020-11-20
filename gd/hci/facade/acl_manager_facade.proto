@@ -44,7 +44,7 @@ message ConnectionCommandMsg {
 }
 
 message ConnectionEvent {
-  bytes event = 1;
+  bytes payload = 1;
 }
 
 message AclData {
