@@ -69,7 +69,6 @@ class CertSecurity(PySecurity):
 
     _hci_event_stream = None
     _io_caps = hci_packets.IoCapability.DISPLAY_ONLY
-    _remote_oob_data = None
     _auth_reqs = hci_packets.AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION
     _secure_connections_enabled = False
 
@@ -130,13 +129,6 @@ class CertSecurity(PySecurity):
         logging.info("Cert: setting Authentication Requirements data to '%s'" % self._auth_reqs_name_lookup.get(
             auth_reqs, "ERROR"))
         self._auth_reqs = self._auth_req_lookup.get(auth_reqs, hci_packets.AuthenticationRequirements.GENERAL_BONDING)
-
-    def set_remote_oob_data(self, remote_data):
-        """
-            Set the Out-of-band data for SSP pairing
-        """
-        logging.info("Cert: setting OOB data present to '%s'" % remote_data)
-        self._remote_oob_data = remote_data
 
     def get_oob_data_from_controller(self, pb_oob_data_type):
         """
