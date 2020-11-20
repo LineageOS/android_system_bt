@@ -78,6 +78,27 @@ class PySecurity(Closable):
         self._device.security.CreateBond(
             common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type))
 
+    def create_bond_out_of_band(self, address, type, p192_oob_data, p256_oob_data):
+        """
+            Triggers stack under test to create bond using Out of Band method
+        """
+
+        logging.debug("DUT: Creating OOB bond to '%s' from '%s'" % (str(address), str(self._device.address)))
+
+        self._device.security.CreateBondOutOfBand(
+            OobDataBondMessage(
+                address=common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type),
+                p192_data=OobDataMessage(
+                    address=common.BluetoothAddressWithType(
+                        address=common.BluetoothAddress(address=address), type=type),
+                    le_sc_confirmation_value=bytes(bytearray(p192_oob_data[0])),
+                    le_sc_random_value=bytes(bytearray(p192_oob_data[1]))),
+                p256_data=OobDataMessage(
+                    address=common.BluetoothAddressWithType(
+                        address=common.BluetoothAddress(address=address), type=type),
+                    le_sc_confirmation_value=bytes(bytearray(p256_oob_data[0])),
+                    le_sc_random_value=bytes(bytearray(p256_oob_data[1])))))
+
     def remove_bond(self, address, type):
         """
             Removes bond from stack under test
@@ -127,6 +148,14 @@ class PySecurity(Closable):
         pass
 
     def accept_pairing(self, cert_address, reply_boolean):
+        """
+            Here we pass, but in cert we perform pairing flow tasks.
+            This was added here in order to be more dynamic, but the stack
+            under test will handle the pairing flow.
+        """
+        pass
+
+    def accept_oob_pairing(self, cert_address, reply_boolean, p192_data, p256_data):
         """
             Here we pass, but in cert we perform pairing flow tasks.
             This was added here in order to be more dynamic, but the stack
