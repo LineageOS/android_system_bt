@@ -25,7 +25,7 @@
 #include <base/run_loop.h>
 #include <base/sequenced_task_runner.h>
 #include <base/threading/thread.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 
 #include <signal.h>
 #include <string.h>
