@@ -749,20 +749,20 @@ void SecurityManagerImpl::SetLeOobDataPresent(OobDataFlag data_present) {
   this->local_le_oob_data_present_ = data_present;
 }
 
-void SecurityManagerImpl::GetOutOfBandData(
-    std::array<uint8_t, 16>* le_sc_confirmation_value, std::array<uint8_t, 16>* le_sc_random_value) {
+void SecurityManagerImpl::GetLeOutOfBandData(
+    std::array<uint8_t, 16>* confirmation_value, std::array<uint8_t, 16>* random_value) {
   local_le_oob_data_ = std::make_optional<MyOobData>(PairingHandlerLe::GenerateOobData());
-  *le_sc_confirmation_value = local_le_oob_data_.value().c;
-  *le_sc_random_value = local_le_oob_data_.value().r;
+  *confirmation_value = local_le_oob_data_.value().c;
+  *random_value = local_le_oob_data_.value().r;
 }
 
 void SecurityManagerImpl::SetOutOfBandData(
     hci::AddressWithType remote_address,
-    std::array<uint8_t, 16> le_sc_confirmation_value,
-    std::array<uint8_t, 16> le_sc_random_value) {
+    std::array<uint8_t, 16> confirmation_value,
+    std::array<uint8_t, 16> random_value) {
   remote_oob_data_address_ = remote_address;
-  remote_oob_data_le_sc_c_ = le_sc_confirmation_value;
-  remote_oob_data_le_sc_r_ = le_sc_random_value;
+  remote_oob_data_le_sc_c_ = confirmation_value;
+  remote_oob_data_le_sc_r_ = random_value;
 }
 
 void SecurityManagerImpl::SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirements) {
