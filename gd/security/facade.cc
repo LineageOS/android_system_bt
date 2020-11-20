@@ -22,6 +22,7 @@
 #include "l2cap/le/l2cap_le_module.h"
 #include "os/handler.h"
 #include "security/facade.grpc.pb.h"
+#include "security/pairing/oob_data.h"
 #include "security/security_manager_listener.h"
 #include "security/security_module.h"
 #include "security/ui.h"
@@ -93,8 +94,40 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
                             ::google::protobuf::Empty* response) override {
     hci::Address peer;
     ASSERT(hci::Address::FromString(request->address().address(), peer));
-    hci::AddressType peer_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
+    hci::AddressType peer_type = static_cast<hci::AddressType>(request->type());
     security_module_->GetSecurityManager()->CreateBond(hci::AddressWithType(peer, peer_type));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status CreateBondOutOfBand(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::security::OobDataBondMessage* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address().address(), peer));
+    hci::AddressType peer_type = static_cast<hci::AddressType>(request->address().type());
+    pairing::SimplePairingHash c;
+    pairing::SimplePairingRandomizer r;
+    std::copy(
+        std::begin(request->p192_data().le_sc_confirmation_value()),
+        std::end(request->p192_data().le_sc_confirmation_value()),
+        c.data());
+    std::copy(
+        std::begin(request->p192_data().le_sc_random_value()),
+        std::end(request->p192_data().le_sc_random_value()),
+        r.data());
+    pairing::OobData p192_data(c, r);
+    std::copy(
+        std::begin(request->p256_data().le_sc_confirmation_value()),
+        std::end(request->p256_data().le_sc_confirmation_value()),
+        c.data());
+    std::copy(
+        std::begin(request->p256_data().le_sc_random_value()),
+        std::end(request->p256_data().le_sc_random_value()),
+        r.data());
+    pairing::OobData p256_data(c, r);
+    security_module_->GetSecurityManager()->CreateBondOutOfBand(
+        hci::AddressWithType(peer, peer_type), p192_data, p256_data);
     return ::grpc::Status::OK;
   }
 
