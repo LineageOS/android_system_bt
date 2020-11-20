@@ -78,29 +78,32 @@ bool generate_cpp_headers_one_file(
     return false;
   }
 
-  out_file << "\n\n";
-  out_file << "#pragma once\n";
-  out_file << "\n\n";
-  out_file << "#include <cstdint>\n";
-  out_file << "#include <sstream>\n";
-  out_file << "#include <string>\n";
-  out_file << "#include <type_traits>\n";
-  out_file << "#include <functional>\n";
-  out_file << "\n\n";
-  out_file << "#include \"os/log.h\"\n";
-  out_file << "#include \"packet/base_packet_builder.h\"\n";
-  out_file << "#include \"packet/bit_inserter.h\"\n";
-  out_file << "#include \"packet/custom_field_fixed_size_interface.h\"\n";
-  out_file << "#include \"packet/iterator.h\"\n";
-  out_file << "#include \"packet/packet_builder.h\"\n";
-  out_file << "#include \"packet/packet_struct.h\"\n";
-  out_file << "#include \"packet/packet_view.h\"\n";
-  out_file << "\n#if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)\n";
-  out_file << "#include \"packet/raw_builder.h\"\n";
-  out_file << "\n#endif\n";
-  out_file << "#include \"packet/parser/checksum_type_checker.h\"\n";
-  out_file << "#include \"packet/parser/custom_type_checker.h\"\n";
-  out_file << "\n\n";
+  out_file <<
+      R"(
+#pragma once
+
+#include <cstdint>
+#include <functional>
+#include <sstream>
+#include <string>
+#include <type_traits>
+
+#include "os/log.h"
+#include "packet/base_packet_builder.h"
+#include "packet/bit_inserter.h"
+#include "packet/custom_field_fixed_size_interface.h"
+#include "packet/iterator.h"
+#include "packet/packet_builder.h"
+#include "packet/packet_struct.h"
+#include "packet/packet_view.h"
+
+#if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)
+#include "packet/raw_builder.h"
+#endif
+#include "packet/parser/checksum_type_checker.h"
+#include "packet/parser/custom_type_checker.h"
+
+)";
 
   for (const auto& c : decls.type_defs_queue_) {
     if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
@@ -121,22 +124,26 @@ bool generate_cpp_headers_one_file(
       ((CustomFieldDef*)c.second)->GenUsing(out_file);
     }
   }
-  out_file << "\n\n";
+  out_file <<
+      R"(
 
-  out_file << "using ::bluetooth::packet::BasePacketBuilder;";
-  out_file << "using ::bluetooth::packet::BitInserter;";
-  out_file << "using ::bluetooth::packet::CustomFieldFixedSizeInterface;";
-  out_file << "using ::bluetooth::packet::CustomTypeChecker;";
-  out_file << "using ::bluetooth::packet::Iterator;";
-  out_file << "using ::bluetooth::packet::kLittleEndian;";
-  out_file << "using ::bluetooth::packet::PacketBuilder;";
-  out_file << "using ::bluetooth::packet::PacketStruct;";
-  out_file << "using ::bluetooth::packet::PacketView;";
-  out_file << "\n#if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)\n";
-  out_file << "using ::bluetooth::packet::RawBuilder;";
-  out_file << "\n#endif\n";
-  out_file << "using ::bluetooth::packet::parser::ChecksumTypeChecker;";
-  out_file << "\n\n";
+using ::bluetooth::packet::BasePacketBuilder;
+using ::bluetooth::packet::BitInserter;
+using ::bluetooth::packet::CustomFieldFixedSizeInterface;
+using ::bluetooth::packet::CustomTypeChecker;
+using ::bluetooth::packet::Iterator;
+using ::bluetooth::packet::kLittleEndian;
+using ::bluetooth::packet::PacketBuilder;
+using ::bluetooth::packet::PacketStruct;
+using ::bluetooth::packet::PacketView;
+
+#if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)
+using ::bluetooth::packet::RawBuilder;
+#endif
+
+using ::bluetooth::packet::parser::ChecksumTypeChecker;
+
+)";
 
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
