@@ -59,3 +59,11 @@ void EnumGen::GenLogging(std::ostream& stream) {
   stream << "  return os << " << e_.name_ << "Text(param);";
   stream << "}\n";
 }
+
+void EnumGen::GenRustDef(std::ostream& stream) {
+  stream << "pub enum " << e_.name_ << " {";
+  for (const auto& pair : e_.constants_) {
+    stream << util::ConstantCaseToCamelCase(pair.second) << " = 0x" << std::hex << pair.first << std::dec << ",";
+  }
+  stream << "}";
+}
