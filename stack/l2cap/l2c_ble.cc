@@ -44,11 +44,6 @@
 
 using base::StringPrintf;
 
-tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
-                                              uint16_t psm, bool is_originator,
-                                              tBTM_SEC_CALLBACK* p_callback,
-                                              void* p_ref_data);
-
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 
 /*******************************************************************************
@@ -1127,6 +1122,10 @@ bool l2cble_create_conn(tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 void l2c_link_processs_ble_num_bufs(uint16_t num_lm_ble_bufs) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return;
+  }
+
   if (num_lm_ble_bufs == 0) {
     num_lm_ble_bufs = L2C_DEF_NUM_BLE_BUF_SHARED;
     l2cb.num_lm_acl_bufs -= L2C_DEF_NUM_BLE_BUF_SHARED;
