@@ -92,7 +92,7 @@ std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& address) {
 /** Add a device from the background connection list.  Returns true if device
  * added to the list, or already in list, false otherwise */
 bool background_connect_add(uint8_t app_id, const RawAddress& address) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return L2CA_ConnectFixedChnl(L2CAP_ATT_CID, address);
   }
 
@@ -205,7 +205,7 @@ void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& address) {
 /** Add a device to the direcgt connection list.  Returns true if device
  * added to the list, false otherwise */
 bool direct_connect_add(uint8_t app_id, const RawAddress& address) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return L2CA_ConnectFixedChnl(L2CAP_ATT_CID, address);
   }
 

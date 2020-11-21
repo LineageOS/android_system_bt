@@ -62,7 +62,7 @@ void BTM_SetLeConnectionModeToSlow() {
 
 namespace bluetooth {
 namespace shim {
-bool is_gd_shim_enabled() { return false; }
+bool is_gd_l2cap_enabled() { return false; }
 }  // namespace shim
 }  // namespace bluetooth
 
