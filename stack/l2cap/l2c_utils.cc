@@ -117,6 +117,11 @@ void l2cu_set_lcb_handle(struct t_l2c_linkcb& p_lcb, uint16_t handle) {
  *
  ******************************************************************************/
 void l2cu_update_lcb_4_bonding(const RawAddress& p_bd_addr, bool is_bonding) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    bluetooth::shim::L2CA_SetBondingState(p_bd_addr, is_bonding);
+    return;
+  }
+
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
 
   if (p_lcb) {
@@ -2019,6 +2024,10 @@ void l2cu_process_our_cfg_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
  *
  ******************************************************************************/
 void l2cu_device_reset(void) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return;
+  }
+
   int xx;
   tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
 
@@ -2265,6 +2274,10 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority,
  *
  ******************************************************************************/
 void l2cu_set_non_flushable_pbf(bool is_supported) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return;
+  }
+
   if (is_supported)
     l2cb.non_flushable_pbf =
         (L2CAP_PKT_START_NON_FLUSHABLE << L2CAP_PKT_TYPE_SHIFT);
