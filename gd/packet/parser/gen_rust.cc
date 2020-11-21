@@ -54,6 +54,19 @@ bool generate_rust_source_one_file(
     }
   }
 
+  for (auto& s : decls.type_defs_queue_) {
+    if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
+      const auto* struct_def = dynamic_cast<const StructDef*>(s.second);
+      struct_def->GenRustDef(out_file);
+      out_file << "\n\n";
+    }
+  }
+
+  for (const auto& packet_def : decls.packet_defs_queue_) {
+    packet_def.second.GenRustDef(out_file);
+    out_file << "\n\n";
+  }
+
   out_file.close();
   return true;
 }
