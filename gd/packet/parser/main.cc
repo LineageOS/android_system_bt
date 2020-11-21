@@ -110,6 +110,8 @@ bool generate_cpp_headers_one_file(const Declarations& decls, const std::filesys
 
   auto gen_file = gen_path / (input_filename + ".h");
 
+  std::cout << "generating " << gen_file << std::endl;
+
   std::ofstream out_file;
   out_file.open(gen_file);
   if (!out_file.is_open()) {
@@ -270,6 +272,7 @@ bool generate_pybind11_sources_one_file(const Declarations& decls, const std::fi
   std::vector<std::ofstream> out_file_shards(num_shards);
   for (size_t i = 0; i < out_file_shards.size(); i++) {
     auto filename = gen_path / (input_filename + "_python3_shard_" + std::to_string(i) + ".cc");
+    std::cout << "generating " << filename << std::endl;
     auto& out_file = out_file_shards[i];
     out_file.open(filename);
     if (!out_file.is_open()) {
@@ -416,11 +419,13 @@ int main(int argc, const char** argv) {
   std::string root_namespace = "bluetooth";
   // Number of shards per output pybind11 cc file
   size_t num_shards = 1;
+  bool generate_rust = false;
   std::queue<std::filesystem::path> input_files;
   const std::string arg_out = "--out=";
   const std::string arg_include = "--include=";
   const std::string arg_namespace = "--root_namespace=";
   const std::string arg_num_shards = "--num_shards=";
+  const std::string arg_rust = "--rust";
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
@@ -432,6 +437,8 @@ int main(int argc, const char** argv) {
       root_namespace = arg.substr(arg_namespace.size());
     } else if (arg.find(arg_num_shards) == 0) {
       num_shards = std::stoul(arg.substr(arg_num_shards.size()));
+    } else if (arg.find(arg_rust) == 0) {
+      generate_rust = true;
     } else {
       input_files.emplace(std::filesystem::current_path() / std::filesystem::path(arg));
     }
@@ -442,20 +449,29 @@ int main(int argc, const char** argv) {
     return 1;
   }
 
+  std::cout << "out dir: " << out_dir << std::endl;
+
   while (!input_files.empty()) {
     Declarations declarations;
+    std::cout << "parsing: " << input_files.front() << std::endl;
     if (!parse_declarations_one_file(input_files.front(), &declarations)) {
       std::cerr << "Cannot parse " << input_files.front() << " correctly" << std::endl;
       return 2;
     }
-    if (!generate_cpp_headers_one_file(declarations, input_files.front(), include_dir, out_dir, root_namespace)) {
-      std::cerr << "Didn't generate cpp headers for " << input_files.front() << std::endl;
-      return 3;
-    }
-    if (!generate_pybind11_sources_one_file(declarations, input_files.front(), include_dir, out_dir, root_namespace,
-                                            num_shards)) {
-      std::cerr << "Didn't generate pybind11 sources for " << input_files.front() << std::endl;
-      return 4;
+    if (generate_rust) {
+      std::cout << "generating rust" << std::endl;
+      // TODO do fun things
+    } else {
+      std::cout << "generating c++ and pybind11" << std::endl;
+      if (!generate_cpp_headers_one_file(declarations, input_files.front(), include_dir, out_dir, root_namespace)) {
+        std::cerr << "Didn't generate cpp headers for " << input_files.front() << std::endl;
+        return 3;
+      }
+      if (!generate_pybind11_sources_one_file(
+              declarations, input_files.front(), include_dir, out_dir, root_namespace, num_shards)) {
+        std::cerr << "Didn't generate pybind11 sources for " << input_files.front() << std::endl;
+        return 4;
+      }
     }
     input_files.pop();
   }

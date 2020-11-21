@@ -334,6 +334,9 @@ class DualModeController : public Device {
   // 7.3.61
   void ReadInquiryResponseTransmitPowerLevel(CommandPacketView args);
 
+  // 7.3.63
+  void SendKeypressNotification(CommandPacketView args);
+
   // 7.3.79
   void WriteLeHostSupport(CommandPacketView args);
 

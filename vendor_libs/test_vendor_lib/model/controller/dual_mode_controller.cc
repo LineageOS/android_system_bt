@@ -135,6 +135,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
               RemoteOobExtendedDataRequestReply);
   SET_HANDLER(OpCode::READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL,
               ReadInquiryResponseTransmitPowerLevel);
+  SET_HANDLER(OpCode::SEND_KEYPRESS_NOTIFICATION, SendKeypressNotification);
   SET_HANDLER(OpCode::READ_LOCAL_OOB_DATA, ReadLocalOobData);
   SET_HANDLER(OpCode::READ_LOCAL_OOB_EXTENDED_DATA, ReadLocalOobExtendedData);
   SET_HANDLER(OpCode::WRITE_SIMPLE_PAIRING_MODE, WriteSimplePairingMode);
@@ -711,6 +712,7 @@ void DualModeController::PinCodeRequestNegativeReply(
 
   send_event_(std::move(packet));
 }
+
 void DualModeController::UserPasskeyRequestReply(CommandPacketView command) {
   auto command_view = gd_hci::UserPasskeyRequestReplyView::Create(
       gd_hci::SecurityCommandView::Create(command));
@@ -819,6 +821,19 @@ void DualModeController::ReadInquiryResponseTransmitPowerLevel(
       bluetooth::hci::ReadInquiryResponseTransmitPowerLevelCompleteBuilder::
           Create(kNumCommandPackets, ErrorCode::SUCCESS, tx_power);
   send_event_(std::move(packet));
+}
+
+void DualModeController::SendKeypressNotification(CommandPacketView command) {
+  auto command_view = gd_hci::SendKeypressNotificationView::Create(
+      gd_hci::SecurityCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+
+  auto peer = command_view.GetBdAddr();
+
+  auto status = link_layer_controller_.SendKeypressNotification(
+      peer, command_view.GetNotificationType());
+  send_event_(bluetooth::hci::SendKeypressNotificationCompleteBuilder::Create(
+      kNumCommandPackets, status, peer));
 }
 
 void DualModeController::ReadLocalOobData(CommandPacketView command) {

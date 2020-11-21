@@ -655,9 +655,11 @@ TEST_F(ClassicPairingHandlerTest, locally_initiatied_no_input_no_output_no_input
   // At this point the pairing handler thinks it has NOT_PRESENT
   ReceiveOobDataRequest(device_);
   security_command_view = GetLastCommand(hci_layer_);
-  auto oob_data_req_reply = hci::RemoteOobExtendedDataRequestReplyView::Create(security_command_view);
+  // NOTE(optedoblivion): Extended data is manually disabled in the pairing handler
+  // since the controller doesn't seem to currently have support.
+  auto oob_data_req_reply = hci::RemoteOobDataRequestReplyView::Create(security_command_view);
   ASSERT_TRUE(oob_data_req_reply.IsValid());
-  ASSERT_EQ(OpCode::REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY, oob_data_req_reply.GetOpCode());
+  ASSERT_EQ(OpCode::REMOTE_OOB_DATA_REQUEST_REPLY, oob_data_req_reply.GetOpCode());
   ReceiveSimplePairingComplete(hci::ErrorCode::SUCCESS, device_);
   std::array<uint8_t, 16> link_key = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5};
   hci::KeyType key_type = hci::KeyType::DEBUG_COMBINATION;
