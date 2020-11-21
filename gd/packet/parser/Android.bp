@@ -33,6 +33,8 @@ cc_binary_host {
         "main.cc",
         "language_y.yy",
         "language_l.ll",
+        "gen_cpp.cc",
+        "gen_rust.cc",
     ],
     static_libs: [
         "libc++fs",
