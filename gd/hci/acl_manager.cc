@@ -27,6 +27,7 @@
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
+#include "hci_acl_manager_generated.h"
 #include "security/security_module.h"
 
 namespace bluetooth {
@@ -101,6 +102,9 @@ struct AclManager::impl {
       le_connection_pair->second.assembler_.on_incoming_packet(*packet);
     }
   }
+
+  void Dump(
+      std::promise<flatbuffers::Offset<AclManagerData>> promise, flatbuffers::FlatBufferBuilder* fb_builder) const;
 
   const AclManager& acl_manager_;
 
@@ -259,6 +263,29 @@ std::string AclManager::ToString() const {
 const ModuleFactory AclManager::Factory = ModuleFactory([]() { return new AclManager(); });
 
 AclManager::~AclManager() = default;
+
+void AclManager::impl::Dump(
+    std::promise<flatbuffers::Offset<AclManagerData>> promise, flatbuffers::FlatBufferBuilder* fb_builder) const {
+  auto title = fb_builder->CreateString("----- Acl Manager Dumpsys -----");
+  AclManagerDataBuilder builder(*fb_builder);
+  builder.add_title(title);
+  flatbuffers::Offset<AclManagerData> dumpsys_data = builder.Finish();
+  promise.set_value(dumpsys_data);
+}
+
+DumpsysDataFinisher AclManager::GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) const {
+  ASSERT(fb_builder != nullptr);
+
+  std::promise<flatbuffers::Offset<AclManagerData>> promise;
+  auto future = promise.get_future();
+  pimpl_->Dump(std::move(promise), fb_builder);
+
+  auto dumpsys_data = future.get();
+
+  return [dumpsys_data](DumpsysDataBuilder* dumpsys_builder) {
+    dumpsys_builder->add_hci_acl_manager_dumpsys_data(dumpsys_data);
+  };
+}
 
 }  // namespace hci
 }  // namespace bluetooth
