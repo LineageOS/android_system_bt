@@ -19,6 +19,18 @@
 #include <functional>
 #include <list>
 
+#define LOG_DUMPSYS(fd, fmt, args...)                 \
+  do {                                                \
+    dprintf(fd, "%s " fmt "\n", DUMPSYS_TAG, ##args); \
+  } while (false)
+
+#define LOG_DUMPSYS_TITLE(fd, title)         \
+  do {                                       \
+    dprintf(fd, " ----- %s -----\n", title); \
+  } while (false)
+
+#define BOOL_TEXT(b) ((b) ? "true" : "false")
+
 namespace bluetooth {
 namespace shim {
 
