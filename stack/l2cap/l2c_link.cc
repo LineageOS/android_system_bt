@@ -322,7 +322,6 @@ void l2c_link_sec_comp2(const RawAddress& p_bda,
  ******************************************************************************/
 bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    btm_acl_removed(handle);
     return false;
   }
 
@@ -735,6 +734,11 @@ void l2c_link_adjust_chnl_allocation(void) {
 }
 
 void l2c_link_init() {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    // GD L2cap gets this info through GD ACL
+    return;
+  }
+
   const controller_t* controller = controller_get_interface();
 
   l2cb.num_lm_acl_bufs = controller->get_acl_buffer_count_classic();
@@ -1330,6 +1334,11 @@ void l2c_link_segments_xmitted(BT_HDR* p_msg) {
 }
 
 tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    bluetooth::shim::L2CA_ConnectForSecurity(bd_addr);
+    return BTM_SUCCESS;
+  }
+
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_lcb && (p_lcb->link_state == LST_CONNECTED ||
                 p_lcb->link_state == LST_CONNECTING)) {
