@@ -21,7 +21,6 @@ module! {
 
 #[provides]
 async fn provide_facade(hal_exports: HalExports, rt: Arc<Runtime>) -> HciHalFacadeService {
-    println!("starting hal facade");
     HciHalFacadeService {
         rt,
         cmd_tx: hal_exports.cmd_tx,

@@ -17,9 +17,11 @@ use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr};
 use std::sync::{Arc, Mutex};
 use tokio::net::TcpStream;
 use tokio::runtime::Runtime;
+use log::debug;
 
 fn main() {
     let sigint = install_sigint();
+    bt_common::init_logging();
     let rt = Arc::new(Runtime::new().unwrap());
     rt.block_on(async_main(Arc::clone(&rt), sigint));
 }
@@ -106,7 +108,7 @@ lazy_static! {
 extern "C" fn handle_sigint(_: i32) {
     let mut sigint_tx = SIGINT_TX.lock().unwrap();
     if let Some(tx) = &*sigint_tx {
-        println!("Stopping gRPC root server due to SIGINT");
+        debug!("Stopping gRPC root server due to SIGINT");
         tx.unbounded_send(()).unwrap();
     }
     *sigint_tx = None;

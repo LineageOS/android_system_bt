@@ -10,6 +10,7 @@ use gddi::{module, provides};
 use grpcio::*;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
+use log::error;
 
 module! {
     facade_module,
@@ -52,7 +53,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         let f = sink
             .success(Empty::default())
             .map_err(|e: grpcio::Error| {
-                println!(
+                error!(
                     "failed to handle enqueue_command_with_complete request: {:?}",
                     e
                 )
@@ -76,7 +77,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         let f = sink
             .success(Empty::default())
             .map_err(|e: grpcio::Error| {
-                println!(
+                error!(
                     "failed to handle enqueue_command_with_status request: {:?}",
                     e
                 )
@@ -95,7 +96,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         let f = sink
             .success(Empty::default())
             .map_err(|e: grpcio::Error| {
-                println!(
+                error!(
                     "failed to handle enqueue_command_with_status request: {:?}",
                     e
                 )
