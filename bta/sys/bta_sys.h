@@ -90,10 +90,18 @@ typedef uint8_t tBTA_SYS_ID;
 
 inline std::string BtaIdSysText(tBTA_SYS_ID sys_id) {
   switch (sys_id) {
+    case BTA_ID_DM_SEARCH:
+      return std::string("Scanner");
+    case BTA_ID_PAN:
+      return std::string("PAN Personal area network");
+    case BTA_ID_AV:
+      return std::string("Advanced audio/video");
     case BTA_ID_HD:
-      return std::string("Hid Device");
+      return std::string("HID Human interface device");
     case BTA_ID_GATTC:
-      return std::string("Gatt client");
+      return std::string("GATT client");
+    case BTA_ID_GATTS:
+      return std::string("GATT server");
     default:
       return std::string("Unknown");
   }
