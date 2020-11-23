@@ -122,8 +122,7 @@ declaration
   | packet_definition
     {
       DEBUG() << "FOUND PACKET\n\n";
-      decls->AddPacketDef($1->name_, std::move(*$1));
-      delete $1;
+      decls->AddPacketDef($1->name_, $1);
     }
   | struct_definition
     {
@@ -317,6 +316,7 @@ packet_definition
         ERRORLOC(LOC) << "Could not find packet " << parent_packet_name
                   << " used as parent for " << packet_name;
       }
+
 
       auto packet_definition = new PacketDef(std::move(packet_name), std::move(field_definition_list), parent_packet);
       packet_definition->AssignSizeFields();

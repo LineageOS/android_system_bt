@@ -50,6 +50,8 @@ class StructDef : public ParentDef {
 
   Size GetStructOffsetForField(std::string field_name) const;
 
+  void GenRustDef(std::ostream& s) const;
+
  private:
   Size total_size_;
 };

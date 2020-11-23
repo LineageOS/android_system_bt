@@ -88,7 +88,10 @@ bool parse_declarations_one_file(const std::filesystem::path& input_file, Declar
   }
 
   for (auto& packet_def : declarations->packet_defs_queue_) {
-    packet_def.second.SetEndianness(declarations->is_little_endian);
+    packet_def.second->SetEndianness(declarations->is_little_endian);
+    if (packet_def.second->parent_ != nullptr) {
+      packet_def.second->parent_->children_.push_back(packet_def.second);
+    }
   }
 
   return true;
