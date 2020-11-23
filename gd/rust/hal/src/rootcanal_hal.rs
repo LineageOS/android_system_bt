@@ -52,21 +52,28 @@ impl RootcanalHal {
         R: AsyncReadExt + Unpin,
     {
         let mut reader = BufReader::new(reader);
-        let header_size = H4_HEADER_SIZE + HciPacketHeaderSize::Event as usize;
         loop {
-            let mut header = BytesMut::with_capacity(1024);
-            header.resize(header_size, 0);
-            reader.read_exact(&mut header).await?;
-            let param_len: usize = header[2].into();
-            let mut payload = header.split_off(header_size);
-            payload.resize(param_len, 0);
-            reader.read_exact(&mut payload).await?;
-            let h4_type = header.split_to(H4_HEADER_SIZE);
-            header.unsplit(payload);
-            if h4_type[0] == HciPacketType::Event as u8 {
-                evt_tx.send(header.freeze()).unwrap();
-            } else if h4_type[0] == HciPacketType::Acl as u8 {
-                acl_tx.send(header.freeze()).unwrap();
+            let mut buffer = BytesMut::with_capacity(1024);
+            buffer.resize(H4_HEADER_SIZE, 0);
+            reader.read_exact(&mut buffer).await?;
+            if buffer[0] == HciPacketType::Event as u8 {
+                buffer.resize(HciPacketHeaderSize::Event as usize, 0);
+                reader.read_exact(&mut buffer).await?;
+                let len: usize = buffer[1].into();
+                let mut payload = buffer.split_off(HciPacketHeaderSize::Event as usize);
+                payload.resize(len, 0);
+                reader.read_exact(&mut payload).await?;
+                buffer.unsplit(payload);
+                evt_tx.send(buffer.freeze()).unwrap();
+            } else if buffer[0] == HciPacketType::Acl as u8 {
+                buffer.resize(HciPacketHeaderSize::Acl as usize, 0);
+                reader.read_exact(&mut buffer).await?;
+                let len: usize = (buffer[2] as u16 + ((buffer[3] as u16) << 8)).into();
+                let mut payload = buffer.split_off(HciPacketHeaderSize::Event as usize);
+                payload.resize(len, 0);
+                reader.read_exact(&mut payload).await?;
+                buffer.unsplit(payload);
+                acl_tx.send(buffer.freeze()).unwrap();
             }
         }
     }
