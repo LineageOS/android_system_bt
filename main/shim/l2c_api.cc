@@ -22,6 +22,7 @@
 #include "gd/l2cap/le/l2cap_le_module.h"
 #include "gd/os/log.h"
 #include "gd/os/queue.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/btm.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -273,6 +274,7 @@ void bluetooth::shim::L2CA_UseLegacySecurityModule() {
 
   bluetooth::shim::GetL2capLeModule()->InjectSecurityEnforcementInterface(
       &le_security_enforcement_shim_);
+  ACL_ConfigureLePrivacy(true);
 }
 
 /**

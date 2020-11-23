@@ -120,7 +120,7 @@ void ClassicSignallingManager::on_security_result_for_outgoing(
       dynamic_service_manager_->GetService(psm)->GetSecurityPolicy() !=
           SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK) {
     link_->Encrypt();
-    return;
+    // TODO(b/171253721): If we can receive ENCRYPTION_CHANGE event, we can send command after callback is received.
   }
 
   PendingCommand pending_command = {next_signal_id_, CommandCode::CONNECTION_REQUEST, psm, local_cid, {}, {}, {}};
