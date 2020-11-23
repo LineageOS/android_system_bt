@@ -20,7 +20,7 @@
 #include "declarations.h"
 
 bool generate_rust_source_one_file(
-    __attribute__((unused)) const Declarations& decls,
+    const Declarations& decls,
     const std::filesystem::path& input_file,
     const std::filesystem::path& include_dir,
     const std::filesystem::path& out_dir,
@@ -43,7 +43,16 @@ bool generate_rust_source_one_file(
     return false;
   }
 
-  out_file << "// @generated rust packets from " << input_file.filename().string();
+  out_file << "// @generated rust packets from " << input_file.filename().string() << "\n\n";
+
+  for (const auto& e : decls.type_defs_queue_) {
+    if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
+      const auto* enum_def = dynamic_cast<const EnumDef*>(e.second);
+      EnumGen gen(*enum_def);
+      gen.GenRustDef(out_file);
+      out_file << "\n\n";
+    }
+  }
 
   out_file.close();
   return true;
