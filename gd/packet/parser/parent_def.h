@@ -65,6 +65,8 @@ class ParentDef : public TypeDef {
 
   ParentDef* parent_{nullptr};
 
+  std::vector<ParentDef*> children_;
+
   std::map<std::string, std::variant<int64_t, std::string>> parent_constraints_;
   bool is_little_endian_;
 };

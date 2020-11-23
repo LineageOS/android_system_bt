@@ -47,7 +47,7 @@ class Declarations {
     return it->second;
   }
 
-  void AddPacketDef(std::string name, PacketDef def) {
+  void AddPacketDef(std::string name, PacketDef* def) {
     auto it = packet_defs_.find(name);
     if (it != packet_defs_.end()) {
       ERROR() << "Redefinition of Packet " << name;
@@ -62,7 +62,7 @@ class Declarations {
       return nullptr;
     }
 
-    return &(it->second);
+    return it->second;
   }
 
   void AddGroupDef(std::string name, FieldList* group_def) {
@@ -85,7 +85,7 @@ class Declarations {
 
   std::map<std::string, TypeDef*> type_defs_;
   std::deque<std::pair<std::string, TypeDef*>> type_defs_queue_;
-  std::map<std::string, PacketDef> packet_defs_;
-  std::deque<std::pair<std::string, PacketDef>> packet_defs_queue_;
+  std::map<std::string, PacketDef*> packet_defs_;
+  std::deque<std::pair<std::string, PacketDef*>> packet_defs_queue_;
   bool is_little_endian;
 };

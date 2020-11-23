@@ -739,3 +739,14 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 
   s << "}\n";
 }
+
+void PacketDef::GenRustDef(std::ostream& s) const {
+  if (!children_.empty()) {
+    s << "pub enum " << name_ << "Child {";
+    for (const auto& child : children_) {
+      s << child->name_ << "(" << child->name_ << "Packet),";
+    }
+    s << "}\n\n";
+  }
+  s << "pub struct " << name_ << "Packet {}";
+}

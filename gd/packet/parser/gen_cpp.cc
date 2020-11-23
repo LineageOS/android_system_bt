@@ -197,12 +197,12 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
   }
 
   for (const auto& packet_def : decls.packet_defs_queue_) {
-    packet_def.second.GenParserDefinition(out_file);
+    packet_def.second->GenParserDefinition(out_file);
     out_file << "\n\n";
   }
 
   for (const auto& packet_def : decls.packet_defs_queue_) {
-    packet_def.second.GenBuilderDefinition(out_file);
+    packet_def.second->GenBuilderDefinition(out_file);
     out_file << "\n\n";
   }
 
@@ -331,14 +331,14 @@ bool generate_pybind11_sources_one_file(
 
   for (const auto& packet_def : decls.packet_defs_queue_) {
     auto& out_file = get_out_file(symbol_count, symbol_total, &out_file_shards);
-    packet_def.second.GenParserDefinitionPybind11(out_file);
+    packet_def.second->GenParserDefinitionPybind11(out_file);
     out_file << "\n\n";
     symbol_count++;
   }
 
   for (const auto& p : decls.packet_defs_queue_) {
     auto& out_file = get_out_file(symbol_count, symbol_total, &out_file_shards);
-    p.second.GenBuilderDefinitionPybind11(out_file);
+    p.second->GenBuilderDefinitionPybind11(out_file);
     out_file << "\n\n";
     symbol_count++;
   }

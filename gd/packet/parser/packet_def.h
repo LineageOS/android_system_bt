@@ -64,4 +64,6 @@ class PacketDef : public ParentDef {
   void GenBuilderConstructor(std::ostream& s) const;
 
   void GenTestingFromView(std::ostream& s) const;
+
+  void GenRustDef(std::ostream& s) const;
 };
