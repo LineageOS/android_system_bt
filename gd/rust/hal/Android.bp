@@ -12,6 +12,7 @@ rust_library {
         "libgrpcio",
         "libtokio",
         "libprotobuf",
+        "libbt_packets",
     ],
     host_supported: true,
 }

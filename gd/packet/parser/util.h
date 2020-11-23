@@ -103,6 +103,31 @@ inline std::string UnderscoreToCamelCase(std::string value) {
   return camel_case.str();
 }
 
+inline std::string ConstantCaseToCamelCase(std::string value) {
+  if (value[0] < 'A' || value[0] > 'Z') {
+    ERROR() << value << " doesn't look like CONSTANT_CASE";
+  }
+
+  std::ostringstream camel_case;
+
+  bool capitalize = true;
+  for (unsigned char c : value) {
+    if (c == '_') {
+      capitalize = true;
+    } else {
+      if (capitalize) {
+        c = std::toupper(c);
+        capitalize = false;
+      } else {
+        c = std::tolower(c);
+      }
+      camel_case << c;
+    }
+  }
+
+  return camel_case.str();
+}
+
 inline bool IsEnumCase(std::string value) {
   if (value[0] < 'A' || value[0] > 'Z') {
     return false;

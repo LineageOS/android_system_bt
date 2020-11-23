@@ -4622,7 +4622,7 @@ packet VendorSpecificEvent : EventPacket (event_code = VENDOR_SPECIFIC) {
   _payload_,
 }
 
-enum qualityReportId : 8 {
+enum QualityReportId : 8 {
   MONITOR_MODE = 0x01,
   APPROACH_LSTO = 0x02,
   A2DP_AUDIO_CHOPPY = 0x03,
@@ -4634,7 +4634,7 @@ enum qualityReportId : 8 {
 }
 
 packet BqrEvent : VendorSpecificEvent (subevent_code = BQR_EVENT) {
-  quality_report_id : qualityReportId,
+  quality_report_id : QualityReportId,
   _payload_,
 }
 
