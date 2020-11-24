@@ -97,6 +97,7 @@ class LeAdvertisingManager : public bluetooth::Module {
   static constexpr AdvertiserId kInvalidId = 0xFF;
   static constexpr uint8_t kInvalidHandle = 0xFF;
   static constexpr uint8_t kAdvertisingSetIdMask = 0x0F;
+  static constexpr uint16_t kLeMaximumFragmentLength = 251;
   static constexpr FragmentPreference kFragment_preference = FragmentPreference::CONTROLLER_SHOULD_NOT;
   LeAdvertisingManager();
 
