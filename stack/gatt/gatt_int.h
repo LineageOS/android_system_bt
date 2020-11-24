@@ -230,13 +230,13 @@ typedef struct {
   uint16_t cid;
 } tGATT_SR_CMD;
 
-#define GATT_CH_CLOSE 0
-#define GATT_CH_CLOSING 1
-#define GATT_CH_CONN 2
-#define GATT_CH_CFG 3
-#define GATT_CH_OPEN 4
-
-typedef uint8_t tGATT_CH_STATE;
+typedef enum : uint8_t {
+  GATT_CH_CLOSE = 0,
+  GATT_CH_CLOSING = 1,
+  GATT_CH_CONN = 2,
+  GATT_CH_CFG = 3,
+  GATT_CH_OPEN = 4,
+} tGATT_CH_STATE;
 
 #define GATT_GATT_START_HANDLE 1
 #define GATT_GAP_START_HANDLE 20

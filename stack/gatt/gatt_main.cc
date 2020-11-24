@@ -969,7 +969,7 @@ void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {
   if (!p_tcb) return;
 
   VLOG(1) << __func__ << ": old=" << +p_tcb->ch_state
-          << " new=" << loghex(ch_state);
+          << " new=" << loghex(static_cast<uint8_t>(ch_state));
   p_tcb->ch_state = ch_state;
 }
 

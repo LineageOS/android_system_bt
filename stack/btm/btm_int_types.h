@@ -19,7 +19,10 @@
 #define BTM_INT_TYPES_H
 
 #include <cstdint>
+#include <memory>
+#include <string>
 
+#include "gd/common/circular_buffer.h"
 #include "osi/include/list.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_ble_int_types.h"
@@ -38,6 +41,27 @@
    BTM_SEC_LE_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_AUTHED)
 
 #define BTM_MAX_SCN_ 31  // PORT_MAX_RFC_PORTS system/bt/stack/include/rfcdefs.h
+
+constexpr size_t kMaxLogSize = 255;
+class TimestampedStringCircularBuffer
+    : public bluetooth::common::TimestampedCircularBuffer<std::string> {
+ public:
+  explicit TimestampedStringCircularBuffer(size_t size)
+      : bluetooth::common::TimestampedCircularBuffer<std::string>(size) {}
+
+  void Push(std::string s) {
+    bluetooth::common::TimestampedCircularBuffer<std::string>::Push(
+        s.substr(0, kMaxLogSize));
+  }
+
+  template <typename... Args>
+  void Push(Args... args) {
+    char buf[kMaxLogSize];
+    std::snprintf(buf, sizeof(buf), args...);
+    bluetooth::common::TimestampedCircularBuffer<std::string>::Push(
+        std::string(buf));
+  }
+};
 
 /*
  * Define device configuration structure
@@ -287,6 +311,8 @@ typedef struct {
   tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver;
 
   tACL_CB acl_cb_;
+
+  std::shared_ptr<TimestampedStringCircularBuffer> history_{nullptr};
 
  private:
   friend uint8_t BTM_AllocateSCN(void);

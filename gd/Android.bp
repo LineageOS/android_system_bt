@@ -480,6 +480,7 @@ genrule {
     srcs: [
         "common/init_flags.fbs",
         "dumpsys_data.fbs",
+        "hci/hci_acl_manager.fbs",
         "l2cap/classic/l2cap_classic_module.fbs",
         "shim/dumpsys.fbs",
     ],
@@ -487,6 +488,7 @@ genrule {
         "init_flags.bfbs",
         "dumpsys.bfbs",
         "dumpsys_data.bfbs",
+        "hci_acl_manager.bfbs",
         "l2cap_classic_module.bfbs",
     ],
 }
@@ -500,12 +502,14 @@ genrule {
     srcs: [
         "common/init_flags.fbs",
         "dumpsys_data.fbs",
+        "hci/hci_acl_manager.fbs",
         "l2cap/classic/l2cap_classic_module.fbs",
         "shim/dumpsys.fbs",
     ],
     out: [
         "dumpsys_data_generated.h",
         "dumpsys_generated.h",
+        "hci_acl_manager_generated.h",
         "init_flags_generated.h",
         "l2cap_classic_module_generated.h",
     ],
