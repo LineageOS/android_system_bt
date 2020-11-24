@@ -13,6 +13,7 @@ rust_library {
         "libtokio",
         "libprotobuf",
         "libbt_packets",
+        "libgddi",
     ],
     host_supported: true,
 }

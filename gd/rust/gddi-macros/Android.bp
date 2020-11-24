@@ -1,0 +1,11 @@
+rust_proc_macro {
+    name: "libgddi_macros",
+    crate_name: "gddi_macros",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libproc_macro2",
+        "libquote",
+        "libsyn",
+    ],
+}
