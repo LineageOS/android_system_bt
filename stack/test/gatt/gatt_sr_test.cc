@@ -83,7 +83,7 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
 }
 void gatt_act_discovery(tGATT_CLCB* p_clcb) {}
 bool gatt_disconnect(tGATT_TCB* p_tcb) { return false; }
-tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb) { return 0; }
+tGATT_CH_STATE gatt_get_ch_state(tGATT_TCB* p_tcb) { return GATT_CH_CLOSE; }
 tGATT_STATUS gatts_db_read_attr_value_by_type(
     tGATT_TCB& tcb, uint16_t cid, tGATT_SVC_DB* p_db, uint8_t op_code,
     BT_HDR* p_rsp, uint16_t s_handle, uint16_t e_handle, const Uuid& type,

@@ -124,8 +124,6 @@ typedef enum GattStatus : uint8_t {
 #define GATT_CONN_TERMINATE_PEER_USER HCI_ERR_PEER_USER
 /* 0x16 connectionterminated by local host  */
 #define GATT_CONN_TERMINATE_LOCAL_HOST HCI_ERR_CONN_CAUSE_LOCAL_HOST
-/* 0x03E connection fail to establish  */
-#define GATT_CONN_FAIL_ESTABLISH HCI_ERR_CONN_FAILED_ESTABLISHMENT
 /* 0x22 connection fail for LMP response tout */
 #define GATT_CONN_LMP_TIMEOUT HCI_ERR_LMP_RESPONSE_TIMEOUT
 /* 0x0100 L2CAP connection cancelled  */

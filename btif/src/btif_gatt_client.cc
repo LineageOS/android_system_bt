@@ -134,9 +134,6 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
 
   tBTA_GATTC* p_data = (tBTA_GATTC*)p_param;
   switch (event) {
-    case BTA_GATTC_DEREG_EVT:
-      break;
-
     case BTA_GATTC_EXEC_EVT: {
       HAL_CBACK(bt_gatt_callbacks, client->execute_write_cb,
                 p_data->exec_cmpl.conn_id, p_data->exec_cmpl.status);
@@ -193,14 +190,11 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_ACL_EVT:
-      LOG_INFO("BTA_GATTC_ACL_EVT: status = %d", p_data->status);
-      /* Ignore for now */
-      break;
-
+    case BTA_GATTC_DEREG_EVT:
     case BTA_GATTC_SEARCH_RES_EVT:
-      break;
-
     case BTA_GATTC_CANCEL_OPEN_EVT:
+    case BTA_GATTC_SRVC_DISC_DONE_EVT:
+      LOG_DEBUG("Ignoring event (%d)", event);
       break;
 
     case BTA_GATTC_CFG_MTU_EVT: {
@@ -234,7 +228,7 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     default:
-      LOG_ERROR("%s: Unhandled event (%d)!", __func__, event);
+      LOG_ERROR("Unhandled event (%d)!", event);
       break;
   }
 }
