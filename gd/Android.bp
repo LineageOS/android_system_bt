@@ -448,6 +448,28 @@ genrule {
     ],
 }
 
+genrule {
+    name: "BluetoothGeneratedPackets_rust",
+    tools: [
+        "bluetooth_packetgen",
+    ],
+    cmd: "$(location bluetooth_packetgen) --include=system/bt/gd --out=$(genDir) $(in) --rust",
+    srcs: [
+        "hci/hci_packets.pdl",
+    ],
+    out: [
+        "hci/hci_packets.rs",
+    ],
+}
+
+rust_library {
+    name: "libbt_packets",
+    crate_name: "bt_packets",
+    srcs: ["rust/packets/lib.rs", ":BluetoothGeneratedPackets_rust"],
+    edition: "2018",
+    host_supported: true,
+}
+
 // Generates binary schema data to be bundled and source file generated
 genrule {
     name: "BluetoothGeneratedDumpsysBinarySchema_bfbs",

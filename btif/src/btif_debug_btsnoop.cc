@@ -120,6 +120,10 @@ static size_t btsnoop_calculate_packet_length(uint16_t type,
       return len_hci_acl < length ? len_hci_acl : length;
     }
 
+    case BT_EVT_TO_LM_HCI_ISO:
+    case BT_EVT_TO_BTU_HCI_ISO:
+      return length;
+
     case BT_EVT_TO_LM_HCI_SCO:
     case BT_EVT_TO_BTU_HCI_SCO:
       // We're not logging SCO packets at this time since they are not currently

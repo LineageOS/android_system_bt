@@ -22,6 +22,7 @@
 #include "gd/l2cap/le/l2cap_le_module.h"
 #include "gd/os/log.h"
 #include "gd/os/queue.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/btm.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -31,6 +32,9 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_api.h"
+
+using bluetooth::hci::AddressWithType;
+using namespace bluetooth::l2cap;
 
 static bluetooth::shim::legacy::L2cap shim_l2cap;
 
@@ -273,6 +277,7 @@ void bluetooth::shim::L2CA_UseLegacySecurityModule() {
 
   bluetooth::shim::GetL2capLeModule()->InjectSecurityEnforcementInterface(
       &le_security_enforcement_shim_);
+  ACL_ConfigureLePrivacy(true);
 }
 
 /**
@@ -407,32 +412,24 @@ bool bluetooth::shim::L2CA_GetPeerFeatures(const RawAddress& bd_addr,
   return false;
 }
 
-using bluetooth::hci::AddressWithType;
-using bluetooth::l2cap::le::DynamicChannel;
-using bluetooth::l2cap::le::DynamicChannelManager;
-using bluetooth::l2cap::le::DynamicChannelService;
-using bluetooth::l2cap::le::FixedChannel;
-using bluetooth::l2cap::le::FixedChannelManager;
-using bluetooth::l2cap::le::FixedChannelService;
-
 static constexpr uint16_t kAttCid = 4;
-static constexpr uint16_t kSmpCid = 6;
 
 struct LeFixedChannelHelper {
   LeFixedChannelHelper(uint16_t cid) : cid_(cid) {}
 
   uint16_t cid_;
 
-  void on_registration_complete(FixedChannelManager::RegistrationResult result,
-                                std::unique_ptr<FixedChannelService> service) {
-    if (result != FixedChannelManager::RegistrationResult::SUCCESS) {
+  void on_registration_complete(
+      le::FixedChannelManager::RegistrationResult result,
+      std::unique_ptr<le::FixedChannelService> service) {
+    if (result != le::FixedChannelManager::RegistrationResult::SUCCESS) {
       LOG(ERROR) << "Channel is not registered. cid=" << +cid_;
       return;
     }
     channel_service_ = std::move(service);
   }
 
-  std::unique_ptr<FixedChannelService> channel_service_ = nullptr;
+  std::unique_ptr<le::FixedChannelService> channel_service_ = nullptr;
 
   void on_channel_close(bluetooth::hci::AddressWithType device,
                         bluetooth::hci::ErrorCode error_code) {
@@ -443,7 +440,7 @@ struct LeFixedChannelHelper {
     (freg_.pL2CA_FixedConn_Cb)(cid_, address, true, 0, 2);
   }
 
-  void on_channel_open(std::unique_ptr<FixedChannel> channel) {
+  void on_channel_open(std::unique_ptr<le::FixedChannel> channel) {
     auto device = channel->GetDevice();
     channel->RegisterOnCloseCallback(
         bluetooth::shim::GetGdShimHandler(),
@@ -484,7 +481,7 @@ struct LeFixedChannelHelper {
   }
 
   void on_outgoing_connection_fail(
-      RawAddress remote, FixedChannelManager::ConnectionResult result) {
+      RawAddress remote, le::FixedChannelManager::ConnectionResult result) {
     LOG(ERROR) << "Outgoing connection failed";
     freg_.pL2CA_FixedConn_Cb(cid_, remote, true, 0, BT_TRANSPORT_LE);
   }
@@ -501,7 +498,8 @@ struct LeFixedChannelHelper {
     return true;
   }
 
-  std::unordered_map<AddressWithType, std::unique_ptr<FixedChannel>> channels_;
+  std::unordered_map<AddressWithType, std::unique_ptr<le::FixedChannel>>
+      channels_;
   std::unordered_map<AddressWithType,
                      std::unique_ptr<bluetooth::os::EnqueueBuffer<
                          bluetooth::packet::BasePacketBuilder>>>
@@ -702,16 +700,16 @@ struct LeDynamicChannelHelper {
   }
 
   void on_registration_complete(
-      DynamicChannelManager::RegistrationResult result,
-      std::unique_ptr<DynamicChannelService> service) {
-    if (result != DynamicChannelManager::RegistrationResult::SUCCESS) {
+      le::DynamicChannelManager::RegistrationResult result,
+      std::unique_ptr<le::DynamicChannelService> service) {
+    if (result != le::DynamicChannelManager::RegistrationResult::SUCCESS) {
       LOG(ERROR) << "Channel is not registered. psm=" << +psm_ << (int)result;
       return;
     }
     channel_service_ = std::move(service);
   }
 
-  std::unique_ptr<DynamicChannelService> channel_service_ = nullptr;
+  std::unique_ptr<le::DynamicChannelService> channel_service_ = nullptr;
 
   void Connect(bluetooth::hci::AddressWithType device) {
     if (channel_service_ == nullptr) {
@@ -774,7 +772,7 @@ struct LeDynamicChannelHelper {
     }
   }
 
-  void on_channel_open(std::unique_ptr<DynamicChannel> channel) {
+  void on_channel_open(std::unique_ptr<le::DynamicChannel> channel) {
     auto device = channel->GetDevice();
     channel->RegisterOnCloseCallback(
         bluetooth::shim::GetGdShimHandler()->BindOnceOn(
@@ -820,7 +818,7 @@ struct LeDynamicChannelHelper {
   }
 
   void on_outgoing_connection_fail(
-      DynamicChannelManager::ConnectionResult result) {
+      le::DynamicChannelManager::ConnectionResult result) {
     LOG(ERROR) << "Outgoing connection failed";
   }
 
@@ -843,7 +841,7 @@ struct LeDynamicChannelHelper {
     return static_cast<uint16_t>(channels_[remote]->GetMtu());
   }
 
-  std::unordered_map<AddressWithType, std::unique_ptr<DynamicChannel>>
+  std::unordered_map<AddressWithType, std::unique_ptr<le::DynamicChannel>>
       channels_;
   std::unordered_map<AddressWithType,
                      std::unique_ptr<bluetooth::os::EnqueueBuffer<
