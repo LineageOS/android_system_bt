@@ -21,8 +21,6 @@
 #include <mutex>
 #include <queue>
 
-#include "os/log.h"
-
 namespace bluetooth {
 namespace common {
 

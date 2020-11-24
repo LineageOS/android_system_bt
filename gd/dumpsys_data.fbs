@@ -1,6 +1,7 @@
 // Top level module dumpsys data schema
 include "common/init_flags.fbs";
 include "l2cap/classic/l2cap_classic_module.fbs";
+include "hci/hci_acl_manager.fbs";
 include "module_unittest.fbs";
 include "shim/dumpsys.fbs";
 
@@ -13,6 +14,7 @@ table DumpsysData {
     init_flags:common.InitFlagsData (privacy:"Any");
     shim_dumpsys_data:bluetooth.shim.DumpsysModuleData (privacy:"Any");
     l2cap_classic_dumpsys_data:bluetooth.l2cap.classic.L2capClassicModuleData (privacy:"Any");
+    hci_acl_manager_dumpsys_data:bluetooth.hci.AclManagerData (privacy:"Any");
     module_unittest_data:bluetooth.ModuleUnitTestData; // private
 }
 
