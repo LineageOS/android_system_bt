@@ -4,8 +4,13 @@
 pub mod facade;
 pub mod rootcanal_hal;
 
+pub use facade::hal_facade_module;
+pub use rootcanal_hal::rootcanal_hal_module;
+
+use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::mpsc;
+use tokio::sync::Mutex;
 
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 
@@ -15,15 +20,16 @@ const H4_HEADER_SIZE: usize = 1;
 /// HAL interface
 /// This is used by the HCI module to send commands to the
 /// HAL and receive events from the HAL
+#[derive(Clone)]
 pub struct HalExports {
     /// Transmit end of a channel used to send HCI commands
     pub cmd_tx: mpsc::UnboundedSender<HciCommand>,
     /// Receive end of a channel used to receive HCI events
-    pub evt_rx: mpsc::UnboundedReceiver<HciEvent>,
+    pub evt_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
     /// Transmit end of a channel used to send ACL data
     pub acl_tx: mpsc::UnboundedSender<RawPacket>,
     /// Receive end of a channel used to receive ACL data
-    pub acl_rx: mpsc::UnboundedReceiver<RawPacket>,
+    pub acl_rx: Arc<Mutex<mpsc::UnboundedReceiver<RawPacket>>>,
 }
 
 /// HCI HAL
@@ -49,9 +55,9 @@ impl Hal {
         (
             HalExports {
                 cmd_tx,
-                evt_rx,
+                evt_rx: Arc::new(Mutex::new(evt_rx)),
                 acl_tx: acl_down_tx,
-                acl_rx: acl_up_rx,
+                acl_rx: Arc::new(Mutex::new(acl_up_rx)),
             },
             Self {
                 cmd_rx,
