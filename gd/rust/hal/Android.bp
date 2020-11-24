@@ -14,6 +14,47 @@ rust_library {
         "libprotobuf",
         "libbt_packets",
         "libgddi",
+        "libcxx",
+        "liblazy_static",
     ],
     host_supported: true,
+    target: {
+        android: {
+            static_libs: ["libbt_hidl_hal_cxx"],
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "libhidlbase",
+                "libutils",
+            ],
+        },
+    },
+}
+
+genrule {
+    name: "libbt_hidl_hal_bridge_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: ["src/hidl_hal.rs"],
+    out: ["src/hidl_hal.rs.h"],
+}
+
+genrule {
+    name: "libbt_hidl_hal_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/hidl_hal.rs"],
+    out: ["hidl_hal_generated.cc"],
+}
+
+cc_library_static {
+    name: "libbt_hidl_hal_cxx",
+    srcs: ["src/hidl/interop.cc"],
+    local_include_dirs: ["src/hidl"],
+    generated_headers: ["libbt_hidl_hal_bridge_header", "cxx-bridge-header"],
+    generated_sources: ["libbt_hidl_hal_bridge_code"],
+    shared_libs: [
+        "android.hardware.bluetooth@1.0",
+        "libhidlbase",
+        "libutils",
+    ],
 }
