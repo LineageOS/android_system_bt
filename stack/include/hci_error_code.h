@@ -52,11 +52,12 @@ typedef enum : uint8_t {
   HCI_ERR_DIFF_TRANSACTION_COLLISION = 0x2A,  // stack/btm/btm_sec
   HCI_ERR_INSUFFCIENT_SECURITY = 0x2F,        // btif/btu
   HCI_ERR_ROLE_SWITCH_PENDING = 0x32,         // stack/btm/btm_sco
-  HCI_ERR_HOST_BUSY_PAIRING = 0x38,           // stack/btm/btm_sec
-  HCI_ERR_UNACCEPT_CONN_INTERVAL = 0x3B,      // stack/l2cap/l2c_ble
-  HCI_ERR_ADVERTISING_TIMEOUT = 0x3C,         // stack/btm/btm_ble
-  HCI_ERR_CONN_FAILED_ESTABLISHMENT = 0x3E,   // GATT_CONN_FAIL_ESTABLISH
-  HCI_ERR_LIMIT_REACHED = 0x43,               // stack/btm/btm_ble_multi_adv.cc
+  HCI_ERR_ROLE_SWITCH_FAILED = 0x35,
+  HCI_ERR_HOST_BUSY_PAIRING = 0x38,          // stack/btm/btm_sec
+  HCI_ERR_UNACCEPT_CONN_INTERVAL = 0x3B,     // stack/l2cap/l2c_ble
+  HCI_ERR_ADVERTISING_TIMEOUT = 0x3C,        // stack/btm/btm_ble
+  HCI_ERR_CONN_FAILED_ESTABLISHMENT = 0x3E,  // GATT_CONN_FAIL_ESTABLISH
+  HCI_ERR_LIMIT_REACHED = 0x43,              // stack/btm/btm_ble_multi_adv.cc
 
   HCI_ERR_MAX_ERR = 0x43,  // TODO remove. randomly used
   HCI_ERR_UNDEFINED = 0xff,

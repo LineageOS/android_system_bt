@@ -324,6 +324,8 @@ class ClassicShimAclConnection
       connection_->ReadRemoteExtendedFeatures(page_number + 1);
   }
 
+  hci::Address GetRemoteAddress() const { return connection_->GetAddress(); }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_classic_link_interface_t interface_;
@@ -378,6 +380,10 @@ class LeShimAclConnection
   void OnDisconnection(hci::ErrorCode reason) {
     Disconnect();
     on_disconnect_(handle_, reason);
+  }
+
+  hci::AddressWithType GetRemoteAddressWithType() const {
+    return connection_->GetRemoteAddress();
   }
 
  private:

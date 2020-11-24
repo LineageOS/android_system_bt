@@ -25,6 +25,7 @@
 #define L2C_INT_H
 
 #include <stdbool.h>
+#include <string>
 
 #include "bt_common.h"
 #include "btm_api.h"
@@ -88,6 +89,25 @@ typedef enum {
   LST_CONNECTED,
   LST_DISCONNECTING
 } tL2C_LINK_STATE;
+
+inline std::string link_state_text(const tL2C_LINK_STATE& state) {
+  switch (state) {
+    case LST_DISCONNECTED:
+      return std::string("LST_DISCONNECTED");
+    case LST_CONNECT_HOLDING:
+      return std::string("LST_CONNECT_HOLDING");
+    case LST_CONNECTING_WAIT_SWITCH:
+      return std::string("LST_CONNECTING_WAIT_SWITCH");
+    case LST_CONNECTING:
+      return std::string("LST_CONNECTING");
+    case LST_CONNECTED:
+      return std::string("LST_CONNECTED");
+    case LST_DISCONNECTING:
+      return std::string("LST_DISCONNECTING");
+    default:
+      return std::string("UNKNOWN");
+  }
+}
 
 /* Define input events to the L2CAP link and channel state machines. The names
  * of the events may seem a bit strange, but they are taken from

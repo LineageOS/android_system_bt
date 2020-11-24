@@ -2724,6 +2724,10 @@ void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
 
 void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
 
   /* If a role switch is in progress, delay the HCI Disconnect to avoid
    * controller problem */
