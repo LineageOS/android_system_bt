@@ -532,10 +532,6 @@ void bluetooth::shim::L2CA_Deregister(uint16_t client_psm) {
   shim_l2cap.RemoveClientPsm(psm);
 }
 
-uint16_t bluetooth::shim::L2CA_AllocatePSM(void) {
-  return shim_l2cap.GetNextDynamicClassicPsm();
-}
-
 uint16_t bluetooth::shim::L2CA_AllocateLePSM(void) {
   return shim_l2cap.GetNextDynamicLePsm();
 }
