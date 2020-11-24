@@ -1,19 +1,47 @@
 //! HCI Hardware Abstraction Layer
 //! Supports sending HCI commands to the HAL and receving
 //! HCI events from the HAL
+#[cfg(target_os = "android")]
+#[macro_use]
+extern crate lazy_static;
+
 pub mod facade;
 pub mod rootcanal_hal;
+#[cfg(not(target_os = "android"))]
+use rootcanal_hal::rootcanal_hal_module;
 
-pub use facade::hal_facade_module;
-pub use rootcanal_hal::rootcanal_hal_module;
+#[cfg(target_os = "android")]
+mod hidl_hal;
+#[cfg(target_os = "android")]
+use hidl_hal::hidl_hal_module;
 
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
+use gddi::module;
 
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 
+use facade::hal_facade_module;
+
+#[cfg(target_os = "android")]
+module! {
+    hal_module,
+    submodules {
+        hal_facade_module,
+        hidl_hal_module
+    },
+}
+
+#[cfg(not(target_os = "android"))]
+module! {
+    hal_module,
+    submodules {
+        hal_facade_module,
+        rootcanal_hal_module
+    },
+}
 /// H4 packet header size
 const H4_HEADER_SIZE: usize = 1;
 
