@@ -46,10 +46,8 @@ cc_test {
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth@1.0",
         "android.hardware.bluetooth@1.1",
-        "android.system.suspend.control-ndk",
         "libaaudio",
         "libbase",
-        "libbinder_ndk",
         "libcrypto",
         "libcutils",  // property_get_bool
         "libfmq",
