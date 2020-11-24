@@ -24,8 +24,8 @@
 
 #define LOG_TAG "bt_btm_sec"
 
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <log/log.h>
 #include <stdarg.h>
 #include <stdio.h>

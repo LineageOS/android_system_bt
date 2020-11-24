@@ -32,8 +32,8 @@
 #include <base/location.h>
 #include <base/logging.h>
 #include <base/threading/thread.h>
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <log/log.h>
 #include <statslog.h>
 #include <stdio.h>

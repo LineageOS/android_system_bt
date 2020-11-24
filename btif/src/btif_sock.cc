@@ -22,7 +22,7 @@
 
 #include <base/logging.h>
 
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
 

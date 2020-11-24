@@ -28,7 +28,7 @@
 
 #include <mutex>
 
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <hardware/bt_sock.h>
 
 #include "osi/include/allocator.h"

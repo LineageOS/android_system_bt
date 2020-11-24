@@ -17,7 +17,7 @@
 #define LOG_TAG "bt_shim_hci"
 
 #include <base/bind.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <algorithm>
 #include <cstdint>
 
