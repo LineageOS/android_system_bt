@@ -74,7 +74,6 @@ class L2cap {
                                           uint16_t psm, uint16_t cid,
                                           uint16_t remote_cid);
 
-  uint16_t GetNextDynamicClassicPsm();
   uint16_t GetNextDynamicLePsm();
 
   uint16_t ConvertClientToRealPsm(uint16_t psm,
@@ -104,7 +103,6 @@ class L2cap {
   bool ConnectionExists(uint16_t cid) const;
   uint16_t CidToPsm(uint16_t cid) const;
 
-  uint16_t classic_dynamic_psm_;
   uint16_t le_dynamic_psm_;
   uint16_t classic_virtual_psm_;
 
