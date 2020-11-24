@@ -10,8 +10,8 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::select;
 
+use gddi::{module, provides};
 use tokio::runtime::Runtime;
-
 use tokio::sync::mpsc;
 
 use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType, RawPacket};
@@ -19,6 +19,20 @@ use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType, RawPac
 use std::sync::Arc;
 
 use crate::{Hal, HalExports, Result, H4_HEADER_SIZE};
+
+module! {
+    rootcanal_hal_module,
+    providers {
+        HalExports => provide_rootcanal_hal,
+    }
+}
+
+#[provides]
+async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> HalExports {
+    // Temporarily unwrap, until GDDI supports returning Result types
+    println!("starting rootcanal");
+    RootcanalHal::start(config, rt).await.unwrap()
+}
 
 /// Rootcanal configuration
 #[derive(Clone, Debug, Default)]
