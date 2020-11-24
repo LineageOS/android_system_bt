@@ -26,7 +26,6 @@
 #include "gd/os/handler.h"
 #include "gd/security/security_module.h"
 #include "gd/shim/dumpsys.h"
-#include "gd/shim/l2cap.h"
 #include "gd/storage/storage_module.h"
 
 #include "hci/acl_manager.h"
@@ -75,10 +74,6 @@ neighbor::InquiryModule* GetInquiry() {
 
 hci::HciLayer* GetHciLayer() {
   return Stack::GetInstance()->GetStackManager()->GetInstance<hci::HciLayer>();
-}
-
-L2cap* GetL2cap() {
-  return Stack::GetInstance()->GetStackManager()->GetInstance<L2cap>();
 }
 
 l2cap::classic::L2capClassicModule* GetL2capClassicModule() {
