@@ -12,7 +12,6 @@ filegroup {
         "entry.cc",
         "hci_layer.cc",
         "l2c_api.cc",
-        "l2cap.cc",
         "le_advertising_manager.cc",
         "shim.cc",
         "stack.cc",
