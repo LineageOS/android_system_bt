@@ -266,11 +266,13 @@ static bool subevent_already_registered_in_le_hci_layer(
     case bluetooth::hci::SubeventCode::PHY_UPDATE_COMPLETE:
     case bluetooth::hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
       return bluetooth::shim::is_gd_acl_enabled() ||
-             bluetooth::shim::is_gd_l2cap_enabled();
+             bluetooth::shim::is_gd_l2cap_enabled() ||
+             bluetooth::shim::is_gd_advertising_enabled();
     case bluetooth::hci::SubeventCode::ADVERTISING_SET_TERMINATED:
     case bluetooth::hci::SubeventCode::SCAN_REQUEST_RECEIVED:
       return bluetooth::shim::is_gd_acl_enabled() ||
-             bluetooth::shim::is_gd_l2cap_enabled();
+             bluetooth::shim::is_gd_l2cap_enabled() ||
+             bluetooth::shim::is_gd_advertising_enabled();
     case bluetooth::hci::SubeventCode::ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
     case bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
