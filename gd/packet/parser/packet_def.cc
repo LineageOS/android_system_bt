@@ -740,13 +740,35 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
   s << "}\n";
 }
 
-void PacketDef::GenRustDef(std::ostream& s) const {
+void PacketDef::GenRustChildEnums(std::ostream& s) const {
   if (!children_.empty()) {
     s << "pub enum " << name_ << "Child {";
     for (const auto& child : children_) {
       s << child->name_ << "(" << child->name_ << "Packet),";
     }
-    s << "}\n\n";
+    s << "}\n";
   }
-  s << "pub struct " << name_ << "Packet {}";
+}
+
+void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
+  s << "pub struct " << name_ << "Packet {";
+
+  // Generate struct fields
+  auto params = GetParamList().GetFieldsWithoutTypes({
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
+  });
+  for (int i = 0; i < params.size(); i++) {
+    params[i]->GenRustNameAndType(s);
+    if (i != params.size() - 1) {
+      s << ", ";
+    }
+  }
+
+  s << "}\n";
+}
+
+void PacketDef::GenRustDef(std::ostream& s) const {
+  GenRustChildEnums(s);
+  GenRustStructDeclarations(s);
 }

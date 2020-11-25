@@ -1565,7 +1565,7 @@ void DualModeController::LeSetAdvertisingParameters(CommandPacketView command) {
       gd_hci::LeAdvertisingCommandView::Create(command));
   ASSERT(command_view.IsValid());
   auto peer_address = command_view.GetPeerAddress();
-  auto type = command_view.GetType();
+  auto type = command_view.GetAdvtType();
   if (type != bluetooth::hci::AdvertisingType::ADV_DIRECT_IND &&
       type != bluetooth::hci::AdvertisingType::ADV_DIRECT_IND_LOW) {
     peer_address = Address::kEmpty;

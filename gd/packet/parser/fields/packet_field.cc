@@ -104,3 +104,12 @@ const PacketField* PacketField::GetElementField() const {
 void PacketField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
   s << "\"REPRESENTATION_UNIMPLEMENTED " << GetFieldType() << " " << accessor << "\"";
 }
+
+bool PacketField::GenRustNameAndType(std::ostream& s) const {
+  auto param_type = GetRustDataType();
+  if (param_type.empty()) {
+    return false;
+  }
+  s << GetName() << ": " << param_type;
+  return true;
+}

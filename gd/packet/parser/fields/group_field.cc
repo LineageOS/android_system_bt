@@ -82,3 +82,7 @@ void GroupField::GenValidator(std::ostream&) const {
 const std::list<PacketField*>* GroupField::GetFields() const {
   return fields_;
 }
+
+std::string GroupField::GetRustDataType() const {
+  return GetDataType();
+}

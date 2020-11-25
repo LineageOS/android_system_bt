@@ -69,6 +69,8 @@ class VectorField : public PacketField {
 
   virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
 
+  virtual std::string GetRustDataType() const override;
+
   const std::string name_;
 
   const PacketField* element_field_{nullptr};

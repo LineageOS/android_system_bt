@@ -67,3 +67,7 @@ void ReservedField::GenInserter(std::ostream& s) const {
 void ReservedField::GenValidator(std::ostream&) const {
   // There is no need to validate the value of a reserved field
 }
+
+std::string ReservedField::GetRustDataType() const {
+  return util::GetRustTypeForSize(size_);
+}

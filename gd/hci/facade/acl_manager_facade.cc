@@ -191,7 +191,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       case OpCode::READ_TRANSMIT_POWER_LEVEL: {
         auto view = ReadTransmitPowerLevelView::Create(command_view);
         GET_CONNECTION(view);
-        connection->second.connection_->ReadTransmitPowerLevel(view.GetType());
+        connection->second.connection_->ReadTransmitPowerLevel(view.GetTransmitPowerLevelType());
         return ::grpc::Status::OK;
       }
       case OpCode::READ_LINK_SUPERVISION_TIMEOUT: {

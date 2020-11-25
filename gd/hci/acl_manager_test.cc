@@ -1119,7 +1119,7 @@ TEST_F(AclManagerWithConnectionTest, send_read_transmit_power_level) {
   auto packet = test_hci_layer_->GetCommandPacket(OpCode::READ_TRANSMIT_POWER_LEVEL);
   auto command_view = ReadTransmitPowerLevelView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
-  ASSERT_EQ(command_view.GetType(), TransmitPowerLevelType::CURRENT);
+  ASSERT_EQ(command_view.GetTransmitPowerLevelType(), TransmitPowerLevelType::CURRENT);
 
   EXPECT_CALL(mock_connection_management_callbacks_, OnReadTransmitPowerLevelComplete(0x07));
   uint8_t num_packets = 1;

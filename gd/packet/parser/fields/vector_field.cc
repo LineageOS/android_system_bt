@@ -249,3 +249,7 @@ void VectorField::GenStringRepresentation(std::ostream& s, std::string accessor)
   s << ";}";
   s << "ss << \"]\"";
 }
+
+std::string VectorField::GetRustDataType() const {
+  return "Vec<" + element_field_->GetRustDataType() + ">";
+}
