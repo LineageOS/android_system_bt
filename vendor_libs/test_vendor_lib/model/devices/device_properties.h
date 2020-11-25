@@ -55,6 +55,35 @@ class DeviceProperties {
     extended_features_[page_number] = features;
   }
 
+  bool GetSecureSimplePairingSupported() const {
+    uint64_t ssp_bit = 0x1;
+    return extended_features_[1] & ssp_bit;
+  }
+
+  void SetSecureSimplePairingSupport(bool supported) {
+    uint64_t ssp_bit = 0x1;
+    extended_features_[1] &= ~ssp_bit;
+    if (supported) {
+      extended_features_[1] = extended_features_[1] | ssp_bit;
+    }
+  }
+
+  void SetLeHostSupport(bool le_supported) {
+    uint64_t le_bit = 0x2;
+    extended_features_[1] &= ~le_bit;
+    if (le_supported) {
+      extended_features_[1] = extended_features_[1] | le_bit;
+    }
+  }
+
+  void SetSecureConnections(bool supported) {
+    uint64_t secure_bit = 0x8;
+    extended_features_[1] &= ~secure_bit;
+    if (supported) {
+      extended_features_[1] = extended_features_[1] | secure_bit;
+    }
+  }
+
   // Specification Version 4.2, Volume 2, Part E, Section 7.4.4
   uint8_t GetExtendedFeaturesMaximumPageNumber() const {
     return extended_features_.size() - 1;
@@ -325,7 +354,7 @@ class DeviceProperties {
   std::vector<uint8_t> supported_codecs_;
   std::vector<uint32_t> vendor_specific_codecs_;
   std::vector<uint8_t> supported_commands_;
-  std::vector<uint64_t> extended_features_{{0x875b3fd8fe8ffeff, 0x0f}};
+  std::vector<uint64_t> extended_features_{{0x875b3fd8fe8ffeff, 0x04}};
   ClassOfDevice class_of_device_{{0, 0, 0}};
   std::vector<uint8_t> extended_inquiry_data_;
   std::array<uint8_t, 248> name_{};
