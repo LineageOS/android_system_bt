@@ -14,19 +14,30 @@ use rootservice::*;
 use rootservice_grpc::{create_root_facade, RootFacade};
 
 use bt_hal::facade::HciHalFacadeService;
-use bt_hal::rootcanal_hal::{RootcanalConfig, RootcanalHal};
+use bt_hal::hal_module;
+use bt_hal::rootcanal_hal::RootcanalConfig;
 use bt_hci::facade::HciLayerFacadeService;
-use bt_hci::Hci;
+use bt_hci::hci_module;
 
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{channel, Sender};
 use tokio::sync::oneshot;
+
+use gddi::{module, Registry, RegistryBuilder};
 
 use grpcio::*;
 
 use std::sync::Arc;
 
 use futures::executor::block_on;
+
+module! {
+    stack_module,
+    submodules {
+        hal_module,
+        hci_module,
+    }
+}
 
 /// Bluetooth testing root facade service
 #[derive(Clone)]
@@ -94,13 +105,25 @@ impl FacadeServiceManager {
     fn create(rt: Arc<Runtime>, grpc_port: u16, rootcanal_port: Option<u16>) -> Self {
         let (tx, mut rx) = channel::<LifecycleCommand>(1);
         let local_rt = rt.clone();
-        local_rt.spawn(async move {
+        rt.spawn(async move {
             let mut server: Option<Server> = None;
             while let Some(cmd) = rx.recv().await {
                 match cmd {
                     LifecycleCommand::Start { req, done } => {
-                        server =
-                            Some(Self::start_internal(&rt, req, grpc_port, rootcanal_port).await);
+                        let registry = {
+                            let mut builder = RegistryBuilder::new();
+                            builder.register_module(stack_module);
+                            Arc::new(builder.build())
+                        };
+
+                        registry.inject(local_rt.clone()).await;
+                        if let Some(rc_port) = rootcanal_port {
+                            registry
+                                .inject(RootcanalConfig::new(rc_port, "127.0.0.1"))
+                                .await;
+                        }
+
+                        server = Some(Self::start_internal(&registry, req, grpc_port).await);
                         done.send(()).unwrap();
                     }
                     LifecycleCommand::Stop { done } => {
@@ -135,30 +158,20 @@ impl FacadeServiceManager {
         Ok(())
     }
 
-    // TODO this is messy and needs to be overhauled to support bringing up the stack to partial
-    // layers. Will be cleaned up soon.
     async fn start_internal(
-        rt: &Arc<Runtime>,
+        registry: &Arc<Registry>,
         req: StartStackRequest,
         grpc_port: u16,
-        rootcanal_port: Option<u16>,
     ) -> Server {
-        let hal_exports = RootcanalHal::start(
-            RootcanalConfig::new(rootcanal_port.unwrap(), "127.0.0.1"),
-            Arc::clone(&rt),
-        )
-        .await
-        .unwrap();
         let mut services = Vec::new();
         match req.get_module_under_test() {
             BluetoothModule::HAL => {
-                services.push(HciHalFacadeService::create(hal_exports, Arc::clone(&rt)));
+                services.push(registry.get::<HciHalFacadeService>().await.create_grpc());
             }
             BluetoothModule::HCI => {
-                let hci_exports = Hci::start(hal_exports, Arc::clone(&rt));
-                services.push(HciLayerFacadeService::create(hci_exports, Arc::clone(&rt)));
+                services.push(registry.get::<HciLayerFacadeService>().await.create_grpc());
             }
-            _ => unimplemented!()
+            _ => unimplemented!(),
         }
 
         FacadeServiceManager::start_server(services, grpc_port)

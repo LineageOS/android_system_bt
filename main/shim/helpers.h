@@ -206,6 +206,8 @@ inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
       return HCI_ERR_LMP_ERR_TRANS_COLLISION;
     case hci::ErrorCode::ENCRYPTION_MODE_NOT_ACCEPTABLE:
       return HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE;
+    case hci::ErrorCode::ROLE_SWITCH_FAILED:
+      return static_cast<tHCI_STATUS>(hci::ErrorCode::ROLE_SWITCH_FAILED);
     case hci::ErrorCode::CONTROLLER_BUSY:
       return static_cast<tHCI_STATUS>(hci::ErrorCode::CONTROLLER_BUSY);
     case hci::ErrorCode::CONNECTION_FAILED_ESTABLISHMENT:

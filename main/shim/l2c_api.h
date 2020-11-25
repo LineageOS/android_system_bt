@@ -57,18 +57,6 @@ void L2CA_Deregister(uint16_t psm);
 
 /*******************************************************************************
  *
- * Function         L2CA_AllocatePSM
- *
- * Description      Other layers call this function to find an unused PSM for
- *                  L2CAP services.
- *
- * Returns          PSM to use.
- *
- ******************************************************************************/
-uint16_t L2CA_AllocatePSM(void);
-
-/*******************************************************************************
- *
  * Function         L2CA_AllocateLePSM
  *
  * Description      Other layers call this function to find an unused LE PSM for

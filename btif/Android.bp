@@ -49,7 +49,6 @@ cc_library_static {
         "src/btif_a2dp_control.cc",
         "src/btif_a2dp_sink.cc",
         "src/btif_a2dp_source.cc",
-        "src/btif_activity_attribution.cc",
         "src/btif_av.cc",
         "src/btif_avrcp_audio_track.cc",
         "src/btif_ble_advertiser.cc",
@@ -97,7 +96,6 @@ cc_library_static {
     shared_libs: [
         "android.hardware.bluetooth.a2dp@1.0",
         "android.hardware.bluetooth.audio@2.0",
-        "android.system.suspend.control-ndk",
         "libaaudio",
         "libcrypto",
         "libcutils",
@@ -113,7 +111,6 @@ cc_library_static {
         "lib-bt-packets",
         "libaudio-a2dp-hw-utils",
         "libbt-audio-hal-interface",
-        "libbtaa",
     ],
     cflags: [
         "-DBUILDCFG",

@@ -623,11 +623,11 @@ typedef uint8_t
 
 #ifdef __cplusplus
 // Bit order [0]:0-7 [1]:8-15 ... [7]:56-63
-inline std::string bd_features_text(BD_FEATURES features) {
+inline std::string bd_features_text(const BD_FEATURES& features) {
   uint8_t len = BD_FEATURES_LEN;
   char buf[255];
   char* pbuf = buf;
-  uint8_t* b = features;
+  const uint8_t* b = features;
   while (len--) {
     pbuf += sprintf(pbuf, "0x%02x ", *b++);
   }

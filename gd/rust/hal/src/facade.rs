@@ -4,6 +4,7 @@ use bt_hal_proto::empty::Empty;
 use bt_hal_proto::facade::*;
 use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
 
+use gddi::{module, provides};
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
@@ -17,6 +18,25 @@ use crate::HalExports;
 
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 
+module! {
+    hal_facade_module,
+    providers {
+        HciHalFacadeService => provide_facade,
+    }
+}
+
+#[provides]
+async fn provide_facade(hal_exports: HalExports, rt: Arc<Runtime>) -> HciHalFacadeService {
+    println!("starting hal facade");
+    HciHalFacadeService {
+        rt,
+        cmd_tx: hal_exports.cmd_tx,
+        evt_rx: hal_exports.evt_rx,
+        acl_tx: hal_exports.acl_tx,
+        acl_rx: hal_exports.acl_rx,
+    }
+}
+
 /// HCI HAL facade service
 #[derive(Clone)]
 pub struct HciHalFacadeService {
@@ -28,15 +48,9 @@ pub struct HciHalFacadeService {
 }
 
 impl HciHalFacadeService {
-    /// Create a new instance of HCI HAL facade service
-    pub fn create(hal_exports: HalExports, rt: Arc<Runtime>) -> grpcio::Service {
-        create_hci_hal_facade(Self {
-            rt,
-            cmd_tx: hal_exports.cmd_tx,
-            evt_rx: Arc::new(Mutex::new(hal_exports.evt_rx)),
-            acl_tx: hal_exports.acl_tx,
-            acl_rx: Arc::new(Mutex::new(hal_exports.acl_rx)),
-        })
+    /// Convert to a grpc service
+    pub fn create_grpc(self) -> grpcio::Service {
+        create_hci_hal_facade(self)
     }
 }
 

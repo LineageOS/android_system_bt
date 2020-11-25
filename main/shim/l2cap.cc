@@ -64,8 +64,7 @@ const tL2CAP_APPL_INFO bluetooth::shim::legacy::PsmManager::Callbacks(
 }
 
 bluetooth::shim::legacy::L2cap::L2cap()
-    : classic_dynamic_psm_(kInitialClassicDynamicPsm),
-      le_dynamic_psm_(kInitialLeDynamicPsm),
+    : le_dynamic_psm_(kInitialLeDynamicPsm),
       classic_virtual_psm_(kInitialClassicVirtualPsm) {
   bluetooth::shim::RegisterDumpsysFunction(static_cast<void*>(this),
                                            [this](int fd) { Dump(fd); });
@@ -138,25 +137,6 @@ uint16_t bluetooth::shim::legacy::L2cap::GetNextDynamicLePsm() {
     }
   }
   return le_dynamic_psm_;
-}
-
-uint16_t bluetooth::shim::legacy::L2cap::GetNextDynamicClassicPsm() {
-  while (Classic().IsPsmRegistered(classic_dynamic_psm_)) {
-    classic_dynamic_psm_ += 2;
-    if (classic_dynamic_psm_ > kFinalClassicDynamicPsm) {
-      classic_dynamic_psm_ = kInitialClassicDynamicPsm;
-    } else if (classic_dynamic_psm_ & 0x0100) {
-      /* the upper byte must be even */
-      classic_dynamic_psm_ += 0x0100;
-    }
-
-    /* if psm is in range of reserved BRCM Aware features */
-    if ((BRCM_RESERVED_PSM_START <= classic_dynamic_psm_) &&
-        (classic_dynamic_psm_ <= BRCM_RESERVED_PSM_END)) {
-      classic_dynamic_psm_ = BRCM_RESERVED_PSM_END + 2;
-    }
-  }
-  return classic_dynamic_psm_;
 }
 
 uint16_t bluetooth::shim::legacy::L2cap::RegisterService(
