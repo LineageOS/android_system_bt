@@ -22,10 +22,12 @@
  *
  ******************************************************************************/
 
-#include <string.h>
+#include <memory>
+#include <string>
 #include "bt_target.h"
 #include "bt_types.h"
 #include "btm_int.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack_config.h"
 
 /* Global BTM control block structure
@@ -63,10 +65,16 @@ void btm_init(void) {
   btm_sco_init(); /* SCO Database and Structures (If included) */
 
   btm_dev_init(); /* Device Manager Structures & HCI_Reset */
+
+  btm_cb.history_ = std::make_shared<TimestampedStringCircularBuffer>(40);
+  CHECK(btm_cb.history_ != nullptr);
+  btm_cb.history_->Push(std::string("Initialized btm history"));
 }
 
 /** This function is called to free dynamic memory and system resource allocated by btm_init */
 void btm_free(void) {
+  btm_cb.history_.reset();
+
   btm_dev_free();
   btm_inq_db_free();
 
