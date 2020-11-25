@@ -96,6 +96,7 @@ filegroup {
         "android/bluetooth/IBluetoothHeadsetPhone.aidl",
         "android/bluetooth/IBluetoothHearingAid.aidl",
         "android/bluetooth/IBluetoothHidHost.aidl",
+        "android/bluetooth/IBluetoothLeAudio.aidl",
         "android/bluetooth/IBluetoothPan.aidl",
         "android/bluetooth/IBluetoothManager.aidl",
         "android/bluetooth/IBluetoothManagerCallback.aidl",
