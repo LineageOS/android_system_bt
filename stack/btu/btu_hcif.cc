@@ -1016,14 +1016,8 @@ static void btu_hcif_disconnection_comp_evt(uint8_t* p) {
 
   handle = HCID_GET_HANDLE(handle);
 
-  /* If L2CAP or SCO doesn't know about it, send it to ISO */
-  if (!l2c_link_hci_disc_comp(handle, reason) &&
-      !btm_sco_removed(handle, reason)) {
-    IsoManager::GetInstance()->HandleDisconnect(handle, reason);
-  }
-
-  /* Notify security manager */
-  btm_sec_disconnected(handle, static_cast<tHCI_STATUS>(reason));
+  btm_acl_disconnected(static_cast<tHCI_STATUS>(status), handle,
+                       static_cast<tHCI_STATUS>(reason));
 }
 
 /*******************************************************************************
