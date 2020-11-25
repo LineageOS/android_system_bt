@@ -2023,22 +2023,18 @@ packet SendKeypressNotificationComplete : CommandComplete (command_op_code = SEN
   bd_addr : Address,
 }
 
-enum SimultaneousLeHost : 8 {
-  DISABLED = 0x00,
-}
-
 packet ReadLeHostSupport : CommandPacket (op_code = READ_LE_HOST_SUPPORT) {
 }
 
 packet ReadLeHostSupportComplete : CommandComplete (command_op_code = READ_LE_HOST_SUPPORT) {
   status : ErrorCode,
   le_supported_host : Enable,
-  simultaneous_le_host : SimultaneousLeHost,
+  _reserved_ : 8, // simultaneous_le_host (ignored and always 0)
 }
 
 packet WriteLeHostSupport : CommandPacket (op_code = WRITE_LE_HOST_SUPPORT) {
   le_supported_host : Enable,
-  simultaneous_le_host : SimultaneousLeHost,
+  _reserved_ : 8, // simultaneous_le_host (ignored and always 0)
 }
 
 packet WriteLeHostSupportComplete : CommandComplete (command_op_code = WRITE_LE_HOST_SUPPORT) {
