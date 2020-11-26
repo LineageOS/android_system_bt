@@ -165,7 +165,6 @@ void LeAddressManager::unregister_client(LeAddressManagerCallback* callback) {
   registered_clients_.erase(callback);
   if (registered_clients_.empty() && address_rotation_alarm_ != nullptr) {
     address_rotation_alarm_->Cancel();
-    address_rotation_alarm_.reset();
   }
 }
 
