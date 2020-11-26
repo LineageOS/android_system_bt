@@ -18,9 +18,9 @@
 
 #pragma once
 
-#include <android/bluetooth/hci/enums.pb.h>
 #include <bta/include/bta_api.h>
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <stdint.h>
 #include <memory>
 #include <string>
