@@ -53,28 +53,9 @@ extern void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
  *
  ******************************************************************************/
 void btm_init(void) {
-  /* All fields are cleared; nonzero fields are reinitialized in appropriate
-   * function */
-  memset(&btm_cb, 0, sizeof(tBTM_CB));
-  btm_cb.btm_inq_vars.remote_name_timer = nullptr;
-
-  btm_cb.page_queue = fixed_queue_new(SIZE_MAX);
-  btm_cb.sec_pending_q = fixed_queue_new(SIZE_MAX);
-  btm_cb.sec_collision_timer = alarm_new("btm.sec_collision_timer");
-  btm_cb.pairing_timer = alarm_new("btm.pairing_timer");
-
-#if defined(BTM_INITIAL_TRACE_LEVEL)
-  btm_cb.trace_level = BTM_INITIAL_TRACE_LEVEL;
-#else
-  btm_cb.trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
-#endif
-  /* Security Manager Database and Structures */
-  if (stack_config_get_interface()->get_pts_secure_only_mode())
-    btm_cb.security_mode = BTM_SEC_MODE_SC;
-  else
-    btm_cb.security_mode = BTM_SEC_MODE_SP;
-  btm_cb.pairing_bda = RawAddress::kAny;
-  btm_cb.sec_dev_rec = list_new(osi_free);
+  btm_cb.Init(stack_config_get_interface()->get_pts_secure_only_mode()
+                  ? BTM_SEC_MODE_SC
+                  : BTM_SEC_MODE_SP);
 
   /* Initialize BTM component structures */
   btm_inq_db_init(); /* Inquiry Database and Structures */
@@ -89,28 +70,5 @@ void btm_free(void) {
   btm_dev_free();
   btm_inq_db_free();
 
-  fixed_queue_free(btm_cb.page_queue, NULL);
-  btm_cb.page_queue = NULL;
-
-  fixed_queue_free(btm_cb.sec_pending_q, NULL);
-  btm_cb.sec_pending_q = NULL;
-
-  list_node_t* end = list_end(btm_cb.sec_dev_rec);
-  list_node_t* node = list_begin(btm_cb.sec_dev_rec);
-  while (node != end) {
-    tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-
-    // we do list_remove in, must grab next before removing
-    node = list_next(node);
-    wipe_secrets_and_remove(p_dev_rec);
-  }
-
-  list_free(btm_cb.sec_dev_rec);
-  btm_cb.sec_dev_rec = NULL;
-
-  alarm_free(btm_cb.sec_collision_timer);
-  btm_cb.sec_collision_timer = NULL;
-
-  alarm_free(btm_cb.pairing_timer);
-  btm_cb.pairing_timer = NULL;
+  btm_cb.Free();
 }
