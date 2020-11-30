@@ -53,7 +53,7 @@ uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         uint16_t my_mtu, uint16_t required_remote_mtu,
                         uint16_t sec_level) {
   auto ret = L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu,
-                           required_remote_mtu);
+                           required_remote_mtu, sec_level);
   BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
   return ret;
 }
@@ -74,10 +74,12 @@ uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
  ******************************************************************************/
 uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                       uint16_t my_mtu, uint16_t required_remote_mtu) {
+                       uint16_t my_mtu, uint16_t required_remote_mtu,
+                       uint16_t sec_level) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_Register(
-        psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu, required_remote_mtu);
+    return bluetooth::shim::L2CA_Register(psm, p_cb_info, enable_snoop,
+                                          p_ertm_info, my_mtu,
+                                          required_remote_mtu, sec_level);
   }
 
   const bool config_cfm_cb = (p_cb_info.pL2CA_ConfigCfm_Cb != nullptr);

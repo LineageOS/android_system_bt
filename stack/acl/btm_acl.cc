@@ -1126,11 +1126,19 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
 
 bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
                            tBT_TRANSPORT transport) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_IsLinkEstablished(remote_bda, transport);
+  }
+
   return internal_.btm_bda_to_acl(remote_bda, transport) != nullptr;
 }
 
 bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
                                          tBT_TRANSPORT transport) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_IsLinkEstablished(remote_bda, transport);
+  }
+
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, transport);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
@@ -1154,6 +1162,9 @@ bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle) {
  *
  ******************************************************************************/
 uint16_t BTM_GetNumAclLinks(void) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_GetNumLinks();
+  }
   uint16_t num_acl = 0;
 
   for (uint16_t i = 0; i < MAX_L2CAP_LINKS; ++i) {
@@ -2081,6 +2092,13 @@ void btm_read_link_quality_complete(uint8_t* p) {
  *
  ******************************************************************************/
 tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    if (transport == BT_TRANSPORT_LE) {
+      LOG(ERROR) << __func__ << ": Unsupported";
+    }
+    bluetooth::shim::L2CA_DisconnectLink(bd_addr);
+    return BTM_SUCCESS;
+  }
   uint16_t hci_handle = BTM_GetHCIConnHandle(bd_addr, transport);
   tBTM_STATUS status = BTM_SUCCESS;
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
