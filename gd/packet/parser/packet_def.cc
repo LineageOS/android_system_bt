@@ -754,6 +754,20 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
   s << "pub struct " << name_ << "Packet {";
 
   // Generate struct fields
+  GenRustStructFieldNameAndType(s);
+
+  // Generate size field
+  auto params = GetParamList().GetFieldsWithoutTypes({
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
+  });
+  if (params.size() > 0) {
+    s << ", size: usize";
+  }
+  s << "}\n";
+}
+
+void PacketDef::GenRustStructFieldNameAndType(std::ostream& s) const {
   auto params = GetParamList().GetFieldsWithoutTypes({
       PayloadField::kFieldType,
       BodyField::kFieldType,
@@ -764,11 +778,47 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
       s << ", ";
     }
   }
+}
 
-  s << "}\n";
+void PacketDef::GenRustStructFieldNames(std::ostream& s) const {
+  auto params = GetParamList().GetFieldsWithoutTypes({
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
+  });
+  for (int i = 0; i < params.size(); i++) {
+    s << params[i]->GetName();
+    if (i != params.size() - 1) {
+      s << ", ";
+    }
+  }
+}
+
+void PacketDef::GenRustStructSizeField(std::ostream& s) const {
+  int size = 0;
+  auto params = GetParamList().GetFieldsWithoutTypes({
+      PayloadField::kFieldType,
+      BodyField::kFieldType,
+  });
+  for (int i = 0; i < params.size(); i++) {
+    size += params[i]->GetSize().bytes();
+  }
+  if (params.size() > 0) {
+    s << ", size: " << size;
+  }
+}
+
+void PacketDef::GenRustStructImpls(std::ostream& s) const {
+  s << "impl " << name_ << "Packet {";
+  s << "pub fn new(";
+  GenRustStructFieldNameAndType(s);
+  s << ") -> Self { Self {";
+  GenRustStructFieldNames(s);
+  GenRustStructSizeField(s);
+  s << "}}}\n";
 }
 
 void PacketDef::GenRustDef(std::ostream& s) const {
   GenRustChildEnums(s);
   GenRustStructDeclarations(s);
+  GenRustStructImpls(s);
 }
