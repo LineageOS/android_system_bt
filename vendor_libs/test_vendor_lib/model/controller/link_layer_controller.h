@@ -46,7 +46,6 @@ class LinkLayerController {
   ErrorCode SendScoToRemote(bluetooth::hci::ScoPacketView sco_packet);
   ErrorCode SendAclToRemote(bluetooth::hci::AclPacketView acl_packet);
 
-  void WriteSimplePairingMode(bool enabled);
   void StartSimplePairing(const Address& address);
   void AuthenticateRemoteStage1(const Address& address, PairingType pairing_type);
   void AuthenticateRemoteStage2(const Address& address);
@@ -469,8 +468,6 @@ class LinkLayerController {
 
   bool page_scans_enabled_{false};
   bool inquiry_scans_enabled_{false};
-
-  bool simple_pairing_mode_enabled_{false};
 };
 
 }  // namespace test_vendor_lib
