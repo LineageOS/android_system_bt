@@ -26,7 +26,8 @@ void bluetooth::l2cap::SetMockInterface(
 
 uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                       uint16_t my_mtu, uint16_t required_remote_mtu) {
+                       uint16_t my_mtu, uint16_t required_remote_mtu,
+                       uint16_t sec_level) {
   VLOG(1) << __func__ << ": psm=" << psm << ", enable_snoop=" << enable_snoop;
   return l2cap_interface->Register(psm, p_cb_info, enable_snoop, p_ertm_info);
 }
