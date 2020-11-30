@@ -1,31 +1,5 @@
-rust_library {
-    name: "libbt_common",
-    crate_name: "bt_common",
-    srcs: ["src/lib.rs"],
-    edition: "2018",
-    rustlibs: [
-        "libtokio",
-        "libnix",
-        "liblog_rust",
-        "libcxx",
-    ],
-    target: {
-        android: {
-            rustlibs: [
-                "libandroid_logger",
-            ],
-        },
-        host: {
-            rustlibs: [
-                "libenv_logger",
-            ],
-        },
-    },
-    host_supported: true,
-}
-
-rust_ffi_static {
-    name: "libbt_common_ffi",
+rust_defaults {
+    name: "libbt_common_defaults",
     stem: "libbt_common",
     crate_name: "bt_common",
     srcs: ["src/lib.rs"],
@@ -48,7 +22,20 @@ rust_ffi_static {
             ],
         },
     },
+    proc_macros: [
+        "libpaste",
+    ],
     host_supported: true,
+}
+
+rust_library {
+    name: "libbt_common",
+    defaults: ["libbt_common_defaults"],
+}
+
+rust_ffi_static {
+    name: "libbt_common_ffi",
+    defaults: ["libbt_common_defaults"],
 }
 
 rust_test_host {

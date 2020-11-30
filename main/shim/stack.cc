@@ -71,29 +71,29 @@ void Stack::StartEverything() {
   ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
   LOG_INFO("%s Starting Gd stack", __func__);
   ModuleList modules;
-  if (common::InitFlags::GdHciEnabled()) {
+  if (common::init_flags::gd_hci_is_enabled()) {
     modules.add<hal::HciHal>();
     modules.add<hci::HciLayer>();
     modules.add<storage::StorageModule>();
     modules.add<shim::Dumpsys>();
   }
-  if (common::InitFlags::GdControllerEnabled()) {
+  if (common::init_flags::gd_controller_is_enabled()) {
     modules.add<hci::Controller>();
   }
-  if (common::InitFlags::GdAclEnabled()) {
+  if (common::init_flags::gd_acl_is_enabled()) {
     modules.add<hci::AclManager>();
   }
-  if (common::InitFlags::GdL2capEnabled()) {
+  if (common::init_flags::gd_l2cap_is_enabled()) {
     modules.add<l2cap::classic::L2capClassicModule>();
     modules.add<l2cap::le::L2capLeModule>();
   }
-  if (common::InitFlags::GdSecurityEnabled()) {
+  if (common::init_flags::gd_security_is_enabled()) {
     modules.add<security::SecurityModule>();
   }
-  if (common::InitFlags::GdAdvertisingEnabled()) {
+  if (common::init_flags::gd_advertising_is_enabled()) {
     modules.add<hci::LeAdvertisingManager>();
   }
-  if (common::InitFlags::GdCoreEnabled()) {
+  if (common::init_flags::gd_core_is_enabled()) {
     modules.add<att::AttModule>();
     modules.add<hci::LeScanningManager>();
     modules.add<neighbor::ConnectabilityModule>();
@@ -110,24 +110,24 @@ void Stack::StartEverything() {
   // Make sure the leaf modules are started
   ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
   ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
-  if (common::InitFlags::GdCoreEnabled()) {
+  if (common::init_flags::gd_core_is_enabled()) {
     btm_ = new Btm(stack_handler_,
                    stack_manager_.GetInstance<neighbor::InquiryModule>());
   }
-  if (common::InitFlags::GdAclEnabled()) {
-    if (!common::InitFlags::GdCoreEnabled()) {
+  if (common::init_flags::gd_acl_is_enabled()) {
+    if (!common::init_flags::gd_core_is_enabled()) {
       acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface());
     }
   }
-  if (!common::InitFlags::GdCoreEnabled()) {
+  if (!common::init_flags::gd_core_is_enabled()) {
     bluetooth::shim::hci_on_reset_complete();
   }
 
-  if (common::InitFlags::GdAdvertisingEnabled()) {
+  if (common::init_flags::gd_advertising_is_enabled()) {
     bluetooth::shim::init_advertising_manager();
   }
-  if (common::InitFlags::GdL2capEnabled() &&
-      !common::InitFlags::GdCoreEnabled()) {
+  if (common::init_flags::gd_l2cap_is_enabled() &&
+      !common::init_flags::gd_core_is_enabled()) {
     L2CA_UseLegacySecurityModule();
   }
 }
@@ -147,7 +147,7 @@ void Stack::Start(ModuleList* modules) {
 
 void Stack::Stop() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  if (!common::InitFlags::GdCoreEnabled()) {
+  if (!common::init_flags::gd_core_is_enabled()) {
     bluetooth::shim::hci_on_shutting_down();
   }
   delete acl_;

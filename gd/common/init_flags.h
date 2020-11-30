@@ -18,6 +18,7 @@
 
 #include <string>
 #include <unordered_map>
+#include "src/init_flags.rs.h"
 
 namespace bluetooth {
 namespace common {
@@ -25,38 +26,6 @@ namespace common {
 class InitFlags final {
  public:
   static void Load(const char** flags);
-
-  static bool GdAdvertisingEnabled() {
-    return gd_advertising_enabled;
-  }
-
-  static bool GdSecurityEnabled() {
-    return gd_security_enabled;
-  }
-
-  static bool GdAclEnabled() {
-    return gd_acl_enabled;
-  }
-
-  static bool GdHciEnabled() {
-    return gd_hci_enabled;
-  }
-
-  static bool GdControllerEnabled() {
-    return gd_controller_enabled;
-  }
-
-  static bool GdL2capEnabled() {
-    return gd_l2cap_enabled;
-  }
-
-  static bool GdCoreEnabled() {
-    return gd_core_enabled;
-  }
-
-  static bool GattRobustCachingEnabled() {
-    return gatt_robust_caching_enabled;
-  }
 
   inline static bool IsDebugLoggingEnabledForTag(const std::string& tag) {
     auto tag_setting = logging_debug_explicit_tag_settings.find(tag);
@@ -70,26 +39,13 @@ class InitFlags final {
     return logging_debug_enabled_for_all;
   }
 
-  static bool BtaaHciLogEnabled() {
-    return btaa_hci_log_enabled;
-  }
-
   static void SetAllForTesting();
 
  private:
   static void SetAll(bool value);
-  static bool gd_advertising_enabled;
-  static bool gd_security_enabled;
-  static bool gd_acl_enabled;
-  static bool gd_hci_enabled;
-  static bool gd_controller_enabled;
-  static bool gd_l2cap_enabled;
-  static bool gd_core_enabled;
-  static bool gatt_robust_caching_enabled;
   static bool logging_debug_enabled_for_all;
   // save both log allow list and block list in the map to save hashing time
   static std::unordered_map<std::string, bool> logging_debug_explicit_tag_settings;
-  static bool btaa_hci_log_enabled;
 };
 
 }  // namespace common
