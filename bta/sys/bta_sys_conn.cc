@@ -25,11 +25,11 @@
 #include <stddef.h>
 
 #include "bt_common.h"
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "bta_sys_int.h"
+#include "bta/include/bta_api.h"
+#include "bta/include/utl.h"
+#include "bta/sys/bta_sys.h"
+#include "bta/sys/bta_sys_int.h"
 #include "osi/include/osi.h"
-#include "utl.h"
 
 /*******************************************************************************
  *
