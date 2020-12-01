@@ -25,7 +25,7 @@
 #define UTL_H
 
 #include "bt_types.h"
-#include "bt_utils.h"
+#include "utils/include/bt_utils.h"
 
 /*****************************************************************************
  *  Constants
