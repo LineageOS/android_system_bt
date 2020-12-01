@@ -29,7 +29,6 @@
 #include "main/shim/btm.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "main/shim/l2cap.h"
 #include "main/shim/stack.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
