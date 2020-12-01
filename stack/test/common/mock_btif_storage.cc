@@ -29,5 +29,3 @@ void bluetooth::manager::SetMockBtifStorageInterface(
 void btif_storage_load_bonded_eatt(void) {
   btif_storage_interface->LoadBondedEatt();
 }
-
-uint8_t btif_storage_get_local_io_caps() { return 0; }
