@@ -35,7 +35,7 @@
 #include "btu.h"
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
-#include "hci_layer.h"
+#include "hci/include/hci_layer.h"
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
 #include "stack/gatt/connection_manager.h"
