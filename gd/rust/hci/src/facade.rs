@@ -1,19 +1,16 @@
 //! HCI layer facade
 
+use crate::HciExports;
 use bt_hci_proto::empty::Empty;
 use bt_hci_proto::facade::*;
 use bt_hci_proto::facade_grpc::{create_hci_layer_facade, HciLayerFacade};
-
+use futures::prelude::*;
 use futures::sink::SinkExt;
 use gddi::{module, provides};
-use tokio::runtime::Runtime;
-
-use crate::HciExports;
-
-use futures::prelude::*;
 use grpcio::*;
-
 use std::sync::Arc;
+use tokio::runtime::Runtime;
+use log::error;
 
 module! {
     facade_module,
@@ -56,7 +53,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         let f = sink
             .success(Empty::default())
             .map_err(|e: grpcio::Error| {
-                println!(
+                error!(
                     "failed to handle enqueue_command_with_complete request: {:?}",
                     e
                 )
@@ -80,7 +77,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         let f = sink
             .success(Empty::default())
             .map_err(|e: grpcio::Error| {
-                println!(
+                error!(
                     "failed to handle enqueue_command_with_status request: {:?}",
                     e
                 )
@@ -99,7 +96,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         let f = sink
             .success(Empty::default())
             .map_err(|e: grpcio::Error| {
-                println!(
+                error!(
                     "failed to handle enqueue_command_with_status request: {:?}",
                     e
                 )

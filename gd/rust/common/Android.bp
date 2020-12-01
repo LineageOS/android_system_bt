@@ -6,7 +6,20 @@ rust_library {
     rustlibs: [
         "libtokio",
         "libnix",
+        "liblog_rust",
     ],
+    target: {
+        android: {
+            rustlibs: [
+                "libandroid_logger",
+            ],
+        },
+        host: {
+            rustlibs: [
+                "libenv_logger",
+            ],
+        },
+    },
     host_supported: true,
 }
 
@@ -18,5 +31,7 @@ rust_test_host {
     rustlibs: [
         "libtokio",
         "libnix",
+        "liblog_rust",
+        "libenv_logger",
     ],
 }

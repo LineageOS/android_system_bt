@@ -28,6 +28,8 @@ rust_binary {
       "libgrpcio",
       "libtokio",
       "libnix",
+      "libbt_common",
+      "liblog_rust",
     ],
     host_supported: true,
 }
