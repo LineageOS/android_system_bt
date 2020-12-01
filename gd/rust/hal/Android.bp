@@ -16,6 +16,7 @@ rust_library {
         "libgddi",
         "libcxx",
         "liblazy_static",
+        "liblog_rust",
     ],
     host_supported: true,
     target: {

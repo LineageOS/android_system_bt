@@ -15,15 +15,12 @@ mod hidl_hal;
 #[cfg(target_os = "android")]
 use hidl_hal::hidl_hal_module;
 
+use bt_packet::{HciCommand, HciEvent, RawPacket};
+use facade::hal_facade_module;
+use gddi::module;
 use std::sync::Arc;
 use thiserror::Error;
-use tokio::sync::mpsc;
-use tokio::sync::Mutex;
-use gddi::module;
-
-use bt_packet::{HciCommand, HciEvent, RawPacket};
-
-use facade::hal_facade_module;
+use tokio::sync::{mpsc, Mutex};
 
 #[cfg(target_os = "android")]
 module! {
