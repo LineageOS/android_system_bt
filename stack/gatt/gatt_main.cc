@@ -32,11 +32,11 @@
 #include "connection_manager.h"
 #include "device/include/interop.h"
 #include "eatt.h"
+#include "gatt_int.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
-#include "stack/gatt/gatt_int.h"
 #include "stack/include/l2cap_acl_interface.h"
 
 using base::StringPrintf;

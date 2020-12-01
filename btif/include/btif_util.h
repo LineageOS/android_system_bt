@@ -25,7 +25,7 @@
 #include <sys/time.h>
 
 #include "bt_types.h"
-#include "utils/include/bt_utils.h"
+#include "bt_utils.h"
 
 /*******************************************************************************
  *  Constants & Macros
