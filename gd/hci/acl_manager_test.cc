@@ -910,18 +910,6 @@ TEST_F(AclManagerWithConnectionTest, send_write_default_link_policy_settings) {
   ASSERT_EQ(link_policy_settings, acl_manager_->ReadDefaultLinkPolicySettings());
 }
 
-TEST_F(AclManagerWithConnectionTest, send_change_connection_packet_type) {
-  test_hci_layer_->SetCommandFuture();
-  connection_->ChangeConnectionPacketType(0xEE1C);
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::CHANGE_CONNECTION_PACKET_TYPE);
-  auto command_view = ChangeConnectionPacketTypeView::Create(packet);
-  ASSERT_TRUE(command_view.IsValid());
-  ASSERT_EQ(command_view.GetPacketType(), 0xEE1C);
-
-  EXPECT_CALL(mock_connection_management_callbacks_, OnConnectionPacketTypeChanged(0xEE1C));
-  test_hci_layer_->IncomingEvent(ConnectionPacketTypeChangedBuilder::Create(ErrorCode::SUCCESS, handle_, 0xEE1C));
-}
-
 TEST_F(AclManagerWithConnectionTest, send_authentication_requested) {
   test_hci_layer_->SetCommandFuture();
   connection_->AuthenticationRequested();
