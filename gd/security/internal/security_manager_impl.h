@@ -181,6 +181,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
   void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
   void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
+  void OnPinEntry(const bluetooth::hci::AddressWithType& address, std::vector<uint8_t> pin) override;
 
   // Facade Configuration API functions
   using FacadeDisconnectCallback = common::Callback<void(bluetooth::hci::AddressWithType)>;

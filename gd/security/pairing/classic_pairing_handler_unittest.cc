@@ -79,6 +79,7 @@ class TestUI : public UI {
   void DisplayYesNoDialog(ConfirmationData data) override {}
   void DisplayEnterPasskeyDialog(ConfirmationData data) override {}
   void DisplayPasskey(ConfirmationData data) override {}
+  void DisplayEnterPinDialog(ConfirmationData data) override {}
 };
 
 class SecurityManagerChannelCallback : public channel::ISecurityManagerChannelListener {

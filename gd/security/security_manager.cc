@@ -100,13 +100,20 @@ void SecurityManager::OnPairingPromptAccepted(const bluetooth::hci::AddressWithT
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnPairingPromptAccepted,
                                            common::Unretained(security_manager_impl_), address, confirmed));
 }
+
 void SecurityManager::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnConfirmYesNo,
                                            common::Unretained(security_manager_impl_), address, confirmed));
 }
+
 void SecurityManager::OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnPasskeyEntry,
                                            common::Unretained(security_manager_impl_), address, passkey));
+}
+
+void SecurityManager::OnPinEntry(const bluetooth::hci::AddressWithType& address, std::vector<uint8_t> pin) {
+  security_handler_->Post(common::BindOnce(
+      &internal::SecurityManagerImpl::OnPinEntry, common::Unretained(security_manager_impl_), address, std::move(pin)));
 }
 
 }  // namespace security
