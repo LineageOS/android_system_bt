@@ -243,10 +243,7 @@ struct classic_impl : public security::ISecurityManagerListener {
       LOG_ERROR("Received on_connection_packet_type_changed with error code %s", error_code.c_str());
       return;
     }
-    uint16_t handle = packet_type_changed.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    uint16_t packet_type = packet_type_changed.GetPacketType();
-    acl_connection.connection_management_callbacks_->OnConnectionPacketTypeChanged(packet_type);
+    // We don't handle this event; we didn't do this in legacy stack either.
   }
 
   void on_central_link_key_complete(EventPacketView packet) {
