@@ -23,7 +23,7 @@
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hd.h>
 #include <stdint.h>
-#include "bta_hd_api.h"
+#include "bta/include/bta_hd_api.h"
 
 typedef enum {
   BTIF_HD_DISABLED = 0,
