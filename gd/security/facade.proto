@@ -10,6 +10,8 @@ import "hci/facade/le_initiator_address_facade.proto";
 service SecurityModuleFacade {
   rpc CreateBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc CreateBondOutOfBand(OobDataBondMessage) returns (google.protobuf.Empty) {}
+  rpc GetOutOfBandData(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+  rpc FetchGetOutOfBandDataEvents(google.protobuf.Empty) returns (stream OobDataBondMessage) {}
   rpc CreateBondLe(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc CancelBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}

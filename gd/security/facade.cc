@@ -125,6 +125,22 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status GetOutOfBandData(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::google::protobuf::Empty* response) override {
+    security_module_->GetSecurityManager()->GetOutOfBandData(
+        security_handler_->BindOnceOn(this, &SecurityModuleFacadeService::OobDataEventOccurred));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status FetchGetOutOfBandDataEvents(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::grpc::ServerWriter<OobDataBondMessage>* writer) override {
+    return oob_events_.RunLoop(context, writer);
+  }
+
   ::grpc::Status CreateBondLe(::grpc::ServerContext* context, const facade::BluetoothAddressWithType* request,
                               ::google::protobuf::Empty* response) override {
     hci::Address peer;
@@ -356,6 +372,39 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return disconnect_events_.RunLoop(context, writer);
   }
 
+  void OobDataEventOccurred(bluetooth::hci::CommandCompleteView packet) {
+    LOG_INFO("Got OOB Data event");
+    ASSERT(packet.IsValid());
+    auto cc = bluetooth::hci::ReadLocalOobDataCompleteView::Create(packet);
+    ASSERT(cc.IsValid());
+    OobDataBondMessage msg;
+    OobDataMessage p192;
+    // Just need this to satisfy the proto message
+    bluetooth::hci::AddressWithType peer;
+    *p192.mutable_address() = ToFacadeAddressWithType(peer);
+
+    auto c = cc.GetC();
+    p192.set_confirmation_value(c.data(), c.size());
+
+    auto r = cc.GetR();
+    p192.set_random_value(r.data(), r.size());
+
+    // Only the Extended version returns 256 also.
+    // The API has a parameter for both, so we set it
+    // empty and the module and test suite will ignore it.
+    OobDataMessage p256;
+    *p256.mutable_address() = ToFacadeAddressWithType(peer);
+
+    std::array<uint8_t, 16> empty_val;
+    p256.set_confirmation_value(empty_val.data(), empty_val.size());
+    p256.set_random_value(empty_val.data(), empty_val.size());
+
+    *msg.mutable_address() = ToFacadeAddressWithType(peer);
+    *msg.mutable_p192_data() = p192;
+    *msg.mutable_p256_data() = p256;
+    oob_events_.OnIncomingEvent(msg);
+  }
+
   void DisconnectEventOccurred(bluetooth::hci::AddressWithType peer) {
     LOG_INFO("%s", peer.ToString().c_str());
     DisconnectMsg msg;
@@ -483,6 +532,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
   ::bluetooth::grpc::GrpcEventQueue<EnforceSecurityPolicyMsg> enforce_security_policy_events_{
       "Enforce Security Policy Events"};
   ::bluetooth::grpc::GrpcEventQueue<DisconnectMsg> disconnect_events_{"Disconnect events"};
+  ::bluetooth::grpc::GrpcEventQueue<OobDataBondMessage> oob_events_{"OOB Data events"};
   uint32_t unique_id{1};
   std::map<uint32_t, common::OnceCallback<void(bool)>> user_yes_no_callbacks_;
   std::map<uint32_t, common::OnceCallback<void(uint32_t)>> user_passkey_callbacks_;

@@ -62,6 +62,7 @@ class PySecurity(Closable):
 
     _ui_event_stream = None
     _bond_event_stream = None
+    _oob_data_event_stream = None
 
     def __init__(self, device):
         logging.debug("DUT: Init")
@@ -72,6 +73,8 @@ class PySecurity(Closable):
         self._enforce_security_policy_stream = EventStream(
             self._device.security.FetchEnforceSecurityPolicyEvents(empty_proto.Empty()))
         self._disconnect_event_stream = EventStream(self._device.security.FetchDisconnectEvents(empty_proto.Empty()))
+        self._oob_data_event_stream = EventStream(
+            self._device.security.FetchGetOutOfBandDataEvents(empty_proto.Empty()))
 
     def create_bond(self, address, type):
         """
@@ -253,8 +256,24 @@ class PySecurity(Closable):
                 address=common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type),
                 policy=policy))
 
+    def get_oob_data_from_controller(self, oob_data_present):
+        self._device.security.GetOutOfBandData(empty_proto.Empty())
+        oob_data = []
+
+        def get_oob_data(event):
+            nonlocal oob_data
+            oob_data = [
+                list(event.p192_data.confirmation_value),
+                list(event.p192_data.random_value), [0 for i in range(0, 16)], [0 for i in range(0, 16)]
+            ]
+            return True
+
+        assertThat(self._oob_data_event_stream).emits(get_oob_data)
+        return oob_data
+
     def close(self):
         safeClose(self._ui_event_stream)
         safeClose(self._bond_event_stream)
         safeClose(self._enforce_security_policy_stream)
         safeClose(self._disconnect_event_stream)
+        safeClose(self._oob_data_event_stream)
