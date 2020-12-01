@@ -21,7 +21,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "device_features.h"
+#include "btcore/include/device_features.h"
 #include "hci/include/hci_layer.h"
 #include "hci/include/hci_packet_factory.h"
 #include "hci/include/hci_packet_parser.h"
