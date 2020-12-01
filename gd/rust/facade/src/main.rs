@@ -7,26 +7,21 @@ use clap::{App, Arg};
 #[macro_use]
 extern crate lazy_static;
 
-use grpcio::*;
-
+use bluetooth_with_facades::RootFacadeService;
 use futures::channel::mpsc;
 use futures::executor::block_on;
 use futures::stream::StreamExt;
-
-use bluetooth_with_facades::RootFacadeService;
-
-use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr};
-use std::sync::Arc;
-use std::sync::Mutex;
-
-use tokio::net::TcpStream;
-
-use tokio::runtime::Runtime;
-
+use grpcio::*;
 use nix::sys::signal;
+use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr};
+use std::sync::{Arc, Mutex};
+use tokio::net::TcpStream;
+use tokio::runtime::Runtime;
+use log::debug;
 
 fn main() {
     let sigint = install_sigint();
+    bt_common::init_logging();
     let rt = Arc::new(Runtime::new().unwrap());
     rt.block_on(async_main(Arc::clone(&rt), sigint));
 }
@@ -57,11 +52,7 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
                 .long("rootcanal-port")
                 .takes_value(true),
         )
-        .arg(
-            Arg::with_name("btsnoop")
-                .long("btsnoop")
-                .takes_value(true),
-        )
+        .arg(Arg::with_name("btsnoop").long("btsnoop").takes_value(true))
         .arg(
             Arg::with_name("btconfig")
                 .long("btconfig")
@@ -117,7 +108,7 @@ lazy_static! {
 extern "C" fn handle_sigint(_: i32) {
     let mut sigint_tx = SIGINT_TX.lock().unwrap();
     if let Some(tx) = &*sigint_tx {
-        println!("Stopping gRPC root server due to SIGINT");
+        debug!("Stopping gRPC root server due to SIGINT");
         tx.unbounded_send(()).unwrap();
     }
     *sigint_tx = None;

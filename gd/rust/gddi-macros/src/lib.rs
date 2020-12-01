@@ -139,11 +139,12 @@ pub fn module(item: TokenStream) -> TokenStream {
     let submodule_idents = module.submodules.iter();
     let emitted_code = quote! {
         #[doc(hidden)]
-        pub fn #init_ident(builder: &mut gddi::RegistryBuilder) {
+        #[allow(missing_docs)]
+        pub fn #init_ident(builder: gddi::RegistryBuilder) -> gddi::RegistryBuilder {
             // Register all providers on this module
-            #(builder.register_provider::<#types>(Box::new(#provider_idents));)*
+            builder#(.register_provider::<#types>(Box::new(#provider_idents)))*
             // Register all submodules on this module
-            #(builder.register_module(#submodule_idents);)*
+            #(.register_module(#submodule_idents))*
         }
     };
     emitted_code.into()

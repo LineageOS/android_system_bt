@@ -6,23 +6,16 @@ pub mod error;
 /// HCI layer facade service
 pub mod facade;
 
+use bt_hal::HalExports;
+use bt_packet::{HciCommand, HciEvent};
+use error::Result;
+use facade::facade_module;
 use gddi::{module, provides};
-use tokio::sync::mpsc;
-use tokio::sync::mpsc::{channel, Receiver, Sender};
-use tokio::sync::oneshot;
-
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use tokio::sync::Mutex;
-
-use bt_hal::HalExports;
-use bt_packet as packet;
-use packet::{HciCommand, HciEvent};
-
-use error::Result;
-
-use facade::facade_module;
+use tokio::sync::mpsc::{channel, Receiver, Sender};
+use tokio::sync::{mpsc, oneshot, Mutex};
 
 module! {
     hci_module,
@@ -97,7 +90,7 @@ impl HciExports {
 
     /// Send the HCI event
     async fn dispatch_event(&mut self, event: HciEvent) -> Result<()> {
-        let evt_code = packet::get_evt_code(&event);
+        let evt_code = bt_packet::get_evt_code(&event);
         if let Some(evt_code) = evt_code {
             let registered_events = self.registered_events.lock().await;
             if registered_events.contains(&evt_code) {
@@ -136,7 +129,7 @@ async fn on_event(
     evt_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
 ) {
     while let Some(evt) = evt_rx.lock().await.recv().await {
-        let opcode = packet::get_evt_opcode(&evt).unwrap();
+        let opcode = bt_packet::get_evt_opcode(&evt).unwrap();
         let mut pending_cmds = pending_cmds.lock().await;
         if let Some(pending_cmd) = remove_first(&mut pending_cmds, |entry| entry.opcode == opcode) {
             pending_cmd.fut.send(evt).unwrap();
@@ -154,7 +147,7 @@ async fn on_command(
     while let Some(cmd) = cmd_rx.recv().await {
         let mut pending_cmds = pending_cmds.lock().await;
         pending_cmds.push(HciCommandEntryInner {
-            opcode: packet::get_cmd_opcode(&cmd.cmd).unwrap(),
+            opcode: bt_packet::get_cmd_opcode(&cmd.cmd).unwrap(),
             fut: cmd.fut,
         });
         cmd_tx.send(cmd.cmd).unwrap();

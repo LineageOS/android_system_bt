@@ -25,10 +25,10 @@ module! {
 #[provides]
 async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> HalExports {
     let (hal_exports, hal) = Hal::new();
-    let ipaddr = IpAddr::from_str(&config.server_address).unwrap();
-    let socket_addr = SocketAddr::new(ipaddr, config.port);
-    let stream = TcpStream::connect(&socket_addr).await.unwrap();
-    let (reader, writer) = stream.into_split();
+    let (reader, writer) = TcpStream::connect(&config.to_socket_addr().unwrap())
+        .await
+        .expect("unable to create stream to rootcanal")
+        .into_split();
 
     rt.spawn(dispatch_incoming(hal.evt_tx, hal.acl_tx, reader));
     rt.spawn(dispatch_outgoing(hal.cmd_rx, hal.acl_rx, writer));
@@ -39,17 +39,21 @@ async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> Hal
 /// Rootcanal configuration
 #[derive(Clone, Debug, Default)]
 pub struct RootcanalConfig {
+    address: String,
     port: u16,
-    server_address: String,
 }
 
 impl RootcanalConfig {
     /// Create a rootcanal config
-    pub fn new(port: u16, server_address: &str) -> Self {
+    pub fn new(address: &str, port: u16) -> Self {
         Self {
+            address: String::from(address),
             port,
-            server_address: String::from(server_address),
         }
+    }
+
+    fn to_socket_addr(&self) -> Result<SocketAddr> {
+        Ok(SocketAddr::new(IpAddr::from_str(&self.address)?, self.port))
     }
 }
 
