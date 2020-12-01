@@ -809,6 +809,10 @@ void btm_inq_db_init(void) {
   btm_cb.btm_inq_vars.no_inc_ssp = BTM_NO_SSP_ON_INQUIRY;
 }
 
+void btm_inq_db_free(void) {
+  alarm_free(btm_cb.btm_inq_vars.remote_name_timer);
+}
+
 /*******************************************************************************
  *
  * Function         btm_inq_stop_on_ssp
