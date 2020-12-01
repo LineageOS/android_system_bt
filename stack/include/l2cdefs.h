@@ -174,16 +174,14 @@ inline std::string l2cap_le_result_code_text(
 
 /* L2CAP Predefined CIDs
 */
-enum : uint16_t {
-  L2CAP_SIGNALLING_CID = 1,
-  L2CAP_CONNECTIONLESS_CID = 2,
-  L2CAP_AMP_CID = 3,
-  L2CAP_ATT_CID = 4,
-  L2CAP_BLE_SIGNALLING_CID = 5,
-  L2CAP_SMP_CID = 6,
-  L2CAP_SMP_BR_CID = 7,
-  L2CAP_BASE_APPL_CID = 0x0040,
-};
+#define L2CAP_SIGNALLING_CID 1
+#define L2CAP_CONNECTIONLESS_CID 2
+#define L2CAP_AMP_CID 3
+#define L2CAP_ATT_CID 4
+#define L2CAP_BLE_SIGNALLING_CID 5
+#define L2CAP_SMP_CID 6
+#define L2CAP_SMP_BR_CID 7
+#define L2CAP_BASE_APPL_CID 0x0040
 
 /* Fixed Channels mask bits */
 

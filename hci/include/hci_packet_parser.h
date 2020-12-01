@@ -21,10 +21,10 @@
 #include <stdint.h>
 
 #include "bt_types.h"
-#include "btcore/include/device_features.h"
-#include "btcore/include/version.h"
+#include "device_features.h"
 #include "features.h"
 #include "osi/include/allocator.h"
+#include "version.h"
 
 typedef struct {
   void (*parse_generic_command_complete)(BT_HDR* response);

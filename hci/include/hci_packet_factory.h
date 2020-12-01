@@ -19,7 +19,7 @@
 #pragma once
 
 #include "bt_types.h"
-#include "btcore/include/event_mask.h"
+#include "event_mask.h"
 
 typedef struct {
   BT_HDR* (*make_reset)(void);
