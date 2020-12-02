@@ -243,7 +243,7 @@ enum OpCode : 16 {
   LE_READ_LOCAL_SUPPORTED_FEATURES = 0x2003,
   LE_SET_RANDOM_ADDRESS = 0x2005,
   LE_SET_ADVERTISING_PARAMETERS = 0x2006,
-  LE_READ_ADVERTISING_CHANNEL_TX_POWER = 0x2007,
+  LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER = 0x2007,
   LE_SET_ADVERTISING_DATA = 0x2008,
   LE_SET_SCAN_RESPONSE_DATA = 0x2009,
   LE_SET_ADVERTISING_ENABLE = 0x200A,
@@ -496,7 +496,7 @@ enum OpCodeIndex : 16 {
   LE_READ_LOCAL_SUPPORTED_FEATURES = 252,
   LE_SET_RANDOM_ADDRESS = 254,
   LE_SET_ADVERTISING_PARAMETERS = 255,
-  LE_READ_ADVERTISING_CHANNEL_TX_POWER = 256,
+  LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER = 256,
   LE_SET_ADVERTISING_DATA = 257,
   LE_SET_SCAN_RESPONSE_DATA = 260,
   LE_SET_ADVERTISING_ENABLE = 261,
@@ -2500,12 +2500,12 @@ packet LeSetAdvertisingParametersComplete : CommandComplete (command_op_code = L
   status : ErrorCode,
 }
 
-packet LeReadAdvertisingChannelTxPower : LeAdvertisingCommand (op_code = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
+packet LeReadAdvertisingPhysicalChannelTxPower : LeAdvertisingCommand (op_code = LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER) {
 }
 
-packet LeReadAdvertisingChannelTxPowerComplete : CommandComplete (command_op_code = LE_READ_ADVERTISING_CHANNEL_TX_POWER) {
+packet LeReadAdvertisingPhysicalChannelTxPowerComplete : CommandComplete (command_op_code = LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER) {
   status : ErrorCode,
-  transmit_power_level : 8, // (-20dBm to 10dBm) Accuracy: +/-4dB
+  transmit_power_level : 8, // (-127dBm to 20dBm) Accuracy: +/-4dB
 }
 
 packet LeSetAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_DATA) {
