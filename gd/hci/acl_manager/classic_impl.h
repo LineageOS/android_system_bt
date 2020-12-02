@@ -190,9 +190,11 @@ struct classic_impl : public security::ISecurityManagerListener {
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetBdAddr();
     Role current_role = Role::CENTRAL;
+    bool locally_initiated = true;
     if (outgoing_connecting_address_ == address) {
       outgoing_connecting_address_ = Address::kEmpty;
     } else {
+      locally_initiated = false;
       ASSERT_LOG(incoming_connecting_address_ == address, "No prior connection request for %s",
                  address.ToString().c_str());
       incoming_connecting_address_ = Address::kEmpty;
@@ -212,6 +214,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue);
     std::unique_ptr<ClassicAclConnection> connection(
         new ClassicAclConnection(std::move(queue), acl_connection_interface_, handle, address));
+    connection->locally_initiated_ = locally_initiated;
     auto& connection_proxy = check_and_get_connection(handle);
     connection_proxy.connection_management_callbacks_ = connection->GetEventCallbacks();
     connection_proxy.connection_management_callbacks_->OnRoleChange(current_role);
