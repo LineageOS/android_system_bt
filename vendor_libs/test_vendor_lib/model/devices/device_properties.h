@@ -307,6 +307,11 @@ class DeviceProperties {
     return le_supported_features_;
   }
 
+  // Specification Version 5.2, Volume 4, Part E, Section 7.8.6
+  int8_t GetLeAdvertisingPhysicalChannelTxPower() const {
+    return le_advertising_physical_channel_tx_power_;
+  }
+
   void SetLeSupportedFeatures(uint64_t features) {
     le_supported_features_ = features;
   }
@@ -369,6 +374,7 @@ class DeviceProperties {
   uint8_t le_connect_list_size_;
   uint8_t le_resolving_list_size_;
   uint64_t le_supported_features_{0x075b3fd8fe8ffeff};
+  int8_t le_advertising_physical_channel_tx_power_{0x00};
   uint64_t le_supported_states_;
   uint64_t le_event_mask_{0x01f};
   std::vector<uint8_t> le_vendor_cap_;

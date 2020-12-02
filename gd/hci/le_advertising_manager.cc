@@ -102,6 +102,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       advertising_api_type_ = AdvertisingApiType::ANDROID_HCI;
     } else {
       advertising_api_type_ = AdvertisingApiType::LEGACY;
+      hci_layer_->EnqueueCommand(
+          LeReadAdvertisingPhysicalChannelTxPowerBuilder::Create(),
+          handler->BindOnceOn(this, &impl::on_read_advertising_physical_channel_tx_power));
     }
   }
 
@@ -826,6 +829,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   hci::HciLayer* hci_layer_;
   hci::Controller* controller_;
   uint16_t le_maximum_advertising_data_length_;
+  int8_t le_physical_channel_tx_power_ = 0;
   hci::LeAdvertisingInterface* le_advertising_interface_;
   std::map<AdvertiserId, Advertiser> advertising_sets_;
   hci::LeAddressManager* le_address_manager_;
@@ -838,6 +842,16 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   std::map<uint8_t, int> id_map_;
 
   AdvertisingApiType advertising_api_type_{0};
+
+  void on_read_advertising_physical_channel_tx_power(CommandCompleteView view) {
+    auto complete_view = LeReadAdvertisingPhysicalChannelTxPowerCompleteView::Create(view);
+    ASSERT(complete_view.IsValid());
+    if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_INFO("Got a command complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+      return;
+    }
+    le_physical_channel_tx_power_ = complete_view.GetTransmitPowerLevel();
+  }
 
   template <class View>
   void on_set_advertising_enable_complete(bool enable, std::vector<EnabledSet> enabled_sets, CommandCompleteView view) {
@@ -864,8 +878,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       } else {
         int reg_id = id_map_[id];
         advertising_sets_[enabled_set.advertising_handle_].started = true;
-        // TODO read tx power
-        advertising_callbacks_->OnAdvertisingSetStarted(reg_id, id, 0x00, advertising_status);
+        advertising_callbacks_->OnAdvertisingSetStarted(reg_id, id, le_physical_channel_tx_power_, advertising_status);
       }
     }
   }
@@ -965,8 +978,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
     switch (opcode) {
       case OpCode::LE_SET_ADVERTISING_PARAMETERS:
-        // TODO read tx power
-        advertising_callbacks_->OnAdvertisingParametersUpdated(id, 0x00, advertising_status);
+        advertising_callbacks_->OnAdvertisingParametersUpdated(id, le_physical_channel_tx_power_, advertising_status);
         break;
       case OpCode::LE_SET_ADVERTISING_DATA:
       case OpCode::LE_SET_EXTENDED_ADVERTISING_DATA:
