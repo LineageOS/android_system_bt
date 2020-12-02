@@ -46,7 +46,6 @@
 #include "security/security_module.h"
 #include "shim/dumpsys.h"
 #include "shim/facade/facade.h"
-#include "shim/l2cap.h"
 #include "stack_manager.h"
 #include "storage/storage_module.h"
 
@@ -115,7 +114,6 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         break;
       case BluetoothModule::SHIM:
         modules.add<::bluetooth::shim::facade::ShimFacadeModule>();
-        modules.add<::bluetooth::shim::L2cap>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");

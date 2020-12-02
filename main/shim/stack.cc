@@ -36,7 +36,6 @@
 #include "gd/os/log.h"
 #include "gd/security/security_module.h"
 #include "gd/shim/dumpsys.h"
-#include "gd/shim/l2cap.h"
 #include "gd/storage/storage_module.h"
 
 #include "main/shim/acl_legacy_interface.h"
@@ -87,7 +86,6 @@ void Stack::StartEverything() {
   if (common::InitFlags::GdL2capEnabled()) {
     modules.add<l2cap::classic::L2capClassicModule>();
     modules.add<l2cap::le::L2capLeModule>();
-    modules.add<shim::L2cap>();
   }
   if (common::InitFlags::GdSecurityEnabled()) {
     modules.add<security::SecurityModule>();
@@ -113,7 +111,6 @@ void Stack::StartEverything() {
   ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
   ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
   if (common::InitFlags::GdCoreEnabled()) {
-    ASSERT(stack_manager_.GetInstance<shim::L2cap>() != nullptr);
     btm_ = new Btm(stack_handler_,
                    stack_manager_.GetInstance<neighbor::InquiryModule>());
   }
