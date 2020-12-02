@@ -8,14 +8,33 @@ rust_ffi_static {
         "libbt_common",
         "libcxx",
     ],
+    static_libs: [
+        "libbt_callbacks_cxx",
+    ],
     host_supported: true,
 }
 
 cc_library_static {
     name: "libbluetooth_rust_interop",
-    generated_headers: ["libbt_init_flags_bridge_header", "libbt_shim_bridge_header"],
-    generated_sources: ["libbt_init_flags_bridge_code", "libbt_shim_bridge_code"],
-    export_generated_headers: ["libbt_init_flags_bridge_header", "libbt_shim_bridge_header"],
+    generated_headers: [
+        "libbt_init_flags_bridge_header",
+        "libbt_shim_bridge_header",
+        "libbt_hci_bridge_header",
+        "cxx-bridge-header",
+    ],
+    generated_sources: [
+        "libbt_init_flags_bridge_code",
+        "libbt_shim_bridge_code",
+        "libbt_hci_bridge_code",
+    ],
+    export_generated_headers: [
+        "libbt_init_flags_bridge_header",
+        "libbt_shim_bridge_header",
+        "libbt_hci_bridge_header",
+        "cxx-bridge-header",
+    ],
+    header_libs: ["libbt_callbacks_cxx_headers"],
+    export_header_lib_headers: ["libbt_callbacks_cxx_headers"],
     cflags: [
         "-Wno-unused-const-variable",
     ],
@@ -24,9 +43,29 @@ cc_library_static {
         "//apex_available:platform",
         "com.android.bluetooth.updatable",
     ],
+    shared_libs: [
+        "libchrome",
+    ],
     static_libs: [
         "libbt_shim_ffi",
     ],
+}
+
+cc_library_static {
+    name: "libbt_callbacks_cxx",
+    header_libs: ["libbt_callbacks_cxx_headers"],
+    srcs: ["callbacks/callbacks.cc"],
+    generated_headers: ["libbt_hci_bridge_header", "cxx-bridge-header"],
+    shared_libs: [
+        "libchrome",
+    ],
+    host_supported: true,
+}
+
+cc_library_headers {
+    name: "libbt_callbacks_cxx_headers",
+    local_include_dirs: ["callbacks"],
+    host_supported: true,
 }
 
 genrule {
@@ -61,4 +100,18 @@ genrule {
     out: ["init_flags.cc"],
 }
 
+genrule {
+    name: "libbt_hci_bridge_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: ["src/hci.rs"],
+    out: ["src/hci.rs.h"],
+}
 
+genrule {
+    name: "libbt_hci_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/hci.rs"],
+    out: ["hci.cc"],
+}
