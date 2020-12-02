@@ -19,7 +19,6 @@
 #pragma once
 
 #include <fuzzer/FuzzedDataProvider.h>
-#include <gd/shim/l2cap.h>
 
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/l2cap_classic_module.h"
