@@ -22,22 +22,21 @@
 namespace bluetooth {
 namespace activity_attribution {
 
-enum class Activity { UNKNOWN = 0, ADVERTISE, CONNECT, SCAN };
-
 class ActivityAttributionCallbacks {
  public:
+  enum class Activity { UNKNOWN = 0, ADVERTISE, CONNECT, SCAN };
   virtual ~ActivityAttributionCallbacks() = default;
 
   /** Callback when Blutooth woke up the system */
-  virtual void OnWakeup(Activity activity, const RawAddress& address) = 0;
+  virtual void OnWakeup(const Activity activity, const RawAddress& address) = 0;
 };
 
 class ActivityAttributionInterface {
  public:
   virtual ~ActivityAttributionInterface() = default;
 
-  /** Register the Activity Attribution callbacks */
-  virtual void Init(ActivityAttributionCallbacks* callbacks) = 0;
+  /** Register JNI callbacks with the interface. */
+  virtual void RegisterCallbacks(ActivityAttributionCallbacks* callbacks) = 0;
 
   /** Closes the interface. */
   virtual void Cleanup(void) = 0;

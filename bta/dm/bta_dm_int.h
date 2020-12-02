@@ -26,9 +26,9 @@
 
 #include <memory>
 #include "bt_target.h"
-#include "bta_sys.h"
+#include "bta/sys/bta_sys.h"
 
-#include "bta_gatt_api.h"
+#include "bta/include/bta_gatt_api.h"
 
 /*****************************************************************************
  *  Constants and data types

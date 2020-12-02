@@ -98,7 +98,7 @@ void SMP_Init(void) {
  * Returns          The new or current trace level
  *
  ******************************************************************************/
-extern uint8_t SMP_SetTraceLevel(uint8_t new_level) {
+uint8_t SMP_SetTraceLevel(uint8_t new_level) {
   if (new_level != 0xFF) smp_cb.trace_level = new_level;
 
   return (smp_cb.trace_level);

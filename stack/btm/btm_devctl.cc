@@ -35,7 +35,7 @@
 #include "btu.h"
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
-#include "hci_layer.h"
+#include "hci/include/hci_layer.h"
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
 #include "stack/gatt/connection_manager.h"
@@ -49,7 +49,6 @@
 
 extern void btm_inq_db_reset(void);
 extern void btm_pm_reset(void);
-
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
@@ -99,6 +98,15 @@ void btm_dev_init() {
       ESCO_PKT_TYPES_MASK_HV1 + ESCO_PKT_TYPES_MASK_HV2 +
       ESCO_PKT_TYPES_MASK_HV3 + ESCO_PKT_TYPES_MASK_EV3 +
       ESCO_PKT_TYPES_MASK_EV4 + ESCO_PKT_TYPES_MASK_EV5;
+}
+
+void btm_dev_free() {
+  alarm_free(btm_cb.devcb.read_local_name_timer);
+  alarm_free(btm_cb.devcb.read_rssi_timer);
+  alarm_free(btm_cb.devcb.read_failed_contact_counter_timer);
+  alarm_free(btm_cb.devcb.read_automatic_flush_timeout_timer);
+  alarm_free(btm_cb.devcb.read_link_quality_timer);
+  alarm_free(btm_cb.devcb.read_tx_power_timer);
 }
 
 /*******************************************************************************

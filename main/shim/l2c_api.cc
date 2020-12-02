@@ -16,6 +16,9 @@
 
 #define LOG_TAG "bt_shim_l2cap"
 
+#include <unordered_map>
+#include <unordered_set>
+
 #include "main/shim/l2c_api.h"
 #include "bta/include/bta_dm_acl.h"
 #include "gd/l2cap/classic/l2cap_classic_module.h"
@@ -26,7 +29,6 @@
 #include "main/shim/btm.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "main/shim/l2cap.h"
 #include "main/shim/stack.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
@@ -36,8 +38,6 @@
 
 using bluetooth::hci::AddressWithType;
 using namespace bluetooth::l2cap;
-
-static bluetooth::shim::legacy::L2cap shim_l2cap;
 
 // Classic Dynamic Channel Shim Helper
 
@@ -575,18 +575,6 @@ void bluetooth::shim::L2CA_Deregister(uint16_t psm) {
   if (classic_dynamic_channel_helper_map_[psm]->channels_.empty()) {
     classic_dynamic_channel_helper_map_.erase(psm);
   }
-}
-
-uint16_t bluetooth::shim::L2CA_AllocateLePSM(void) {
-  return shim_l2cap.GetNextDynamicLePsm();
-}
-
-void bluetooth::shim::L2CA_FreeLePSM(uint16_t psm) {
-  if (!shim_l2cap.Le().IsPsmRegistered(psm)) {
-    LOG_ERROR("%s Not previously registered le psm:%hd", __func__, psm);
-    return;
-  }
-  shim_l2cap.Le().UnregisterPsm(psm);
 }
 
 /**
@@ -1136,6 +1124,29 @@ std::unordered_map<uint16_t, std::unique_ptr<LeDynamicChannelHelper>>
 /**
  * Le Connection Oriented Channel APIs
  */
+
+static std::unordered_set<uint16_t> assigned_dynamic_le_psm_;
+static uint16_t next_assigned_dynamic_le_psm_ = 0x80;
+
+uint16_t bluetooth::shim::L2CA_AllocateLePSM() {
+  if (le_dynamic_channel_helper_map_.size() > 100) {
+    LOG_ERROR("Why do we need more than 100 dynamic channel PSMs?");
+    return 0;
+  }
+  while (le_dynamic_channel_helper_map_.count(next_assigned_dynamic_le_psm_)) {
+    next_assigned_dynamic_le_psm_++;
+    if (next_assigned_dynamic_le_psm_ > 0xff) {
+      next_assigned_dynamic_le_psm_ = 0x80;
+    }
+  }
+  assigned_dynamic_le_psm_.emplace(next_assigned_dynamic_le_psm_);
+  return next_assigned_dynamic_le_psm_;
+}
+
+void bluetooth::shim::L2CA_FreeLePSM(uint16_t psm) {
+  assigned_dynamic_le_psm_.erase(psm);
+}
+
 uint16_t bluetooth::shim::L2CA_RegisterLECoc(uint16_t psm,
                                              const tL2CAP_APPL_INFO& callbacks,
                                              uint16_t sec_level) {

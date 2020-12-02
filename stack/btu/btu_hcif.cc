@@ -731,7 +731,7 @@ using hci_cmd_cb = base::OnceCallback<void(
 
 struct cmd_with_cb_data {
   hci_cmd_cb cb;
-  Location posted_from;
+  base::Location posted_from;
 };
 
 void cmd_with_cb_data_init(cmd_with_cb_data* cb_wrapper) {
@@ -875,9 +875,9 @@ static void btu_hcif_command_status_evt_with_cb(uint8_t status, BT_HDR* command,
 /* This function is called to send commands to the Host Controller. |cb| is
  * called when command status event is called with error code, or when the
  * command complete event is received. */
-void btu_hcif_send_cmd_with_cb(const Location& posted_from, uint16_t opcode,
-                               uint8_t* params, uint8_t params_len,
-                               hci_cmd_cb cb) {
+void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
+                               uint16_t opcode, uint8_t* params,
+                               uint8_t params_len, hci_cmd_cb cb) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1016,14 +1016,8 @@ static void btu_hcif_disconnection_comp_evt(uint8_t* p) {
 
   handle = HCID_GET_HANDLE(handle);
 
-  /* If L2CAP or SCO doesn't know about it, send it to ISO */
-  if (!l2c_link_hci_disc_comp(handle, reason) &&
-      !btm_sco_removed(handle, reason)) {
-    IsoManager::GetInstance()->HandleDisconnect(handle, reason);
-  }
-
-  /* Notify security manager */
-  btm_sec_disconnected(handle, static_cast<tHCI_STATUS>(reason));
+  btm_acl_disconnected(static_cast<tHCI_STATUS>(status), handle,
+                       static_cast<tHCI_STATUS>(reason));
 }
 
 /*******************************************************************************
