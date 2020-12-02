@@ -90,5 +90,11 @@ std::string StringFormat(const std::string& format, Args... args) {
   return std::string(buffer, size);
 }
 
+inline std::string StringFormatTime(const std::string& format, const struct std::tm& tm) {
+  std::ostringstream os;
+  os << std::put_time(&tm, format.c_str());
+  return os.str();
+}
+
 }  // namespace common
 }  // namespace bluetooth
