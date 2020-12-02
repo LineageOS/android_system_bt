@@ -23,7 +23,6 @@
 #include <gd/l2cap/classic/internal/fixed_channel_service_manager_impl.h>
 #include <gd/l2cap/classic/internal/link_manager.h>
 #include <gd/l2cap/internal/parameter_provider.h>
-#include <gd/shim/l2cap.h>
 #include <future>
 #include <memory>
 
@@ -39,43 +38,34 @@ namespace shim {
 namespace {
 class ShimL2capFuzz {
  public:
-  void OnConnectionComplete(std::string string_address, uint16_t psm, uint16_t cid, bool connected) {
-    connection_string_address_ = string_address;
-    connection_psm_ = psm;
-    connection_cid_ = cid;
-    connection_connected_ = connected;
-    connection_complete_promise_.set_value();
-  }
-
-  uint16_t CreateConnection(uint16_t psm, std::string device_address) {
+  uint16_t CreateConnection(uint16_t psm, hci::Address device_address) {
     std::promise<uint16_t> promise;
     auto future = promise.get_future();
 
-    shim_l2cap_->CreateClassicConnection(
-        psm,
+    fuzz_l2cap_classic_module_->GetDynamicChannelManager()->ConnectChannel(
         device_address,
-        std::bind(
-            &shim::ShimL2capFuzz::OnConnectionComplete,
-            this,
-            std::placeholders::_1,
-            std::placeholders::_2,
-            std::placeholders::_3,
-            std::placeholders::_4),
-        std::move(promise));
+        {},
+        psm,
+        handler_->BindOn(this, &ShimL2capFuzz::OnConnectionComplete),
+        handler_->BindOnceOn(this, &ShimL2capFuzz::OnConnectionFail));
+
     return future.get();
   }
+
+  void OnConnectionComplete(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {}
+
+  void OnConnectionFail(l2cap::classic::DynamicChannelManager::ConnectionResult result) {}
 
   ShimL2capFuzz(FuzzedDataProvider* fdp) {
     hci::fuzz::FuzzHciLayer* fuzzHci = fake_registry_.Inject<hci::fuzz::FuzzHciLayer>(&hci::HciLayer::Factory);
     fuzz_l2cap_classic_module_ = new FuzzL2capClassicModule();
     fake_registry_.InjectTestModule(&l2cap::classic::L2capClassicModule::Factory, fuzz_l2cap_classic_module_);
-    fake_registry_.Start<shim::L2cap>();
+    fake_registry_.Start<l2cap::classic::L2capClassicModule>();
 
     // The autoreply is needed to prevent it from hanging.
     fuzzHci->TurnOnAutoReply(fdp);
     acl_manager_ = fake_registry_.Start<hci::AclManager>();
     fuzzHci->TurnOffAutoReply();
-    shim_l2cap_ = static_cast<shim::L2cap*>(fake_registry_.GetModuleUnderTest(&shim::L2cap::Factory));
 
     // Create the LinkManager
     handler_ = std::unique_ptr<os::Handler>(new os::Handler(&thread_));
@@ -96,13 +86,8 @@ class ShimL2capFuzz {
     fake_registry_.WaitForIdleAndStopAll();
   }
 
-  std::string connection_string_address_;
-  uint16_t connection_psm_{0};
-  uint16_t connection_cid_{1000};
-  bool connection_connected_{false};
   std::promise<void> connection_complete_promise_;
 
-  shim::L2cap* shim_l2cap_{nullptr};
   FuzzL2capClassicModule* fuzz_l2cap_classic_module_{nullptr};
   hci::AclManager* acl_manager_{nullptr};
 
