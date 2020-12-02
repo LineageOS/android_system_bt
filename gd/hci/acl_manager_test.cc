@@ -1259,15 +1259,15 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type_);
 
-  // Add device to connect list
-  test_hci_layer_->GetLastCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
-  test_hci_layer_->SetCommandFuture();
-  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
-
   // Set random address
   test_hci_layer_->GetLastCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+
+  // Add device to connect list
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
   // send create connection command
   test_hci_layer_->GetLastCommandPacket(OpCode::LE_CREATE_CONNECTION);
