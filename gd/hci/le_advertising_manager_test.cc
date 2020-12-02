@@ -401,6 +401,7 @@ class LeAdvertisingAPITest : public LeAdvertisingManagerTest {
         mock_advertising_callback_,
         OnAdvertisingSetStarted(0x00, advertiser_id_, 0x00, AdvertisingCallback::AdvertisingStatus::SUCCESS));
     std::vector<OpCode> adv_opcodes = {
+        OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER,
         OpCode::LE_SET_ADVERTISING_PARAMETERS,
         OpCode::LE_SET_SCAN_RESPONSE_DATA,
         OpCode::LE_SET_ADVERTISING_DATA,
@@ -410,8 +411,13 @@ class LeAdvertisingAPITest : public LeAdvertisingManagerTest {
     for (size_t i = 0; i < adv_opcodes.size(); i++) {
       auto packet_view = test_hci_layer_->GetCommandPacket(adv_opcodes[i]);
       CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
-      test_hci_layer_->IncomingEvent(
-          CommandCompleteBuilder::Create(uint8_t{1}, adv_opcodes[i], std::make_unique<RawBuilder>(success_vector)));
+      if (adv_opcodes[i] == OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER) {
+        test_hci_layer_->IncomingEvent(
+            LeReadAdvertisingPhysicalChannelTxPowerCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS, 0x00));
+      } else {
+        test_hci_layer_->IncomingEvent(
+            CommandCompleteBuilder::Create(uint8_t{1}, adv_opcodes[i], std::make_unique<RawBuilder>(success_vector)));
+      }
       test_hci_layer_->SetCommandFuture();
     }
     sync_client_handler();
@@ -521,6 +527,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
       0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   std::vector<OpCode> adv_opcodes = {
+      OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER,
       OpCode::LE_SET_ADVERTISING_PARAMETERS,
       OpCode::LE_SET_SCAN_RESPONSE_DATA,
       OpCode::LE_SET_ADVERTISING_DATA,
@@ -534,8 +541,13 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
     auto packet_view = test_hci_layer_->GetCommandPacket(adv_opcodes[i]);
     CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
     auto command = ConnectionManagementCommandView::Create(AclCommandView::Create(command_packet_view));
-    test_hci_layer_->IncomingEvent(
-        CommandCompleteBuilder::Create(uint8_t{1}, adv_opcodes[i], std::make_unique<RawBuilder>(success_vector)));
+    if (adv_opcodes[i] == OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER) {
+      test_hci_layer_->IncomingEvent(
+          LeReadAdvertisingPhysicalChannelTxPowerCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS, 0x00));
+    } else {
+      test_hci_layer_->IncomingEvent(
+          CommandCompleteBuilder::Create(uint8_t{1}, adv_opcodes[i], std::make_unique<RawBuilder>(success_vector)));
+    }
     test_hci_layer_->SetCommandFuture();
   }
   sync_client_handler();
