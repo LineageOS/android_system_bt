@@ -403,6 +403,9 @@ class DualModeController : public Device {
   // 7.8.5
   void LeSetAdvertisingParameters(CommandPacketView args);
 
+  // 7.8.6
+  void LeReadAdvertisingPhysicalChannelTxPower(CommandPacketView args);
+
   // 7.8.7
   void LeSetAdvertisingData(CommandPacketView args);
 
