@@ -23,6 +23,8 @@
 #include <string>
 
 #include "gd/common/circular_buffer.h"
+#include "osi/include/allocator.h"
+#include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_ble_int_types.h"
@@ -214,7 +216,7 @@ typedef struct {
   ****************************************************/
   tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
 
-  uint8_t pm_pend_id;   /* the id pf the module, which has a pending PM cmd */
+  uint8_t pm_pend_id{0}; /* the id pf the module, which has a pending PM cmd */
 
   /*****************************************************
   **      Device control
@@ -233,21 +235,21 @@ typedef struct {
                                            Octet16* p_stk);
   friend void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk,
                                         const Octet16& stk);
-  uint16_t enc_handle;
+  uint16_t enc_handle{0};
 
   friend void btm_ble_ltk_request(uint16_t handle, uint8_t rand[8],
                                   uint16_t ediv);
   BT_OCTET8 enc_rand; /* received rand value from LTK request*/
 
-  uint16_t ediv;      /* received ediv value from LTK request */
+  uint16_t ediv{0}; /* received ediv value from LTK request */
 
-  uint8_t key_size;
+  uint8_t key_size{0};
 
  public:
   tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
 
   /* Packet types supported by the local device */
-  uint16_t btm_sco_pkt_types_supported;
+  uint16_t btm_sco_pkt_types_supported{0};
 
   /*****************************************************
   **      Inquiry
@@ -267,52 +269,105 @@ typedef struct {
 #define BTM_SEC_MAX_RMT_NAME_CALLBACKS 2
   tBTM_RMT_NAME_CALLBACK* p_rmt_name_callback[BTM_SEC_MAX_RMT_NAME_CALLBACKS];
 
-  tBTM_SEC_DEV_REC* p_collided_dev_rec;
-  alarm_t* sec_collision_timer;
-  uint64_t collision_start_time;
-  uint32_t dev_rec_count; /* Counter used for device record timestamp */
-  uint8_t security_mode;
-  bool pairing_disabled;
-  bool security_mode_changed; /* mode changed during bonding */
-  bool pin_type_changed;      /* pin type changed during bonding */
-  bool sec_req_pending;       /*   true if a request is pending */
+  tBTM_SEC_DEV_REC* p_collided_dev_rec{nullptr};
+  alarm_t* sec_collision_timer{nullptr};
+  uint64_t collision_start_time{0};
+  uint32_t dev_rec_count{0}; /* Counter used for device record timestamp */
+  uint8_t security_mode{0};
+  bool pairing_disabled{false};
+  bool security_mode_changed{false}; /* mode changed during bonding */
+  bool pin_type_changed{false};      /* pin type changed during bonding */
+  bool sec_req_pending{false};       /*   true if a request is pending */
 
-  uint8_t pin_code_len;             /* for legacy devices */
+  uint8_t pin_code_len{0};          /* for legacy devices */
   PIN_CODE pin_code;                /* for legacy devices */
-  tBTM_PAIRING_STATE pairing_state; /* The current pairing state    */
-  uint8_t pairing_flags;            /* The current pairing flags    */
+  tBTM_PAIRING_STATE pairing_state{
+      BTM_PAIR_STATE_IDLE};         /* The current pairing state    */
+  uint8_t pairing_flags{0};         /* The current pairing flags    */
   RawAddress pairing_bda;           /* The device currently pairing */
-  alarm_t* pairing_timer;           /* Timer for pairing process    */
-  uint16_t disc_handle;             /* for legacy devices */
-  uint8_t disc_reason;              /* for legacy devices */
+  alarm_t* pairing_timer{nullptr};  /* Timer for pairing process    */
+  uint16_t disc_handle{0};          /* for legacy devices */
+  uint8_t disc_reason{0};           /* for legacy devices */
   tBTM_SEC_SERV_REC sec_serv_rec[BTM_SEC_MAX_SERVICE_RECORDS];
-  list_t* sec_dev_rec; /* list of tBTM_SEC_DEV_REC */
-  tBTM_SEC_SERV_REC* p_out_serv;
-  tBTM_MKEY_CALLBACK* mkey_cback;
+  list_t* sec_dev_rec{nullptr}; /* list of tBTM_SEC_DEV_REC */
+  tBTM_SEC_SERV_REC* p_out_serv{nullptr};
+  tBTM_MKEY_CALLBACK* mkey_cback{nullptr};
 
   RawAddress connecting_bda;
   DEV_CLASS connecting_dc;
   uint8_t trace_level;
-  bool is_paging;     /* true, if paging is in progess */
-  bool is_inquiry;    /* true, if inquiry is in progess */
-  fixed_queue_t* page_queue;
+  bool is_paging{false};  /* true, if paging is in progess */
+  bool is_inquiry{false}; /* true, if inquiry is in progess */
+  fixed_queue_t* page_queue{nullptr};
 
-  bool paging;
+  bool paging{false};
   void set_paging() { paging = true; }
   void reset_paging() { paging = false; }
   bool is_paging_active() const {
     return paging;
   }  // TODO remove all this paging state
 
-  fixed_queue_t* sec_pending_q; /* pending sequrity requests in
-                                   tBTM_SEC_QUEUE_ENTRY format */
+  fixed_queue_t* sec_pending_q{nullptr}; /* pending sequrity requests in
+                                            tBTM_SEC_QUEUE_ENTRY format */
 
   // BQR Receiver
-  tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver;
+  tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver{nullptr};
 
   tACL_CB acl_cb_;
 
   std::shared_ptr<TimestampedStringCircularBuffer> history_{nullptr};
+
+  void Init(uint8_t initial_security_mode) {
+    memset(&cfg, 0, sizeof(cfg));
+    memset(pm_reg_db, 0, sizeof(pm_reg_db));
+    memset(&devcb, 0, sizeof(devcb));
+    memset(&ble_ctr_cb, 0, sizeof(ble_ctr_cb));
+    memset(&enc_rand, 0, sizeof(enc_rand));
+    memset(&cmn_ble_vsc_cb, 0, sizeof(cmn_ble_vsc_cb));
+    memset(&btm_inq_vars, 0, sizeof(btm_inq_vars));
+    memset(&sco_cb, 0, sizeof(sco_cb));
+    memset(&api, 0, sizeof(api));
+    memset(p_rmt_name_callback, 0, sizeof(p_rmt_name_callback));
+    memset(&pin_code, 0, sizeof(pin_code));
+    pairing_bda = RawAddress::kEmpty;
+    memset(sec_serv_rec, 0, sizeof(sec_serv_rec));
+
+    connecting_bda = RawAddress::kEmpty;
+    memset(&connecting_dc, 0, sizeof(connecting_dc));
+
+    memset(&acl_cb_, 0, sizeof(acl_cb_));
+
+    page_queue = fixed_queue_new(SIZE_MAX);
+    sec_pending_q = fixed_queue_new(SIZE_MAX);
+    sec_collision_timer = alarm_new("btm.sec_collision_timer");
+    pairing_timer = alarm_new("btm.pairing_timer");
+
+#if defined(BTM_INITIAL_TRACE_LEVEL)
+    trace_level = BTM_INITIAL_TRACE_LEVEL;
+#else
+    trace_level = BT_TRACE_LEVEL_NONE; /* No traces */
+#endif
+    security_mode = initial_security_mode;
+    pairing_bda = RawAddress::kAny;
+    sec_dev_rec = list_new(osi_free);
+  }
+
+  void Free() {
+    fixed_queue_free(page_queue, nullptr);
+    page_queue = nullptr;
+
+    fixed_queue_free(sec_pending_q, nullptr);
+    sec_pending_q = nullptr;
+
+    list_free(sec_dev_rec);
+    sec_dev_rec = nullptr;
+
+    alarm_free(sec_collision_timer);
+    sec_collision_timer = nullptr;
+
+    alarm_free(pairing_timer);
+    pairing_timer = nullptr;
+  }
 
  private:
   friend uint8_t BTM_AllocateSCN(void);
