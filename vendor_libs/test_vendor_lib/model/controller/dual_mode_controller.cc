@@ -204,6 +204,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::LE_SET_RANDOM_ADDRESS, LeSetRandomAddress);
   SET_HANDLER(OpCode::LE_SET_ADVERTISING_PARAMETERS,
               LeSetAdvertisingParameters);
+  SET_HANDLER(OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER,
+              LeReadAdvertisingPhysicalChannelTxPower);
   SET_HANDLER(OpCode::LE_SET_ADVERTISING_DATA, LeSetAdvertisingData);
   SET_HANDLER(OpCode::LE_SET_SCAN_RESPONSE_DATA, LeSetScanResponseData);
   SET_HANDLER(OpCode::LE_SET_ADVERTISING_ENABLE, LeSetAdvertisingEnable);
@@ -1589,6 +1591,19 @@ void DualModeController::LeSetAdvertisingParameters(CommandPacketView command) {
   auto packet =
       bluetooth::hci::LeSetAdvertisingParametersCompleteBuilder::Create(
           kNumCommandPackets, ErrorCode::SUCCESS);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::LeReadAdvertisingPhysicalChannelTxPower(
+    CommandPacketView command) {
+  auto command_view =
+      gd_hci::LeReadAdvertisingPhysicalChannelTxPowerView::Create(
+          gd_hci::LeAdvertisingCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  auto packet =
+      bluetooth::hci::LeReadAdvertisingPhysicalChannelTxPowerCompleteBuilder::
+          Create(kNumCommandPackets, ErrorCode::SUCCESS,
+                 properties_.GetLeAdvertisingPhysicalChannelTxPower());
   send_event_(std::move(packet));
 }
 
