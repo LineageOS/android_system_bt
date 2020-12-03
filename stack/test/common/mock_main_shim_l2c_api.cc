@@ -47,12 +47,7 @@ bool bluetooth::shim::L2CA_ConnectFixedChnl(uint16_t cid,
   mock_function_count_map[__func__]++;
   return false;
 }
-bool bluetooth::shim::L2CA_ConnectFixedChnl(uint16_t cid,
-                                            const RawAddress& rem_bda,
-                                            uint8_t initiating_phys) {
-  mock_function_count_map[__func__]++;
-  return false;
-}
+
 bool bluetooth::shim::L2CA_DisconnectLECocReq(uint16_t cid) {
   mock_function_count_map[__func__]++;
   return false;
