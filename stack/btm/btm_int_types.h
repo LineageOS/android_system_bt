@@ -329,7 +329,6 @@ typedef struct {
     memset(&api, 0, sizeof(api));
     memset(p_rmt_name_callback, 0, sizeof(p_rmt_name_callback));
     memset(&pin_code, 0, sizeof(pin_code));
-    pairing_bda = RawAddress::kEmpty;
     memset(sec_serv_rec, 0, sizeof(sec_serv_rec));
 
     connecting_bda = RawAddress::kEmpty;
