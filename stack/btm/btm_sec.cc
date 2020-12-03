@@ -3635,8 +3635,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
 
   if ((reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) &&
       (reason != HCI_ERR_PEER_USER)) {
-    /* Uncommon disconnection reasons */
-    LOG_WARN("Got Disconn Complete Event: reason=%s, handle=%d",
+    LOG_WARN("Got uncommon disconnection reason:%s handle:0x%04x",
              hci_error_code_text(reason).c_str(), handle);
   }
 
@@ -3644,7 +3643,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) {
-    LOG_WARN("Unable to find device record");
+    LOG_WARN("Got disconnect for unknown device record handle:0x%04x", handle);
     return;
   }
 
@@ -3654,16 +3653,12 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
   /* clear unused flags */
   p_dev_rec->sm4 &= BTM_SM4_TRUE;
 
-  VLOG(2) << __func__ << " bd_addr: " << p_dev_rec->bd_addr
-          << " name: " << p_dev_rec->sec_bd_name
-          << " state: " << btm_pair_state_descr(btm_cb.pairing_state)
-          << " reason: " << reason << " sec_req: " << std::hex
-          << p_dev_rec->security_required;
-
   /* If we are in the process of bonding we need to tell client that auth failed
    */
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_cb.pairing_bda == p_dev_rec->bd_addr)) {
+    LOG_DEBUG("Disconnected while pairing process active handle:0x%04x",
+              handle);
     btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
     p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
     if (btm_cb.api.p_auth_complete_callback) {
@@ -3686,6 +3681,12 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
       }
     }
   }
+
+  VLOG(2) << __func__ << " bd_addr: " << p_dev_rec->bd_addr
+          << " name: " << p_dev_rec->sec_bd_name
+          << " state: " << btm_pair_state_descr(btm_cb.pairing_state)
+          << " reason: " << reason << " sec_req: " << std::hex
+          << p_dev_rec->security_required;
 
   btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, &p_dev_rec->bd_addr,
                                 HCI_SUCCESS);
