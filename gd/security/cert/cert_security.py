@@ -74,6 +74,9 @@ class CertSecurity(PySecurity):
 
     _hci = None
 
+    MAX_PIN_LENGTH = 16
+    MIN_PIN_LENGTH = 1
+
     def _enqueue_hci_command(self, command, expect_complete):
         if (expect_complete):
             self._hci.send_command_with_complete(command)
@@ -230,7 +233,23 @@ class CertSecurity(PySecurity):
             True)
         self._enqueue_hci_command(hci_packets.UserPasskeyRequestReplyBuilder(peer, passkey), True)
 
-    def send_ui_callback(self, address, callback_type, b, uid):
+    def input_pin(self, address, pin):
+        """
+            Pretend to answer the pairing dialog as a user
+        """
+        if len(pin) > self.MAX_PIN_LENGTH or len(pin) < self.MIN_PIN_LENGTH:
+            raise Exception("Pin code must be within range")
+        logging.info("Cert: Waiting for PIN request")
+        assertThat(self._hci_event_stream).emits(HciMatchers.EventWithCode(hci_packets.EventCode.PIN_CODE_REQUEST))
+        logging.info("Cert: Send user input PIN %s for %s" % (pin.decode(), address))
+        peer = address.decode('utf-8')
+        pin_list = list(pin)
+        # Pad
+        for i in range(self.MAX_PIN_LENGTH - len(pin_list)):
+            pin_list.append(0)
+        self._enqueue_hci_command(hci_packets.PinCodeRequestReplyBuilder(peer, len(pin), pin_list), True)
+
+    def __send_ui_callback(self, address, callback_type, b, uid, pin):
         """
             Pretend to answer the pairing dailog as a user
         """
