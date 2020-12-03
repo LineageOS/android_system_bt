@@ -50,6 +50,7 @@ enum UiMsgType {
   DISPLAY_PASSKEY_ENTRY = 3;
   DISPLAY_CANCEL = 4;
   DISPLAY_PAIRING_PROMPT = 5;
+  DISPLAY_PIN_ENTRY = 6;
 }
 
 message UiMsg {
@@ -63,14 +64,16 @@ enum UiCallbackType {
   YES_NO = 0;
   PASSKEY = 1;
   PAIRING_PROMPT = 2;
+  PIN = 3;
 }
 
 message UiCallbackMsg {
   UiCallbackType message_type = 1;
-  bool boolean = 2;
-  uint32 numeric_value = 3;
-  uint32 unique_id = 4;
-  facade.BluetoothAddressWithType address = 5;
+  facade.BluetoothAddressWithType address = 2;
+  bool boolean = 3;
+  uint32 numeric_value = 4;
+  uint32 unique_id = 5;
+  bytes pin = 6;
 }
 
 enum BondMsgType {

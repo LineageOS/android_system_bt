@@ -414,6 +414,17 @@ void SecurityManagerImpl::OnPasskeyEntry(const bluetooth::hci::AddressWithType& 
   }
 }
 
+void SecurityManagerImpl::OnPinEntry(const bluetooth::hci::AddressWithType& address, std::vector<uint8_t> pin) {
+  auto entry = pairing_handler_map_.find(address.GetAddress());
+  if (entry != pairing_handler_map_.end()) {
+    LOG_INFO("PIN for %s", address.ToString().c_str());
+    entry->second->OnPinEntry(address, pin);
+  } else {
+    LOG_WARN("No handler found for PIN for %s", address.ToString().c_str());
+    // TODO(jpawlowski): Implement LE version
+  }
+}
+
 void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, PairingResultOrFailure status) {
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {

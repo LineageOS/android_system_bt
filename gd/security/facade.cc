@@ -176,6 +176,12 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
         security_module_->GetSecurityManager()->OnPairingPromptAccepted(
             hci::AddressWithType(peer, remote_type), request->boolean());
         break;
+      case UiCallbackType::PIN:
+        LOG_INFO("PIN Callback");
+        security_module_->GetSecurityManager()->OnPinEntry(
+            hci::AddressWithType(peer, remote_type),
+            std::vector<uint8_t>(request->pin().cbegin(), request->pin().cend()));
+        break;
       default:
         LOG_ERROR("Unknown UiCallbackType %d", static_cast<int>(request->message_type()));
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Unknown UiCallbackType");
@@ -412,6 +418,17 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     display_passkey_input.set_message_type(UiMsgType::DISPLAY_PASSKEY_ENTRY);
     display_passkey_input.set_unique_id(unique_id++);
     ui_events_.OnIncomingEvent(display_passkey_input);
+  }
+
+  void DisplayEnterPinDialog(ConfirmationData data) override {
+    const bluetooth::hci::AddressWithType& peer = data.GetAddressWithType();
+    std::string name = data.GetName();
+    LOG_INFO("%s", peer.ToString().c_str());
+    UiMsg display_pin_input;
+    *display_pin_input.mutable_peer() = ToFacadeAddressWithType(peer);
+    display_pin_input.set_message_type(UiMsgType::DISPLAY_PIN_ENTRY);
+    display_pin_input.set_unique_id(unique_id++);
+    ui_events_.OnIncomingEvent(display_pin_input);
   }
 
   void Cancel(const bluetooth::hci::AddressWithType& peer) override {

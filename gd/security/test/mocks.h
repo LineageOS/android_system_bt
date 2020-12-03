@@ -39,6 +39,7 @@ class UIMock : public UI {
   MOCK_METHOD1(DisplayYesNoDialog, void(ConfirmationData));
   MOCK_METHOD1(DisplayEnterPasskeyDialog, void(ConfirmationData));
   MOCK_METHOD1(DisplayPasskey, void(ConfirmationData));
+  MOCK_METHOD1(DisplayEnterPinDialog, void(ConfirmationData));
 
  private:
   DISALLOW_COPY_AND_ASSIGN(UIMock);
