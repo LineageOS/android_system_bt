@@ -28,6 +28,7 @@ using bluetooth::common::BoolFromString;
 using bluetooth::common::FromHexString;
 using bluetooth::common::Int64FromString;
 using bluetooth::common::StringFormat;
+using bluetooth::common::StringFormatTime;
 using bluetooth::common::StringJoin;
 using bluetooth::common::StringSplit;
 using bluetooth::common::StringTrim;
@@ -172,6 +173,14 @@ TEST(StringsTest, string_format_test) {
   ASSERT_THAT(StringFormat("%d", 42), StrEq("42"));
   ASSERT_THAT(StringFormat("%s world", "hello"), StrEq("hello world"));
   ASSERT_THAT(StringFormat("%d %.1f 0x%02x", 42, 43.123, 0x8), StrEq("42 43.1 0x08"));
+}
+
+TEST(StringsTest, string_format_time_test) {
+  std::string format("%Y-%m-%d %H:%M:%S");
+  time_t then = 123456789;
+  struct std::tm tm;
+  localtime_r(&then, &tm);
+  ASSERT_THAT(StringFormatTime(format, tm), StrEq("1973-11-29 13:33:09"));
 }
 
 }  // namespace testing
