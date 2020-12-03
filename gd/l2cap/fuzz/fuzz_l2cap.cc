@@ -35,6 +35,17 @@ using l2cap::classic::internal::Link;
 
 using shim::ShimL2capFuzz;
 
+class FakeCommandInterface : public hci::CommandInterface<hci::AclCommandBuilder> {
+ public:
+  virtual void EnqueueCommand(
+      std::unique_ptr<hci::AclCommandBuilder> command,
+      common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) {}
+
+  virtual void EnqueueCommand(
+      std::unique_ptr<hci::AclCommandBuilder> command,
+      common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) {}
+} fake_command_interface;
+
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider fdp = FuzzedDataProvider(data, size);
   ShimL2capFuzz l2shim(&fdp);
@@ -51,8 +62,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   // Associate a ClassicAclConnection so that we can grab a link.
   auto throwaway_queue = std::make_shared<AclConnection::Queue>(10);
-  l2shim.link_manager->OnConnectSuccess(
-      std::unique_ptr<ClassicAclConnection>(new ClassicAclConnection(throwaway_queue, nullptr, 0, myAddress)));
+  l2shim.link_manager->OnConnectSuccess(std::unique_ptr<ClassicAclConnection>(
+      new ClassicAclConnection(throwaway_queue, &fake_command_interface, 0, myAddress)));
   Link* link = l2shim.link_manager->GetLink(myAddress);
 
   // 0x0001-0x007F Fixed, 0x0080-0x00FF Dynamic
@@ -62,7 +73,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   dynamicPsm = 0x0101u ^ 0x0100u;
 
   // Open a connection and assign an ID
-  uint16_t connectionId = l2shim.CreateConnection(psm, myAddress.ToString());
   Cid fixedCid = l2cap::kLeSignallingCid;
 
   // Fixed channels must be acquired.
@@ -93,7 +103,6 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   // Cleanup stuff.
   fixedChannel->Release();
   dynamicChannel->Close();
-  l2shim.shim_l2cap_->CloseClassicConnection(connectionId);
   l2shim.stopRegistry();
   link->OnAclDisconnected(hci::ErrorCode::SUCCESS);
   l2shim.link_manager->OnDisconnect(myAddress, hci::ErrorCode::SUCCESS);
