@@ -7,7 +7,7 @@ pub mod error;
 pub mod facade;
 
 use bt_hal::HalExports;
-use bt_packet::{HciCommand, HciEvent};
+use bt_packet::{HciCommand, HciEvent, RawPacket};
 use error::Result;
 use facade::facade_module;
 use gddi::{module, provides};
@@ -43,6 +43,8 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     HciExports {
         cmd_tx,
         evt_handlers,
+        acl_tx: hal_exports.acl_tx,
+        acl_rx: hal_exports.acl_rx,
     }
 }
 
@@ -64,9 +66,12 @@ struct PendingCommand {
 /// HCI interface
 #[derive(Clone)]
 pub struct HciExports {
-    /// Transmit end of a channel used to send HCI commands
     cmd_tx: Sender<Command>,
     evt_handlers: Arc<Mutex<HashMap<u8, Sender<HciEvent>>>>,
+    /// Transmit end of a channel used to send ACL data
+    pub acl_tx: UnboundedSender<RawPacket>,
+    /// Receive end of a channel used to receive ACL data
+    pub acl_rx: Arc<Mutex<UnboundedReceiver<RawPacket>>>,
 }
 
 impl HciExports {

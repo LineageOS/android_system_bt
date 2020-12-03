@@ -91,8 +91,12 @@ impl HciLayerFacade for HciLayerFacadeService {
         unimplemented!()
     }
 
-    fn send_acl(&mut self, _ctx: RpcContext<'_>, _data: AclPacket, _sink: UnarySink<Empty>) {
-        unimplemented!()
+    fn send_acl(&mut self, _ctx: RpcContext<'_>, mut packet: AclPacket, sink: UnarySink<Empty>) {
+        self.hci_exports
+            .acl_tx
+            .send(packet.take_data().into())
+            .unwrap();
+        sink.success(Empty::default());
     }
 
     fn stream_events(
@@ -125,8 +129,16 @@ impl HciLayerFacade for HciLayerFacadeService {
         &mut self,
         _ctx: RpcContext<'_>,
         _req: Empty,
-        mut _resp: ServerStreamingSink<AclPacket>,
+        mut resp: ServerStreamingSink<AclPacket>,
     ) {
-        unimplemented!()
+        let acl_rx = self.hci_exports.acl_rx.clone();
+
+        self.rt.spawn(async move {
+            while let Some(data) = acl_rx.lock().await.recv().await {
+                let mut packet = AclPacket::default();
+                packet.set_data(data.to_vec());
+                resp.send((packet, WriteFlags::default())).await.unwrap();
+            }
+        });
     }
 }
