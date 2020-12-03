@@ -2655,6 +2655,22 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
   btm_sec_connected(bda, handle, status, enc_mode);
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(status, handle, bda);
+
+  /*
+   * The legacy code path informs the upper layer via the BTA
+   * layer after all relevant read_remote_ commands are complete.
+   * The GD code path has ownership of the read_remote_ commands
+   * and thus may inform the upper layers about the connection.
+   */
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+    if (p_acl != nullptr) {
+      p_acl->link_up_issued = true;
+      BTA_dm_acl_up(p_acl->remote_addr, p_acl->transport);
+    } else {
+      LOG_WARN("Unable to find active acl");
+    }
+  }
 }
 
 void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
