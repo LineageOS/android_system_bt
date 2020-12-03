@@ -77,6 +77,7 @@ class PairingHandler : public UICallbacks {
   virtual void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) = 0;
   virtual void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) = 0;
   virtual void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) = 0;
+  virtual void OnPinEntry(const bluetooth::hci::AddressWithType& address, std::vector<uint8_t> pin) override = 0;
 
  protected:
   std::shared_ptr<record::SecurityRecord> GetRecord() {

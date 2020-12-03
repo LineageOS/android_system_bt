@@ -117,6 +117,7 @@ class SecurityManager : public UICallbacks {
   void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
   void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
   void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
+  void OnPinEntry(const bluetooth::hci::AddressWithType& address, std::vector<uint8_t> pin) override;
 
  protected:
   SecurityManager(os::Handler* security_handler, internal::SecurityManagerImpl* security_manager_impl)
