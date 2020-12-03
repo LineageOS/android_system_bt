@@ -59,6 +59,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
 
   void ConfigureLePrivacy(bool is_le_privacy_enabled);
 
+  void Dump(int fd) const;
+
  protected:
   void on_incoming_acl_credits(uint16_t handle, uint16_t credits);
   void write_data_sync(uint16_t hci_handle,
