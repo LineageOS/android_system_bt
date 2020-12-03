@@ -173,7 +173,7 @@ class PySecurity(Closable):
         """
         passkey = -1
 
-        def get_unique_id(event):
+        def get_passkey(event):
             if event.message_type == UiMsgType.DISPLAY_PASSKEY:
                 nonlocal passkey
                 passkey = event.numeric_value
@@ -181,7 +181,7 @@ class PySecurity(Closable):
             return False
 
         logging.debug("DUT: Waiting for expected UI event")
-        assertThat(self._ui_event_stream).emits(get_unique_id)
+        assertThat(self._ui_event_stream).emits(get_passkey)
         return passkey
 
     def input_pin(self, cert_address, pin):
