@@ -6,11 +6,9 @@ use bt_hci_proto::empty::Empty;
 use bt_hci_proto::facade::*;
 use bt_hci_proto::facade_grpc::{create_hci_layer_facade, HciLayerFacade};
 use bt_packet::HciEvent;
-use futures::prelude::*;
 use futures::sink::SinkExt;
 use gddi::{module, provides};
 use grpcio::*;
-use log::error;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
@@ -52,7 +50,7 @@ impl GrpcFacade for HciLayerFacadeService {
 impl HciLayerFacade for HciLayerFacadeService {
     fn send_command_with_complete(
         &mut self,
-        ctx: RpcContext<'_>,
+        _ctx: RpcContext<'_>,
         mut cmd: Command,
         sink: UnarySink<Empty>,
     ) {
@@ -60,23 +58,12 @@ impl HciLayerFacade for HciLayerFacadeService {
             self.hci_exports
                 .enqueue_command_with_complete(cmd.take_payload().into()),
         );
-
-        let f = sink
-            .success(Empty::default())
-            .map_err(|e: grpcio::Error| {
-                error!(
-                    "failed to handle enqueue_command_with_complete request: {:?}",
-                    e
-                )
-            })
-            .map(|_| ());
-
-        ctx.spawn(f);
+        sink.success(Empty::default());
     }
 
     fn send_command_with_status(
         &mut self,
-        ctx: RpcContext<'_>,
+        _ctx: RpcContext<'_>,
         mut cmd: Command,
         sink: UnarySink<Empty>,
     ) {
@@ -84,37 +71,15 @@ impl HciLayerFacade for HciLayerFacadeService {
             self.hci_exports
                 .enqueue_command_with_complete(cmd.take_payload().into()),
         );
-
-        let f = sink
-            .success(Empty::default())
-            .map_err(|e: grpcio::Error| {
-                error!(
-                    "failed to handle enqueue_command_with_status request: {:?}",
-                    e
-                )
-            })
-            .map(|_| ());
-
-        ctx.spawn(f);
+        sink.success(Empty::default());
     }
 
-    fn request_event(&mut self, ctx: RpcContext<'_>, code: EventRequest, sink: UnarySink<Empty>) {
+    fn request_event(&mut self, _ctx: RpcContext<'_>, code: EventRequest, sink: UnarySink<Empty>) {
         self.rt.block_on(
             self.hci_exports
                 .register_event_handler(code.get_code() as u8, self.from_hci_evt_tx.clone()),
         );
-
-        let f = sink
-            .success(Empty::default())
-            .map_err(|e: grpcio::Error| {
-                error!(
-                    "failed to handle enqueue_command_with_status request: {:?}",
-                    e
-                )
-            })
-            .map(|_| ());
-
-        ctx.spawn(f);
+        sink.success(Empty::default());
     }
 
     fn request_le_subevent(
