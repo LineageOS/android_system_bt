@@ -421,7 +421,7 @@ void HciLayer::Start() {
   RegisterEventHandler(EventCode::COMMAND_COMPLETE, handler->BindOn(impl_, &impl::on_command_complete));
   RegisterEventHandler(EventCode::COMMAND_STATUS, handler->BindOn(impl_, &impl::on_command_status));
   RegisterLeMetaEventHandler(handler->BindOn(impl_, &impl::on_le_meta_event));
-  if (bluetooth::common::init_flags::gd_acl_is_enabled() || bluetooth::common::init_flags::gd_l2cap_is_enabled()) {
+  if (bluetooth::common::InitFlags::GdAclEnabled() || bluetooth::common::InitFlags::GdL2capEnabled()) {
     RegisterEventHandler(
         EventCode::DISCONNECTION_COMPLETE, handler->BindOn(this, &HciLayer::on_disconnection_complete));
     RegisterEventHandler(
