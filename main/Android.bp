@@ -111,9 +111,6 @@ cc_library_shared {
         "libg722codec",
         "libudrv-uipc",
         "libbluetooth_gd", // Gabeldorsche
-        "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
-        "libcxxbridge05",
     ],
     whole_static_libs: [
         "libbt-bta",

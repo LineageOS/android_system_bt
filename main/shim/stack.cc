@@ -45,7 +45,6 @@
 #include "main/shim/le_advertising_manager.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
-#include "src/stack.rs.h"
 
 namespace bluetooth {
 namespace shim {
@@ -68,38 +67,33 @@ void Stack::StartIdleMode() {
 }
 
 void Stack::StartEverything() {
-  if (common::init_flags::gd_rust_is_enabled()) {
-    rust::stack::start();
-    return;
-  }
-
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
   LOG_INFO("%s Starting Gd stack", __func__);
   ModuleList modules;
-  if (common::init_flags::gd_hci_is_enabled()) {
+  if (common::InitFlags::GdHciEnabled()) {
     modules.add<hal::HciHal>();
     modules.add<hci::HciLayer>();
     modules.add<storage::StorageModule>();
     modules.add<shim::Dumpsys>();
   }
-  if (common::init_flags::gd_controller_is_enabled()) {
+  if (common::InitFlags::GdControllerEnabled()) {
     modules.add<hci::Controller>();
   }
-  if (common::init_flags::gd_acl_is_enabled()) {
+  if (common::InitFlags::GdAclEnabled()) {
     modules.add<hci::AclManager>();
   }
-  if (common::init_flags::gd_l2cap_is_enabled()) {
+  if (common::InitFlags::GdL2capEnabled()) {
     modules.add<l2cap::classic::L2capClassicModule>();
     modules.add<l2cap::le::L2capLeModule>();
   }
-  if (common::init_flags::gd_security_is_enabled()) {
+  if (common::InitFlags::GdSecurityEnabled()) {
     modules.add<security::SecurityModule>();
   }
-  if (common::init_flags::gd_advertising_is_enabled()) {
+  if (common::InitFlags::GdAdvertisingEnabled()) {
     modules.add<hci::LeAdvertisingManager>();
   }
-  if (common::init_flags::gd_core_is_enabled()) {
+  if (common::InitFlags::GdCoreEnabled()) {
     modules.add<att::AttModule>();
     modules.add<hci::LeScanningManager>();
     modules.add<neighbor::ConnectabilityModule>();
@@ -116,24 +110,24 @@ void Stack::StartEverything() {
   // Make sure the leaf modules are started
   ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
   ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
-  if (common::init_flags::gd_core_is_enabled()) {
+  if (common::InitFlags::GdCoreEnabled()) {
     btm_ = new Btm(stack_handler_,
                    stack_manager_.GetInstance<neighbor::InquiryModule>());
   }
-  if (common::init_flags::gd_acl_is_enabled()) {
-    if (!common::init_flags::gd_core_is_enabled()) {
+  if (common::InitFlags::GdAclEnabled()) {
+    if (!common::InitFlags::GdCoreEnabled()) {
       acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface());
     }
   }
-  if (!common::init_flags::gd_core_is_enabled()) {
+  if (!common::InitFlags::GdCoreEnabled()) {
     bluetooth::shim::hci_on_reset_complete();
   }
 
-  if (common::init_flags::gd_advertising_is_enabled()) {
+  if (common::InitFlags::GdAdvertisingEnabled()) {
     bluetooth::shim::init_advertising_manager();
   }
-  if (common::init_flags::gd_l2cap_is_enabled() &&
-      !common::init_flags::gd_core_is_enabled()) {
+  if (common::InitFlags::GdL2capEnabled() &&
+      !common::InitFlags::GdCoreEnabled()) {
     L2CA_UseLegacySecurityModule();
   }
 }
@@ -152,13 +146,8 @@ void Stack::Start(ModuleList* modules) {
 }
 
 void Stack::Stop() {
-  if (common::init_flags::gd_rust_is_enabled()) {
-    rust::stack::stop();
-    return;
-  }
-
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  if (!common::init_flags::gd_core_is_enabled()) {
+  if (!common::InitFlags::GdCoreEnabled()) {
     bluetooth::shim::hci_on_shutting_down();
   }
   delete acl_;

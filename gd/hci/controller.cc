@@ -35,7 +35,7 @@ struct Controller::impl {
   void Start(hci::HciLayer* hci) {
     hci_ = hci;
     Handler* handler = module_.GetHandler();
-    if (common::init_flags::gd_acl_is_enabled() || common::init_flags::gd_l2cap_is_enabled()) {
+    if (common::InitFlags::GdAclEnabled() || common::InitFlags::GdL2capEnabled()) {
       hci_->RegisterEventHandler(
           EventCode::NUMBER_OF_COMPLETED_PACKETS, handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
     }
@@ -133,7 +133,7 @@ struct Controller::impl {
   }
 
   void Stop() {
-    if (bluetooth::common::init_flags::gd_core_is_enabled()) {
+    if (bluetooth::common::InitFlags::GdCoreEnabled()) {
       hci_->UnregisterEventHandler(EventCode::NUMBER_OF_COMPLETED_PACKETS);
     }
     hci_ = nullptr;

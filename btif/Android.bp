@@ -115,6 +115,7 @@ cc_library_static {
     cflags: [
         "-DBUILDCFG",
     ],
+
 }
 
 // btif unit tests for target
