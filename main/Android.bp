@@ -112,7 +112,7 @@ cc_library_shared {
         "libudrv-uipc",
         "libbluetooth_gd", // Gabeldorsche
         "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
+        "libbt_common_ffi",
         "libcxxbridge05",
     ],
     whole_static_libs: [

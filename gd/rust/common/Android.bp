@@ -1,5 +1,6 @@
-rust_library {
-    name: "libbt_common",
+rust_defaults {
+    name: "libbt_common_defaults",
+    stem: "libbt_common",
     crate_name: "bt_common",
     srcs: ["src/lib.rs"],
     edition: "2018",
@@ -27,6 +28,16 @@ rust_library {
     host_supported: true,
 }
 
+rust_library {
+    name: "libbt_common",
+    defaults: ["libbt_common_defaults"],
+}
+
+rust_ffi_static {
+    name: "libbt_common_ffi",
+    defaults: ["libbt_common_defaults"],
+}
+
 rust_test_host {
     name: "libbt_common_inline_tests",
     srcs: ["src/lib.rs"],
@@ -39,7 +50,22 @@ rust_test_host {
         "libenv_logger",
         "libcxx",
     ],
-    proc_macros: [
-        "libpaste",
-    ],
 }
+
+genrule {
+    name: "libbt_common_bridge_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: ["src/init_flags.rs"],
+    out: ["src/init_flags.rs.h"],
+}
+
+genrule {
+    name: "libbt_common_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/init_flags.rs"],
+    out: ["init_flags.cc"],
+}
+
+

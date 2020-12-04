@@ -2,6 +2,24 @@ use log::{error, info};
 use paste::paste;
 use std::sync::Mutex;
 
+#[cxx::bridge(namespace = bluetooth::common::init_flags)]
+mod ffi {
+    extern "Rust" {
+        fn load(flags: Vec<String>);
+        fn set_all_for_testing();
+
+        fn gd_core_is_enabled() -> bool;
+        fn gd_security_is_enabled() -> bool;
+        fn gd_advertising_is_enabled() -> bool;
+        fn gd_acl_is_enabled() -> bool;
+        fn gd_l2cap_is_enabled() -> bool;
+        fn gd_hci_is_enabled() -> bool;
+        fn gd_controller_is_enabled() -> bool;
+        fn gatt_robust_caching_is_enabled() -> bool;
+        fn btaa_hci_is_enabled() -> bool;
+    }
+}
+
 macro_rules! init_flags {
     (flags: { $($flag:ident),* }, dependencies: { $($parent:ident => $child:ident),* }) => {
         #[derive(Default)]
@@ -9,7 +27,6 @@ macro_rules! init_flags {
             $($flag: bool,)*
         }
 
-        /// Sets all flags to true, for testing
         pub fn set_all_for_testing() {
             *FLAGS.lock().unwrap() = InitFlags { $($flag: true,)* };
         }
@@ -64,7 +81,6 @@ macro_rules! init_flags {
 
         paste! {
             $(
-                #[allow(missing_docs)]
                 pub fn [<$flag _is_enabled>]() -> bool {
                     FLAGS.lock().unwrap().$flag
                 }
@@ -83,8 +99,7 @@ init_flags!(
         gd_hci,
         gd_controller,
         gatt_robust_caching,
-        btaa_hci,
-        gd_rust
+        btaa_hci
     },
     dependencies: {
         gd_core => gd_security,
@@ -98,11 +113,12 @@ lazy_static! {
     static ref FLAGS: Mutex<InitFlags> = Mutex::new(InitFlags::default());
 }
 
-/// Loads the flag values from the passed-in vector of string values
-pub fn load(flags: Vec<String>) {
+fn load(flags: Vec<String>) {
     crate::init_logging();
 
     let flags = InitFlags::parse(flags);
     flags.log();
     *FLAGS.lock().unwrap() = flags;
 }
+
+

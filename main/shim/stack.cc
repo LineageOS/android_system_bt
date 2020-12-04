@@ -45,7 +45,6 @@
 #include "main/shim/le_advertising_manager.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
-#include "src/stack.rs.h"
 
 namespace bluetooth {
 namespace shim {
@@ -68,11 +67,6 @@ void Stack::StartIdleMode() {
 }
 
 void Stack::StartEverything() {
-  if (common::init_flags::gd_rust_is_enabled()) {
-    rust::stack::start();
-    return;
-  }
-
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
   LOG_INFO("%s Starting Gd stack", __func__);
@@ -152,11 +146,6 @@ void Stack::Start(ModuleList* modules) {
 }
 
 void Stack::Stop() {
-  if (common::init_flags::gd_rust_is_enabled()) {
-    rust::stack::stop();
-    return;
-  }
-
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   if (!common::init_flags::gd_core_is_enabled()) {
     bluetooth::shim::hci_on_shutting_down();

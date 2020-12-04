@@ -12,8 +12,7 @@ mod ready;
 #[macro_use]
 mod asserts;
 
-/// Provides runtime configured-at-startup flags
-pub mod init_flags;
+mod init_flags;
 
 /// Inits logging for Android
 #[cfg(target_os = "android")]
@@ -31,6 +30,5 @@ pub fn init_logging() {
     env_logger::Builder::new()
         .filter(None, log::LevelFilter::Debug)
         .parse_default_env()
-        .try_init()
-        .ok();
+        .init();
 }
