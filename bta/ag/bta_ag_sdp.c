@@ -36,6 +36,7 @@
 #include "bt_common.h"
 #include "utl.h"
 #include "bt_utils.h"
+#include "log/log.h"
 
 /* Number of protocol elements in protocol element list. */
 #define BTA_AG_NUM_PROTO_ELEMS      2
@@ -497,6 +498,12 @@ void bta_ag_do_disc(tBTA_AG_SCB *p_scb, tBTA_SERVICE_MASK service)
            uuid_list[1].uu.uuid16 = UUID_SERVCLASS_HEADSET_HS;
            num_uuid = 2;
        }
+    }
+
+    if (p_scb->p_disc_db != NULL) {
+        android_errorWriteLog(0x534e4554, "174052148");
+        APPL_TRACE_ERROR("Discovery already in progress... returning.");
+        return;
     }
 
     /* allocate buffer for sdp database */
