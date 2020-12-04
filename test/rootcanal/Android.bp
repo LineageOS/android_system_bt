@@ -45,7 +45,6 @@ cc_binary {
     generated_headers: [
         "RootCanalGeneratedPackets_h",
         "BluetoothGeneratedPackets_h",
-        "libbt_init_flags_bridge_header",
     ],
     static_libs: [
         "android.hardware.bluetooth-async",
@@ -94,7 +93,6 @@ cc_library_shared {
     generated_headers: [
         "RootCanalGeneratedPackets_h",
         "BluetoothGeneratedPackets_h",
-        "libbt_init_flags_bridge_header",
     ],
     static_libs: [
         "android.hardware.bluetooth-async",

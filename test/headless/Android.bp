@@ -40,9 +40,6 @@ cc_test {
         "libprotobuf-cpp-lite",
         "libudrv-uipc",
         "libz",
-        "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
-        "libcxxbridge05",
     ],
     shared_libs: [
         "android.hardware.bluetooth.a2dp@1.0",
