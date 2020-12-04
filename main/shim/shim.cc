@@ -56,36 +56,36 @@ EXPORT_SYMBOL extern const module_t gd_shim_module = {
 
 bool bluetooth::shim::is_gd_advertising_enabled() {
   // TODO enable when module ready
-  // return bluetooth::common::InitFlags::GdAdvertisingEnabled();
+  // return bluetooth::common::init_flags::gd_advertising_is_enabled();
   return false;
 }
 
 bool bluetooth::shim::is_gd_security_enabled() {
-  return bluetooth::common::InitFlags::GdSecurityEnabled();
+  return bluetooth::common::init_flags::gd_security_is_enabled();
 }
 
 bool bluetooth::shim::is_gd_acl_enabled() {
-  return bluetooth::common::InitFlags::GdAclEnabled();
+  return bluetooth::common::init_flags::gd_acl_is_enabled();
 }
 
 bool bluetooth::shim::is_gd_hci_enabled() {
-  return bluetooth::common::InitFlags::GdHciEnabled();
+  return bluetooth::common::init_flags::gd_hci_is_enabled();
 }
 
 bool bluetooth::shim::is_gd_controller_enabled() {
-  return bluetooth::common::InitFlags::GdControllerEnabled();
+  return bluetooth::common::init_flags::gd_controller_is_enabled();
 }
 
 bool bluetooth::shim::is_gd_l2cap_enabled() {
-  return bluetooth::common::InitFlags::GdL2capEnabled();
+  return bluetooth::common::init_flags::gd_l2cap_is_enabled();
 }
 
 bool bluetooth::shim::is_gd_shim_enabled() {
-  return bluetooth::common::InitFlags::GdCoreEnabled();
+  return bluetooth::common::init_flags::gd_core_is_enabled();
 }
 
 bool bluetooth::shim::is_any_gd_enabled() {
-  return bluetooth::common::InitFlags::GdHciEnabled();
+  return bluetooth::common::init_flags::gd_hci_is_enabled();
 }
 
 bool bluetooth::shim::is_gd_stack_started_up() {

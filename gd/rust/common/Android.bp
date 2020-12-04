@@ -7,6 +7,7 @@ rust_library {
         "libtokio",
         "libnix",
         "liblog_rust",
+        "libcxx",
     ],
     target: {
         android: {
@@ -20,6 +21,9 @@ rust_library {
             ],
         },
     },
+    proc_macros: [
+        "libpaste",
+    ],
     host_supported: true,
 }
 
@@ -33,5 +37,9 @@ rust_test_host {
         "libnix",
         "liblog_rust",
         "libenv_logger",
+        "libcxx",
+    ],
+    proc_macros: [
+        "libpaste",
     ],
 }
