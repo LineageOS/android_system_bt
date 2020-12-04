@@ -76,6 +76,7 @@ cc_defaults {
     name: "gd_clang_tidy",
     tidy: true,
     tidy_checks: [
+        "cppcoreguidelines-pro-type-member-init",
         "clang-analyzer-core.CallAndMessage",
         "clang-analyzer-optin.cplusplus.UninitializedObject",
         "-google*",
@@ -161,11 +162,7 @@ cc_defaults {
     ],
     static_libs: [
         "libbluetooth-protos",
-        "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
-        "libcxxbridge05",
-    ],
-    export_static_lib_headers: [ "libbluetooth_rust_interop" ],
+    ]
 }
 
 cc_library {
@@ -224,9 +221,6 @@ cc_binary {
         "libbluetooth-protos",
         "libbluetooth_gd",
         "libflatbuffers-cpp",
-        "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
-        "libcxxbridge05",
     ],
     shared_libs: [
         "libbacktrace",
@@ -315,9 +309,6 @@ cc_test {
         "libc++fs",
         "libflatbuffers-cpp",
         "libgmock",
-        "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
-        "libcxxbridge05",
     ],
     shared_libs: [
         "libchrome",
@@ -348,11 +339,6 @@ cc_test {
         address: true,
         cfi: true,
     },
-    static_libs: [
-        "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
-        "libcxxbridge05",
-    ],
 }
 
 cc_defaults {
@@ -368,9 +354,6 @@ cc_defaults {
         "libchrome",
         "libgmock",
         "libgtest",
-        "libbluetooth_rust_interop",
-        "libbt_shim_ffi",
-        "libcxxbridge05",
     ],
     host_supported: true,
     generated_headers: [
