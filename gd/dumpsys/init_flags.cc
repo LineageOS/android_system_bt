@@ -23,11 +23,11 @@ flatbuffers::Offset<bluetooth::common::InitFlagsData> bluetooth::dumpsys::InitFl
   auto title = fb_builder->CreateString("----- Init Flags -----");
   common::InitFlagsDataBuilder builder(*fb_builder);
   builder.add_title(title);
-  builder.add_gd_advertising_enabled(bluetooth::common::InitFlags::GdAdvertisingEnabled());
-  builder.add_gd_security_enabled(bluetooth::common::InitFlags::GdSecurityEnabled());
-  builder.add_gd_acl_enabled(bluetooth::common::InitFlags::GdAclEnabled());
-  builder.add_gd_hci_enabled(bluetooth::common::InitFlags::GdHciEnabled());
-  builder.add_gd_controller_enabled(bluetooth::common::InitFlags::GdControllerEnabled());
-  builder.add_gd_core_enabled(bluetooth::common::InitFlags::GdCoreEnabled());
+  builder.add_gd_advertising_enabled(bluetooth::common::init_flags::gd_advertising_is_enabled());
+  builder.add_gd_security_enabled(bluetooth::common::init_flags::gd_security_is_enabled());
+  builder.add_gd_acl_enabled(bluetooth::common::init_flags::gd_acl_is_enabled());
+  builder.add_gd_hci_enabled(bluetooth::common::init_flags::gd_hci_is_enabled());
+  builder.add_gd_controller_enabled(bluetooth::common::init_flags::gd_controller_is_enabled());
+  builder.add_gd_core_enabled(bluetooth::common::init_flags::gd_core_is_enabled());
   return builder.Finish();
 }
