@@ -22,7 +22,6 @@
 
 #include "common/strings.h"
 #include "os/log.h"
-#include "src/init_flags.rs.h"
 
 namespace bluetooth {
 namespace common {
@@ -52,13 +51,6 @@ bool ParseBoolFlag(const std::vector<std::string>& flag_pair, const std::string&
 }
 
 void InitFlags::Load(const char** flags) {
-  rust::Vec<rust::String> rusted_flags = rust::Vec<rust::String>();
-  while (flags != nullptr && *flags != nullptr) {
-    rusted_flags.push_back(rust::String(*flags));
-    flags++;
-  }
-  init_flags_load(std::move(rusted_flags));
-
   SetAll(false);
   while (flags != nullptr && *flags != nullptr) {
     std::string flag_element = *flags;

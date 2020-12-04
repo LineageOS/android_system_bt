@@ -154,7 +154,6 @@ cc_defaults {
         "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedDumpsysBundledSchema_h",
         "BluetoothGeneratedPackets_h",
-        "libbt_common_bridge_header",
     ],
     shared_libs: [
         "libchrome",
@@ -163,27 +162,7 @@ cc_defaults {
     ],
     static_libs: [
         "libbluetooth-protos",
-        "libbluetooth_rust_interop",
-        "libbt_common_ffi",
-        "libcxxbridge05",
-    ],
-}
-
-cc_library_static {
-    name: "libbluetooth_rust_interop",
-    generated_headers: ["libbt_common_bridge_header"],
-    generated_sources: ["libbt_common_bridge_code"],
-    cflags: [
-        "-Wno-unused-const-variable",
-    ],
-    host_supported: true,
-    apex_available: [
-        "//apex_available:platform",
-        "com.android.bluetooth.updatable",
-    ],
-    static_libs: [
-        "libbt_common_ffi",
-    ],
+    ]
 }
 
 cc_library {

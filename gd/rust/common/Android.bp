@@ -7,34 +7,6 @@ rust_library {
         "libtokio",
         "libnix",
         "liblog_rust",
-        "libcxx",
-    ],
-    target: {
-        android: {
-            rustlibs: [
-                "libandroid_logger",
-            ],
-        },
-        host: {
-            rustlibs: [
-                "libenv_logger",
-            ],
-        },
-    },
-    host_supported: true,
-}
-
-rust_ffi_static {
-    name: "libbt_common_ffi",
-    stem: "libbt_common",
-    crate_name: "bt_common",
-    srcs: ["src/lib.rs"],
-    edition: "2018",
-    rustlibs: [
-        "libtokio",
-        "libnix",
-        "liblog_rust",
-        "libcxx",
     ],
     target: {
         android: {
@@ -61,24 +33,5 @@ rust_test_host {
         "libnix",
         "liblog_rust",
         "libenv_logger",
-        "libcxx",
     ],
 }
-
-genrule {
-    name: "libbt_common_bridge_header",
-    tools: ["cxxbridge"],
-    cmd: "$(location cxxbridge) $(in) --header > $(out)",
-    srcs: ["src/init_flags.rs"],
-    out: ["src/init_flags.rs.h"],
-}
-
-genrule {
-    name: "libbt_common_bridge_code",
-    tools: ["cxxbridge"],
-    cmd: "$(location cxxbridge) $(in) >> $(out)",
-    srcs: ["src/init_flags.rs"],
-    out: ["init_flags.cc"],
-}
-
-
