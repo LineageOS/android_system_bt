@@ -100,7 +100,7 @@ class UI {
    * bond with this device */
   virtual void Cancel(const bluetooth::hci::AddressWithType& address) = 0;
 
-  /* Display value for Comprision, user responds yes/no */
+  /* Display value for Comparison, user responds yes/no */
   virtual void DisplayConfirmValue(ConfirmationData data) = 0;
 
   /* Display Yes/No dialog, Classic pairing, numeric comparison with NoInputNoOutput device */
@@ -111,6 +111,9 @@ class UI {
 
   /* Present the passkey value to the user, user compares with other device */
   virtual void DisplayPasskey(ConfirmationData data) = 0;
+
+  /* Ask the user to enter a PIN */
+  virtual void DisplayEnterPinDialog(ConfirmationData data) = 0;
 };
 
 /* Through this interface, UI provides us with user choices. */
@@ -126,6 +129,9 @@ class UICallbacks {
 
   /* User typed the value displayed on the other device. This is either Passkey or the Confirm value */
   virtual void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) = 0;
+
+  /* User typed the PIN for the other device. */
+  virtual void OnPinEntry(const bluetooth::hci::AddressWithType& address, std::vector<uint8_t> pin) = 0;
 };
 
 }  // namespace security

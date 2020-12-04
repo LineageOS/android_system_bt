@@ -26,6 +26,8 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/include/acl_hci_link_interface.h"
+#include "types/raw_address.h"
 
 base::MessageLoop* get_main_message_loop() { return nullptr; }
 
@@ -67,6 +69,8 @@ const stack_config_t* stack_config_get_interface(void) {
 
 std::map<std::string, int> mock_function_count_map;
 
+bool MOCK_bluetooth_shim_is_gd_acl_enabled_;
+
 namespace {
 
 using testing::_;
@@ -95,6 +99,20 @@ TEST_F(StackBtmTest, GlobalLifecycle) {
 TEST_F(StackBtmTest, DynamicLifecycle) {
   auto* btm = new tBTM_CB();
   delete btm;
+}
+
+TEST_F(StackBtmTest, InformBtmOnConnection) {
+  MOCK_bluetooth_shim_is_gd_acl_enabled_ = true;
+
+  btm_init();
+
+  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+
+  btm_acl_connected(bda, 2, HCI_SUCCESS, false);
+  ASSERT_EQ(static_cast<size_t>(1),
+            mock_function_count_map.count("BTA_dm_acl_up"));
+
+  btm_free();
 }
 
 }  // namespace

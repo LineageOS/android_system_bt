@@ -383,6 +383,11 @@ class ShimUi : public bluetooth::security::UI {
     LOG_WARN("UNIMPLEMENTED, Passkey not supported in GD");
   }
 
+  void DisplayEnterPinDialog(bluetooth::security::ConfirmationData data) {
+    waiting_for_pairing_prompt_ = false;
+    LOG_WARN("UNIMPLEMENTED, PIN not supported in GD");
+  }
+
   bool waiting_for_pairing_prompt_ = false;
 
  private:

@@ -125,7 +125,7 @@ class PySecurity(Closable):
             auth_reqs, "ERROR"))
         self._device.security.SetAuthenticationRequirements(AuthenticationRequirementsMessage(requirement=auth_reqs))
 
-    def send_ui_callback(self, address, callback_type, b, uid):
+    def __send_ui_callback(self, address, callback_type, b, uid, pin):
         """
             Send a callback from the UI as if the user pressed a button on the dialog
         """
@@ -135,6 +135,7 @@ class PySecurity(Closable):
                 message_type=callback_type,
                 boolean=b,
                 unique_id=uid,
+                pin=bytes(pin),
                 address=common.BluetoothAddressWithType(
                     address=common.BluetoothAddress(address=address),
                     type=common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)))
@@ -172,7 +173,7 @@ class PySecurity(Closable):
         """
         passkey = -1
 
-        def get_unique_id(event):
+        def get_passkey(event):
             if event.message_type == UiMsgType.DISPLAY_PASSKEY:
                 nonlocal passkey
                 passkey = event.numeric_value
@@ -180,10 +181,17 @@ class PySecurity(Closable):
             return False
 
         logging.debug("DUT: Waiting for expected UI event")
-        assertThat(self._ui_event_stream).emits(get_unique_id)
+        assertThat(self._ui_event_stream).emits(get_passkey)
         return passkey
 
-    def on_user_input(self, cert_address, reply_boolean, expected_ui_event):
+    def input_pin(self, cert_address, pin):
+        """
+            Respond to the UI event
+        """
+        self.on_user_input(
+            cert_address=cert_address, reply_boolean=True, expected_ui_event=UiMsgType.DISPLAY_PIN_ENTRY, pin=pin)
+
+    def on_user_input(self, cert_address, reply_boolean, expected_ui_event, pin=[]):
         """
             Respond to the UI event
         """
@@ -201,8 +209,8 @@ class PySecurity(Closable):
 
         logging.debug("DUT: Waiting for expected UI event")
         assertThat(self._ui_event_stream).emits(get_unique_id)
-        # TODO(optedoblivion): Make UiCallbackType dynamic for PASSKEY when added
-        self.send_ui_callback(cert_address, UiCallbackType.YES_NO, reply_boolean, ui_id)
+        callback_type = UiCallbackType.YES_NO if len(pin) == 0 else UiCallbackType.PIN
+        self.__send_ui_callback(cert_address, callback_type, reply_boolean, ui_id, pin)
 
     def get_address(self):
         return self._device.address
