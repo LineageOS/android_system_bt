@@ -1,6 +1,4 @@
 //! Bluetooth common library
-#[macro_use]
-extern crate lazy_static;
 
 /// Provides waking timer abstractions
 pub mod time;
