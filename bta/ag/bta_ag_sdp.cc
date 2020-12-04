@@ -31,6 +31,7 @@
 #include "bta_api.h"
 #include "bta_sys.h"
 #include "btm_api.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "sdp_api.h"
 #include "utl.h"
@@ -416,6 +417,12 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
   }
   /* HSP acceptor; no discovery */
   else {
+    return;
+  }
+
+  if (p_scb->p_disc_db != nullptr) {
+    android_errorWriteLog(0x534e4554, "174052148");
+    APPL_TRACE_ERROR("Discovery already in progress... returning.");
     return;
   }
 
