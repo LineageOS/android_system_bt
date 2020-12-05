@@ -712,8 +712,15 @@ static void maybe_chain_more_commands_after_read_remote_version_complete(
       l2cble_use_preferred_conn_params(p_acl_cb->remote_addr);
       break;
     case BT_TRANSPORT_BR_EDR:
-      if (status == HCI_SUCCESS) {
-        internal_.btm_read_remote_features(p_acl_cb->hci_handle);
+      /**
+       * When running legacy stack continue chain of executing various
+       * read commands.  Skip when gd_acl is enabled because that
+       * module handles all remote read functionality.
+       */
+      if (!bluetooth::shim::is_gd_acl_enabled()) {
+        if (status == HCI_SUCCESS) {
+          internal_.btm_read_remote_features(p_acl_cb->hci_handle);
+        }
       }
   }
 }
@@ -753,6 +760,8 @@ void btm_read_remote_version_complete_raw(uint8_t* p) {
   STREAM_TO_UINT16(manufacturer, p);
   STREAM_TO_UINT16(lmp_subversion, p);
 
+  ASSERT_LOG(!bluetooth::shim::is_gd_acl_enabled(),
+             "gd acl layer should be receiving this completion");
   btm_read_remote_version_complete(static_cast<tHCI_STATUS>(status), handle,
                                    lmp_version, manufacturer, lmp_version);
 }
