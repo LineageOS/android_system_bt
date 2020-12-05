@@ -3593,7 +3593,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   /* After connection is established we perform security if we do not know */
   /* the name, or if we are originator because some procedure can have */
   /* been scheduled while connection was down */
-  BTM_TRACE_DEBUG("is_originator:%d ", p_dev_rec->is_originator);
+  LOG_DEBUG("Is connection locally initiated:%s",
+            logbool(p_dev_rec->is_originator).c_str());
   if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
       p_dev_rec->is_originator) {
     res = btm_sec_execute_procedure(p_dev_rec);
