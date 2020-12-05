@@ -327,18 +327,18 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   p_acl->link_up_issued = false;
   p_acl->remote_addr = bda;
   p_acl->sca = 0xFF;
+  p_acl->transport = transport;
+  p_acl->switch_role_failed_attempts = 0;
+  p_acl->reset_switch_role();
+  acl_initialize_power_mode(*p_acl);
+
+  LOG_DEBUG("Created new ACL connection");
   btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
 
-  p_acl->transport = transport;
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_refresh_local_resolvable_private_addr(
         bda, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
   }
-  p_acl->switch_role_failed_attempts = 0;
-  p_acl->reset_switch_role();
-
-  acl_initialize_power_mode(*p_acl);
-
   /* if BR/EDR do something more */
   if (transport == BT_TRANSPORT_BR_EDR) {
     btsnd_hcic_read_rmt_clk_offset(hci_handle);
