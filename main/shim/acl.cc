@@ -49,6 +49,8 @@
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/l2cap/l2c_int.h"
 
+extern tBTM_CB btm_cb;
+
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task);
 
@@ -307,6 +309,9 @@ class ClassicShimAclConnection
                         ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS),
                         ToRawAddress(connection_->GetAddress()),
                         ToLegacyRole(new_role));
+    btm_cb.history_->Push("%-32s: %s classic new_role:%s", "Role change",
+                          PRIVATE_ADDRESS(connection_->GetAddress()),
+                          hci::RoleText(new_role).c_str());
   }
 
   void OnDisconnection(hci::ErrorCode reason) override {
@@ -449,7 +454,6 @@ void DumpsysL2cap(int fd) {
 
 #undef DUMPSYS_TAG
 #define DUMPSYS_TAG "shim::legacy::acl"
-extern tBTM_CB btm_cb;
 void DumpsysAcl(int fd) {
   const tACL_CB& acl_cb = btm_cb.acl_cb_;
 
@@ -488,6 +492,7 @@ void DumpsysAcl(int fd) {
     LOG_DUMPSYS(fd, "    pkt_types_mask:0x%04x", acl_conn.pkt_types_mask);
     LOG_DUMPSYS(fd, "    disconnect_reason:0x%02x", acl_conn.disconnect_reason);
     LOG_DUMPSYS(fd, "    chg_ind:%s", (btm_pm_mcb.chg_ind) ? "true" : "false");
+    LOG_DUMPSYS(fd, "    role:%s", RoleText(acl_conn.link_role).c_str());
   }
 }
 #undef DUMPSYS_TAG
@@ -496,7 +501,6 @@ using Record = bluetooth::common::TimestampedEntry<std::string>;
 const std::string kTimeFormat("%Y-%m-%d %H:%M:%S");
 
 #define DUMPSYS_TAG "shim::legacy::btm"
-extern tBTM_CB btm_cb;
 void DumpsysBtm(int fd) {
   LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
   if (btm_cb.history_ != nullptr) {
