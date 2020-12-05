@@ -880,6 +880,7 @@ void btm_read_remote_features_complete(uint16_t handle, uint8_t* features) {
   /* Copy the received features page */
   STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[0], features,
                   HCI_FEATURE_BYTES_PER_PAGE);
+  p_acl_cb->peer_lmp_feature_valid[0] = true;
 
   if ((HCI_LMP_EXTENDED_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[0])) &&
       (controller_get_interface()
@@ -959,6 +960,7 @@ void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num,
   /* Copy the received features page */
   STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[page_num], features,
                   HCI_FEATURE_BYTES_PER_PAGE);
+  p_acl_cb->peer_lmp_feature_valid[page_num] = true;
 
   /* If there is the next remote features page and
    * we have space to keep this page data - read this page */
@@ -2638,6 +2640,8 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
     return false;
   }
   STREAM_TO_ARRAY(p_acl->peer_le_features, p, BD_FEATURES_LEN);
+  p_acl->peer_le_features_valid = true;
+  LOG_DEBUG("Completed le feature read request");
   return true;
 }
 
@@ -2921,6 +2925,8 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
   }
   memcpy(p_acl->peer_lmp_feature_pages[current_page_number],
          (uint8_t*)&features, sizeof(uint64_t));
+  p_acl->peer_lmp_feature_valid[current_page_number] = true;
+
   LOG_DEBUG(
       "Copied extended feature pages handle:%hu current_page_number:%hhu "
       "max_page_number:%hhu features:%s",
