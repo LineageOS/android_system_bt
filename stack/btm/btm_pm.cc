@@ -42,6 +42,7 @@
 #include "btm_int.h"
 #include "btm_int_types.h"
 #include "btu.h"
+#include "device/include/interop.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
@@ -177,7 +178,8 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     /* check if the requested mode is supported */
     ind = mode - BTM_PM_MD_HOLD; /* make it base 0 */
     p_features = BTM_ReadLocalFeatures();
-    if (!(p_features[btm_pm_mode_off[ind]] & btm_pm_mode_msk[ind])) {
+    if (!(p_features[btm_pm_mode_off[ind]] & btm_pm_mode_msk[ind]) ||
+            interop_match_addr(INTEROP_DISABLE_SNIFF, &remote_bda)) {
       LOG(ERROR) << __func__ << ": pm_id " << unsigned(pm_id) << " mode "
                  << unsigned(mode) << " is not supported for " << remote_bda;
       return BTM_MODE_UNSUPPORTED;
