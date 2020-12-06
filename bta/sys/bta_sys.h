@@ -119,6 +119,31 @@ typedef enum : uint8_t {
   BTA_SYS_ROLE_CHANGE = 0x14, /* role change */
 } tBTA_SYS_CONN_STATUS;
 
+inline std::string bta_sys_conn_status_text(tBTA_SYS_CONN_STATUS status) {
+  switch (status) {
+    case BTA_SYS_CONN_OPEN:
+      return std::string("BTA_SYS_CONN_OPEN");
+    case BTA_SYS_CONN_CLOSE:
+      return std::string("BTA_SYS_CONN_CLOSE");
+    case BTA_SYS_APP_OPEN:
+      return std::string("BTA_SYS_APP_OPEN");
+    case BTA_SYS_APP_CLOSE:
+      return std::string("BTA_SYS_APP_CLOSE");
+    case BTA_SYS_SCO_OPEN:
+      return std::string("BTA_SYS_SCO_OPEN");
+    case BTA_SYS_SCO_CLOSE:
+      return std::string("BTA_SYS_SCO_CLOSE");
+    case BTA_SYS_CONN_IDLE:
+      return std::string("BTA_SYS_CONN_IDLE");
+    case BTA_SYS_CONN_BUSY:
+      return std::string("BTA_SYS_CONN_BUSY");
+    case BTA_SYS_ROLE_CHANGE:
+      return std::string("BTA_SYS_ROLE_CHANGE");
+    default:
+      return std::string("UNKNOWN");
+  }
+}
+
 /* conn callback for role / low power manager*/
 typedef void(tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, uint8_t id,
                                   uint8_t app_id, const RawAddress& peer_addr);
