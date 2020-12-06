@@ -20,6 +20,7 @@
 #define BTM_API_TYPES_H
 
 #include <cstdint>
+#include <string>
 
 #include "device/include/esco_parameters.h"
 #include "internal_include/bt_target.h"
