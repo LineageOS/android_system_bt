@@ -107,18 +107,17 @@ inline std::string BtaIdSysText(tBTA_SYS_ID sys_id) {
   }
 }
 
-#define BTA_SYS_CONN_OPEN 0x00
-#define BTA_SYS_CONN_CLOSE 0x01
-#define BTA_SYS_APP_OPEN 0x02
-#define BTA_SYS_APP_CLOSE 0x03
-#define BTA_SYS_SCO_OPEN 0x04
-#define BTA_SYS_SCO_CLOSE 0x05
-#define BTA_SYS_CONN_IDLE 0x06
-#define BTA_SYS_CONN_BUSY 0x07
-
-#define BTA_SYS_ROLE_CHANGE 0x14  /* role change */
-
-typedef uint8_t tBTA_SYS_CONN_STATUS;
+typedef enum : uint8_t {
+  BTA_SYS_CONN_OPEN = 0x00,
+  BTA_SYS_CONN_CLOSE = 0x01,
+  BTA_SYS_APP_OPEN = 0x02,
+  BTA_SYS_APP_CLOSE = 0x03,
+  BTA_SYS_SCO_OPEN = 0x04,
+  BTA_SYS_SCO_CLOSE = 0x05,
+  BTA_SYS_CONN_IDLE = 0x06,
+  BTA_SYS_CONN_BUSY = 0x07,
+  BTA_SYS_ROLE_CHANGE = 0x14, /* role change */
+} tBTA_SYS_CONN_STATUS;
 
 /* conn callback for role / low power manager*/
 typedef void(tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, uint8_t id,
