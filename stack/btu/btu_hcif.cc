@@ -1573,7 +1573,8 @@ static void btu_hcif_mode_change_evt(uint8_t* p) {
   STREAM_TO_UINT8(current_mode, p);
   STREAM_TO_UINT16(interval, p);
   btm_sco_chk_pend_unpark(status, handle);
-  btm_pm_proc_mode_change(status, handle, current_mode, interval);
+  btm_pm_proc_mode_change(status, handle, static_cast<tHCI_MODE>(current_mode),
+                          interval);
 
 #if (HID_DEV_INCLUDED == TRUE && HID_DEV_PM_INCLUDED == TRUE)
   hidd_pm_proc_mode_change(status, current_mode, interval);
