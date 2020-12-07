@@ -5276,6 +5276,13 @@ void btm_sec_pin_code_request (UINT8 *p_bda)
                       btm_pair_state_descr(btm_cb.pairing_state),
                       (p_bda[0]<<8)+p_bda[1], (p_bda[2]<<24)+(p_bda[3]<<16)+(p_bda[4]<<8)+p_bda[5] );
 
+    UINT8 *local_bd_addr = (UINT8 *) controller_get_interface()->get_address()->address;
+    if (memcmp (p_bda, local_bd_addr, BD_ADDR_LEN) == 0) {
+        android_errorWriteLog(0x534e4554, "174626251");
+        btsnd_hcic_pin_code_neg_reply(p_bda);
+        return;
+    }
+
     if (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)
     {
         if ( (memcmp (p_bda, btm_cb.pairing_bda, BD_ADDR_LEN) == 0)  &&
