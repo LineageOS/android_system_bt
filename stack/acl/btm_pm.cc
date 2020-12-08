@@ -42,6 +42,7 @@
 #include "device/include/interop.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/acl_api.h"
@@ -68,8 +69,8 @@ StackAclBtmPm internal_;
 #define BTM_PM_GET_COMP 3
 
 uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
-uint16_t acl_address_to_handle(const RawAddress& bd_addr,
-                               tBT_TRANSPORT transport);
+tACL_CONN* acl_get_connection_from_address(const RawAddress& bd_addr,
+                                           tBT_TRANSPORT transport);
 
 const uint8_t
     btm_pm_md_comp_matrix[BTM_PM_NUM_SET_MODES * BTM_PM_NUM_SET_MODES] = {
@@ -282,14 +283,20 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
 
-  if (BTM_PM_STS_ACTIVE == btm_cb.acl_cb_.pm_mode_db[acl_ind].state ||
-      BTM_PM_STS_SNIFF == btm_cb.acl_cb_.pm_mode_db[acl_ind].state) {
-    btsnd_hcic_sniff_sub_rate(btm_cb.acl_cb_.acl_db[acl_ind].hci_handle,
-                              max_lat, min_rmt_to, min_loc_to);
+  tBTM_PM_MCB* p_cb = &btm_cb.acl_cb_.pm_mode_db[acl_ind];
+  tACL_CONN* p_acl =
+      acl_get_connection_from_address(remote_bda, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find acl for peer:%s", PRIVATE_ADDRESS(remote_bda));
+    return BTM_UNKNOWN_ADDR;
+  }
+
+  if (p_cb->state == BTM_PM_ST_ACTIVE || p_cb->state == BTM_PM_ST_SNIFF) {
+    btsnd_hcic_sniff_sub_rate(p_acl->hci_handle, max_lat, min_rmt_to,
+                              min_loc_to);
     return BTM_SUCCESS;
   }
   LOG_INFO("pm_mode_db state: %d", btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
-  tBTM_PM_MCB* p_cb = &btm_cb.acl_cb_.pm_mode_db[acl_ind];
   p_cb->max_lat = max_lat;
   p_cb->min_rmt_to = min_rmt_to;
   p_cb->min_loc_to = min_loc_to;
