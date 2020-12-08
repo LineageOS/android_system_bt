@@ -522,6 +522,11 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   LOG_INFO("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
            power_mode_state_text(p_cb->state).c_str(), p_cb->state,
            power_mode_state_text(md_res.mode).c_str(), md_res.mode, link_ind);
+  btm_cb.history_->Push(
+      "%-32s: %s  %s(0x%02x) ==> %s(0x%02x)", "Power mode change",
+      PRIVATE_ADDRESS(btm_cb.acl_cb_.acl_db[link_ind].remote_addr),
+      power_mode_state_text(p_cb->state).c_str(), p_cb->state,
+      power_mode_state_text(md_res.mode).c_str(), md_res.mode);
 
   switch (md_res.mode) {
     case BTM_PM_MD_ACTIVE:
