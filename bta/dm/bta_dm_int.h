@@ -396,6 +396,7 @@ typedef struct {
   uint16_t max_lat;
   uint16_t min_rmt_to;
   uint16_t min_loc_to;
+  const char* name{nullptr};
 } tBTA_DM_SSR_SPEC;
 
 typedef struct {
