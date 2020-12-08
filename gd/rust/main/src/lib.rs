@@ -1,7 +1,5 @@
 //! Main BT lifecycle support
 
-use bt_hal::hal_module;
-use bt_hci::hci_module;
 use gddi::{module, Registry, RegistryBuilder, Stoppable};
 use bt_hal::rootcanal_hal::RootcanalConfig;
 use std::sync::Arc;
@@ -11,8 +9,8 @@ use bt_common::GrpcFacade;
 module! {
     stack_module,
     submodules {
-        hal_module,
-        hci_module,
+        bt_hal::hal_module,
+        bt_hci::hci_module,
     }
 }
 

@@ -5,7 +5,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
-use syn::{braced, parse, parse_macro_input, FnArg, Ident, ItemFn, Token, Type, DeriveInput};
+use syn::{braced, parse, parse_macro_input, FnArg, Ident, ItemFn, Token, Type, DeriveInput, Path};
 
 /// Defines a provider function, with generated helper that implicitly fetches argument instances from the registry
 #[proc_macro_attribute]
@@ -46,12 +46,12 @@ pub fn provides(_attr: TokenStream, item: TokenStream) -> TokenStream {
 struct ModuleDef {
     name: Ident,
     providers: Punctuated<ProviderDef, Token![,]>,
-    submodules: Punctuated<Ident, Token![,]>,
+    submodules: Punctuated<Path, Token![,]>,
 }
 
 enum ModuleEntry {
     Providers(Punctuated<ProviderDef, Token![,]>),
-    Submodules(Punctuated<Ident, Token![,]>),
+    Submodules(Punctuated<Path, Token![,]>),
 }
 
 struct ProviderDef {
@@ -116,7 +116,7 @@ impl Parse for ModuleEntry {
                 let entries;
                 braced!(entries in input);
                 Ok(ModuleEntry::Submodules(
-                    entries.parse_terminated(Ident::parse)?,
+                    entries.parse_terminated(Path::parse)?,
                 ))
             }
             keyword => {
