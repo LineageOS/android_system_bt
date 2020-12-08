@@ -757,64 +757,116 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
   GenRustStructFieldNameAndType(s);
 
   // Generate size field
-  auto params = GetParamList().GetFieldsWithoutTypes({
-      PayloadField::kFieldType,
+  auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      SizeField::kFieldType,
   });
-  if (params.size() > 0) {
-    s << ", size: usize";
+  if (fields.size() > 0) {
+    s << " size: usize";
   }
   s << "}\n";
 }
 
-void PacketDef::GenRustStructFieldNameAndType(std::ostream& s) const {
-  auto params = GetParamList().GetFieldsWithoutTypes({
-      PayloadField::kFieldType,
+bool PacketDef::GenRustStructFieldNameAndType(std::ostream& s) const {
+  auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
   });
-  for (int i = 0; i < params.size(); i++) {
-    params[i]->GenRustNameAndType(s);
-    if (i != params.size() - 1) {
-      s << ", ";
-    }
+  if (fields.size() == 0) {
+    return false;
   }
+  for (int i = 0; i < fields.size(); i++) {
+    fields[i]->GenRustNameAndType(s);
+    s << ", ";
+  }
+  return true;
 }
 
 void PacketDef::GenRustStructFieldNames(std::ostream& s) const {
-  auto params = GetParamList().GetFieldsWithoutTypes({
-      PayloadField::kFieldType,
+  auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
   });
-  for (int i = 0; i < params.size(); i++) {
-    s << params[i]->GetName();
-    if (i != params.size() - 1) {
-      s << ", ";
-    }
+  for (int i = 0; i < fields.size(); i++) {
+    s << fields[i]->GetName();
+    s << ", ";
   }
 }
 
 void PacketDef::GenRustStructSizeField(std::ostream& s) const {
   int size = 0;
-  auto params = GetParamList().GetFieldsWithoutTypes({
-      PayloadField::kFieldType,
+  auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
+      CountField::kFieldType,
+      SizeField::kFieldType,
   });
-  for (int i = 0; i < params.size(); i++) {
-    size += params[i]->GetSize().bytes();
+  for (int i = 0; i < fields.size(); i++) {
+    size += fields[i]->GetSize().bytes();
   }
-  if (params.size() > 0) {
-    s << ", size: " << size;
+  if (fields.size() > 0) {
+    s << " size: " << size;
   }
 }
 
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Packet {";
   s << "pub fn new(";
-  GenRustStructFieldNameAndType(s);
+  bool fields_exist = GenRustStructFieldNameAndType(s);
   s << ") -> Self { Self {";
   GenRustStructFieldNames(s);
-  GenRustStructSizeField(s);
-  s << "}}}\n";
+  if (fields_exist) {
+    GenRustStructSizeField(s);
+  }
+  s << "}}";
+
+  s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+  });
+
+  for (auto const& field : fields) {
+    auto start_field_offset = GetOffsetForField(field->GetName(), false);
+    auto end_field_offset = GetOffsetForField(field->GetName(), true);
+
+    if (start_field_offset.empty() && end_field_offset.empty()) {
+      ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
+                   << "no method exists to determine field location from begin() or end().\n";
+    }
+
+    field->GenRustGetter(s, start_field_offset, end_field_offset);
+  }
+
+  s << "Ok(Self {";
+  fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
+  });
+
+  if (fields_exist) {
+    for (int i = 0; i < fields.size(); i++) {
+      auto field_type = fields[i]->GetFieldType();
+      s << fields[i]->GetName();
+      s << ", ";
+    }
+    GenRustStructSizeField(s);
+  }
+  s << "})}\n";
+
+  if (fields_exist) {
+    s << "pub fn get_size(&self) -> usize { self.size }";
+  }
+  s << "}\n";
 }
 
 void PacketDef::GenRustDef(std::ostream& s) const {

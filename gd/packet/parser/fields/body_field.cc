@@ -79,3 +79,6 @@ void BodyField::GenStringRepresentation(std::ostream& s, std::string accessor) c
 std::string BodyField::GetRustDataType() const {
   return GetDataType();
 }
+
+void BodyField::GenRustGetter(std::ostream&, Size, Size) const {
+}

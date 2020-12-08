@@ -69,7 +69,7 @@ class PacketDef : public ParentDef {
 
   void GenRustStructDeclarations(std::ostream& s) const;
 
-  void GenRustStructFieldNameAndType(std::ostream& s) const;
+  bool GenRustStructFieldNameAndType(std::ostream& s) const;
 
   void GenRustStructFieldNames(std::ostream& s) const;
 

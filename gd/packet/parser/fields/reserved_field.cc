@@ -71,3 +71,6 @@ void ReservedField::GenValidator(std::ostream&) const {
 std::string ReservedField::GetRustDataType() const {
   return util::GetRustTypeForSize(size_);
 }
+
+void ReservedField::GenRustGetter(std::ostream&, Size, Size) const {
+}

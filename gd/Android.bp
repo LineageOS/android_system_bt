@@ -468,6 +468,12 @@ rust_library {
     srcs: ["rust/packets/lib.rs", ":BluetoothGeneratedPackets_rust"],
     edition: "2018",
     host_supported: true,
+    proc_macros: ["libnum_derive"],
+    rustlibs: [
+        "libbytes",
+        "libnum_traits",
+        "libthiserror",
+    ],
 }
 
 // Generates binary schema data to be bundled and source file generated

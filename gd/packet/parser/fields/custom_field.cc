@@ -103,3 +103,6 @@ void CustomField::GenBuilderParameterFromView(std::ostream& s) const {
 std::string CustomField::GetRustDataType() const {
   return type_name_;
 }
+
+void CustomField::GenRustGetter(std::ostream&, Size, Size) const {
+}

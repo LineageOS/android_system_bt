@@ -69,3 +69,6 @@ void ChecksumStartField::GenStringRepresentation(std::ostream&, std::string) con
 std::string ChecksumStartField::GetRustDataType() const {
   return GetDataType();
 }
+
+void ChecksumStartField::GenRustGetter(std::ostream&, Size, Size) const {
+}

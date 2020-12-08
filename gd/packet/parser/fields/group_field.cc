@@ -86,3 +86,6 @@ const std::list<PacketField*>* GroupField::GetFields() const {
 std::string GroupField::GetRustDataType() const {
   return GetDataType();
 }
+
+void GroupField::GenRustGetter(std::ostream&, Size, Size) const {
+}

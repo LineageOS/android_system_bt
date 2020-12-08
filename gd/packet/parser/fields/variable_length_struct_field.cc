@@ -95,3 +95,6 @@ std::string VariableLengthStructField::GetRustDataType() const {
   std::string ret = "std::boxed::Box<" + type_name_ + ">";
   return ret;
 }
+
+void VariableLengthStructField::GenRustGetter(std::ostream&, Size, Size) const {
+}
