@@ -24,6 +24,7 @@
 #ifndef BTA_DM_INT_H
 #define BTA_DM_INT_H
 
+#include <base/strings/stringprintf.h>
 #include <memory>
 #include "bt_target.h"
 #include "bta/sys/bta_sys.h"
@@ -167,10 +168,26 @@ typedef enum : uint8_t {
   BTA_DM_DI_INT_SNIFF = 0x02, /* set this bit if call BTM_SetPowerMode(sniff) &
                                  enter sniff mode */
   BTA_DM_DI_ACP_SNIFF = 0x04, /* set this bit if peer init sniff */
+  BTA_DM_DI_UNUSED = 0x08,
   BTA_DM_DI_USE_SSR = 0x10, /* set this bit if ssr is supported for this link */
   BTA_DM_DI_AV_ACTIVE = 0x20, /* set this bit if AV is active for this link */
 } tBTA_DM_DEV_INFO_BITMASK;
 typedef uint8_t tBTA_DM_DEV_INFO;
+
+inline std::string device_info_text(tBTA_DM_DEV_INFO info) {
+  const char* const device_info_text[] = {
+      ":set_sniff", ":int_sniff", ":acp_sniff",
+      ":unused",    ":use_ssr",   ":av_active",
+  };
+
+  std::string s = base::StringPrintf("0x%02x", info);
+  if (info == BTA_DM_DI_NONE) return s + std::string(":none");
+  for (size_t i = 0; i < sizeof(device_info_text) / sizeof(device_info_text[0]);
+       i++) {
+    if (info & (1u << i)) s += std::string(device_info_text[i]);
+  }
+  return s;
+}
 
 /* set power mode request type */
 #define BTA_DM_PM_RESTART 1

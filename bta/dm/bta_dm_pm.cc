@@ -709,6 +709,9 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
             p_peer_dev->info);
 
   uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
+  LOG_DEBUG("Current power mode:%s[0x%x] peer_info:%s",
+            power_mode_status_text(mode).c_str(), mode,
+            device_info_text(p_peer_dev->info).c_str());
 
   const controller_t* controller = controller_get_interface();
   if (mode != BTM_PM_MD_SNIFF ||
