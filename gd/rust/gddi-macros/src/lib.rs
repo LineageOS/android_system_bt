@@ -5,7 +5,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote};
 use syn::parse::{Parse, ParseStream, Result};
 use syn::punctuated::Punctuated;
-use syn::{braced, parse, parse_macro_input, FnArg, Ident, ItemFn, Token, Type};
+use syn::{braced, parse, parse_macro_input, FnArg, Ident, ItemFn, Token, Type, DeriveInput};
 
 /// Defines a provider function, with generated helper that implicitly fetches argument instances from the registry
 #[proc_macro_attribute]
@@ -146,6 +146,17 @@ pub fn module(item: TokenStream) -> TokenStream {
             // Register all submodules on this module
             #(.register_module(#submodule_idents))*
         }
+    };
+    emitted_code.into()
+}
+
+/// Emits a default implementation for Stoppable that does nothing;
+#[proc_macro_derive(Stoppable)]
+pub fn derive_nop_stop(item: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(item as DeriveInput);
+    let ident = input.ident;
+    let emitted_code = quote! {
+        impl gddi::Stoppable for #ident {}
     };
     emitted_code.into()
 }

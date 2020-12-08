@@ -2,7 +2,7 @@
 
 use bt_hal::hal_module;
 use bt_hci::hci_module;
-use gddi::{module, Registry, RegistryBuilder};
+use gddi::{module, Registry, RegistryBuilder, Stoppable};
 use bt_hal::rootcanal_hal::RootcanalConfig;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -40,12 +40,17 @@ impl Stack {
     }
 
     /// Helper forwarding to underlying registry
-    pub async fn get<T: 'static + Clone + Send + Sync>(&self) -> T {
+    pub async fn get<T: 'static + Clone + Send + Sync + Stoppable>(&self) -> T {
         self.registry.get::<T>().await
     }
 
     /// Helper to get a grpc service
-    pub async fn get_grpc<T: 'static + Clone + Send + Sync + GrpcFacade>(&self) -> grpcio::Service {
+    pub async fn get_grpc<T: 'static + Clone + Send + Sync + GrpcFacade + Stoppable>(&self) -> grpcio::Service {
         self.get::<T>().await.into_grpc()
+    }
+
+    /// Stop the stack
+    pub async fn stop(&mut self) {
+        self.registry.stop_all().await;
     }
 }
