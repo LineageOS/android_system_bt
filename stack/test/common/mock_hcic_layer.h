@@ -54,6 +54,9 @@ class HcicInterface {
       uint16_t iso_handle, uint8_t data_path_dir,
       base::OnceCallback<void(uint8_t*, uint16_t)> cb) = 0;
 
+  virtual void ReadIsoLinkQuality(
+      uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) = 0;
+
   // iso_manager::big_create_params is a workaround for the 10 params function
   // limitation that gmock sets
   virtual void CreateBig(
@@ -61,6 +64,7 @@ class HcicInterface {
       struct bluetooth::hci::iso_manager::big_create_params big_params) = 0;
 
   virtual void TerminateBig(uint8_t big_handle, uint8_t reason) = 0;
+
   virtual ~HcicInterface() = default;
 };
 
@@ -94,6 +98,11 @@ class MockHcicInterface : public HcicInterface {
 
   MOCK_METHOD((void), RemoveIsoDataPath,
               (uint16_t iso_handle, uint8_t data_path_dir,
+               base::OnceCallback<void(uint8_t*, uint16_t)> cb),
+              (override));
+
+  MOCK_METHOD((void), ReadIsoLinkQuality,
+              (uint16_t iso_handle,
                base::OnceCallback<void(uint8_t*, uint16_t)> cb),
               (override));
 
