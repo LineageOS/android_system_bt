@@ -72,3 +72,29 @@ void btsnd_hcic_remove_iso_data_path(
     base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   hcic_interface->RemoveIsoDataPath(iso_handle, data_path_dir, std::move(cb));
 }
+
+void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle,
+                           uint8_t num_bis, uint32_t sdu_itv,
+                           uint16_t max_sdu_size, uint16_t transport_latency,
+                           uint8_t rtn, uint8_t phy, uint8_t packing,
+                           uint8_t framing, uint8_t enc,
+                           std::array<uint8_t, 16> bcst_code) {
+  struct bluetooth::hci::iso_manager::big_create_params big_params = {
+      .adv_handle = adv_handle,
+      .num_bis = num_bis,
+      .sdu_itv = sdu_itv,
+      .max_sdu_size = max_sdu_size,
+      .max_transport_latency = transport_latency,
+      .rtn = rtn,
+      .phy = phy,
+      .packing = packing,
+      .framing = framing,
+      .enc = enc,
+      .enc_code = std::move(bcst_code),
+  };
+  hcic_interface->CreateBig(big_handle, std::move(big_params));
+}
+
+void btsnd_hcic_term_big(uint8_t big_handle, uint8_t reason) {
+  hcic_interface->TerminateBig(big_handle, reason);
+}

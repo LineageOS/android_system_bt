@@ -21,6 +21,7 @@
 #include "btm_iso_impl.h"
 #include "btu.h"
 
+using bluetooth::hci::iso_manager::BigCallbacks;
 using bluetooth::hci::iso_manager::CigCallbacks;
 using bluetooth::hci::iso_manager::iso_impl;
 
@@ -50,6 +51,10 @@ IsoManager::IsoManager() : pimpl_(std::make_unique<impl>(*this)) {}
 
 void IsoManager::RegisterCigCallbacks(CigCallbacks* callbacks) const {
   pimpl_->iso_impl_->handle_register_cis_callbacks(callbacks);
+}
+
+void IsoManager::RegisterBigCallbacks(BigCallbacks* callbacks) const {
+  pimpl_->iso_impl_->handle_register_big_callbacks(callbacks);
 }
 
 void IsoManager::CreateCig(uint8_t cig_id,
@@ -87,6 +92,15 @@ void IsoManager::RemoveIsoDataPath(uint16_t iso_handle, uint8_t data_path_dir) {
 void IsoManager::SendIsoData(uint16_t iso_handle, const uint8_t* data,
                              uint16_t data_len) {
   pimpl_->iso_impl_->send_iso_data(iso_handle, data, data_len);
+}
+
+void IsoManager::CreateBig(uint8_t big_id,
+                           struct iso_manager::big_create_params big_params) {
+  pimpl_->iso_impl_->create_big(big_id, std::move(big_params));
+}
+
+void IsoManager::TerminateBig(uint8_t big_id, uint8_t reason) {
+  pimpl_->iso_impl_->terminate_big(big_id, reason);
 }
 
 void IsoManager::HandleIsoData(void* p_msg) {
