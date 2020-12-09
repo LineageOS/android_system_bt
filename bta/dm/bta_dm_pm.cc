@@ -336,10 +336,9 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   tBTA_DM_PEER_DEVICE* p_dev;
   tBTA_DM_PM_REQ pm_req = BTA_DM_PM_NEW_REQ;
 
-  APPL_TRACE_DEBUG("bta_dm_pm_cback: st(%d), id(%d), app(%d)", status, id,
-                   app_id);
-
-  p_dev = bta_dm_find_peer_device(peer_addr);
+  LOG_DEBUG("Power management callback status:%s[%hhu] id:%s[%d], app:%hhu",
+            bta_sys_conn_status_text(status).c_str(), status,
+            BtaIdSysText(id).c_str(), id, app_id);
 
   /* find if there is an power mode entry for the service */
   for (i = 1; i <= p_bta_dm_pm_cfg[0].app_id; i++) {
@@ -350,10 +349,21 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   }
 
   /* if no entries are there for the app_id and subsystem in p_bta_dm_pm_spec*/
-  if (i > p_bta_dm_pm_cfg[0].app_id) return;
+  if (i > p_bta_dm_pm_cfg[0].app_id) {
+    LOG_DEBUG("Ignoring power management callback as no service entries exist");
+    return;
+  }
 
+  LOG_DEBUG("Stopped all timers for service to device:%s id:%hhu",
+            PRIVATE_ADDRESS(peer_addr), id);
   bta_dm_pm_stop_timer_by_srvc_id(peer_addr, id);
-/*p_dev = bta_dm_find_peer_device(peer_addr);*/
+
+  p_dev = bta_dm_find_peer_device(peer_addr);
+  if (p_dev) {
+    LOG_DEBUG("Device info:%s", device_info_text(p_dev->info).c_str());
+  } else {
+    LOG_ERROR("Unable to find peer device...yet soldiering on...");
+  }
 
   /* set SSR parameters on SYS CONN OPEN */
   int index = BTA_DM_PM_SSR0;
@@ -441,11 +451,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     p_dev->pm_mode_failed = 0;
   }
 
-  if (p_bta_dm_ssr_spec[index].max_lat
-#if (BTA_HH_INCLUDED == TRUE)
-      || index == BTA_DM_PM_SSR_HH
-#endif
-      ) {
+  if (p_bta_dm_ssr_spec[index].max_lat || index == BTA_DM_PM_SSR_HH) {
     bta_dm_pm_ssr(peer_addr, index);
   } else {
     const controller_t* controller = controller_get_interface();
@@ -763,6 +769,8 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
   int ssr_index = ssr;
   tBTA_DM_SSR_SPEC* p_spec = &p_bta_dm_ssr_spec[ssr_index];
 
+  LOG_DEBUG("Request to put link to device:%s into power_mode:%s",
+            PRIVATE_ADDRESS(peer_addr), p_spec->name);
   /* go through the connected services */
   for (int i = 0; i < bta_dm_conn_srvcs.count; i++) {
     const tBTA_DM_SRVCS& service = bta_dm_conn_srvcs.conn_srvc[i];
@@ -776,9 +784,10 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
       current_ssr_index = p_bta_dm_pm_spec[config.spec_idx].ssr;
       if ((config.id == service.id) && ((config.app_id == BTA_ALL_APP_ID) ||
                                         (config.app_id == service.app_id))) {
-        LOG_INFO("Found connected service:%s app_id:%d peer:%s",
+        LOG_INFO("Found connected service:%s app_id:%d peer:%s spec_name:%s",
                  BtaIdSysText(service.id).c_str(), service.app_id,
-                 PRIVATE_ADDRESS(peer_addr));
+                 PRIVATE_ADDRESS(peer_addr),
+                 p_bta_dm_ssr_spec[current_ssr_index].name);
         break;
       }
     }
@@ -796,16 +805,17 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
 #endif
     if (p_spec_cur->max_lat < p_spec->max_lat ||
         (ssr_index == BTA_DM_PM_SSR0 && current_ssr_index != BTA_DM_PM_SSR0)) {
+      LOG_DEBUG(
+          "Changing sniff subrating specification for %s from %s[%d] ==> "
+          "%s[%d]",
+          PRIVATE_ADDRESS(peer_addr), p_spec->name, ssr_index, p_spec_cur->name,
+          current_ssr_index);
       ssr_index = current_ssr_index;
       p_spec = &p_bta_dm_ssr_spec[ssr_index];
     }
   }
 
   if (p_spec->max_lat) {
-    LOG_DEBUG(
-        "Max latency is non zero max_lat:0x%04x min_loc_to:0x%04x "
-        "min_rmt_to:0x%04x",
-        p_spec->max_lat, p_spec->min_loc_to, p_spec->min_rmt_to);
     /* Avoid SSR reset on device which has SCO connected */
     if (bta_dm_pm_is_sco_active()) {
       int idx = bta_dm_get_sco_index();
@@ -818,37 +828,50 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
     }
 
     LOG_DEBUG(
-        "Setting sniff subrating for device:%s max_lat:0x%04x "
-        "min_loc_to:0x%04x min_rmt_to:0x%04x",
-        PRIVATE_ADDRESS(peer_addr), p_spec->max_lat, p_spec->min_loc_to,
-        p_spec->min_rmt_to);
-
+        "Setting sniff subrating for device:%s spec_name:%s max_latency(s):%.2f"
+        " min_local_timeout(s):%.2f min_remote_timeout(s):%.2f",
+        PRIVATE_ADDRESS(peer_addr), p_spec->name,
+        ticks_to_seconds(p_spec->max_lat), ticks_to_seconds(p_spec->min_loc_to),
+        ticks_to_seconds(p_spec->min_rmt_to));
     /* set the SSR parameters. */
     BTM_SetSsrParams(peer_addr, p_spec->max_lat, p_spec->min_rmt_to,
                      p_spec->min_loc_to);
   }
 }
+
 /*******************************************************************************
  *
  * Function         bta_dm_pm_active
  *
  * Description      Brings connection to active mode
  *
- *
  * Returns          void
  *
  ******************************************************************************/
 void bta_dm_pm_active(const RawAddress& peer_addr) {
-  tBTM_PM_PWR_MD pm;
-
-  memset((void*)&pm, 0, sizeof(pm));
+  tBTM_PM_PWR_MD pm{
+      .mode = BTM_PM_MD_ACTIVE,
+  };
 
   /* switch to active mode */
-  pm.mode = BTM_PM_MD_ACTIVE;
   tBTM_STATUS status = BTM_SetPowerMode(bta_dm_cb.pm_id, peer_addr, &pm);
-  if (status != BTM_CMD_STORED && status != BTM_CMD_STARTED) {
-    LOG_WARN("Unable to set active mode for device:%s",
-             PRIVATE_ADDRESS(peer_addr));
+  switch (status) {
+    case BTM_CMD_STORED:
+      LOG_DEBUG("Active power mode stored for execution later for remote:%s",
+                PRIVATE_ADDRESS(peer_addr));
+      break;
+    case BTM_CMD_STARTED:
+      LOG_DEBUG("Active power mode started for remote:%s",
+                PRIVATE_ADDRESS(peer_addr));
+      break;
+    case BTM_SUCCESS:
+      LOG_INFO("Active power mode already set for device:%s",
+               PRIVATE_ADDRESS(peer_addr));
+      break;
+    default:
+      LOG_WARN("Unable to set active power mode for device:%s status:%s",
+               PRIVATE_ADDRESS(peer_addr), btm_status_text(status).c_str());
+      break;
   }
 }
 
