@@ -16,7 +16,7 @@ use bt_packet::{HciCommand, HciEvent, RawPacket};
 use gddi::{module, Stoppable};
 use std::sync::Arc;
 use thiserror::Error;
-use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
 
 #[cfg(target_os = "android")]
@@ -24,7 +24,8 @@ module! {
     hal_module,
     submodules {
         facade::hal_facade_module,
-        hidl_hal::hidl_hal_module
+        hidl_hal::hidl_hal_module,
+        snoop::snoop_module,
     },
 }
 
@@ -33,7 +34,8 @@ module! {
     hal_module,
     submodules {
         facade::hal_facade_module,
-        rootcanal_hal::rootcanal_hal_module
+        rootcanal_hal::rootcanal_hal_module,
+        snoop::snoop_module,
     },
 }
 /// H4 packet header size
@@ -45,20 +47,29 @@ const H4_HEADER_SIZE: usize = 1;
 #[derive(Clone, Stoppable)]
 pub struct HalExports {
     /// Transmit end of a channel used to send HCI commands
-    pub cmd_tx: UnboundedSender<HciCommand>,
+    pub cmd_tx: Sender<HciCommand>,
     /// Receive end of a channel used to receive HCI events
-    pub evt_rx: Arc<Mutex<UnboundedReceiver<HciEvent>>>,
+    pub evt_rx: Arc<Mutex<Receiver<HciEvent>>>,
     /// Transmit end of a channel used to send ACL data
-    pub acl_tx: UnboundedSender<RawPacket>,
+    pub acl_tx: Sender<RawPacket>,
     /// Receive end of a channel used to receive ACL data
-    pub acl_rx: Arc<Mutex<UnboundedReceiver<RawPacket>>>,
+    pub acl_rx: Arc<Mutex<Receiver<RawPacket>>>,
 }
 
 mod internal {
     use bt_packet::{HciCommand, HciEvent, RawPacket};
+    use gddi::Stoppable;
     use std::sync::Arc;
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
     use tokio::sync::Mutex;
+
+    #[derive(Clone, Stoppable)]
+    pub struct RawHalExports {
+        pub cmd_tx: UnboundedSender<HciCommand>,
+        pub evt_rx: Arc<Mutex<UnboundedReceiver<HciEvent>>>,
+        pub acl_tx: UnboundedSender<RawPacket>,
+        pub acl_rx: Arc<Mutex<UnboundedReceiver<RawPacket>>>,
+    }
 
     pub struct Hal {
         pub cmd_rx: UnboundedReceiver<HciCommand>,
@@ -68,13 +79,13 @@ mod internal {
     }
 
     impl Hal {
-        pub fn new() -> (super::HalExports, Self) {
+        pub fn new() -> (RawHalExports, Self) {
             let (cmd_tx, cmd_rx) = unbounded_channel();
             let (evt_tx, evt_rx) = unbounded_channel();
             let (acl_down_tx, acl_down_rx) = unbounded_channel();
             let (acl_up_tx, acl_up_rx) = unbounded_channel();
             (
-                super::HalExports {
+                RawHalExports {
                     cmd_tx,
                     evt_rx: Arc::new(Mutex::new(evt_rx)),
                     acl_tx: acl_down_tx,
