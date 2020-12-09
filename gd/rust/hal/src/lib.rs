@@ -7,6 +7,7 @@ extern crate lazy_static;
 
 pub mod facade;
 pub mod rootcanal_hal;
+pub mod snoop;
 
 #[cfg(target_os = "android")]
 mod hidl_hal;
