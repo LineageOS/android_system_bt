@@ -1257,6 +1257,14 @@ void Device::SetBrowsedPlayerResponse(
     return;
   }
 
+  if (pkt->GetPlayerId() == 0 && num_items == 0) {
+    // Response fail if no browsable player in Bluetooth Player
+    auto response = SetBrowsedPlayerResponseBuilder::MakeBuilder(
+        Status::PLAYER_NOT_BROWSABLE, 0x0000, num_items, 0, "");
+    send_message(label, true, std::move(response));
+    return;
+  }
+
   curr_browsed_player_id_ = pkt->GetPlayerId();
 
   // Clear the path and push the new root.

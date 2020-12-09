@@ -29,6 +29,8 @@
 #include "bt_common.h"
 #include "bt_types.h"
 
+#include "avrc_defs.h"
+#include "device/include/interop.h"
 #include "osi/include/osi.h"
 #include "sdp_api.h"
 #include "sdpint.h"
@@ -116,9 +118,11 @@ void sdp_server_handle_client_req(tCONN_CB* p_ccb, BT_HDR* p_msg) {
 
   if (p_req + sizeof(pdu_id) + sizeof(trans_num) > p_req_end) {
     android_errorWriteLog(0x534e4554, "69384124");
+    android_errorWriteLog(0x534e4554, "169342531");
     trans_num = 0;
     sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX,
                             SDP_TEXT_BAD_HEADER);
+    return;
   }
 
   /* The first byte in the message is the pdu type */
@@ -129,8 +133,10 @@ void sdp_server_handle_client_req(tCONN_CB* p_ccb, BT_HDR* p_msg) {
 
   if (p_req + sizeof(param_len) > p_req_end) {
     android_errorWriteLog(0x534e4554, "69384124");
+    android_errorWriteLog(0x534e4554, "169342531");
     sdpu_build_n_send_error(p_ccb, trans_num, SDP_INVALID_REQ_SYNTAX,
                             SDP_TEXT_BAD_HEADER);
+    return;
   }
 
   BE_STREAM_TO_UINT16(param_len, p_req);
@@ -548,6 +554,7 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
   tSDP_RECORD* p_rec;
   tSDP_ATTR_SEQ attr_seq, attr_seq_sav;
   tSDP_ATTRIBUTE* p_attr;
+  tSDP_ATTRIBUTE attr_sav;
   bool maxxed_out = false, is_cont = false;
   uint8_t* p_seq_start;
   uint16_t seq_len, attr_len;
@@ -646,6 +653,19 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
                                        attr_seq.attr_entry[xx].end);
 
       if (p_attr) {
+        // Check if the attribute contain AVRCP profile description list
+        uint16_t avrcp_version = sdpu_is_avrcp_profile_description_list(p_attr);
+        if (avrcp_version > AVRC_REV_1_4 &&
+            interop_match_addr(INTEROP_AVRCP_1_4_ONLY,
+                               &(p_ccb->device_address))) {
+          SDP_TRACE_DEBUG(
+              "%s, device=%s is only accept AVRCP 1.4, reply AVRCP 1.4 "
+              "instead.",
+              __func__, p_ccb->device_address.ToString().c_str());
+          memcpy(&attr_sav, p_attr, sizeof(tSDP_ATTRIBUTE));
+          attr_sav.value_ptr[attr_sav.len - 1] = 0x04;
+          p_attr = &attr_sav;
+        }
         /* Check if attribute fits. Assume 3-byte value type/length */
         rem_len = max_list_len - (int16_t)(p_rsp - &p_ccb->rsp_list[0]);
 
@@ -825,5 +845,4 @@ static void process_service_search_attr_req(tCONN_CB* p_ccb, uint16_t trans_num,
   /* Send the buffer through L2CAP */
   L2CA_DataWrite(p_ccb->connection_id, p_buf);
 }
-
 #endif /* SDP_SERVER_ENABLED == TRUE */

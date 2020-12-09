@@ -99,7 +99,10 @@ typedef enum {
   // The public address of these devices are same as the Random address in ADV.
   // Then will get name by LE_Create_connection, actually fails,
   // but will block pairing.
-  INTEROP_DISABLE_NAME_REQUEST
+  INTEROP_DISABLE_NAME_REQUEST,
+
+  // Respond AVRCP profile version only 1.4 for some device.
+  INTEROP_AVRCP_1_4_ONLY
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as

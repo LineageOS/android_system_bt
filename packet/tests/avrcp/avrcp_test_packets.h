@@ -316,6 +316,10 @@ std::vector<uint8_t> set_addressed_player_response = {
 std::vector<uint8_t> set_browsed_player_request = {0x70, 0x00, 0x02, 0x00,
                                                    0x02};
 
+// AVRCP Set Browsed Player Request with player_id = 0
+std::vector<uint8_t> set_browsed_player_id_0_request = {0x70, 0x00, 0x02, 0x00,
+                                                        0x00};
+
 // AVRCP Set Browsed Player Response with num items = 4 and depth = 0
 std::vector<uint8_t> set_browsed_player_response = {
     0x70, 0x00, 0x0a, 0x04, 0x00, 0x00, 0x00,
