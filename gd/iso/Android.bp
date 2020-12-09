@@ -1,0 +1,20 @@
+filegroup {
+    name: "BluetoothIsoSources",
+    srcs: [
+	    "iso_manager.cc",
+	    "iso_module.cc",
+	    "internal/iso_manager_impl.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothIsoTestSources",
+    srcs: [
+    ],
+}
+
+filegroup {
+    name: "BluetoothFacade_iso_layer",
+    srcs: [
+    ],
+}
