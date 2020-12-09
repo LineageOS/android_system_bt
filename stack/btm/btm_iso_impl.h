@@ -41,6 +41,7 @@ static constexpr uint8_t kIsoHeaderWithoutTsLen = 8;
 static constexpr uint8_t kStateFlagsNone = 0x00;
 static constexpr uint8_t kStateFlagIsConnected = 0x01;
 static constexpr uint8_t kStateFlagHasDataPathSet = 0x02;
+static constexpr uint8_t kStateFlagIsBroadcast = 0x04;
 
 struct iso_sync_info {
   uint32_t first_sync_ts;
@@ -48,7 +49,10 @@ struct iso_sync_info {
 };
 
 struct iso_base {
-  uint8_t cig_id;
+  union {
+    uint8_t cig_id;
+    uint8_t big_handle;
+  };
 
   struct iso_sync_info sync_info;
   uint8_t state_flags;
@@ -56,6 +60,7 @@ struct iso_base {
 };
 
 typedef iso_base iso_cis;
+typedef iso_base iso_bis;
 
 struct iso_impl {
   iso_impl() {
@@ -68,6 +73,11 @@ struct iso_impl {
   void handle_register_cis_callbacks(CigCallbacks* callbacks) {
     LOG_ASSERT(callbacks != nullptr) << "Invalid CIG callbacks";
     cig_callbacks_ = callbacks;
+  }
+
+  void handle_register_big_callbacks(BigCallbacks* callbacks) {
+    LOG_ASSERT(callbacks != nullptr) << "Invalid BIG callbacks";
+    big_callbacks_ = callbacks;
   }
 
   void on_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint8_t* stream,
@@ -226,9 +236,13 @@ struct iso_impl {
     LOG_ASSERT(iso != nullptr) << "Invalid connection handle: " << +conn_handle;
 
     if (status == HCI_SUCCESS) iso->state_flags |= kStateFlagHasDataPathSet;
-
-    LOG_ASSERT(cig_callbacks_ != nullptr) << "Invalid CIG callbacks";
-    cig_callbacks_->OnSetupIsoDataPath(status, conn_handle, iso->cig_id);
+    if (iso->state_flags & kStateFlagIsBroadcast) {
+      LOG_ASSERT(big_callbacks_ != nullptr) << "Invalid BIG callbacks";
+      big_callbacks_->OnSetupIsoDataPath(status, conn_handle, iso->big_handle);
+    } else {
+      LOG_ASSERT(cig_callbacks_ != nullptr) << "Invalid CIG callbacks";
+      cig_callbacks_->OnSetupIsoDataPath(status, conn_handle, iso->cig_id);
+    }
   }
 
   void setup_iso_data_path(
@@ -237,8 +251,10 @@ struct iso_impl {
     iso_base* iso = GetIsoIfKnown(conn_handle);
     LOG_ASSERT(iso != nullptr) << "No such iso connection: " << +conn_handle;
 
-    LOG_ASSERT(iso->state_flags & kStateFlagIsConnected)
-        << "CIS not established";
+    if (!(iso->state_flags & kStateFlagIsBroadcast)) {
+      LOG_ASSERT(iso->state_flags & kStateFlagIsConnected)
+          << "CIS not established";
+    }
 
     btsnd_hcic_setup_iso_data_path(
         conn_handle, path_params.data_path_dir, path_params.data_path_id,
@@ -261,8 +277,13 @@ struct iso_impl {
 
     if (status == HCI_SUCCESS) iso->state_flags &= ~kStateFlagHasDataPathSet;
 
-    LOG_ASSERT(cig_callbacks_ != nullptr) << "Invalid CIG callbacks";
-    cig_callbacks_->OnRemoveIsoDataPath(status, conn_handle, iso->cig_id);
+    if (iso->state_flags & kStateFlagIsBroadcast) {
+      LOG_ASSERT(big_callbacks_ != nullptr) << "Invalid BIG callbacks";
+      big_callbacks_->OnRemoveIsoDataPath(status, conn_handle, iso->big_handle);
+    } else {
+      LOG_ASSERT(cig_callbacks_ != nullptr) << "Invalid CIG callbacks";
+      cig_callbacks_->OnRemoveIsoDataPath(status, conn_handle, iso->cig_id);
+    }
   }
 
   void remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir) {
@@ -314,8 +335,10 @@ struct iso_impl {
     LOG_ASSERT(iso != nullptr)
         << "No such iso connection handle: " << +iso_handle;
 
-    LOG_ASSERT(iso->state_flags & kStateFlagIsConnected)
-        << "CIS not established";
+    if (!(iso->state_flags & kStateFlagIsBroadcast)) {
+      LOG_ASSERT(iso->state_flags & kStateFlagIsConnected)
+          << "CIS not established";
+    }
     LOG_ASSERT(iso->state_flags & kStateFlagHasDataPathSet)
         << "Data path not set for handle: " << +iso_handle;
 
@@ -411,11 +434,97 @@ struct iso_impl {
       STREAM_TO_UINT16(handle, p);
       STREAM_TO_UINT16(num_sent, p);
 
-      if (conn_hdl_to_cis_map_.find(handle) == conn_hdl_to_cis_map_.end())
+      if ((conn_hdl_to_cis_map_.find(handle) == conn_hdl_to_cis_map_.end()) &&
+          (conn_hdl_to_bis_map_.find(handle) == conn_hdl_to_bis_map_.end()))
         continue;
 
       iso_credits_ += num_sent;
     }
+  }
+
+  void process_create_big_cmpl_pkt(uint8_t len, uint8_t* data) {
+    struct big_create_cmpl_evt evt;
+
+    LOG_ASSERT(len >= 18) << "Invalid packet length";
+    LOG_ASSERT(big_callbacks_ != nullptr) << "Invalid BIG callbacks";
+
+    STREAM_TO_UINT8(evt.status, data);
+    STREAM_TO_UINT8(evt.big_id, data);
+    STREAM_TO_UINT24(evt.big_sync_delay, data);
+    STREAM_TO_UINT24(evt.transport_latency_big, data);
+    STREAM_TO_UINT8(evt.phy, data);
+    STREAM_TO_UINT8(evt.nse, data);
+    STREAM_TO_UINT8(evt.bn, data);
+    STREAM_TO_UINT8(evt.pto, data);
+    STREAM_TO_UINT8(evt.irc, data);
+    STREAM_TO_UINT16(evt.max_pdu, data);
+    STREAM_TO_UINT16(evt.iso_interval, data);
+
+    uint8_t num_bis;
+    STREAM_TO_UINT8(num_bis, data);
+
+    LOG_ASSERT(num_bis != 0) << "Invalid bis count";
+    LOG_ASSERT(len == (18 + num_bis * sizeof(uint16_t)))
+        << "Invalid packet length";
+
+    uint32_t ts = bluetooth::common::time_get_os_boottime_us();
+    for (auto i = 0; i < num_bis; ++i) {
+      uint16_t conn_handle;
+      STREAM_TO_UINT16(conn_handle, data);
+      evt.conn_handles.push_back(conn_handle);
+      LOG_INFO(" received BIS conn_hdl %d", +conn_handle);
+
+      if (evt.status == HCI_SUCCESS) {
+        conn_hdl_to_bis_map_[conn_handle] = std::unique_ptr<iso_bis>(
+            new iso_bis({.sync_info = {.first_sync_ts = ts, .seq_nb = 0},
+                         .big_handle = evt.big_id,
+                         .state_flags = kStateFlagIsBroadcast,
+                         .sdu_itv = last_big_create_req_sdu_itv_}));
+      }
+    }
+
+    big_callbacks_->OnBigEvent(kIsoEventBigOnCreateCmpl, &evt);
+  }
+
+  void process_terminate_big_cmpl_pkt(uint8_t len, uint8_t* data) {
+    struct big_terminate_cmpl_evt evt;
+
+    LOG_ASSERT(len == 2) << "Invalid packet length";
+    LOG_ASSERT(big_callbacks_ != nullptr) << "Invalid BIG callbacks";
+
+    STREAM_TO_UINT8(evt.big_id, data);
+    STREAM_TO_UINT8(evt.reason, data);
+
+    bool is_known_handle = false;
+    auto bis_it = conn_hdl_to_bis_map_.cbegin();
+    while (bis_it != conn_hdl_to_bis_map_.cend()) {
+      if (bis_it->second->big_handle == evt.big_id) {
+        bis_it = conn_hdl_to_bis_map_.erase(bis_it);
+        is_known_handle = true;
+      } else {
+        ++bis_it;
+      }
+    }
+
+    LOG_ASSERT(is_known_handle) << "No such big";
+    big_callbacks_->OnBigEvent(kIsoEventBigOnTerminateCmpl, &evt);
+  }
+
+  void create_big(uint8_t big_id, struct big_create_params big_params) {
+    LOG_ASSERT(!IsBigKnown(big_id)) << "Invalid big - already exists";
+
+    last_big_create_req_sdu_itv_ = big_params.sdu_itv;
+    btsnd_hcic_create_big(
+        big_id, big_params.adv_handle, big_params.num_bis, big_params.sdu_itv,
+        big_params.max_sdu_size, big_params.max_transport_latency,
+        big_params.rtn, big_params.phy, big_params.packing, big_params.framing,
+        big_params.enc, big_params.enc_code);
+  }
+
+  void terminate_big(uint8_t big_id, uint8_t reason) {
+    LOG_ASSERT(IsBigKnown(big_id)) << "No such big";
+
+    btsnd_hcic_term_big(big_id, reason);
   }
 
   void on_iso_event(uint8_t code, uint8_t* packet, uint16_t packet_len) {
@@ -424,10 +533,10 @@ struct iso_impl {
         process_cis_est_pkt(packet_len, packet);
         break;
       case HCI_BLE_CREATE_BIG_CPL_EVT:
-        /* TODO: Implement */
+        process_create_big_cmpl_pkt(packet_len, packet);
         break;
       case HCI_BLE_TERM_BIG_CPL_EVT:
-        /* TODO: Implement */
+        process_terminate_big_cmpl_pkt(packet_len, packet);
         break;
       case HCI_BLE_CIS_REQ_EVT:
         /* Not supported */
@@ -503,8 +612,15 @@ struct iso_impl {
                                                   : nullptr;
   }
 
+  iso_bis* GetBisIfKnown(uint16_t bis_conn_handle) {
+    auto bis_it = conn_hdl_to_bis_map_.find(bis_conn_handle);
+    return (bis_it != conn_hdl_to_bis_map_.end()) ? bis_it->second.get()
+                                                  : nullptr;
+  }
+
   iso_base* GetIsoIfKnown(uint16_t iso_handle) {
-    return GetCisIfKnown(iso_handle);
+    struct iso_base* iso = GetCisIfKnown(iso_handle);
+    return (iso != nullptr) ? iso : GetBisIfKnown(iso_handle);
   }
 
   bool IsCigKnown(uint8_t cig_id) const {
@@ -516,12 +632,24 @@ struct iso_impl {
     return (cis_it != conn_hdl_to_cis_map_.cend());
   }
 
+  bool IsBigKnown(uint8_t big_id) const {
+    auto bis_it =
+        std::find_if(conn_hdl_to_bis_map_.cbegin(), conn_hdl_to_bis_map_.cend(),
+                     [&big_id](auto& kv_pair) {
+                       return (kv_pair.second->big_handle == big_id);
+                     });
+    return (bis_it != conn_hdl_to_bis_map_.cend());
+  }
+
   std::map<uint16_t, std::unique_ptr<iso_cis>> conn_hdl_to_cis_map_;
+  std::map<uint16_t, std::unique_ptr<iso_bis>> conn_hdl_to_bis_map_;
 
   uint16_t iso_credits_;
   uint16_t iso_buffer_size_;
+  uint32_t last_big_create_req_sdu_itv_;
 
   CigCallbacks* cig_callbacks_ = nullptr;
+  BigCallbacks* big_callbacks_ = nullptr;
 };
 
 }  // namespace iso_manager
