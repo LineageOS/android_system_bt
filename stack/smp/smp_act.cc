@@ -1254,7 +1254,17 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     /* state check to prevent re-entrant */
     if (smp_get_state() == SMP_STATE_BOND_PENDING) {
       if (p_cb->derive_lk) {
-        smp_derive_link_key_from_long_term_key(p_cb, NULL);
+        tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
+        if (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_AUTHED) &&
+            (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_AUTHED)) {
+          SMP_TRACE_DEBUG(
+              "%s BR key is higher security than existing LE keys, don't "
+              "derive LK from LTK",
+              __func__);
+          android_errorWriteLog(0x534e4554, "158854097");
+        } else {
+          smp_derive_link_key_from_long_term_key(p_cb, NULL);
+        }
         p_cb->derive_lk = false;
       }
 
