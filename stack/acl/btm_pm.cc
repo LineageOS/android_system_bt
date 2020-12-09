@@ -161,6 +161,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) {
     if (btm_pm_is_le_link(remote_bda)) {
+      LOG_ERROR("Setting power mode on le link is unsupported");
       return BTM_MODE_UNSUPPORTED;
     }
     LOG_ERROR("br_edr acl addr %s is unknown", remote_bda.ToString().c_str());
@@ -190,8 +191,10 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
          (p_mode->min <= p_cb->interval)) ||
         ((p_mode->mode & BTM_PM_MD_FORCE) == 0 &&
          (p_mode->max >= p_cb->interval))) {
-      LOG_INFO("already in requested mode %d, interval: %d, max: %d, min: %d",
-               p_mode->mode, p_cb->interval, p_mode->max, p_mode->min);
+      LOG_INFO(
+          "Device is already in requested mode %d, interval: %d, max: %d, min: "
+          "%d",
+          p_mode->mode, p_cb->interval, p_mode->max, p_mode->min);
       return BTM_SUCCESS;
     }
   }
@@ -491,9 +494,10 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   mode = btm_pm_get_set_mode(pm_id, p_cb, p_mode, &md_res);
   md_res.mode = mode;
 
-  LOG_INFO("link_ind: %d, mode: %d", link_ind, mode);
-
   if (p_cb->state == mode) {
+    LOG_INFO("Link already in requested mode pm_id:%hhu link_ind:%d mode:%d",
+             pm_id, link_ind, mode);
+
     /* already in the resulting mode */
     if ((mode == BTM_PM_MD_ACTIVE) ||
         ((md_res.max >= p_cb->interval) && (md_res.min <= p_cb->interval)))
