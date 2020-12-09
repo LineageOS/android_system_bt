@@ -90,6 +90,9 @@ fluoride_defaults {
     },
     static_libs: [
         "libbluetooth_gd",
+        "libbluetooth_rust_interop",
+        "libbt_shim_ffi",
+        "libcxxbridge05",
     ],
     target: {
         darwin: {
@@ -97,9 +100,6 @@ fluoride_defaults {
             enabled: false,
         },
     },
-    generated_headers: [
-        "libbt_common_bridge_header",
-    ],
 }
 
 // Enables code coverage for a set of source files. Must be combined with
