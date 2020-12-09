@@ -1,0 +1,64 @@
+rust_ffi_static {
+    name: "libbt_shim_ffi",
+    crate_name: "bt_shim",
+    srcs: ["src/lib.rs"],
+    rustlibs: [
+        "libbt_hal",
+        "libbt_hci",
+        "libbt_common",
+        "libcxx",
+    ],
+    host_supported: true,
+}
+
+cc_library_static {
+    name: "libbluetooth_rust_interop",
+    generated_headers: ["libbt_init_flags_bridge_header", "libbt_shim_bridge_header"],
+    generated_sources: ["libbt_init_flags_bridge_code", "libbt_shim_bridge_code"],
+    export_generated_headers: ["libbt_init_flags_bridge_header", "libbt_shim_bridge_header"],
+    cflags: [
+        "-Wno-unused-const-variable",
+    ],
+    host_supported: true,
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
+    ],
+    static_libs: [
+        "libbt_shim_ffi",
+    ],
+}
+
+genrule {
+    name: "libbt_shim_bridge_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: ["src/stack.rs"],
+    out: ["src/stack.rs.h"],
+}
+
+genrule {
+    name: "libbt_shim_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/stack.rs"],
+    out: ["stack.cc"],
+}
+
+genrule {
+    name: "libbt_init_flags_bridge_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: ["src/init_flags.rs"],
+    out: ["src/init_flags.rs.h"],
+}
+
+genrule {
+    name: "libbt_init_flags_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/init_flags.rs"],
+    out: ["init_flags.cc"],
+}
+
+
