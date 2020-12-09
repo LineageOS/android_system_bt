@@ -29,6 +29,7 @@ cc_defaults {
         "libudrv-uipc",
         "libbt-protos-lite",
         "libbluetooth_gd",
+        "libcxxbridge05",
     ],
     shared_libs: [
         "libbinder",
