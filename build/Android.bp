@@ -97,6 +97,9 @@ fluoride_defaults {
             enabled: false,
         },
     },
+    generated_headers: [
+        "libbt_common_bridge_header",
+    ],
 }
 
 // Enables code coverage for a set of source files. Must be combined with
