@@ -67,7 +67,7 @@ void btsnoop_mem_capture(const BT_HDR* packet, uint64_t timestamp_us) {
   if (length && data_callback)
     (*data_callback)(type, data, length, timestamp_us);
   if (length && attribution_callback &&
-      bluetooth::common::InitFlags::BtaaHciLogEnabled()) {
+      bluetooth::common::init_flags::btaa_hci_is_enabled()) {
     (*attribution_callback)(type, data, length, timestamp_us);
   }
 }
