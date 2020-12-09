@@ -474,6 +474,11 @@ void DumpsysAcl(int fd) {
                   common::ToString(acl_conn.peer_lmp_feature_valid[j]).c_str(),
                   bd_features_text(acl_conn.peer_lmp_feature_pages[j]).c_str());
     }
+    LOG_DUMPSYS(fd, "      sniff_subrating:%s",
+                common::ToString(HCI_SNIFF_SUB_RATE_SUPPORTED(
+                                     acl_conn.peer_lmp_feature_pages[0]))
+                    .c_str());
+
     LOG_DUMPSYS(fd, "remote_addr:%s", acl_conn.remote_addr.ToString().c_str());
     LOG_DUMPSYS(fd, "    handle:0x%04x", acl_conn.hci_handle);
     LOG_DUMPSYS(fd, "    [le] active_remote_addr:%s",
