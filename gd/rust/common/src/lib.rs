@@ -10,6 +10,8 @@ mod ready;
 #[macro_use]
 mod asserts;
 
+mod init_flags;
+
 /// Inits logging for Android
 #[cfg(target_os = "android")]
 pub fn init_logging() {
