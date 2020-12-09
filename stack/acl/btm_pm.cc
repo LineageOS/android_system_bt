@@ -164,8 +164,16 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     return BTM_UNKNOWN_ADDR;
   }
 
-  /* take out the force bit */
-  tBTM_PM_MODE mode = p_mode->mode & ~BTM_PM_MD_FORCE;
+  tBTM_PM_MODE mode = p_mode->mode;
+  if (p_mode->mode & BTM_PM_MD_FORCE) {
+    LOG_INFO("Attempting to force into this power mode");
+    /* take out the force bit */
+    mode &= (~BTM_PM_MD_FORCE);
+  }
+  if (!(mode & 0xf8)) {
+    LOG_ERROR("Unable to set illegal power mode value:0x%02x", mode);
+    return BTM_ILLEGAL_VALUE;
+  }
 
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) {
@@ -173,7 +181,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
       LOG_ERROR("Setting power mode on le link is unsupported");
       return BTM_MODE_UNSUPPORTED;
     }
-    LOG_ERROR("br_edr acl addr %s is unknown", remote_bda.ToString().c_str());
+    LOG_ERROR("br_edr acl addr:%s is unknown", PRIVATE_ADDRESS(remote_bda));
     return BTM_UNKNOWN_ADDR;
   }
 
@@ -187,7 +195,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
         (mode == BTM_PM_MD_PARK && !controller->supports_park_mode()) ||
         interop_match_addr(INTEROP_DISABLE_SNIFF, &remote_bda)) {
       LOG_ERROR("pm_id %u mode %u is not supported for %s", pm_id, mode,
-                remote_bda.ToString().c_str());
+                PRIVATE_ADDRESS(remote_bda));
       return BTM_MODE_UNSUPPORTED;
     }
   }
@@ -246,37 +254,18 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   return internal_.btm_pm_snd_md_req(*p_acl, pm_id, acl_ind, p_mode);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_ReadPowerMode
- *
- * Description      This returns the current mode for a specific
- *                  ACL connection.
- *
- * Input Param      remote_bda - device address of desired ACL connection
- *
- * Output Param     p_mode - address where the current mode is copied into.
- *                          BTM_ACL_MODE_NORMAL
- *                          BTM_ACL_MODE_HOLD
- *                          BTM_ACL_MODE_SNIFF
- *                          BTM_ACL_MODE_PARK
- *                          (valid only if return code is BTM_SUCCESS)
- *
- * Returns          true if successful, false otherwise
- *
- ******************************************************************************/
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
   if (p_mode == nullptr) {
-    LOG_ERROR("%s power mode is nullptr", __func__);
+    LOG_ERROR("power mode is nullptr");
     return false;
   }
-  int acl_ind = btm_pm_find_acl_ind(remote_bda);
-  if (acl_ind == MAX_L2CAP_LINKS) {
-    LOG_WARN("unknown bda: %s", remote_bda.ToString().c_str());
+  tBTM_PM_MCB* p_mcb =
+      internal_.btm_pm_get_power_manager_from_address(remote_bda);
+  if (p_mcb == nullptr) {
+    LOG_WARN("Unknown device:%s", PRIVATE_ADDRESS(remote_bda));
     return false;
   }
-
-  *p_mode = static_cast<tBTM_PM_MODE>(btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
+  *p_mode = static_cast<tBTM_PM_MODE>(p_mcb->state);
   return true;
 }
 
