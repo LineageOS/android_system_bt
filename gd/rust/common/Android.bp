@@ -8,6 +8,7 @@ rust_library {
         "libnix",
         "liblog_rust",
         "libcxx",
+        "libgrpcio",
     ],
     target: {
         android: {
@@ -38,6 +39,7 @@ rust_test_host {
         "liblog_rust",
         "libenv_logger",
         "libcxx",
+        "libgrpcio",
     ],
     proc_macros: [
         "libpaste",

@@ -34,3 +34,9 @@ pub fn init_logging() {
         .try_init()
         .ok();
 }
+
+/// Indicates the object can be converted to a GRPC service
+pub trait GrpcFacade {
+    /// Convert the object into the service
+    fn into_grpc(self) -> grpcio::Service;
+}

@@ -16,6 +16,7 @@ rust_library {
         "libprotobuf",
         "libgddi",
         "liblog_rust",
+        "libbt_common",
     ],
     proc_macros: [
         "libnum_derive",
