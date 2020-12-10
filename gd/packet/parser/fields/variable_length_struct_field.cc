@@ -90,3 +90,11 @@ void VariableLengthStructField::GenInserter(std::ostream& s) const {
 void VariableLengthStructField::GenValidator(std::ostream&) const {
   // Do nothing
 }
+
+std::string VariableLengthStructField::GetRustDataType() const {
+  std::string ret = "std::boxed::Box<" + type_name_ + ">";
+  return ret;
+}
+
+void VariableLengthStructField::GenRustGetter(std::ostream&, Size, Size) const {
+}

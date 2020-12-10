@@ -56,6 +56,10 @@ class PayloadField : public PacketField {
 
   virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
 
+  virtual std::string GetRustDataType() const override;
+
+  void GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
+
   // Payload fields can only be dynamically sized.
   const SizeField* size_field_;
   // Only used if the size of the payload is based on another field.
