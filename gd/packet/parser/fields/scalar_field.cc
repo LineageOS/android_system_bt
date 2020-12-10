@@ -133,3 +133,46 @@ void ScalarField::GenValidator(std::ostream&) const {
 void ScalarField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
   s << "+" << accessor;
 }
+
+std::string ScalarField::GetRustDataType() const {
+  return util::GetRustTypeForSize(size_);
+}
+
+int ScalarField::GetRustBitOffset(
+    std::ostream&, Size start_offset, Size end_offset, Size size) const {
+  int num_leading_bits = 0;
+
+  if (!start_offset.empty()) {
+    // Default to start if available.
+    num_leading_bits = start_offset.bits() % 8;
+  } else if (!end_offset.empty()) {
+    num_leading_bits = GetShiftBits(end_offset.bits() + size.bits());
+    Size byte_offset = Size(num_leading_bits + size.bits()) + end_offset;
+  } else {
+    ERROR(this) << "Ambiguous offset for field.";
+  }
+  return num_leading_bits;
+}
+
+void ScalarField::GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const {
+  Size size = GetSize();
+  int num_leading_bits = GetRustBitOffset(s, start_offset, end_offset, GetSize());
+
+  s << "let " << GetName() << " = ";
+  s << GetRustDataType() << "::from_le_bytes(bytes[" << start_offset.bytes() << "..";
+  s << start_offset.bytes() + GetSize().bytes() << "].try_into().unwrap());";
+
+  if (num_leading_bits != 0) {
+    s << "let " << GetName() << " = " << GetName() << " >> " << num_leading_bits << ";";
+  }
+
+  if (util::RoundSizeUp(size.bits()) != size.bits()) {
+    uint64_t mask = 0;
+    for (int i = 0; i < size.bits(); i++) {
+      mask <<= 1;
+      mask |= 1;
+    }
+    s << "let " << GetName() << " = ";
+    s << GetName() << " & 0x" << std::hex << mask << std::dec << ";";
+  }
+}

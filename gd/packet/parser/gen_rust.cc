@@ -19,6 +19,33 @@
 #include <iostream>
 #include "declarations.h"
 
+void generate_rust_packet_preamble(std::ostream& s) {
+  s <<
+      R"(
+use bytes::Bytes;
+use num_derive::{FromPrimitive, ToPrimitive};
+use num_traits::FromPrimitive;
+use std::convert::TryInto;
+use thiserror::Error;
+
+type Result<T> = std::result::Result<T, Error>;
+
+#[derive(Debug, Error)]
+pub enum Error {
+  #[error("Packet parsing failed")]
+  InvalidPacketError
+}
+
+pub struct Address {
+  pub addr: [u8; 6],
+}
+
+pub struct ClassOfDevice {
+  pub cod: [u8; 3],
+}
+)";
+}
+
 bool generate_rust_source_one_file(
     const Declarations& decls,
     const std::filesystem::path& input_file,
@@ -44,6 +71,8 @@ bool generate_rust_source_one_file(
   }
 
   out_file << "// @generated rust packets from " << input_file.filename().string() << "\n\n";
+
+  generate_rust_packet_preamble(out_file);
 
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {

@@ -61,3 +61,10 @@ void PaddingField::GenInserter(std::ostream&) const {
 }
 
 void PaddingField::GenValidator(std::ostream&) const {}
+
+std::string PaddingField::GetRustDataType() const {
+  return "There's no type for Padding fields";
+}
+
+void PaddingField::GenRustGetter(std::ostream&, Size, Size) const {
+}

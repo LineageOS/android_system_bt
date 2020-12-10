@@ -47,6 +47,10 @@ class ReservedField : public PacketField {
 
   virtual void GenValidator(std::ostream&) const override;
 
+  virtual std::string GetRustDataType() const override;
+
+  void GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
+
  private:
   std::string name_;
   int size_;
