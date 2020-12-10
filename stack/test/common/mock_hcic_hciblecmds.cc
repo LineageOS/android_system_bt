@@ -300,6 +300,10 @@ void btsnd_hcic_remove_iso_data_path(
     base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
   mock_function_count_map[__func__]++;
 }
+void btsnd_hcic_read_iso_link_quality(
+    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  mock_function_count_map[__func__]++;
+}
 void btsnd_hcic_req_peer_sca(uint16_t conn_handle) {
   mock_function_count_map[__func__]++;
 }
