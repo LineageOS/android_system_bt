@@ -298,6 +298,7 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   gatt_free();
   l2c_free();
   sdp_free();
+  btm_ble_free();
   btm_free();
 
   if (bluetooth::shim::is_any_gd_enabled()) {
