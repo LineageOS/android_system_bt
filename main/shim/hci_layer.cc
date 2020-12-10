@@ -23,6 +23,7 @@
 #include <algorithm>
 #include <cstdint>
 
+#include "callbacks/callbacks.h"
 #include "gd/common/init_flags.h"
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
@@ -32,6 +33,7 @@
 #include "osi/include/allocator.h"
 #include "osi/include/future.h"
 #include "packet/raw_builder.h"
+#include "src/hci.rs.h"
 #include "stack/include/bt_types.h"
 
 /**
@@ -531,20 +533,67 @@ static void on_shutting_down() {
 
 }  // namespace cpp
 
+using bluetooth::common::Bind;
+using bluetooth::common::BindOnce;
+using bluetooth::common::Unretained;
+
 namespace rust {
+
+using bluetooth::shim::rust::u8SliceCallback;
+
+static BT_HDR* WrapRustPacketAndCopy(uint16_t event,
+                                     ::rust::Slice<uint8_t>* data) {
+  size_t packet_size = data->length() + kBtHdrSize;
+  BT_HDR* packet = reinterpret_cast<BT_HDR*>(osi_malloc(packet_size));
+  packet->offset = 0;
+  packet->len = data->length();
+  packet->layer_specific = 0;
+  packet->event = event;
+  std::copy(data->data(), data->data() + data->length(), packet->data);
+  return packet;
+}
+
+static void on_acl(::rust::Slice<uint8_t> data) {
+  if (!send_data_upwards) {
+    return;
+  }
+  auto legacy_data = WrapRustPacketAndCopy(MSG_HC_TO_STACK_HCI_ACL, &data);
+  packet_fragmenter->reassemble_and_dispatch(legacy_data);
+}
+
+static void on_event(::rust::Slice<uint8_t> data) {
+  if (!send_data_upwards) {
+    return;
+  }
+  send_data_upwards.Run(FROM_HERE,
+                        WrapRustPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &data));
+}
 
 static void transmit_command(BT_HDR* command,
                              command_complete_cb complete_callback,
                              command_status_cb status_callback, void* context) {
 }
 
-static void transmit_fragment(uint8_t* stream, size_t length) {}
+static void transmit_fragment(uint8_t* stream, size_t length) {
+  bluetooth::shim::rust::hci_send_acl(::rust::Slice(stream, length));
+}
 
-static void register_event(bluetooth::hci::EventCode event_code) {}
+static void register_event(bluetooth::hci::EventCode event_code) {
+  bluetooth::shim::rust::hci_register_event(
+      static_cast<uint8_t>(event_code),
+      std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
+}
 
-static void register_le_event(bluetooth::hci::SubeventCode subevent_code) {}
+static void register_le_event(bluetooth::hci::SubeventCode subevent_code) {
+  bluetooth::shim::rust::hci_register_le_event(
+      static_cast<uint8_t>(subevent_code),
+      std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
+}
 
-static void register_for_acl() {}
+static void register_for_acl() {
+  bluetooth::shim::rust::hci_set_acl_callback(
+      std::make_unique<u8SliceCallback>(Bind(rust::on_acl)));
+}
 
 static void on_shutting_down() {}
 
@@ -554,9 +603,6 @@ static void set_data_cb(
     base::Callback<void(const base::Location&, BT_HDR*)> send_data_cb) {
   send_data_upwards = std::move(send_data_cb);
 }
-
-using bluetooth::common::BindOnce;
-using bluetooth::common::Unretained;
 
 static void transmit_command(BT_HDR* command,
                              command_complete_cb complete_callback,
@@ -665,7 +711,7 @@ void bluetooth::shim::hci_on_reset_complete() {
     }
 
     if (bluetooth::common::init_flags::gd_rust_is_enabled()) {
-      rust::register_event(event_code);
+      ::rust::register_event(event_code);
     } else {
       cpp::register_event(event_code);
     }
@@ -683,7 +729,7 @@ void bluetooth::shim::hci_on_reset_complete() {
     }
 
     if (bluetooth::common::init_flags::gd_rust_is_enabled()) {
-      rust::register_le_event(subevent_code);
+      ::rust::register_le_event(subevent_code);
     } else {
       cpp::register_le_event(subevent_code);
     }
@@ -694,7 +740,7 @@ void bluetooth::shim::hci_on_reset_complete() {
   }
 
   if (bluetooth::common::init_flags::gd_rust_is_enabled()) {
-    rust::register_for_acl();
+    ::rust::register_for_acl();
   } else {
     cpp::register_for_acl();
   }
@@ -702,7 +748,7 @@ void bluetooth::shim::hci_on_reset_complete() {
 
 void bluetooth::shim::hci_on_shutting_down() {
   if (bluetooth::common::init_flags::gd_rust_is_enabled()) {
-    rust::on_shutting_down();
+    ::rust::on_shutting_down();
   } else {
     cpp::on_shutting_down();
   }

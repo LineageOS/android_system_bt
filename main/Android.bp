@@ -21,6 +21,7 @@ cc_library_static {
     include_dirs: [
         "system/bt",
         "system/bt/gd",
+        "system/bt/gd/rust/shim",
         "system/bt/bta/include",
         "system/bt/bta/sys",
         "system/bt/bta/dm",
@@ -50,6 +51,7 @@ cc_library_static {
         "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
+    header_libs: ["libbt_callbacks_cxx_headers"],
     host_supported: true,
 }
 
@@ -159,6 +161,7 @@ cc_library_static {
     include_dirs: [
         "system/bt",
         "system/bt/gd",
+        "system/bt/gd/rust/shim",
         "system/bt/bta/include",
         "system/bt/btcore/include",
         "system/bt/btif/include",
