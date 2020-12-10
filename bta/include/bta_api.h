@@ -457,28 +457,28 @@ typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
 /* Maximum service name length */
 #define BTA_SERVICE_NAME_LEN 35
 
-/* power mode actions  */
-#define BTA_DM_PM_NO_ACTION 0x00 /* no change to the current pm setting */
-#define BTA_DM_PM_PARK 0x10      /* prefers park mode */
-#define BTA_DM_PM_SNIFF 0x20     /* prefers sniff mode */
-#define BTA_DM_PM_SNIFF1 0x21    /* prefers sniff1 mode */
-#define BTA_DM_PM_SNIFF2 0x22    /* prefers sniff2 mode */
-#define BTA_DM_PM_SNIFF3 0x23    /* prefers sniff3 mode */
-#define BTA_DM_PM_SNIFF4 0x24    /* prefers sniff4 mode */
-#define BTA_DM_PM_SNIFF5 0x25    /* prefers sniff5 mode */
-#define BTA_DM_PM_SNIFF6 0x26    /* prefers sniff6 mode */
-#define BTA_DM_PM_SNIFF7 0x27    /* prefers sniff7 mode */
-#define BTA_DM_PM_SNIFF_USER0 \
-  0x28 /* prefers user-defined sniff0 mode (testtool only) */
-#define BTA_DM_PM_SNIFF_USER1 \
-  0x29 /* prefers user-defined sniff1 mode (testtool only) */
-#define BTA_DM_PM_ACTIVE 0x40  /* prefers active mode */
-#define BTA_DM_PM_RETRY 0x80   /* retry power mode based on current settings */
-#define BTA_DM_PM_SUSPEND 0x04 /* prefers suspend mode */
-#define BTA_DM_PM_NO_PREF                                                   \
-  0x01 /* service has no prefernce on power mode setting. eg. connection to \
-          service got closed */
-
+enum : uint8_t {
+  /* power mode actions  */
+  BTA_DM_PM_NO_ACTION = 0x00, /* no change to the current pm setting */
+  BTA_DM_PM_PARK = 0x10,      /* prefers park mode */
+  BTA_DM_PM_SNIFF = 0x20,     /* prefers sniff mode */
+  BTA_DM_PM_SNIFF1 = 0x21,    /* prefers sniff1 mode */
+  BTA_DM_PM_SNIFF2 = 0x22,    /* prefers sniff2 mode */
+  BTA_DM_PM_SNIFF3 = 0x23,    /* prefers sniff3 mode */
+  BTA_DM_PM_SNIFF4 = 0x24,    /* prefers sniff4 mode */
+  BTA_DM_PM_SNIFF5 = 0x25,    /* prefers sniff5 mode */
+  BTA_DM_PM_SNIFF6 = 0x26,    /* prefers sniff6 mode */
+  BTA_DM_PM_SNIFF7 = 0x27,    /* prefers sniff7 mode */
+  BTA_DM_PM_SNIFF_USER0 =
+      0x28, /* prefers user-defined sniff0 mode (testtool only) */
+  BTA_DM_PM_SNIFF_USER1 =
+      0x29, /* prefers user-defined sniff1 mode (testtool only) */
+  BTA_DM_PM_ACTIVE = 0x40,  /* prefers active mode */
+  BTA_DM_PM_RETRY = 0x80,   /* retry power mode based on current settings */
+  BTA_DM_PM_SUSPEND = 0x04, /* prefers suspend mode */
+  BTA_DM_PM_NO_PREF = 0x01, /* service has no preference on power mode setting.
+                               eg. connection to \ service got closed */
+};
 typedef uint8_t tBTA_DM_PM_ACTION;
 
 /* index to bta_dm_ssr_spec */
