@@ -17,6 +17,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
@@ -41,6 +42,32 @@ enum btm_acl_swkey_state_t {
   BTM_ACL_SWKEY_STATE_ENCRYPTION_ON = 4,
   BTM_ACL_SWKEY_STATE_IN_PROGRESS = 5,
 };
+
+/* Policy settings status */
+typedef enum : uint16_t {
+  HCI_DISABLE_ALL_LM_MODES = 0,
+  HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH = (1u << 0),
+  HCI_ENABLE_HOLD_MODE = (1u << 1),
+  HCI_ENABLE_SNIFF_MODE = (1u << 2),
+  HCI_ENABLE_PARK_MODE = (1u << 3),
+} tLINK_POLICY;
+
+static const char* link_policy_string[] = {
+    " role_switch ",
+    " hold_mode ",
+    " sniff_mode ",
+    " park_mode ",
+};
+
+inline std::string link_policy_text(tLINK_POLICY policy) {
+  std::ostringstream os;
+  os << "0x" << loghex(static_cast<uint16_t>(policy)) << " :";
+  std::string s = os.str();
+  for (uint16_t i = 0; i < 4; i++) {
+    if (policy & (0x1 << i)) s += link_policy_string[i];
+  }
+  return s;
+}
 
 /* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
  * function) in response to BTM_SwitchRoleToCentral call.
