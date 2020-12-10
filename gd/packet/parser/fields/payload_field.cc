@@ -112,3 +112,17 @@ void PayloadField::GenStringRepresentation(std::ostream& s, std::string) const {
   // TODO: we should parse the child packets
   s << "\"PAYLOAD[]\"";
 }
+
+std::string PayloadField::GetRustDataType() const {
+  return "Vec::<u8>";
+}
+
+void PayloadField::GenRustGetter(std::ostream& s, Size start_offset, Size) const {
+  s << "let " << GetName() << ": " << GetRustDataType() << " = ";
+  if (size_field_ == nullptr) {
+    s << "bytes[" << start_offset.bytes() << "..].into();";
+  } else {
+    s << "bytes[" << start_offset.bytes() << "..(";
+    s << start_offset.bytes() << " + " << size_field_->GetName() << " as usize)].into();";
+  }
+}

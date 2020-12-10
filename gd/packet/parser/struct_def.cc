@@ -311,6 +311,140 @@ Size StructDef::GetStructOffsetForField(std::string field_name) const {
   return size;
 }
 
+void StructDef::GenRustFieldNameAndType(std::ostream& s, bool include_fixed) const {
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
+  });
+  for (const auto& field : fields) {
+    if (!include_fixed && field->GetFieldType() == FixedScalarField::kFieldType) {
+      continue;
+    }
+    field->GenRustNameAndType(s);
+    s << ", ";
+  }
+}
+
+void StructDef::GenRustFieldNames(std::ostream& s) const {
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
+  });
+  for (const auto& field : fields) {
+    s << field->GetName();
+    s << ", ";
+  }
+}
+
+void StructDef::GenRustSizeField(std::ostream& s) const {
+  int size = 0;
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      SizeField::kFieldType,
+  });
+  for (const auto& field : fields) {
+    size += field->GetSize().bytes();
+  }
+  if (fields.size() > 0) {
+    s << " size: " << size;
+  }
+}
+
+void StructDef::GenRustDeclarations(std::ostream& s) const {
+  s << "pub struct " << name_ << "{";
+
+  // Generate struct fields
+  GenRustFieldNameAndType(s, true);
+
+  // Generate size field
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      SizeField::kFieldType,
+  });
+  if (fields.size() > 0) {
+    s << " size: usize";
+  }
+  s << "}\n";
+}
+
+void StructDef::GenRustImpls(std::ostream& s) const {
+  s << "impl " << name_ << "{";
+  s << "pub fn new(";
+  GenRustFieldNameAndType(s, false);
+  s << ") -> Self { Self {";
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
+  });
+  for (const auto& field : fields) {
+    if (field->GetFieldType() == FixedScalarField::kFieldType) {
+      s << field->GetName() << ": ";
+      static_cast<FixedScalarField*>(field)->GenValue(s);
+    } else {
+      s << field->GetName();
+    }
+    s << ", ";
+  }
+  GenRustSizeField(s);
+  s << "}}";
+
+  s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
+  fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+  });
+
+  for (const auto& field : fields) {
+    auto start_field_offset = GetOffsetForField(field->GetName(), false);
+    auto end_field_offset = GetOffsetForField(field->GetName(), true);
+
+    if (start_field_offset.empty() && end_field_offset.empty()) {
+      ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
+                   << "no method exists to determine field location from begin() or end().\n";
+    }
+
+    field->GenRustGetter(s, start_field_offset, end_field_offset);
+  }
+
+  fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
+  });
+
+  s << "Ok(Self {";
+  for (const auto& field : fields) {
+    if (field->GetFieldType() == FixedScalarField::kFieldType) {
+      s << field->GetName() << ": ";
+      static_cast<FixedScalarField*>(field)->GenValue(s);
+    } else {
+      s << field->GetName();
+    }
+    s << ", ";
+  }
+  GenRustSizeField(s);
+  s << "})}\n";
+
+  if (fields.size() > 0) {
+    s << "pub fn get_size(&self) -> usize { self.size }";
+  }
+  s << "}\n";
+}
+
 void StructDef::GenRustDef(std::ostream& s) const {
-  s << "pub struct " << name_ << " {}";
+  GenRustDeclarations(s);
+  GenRustImpls(s);
 }
