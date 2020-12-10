@@ -1,0 +1,15 @@
+rust_library {
+    name: "libbt_main",
+    crate_name: "bt_main",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+      "libbt_hal",
+      "libbt_hci",
+      "libtokio",
+      "libgddi",
+      "libbt_common",
+      "libgrpcio",
+    ],
+    host_supported: true,
+}

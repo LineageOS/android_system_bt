@@ -1,6 +1,7 @@
 //! BT HCI HAL facade
 
 use crate::HalExports;
+use bt_common::GrpcFacade;
 use bt_hal_proto::empty::Empty;
 use bt_hal_proto::facade::*;
 use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
@@ -40,9 +41,8 @@ pub struct HciHalFacadeService {
     acl_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
 }
 
-impl HciHalFacadeService {
-    /// Convert to a grpc service
-    pub fn create_grpc(self) -> grpcio::Service {
+impl GrpcFacade for HciHalFacadeService {
+    fn into_grpc(self) -> grpcio::Service {
         create_hci_hal_facade(self)
     }
 }

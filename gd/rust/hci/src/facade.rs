@@ -1,6 +1,7 @@
 //! HCI layer facade
 
 use crate::HciExports;
+use bt_common::GrpcFacade;
 use bt_hci_proto::empty::Empty;
 use bt_hci_proto::facade::*;
 use bt_hci_proto::facade_grpc::{create_hci_layer_facade, HciLayerFacade};
@@ -8,9 +9,9 @@ use futures::prelude::*;
 use futures::sink::SinkExt;
 use gddi::{module, provides};
 use grpcio::*;
+use log::error;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use log::error;
 
 module! {
     facade_module,
@@ -31,9 +32,8 @@ pub struct HciLayerFacadeService {
     rt: Arc<Runtime>,
 }
 
-impl HciLayerFacadeService {
-    /// Convert to a grpc service
-    pub fn create_grpc(self) -> grpcio::Service {
+impl GrpcFacade for HciLayerFacadeService {
+    fn into_grpc(self) -> grpcio::Service {
         create_hci_layer_facade(self)
     }
 }
