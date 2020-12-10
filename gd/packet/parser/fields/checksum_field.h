@@ -48,6 +48,8 @@ class ChecksumField : public ScalarField {
 
   virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
 
+  void GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
+
  private:
   std::string type_name_;
 };

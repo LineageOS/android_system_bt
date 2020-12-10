@@ -195,3 +195,13 @@ void ArrayField::GenStringRepresentation(std::ostream& s, std::string accessor) 
   s << ";}";
   s << "ss << \"]\"";
 }
+
+std::string ArrayField::GetRustDataType() const {
+  return "[" + element_field_->GetRustDataType() + "; " + std::to_string(array_size_) + "]";
+}
+
+void ArrayField::GenRustGetter(std::ostream& s, Size start_offset, Size) const {
+  s << "let " << GetName() << " = ";
+  s << "bytes[" << start_offset.bytes() << "..";
+  s << start_offset.bytes() + GetSize().bytes() << "].try_into().unwrap();";
+}
