@@ -90,6 +90,9 @@ fluoride_defaults {
     },
     static_libs: [
         "libbluetooth_gd",
+        "libbluetooth_rust_interop",
+        "libbt_shim_ffi",
+        "libcxxbridge05",
     ],
     target: {
         darwin: {

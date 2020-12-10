@@ -36,6 +36,16 @@ struct CigCallbacks {
   virtual void OnCisEvent(uint8_t event, void* data) = 0;
   virtual void OnCigEvent(uint8_t event, void* data) = 0;
 };
+
+struct BigCallbacks {
+  virtual ~BigCallbacks() = default;
+  virtual void OnSetupIsoDataPath(uint8_t status, uint16_t conn_handle,
+                                  uint8_t big_id) = 0;
+  virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle,
+                                   uint8_t big_id) = 0;
+
+  virtual void OnBigEvent(uint8_t event, void* data) = 0;
+};
 }  // namespace iso_manager
 
 class IsoManager {
@@ -56,6 +66,15 @@ class IsoManager {
    * @param callbacks CigCallbacks implementation
    */
   virtual void RegisterCigCallbacks(iso_manager::CigCallbacks* callbacks) const;
+
+  /**
+   * Set BIG related callbacks
+   *
+   * <p> Shall be set by the Le Audio Broadcaster implementation
+   *
+   * @param callbacks BigCallbacks implementation
+   */
+  virtual void RegisterBigCallbacks(iso_manager::BigCallbacks* callbacks) const;
 
   /**
    * Creates connected isochronous group (CIG) according to given params.
@@ -102,7 +121,7 @@ class IsoManager {
    * Initiates creation of isochronous data path for connected isochronous
    * stream.
    *
-   * @param conn_handle handle of CIS connection
+   * @param conn_handle handle of BIS or CIS connection
    * @param path_params iso data path parameters
    */
   virtual void SetupIsoDataPath(
@@ -113,7 +132,7 @@ class IsoManager {
    * Initiates removement of isochronous data path for connected isochronous
    * stream.
    *
-   * @param conn_handle handle of CIS connection
+   * @param conn_handle handle of BIS or CIS connection
    * @param data_path_dir iso data path direction
    */
   virtual void RemoveIsoDataPath(uint16_t conn_handle, uint8_t data_path_dir);
@@ -121,12 +140,29 @@ class IsoManager {
   /**
    * Sends iso data to the controller
    *
-   * @param conn_handle handle of CIS connection
+   * @param conn_handle handle of BIS or CIS connection
    * @param data data buffer. The ownership of data is not being transferred.
    * @param data_len data buffer length
    */
   virtual void SendIsoData(uint16_t conn_handle, const uint8_t* data,
                            uint16_t data_len);
+
+  /**
+   * Creates the Broadcast Isochronous Group
+   *
+   * @param big_id host assigned BIG identifier
+   * @param big_params BIG parameters
+   */
+  virtual void CreateBig(uint8_t big_id,
+                         struct iso_manager::big_create_params big_params);
+
+  /**
+   * Terminates the Broadcast Isochronous Group
+   *
+   * @param big_id host assigned BIG identifier
+   * @param reason termination reason data
+   */
+  virtual void TerminateBig(uint8_t big_id, uint8_t reason);
 
   /* Below are defined handlers called by the legacy code in btu_hcif.cc */
 
@@ -159,7 +195,7 @@ class IsoManager {
   virtual void HandleNumComplDataPkts(uint8_t* p, uint8_t evt_len);
 
   /**
-   * Handle CIS related HCI events
+   * Handle CIS and BIG related HCI events
    *
    * @param sub_code ble subcode for the HCI event
    * @param params raw packet buffer for the event. The ownership of params is
