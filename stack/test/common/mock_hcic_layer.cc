@@ -73,6 +73,11 @@ void btsnd_hcic_remove_iso_data_path(
   hcic_interface->RemoveIsoDataPath(iso_handle, data_path_dir, std::move(cb));
 }
 
+void btsnd_hcic_read_iso_link_quality(
+    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  hcic_interface->ReadIsoLinkQuality(iso_handle, std::move(cb));
+}
+
 void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle,
                            uint8_t num_bis, uint32_t sdu_itv,
                            uint16_t max_sdu_size, uint16_t transport_latency,
