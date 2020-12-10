@@ -379,7 +379,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
 uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                             uint16_t sec_level, tL2CAP_LE_CFG_INFO cfg) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info, sec_level);
+    return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info, sec_level, cfg);
   }
 
   BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
