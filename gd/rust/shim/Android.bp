@@ -27,6 +27,8 @@ rust_ffi_static {
         "libbt_hci",
         "libbt_common",
         "libcxx",
+        "libtokio",
+        "libbt_main",
     ],
     static_libs: [
         "libbt_callbacks_cxx",
