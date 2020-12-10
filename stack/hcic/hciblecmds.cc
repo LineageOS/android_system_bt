@@ -1072,6 +1072,17 @@ void btsnd_hcic_remove_iso_data_path(
                             params_len, std::move(cb));
 }
 
+void btsnd_hcic_read_iso_link_quality(
+    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  const int params_len = 2;
+  uint8_t param[params_len];
+  uint8_t* pp = param;
+
+  UINT16_TO_STREAM(pp, iso_handle);
+
+  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_READ_ISO_LINK_QUALITY, param,
+                            params_len, std::move(cb));
+}
 
 void btsnd_hcic_ble_periodic_advertising_create_sync(
     uint8_t options, uint8_t adv_sid, uint8_t adv_addr_type,
