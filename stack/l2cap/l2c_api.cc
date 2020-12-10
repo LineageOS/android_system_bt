@@ -1089,6 +1089,27 @@ bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
  *  Return value:   -
  *
  ******************************************************************************/
+static std::string fixed_channel_text(const uint16_t& fixed_cid) {
+  switch (fixed_cid) {
+    case L2CAP_SIGNALLING_CID:
+      return std::string("br_edr signalling");
+    case L2CAP_CONNECTIONLESS_CID:
+      return std::string("connectionless");
+    case L2CAP_AMP_CID:
+      return std::string("amp");
+    case L2CAP_ATT_CID:
+      return std::string("att");
+    case L2CAP_BLE_SIGNALLING_CID:
+      return std::string("ble signalling");
+    case L2CAP_SMP_CID:
+      return std::string("smp");
+    case L2CAP_SMP_BR_CID:
+      return std::string("br_edr smp");
+    default:
+      return std::string("unknown");
+  }
+}
+
 bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
                                tL2CAP_FIXED_CHNL_REG* p_freg) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
@@ -1097,14 +1118,14 @@ bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
 
   if ((fixed_cid < L2CAP_FIRST_FIXED_CHNL) ||
       (fixed_cid > L2CAP_LAST_FIXED_CHNL)) {
-    L2CAP_TRACE_ERROR("L2CA_RegisterFixedChannel()  Invalid CID: 0x%04x",
-                      fixed_cid);
-
-    return (false);
+    LOG_ERROR("Invalid fixed CID: 0x%04x", fixed_cid);
+    return false;
   }
 
   l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL] = *p_freg;
-  return (true);
+  LOG_DEBUG("Registered fixed channel:%s",
+            fixed_channel_text(fixed_cid).c_str());
+  return true;
 }
 
 /*******************************************************************************

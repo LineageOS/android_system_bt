@@ -41,6 +41,7 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_acl_interface.h"
@@ -477,7 +478,10 @@ void DumpsysAcl(int fd) {
                 BtTransportText(acl_conn.transport).c_str());
     LOG_DUMPSYS(fd, "    flush_timeout:0x%04x",
                 acl_conn.flush_timeout_in_ticks);
-    LOG_DUMPSYS(fd, "    [classic] link_policy:0x%x", acl_conn.link_policy);
+    LOG_DUMPSYS(
+        fd, "    [classic] link_policy:%s",
+        link_policy_text(static_cast<tLINK_POLICY>(acl_conn.link_policy))
+            .c_str());
     LOG_DUMPSYS(fd, "    link_super_tout:0x%04x", acl_conn.link_super_tout);
     LOG_DUMPSYS(fd, "    pkt_types_mask:0x%04x", acl_conn.pkt_types_mask);
     LOG_DUMPSYS(fd, "    disconnect_reason:0x%02x", acl_conn.disconnect_reason);
