@@ -827,6 +827,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   }
   s << "}}";
 
+  // parse function
   s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
@@ -862,6 +863,22 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     GenRustStructSizeField(s);
   }
   s << "})}\n";
+
+  // to_bytes function (only on root packet types)
+  if (parent_ == nullptr) {
+    s << "fn to_bytes(self) -> Bytes {";
+    s << " let mut buffer = BytesMut::new();";
+    s << " self.write_to(&mut buffer);";
+    s << " buffer.freeze()";
+    s << "}\n";
+  }
+
+  // write_to function
+  s << "fn write_to(&self, buffer: &mut BytesMut) {";
+  if (fields_exist) {
+    s << " buffer.resize(buffer.len() + self.size, 0);";
+  }
+  s << "}\n";
 
   if (fields_exist) {
     s << "pub fn get_size(&self) -> usize { self.size }";
