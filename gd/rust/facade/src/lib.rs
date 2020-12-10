@@ -11,12 +11,8 @@ pub mod empty {
 use bt_facade_common_proto::common;
 use bt_facade_rootservice_proto::rootservice;
 use bt_hal::facade::HciHalFacadeService;
-use bt_hal::hal_module;
-use bt_hal::rootcanal_hal::RootcanalConfig;
 use bt_hci::facade::HciLayerFacadeService;
-use bt_hci::hci_module;
 use futures::executor::block_on;
-use gddi::{module, Registry, RegistryBuilder};
 use grpcio::*;
 use rootservice::*;
 use rootservice_grpc::{create_root_facade, RootFacade};
@@ -24,14 +20,7 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{channel, Sender};
 use tokio::sync::oneshot;
-
-module! {
-    stack_module,
-    submodules {
-        hal_module,
-        hci_module,
-    }
-}
+use bt_main::Stack;
 
 /// Bluetooth testing root facade service
 #[derive(Clone)]
@@ -104,16 +93,9 @@ impl FacadeServiceManager {
             while let Some(cmd) = rx.recv().await {
                 match cmd {
                     LifecycleCommand::Start { req, done } => {
-                        let registry = Arc::new(RegistryBuilder::new().register_module(stack_module).build());
-
-                        registry.inject(local_rt.clone()).await;
-                        if let Some(rc_port) = rootcanal_port {
-                            registry
-                                .inject(RootcanalConfig::new("127.0.0.1", rc_port))
-                                .await;
-                        }
-
-                        server = Some(Self::start_internal(&registry, req, grpc_port).await);
+                        let stack = Stack::new(local_rt.clone()).await;
+                        stack.set_rootcanal_port(rootcanal_port).await;
+                        server = Some(Self::start_internal(&stack, req, grpc_port).await);
                         done.send(()).unwrap();
                     }
                     LifecycleCommand::Stop { done } => {
@@ -149,17 +131,17 @@ impl FacadeServiceManager {
     }
 
     async fn start_internal(
-        registry: &Arc<Registry>,
+        stack: &Stack,
         req: StartStackRequest,
         grpc_port: u16,
     ) -> Server {
         let mut services = Vec::new();
         match req.get_module_under_test() {
             BluetoothModule::HAL => {
-                services.push(registry.get::<HciHalFacadeService>().await.create_grpc());
+                services.push(stack.get_grpc::<HciHalFacadeService>().await);
             }
             BluetoothModule::HCI => {
-                services.push(registry.get::<HciLayerFacadeService>().await.create_grpc());
+                services.push(stack.get_grpc::<HciLayerFacadeService>().await);
             }
             _ => unimplemented!(),
         }
