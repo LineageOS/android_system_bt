@@ -71,7 +71,7 @@ CERT_HOST_LOGS="/tmp/logs/HostOnlyCert"
 CERT_DEVICE_LOGS="TODO: Add this"
 CERT_TEST_VENV=${ANDROID_BUILD_TOP}/out/dist/bluetooth_venv
 OUT_TARGET="${ANDROID_BUILD_TOP}/out/target"
-TEST_CONFIG="${ANDROID_BUILD_TOP}/system/bt/gd/cert/android_devices_config.json"
+TEST_CONFIG="${ANDROID_BUILD_TOP}/system/bt/gd/cert/host_config.json"
 TEST_FILTER="-tf ${ANDROID_BUILD_TOP}/system/bt/gd/cert/all_cert_testcases"
 BUILD_TARGET="bluetooth_stack_with_facade"
 
@@ -81,6 +81,14 @@ NUM_REPETITIONS="1"
 SKIP_SOONG_BUILD=false
 USE_ASHMEM_VENV=true
 VERBOSE_MODE=false
+
+# Directory for test configs to modify
+CONFIG_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+## Verify devices connected and valid
+DUT_SERIAL="DUT Not Set"
+DUT_ADB="DUT Not Set"
+DUT_NAME="DUT Not Set"
 
 # Used for position arguments needed for later
 POSITIONAL=()
@@ -99,22 +107,26 @@ function parse_options {
         echo
         echo -e "${YELLOW}Help menu${NOCOLOR}"
         echo -e "==================================="
-        echo -e "${BLUE}  --clean${NOCOLOR}" 
-        echo -e "    Clean the virtul environment; use if ACTS has been updated." 
-        echo -e "${BLUE}  --disable-ashmem-venv${NOCOLOR}" 
-        echo -e "    Places the virtual environment on disk rather than in ashmem which is default." 
-        echo -e "${BLUE}  --gotta-go-fast${NOCOLOR}" 
-        echo -e "    Makes use of ashmem as best as possible for targeted speed increases." 
-        echo -e "${BLUE}  --host${NOCOLOR}" 
-        echo -e "    Run the test on the host machine [i.e. simulated]." 
-        echo -e "${BLUE}  --repeat=<N>${NOCOLOR}" 
-        echo -e "    Repeat the test sequence N (int) number of times." 
-        echo -e "${BLUE}  --skip-soong-build${NOCOLOR}" 
-        echo -e "    Skips building soong targets. Use when you are just modifying simple python files." 
-        echo -e "${BLUE}  --test_config=<configfile>${NOCOLOR}" 
-        echo -e "    Override default test configuration." 
+        echo -e "${BLUE}  --clean${NOCOLOR}"
+        echo -e "    Clean the virtul environment; use if ACTS has been updated."
+        echo -e "${BLUE}  --disable-ashmem-venv${NOCOLOR}"
+        echo -e "    Places the virtual environment on disk rather than in ashmem which is default."
+        echo -e "${BLUE}  --gotta-go-fast${NOCOLOR}"
+        echo -e "    Makes use of ashmem as best as possible for targeted speed increases."
+        echo -e "${BLUE}  --device${NOCOLOR}"
+        echo -e "    Run the test on the 2 real devices."
+        echo -e "${BLUE}  --rust${NOCOLOR}"
+        echo -e "    Run the test using the rust implementation on the 2 real devices."
+        echo -e "${BLUE}  --rhost${NOCOLOR}"
+        echo -e "    Run the test using the rust implementation on the host."
+        echo -e "${BLUE}  --repeat=<N>${NOCOLOR}"
+        echo -e "    Repeat the test sequence N (int) number of times."
+        echo -e "${BLUE}  --skip-soong-build${NOCOLOR}"
+        echo -e "    Skips building soong targets. Use when you are just modifying simple python files."
+        echo -e "${BLUE}  --test_config=<configfile>${NOCOLOR}"
+        echo -e "    Override default test configuration."
         echo -e "${BLUE}  --verbose${NOCOLOR}"
-        echo -e "    Displays device logs and test logs to output." 
+        echo -e "    Displays device logs and test logs to output."
         echo
         echo -e "Usage: $0 [--clean|--host|--repeat=<N>|--test_config=<config>] [TestGroupName[:IndividualTestName]]"
         echo -e "        ${YELLOW}e.g."
@@ -124,8 +136,8 @@ function parse_options {
         shift
         exit 0
         ;;
-        # This will cause the bluetooth_venv to be created in ashmem
-        # Increases --clean build times by 40% (~21 seconds on my machine)
+        # This will cause the bluetooth_venv to NOT be created in ashmem
+        # Using ashmem increases --clean build times by 40% (~21 seconds on my machine)
         --disable-ashmem-venv)
         USE_ASHMEM_VENV=false
         shift # past argument
@@ -134,8 +146,31 @@ function parse_options {
         GOTTA_GO_FAST=true
         shift # past argument
         ;;
-        --host)
-        TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/host_config.json
+        --device)
+        TEST_CONFIG="${ANDROID_BUILD_TOP}/system/bt/gd/cert/devices_config.json"
+        RR="$(cat ${TEST_CONFIG}|grep \"CERT\\\|DUT\")"
+        if [ "$RR" != "" ]; then
+        DUT_SERIAL="$(menu-adb DUT)"
+        DUT_ADB="adb -s ${DUT_SERIAL}"
+        DUT_NAME="$(adb devices -l | grep -v "List of device" | grep ${DUT_SERIAL} | awk '{ print $6 }' | cut -d ':' -f 2)"
+        CERT_SERIAL="$(menu-adb CERT)"
+        CERT_ADB="adb -s ${CERT_SERIAL}"
+        CERT_NAME="$(adb devices -l | grep -v "List of device" | grep ${CERT_SERIAL} | awk '{ print $6 }' | cut -d ':' -f 2)"
+
+        if [ "${CERT_SERIAL}" == "${DUT_SERIAL}" ]; then
+            echo
+            echo "ERROR: CERT and DUT cannot be the same device, or you only have one device connected!"
+            echo
+            exit 1
+        fi
+
+        ## Set android devices in config
+        pushd .
+        cd "${CONFIG_DIR}"
+        popd
+        sed -i "s/\"DUT\"/\"${DUT_SERIAL}\"/g" ${CONFIG_DIR}/devices_config.json
+        sed -i "s/\"CERT\"/\"${CERT_SERIAL}\"/g" ${CONFIG_DIR}/devices_config.json
+        fi
         shift # past argument
         ;;
         # Repeat running the specified test cases by N times in one single setup
@@ -225,7 +260,7 @@ function setup_venv {
             rm -rf ""${ASHMEM_VENV} "${CERT_TEST_VENV}"
             echo -e "Done"
             echo -en "Cleaning up memory..."
-            rm -rf "${ASHMEM_VENV}" 
+            rm -rf "${ASHMEM_VENV}"
             echo -e "Done"
             echo -e "${NOCOLOR}"
         fi
@@ -235,19 +270,19 @@ function setup_venv {
         echo "Error setting up virtualenv"
         exit 1
     fi
-    
+
     unzip -o -q "${ANDROID_BUILD_TOP}/out/dist/bluetooth_cert_tests.zip" -d "${CERT_TEST_VENV}/acts"
     if [[ $? -ne 0 ]] ; then
         echo "Error unzipping bluetooth_cert_tests.zip"
         exit 1
     fi
-    
+
     $(echo "${CERT_TEST_VENV}/bin/python" "${CERT_TEST_VENV}/acts/setup.py" --quiet build --force)
     if [[ $? -ne 0 ]] ; then
         echo "Error building GD Python libraries"
         exit 1
     fi
-    
+
     $(echo "${CERT_TEST_VENV}/bin/python" "${CERT_TEST_VENV}/acts/setup.py" --quiet install --skip-build --force "${INSTALL_ARGS}")
     if [[ $? -ne 0 ]] ; then
         echo "Error installing GD Python libraries"
@@ -289,7 +324,7 @@ function gotta_go_fast {
         if [[ ! -L "${CERT_HOST_LOGS}" ]] ; then
             rm -rf "${CERT_HOST_LOGS}"
             mkdir -p "${ASHMEM_HOST_LOGS}"
-            ln -s "${ASHMEM_HOST_LOGS}" "${CERT_HOST_LOGS}" 
+            ln -s "${ASHMEM_HOST_LOGS}" "${CERT_HOST_LOGS}"
         fi
 
         if [[ ! -L "${OUT_TARGET}" ]] ; then
@@ -319,11 +354,63 @@ function run_tests {
           "${TEST_FILTER}" \
           -tp "${CERT_TEST_VENV}"/acts)
     done
-    
+
     if [ "${CLEAN_VENV}" != true ] ; then
       echo -e "${YELLOW}NOTE:${NOCOLOR} Completed tests using existing external libraries in virtualenv."
       echo -e "${YELLOW}NOTE:${NOCOLOR} To update external libraries, please add --clean option."
     fi
+}
+
+function menu-adb() {
+    TMP=$(adb devices -l | grep -v "List of device" | awk '{ print $1 }')
+    # TODO(optedoblivion): If the device doesn't have a name (offline), it misnames them
+    NTMP=$(adb devices -l | grep -v "List of device" | awk '{ print $6 }' | cut -d ':' -f 2)
+    SERIALS=($TMP)
+    DEVICES=($NTMP)
+    LEN=${#SERIALS[@]}
+    result=0
+    if [ $LEN -lt 1 ]; then
+        echo "No devices connected!"
+        return 1
+    fi
+
+    if [ "$LEN" == "" ]; then
+        LEN=0
+    fi
+
+    answer=0
+
+    DEVICE_NAME="$1 device"
+
+    if [ $LEN -gt 1 ]; then
+        echo "+-------------------------------------------------+" 1>&2
+        echo "| Choose a ${DEVICE_NAME}:                         " 1>&2
+        echo "+-------------------------------------------------+" 1>&2
+        echo "|                                                 |" 1>&2
+        let fixed_len=$LEN-1
+        for i in `seq 0 $fixed_len`;
+        do
+            serial=${SERIALS[i]}
+            device=${DEVICES[i]}
+            echo "| $i) $serial $device" 1>&2
+            ## TODO[MSB]: Find character count, fill with space and ending box wall
+        done
+        echo "|                                                 |" 1>&2
+        echo "+-------------------------------------------------+" 1>&2
+        echo 1>&2
+        echo -n "Index number: " 1>&2
+        read answer
+    fi
+
+    if [ $answer -ge $LEN ]; then
+        echo
+        echo "Please choose a correct index!" 1>&2
+        echo
+        return 1
+    fi
+
+    SERIAL=${SERIALS[$answer]}
+    echo $SERIAL
 }
 
 function main {
