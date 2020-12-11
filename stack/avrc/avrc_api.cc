@@ -236,7 +236,7 @@ static uint8_t* avrc_get_data_ptr(BT_HDR* p_pkt) {
 static BT_HDR* avrc_copy_packet(BT_HDR* p_pkt, int rsp_pkt_len) {
   const int offset = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
   const int pkt_len = MAX(rsp_pkt_len, p_pkt->len);
-  BT_HDR* p_pkt_copy = (BT_HDR*)osi_malloc(BT_HDR_SIZE + offset + pkt_len);
+  BT_HDR* p_pkt_copy = (BT_HDR*)osi_calloc(BT_HDR_SIZE + offset + pkt_len);
 
   /* Copy the packet header, set the new offset, and copy the payload */
   memcpy(p_pkt_copy, p_pkt, BT_HDR_SIZE);
