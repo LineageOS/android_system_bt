@@ -89,6 +89,10 @@ void IsoManager::RemoveIsoDataPath(uint16_t iso_handle, uint8_t data_path_dir) {
   pimpl_->iso_impl_->remove_iso_data_path(iso_handle, data_path_dir);
 }
 
+void IsoManager::ReadIsoLinkQuality(uint16_t iso_handle) {
+  pimpl_->iso_impl_->read_iso_link_quality(iso_handle);
+}
+
 void IsoManager::SendIsoData(uint16_t iso_handle, const uint8_t* data,
                              uint16_t data_len) {
   pimpl_->iso_impl_->send_iso_data(iso_handle, data, data_len);

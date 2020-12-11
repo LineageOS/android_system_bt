@@ -299,6 +299,53 @@ struct iso_impl {
                        base::Unretained(this)));
   }
 
+  void on_iso_link_quality_read(uint8_t* stream, uint16_t len) {
+    uint8_t status;
+    uint16_t conn_handle;
+    uint32_t txUnackedPackets;
+    uint32_t txFlushedPackets;
+    uint32_t txLastSubeventPackets;
+    uint32_t retransmittedPackets;
+    uint32_t crcErrorPackets;
+    uint32_t rxUnreceivedPackets;
+    uint32_t duplicatePackets;
+
+    STREAM_TO_UINT8(status, stream);
+    if (status != HCI_SUCCESS) {
+      LOG(ERROR) << "Failed to Read ISO Link Quality, status: "
+                 << loghex(status);
+      return;
+    }
+
+    STREAM_TO_UINT16(conn_handle, stream);
+
+    iso_base* iso = GetIsoIfKnown(conn_handle);
+    LOG_ASSERT(iso != nullptr) << "Invalid connection handle: " << +conn_handle;
+
+    STREAM_TO_UINT32(txUnackedPackets, stream);
+    STREAM_TO_UINT32(txFlushedPackets, stream);
+    STREAM_TO_UINT32(txLastSubeventPackets, stream);
+    STREAM_TO_UINT32(retransmittedPackets, stream);
+    STREAM_TO_UINT32(crcErrorPackets, stream);
+    STREAM_TO_UINT32(rxUnreceivedPackets, stream);
+    STREAM_TO_UINT32(duplicatePackets, stream);
+
+    LOG_ASSERT(cig_callbacks_ != nullptr) << "Invalid CIG callbacks";
+    cig_callbacks_->OnIsoLinkQualityRead(
+        conn_handle, iso->cig_id, txUnackedPackets, txFlushedPackets,
+        txLastSubeventPackets, retransmittedPackets, crcErrorPackets,
+        rxUnreceivedPackets, duplicatePackets);
+  }
+
+  void read_iso_link_quality(uint16_t iso_handle) {
+    iso_base* iso = GetIsoIfKnown(iso_handle);
+    LOG_ASSERT(iso != nullptr) << "No such iso connection";
+
+    btsnd_hcic_read_iso_link_quality(
+        iso_handle, base::BindOnce(&iso_impl::on_iso_link_quality_read,
+                                   base::Unretained(this)));
+  }
+
   BT_HDR* prepare_ts_hci_packet(uint16_t iso_handle, uint32_t ts,
                                 uint16_t seq_nb, uint16_t data_len) {
     /* Add 2 for packet seq., 2 for length, 4 for the timestamp */

@@ -32,6 +32,11 @@ struct CigCallbacks {
                                   uint8_t cig_id) = 0;
   virtual void OnRemoveIsoDataPath(uint8_t status, uint16_t conn_handle,
                                    uint8_t cig_id) = 0;
+  virtual void OnIsoLinkQualityRead(
+      uint8_t conn_handle, uint8_t cig_id, uint32_t txUnackedPackets,
+      uint32_t txFlushedPackets, uint32_t txLastSubeventPackets,
+      uint32_t retransmittedPackets, uint32_t crcErrorPackets,
+      uint32_t rxUnreceivedPackets, uint32_t duplicatePackets) = 0;
 
   virtual void OnCisEvent(uint8_t event, void* data) = 0;
   virtual void OnCigEvent(uint8_t event, void* data) = 0;
@@ -129,13 +134,21 @@ class IsoManager {
       struct iso_manager::iso_data_path_params path_params);
 
   /**
-   * Initiates removement of isochronous data path for connected isochronous
+   * Initiates removal of isochronous data path for connected isochronous
    * stream.
    *
    * @param conn_handle handle of BIS or CIS connection
    * @param data_path_dir iso data path direction
    */
   virtual void RemoveIsoDataPath(uint16_t conn_handle, uint8_t data_path_dir);
+
+  /**
+   * Reads the ISO link quality. OnIsoLinkQualityRead callback is invoked only
+   * if read is successful.
+   *
+   * @param conn_handle handle of ISO connection
+   */
+  virtual void ReadIsoLinkQuality(uint16_t conn_handle);
 
   /**
    * Sends iso data to the controller

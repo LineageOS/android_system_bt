@@ -115,6 +115,17 @@ class PacketField : public Loggable {
 
   virtual std::string GetName() const;
 
+  // Generate the Rust variable/field name and type
+  virtual bool GenRustNameAndType(std::ostream& s) const;
+
+  // Get the type of the field to be used in the member variables.
+  virtual std::string GetRustDataType() const = 0;
+
+  virtual int GetRustBitOffset(
+      std::ostream& s, Size start_offset, Size end_offset, Size size) const;
+
+  virtual void GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const = 0;
+
  private:
   ParseLocation loc_;
   std::string name_;

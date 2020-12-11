@@ -249,3 +249,55 @@ void VectorField::GenStringRepresentation(std::ostream& s, std::string accessor)
   s << ";}";
   s << "ss << \"]\"";
 }
+
+std::string VectorField::GetRustDataType() const {
+  return "Vec::<" + element_field_->GetRustDataType() + ">";
+}
+
+void VectorField::GenRustGetter(std::ostream& s, Size start_offset, Size) const {
+  auto element_field_type = GetElementField()->GetFieldType();
+  auto element_field = GetElementField();
+  auto element_size = element_field->GetSize().bytes();
+
+  if (element_field_type == ScalarField::kFieldType) {
+    s << "let " << GetName() << ": " << GetRustDataType() << " = ";
+    if (size_field_ == nullptr) {
+      s << "bytes[" << start_offset.bytes() << "..].to_vec().chunks_exact(";
+    } else {
+      s << "bytes[" << start_offset.bytes() << "..(";
+      s << start_offset.bytes() << " + " << size_field_->GetName();
+      s << " as usize)].to_vec().chunks_exact(";
+    }
+
+    s << element_size << ").into_iter().map(|i| ";
+    s << element_field->GetRustDataType() << "::from_le_bytes([";
+
+    for (int j=0; j < element_size; j++) {
+      s << "i[" << j << "]";
+      if (j != element_size - 1) {
+        s << ", ";
+      }
+    }
+    s << "])).collect();";
+  } else {
+        s << "let " << GetName() << ": " << GetRustDataType() << " = ";
+        if (size_field_ == nullptr) {
+	  s << "bytes[" << start_offset.bytes() << "..].to_vec().chunks_exact(";
+	} else {
+          s << "bytes[" << start_offset.bytes() << "..(";
+          s << start_offset.bytes() << " + " << size_field_->GetName();
+          s << " as usize)].to_vec().chunks_exact(";
+	}
+
+        s << element_size << ").into_iter().map(|i| ";
+        s << element_field->GetRustDataType() << "::parse(&[";
+
+        for (int j=0; j < element_size; j++) {
+          s << "i[" << j << "]";
+	  if (j != element_size - 1) {
+            s << ", ";
+	  }
+        }
+        s << "]).unwrap()).collect();";
+  }
+}

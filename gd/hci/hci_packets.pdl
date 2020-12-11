@@ -1753,7 +1753,7 @@ enum TransmitPowerLevelType : 8 {
 packet ReadTransmitPowerLevel : ConnectionManagementCommand (op_code = READ_TRANSMIT_POWER_LEVEL) {
   connection_handle : 12,
   _reserved_ : 4,
-  type : TransmitPowerLevelType,
+  transmit_power_level_type : TransmitPowerLevelType,
 
 }
 
@@ -2487,7 +2487,7 @@ enum OwnAddressType : 8 {
 packet LeSetAdvertisingParameters : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_PARAMETERS) {
   interval_min : 16,
   interval_max : 16,
-  type : AdvertisingType,
+  advt_type : AdvertisingType,
   own_address_type : OwnAddressType,
   peer_address_type : PeerAddressType,
   peer_address : Address,
@@ -3751,7 +3751,7 @@ packet LeMultiAdvtComplete : CommandComplete (command_op_code = LE_MULTI_ADVT) {
 packet LeMultiAdvtParam : LeMultiAdvt (sub_cmd = SET_PARAM) {
   interval_min : 16,
   interval_max : 16,
-  type : AdvertisingType,
+  advt_type : AdvertisingType,
   own_address_type : OwnAddressType,
   peer_address_type : PeerAddressType,
   peer_address : Address,

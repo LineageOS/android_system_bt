@@ -17,6 +17,7 @@ rust_library {
         "libcxx",
         "liblazy_static",
         "liblog_rust",
+        "libbt_common",
     ],
     host_supported: true,
     target: {

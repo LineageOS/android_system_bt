@@ -79,39 +79,104 @@ typedef enum GattStatus : uint8_t {
   GATT_OUT_OF_RANGE = 0xFF,
 } tGATT_STATUS;
 
-#define GATT_RSP_ERROR 0x01
-#define GATT_REQ_MTU 0x02
-#define GATT_RSP_MTU 0x03
-#define GATT_REQ_FIND_INFO 0x04
-#define GATT_RSP_FIND_INFO 0x05
-#define GATT_REQ_FIND_TYPE_VALUE 0x06
-#define GATT_RSP_FIND_TYPE_VALUE 0x07
-#define GATT_REQ_READ_BY_TYPE 0x08
-#define GATT_RSP_READ_BY_TYPE 0x09
-#define GATT_REQ_READ 0x0A
-#define GATT_RSP_READ 0x0B
-#define GATT_REQ_READ_BLOB 0x0C
-#define GATT_RSP_READ_BLOB 0x0D
-#define GATT_REQ_READ_MULTI 0x0E
-#define GATT_RSP_READ_MULTI 0x0F
-#define GATT_REQ_READ_BY_GRP_TYPE 0x10
-#define GATT_RSP_READ_BY_GRP_TYPE 0x11
-/*                 0001-0010 (write)*/
-#define GATT_REQ_WRITE 0x12
-#define GATT_RSP_WRITE 0x13
-/* changed in V4.0 01001-0010(write cmd)*/
-#define GATT_CMD_WRITE 0x52
-#define GATT_REQ_PREPARE_WRITE 0x16
-#define GATT_RSP_PREPARE_WRITE 0x17
-#define GATT_REQ_EXEC_WRITE 0x18
-#define GATT_RSP_EXEC_WRITE 0x19
-#define GATT_HANDLE_VALUE_NOTIF 0x1B
-#define GATT_HANDLE_VALUE_IND 0x1D
-#define GATT_HANDLE_VALUE_CONF 0x1E
-/* changed in V4.0 1101-0010 (signed write)  see write cmd above*/
-#define GATT_SIGN_CMD_WRITE 0xD2
-/* 0x1E = 30 + 1 = 31*/
-#define GATT_OP_CODE_MAX (GATT_HANDLE_VALUE_CONF + 1)
+typedef enum : uint8_t {
+  GATT_RSP_ERROR = 0x01,
+  GATT_REQ_MTU = 0x02,
+  GATT_RSP_MTU = 0x03,
+  GATT_REQ_FIND_INFO = 0x04,
+  GATT_RSP_FIND_INFO = 0x05,
+  GATT_REQ_FIND_TYPE_VALUE = 0x06,
+  GATT_RSP_FIND_TYPE_VALUE = 0x07,
+  GATT_REQ_READ_BY_TYPE = 0x08,
+  GATT_RSP_READ_BY_TYPE = 0x09,
+  GATT_REQ_READ = 0x0A,
+  GATT_RSP_READ = 0x0B,
+  GATT_REQ_READ_BLOB = 0x0C,
+  GATT_RSP_READ_BLOB = 0x0D,
+  GATT_REQ_READ_MULTI = 0x0E,
+  GATT_RSP_READ_MULTI = 0x0F,
+  GATT_REQ_READ_BY_GRP_TYPE = 0x10,
+  GATT_RSP_READ_BY_GRP_TYPE = 0x11,
+  /*                 0001-0010 (write)*/
+  GATT_REQ_WRITE = 0x12,
+  GATT_RSP_WRITE = 0x13,
+  /* changed in V4.0 01001-0010(write cmd)*/
+  GATT_CMD_WRITE = 0x52,
+  GATT_REQ_PREPARE_WRITE = 0x16,
+  GATT_RSP_PREPARE_WRITE = 0x17,
+  GATT_REQ_EXEC_WRITE = 0x18,
+  GATT_RSP_EXEC_WRITE = 0x19,
+  GATT_HANDLE_VALUE_NOTIF = 0x1B,
+  GATT_HANDLE_VALUE_IND = 0x1D,
+  GATT_HANDLE_VALUE_CONF = 0x1E,
+  /* changed in V4.0 1101-0010 (signed write)  see write cmd above*/
+  GATT_SIGN_CMD_WRITE = 0xD2,
+  /* 0x1E = 30 + 1 = 31*/
+  GATT_OP_CODE_MAX = (GATT_HANDLE_VALUE_CONF + 1),
+} tGATT_OP_CODE;
+
+inline std::string gatt_op_code_text(const tGATT_OP_CODE& op_code) {
+  switch (op_code) {
+    case GATT_RSP_ERROR:
+      return std::string("GATT_RSP_ERROR");
+    case GATT_REQ_MTU:
+      return std::string("GATT_REQ_MTU");
+    case GATT_RSP_MTU:
+      return std::string("GATT_RSP_MTU");
+    case GATT_REQ_FIND_INFO:
+      return std::string("GATT_REQ_FIND_INFO");
+    case GATT_RSP_FIND_INFO:
+      return std::string("GATT_RSP_FIND_INFO");
+    case GATT_REQ_FIND_TYPE_VALUE:
+      return std::string("GATT_REQ_FIND_TYPE_VALUE");
+    case GATT_RSP_FIND_TYPE_VALUE:
+      return std::string("GATT_RSP_FIND_TYPE_VALUE");
+    case GATT_REQ_READ_BY_TYPE:
+      return std::string("GATT_REQ_READ_BY_TYPE");
+    case GATT_RSP_READ_BY_TYPE:
+      return std::string("GATT_RSP_READ_BY_TYPE");
+    case GATT_REQ_READ:
+      return std::string("GATT_REQ_READ");
+    case GATT_RSP_READ:
+      return std::string("GATT_RSP_READ");
+    case GATT_REQ_READ_BLOB:
+      return std::string("GATT_REQ_READ_BLOB");
+    case GATT_RSP_READ_BLOB:
+      return std::string("GATT_RSP_READ_BLOB");
+    case GATT_REQ_READ_MULTI:
+      return std::string("GATT_REQ_READ_MULTI");
+    case GATT_RSP_READ_MULTI:
+      return std::string("GATT_RSP_READ_MULTI");
+    case GATT_REQ_READ_BY_GRP_TYPE:
+      return std::string("GATT_REQ_READ_BY_GRP_TYPE");
+    case GATT_RSP_READ_BY_GRP_TYPE:
+      return std::string("GATT_RSP_READ_BY_GRP_TYPE");
+    case GATT_REQ_WRITE:
+      return std::string("GATT_REQ_WRITE");
+    case GATT_RSP_WRITE:
+      return std::string("GATT_RSP_WRITE");
+    case GATT_CMD_WRITE:
+      return std::string("GATT_CMD_WRITE");
+    case GATT_REQ_PREPARE_WRITE:
+      return std::string("GATT_REQ_PREPARE_WRITE");
+    case GATT_RSP_PREPARE_WRITE:
+      return std::string("GATT_RSP_PREPARE_WRITE");
+    case GATT_REQ_EXEC_WRITE:
+      return std::string("GATT_REQ_EXEC_WRITE");
+    case GATT_RSP_EXEC_WRITE:
+      return std::string("GATT_RSP_EXEC_WRITE");
+    case GATT_HANDLE_VALUE_NOTIF:
+      return std::string("GATT_HANDLE_VALUE_NOTIF");
+    case GATT_HANDLE_VALUE_IND:
+      return std::string("GATT_HANDLE_VALUE_IND");
+    case GATT_HANDLE_VALUE_CONF:
+      return std::string("GATT_HANDLE_VALUE_CONF");
+    case GATT_SIGN_CMD_WRITE:
+      return std::string("GATT_SIGN_CMD_WRITE");
+    case GATT_OP_CODE_MAX:
+      return std::string("GATT_OP_CODE_MAX");
+  };
+}
 
 #define GATT_HANDLE_IS_VALID(x) ((x) != 0)
 

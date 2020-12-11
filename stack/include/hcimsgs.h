@@ -969,6 +969,9 @@ extern void btsnd_hcic_remove_iso_data_path(
     uint16_t iso_handle, uint8_t data_path_dir,
     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
+extern void btsnd_hcic_read_iso_link_quality(
+    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
 #define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_CREATE_SYNC 14
 #define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL 0
 #define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_TERMINATE_SYNC 2

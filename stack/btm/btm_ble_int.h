@@ -46,6 +46,7 @@ extern void btm_ble_stop_scan(void);
 extern void btm_clear_all_pending_le_entry(void);
 
 extern void btm_ble_init(void);
+extern void btm_ble_free();
 extern void btm_ble_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t enc_mode, uint8_t role,
                               tBLE_ADDR_TYPE addr_type, bool addr_matched);

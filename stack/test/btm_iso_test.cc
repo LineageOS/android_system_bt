@@ -72,6 +72,12 @@ class MockCigCallbacks : public bluetooth::hci::iso_manager::CigCallbacks {
   MOCK_METHOD((void), OnRemoveIsoDataPath,
               (uint8_t status, uint16_t conn_handle, uint8_t cig_id),
               (override));
+  MOCK_METHOD((void), OnIsoLinkQualityRead,
+              (uint8_t conn_handle, uint8_t cig_id, uint32_t txUnackedPackets,
+               uint32_t txFlushedPackets, uint32_t txLastSubeventPackets,
+               uint32_t retransmittedPackets, uint32_t crcErrorPackets,
+               uint32_t rxUnreceivedPackets, uint32_t duplicatePackets),
+              (override));
 
   MOCK_METHOD((void), OnCisEvent, (uint8_t event, void* data), (override));
   MOCK_METHOD((void), OnCigEvent, (uint8_t event, void* data), (override));
