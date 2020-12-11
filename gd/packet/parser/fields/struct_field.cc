@@ -97,3 +97,5 @@ void StructField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
   s << GetRustDataType() << "::parse(&bytes[" << start_offset.bytes() << "..";
   s << start_offset.bytes() + GetSize().bytes() << "]).unwrap();";
 }
+
+void StructField::GenRustWriter(std::ostream&, Size, Size) const {}

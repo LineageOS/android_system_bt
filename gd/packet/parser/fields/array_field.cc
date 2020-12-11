@@ -205,3 +205,8 @@ void ArrayField::GenRustGetter(std::ostream& s, Size start_offset, Size) const {
   s << "bytes[" << start_offset.bytes() << "..";
   s << start_offset.bytes() + GetSize().bytes() << "].try_into().unwrap();";
 }
+
+void ArrayField::GenRustWriter(std::ostream& s, Size start_offset, Size) const {
+  s << "&buffer[" << start_offset.bytes() << ".." << start_offset.bytes() + GetSize().bytes()
+    << "].copy_from_slice(&self." << GetName() << ");";
+}

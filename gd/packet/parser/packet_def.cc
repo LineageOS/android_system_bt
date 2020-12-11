@@ -827,6 +827,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   }
   s << "}}";
 
+  // parse function
   s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
@@ -862,6 +863,39 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     GenRustStructSizeField(s);
   }
   s << "})}\n";
+
+  // to_bytes function (only on root packet types)
+  if (parent_ == nullptr) {
+    s << "fn to_bytes(self) -> Bytes {";
+    s << " let mut buffer = BytesMut::new();";
+    s << " self.write_to(&mut buffer);";
+    s << " buffer.freeze()";
+    s << "}\n";
+  }
+
+  // write_to function
+  s << "fn write_to(&self, buffer: &mut BytesMut) {";
+  if (fields_exist) {
+    s << " buffer.resize(buffer.len() + self.size, 0);";
+  }
+
+  fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+  });
+
+  for (auto const& field : fields) {
+    auto start_field_offset = GetOffsetForField(field->GetName(), false);
+    auto end_field_offset = GetOffsetForField(field->GetName(), true);
+
+    if (start_field_offset.empty() && end_field_offset.empty()) {
+      ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
+                   << "no method exists to determine field location from begin() or end().\n";
+    }
+
+    field->GenRustWriter(s, start_field_offset, end_field_offset);
+  }
+
+  s << "}\n";
 
   if (fields_exist) {
     s << "pub fn get_size(&self) -> usize { self.size }";

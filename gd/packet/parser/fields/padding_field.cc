@@ -68,3 +68,5 @@ std::string PaddingField::GetRustDataType() const {
 
 void PaddingField::GenRustGetter(std::ostream&, Size, Size) const {
 }
+
+void PaddingField::GenRustWriter(std::ostream&, Size, Size) const {}
