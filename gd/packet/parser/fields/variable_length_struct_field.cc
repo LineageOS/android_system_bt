@@ -98,3 +98,5 @@ std::string VariableLengthStructField::GetRustDataType() const {
 
 void VariableLengthStructField::GenRustGetter(std::ostream&, Size, Size) const {
 }
+
+void VariableLengthStructField::GenRustWriter(std::ostream&, Size, Size) const {}
