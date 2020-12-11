@@ -878,6 +878,23 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   if (fields_exist) {
     s << " buffer.resize(buffer.len() + self.size, 0);";
   }
+
+  fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+  });
+
+  for (auto const& field : fields) {
+    auto start_field_offset = GetOffsetForField(field->GetName(), false);
+    auto end_field_offset = GetOffsetForField(field->GetName(), true);
+
+    if (start_field_offset.empty() && end_field_offset.empty()) {
+      ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
+                   << "no method exists to determine field location from begin() or end().\n";
+    }
+
+    field->GenRustWriter(s, start_field_offset, end_field_offset);
+  }
+
   s << "}\n";
 
   if (fields_exist) {
