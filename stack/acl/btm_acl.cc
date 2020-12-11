@@ -371,7 +371,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     p_acl->hci_handle = hci_handle;
     p_acl->link_role = link_role;
     p_acl->transport = transport;
-    btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
+    btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
     LOG_WARN(
         "Unable to create duplicate acl when one already exists handle:%hu"
         " role:%s transport:%s",
@@ -398,7 +398,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   acl_initialize_power_mode(*p_acl);
 
   LOG_DEBUG("Created new ACL connection");
-  btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
+  btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
 
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_refresh_local_resolvable_private_addr(
