@@ -789,18 +789,18 @@ cc_library_host_shared {
     rtti: true,
 }
 
-rust_grpcio {
+rust_protobuf {
     name: "libbt_hci_proto",
     crate_name: "bt_hci_proto",
-    protos: ["hci/facade/facade.proto"],
+    grpc_protos: ["hci/facade/facade.proto"],
     source_stem: "facade",
     host_supported: true,
 }
 
-rust_grpcio {
+rust_protobuf {
     name: "libbt_hal_proto",
     crate_name: "bt_hal_proto",
-    protos: ["hal/facade.proto"],
+    grpc_protos: ["hal/facade.proto"],
     source_stem: "facade",
     host_supported: true,
 }
