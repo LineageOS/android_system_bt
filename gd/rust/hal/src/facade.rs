@@ -7,7 +7,7 @@ use bt_hal_proto::facade::*;
 use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 use futures::sink::SinkExt;
-use gddi::{module, provides};
+use gddi::{module, provides, Stoppable};
 use grpcio::*;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -32,7 +32,7 @@ async fn provide_facade(hal_exports: HalExports, rt: Arc<Runtime>) -> HciHalFaca
 }
 
 /// HCI HAL facade service
-#[derive(Clone)]
+#[derive(Clone, Stoppable)]
 pub struct HciHalFacadeService {
     rt: Arc<Runtime>,
     cmd_tx: mpsc::UnboundedSender<HciCommand>,

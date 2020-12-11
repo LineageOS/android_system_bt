@@ -7,12 +7,18 @@ use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-pub use gddi_macros::{module, provides};
+pub use gddi_macros::{module, provides, Stoppable};
 
 type InstanceBox = Box<dyn Any + Send + Sync>;
 /// A box around a future for a provider that is safe to send between threads
 pub type ProviderFutureBox = Box<dyn Future<Output = Box<dyn Any>> + Send + Sync>;
 type ProviderFnBox = Box<dyn Fn(Arc<Registry>) -> Pin<ProviderFutureBox> + Send + Sync>;
+
+/// Called to stop an injected object
+pub trait Stoppable {
+    /// Stop and close all resources
+    fn stop(&self) {}
+}
 
 /// Builder for Registry
 pub struct RegistryBuilder {
@@ -23,6 +29,7 @@ pub struct RegistryBuilder {
 pub struct Registry {
     providers: Arc<Mutex<HashMap<TypeId, Provider>>>,
     instances: Arc<Mutex<HashMap<TypeId, InstanceBox>>>,
+    start_order: Arc<Mutex<Vec<Box<dyn Stoppable + Send + Sync>>>>,
 }
 
 #[derive(Clone)]
@@ -65,13 +72,14 @@ impl RegistryBuilder {
         Registry {
             providers: Arc::new(Mutex::new(self.providers)),
             instances: Arc::new(Mutex::new(HashMap::new())),
+            start_order: Arc::new(Mutex::new(Vec::new())),
         }
     }
 }
 
 impl Registry {
     /// Gets an instance of a type, implicitly starting any dependencies if necessary
-    pub async fn get<T: 'static + Clone + Send + Sync>(self: &Arc<Self>) -> T {
+    pub async fn get<T: 'static + Clone + Send + Sync + Stoppable>(self: &Arc<Self>) -> T {
         let typeid = TypeId::of::<T>();
         {
             let instances = self.instances.lock().await;
@@ -92,6 +100,9 @@ impl Registry {
         let mut instances = self.instances.lock().await;
         instances.insert(typeid, Box::new(casted.clone()));
 
+        let mut start_order = self.start_order.lock().await;
+        start_order.push(Box::new(casted.clone()));
+
         casted
     }
 
@@ -100,4 +111,15 @@ impl Registry {
         let mut instances = self.instances.lock().await;
         instances.insert(TypeId::of::<T>(), Box::new(obj));
     }
+
+    /// Stop all instances, in reverse order of start.
+    pub async fn stop_all(self: &Arc<Self>) {
+        let mut start_order = self.start_order.lock().await;
+        while let Some(obj) = start_order.pop() {
+            obj.stop();
+        }
+        self.instances.lock().await.clear();
+    }
 }
+
+impl<T> Stoppable for std::sync::Arc<T> {}

@@ -7,7 +7,7 @@ use bt_hci_proto::facade::*;
 use bt_hci_proto::facade_grpc::{create_hci_layer_facade, HciLayerFacade};
 use bt_packet::HciEvent;
 use futures::sink::SinkExt;
-use gddi::{module, provides};
+use gddi::{module, provides, Stoppable};
 use grpcio::*;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
@@ -33,7 +33,7 @@ async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciLayerFa
 }
 
 /// HCI layer facade service
-#[derive(Clone)]
+#[derive(Clone, Stoppable)]
 pub struct HciLayerFacadeService {
     hci_exports: HciExports,
     rt: Arc<Runtime>,
