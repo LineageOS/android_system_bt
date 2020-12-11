@@ -176,3 +176,5 @@ void ScalarField::GenRustGetter(std::ostream& s, Size start_offset, Size end_off
     s << GetName() << " & 0x" << std::hex << mask << std::dec << ";";
   }
 }
+
+void ScalarField::GenRustWriter(std::ostream&, Size, Size) const {}

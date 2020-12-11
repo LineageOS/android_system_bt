@@ -72,3 +72,5 @@ std::string ChecksumStartField::GetRustDataType() const {
 
 void ChecksumStartField::GenRustGetter(std::ostream&, Size, Size) const {
 }
+
+void ChecksumStartField::GenRustWriter(std::ostream&, Size, Size) const {}

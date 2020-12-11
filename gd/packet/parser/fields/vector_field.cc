@@ -301,3 +301,5 @@ void VectorField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
         s << "]).unwrap()).collect();";
   }
 }
+
+void VectorField::GenRustWriter(std::ostream&, Size, Size) const {}
