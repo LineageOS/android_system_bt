@@ -47,7 +47,7 @@ class PairingHandler : public UICallbacks {
       : security_manager_channel_(security_manager_channel),
         record_(std::move(record)),
         name_db_module_(name_db_module) {}
-  virtual ~PairingHandler() = default;
+  ~PairingHandler() = default;
 
   // Classic
   virtual void Initiate(

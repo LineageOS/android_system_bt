@@ -44,7 +44,7 @@ class BasicModeDataController : public DataController {
   BasicModeDataController(Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
                           Scheduler* scheduler);
 
-  ~BasicModeDataController() override;
+  ~BasicModeDataController();
 
   void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) override;
 

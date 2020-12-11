@@ -25,7 +25,7 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
  public:
   LeAclConnectionTracker(LeAclConnectionInterface* le_acl_connection_interface)
       : le_acl_connection_interface_(le_acl_connection_interface) {}
-  ~LeAclConnectionTracker() override {
+  ~LeAclConnectionTracker() {
     ASSERT(queued_callbacks_.empty());
   }
   void RegisterCallbacks(LeConnectionManagementCallbacks* callbacks, os::Handler* handler) {
@@ -104,7 +104,6 @@ LeAclConnection::LeAclConnection(
 
 LeAclConnection::~LeAclConnection() {
   delete pimpl_;
-  AclConnection::~AclConnection();
 }
 
 void LeAclConnection::RegisterCallbacks(LeConnectionManagementCallbacks* callbacks, os::Handler* handler) {
