@@ -2476,11 +2476,8 @@ int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
   uint8_t xx;
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if (p->in_use && p->remote_addr == remote_bda &&
-        p->transport == BT_TRANSPORT_BR_EDR) {
-      LOG_VERBOSE("btm_pm_find_acl_ind ind:%d", xx);
+    if (p->in_use && p->remote_addr == remote_bda && p->is_transport_br_edr())
       break;
-    }
   }
   return xx;
 }
@@ -2489,7 +2486,7 @@ bool btm_pm_is_le_link(const RawAddress& remote_bda) {
   const tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
   for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl++) {
     if (p_acl->in_use && p_acl->remote_addr == remote_bda &&
-        p_acl->transport == BT_TRANSPORT_LE) {
+        p_acl->is_transport_ble()) {
       return true;
     }
   }
