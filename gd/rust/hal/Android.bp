@@ -1,5 +1,6 @@
 rust_library {
     name: "libbt_hal",
+    defaults: ["gd_rust_defaults"],
     crate_name: "bt_hal",
     srcs: ["src/lib.rs"],
     edition: "2018",
@@ -19,7 +20,6 @@ rust_library {
         "liblog_rust",
         "libbt_common",
     ],
-    host_supported: true,
     target: {
         android: {
             static_libs: ["libbt_hidl_hal_cxx"],
@@ -50,6 +50,7 @@ genrule {
 
 cc_library_static {
     name: "libbt_hidl_hal_cxx",
+    defaults: ["gd_ffi_defaults"],
     srcs: ["src/hidl/interop.cc"],
     local_include_dirs: ["src/hidl"],
     generated_headers: ["libbt_hidl_hal_bridge_header", "cxx-bridge-header"],
