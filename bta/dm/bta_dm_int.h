@@ -26,8 +26,10 @@
 
 #include <base/strings/stringprintf.h>
 #include <memory>
+#include <string>
 #include "bt_target.h"
 #include "bta/sys/bta_sys.h"
+#include "main/shim/dumpsys.h"
 
 #include "bta/include/bta_gatt_api.h"
 
@@ -223,6 +225,13 @@ typedef struct {
   uint8_t app_id;
   tBTA_SYS_CONN_STATUS state;
   bool new_request;
+
+  std::string ToString() const {
+    return base::StringPrintf(
+        "peer:%s sys_name:%s app_id:%hhu state:%s new:request:%s",
+        PRIVATE_ADDRESS(peer_bdaddr), BtaIdSysText(id).c_str(), app_id,
+        bta_sys_conn_status_text(state).c_str(), logbool(new_request).c_str());
+  }
 
 } tBTA_DM_SRVCS;
 
