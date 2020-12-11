@@ -61,8 +61,10 @@ struct AclManager::impl {
     hci_queue_end_ = hci_layer_->GetAclQueueEnd();
     hci_queue_end_->RegisterDequeue(
         handler_, common::Bind(&impl::dequeue_and_route_acl_packet_to_connection, common::Unretained(this)));
-    classic_impl_ = new classic_impl(hci_layer_, controller_, handler_, round_robin_scheduler_);
-    le_impl_ = new le_impl(hci_layer_, controller_, handler_, round_robin_scheduler_);
+    bool crash_on_unknown_handle = false;
+    classic_impl_ =
+        new classic_impl(hci_layer_, controller_, handler_, round_robin_scheduler_, crash_on_unknown_handle);
+    le_impl_ = new le_impl(hci_layer_, controller_, handler_, round_robin_scheduler_, crash_on_unknown_handle);
   }
 
   void Stop() {
