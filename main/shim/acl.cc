@@ -460,10 +460,12 @@ void DumpsysAcl(int fd) {
     const tBTM_PM_MCB& btm_pm_mcb = acl_cb.pm_mode_db[i];
     if (!acl_conn.in_use) continue;
 
-    LOG_DUMPSYS(fd, "    peer_le_features:%s",
+    LOG_DUMPSYS(fd, "    peer_le_features valid:%s data:%s",
+                common::ToString(acl_conn.peer_le_features_valid).c_str(),
                 bd_features_text(acl_conn.peer_le_features).c_str());
     for (int j = 0; j < HCI_EXT_FEATURES_PAGE_MAX + 1; j++) {
-      LOG_DUMPSYS(fd, "    peer_lmp_features[%d]:%s", j,
+      LOG_DUMPSYS(fd, "    peer_lmp_features[%d] valid:%s data:%s", j,
+                  common::ToString(acl_conn.peer_lmp_feature_valid[j]).c_str(),
                   bd_features_text(acl_conn.peer_lmp_feature_pages[j]).c_str());
     }
     LOG_DUMPSYS(fd, "remote_addr:%s", acl_conn.remote_addr.ToString().c_str());

@@ -80,7 +80,10 @@ typedef struct {
 
 typedef struct {
   BD_FEATURES peer_le_features;
+  bool peer_le_features_valid;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
+  bool peer_lmp_feature_valid[HCI_EXT_FEATURES_PAGE_MAX + 1];
+
   RawAddress active_remote_addr;
   RawAddress conn_addr;
   RawAddress remote_addr;
