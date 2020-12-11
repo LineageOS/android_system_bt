@@ -712,8 +712,15 @@ static void maybe_chain_more_commands_after_read_remote_version_complete(
       l2cble_use_preferred_conn_params(p_acl_cb->remote_addr);
       break;
     case BT_TRANSPORT_BR_EDR:
-      if (status == HCI_SUCCESS) {
-        internal_.btm_read_remote_features(p_acl_cb->hci_handle);
+      /**
+       * When running legacy stack continue chain of executing various
+       * read commands.  Skip when gd_acl is enabled because that
+       * module handles all remote read functionality.
+       */
+      if (!bluetooth::shim::is_gd_acl_enabled()) {
+        if (status == HCI_SUCCESS) {
+          internal_.btm_read_remote_features(p_acl_cb->hci_handle);
+        }
       }
   }
 }
@@ -753,6 +760,8 @@ void btm_read_remote_version_complete_raw(uint8_t* p) {
   STREAM_TO_UINT16(manufacturer, p);
   STREAM_TO_UINT16(lmp_subversion, p);
 
+  ASSERT_LOG(!bluetooth::shim::is_gd_acl_enabled(),
+             "gd acl layer should be receiving this completion");
   btm_read_remote_version_complete(static_cast<tHCI_STATUS>(status), handle,
                                    lmp_version, manufacturer, lmp_version);
 }
@@ -778,6 +787,14 @@ void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
  ******************************************************************************/
 void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t num_read_pages) {
+  CHECK(p_acl_cb != nullptr);
+  if (!p_acl_cb->peer_lmp_feature_valid[0] ||
+      !p_acl_cb->peer_lmp_feature_valid[0]) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+  }
+
   bool ssp_supported =
       HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]);
   bool secure_connections_supported =
@@ -1225,6 +1242,11 @@ bool BTM_IsPhy2mSupported(const RawAddress& remote_bda, tBT_TRANSPORT transport)
     return false;
   }
 
+  if (!p->peer_le_features_valid) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+  }
   return HCI_LE_2M_PHY_SUPPORTED(p->peer_le_features);
 }
 
@@ -2250,6 +2272,12 @@ void btm_acl_notif_conn_collision(const RawAddress& bda) {
  *
  ******************************************************************************/
 void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
+  if (!p->peer_lmp_feature_valid[0]) {
+    LOG_ERROR("Remote feature reads are incomplete");
+    *p_pkt_type = 0;
+    return;
+  }
+
   /* 3 and 5 slot packets? */
   if (!HCI_3_SLOT_PACKETS_SUPPORTED(p->peer_lmp_feature_pages[0]))
     *p_pkt_type &= ~(HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
@@ -2341,16 +2369,26 @@ bool acl_peer_supports_ble_connection_parameters_request(
     LOG_WARN("Unable to find active acl");
     return false;
   }
+  if (!p_acl->peer_le_features_valid) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+  }
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
 }
 
 bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return false;
   }
-  return HCI_SNIFF_SUB_RATE_SUPPORTED(p_acl->peer_le_features);
+  if (!p_acl->peer_lmp_feature_valid[0]) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+  }
+  return HCI_SNIFF_SUB_RATE_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
 }
 
 /*******************************************************************************
@@ -2490,6 +2528,11 @@ bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle) {
   if (p_acl == nullptr) {
     return false;
   }
+  if (!p_acl->peer_lmp_feature_valid[0]) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+  }
   return HCI_EDR_ESCO_2MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
 }
 
@@ -2497,6 +2540,11 @@ bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
   if (p_acl == nullptr) {
     return false;
+  }
+  if (!p_acl->peer_lmp_feature_valid[0]) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
   }
   return HCI_EDR_ESCO_3MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
 }
@@ -2593,6 +2641,11 @@ bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle) {
   if (p_acl == nullptr) {
     return false;
   }
+  if (!p_acl->peer_le_features_valid) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+  }
   return HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features);
 }
 
@@ -2601,12 +2654,23 @@ bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle) {
   if (p_acl == nullptr) {
     return false;
   }
+  if (!p_acl->peer_le_features_valid) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
+  }
   return HCI_LE_2M_PHY_SUPPORTED(p_acl->peer_le_features);
 }
 
 bool acl_peer_supports_ble_coded_phy(uint16_t hci_handle) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
   if (p_acl == nullptr) {
+    return false;
+  }
+  if (!p_acl->peer_le_features_valid) {
+    LOG_WARN(
+        "Checking remote features but remote feature read is "
+        "incomplete");
     return false;
   }
   return HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features);
