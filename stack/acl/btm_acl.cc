@@ -106,6 +106,15 @@ typedef struct {
        ? true                                                       \
        : false)
 
+inline bool IsEprAvailable(const tACL_CONN& p_acl) {
+  if (!p_acl.peer_lmp_feature_valid[0]) {
+    LOG_WARN("Checking incomplete feature page read");
+    return false;
+  }
+  return HCI_ATOMIC_ENCRYPT_SUPPORTED(p_acl.peer_lmp_feature_pages[0]) &&
+         controller_get_interface()->supports_encryption_pause();
+}
+
 extern tBTM_CB btm_cb;
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
