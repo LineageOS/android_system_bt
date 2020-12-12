@@ -384,16 +384,19 @@ typedef struct {
       p_app_sink_data_cback; /* Sink application callback for media packets */
 } tBTA_AV_SEP;
 
-/* initiator/acceptor role for adaption */
-#define BTA_AV_ROLE_AD_INT 0x00 /* initiator */
-#define BTA_AV_ROLE_AD_ACP 0x01 /* acceptor */
+enum : uint8_t {
+  /* initiator/acceptor role for adaption */
+  BTA_AV_ROLE_AD_INT = 0x00, /* initiator */
+  BTA_AV_ROLE_AD_ACP = 0x01, /* acceptor */
 
-/* initiator/acceptor signaling roles */
-#define BTA_AV_ROLE_START_ACP 0x00
-#define BTA_AV_ROLE_START_INT 0x10 /* do not change this value */
+  /* initiator/acceptor signaling roles */
+  BTA_AV_ROLE_START_ACP = 0x00,
+  BTA_AV_ROLE_START_INT = 0x10, /* do not change this value */
 
-#define BTA_AV_ROLE_SUSPEND 0x20     /* suspending on start */
-#define BTA_AV_ROLE_SUSPEND_OPT 0x40 /* Suspend on Start option is set */
+  BTA_AV_ROLE_SUSPEND = 0x20,     /* suspending on start */
+  BTA_AV_ROLE_SUSPEND_OPT = 0x40, /* Suspend on Start option is set */
+};
+typedef uint8_t tBTA_AV_ROLE;
 
 /* union of all event datatypes */
 union tBTA_AV_DATA {
