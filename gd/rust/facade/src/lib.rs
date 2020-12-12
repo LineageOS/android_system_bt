@@ -81,6 +81,42 @@ struct FacadeServiceManager {
     lifecycle_tx: Sender<LifecycleCommand>,
 }
 
+struct FacadeServer {
+    server: Server,
+    stack: Stack,
+}
+
+impl FacadeServer {
+    async fn start(stack: Stack, req: StartStackRequest, grpc_port: u16) -> Self {
+        let mut services = Vec::new();
+        match req.get_module_under_test() {
+            BluetoothModule::HAL => {
+                services.push(stack.get_grpc::<HciHalFacadeService>().await);
+            }
+            BluetoothModule::HCI => {
+                services.push(stack.get_grpc::<HciLayerFacadeService>().await);
+            }
+            _ => unimplemented!(),
+        }
+
+        let env = Arc::new(Environment::new(2));
+        let mut builder = ServerBuilder::new(env).bind("0.0.0.0", grpc_port);
+        for service in services {
+            builder = builder.register_service(service);
+        }
+
+        let mut server = builder.build().unwrap();
+        server.start();
+
+        Self { server, stack }
+    }
+
+    async fn stop(&mut self) {
+        self.server.shutdown().await.unwrap();
+        self.stack.stop().await;
+    }
+}
+
 /// Result type
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
@@ -89,18 +125,18 @@ impl FacadeServiceManager {
         let (tx, mut rx) = channel::<LifecycleCommand>(1);
         let local_rt = rt.clone();
         rt.spawn(async move {
-            let mut server: Option<Server> = None;
+            let mut server: Option<FacadeServer> = None;
             while let Some(cmd) = rx.recv().await {
                 match cmd {
                     LifecycleCommand::Start { req, done } => {
                         let stack = Stack::new(local_rt.clone()).await;
                         stack.set_rootcanal_port(rootcanal_port).await;
-                        server = Some(Self::start_internal(&stack, req, grpc_port).await);
+                        server = Some(FacadeServer::start(stack, req, grpc_port).await);
                         done.send(()).unwrap();
                     }
                     LifecycleCommand::Stop { done } => {
                         if let Some(s) = &mut server {
-                            block_on(s.shutdown()).unwrap();
+                            block_on(s.stop());
                             server = None;
                         }
                         done.send(()).unwrap();
@@ -128,36 +164,5 @@ impl FacadeServiceManager {
             .await?;
         rx.await?;
         Ok(())
-    }
-
-    async fn start_internal(
-        stack: &Stack,
-        req: StartStackRequest,
-        grpc_port: u16,
-    ) -> Server {
-        let mut services = Vec::new();
-        match req.get_module_under_test() {
-            BluetoothModule::HAL => {
-                services.push(stack.get_grpc::<HciHalFacadeService>().await);
-            }
-            BluetoothModule::HCI => {
-                services.push(stack.get_grpc::<HciLayerFacadeService>().await);
-            }
-            _ => unimplemented!(),
-        }
-
-        FacadeServiceManager::start_server(services, grpc_port)
-    }
-
-    fn start_server(services: Vec<grpcio::Service>, grpc_port: u16) -> Server {
-        let env = Arc::new(Environment::new(2));
-        let mut builder = ServerBuilder::new(env).bind("0.0.0.0", grpc_port);
-        for service in services {
-            builder = builder.register_service(service);
-        }
-
-        let mut server = builder.build().unwrap();
-        server.start();
-        server
     }
 }

@@ -88,21 +88,6 @@ class LeAddressManager {
   void OnCommandComplete(CommandCompleteView view);
 
  private:
-  void pause_registered_clients();
-  void ack_pause(LeAddressManagerCallback* callback);
-  void resume_registered_clients();
-  void ack_resume(LeAddressManagerCallback* callback);
-  void register_client(LeAddressManagerCallback* callback);
-  void unregister_client(LeAddressManagerCallback* callback);
-  void prepare_to_rotate();
-  void rotate_random_address();
-  void schedule_rotate_random_address();
-  void set_random_address();
-  hci::Address generate_rpa();
-  hci::Address generate_nrpa();
-  std::chrono::milliseconds get_next_private_address_interval_ms();
-  void handle_next_command();
-
   enum ClientState {
     WAITING_FOR_PAUSE,
     PAUSED,
@@ -124,6 +109,22 @@ class LeAddressManager {
     CommandType command_type;
     std::unique_ptr<CommandPacketBuilder> command_packet;
   };
+
+  void pause_registered_clients();
+  void push_command(Command command);
+  void ack_pause(LeAddressManagerCallback* callback);
+  void resume_registered_clients();
+  void ack_resume(LeAddressManagerCallback* callback);
+  void register_client(LeAddressManagerCallback* callback);
+  void unregister_client(LeAddressManagerCallback* callback);
+  void prepare_to_rotate();
+  void rotate_random_address();
+  void schedule_rotate_random_address();
+  void set_random_address();
+  hci::Address generate_rpa();
+  hci::Address generate_nrpa();
+  std::chrono::milliseconds get_next_private_address_interval_ms();
+  void handle_next_command();
 
   common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command_;
   os::Handler* handler_;

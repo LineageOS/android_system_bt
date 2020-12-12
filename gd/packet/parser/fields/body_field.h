@@ -56,6 +56,8 @@ class BodyField : public PacketField {
 
   void GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
+  void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const override;
+
   // Body fields can only be dynamically sized.
   const SizeField* size_field_{nullptr};
 };

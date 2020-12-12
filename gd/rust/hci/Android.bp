@@ -1,5 +1,6 @@
 rust_library {
     name: "libbt_hci",
+    defaults: ["gd_rust_defaults"],
     crate_name: "bt_hci",
     srcs: ["src/lib.rs"],
     edition: "2018",
@@ -21,5 +22,4 @@ rust_library {
     proc_macros: [
         "libnum_derive",
     ],
-    host_supported: true,
 }

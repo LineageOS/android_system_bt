@@ -1,5 +1,25 @@
+rust_defaults {
+    name: "gd_rust_defaults",
+    target: {
+        darwin: {
+            enabled: false,
+        },
+    },
+    host_supported: true,
+}
+
+cc_defaults {
+    name: "gd_ffi_defaults",
+    target: {
+        darwin: {
+            enabled: false,
+        },
+    },
+}
+
 rust_ffi_static {
     name: "libbt_shim_ffi",
+    defaults: ["gd_rust_defaults"],
     crate_name: "bt_shim",
     srcs: ["src/lib.rs"],
     rustlibs: [
@@ -11,11 +31,11 @@ rust_ffi_static {
     static_libs: [
         "libbt_callbacks_cxx",
     ],
-    host_supported: true,
 }
 
 cc_library_static {
     name: "libbluetooth_rust_interop",
+    defaults: ["gd_ffi_defaults"],
     generated_headers: [
         "libbt_init_flags_bridge_header",
         "libbt_shim_bridge_header",
@@ -53,6 +73,7 @@ cc_library_static {
 
 cc_library_static {
     name: "libbt_callbacks_cxx",
+    defaults: ["gd_ffi_defaults"],
     header_libs: ["libbt_callbacks_cxx_headers"],
     srcs: ["callbacks/callbacks.cc"],
     generated_headers: ["libbt_hci_bridge_header", "cxx-bridge-header"],
