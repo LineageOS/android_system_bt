@@ -714,10 +714,12 @@ inline std::string RoleText(hci_role_t role) {
 }
 
 /* HCI mode defenitions */
-#define HCI_MODE_ACTIVE 0x00
-#define HCI_MODE_HOLD 0x01
-#define HCI_MODE_SNIFF 0x02
-#define HCI_MODE_PARK 0x03
+typedef enum : uint8_t {
+  HCI_MODE_ACTIVE = 0x00,
+  HCI_MODE_HOLD = 0x01,
+  HCI_MODE_SNIFF = 0x02,
+  HCI_MODE_PARK = 0x03,
+} tHCI_MODE;
 
 /* Page scan period modes */
 #define HCI_PAGE_SCAN_REP_MODE_R1 0x01
