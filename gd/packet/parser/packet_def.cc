@@ -837,7 +837,7 @@ void PacketDef::GenRustStructSizeField(std::ostream& s) const {
 
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Data {";
-  s << "pub fn new(";
+  s << "fn new(";
   bool fields_exist = GenRustStructFieldNameAndType(s);
   s << ") -> Self { unimplemented!();"; /* Self {";
   GenRustStructFieldNames(s);
@@ -848,7 +848,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "}";
 
   // parse function
-  s << "pub fn parse(bytes: &[u8]) -> Result<Self> { unimplemented!();";
+  s << "fn parse(bytes: &[u8]) -> Result<Self> { unimplemented!();";
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
   });
@@ -886,15 +886,6 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "})}\n";*/
   s << "}\n";
 
-  // to_bytes function (only on root packet types)
-  if (parent_ == nullptr) {
-    s << "fn to_bytes(self) -> Bytes {";
-    s << " let mut buffer = BytesMut::new();";
-    s << " self.write_to(&mut buffer);";
-    s << " buffer.freeze()";
-    s << "}\n";
-  }
-
   // write_to function
   s << "fn write_to(&self, buffer: &mut BytesMut) {";
   if (fields_exist) {
@@ -931,13 +922,26 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 
 void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Packet {";
+  if (parent_ == nullptr) {
+    s << "pub fn parse(bytes: &[u8]) -> Result<Self> { ";
+    s << "Ok(Self::new(Rc::new(" << name_ << "Data::parse(bytes)?)))";
+    s << "}";
+  }
   auto root = GetRootDef();
+  auto root_accessor = util::CamelCaseToUnderScore(root->name_);
+
+  s << "pub fn to_bytes(self) -> Bytes {";
+  s << " let mut buffer = BytesMut::new();";
+  s << " self." << root_accessor << ".write_to(&mut buffer);";
+  s << " buffer.freeze()";
+  s << "}\n";
+
   if (!children_.empty()) {
-    s << " fn specialize(self) -> " << name_ << "Child {";
+    s << " pub fn specialize(self) -> " << name_ << "Child {";
     s << " match self." << util::CamelCaseToUnderScore(name_) << ".child {";
     for (const auto& child : children_) {
       s << name_ << "DataChild::" << child->name_ << "(_) => " << name_ << "Child::" << child->name_ << "("
-        << child->name_ << "Packet::new(self." << util::CamelCaseToUnderScore(root->name_) << ")),";
+        << child->name_ << "Packet::new(self." << root_accessor << ")),";
     }
     s << "}}";
   }
