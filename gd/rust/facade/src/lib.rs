@@ -35,10 +35,11 @@ impl RootFacadeService {
         rt: Arc<Runtime>,
         grpc_port: u16,
         rootcanal_port: Option<u16>,
+        snoop_path: Option<String>,
     ) -> grpcio::Service {
         create_root_facade(Self {
             rt: rt.clone(),
-            manager: FacadeServiceManager::create(rt, grpc_port, rootcanal_port),
+            manager: FacadeServiceManager::create(rt, grpc_port, rootcanal_port, snoop_path),
         })
     }
 }
@@ -121,7 +122,7 @@ impl FacadeServer {
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 impl FacadeServiceManager {
-    fn create(rt: Arc<Runtime>, grpc_port: u16, rootcanal_port: Option<u16>) -> Self {
+    fn create(rt: Arc<Runtime>, grpc_port: u16, rootcanal_port: Option<u16>, snoop_path: Option<String>) -> Self {
         let (tx, mut rx) = channel::<LifecycleCommand>(1);
         let local_rt = rt.clone();
         rt.spawn(async move {
@@ -131,6 +132,7 @@ impl FacadeServiceManager {
                     LifecycleCommand::Start { req, done } => {
                         let stack = Stack::new(local_rt.clone()).await;
                         stack.set_rootcanal_port(rootcanal_port).await;
+                        stack.configure_snoop(snoop_path.clone()).await;
                         server = Some(FacadeServer::start(stack, req, grpc_port).await);
                         done.send(()).unwrap();
                     }

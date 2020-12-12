@@ -15,6 +15,9 @@ mod asserts;
 /// Provides runtime configured-at-startup flags
 pub mod init_flags;
 
+/// Provides runtime configured system properties. Stubbed for non-Android.
+pub mod sys_prop;
+
 /// Inits logging for Android
 #[cfg(target_os = "android")]
 pub fn init_logging() {
