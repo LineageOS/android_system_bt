@@ -922,16 +922,40 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
     s << " fn specialize(self) -> " << name_ << "Child { unimplemented!(); }";
   }
   s << " fn new(root: Rc<" << GetRootDef()->name_ << "Data>) -> Self { unimplemented!(); }";
+
+  auto lineage = GetAncestors();
+  lineage.push_back(this);
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    auto accessor_name = util::CamelCaseToUnderScore(def->name_);
+    s << " fn access_" << accessor_name << "(&self) -> &" << def->name_ << "Data { unimplemented!(); }";
+
+    auto fields = def->fields_.GetFieldsWithoutTypes({
+        BodyField::kFieldType,
+        CountField::kFieldType,
+        PaddingField::kFieldType,
+        ReservedField::kFieldType,
+        SizeField::kFieldType,
+        PayloadField::kFieldType,
+    });
+
+    for (auto const& field : fields) {
+      s << "pub fn get_" << field->GetName() << "(&self) -> &" << field->GetRustDataType() << "{";
+      s << " &self.access_" << accessor_name << "()." << field->GetName();
+      s << "}\n";
+    }
+  }
+
   s << "}\n";
 
-  auto parent = parent_;
-  while (parent != nullptr) {
-    s << "impl Into<" << parent->name_ << "Packet> for " << name_ << "Packet {";
-    s << " fn into(self) -> " << parent->name_ << "Packet {";
-    s << parent->name_ << "Packet::new(self.root)";
+  lineage = GetAncestors();
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    s << "impl Into<" << def->name_ << "Packet> for " << name_ << "Packet {";
+    s << " fn into(self) -> " << def->name_ << "Packet {";
+    s << def->name_ << "Packet::new(self.root)";
     s << " }";
     s << "}\n";
-    parent = parent->parent_;
   }
 }
 

@@ -490,3 +490,13 @@ const ParentDef* ParentDef::GetRootDef() const {
 
   return parent_->GetRootDef();
 }
+
+std::vector<const ParentDef*> ParentDef::GetAncestors() const {
+  std::vector<const ParentDef*> res;
+  auto parent = parent_;
+  while (parent != nullptr) {
+    res.push_back(parent);
+    parent = parent->parent_;
+  }
+  return res;
+}

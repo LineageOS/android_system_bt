@@ -63,6 +63,8 @@ class ParentDef : public TypeDef {
 
   const ParentDef* GetRootDef() const;
 
+  std::vector<const ParentDef*> GetAncestors() const;
+
   FieldList fields_;
 
   ParentDef* parent_{nullptr};
