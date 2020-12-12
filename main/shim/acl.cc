@@ -659,7 +659,7 @@ void bluetooth::shim::legacy::Acl::OnConnectFail(hci::Address address,
                                                  hci::ErrorCode reason) {
   const RawAddress bd_addr = ToRawAddress(address);
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_failed, bd_addr,
-                      kInvalidHciHandle, HCI_SUCCESS, false);
+                      kInvalidHciHandle, ToLegacyHciErrorCode(reason), false);
   LOG_WARN("Connection failed classic remote:%s reason:%s",
            PRIVATE_ADDRESS(address), hci::ErrorCodeText(reason).c_str());
   btm_cb.history_->Push("%-32s: %s classic reason:%s", "Connection failed",
