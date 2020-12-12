@@ -405,6 +405,13 @@ LeScanningInterface* HciLayer::GetLeScanningInterface(ContextualCallback<void(Le
   return &le_scanning_interface;
 }
 
+LeIsoInterface* HciLayer::GetLeIsoInterface(ContextualCallback<void(LeMetaEventView)> event_handler) {
+  for (const auto subevent : LeIsoEvents) {
+    RegisterLeEventHandler(subevent, event_handler);
+  }
+  return &le_iso_interface;
+}
+
 const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer(); });
 
 void HciLayer::ListDependencies(ModuleList* list) {
