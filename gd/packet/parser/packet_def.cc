@@ -916,8 +916,28 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "}\n";
 }
 
+void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
+  s << "impl " << name_ << "Packet {";
+  if (!children_.empty()) {
+    s << " fn specialize(self) -> " << name_ << "Child { unimplemented!(); }";
+  }
+  s << " fn new(root: Rc<" << GetRootDef()->name_ << "Data>) -> Self { unimplemented!(); }";
+  s << "}\n";
+
+  auto parent = parent_;
+  while (parent != nullptr) {
+    s << "impl Into<" << parent->name_ << "Packet> for " << name_ << "Packet {";
+    s << " fn into(self) -> " << parent->name_ << "Packet {";
+    s << parent->name_ << "Packet::new(self.root)";
+    s << " }";
+    s << "}\n";
+    parent = parent->parent_;
+  }
+}
+
 void PacketDef::GenRustDef(std::ostream& s) const {
   GenRustChildEnums(s);
   GenRustStructDeclarations(s);
   GenRustStructImpls(s);
+  GenRustAccessStructImpls(s);
 }
