@@ -742,6 +742,11 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 
 void PacketDef::GenRustChildEnums(std::ostream& s) const {
   if (!children_.empty()) {
+    s << "enum " << name_ << "DataChild {";
+    for (const auto& child : children_) {
+      s << child->name_ << "(" << child->name_ << "Data),";
+    }
+    s << "}\n";
     s << "pub enum " << name_ << "Child {";
     for (const auto& child : children_) {
       s << child->name_ << "(" << child->name_ << "Packet),";
@@ -751,7 +756,7 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
 }
 
 void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
-  s << "pub struct " << name_ << "Packet {";
+  s << "struct " << name_ << "Data {";
 
   // Generate struct fields
   GenRustStructFieldNameAndType(s);
@@ -766,6 +771,10 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
   if (fields.size() > 0) {
     s << " size: usize";
   }
+  s << "}\n";
+
+  s << "pub struct " << name_ << "Packet {";
+  s << "root: Rc<" << GetRootDef()->name_ << "Data>,";
   s << "}\n";
 }
 
@@ -817,7 +826,7 @@ void PacketDef::GenRustStructSizeField(std::ostream& s) const {
 }
 
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
-  s << "impl " << name_ << "Packet {";
+  s << "impl " << name_ << "Data {";
   s << "pub fn new(";
   bool fields_exist = GenRustStructFieldNameAndType(s);
   s << ") -> Self { Self {";

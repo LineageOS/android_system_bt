@@ -482,3 +482,11 @@ void ParentDef::GenInstanceOf(std::ostream& s) const {
     s << "return true;}";
   }
 }
+
+const ParentDef* ParentDef::GetRootDef() const {
+  if (parent_ == nullptr) {
+    return this;
+  }
+
+  return parent_->GetRootDef();
+}
