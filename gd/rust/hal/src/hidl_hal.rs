@@ -1,5 +1,6 @@
 //! Implementation of the HAl that talks to BT controller over Android's HIDL
-use crate::{Hal, HalExports};
+use crate::internal::Hal;
+use crate::HalExports;
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 use bytes::Bytes;
 use gddi::{module, provides};
@@ -7,7 +8,7 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use tokio::runtime::Runtime;
 use tokio::select;
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 
 module! {
     hidl_hal_module,
@@ -19,7 +20,7 @@ module! {
 #[provides]
 async fn provide_hidl_hal(rt: Arc<Runtime>) -> HalExports {
     let (hal_exports, hal) = Hal::new();
-    let (init_tx, mut init_rx) = mpsc::unbounded_channel();
+    let (init_tx, mut init_rx) = unbounded_channel();
     *CALLBACKS.lock().unwrap() = Some(Callbacks {
         init_tx,
         evt_tx: hal.evt_tx,
@@ -53,9 +54,9 @@ mod ffi {
 }
 
 struct Callbacks {
-    init_tx: mpsc::UnboundedSender<()>,
-    evt_tx: mpsc::UnboundedSender<HciEvent>,
-    acl_tx: mpsc::UnboundedSender<RawPacket>,
+    init_tx: UnboundedSender<()>,
+    evt_tx: UnboundedSender<HciEvent>,
+    acl_tx: UnboundedSender<RawPacket>,
 }
 
 lazy_static! {
@@ -90,8 +91,8 @@ fn on_acl(data: &[u8]) {
 fn on_sco(_data: &[u8]) {}
 
 async fn dispatch_outgoing(
-    mut cmd_rx: mpsc::UnboundedReceiver<HciCommand>,
-    mut acl_rx: mpsc::UnboundedReceiver<RawPacket>,
+    mut cmd_rx: UnboundedReceiver<HciCommand>,
+    mut acl_rx: UnboundedReceiver<RawPacket>,
 ) {
     loop {
         select! {

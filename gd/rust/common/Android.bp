@@ -16,6 +16,10 @@ rust_library {
             rustlibs: [
                 "libandroid_logger",
             ],
+            static_libs: ["libbt_common_sys_prop_cxx"],
+            shared_libs: [
+                "libcutils",
+            ],
         },
         host: {
             rustlibs: [
@@ -43,5 +47,25 @@ rust_test_host {
     ],
     proc_macros: [
         "libpaste",
+    ],
+}
+
+genrule {
+    name: "libbt_common_sys_prop_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/sys_prop.rs"],
+    out: ["sys_prop_generated.cc"],
+}
+
+cc_library_static {
+    name: "libbt_common_sys_prop_cxx",
+    defaults: ["gd_ffi_defaults"],
+    local_include_dirs: ["src/ffi"],
+    srcs: ["src/ffi/sys_prop.cc"],
+    generated_headers: ["cxx-bridge-header"],
+    generated_sources: ["libbt_common_sys_prop_bridge_code"],
+    shared_libs: [
+        "libcutils",
     ],
 }
