@@ -488,7 +488,8 @@ void DumpsysAcl(int fd) {
         fd, "    [classic] link_policy:%s",
         link_policy_text(static_cast<tLINK_POLICY>(acl_conn.link_policy))
             .c_str());
-    LOG_DUMPSYS(fd, "    link_super_tout:0x%04x", acl_conn.link_super_tout);
+    LOG_DUMPSYS(fd, "    link_supervision_timeout:%.3f sec",
+                ticks_to_seconds(acl_conn.link_super_tout));
     LOG_DUMPSYS(fd, "    pkt_types_mask:0x%04x", acl_conn.pkt_types_mask);
     LOG_DUMPSYS(fd, "    disconnect_reason:0x%02x", acl_conn.disconnect_reason);
     LOG_DUMPSYS(fd, "    chg_ind:%s", (btm_pm_mcb.chg_ind) ? "true" : "false");
