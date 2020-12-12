@@ -53,6 +53,8 @@ class ScalarField : public PacketField {
 
   virtual std::string GetRustDataType() const override;
 
+  virtual std::string GetRustParseDataType() const;
+
   virtual int GetRustBitOffset(std::ostream& s, Size start_offset,
       Size end_offset, Size size) const override;
 

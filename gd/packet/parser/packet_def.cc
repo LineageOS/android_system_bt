@@ -1054,8 +1054,7 @@ void PacketDef::GenRustBuilderStructImpls(std::ostream& s) const {
         } else if (field->GetFieldType() == EnumField::kFieldType) {
           auto value = std::get<std::string>(constraint->second);
           auto constant = value.substr(value.find("::") + 2, std::string::npos);
-          s << field->GetDataType() << "::" << util::ConstantCaseToCamelCase(constant) << " as "
-            << field->GetRustDataType();
+          s << field->GetDataType() << "::" << util::ConstantCaseToCamelCase(constant);
           ;
         } else {
           ERROR(field) << "Constraints on non enum/scalar fields should be impossible.";
