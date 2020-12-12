@@ -7,17 +7,12 @@ extern crate lazy_static;
 
 pub mod facade;
 pub mod rootcanal_hal;
-#[cfg(not(target_os = "android"))]
-use rootcanal_hal::rootcanal_hal_module;
 
 #[cfg(target_os = "android")]
 mod hidl_hal;
-#[cfg(target_os = "android")]
-use hidl_hal::hidl_hal_module;
 
 use bt_packet::{HciCommand, HciEvent, RawPacket};
-use facade::hal_facade_module;
-use gddi::module;
+use gddi::{module, Stoppable};
 use std::sync::Arc;
 use thiserror::Error;
 use tokio::sync::{mpsc, Mutex};
@@ -26,8 +21,8 @@ use tokio::sync::{mpsc, Mutex};
 module! {
     hal_module,
     submodules {
-        hal_facade_module,
-        hidl_hal_module
+        facade::hal_facade_module,
+        hidl_hal::hidl_hal_module
     },
 }
 
@@ -35,8 +30,8 @@ module! {
 module! {
     hal_module,
     submodules {
-        hal_facade_module,
-        rootcanal_hal_module
+        facade::hal_facade_module,
+        rootcanal_hal::rootcanal_hal_module
     },
 }
 /// H4 packet header size
@@ -45,7 +40,7 @@ const H4_HEADER_SIZE: usize = 1;
 /// HAL interface
 /// This is used by the HCI module to send commands to the
 /// HAL and receive events from the HAL
-#[derive(Clone)]
+#[derive(Clone, Stoppable)]
 pub struct HalExports {
     /// Transmit end of a channel used to send HCI commands
     pub cmd_tx: mpsc::UnboundedSender<HciCommand>,
