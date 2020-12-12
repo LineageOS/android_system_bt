@@ -21,6 +21,7 @@
 
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/hcidefs.h"
 
 // This header contains functions for HCIF-Acl Management to invoke
 //
@@ -39,7 +40,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
                                       uint8_t hci_status);
 void btm_pm_proc_cmd_status(uint8_t status);
 void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
-                             uint8_t mode, uint16_t interval);
+                             tHCI_MODE mode, uint16_t interval);
 void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
 void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset);
 void btm_read_automatic_flush_timeout_complete(uint8_t* p);

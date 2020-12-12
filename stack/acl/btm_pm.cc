@@ -638,7 +638,9 @@ void btm_pm_proc_cmd_status(uint8_t status) {
  *
  ******************************************************************************/
 void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
-                             uint8_t mode, uint16_t interval) {
+                             tHCI_MODE hci_mode, uint16_t interval) {
+  tBTM_PM_STATUS mode = static_cast<tBTM_PM_STATUS>(hci_mode);
+
   tBTM_PM_MCB* p_cb = NULL;
   int xx, yy, zz;
   tBTM_PM_STATE old_state;
