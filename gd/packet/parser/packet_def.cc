@@ -760,6 +760,9 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
 
   // Generate struct fields
   GenRustStructFieldNameAndType(s);
+  if (!children_.empty()) {
+    s << "child: " << name_ << "DataChild,";
+  }
 
   // Generate size field
   auto fields = fields_.GetFieldsWithoutTypes({
@@ -785,6 +788,7 @@ bool PacketDef::GenRustStructFieldNameAndType(std::ostream& s) const {
       PaddingField::kFieldType,
       ReservedField::kFieldType,
       SizeField::kFieldType,
+      PayloadField::kFieldType,
   });
   if (fields.size() == 0) {
     return false;
@@ -803,6 +807,7 @@ void PacketDef::GenRustStructFieldNames(std::ostream& s) const {
       PaddingField::kFieldType,
       ReservedField::kFieldType,
       SizeField::kFieldType,
+      PayloadField::kFieldType,
   });
   for (int i = 0; i < fields.size(); i++) {
     s << fields[i]->GetName();
@@ -829,20 +834,21 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Data {";
   s << "pub fn new(";
   bool fields_exist = GenRustStructFieldNameAndType(s);
-  s << ") -> Self { Self {";
+  s << ") -> Self { unimplemented!();"; /* Self {";
   GenRustStructFieldNames(s);
   if (fields_exist) {
     GenRustStructSizeField(s);
   }
-  s << "}}";
+  s << "}*/
+  s << "}";
 
   // parse function
-  s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
+  s << "pub fn parse(bytes: &[u8]) -> Result<Self> { unimplemented!();";
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
   });
 
-  for (auto const& field : fields) {
+  /*for (auto const& field : fields) {
     auto start_field_offset = GetOffsetForField(field->GetName(), false);
     auto end_field_offset = GetOffsetForField(field->GetName(), true);
 
@@ -861,6 +867,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
       PaddingField::kFieldType,
       ReservedField::kFieldType,
       SizeField::kFieldType,
+      PayloadField::kFieldType,
   });
 
   if (fields_exist) {
@@ -871,7 +878,8 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     }
     GenRustStructSizeField(s);
   }
-  s << "})}\n";
+  s << "})}\n";*/
+  s << "}\n";
 
   // to_bytes function (only on root packet types)
   if (parent_ == nullptr) {
@@ -919,7 +927,13 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Packet {";
   if (!children_.empty()) {
-    s << " fn specialize(self) -> " << name_ << "Child { unimplemented!(); }";
+    s << " fn specialize(self) -> " << name_ << "Child {";
+    s << " match self.access_" << util::CamelCaseToUnderScore(name_) << "().child {";
+    for (const auto& child : children_) {
+      s << name_ << "DataChild::" << child->name_ << "(_) => " << name_ << "Child::" << child->name_ << "("
+        << child->name_ << "Packet::new(self.root)),";
+    }
+    s << "}}";
   }
   s << " fn new(root: Rc<" << GetRootDef()->name_ << "Data>) -> Self { unimplemented!(); }";
 
