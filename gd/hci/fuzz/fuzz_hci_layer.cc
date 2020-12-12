@@ -61,6 +61,10 @@ hci::LeScanningInterface* FuzzHciLayer::GetLeScanningInterface(
   return &le_scanning_interface_;
 }
 
+hci::LeIsoInterface* FuzzHciLayer::GetLeIsoInterface(ContextualCallback<void(hci::LeMetaEventView)> event_handler) {
+  return &le_iso_interface_;
+}
+
 void FuzzHciLayer::Start() {
   acl_dev_null_ = new os::fuzz::DevNullQueue<AclPacketBuilder>(acl_queue_.GetDownEnd(), GetHandler());
   acl_dev_null_->Start();
@@ -177,6 +181,10 @@ void FuzzHciLayer::injectLeAdvertisingEvent(std::vector<uint8_t> data) {
 
 void FuzzHciLayer::injectLeScanningEvent(std::vector<uint8_t> data) {
   InvokeIfValid<LeMetaEventView>(le_scanning_event_handler_, data);
+}
+
+void FuzzHciLayer::injectLeIsoEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_iso_event_handler_, data);
 }
 
 const ModuleFactory FuzzHciLayer::Factory = ModuleFactory([]() { return new FuzzHciLayer(); });

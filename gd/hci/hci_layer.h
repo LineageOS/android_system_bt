@@ -29,6 +29,7 @@
 #include "hci/hci_packets.h"
 #include "hci/le_acl_connection_interface.h"
 #include "hci/le_advertising_interface.h"
+#include "hci/le_iso_interface.h"
 #include "hci/le_scanning_interface.h"
 #include "hci/le_security_interface.h"
 #include "hci/security_interface.h"
@@ -81,6 +82,8 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
       common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
   virtual LeScanningInterface* GetLeScanningInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
+
+  virtual LeIsoInterface* GetLeIsoInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
   std::string ToString() const override {
     return "Hci Layer";
@@ -138,6 +141,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   CommandInterfaceImpl<LeSecurityCommandBuilder> le_security_interface{*this};
   CommandInterfaceImpl<LeAdvertisingCommandBuilder> le_advertising_interface{*this};
   CommandInterfaceImpl<LeScanningCommandBuilder> le_scanning_interface{*this};
+  CommandInterfaceImpl<LeIsoCommandBuilder> le_iso_interface{*this};
 };
 }  // namespace hci
 }  // namespace bluetooth
