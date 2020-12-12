@@ -156,13 +156,16 @@ int ScalarField::GetRustBitOffset(
 
 void ScalarField::GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   Size size = GetSize();
+
   int num_leading_bits = GetRustBitOffset(s, start_offset, end_offset, GetSize());
 
   s << "let " << GetName() << " = ";
-  s << GetRustDataType() << "::from_le_bytes(bytes[" << start_offset.bytes() << "..";
-  s << start_offset.bytes() + GetSize().bytes() << "].try_into().unwrap());";
-
-  if (num_leading_bits != 0) {
+  if (num_leading_bits == 0) {
+    s << GetRustDataType() << "::from_le_bytes(bytes[" << start_offset.bytes() << "..";
+    s << start_offset.bytes() + size.bytes() << "].try_into().unwrap());";
+  } else {
+    s << GetRustDataType() << "::from_le_bytes(bytes[" << start_offset.bytes() - 1 << "..";
+    s << start_offset.bytes() + size.bytes() - 1 << "].try_into().unwrap());";
     s << "let " << GetName() << " = " << GetName() << " >> " << num_leading_bits << ";";
   }
 
