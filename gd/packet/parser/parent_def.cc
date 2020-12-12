@@ -498,5 +498,6 @@ std::vector<const ParentDef*> ParentDef::GetAncestors() const {
     res.push_back(parent);
     parent = parent->parent_;
   }
+  std::reverse(res.begin(), res.end());
   return res;
 }

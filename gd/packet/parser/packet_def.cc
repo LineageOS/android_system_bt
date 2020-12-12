@@ -744,7 +744,7 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
   if (!children_.empty()) {
     s << "enum " << name_ << "DataChild {";
     for (const auto& child : children_) {
-      s << child->name_ << "(" << child->name_ << "Data),";
+      s << child->name_ << "(Rc<" << child->name_ << "Data>),";
     }
     s << "}\n";
     s << "pub enum " << name_ << "Child {";
@@ -777,7 +777,12 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
   s << "}\n";
 
   s << "pub struct " << name_ << "Packet {";
-  s << "root: Rc<" << GetRootDef()->name_ << "Data>,";
+  auto lineage = GetAncestors();
+  lineage.push_back(this);
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    s << util::CamelCaseToUnderScore(def->name_) << ": Rc<" << def->name_ << "Data>,";
+  }
   s << "}\n";
 }
 
@@ -926,24 +931,43 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 
 void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Packet {";
+  auto root = GetRootDef();
   if (!children_.empty()) {
     s << " fn specialize(self) -> " << name_ << "Child {";
-    s << " match self.access_" << util::CamelCaseToUnderScore(name_) << "().child {";
+    s << " match self." << util::CamelCaseToUnderScore(name_) << ".child {";
     for (const auto& child : children_) {
       s << name_ << "DataChild::" << child->name_ << "(_) => " << name_ << "Child::" << child->name_ << "("
-        << child->name_ << "Packet::new(self.root)),";
+        << child->name_ << "Packet::new(self." << util::CamelCaseToUnderScore(root->name_) << ")),";
     }
     s << "}}";
   }
-  s << " fn new(root: Rc<" << GetRootDef()->name_ << "Data>) -> Self { unimplemented!(); }";
-
   auto lineage = GetAncestors();
   lineage.push_back(this);
+  const ParentDef* prev = nullptr;
+
+  s << " fn new(root: Rc<" << root->name_ << "Data>) -> Self {";
   for (auto it = lineage.begin(); it != lineage.end(); it++) {
     auto def = *it;
     auto accessor_name = util::CamelCaseToUnderScore(def->name_);
-    s << " fn access_" << accessor_name << "(&self) -> &" << def->name_ << "Data { unimplemented!(); }";
+    if (prev == nullptr) {
+      s << "let " << accessor_name << " = root;";
+    } else {
+      s << "let " << accessor_name << " = match &" << util::CamelCaseToUnderScore(prev->name_) << ".child {";
+      s << prev->name_ << "DataChild::" << def->name_ << "(value) => (*value).clone(),";
+      s << "_ => panic!(\"inconsistent state - child was not " << def->name_ << "\"),";
+      s << "};";
+    }
+    prev = def;
+  }
+  s << "Self {";
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    s << util::CamelCaseToUnderScore(def->name_) << ",";
+  }
+  s << "}}";
 
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
     auto fields = def->fields_.GetFieldsWithoutTypes({
         BodyField::kFieldType,
         CountField::kFieldType,
@@ -955,7 +979,7 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
 
     for (auto const& field : fields) {
       s << "pub fn get_" << field->GetName() << "(&self) -> &" << field->GetRustDataType() << "{";
-      s << " &self.access_" << accessor_name << "()." << field->GetName();
+      s << " &self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
       s << "}\n";
     }
   }
@@ -967,7 +991,7 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
     auto def = *it;
     s << "impl Into<" << def->name_ << "Packet> for " << name_ << "Packet {";
     s << " fn into(self) -> " << def->name_ << "Packet {";
-    s << def->name_ << "Packet::new(self.root)";
+    s << def->name_ << "Packet::new(self." << util::CamelCaseToUnderScore(root->name_) << ")";
     s << " }";
     s << "}\n";
   }
