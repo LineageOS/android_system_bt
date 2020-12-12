@@ -2,6 +2,7 @@
 
 use gddi::{module, Registry, RegistryBuilder, Stoppable};
 use bt_hal::rootcanal_hal::RootcanalConfig;
+use bt_hal::snoop::{SnoopConfig, SnoopMode};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use bt_common::GrpcFacade;
@@ -35,6 +36,16 @@ impl Stack {
                 .inject(RootcanalConfig::new("127.0.0.1", port))
                 .await;
         }
+    }
+
+    /// Configures snoop. If the path is provided, full logging is turned on
+    pub async fn configure_snoop(&self, path: Option<String>) {
+        let mut config = SnoopConfig::default();
+        if let Some(path) = path {
+            config.set_path(path);
+            config.set_mode(SnoopMode::Full);
+        }
+        self.registry.inject(config).await;
     }
 
     /// Helper forwarding to underlying registry
