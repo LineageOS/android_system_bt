@@ -2037,14 +2037,19 @@ void DualModeController::LeSetPrivacyMode(CommandPacketView command) {
 }
 
 void DualModeController::LeReadIsoTxSync(CommandPacketView command) {
-  auto command_view = gd_hci::LeReadIsoTxSyncView::Create(std::move(command));
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
+  auto command_view =
+      gd_hci::LeReadIsoTxSyncView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeReadIsoTxSync(command_view.GetConnectionHandle());
 }
 
 void DualModeController::LeSetCigParameters(CommandPacketView command) {
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
   auto command_view =
-      gd_hci::LeSetCigParametersView::Create(std::move(command));
+      gd_hci::LeSetCigParametersView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeSetCigParameters(
       command_view.GetCigId(), command_view.GetSduIntervalMToS(),
@@ -2055,7 +2060,10 @@ void DualModeController::LeSetCigParameters(CommandPacketView command) {
 }
 
 void DualModeController::LeCreateCis(CommandPacketView command) {
-  auto command_view = gd_hci::LeCreateCisView::Create(std::move(command));
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
+  auto command_view =
+      gd_hci::LeCreateCisView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   ErrorCode status =
       link_layer_controller_.LeCreateCis(command_view.GetCisConfig());
@@ -2064,7 +2072,10 @@ void DualModeController::LeCreateCis(CommandPacketView command) {
 }
 
 void DualModeController::LeRemoveCig(CommandPacketView command) {
-  auto command_view = gd_hci::LeRemoveCigView::Create(std::move(command));
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
+  auto command_view =
+      gd_hci::LeRemoveCigView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   uint8_t cig = command_view.GetCigId();
   ErrorCode status = link_layer_controller_.LeRemoveCig(cig);
@@ -2073,8 +2084,10 @@ void DualModeController::LeRemoveCig(CommandPacketView command) {
 }
 
 void DualModeController::LeAcceptCisRequest(CommandPacketView command) {
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
   auto command_view =
-      gd_hci::LeAcceptCisRequestView::Create(std::move(command));
+      gd_hci::LeAcceptCisRequestView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   ErrorCode status = link_layer_controller_.LeAcceptCisRequest(
       command_view.GetConnectionHandle());
@@ -2083,15 +2096,20 @@ void DualModeController::LeAcceptCisRequest(CommandPacketView command) {
 }
 
 void DualModeController::LeRejectCisRequest(CommandPacketView command) {
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
   auto command_view =
-      gd_hci::LeRejectCisRequestView::Create(std::move(command));
+      gd_hci::LeRejectCisRequestView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeRejectCisRequest(command_view.GetConnectionHandle(),
                                             command_view.GetReason());
 }
 
 void DualModeController::LeCreateBig(CommandPacketView command) {
-  auto command_view = gd_hci::LeCreateBigView::Create(std::move(command));
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
+  auto command_view =
+      gd_hci::LeCreateBigView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   ErrorCode status = link_layer_controller_.LeCreateBig(
       command_view.GetBigHandle(), command_view.GetAdvertisingHandle(),
@@ -2105,7 +2123,10 @@ void DualModeController::LeCreateBig(CommandPacketView command) {
 }
 
 void DualModeController::LeTerminateBig(CommandPacketView command) {
-  auto command_view = gd_hci::LeTerminateBigView::Create(std::move(command));
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
+  auto command_view =
+      gd_hci::LeTerminateBigView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   ErrorCode status = link_layer_controller_.LeTerminateBig(
       command_view.GetBigHandle(), command_view.GetReason());
@@ -2114,7 +2135,10 @@ void DualModeController::LeTerminateBig(CommandPacketView command) {
 }
 
 void DualModeController::LeBigCreateSync(CommandPacketView command) {
-  auto command_view = gd_hci::LeBigCreateSyncView::Create(std::move(command));
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
+  auto command_view =
+      gd_hci::LeBigCreateSyncView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   ErrorCode status = link_layer_controller_.LeBigCreateSync(
       command_view.GetBigHandle(), command_view.GetSyncHandle(),
@@ -2126,8 +2150,10 @@ void DualModeController::LeBigCreateSync(CommandPacketView command) {
 }
 
 void DualModeController::LeBigTerminateSync(CommandPacketView command) {
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
   auto command_view =
-      gd_hci::LeBigTerminateSyncView::Create(std::move(command));
+      gd_hci::LeBigTerminateSyncView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeBigTerminateSync(command_view.GetBigHandle());
 }
@@ -2142,8 +2168,10 @@ void DualModeController::LeRequestPeerSca(CommandPacketView command) {
 }
 
 void DualModeController::LeSetupIsoDataPath(CommandPacketView command) {
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
   auto command_view =
-      gd_hci::LeSetupIsoDataPathView::Create(std::move(command));
+      gd_hci::LeSetupIsoDataPathView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeSetupIsoDataPath(
       command_view.GetConnectionHandle(), command_view.GetDataPathDirection(),
@@ -2152,8 +2180,10 @@ void DualModeController::LeSetupIsoDataPath(CommandPacketView command) {
 }
 
 void DualModeController::LeRemoveIsoDataPath(CommandPacketView command) {
+  auto iso_command_view = gd_hci::LeIsoCommandView::Create(command);
+  ASSERT(iso_command_view.IsValid());
   auto command_view =
-      gd_hci::LeRemoveIsoDataPathView::Create(std::move(command));
+      gd_hci::LeRemoveIsoDataPathView::Create(std::move(iso_command_view));
   ASSERT(command_view.IsValid());
   link_layer_controller_.LeRemoveIsoDataPath(
       command_view.GetConnectionHandle(), command_view.GetDataPathDirection());
