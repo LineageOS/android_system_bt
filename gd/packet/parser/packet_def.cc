@@ -912,6 +912,14 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     field->GenRustWriter(s, start_field_offset, end_field_offset);
   }
 
+  if (!children_.empty()) {
+    s << "match &self.child {";
+    for (const auto& child : children_) {
+      s << name_ << "DataChild::" << child->name_ << "(value) => value.write_to(buffer),";
+    }
+    s << "}";
+  }
+
   s << "}\n";
 
   if (fields_exist) {
