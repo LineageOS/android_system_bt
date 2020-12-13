@@ -52,8 +52,9 @@
 
 using bluetooth::Uuid;
 
-void BTIF_dm_enable();
 void BTIF_dm_disable();
+void BTIF_dm_enable();
+void btm_ble_adv_init(void);
 
 static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
                                   uint16_t eir_len);
