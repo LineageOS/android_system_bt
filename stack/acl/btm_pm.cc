@@ -61,7 +61,6 @@ StackAclBtmPm internal_;
 /*****************************************************************************/
 /*      to handle different modes                                            */
 /*****************************************************************************/
-#define BTM_PM_STORED_MASK 0x80 /* set this mask if the command is stored */
 #define BTM_PM_NUM_SET_MODES 3  /* only hold, sniff & park */
 
 #define BTM_PM_GET_MD1 1
