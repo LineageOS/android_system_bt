@@ -2,9 +2,10 @@
 
 /// HCI errors
 pub mod error;
-
 /// HCI layer facade service
 pub mod facade;
+/// HCI controller info
+pub mod controller;
 
 use bt_common::time::Alarm;
 use bt_hal::HalExports;
@@ -30,6 +31,7 @@ module! {
     hci_module,
     submodules {
         facade::facade_module,
+        controller::controller_module,
     },
     providers {
         HciExports => provide_hci,
