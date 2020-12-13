@@ -76,7 +76,7 @@ class AvrcpMessageConverter {
         for (int i = 2; i >= 0; i--) {
           data.push_back((uint8_t)((msg->company_id >> i * 8) & 0xff));
         }
-        for (uint8_t i = 0; i < msg->vendor_len; i++) {
+        for (int i = 0; i < msg->vendor_len; i++) {
           data.push_back(msg->p_vendor_data[i]);
         }
       } break;

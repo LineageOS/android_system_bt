@@ -629,6 +629,7 @@ packet LeAdvertisingCommand : CommandPacket { _payload_, }
 packet LeScanningCommand : CommandPacket { _payload_, }
 packet LeConnectionManagementCommand : AclCommand { _payload_, }
 packet LeSecurityCommand : CommandPacket { _payload_, }
+packet LeIsoCommand : CommandPacket { _payload_, }
 packet VendorCommand : CommandPacket { _payload_, }
 
 // HCI Event Packets
@@ -3375,7 +3376,7 @@ packet LeReadBufferSizeV2Complete : CommandComplete (command_op_code = LE_READ_B
   iso_buffer_size : LeBufferSize,
 }
 
-packet LeReadIsoTxSync : CommandPacket (op_code = LE_READ_ISO_TX_SYNC) {
+packet LeReadIsoTxSync : LeIsoCommand (op_code = LE_READ_ISO_TX_SYNC) {
   connection_handle : 12,
   _reserved_ : 4,
 }
@@ -3424,7 +3425,7 @@ enum ClockAccuracy : 8 {
   PPM_20 = 0x07,
 }
 
-packet LeSetCigParameters : CommandPacket (op_code = LE_SET_CIG_PARAMETERS) {
+packet LeSetCigParameters : LeIsoCommand (op_code = LE_SET_CIG_PARAMETERS) {
   cig_id : 8,
   sdu_interval_m_to_s : 24,
   sdu_interval_s_to_m : 24,
@@ -3451,7 +3452,7 @@ struct CreateCisConfig {
   _reserved_ : 4,
 }
 
-packet LeCreateCis : CommandPacket (op_code = LE_CREATE_CIS) {
+packet LeCreateCis : LeIsoCommand (op_code = LE_CREATE_CIS) {
   _count_(cis_config) : 8,
   cis_config : CreateCisConfig[],
 }
@@ -3459,7 +3460,7 @@ packet LeCreateCis : CommandPacket (op_code = LE_CREATE_CIS) {
 packet LeCreateCisStatus : CommandStatus (command_op_code = LE_CREATE_CIS) {
 }
 
-packet LeRemoveCig : CommandPacket (op_code = LE_REMOVE_CIG) {
+packet LeRemoveCig : LeIsoCommand (op_code = LE_REMOVE_CIG) {
   cig_id : 8,
 }
 
@@ -3468,7 +3469,7 @@ packet LeRemoveCigComplete : CommandComplete (command_op_code = LE_REMOVE_CIG) {
   cig_id : 8,
 }
 
-packet LeAcceptCisRequest : CommandPacket (op_code = LE_ACCEPT_CIS_REQUEST) {
+packet LeAcceptCisRequest : LeIsoCommand (op_code = LE_ACCEPT_CIS_REQUEST) {
   connection_handle : 12,
   _reserved_ : 4,
 }
@@ -3476,7 +3477,7 @@ packet LeAcceptCisRequest : CommandPacket (op_code = LE_ACCEPT_CIS_REQUEST) {
 packet LeAcceptCisRequestStatus : CommandStatus (command_op_code = LE_ACCEPT_CIS_REQUEST) {
 }
 
-packet LeRejectCisRequest : CommandPacket (op_code = LE_REJECT_CIS_REQUEST) {
+packet LeRejectCisRequest : LeIsoCommand (op_code = LE_REJECT_CIS_REQUEST) {
   connection_handle : 12,
   _reserved_ : 4,
   reason : ErrorCode,
@@ -3488,7 +3489,7 @@ packet LeRejectCisRequestComplete : CommandComplete (command_op_code = LE_REJECT
   _reserved_ : 4,
 }
 
-packet LeCreateBig : CommandPacket (op_code = LE_CREATE_BIG) {
+packet LeCreateBig : LeIsoCommand (op_code = LE_CREATE_BIG) {
   big_handle : 8,
   advertising_handle : 8,
   num_bis : 8,
@@ -3507,7 +3508,7 @@ packet LeCreateBig : CommandPacket (op_code = LE_CREATE_BIG) {
 packet LeCreateBigStatus : CommandStatus (command_op_code = LE_CREATE_BIG) {
 }
 
-packet LeTerminateBig : CommandPacket (op_code = LE_TERMINATE_BIG) {
+packet LeTerminateBig : LeIsoCommand (op_code = LE_TERMINATE_BIG) {
   big_handle : 8,
   reason : ErrorCode,
 }
@@ -3515,7 +3516,7 @@ packet LeTerminateBig : CommandPacket (op_code = LE_TERMINATE_BIG) {
 packet LeTerminateBigStatus : CommandStatus (command_op_code = LE_TERMINATE_BIG) {
 }
 
-packet LeBigCreateSync : CommandPacket (op_code = LE_BIG_CREATE_SYNC) {
+packet LeBigCreateSync : LeIsoCommand (op_code = LE_BIG_CREATE_SYNC) {
   big_handle : 8,
   sync_handle : 12,
   _reserved_ : 4,
@@ -3531,7 +3532,7 @@ packet LeBigCreateSync : CommandPacket (op_code = LE_BIG_CREATE_SYNC) {
 packet LeBigCreateSyncStatus : CommandStatus (command_op_code = LE_BIG_CREATE_SYNC) {
 }
 
-packet LeBigTerminateSync : CommandPacket (op_code = LE_BIG_TERMINATE_SYNC) {
+packet LeBigTerminateSync : LeIsoCommand (op_code = LE_BIG_TERMINATE_SYNC) {
   big_handle : 8,
 }
 
@@ -3548,7 +3549,7 @@ packet LeRequestPeerSca : CommandPacket (op_code = LE_REQUEST_PEER_SCA) {
 packet LeRequestPeerScaStatus : CommandStatus (command_op_code = LE_REQUEST_PEER_SCA) {
 }
 
-packet LeSetupIsoDataPath : CommandPacket (op_code = LE_SETUP_ISO_DATA_PATH) {
+packet LeSetupIsoDataPath : LeIsoCommand (op_code = LE_SETUP_ISO_DATA_PATH) {
   connection_handle : 12,
   _reserved_ : 4,
   data_path_direction : DataPathDirection,
@@ -3565,7 +3566,7 @@ packet LeSetupIsoDataPathComplete : CommandComplete (command_op_code = LE_SETUP_
   _reserved_ : 4,
 }
 
-packet LeRemoveIsoDataPath : CommandPacket (op_code = LE_REMOVE_ISO_DATA_PATH) {
+packet LeRemoveIsoDataPath : LeIsoCommand (op_code = LE_REMOVE_ISO_DATA_PATH) {
   connection_handle : 12,
   _reserved_ : 4,
   data_path_direction : DataPathDirection,
@@ -3586,7 +3587,7 @@ packet LeSetHostFeatureComplete : CommandComplete (command_op_code = LE_SET_HOST
   status : ErrorCode,
 }
 
-packet LeReadIsoLinkQuality : CommandPacket (op_code = LE_READ_ISO_LINK_QUALITY) {
+packet LeReadIsoLinkQuality : LeIsoCommand (op_code = LE_READ_ISO_LINK_QUALITY) {
   connection_handle : 12,
   _reserved_ : 4,
 }

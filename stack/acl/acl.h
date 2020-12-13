@@ -250,7 +250,7 @@ typedef struct {
                                    const RawAddress& bd_addr, uint8_t new_role);
   friend void btm_pm_proc_cmd_status(uint8_t status);
   friend void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
-                                      uint8_t mode, uint16_t interval);
+                                      tHCI_MODE mode, uint16_t interval);
   friend void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
   friend void btm_pm_reset(void);
   friend void btm_pm_sm_alloc(uint8_t ind);

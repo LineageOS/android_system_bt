@@ -12,12 +12,12 @@ use futures::channel::mpsc;
 use futures::executor::block_on;
 use futures::stream::StreamExt;
 use grpcio::*;
+use log::debug;
 use nix::sys::signal;
 use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr};
 use std::sync::{Arc, Mutex};
 use tokio::net::TcpStream;
 use tokio::runtime::Runtime;
-use log::debug;
 
 fn main() {
     let sigint = install_sigint();
@@ -64,10 +64,14 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
     let grpc_port = value_t!(matches, "grpc-port", u16).unwrap();
     let signal_port = value_t!(matches, "signal-port", u16).unwrap();
     let rootcanal_port = value_t!(matches, "rootcanal-port", u16).ok();
-
     let env = Arc::new(Environment::new(2));
     let mut server = ServerBuilder::new(env)
-        .register_service(RootFacadeService::create(rt, grpc_port, rootcanal_port))
+        .register_service(RootFacadeService::create(
+            rt,
+            grpc_port,
+            rootcanal_port,
+            matches.value_of("btsnoop").map(String::from),
+        ))
         .bind("0.0.0.0", root_server_port)
         .build()
         .unwrap();

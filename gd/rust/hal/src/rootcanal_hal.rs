@@ -2,7 +2,8 @@
 //! This connects to "rootcanal" which provides a simulated
 //! Bluetooth chip as well as a simulated environment.
 
-use crate::{Hal, HalExports, Result, H4_HEADER_SIZE};
+use crate::internal::Hal;
+use crate::{HalExports, Result, H4_HEADER_SIZE};
 use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType, RawPacket};
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, provides, Stoppable};
@@ -13,7 +14,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt, BufReader};
 use tokio::net::TcpStream;
 use tokio::runtime::Runtime;
 use tokio::select;
-use tokio::sync::mpsc;
+use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 
 module! {
     rootcanal_hal_module,
@@ -59,8 +60,8 @@ impl RootcanalConfig {
 
 /// Send HCI events received from the HAL to the HCI layer
 async fn dispatch_incoming<R>(
-    evt_tx: mpsc::UnboundedSender<HciEvent>,
-    acl_tx: mpsc::UnboundedSender<RawPacket>,
+    evt_tx: UnboundedSender<HciEvent>,
+    acl_tx: UnboundedSender<RawPacket>,
     reader: R,
 ) -> Result<()>
 where
@@ -95,8 +96,8 @@ where
 
 /// Send commands received from the HCI later to rootcanal
 async fn dispatch_outgoing<W>(
-    mut cmd_rx: mpsc::UnboundedReceiver<HciCommand>,
-    mut acl_rx: mpsc::UnboundedReceiver<RawPacket>,
+    mut cmd_rx: UnboundedReceiver<HciCommand>,
+    mut acl_rx: UnboundedReceiver<RawPacket>,
     mut writer: W,
 ) -> Result<()>
 where
