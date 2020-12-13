@@ -770,8 +770,9 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
       current_ssr_index = p_bta_dm_pm_spec[config.spec_idx].ssr;
       if ((config.id == service.id) && ((config.app_id == BTA_ALL_APP_ID) ||
                                         (config.app_id == service.app_id))) {
-        APPL_TRACE_WARNING("%s: conn_srvc id:%d, app_id:%d", __func__,
-                           service.id, service.app_id);
+        LOG_INFO("Found connected service:%s app_id:%d peer:%s",
+                 BtaIdSysText(service.id).c_str(), service.app_id,
+                 PRIVATE_ADDRESS(peer_addr));
         break;
       }
     }
@@ -794,20 +795,27 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
     }
   }
 
-  APPL_TRACE_WARNING("%s ssr:%d, lat:%d", __func__, ssr_index, p_spec->max_lat);
-
   if (p_spec->max_lat) {
+    LOG_DEBUG(
+        "Max latency is non zero max_lat:0x%04x min_loc_to:0x%04x "
+        "min_rmt_to:0x%04x",
+        p_spec->max_lat, p_spec->min_loc_to, p_spec->min_rmt_to);
     /* Avoid SSR reset on device which has SCO connected */
     if (bta_dm_pm_is_sco_active()) {
       int idx = bta_dm_get_sco_index();
       if (idx != -1) {
         if (bta_dm_conn_srvcs.conn_srvc[idx].peer_bdaddr == peer_addr) {
-          APPL_TRACE_WARNING("%s SCO is active on device, ignore SSR",
-                             __func__);
+          LOG_WARN("SCO is active on device, ignore SSR");
           return;
         }
       }
     }
+
+    LOG_DEBUG(
+        "Setting sniff subrating for device:%s max_lat:0x%04x "
+        "min_loc_to:0x%04x min_rmt_to:0x%04x",
+        PRIVATE_ADDRESS(peer_addr), p_spec->max_lat, p_spec->min_loc_to,
+        p_spec->min_rmt_to);
 
     /* set the SSR parameters. */
     BTM_SetSsrParams(peer_addr, p_spec->max_lat, p_spec->min_rmt_to,
@@ -1016,8 +1024,6 @@ static bool bta_dm_pm_is_sco_active() {
       break;
     }
   }
-
-  APPL_TRACE_DEBUG("bta_dm_is_sco_active: SCO active: %d", bScoActive);
   return bScoActive;
 }
 
