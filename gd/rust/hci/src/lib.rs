@@ -104,21 +104,43 @@ impl HciExports {
     }
 
     /// Indicate interest in specific HCI events
-    pub async fn register_event_handler(
-        &mut self,
-        evt_code: EventCode,
-        sender: Sender<EventPacket>,
-    ) {
-        self.evt_handlers.lock().await.insert(evt_code, sender);
+    pub async fn register_event_handler(&mut self, code: EventCode, sender: Sender<EventPacket>) {
+        assert!(
+            self.evt_handlers
+                .lock()
+                .await
+                .insert(code, sender)
+                .is_none(),
+            "A handler for {:?} is already registered",
+            code
+        );
+    }
+
+    /// Remove interest in specific HCI events
+    pub async fn unregister_event_handler(&mut self, code: EventCode) {
+        self.evt_handlers.lock().await.remove(&code);
     }
 
     /// Indicate interest in specific LE events
     pub async fn register_le_event_handler(
         &mut self,
-        evt_code: SubeventCode,
+        code: SubeventCode,
         sender: Sender<LeMetaEventPacket>,
     ) {
-        self.le_evt_handlers.lock().await.insert(evt_code, sender);
+        assert!(
+            self.le_evt_handlers
+                .lock()
+                .await
+                .insert(code, sender)
+                .is_none(),
+            "A handler for {:?} is already registered",
+            code
+        );
+    }
+
+    /// Remove interest in specific LE events
+    pub async fn unregister_le_event_handler(&mut self, code: SubeventCode) {
+        self.le_evt_handlers.lock().await.remove(&code);
     }
 }
 
