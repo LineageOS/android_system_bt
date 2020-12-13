@@ -68,6 +68,8 @@ StackAclBtmPm internal_;
 #define BTM_PM_GET_COMP 3
 
 uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
+uint16_t acl_address_to_handle(const RawAddress& bd_addr,
+                               tBT_TRANSPORT transport);
 
 const uint8_t
     btm_pm_md_comp_matrix[BTM_PM_NUM_SET_MODES * BTM_PM_NUM_SET_MODES] = {
