@@ -60,7 +60,7 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     };
 
     match exports
-        .enqueue_command_with_complete(ResetBuilder {}.build().into())
+        .enqueue_command_with_complete(ResetBuilder {}.build())
         .await
         .specialize()
     {
@@ -108,11 +108,11 @@ impl HciExports {
 
     /// Enqueue an HCI command expecting a command complete
     /// response from the controller
-    pub async fn enqueue_command_with_complete(
+    pub async fn enqueue_command_with_complete<T: Into<CommandPacket>>(
         &mut self,
-        cmd: CommandPacket,
+        cmd: T,
     ) -> CommandCompletePacket {
-        match self.send(cmd).await.unwrap().specialize() {
+        match self.send(cmd.into()).await.unwrap().specialize() {
             CommandComplete(evt) => evt,
             _ => panic!("Expected command complete, got status instead"),
         }
@@ -120,8 +120,8 @@ impl HciExports {
 
     /// Enqueue an HCI command expecting a status response
     /// from the controller
-    pub async fn enqueue_command_with_status(&mut self, cmd: CommandPacket) -> CommandStatusPacket {
-        match self.send(cmd).await.unwrap().specialize() {
+    pub async fn enqueue_command_with_status<T: Into<CommandPacket>>(&mut self, cmd: T) -> CommandStatusPacket {
+        match self.send(cmd.into()).await.unwrap().specialize() {
             CommandStatus(evt) => evt,
             _ => panic!("Expected command status, got complete instead"),
         }
