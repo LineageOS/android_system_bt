@@ -110,22 +110,24 @@ async fn dispatch(
     cmd_tx: Sender<CommandPacket>,
     mut cmd_rx: Receiver<Command>,
 ) {
-    let mut pending_cmds: Vec<PendingCommand> = Vec::new();
+    let mut pending_cmd: Option<PendingCommand> = None;
     loop {
         select! {
             Some(evt) = consume(&evt_rx) => {
                 match evt.specialize() {
                     CommandStatus(evt) => {
                         let opcode = *evt.get_command_op_code();
-                        if let Some(pending_cmd) = remove_first(&mut pending_cmds, |entry| entry.opcode == opcode) {
-                            pending_cmd.fut.send(evt.into()).unwrap();
-                        }
+                        assert!(pending_cmd.is_some(), "Unexpected status event with opcode {:?}", opcode);
+                        let pending = pending_cmd.take().unwrap();
+                        assert!(pending.opcode == opcode, "Waiting for {:?}, got {:?}", pending.opcode, opcode);
+                        pending.fut.send(evt.into()).unwrap();
                     },
                     CommandComplete(evt) => {
                         let opcode = *evt.get_command_op_code();
-                        if let Some(pending_cmd) = remove_first(&mut pending_cmds, |entry| entry.opcode == opcode) {
-                            pending_cmd.fut.send(evt.into()).unwrap();
-                        }
+                        assert!(pending_cmd.is_some(), "Unexpected complete event with opcode {:?}", opcode);
+                        let pending = pending_cmd.take().unwrap();
+                        assert!(pending.opcode == opcode, "Waiting for {:?}, got {:?}", pending.opcode, opcode);
+                        pending.fut.send(evt.into()).unwrap();
                     },
                     _ => {
                         if let Some(sender) = evt_handlers.lock().await.get(evt.get_event_code()) {
@@ -134,8 +136,8 @@ async fn dispatch(
                     },
                 }
             },
-            Some(cmd) = cmd_rx.recv() => {
-                pending_cmds.push(PendingCommand {
+            Some(cmd) = cmd_rx.recv(), if pending_cmd.is_none() => {
+                pending_cmd = Some(PendingCommand {
                     opcode: *cmd.cmd.get_op_code(),
                     fut: cmd.fut,
                 });
@@ -148,15 +150,4 @@ async fn dispatch(
 
 async fn consume(evt_rx: &Arc<Mutex<Receiver<EventPacket>>>) -> Option<EventPacket> {
     evt_rx.lock().await.recv().await
-}
-
-fn remove_first<T, P>(vec: &mut Vec<T>, predicate: P) -> Option<T>
-where
-    P: FnMut(&T) -> bool,
-{
-    if let Some(i) = vec.iter().position(predicate) {
-        Some(vec.remove(i))
-    } else {
-        None
-    }
 }
