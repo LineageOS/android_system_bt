@@ -2,8 +2,8 @@
 //! This connects to "rootcanal" which provides a simulated
 //! Bluetooth chip as well as a simulated environment.
 
-use crate::internal::Hal;
-use crate::{HalExports, Result, H4_HEADER_SIZE};
+use crate::internal::{Hal, RawHalExports};
+use crate::{Result, H4_HEADER_SIZE};
 use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType, RawPacket};
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, provides, Stoppable};
@@ -19,12 +19,12 @@ use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 module! {
     rootcanal_hal_module,
     providers {
-        HalExports => provide_rootcanal_hal,
+        RawHalExports => provide_rootcanal_hal,
     }
 }
 
 #[provides]
-async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> HalExports {
+async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> RawHalExports {
     let (hal_exports, hal) = Hal::new();
     let (reader, writer) = TcpStream::connect(&config.to_socket_addr().unwrap())
         .await
