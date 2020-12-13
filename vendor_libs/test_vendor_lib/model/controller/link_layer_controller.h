@@ -43,7 +43,7 @@ class LinkLayerController {
       const Address& remote);
   ErrorCode SendCommandToRemoteByHandle(
       OpCode opcode, bluetooth::packet::PacketView<true> args, uint16_t handle);
-  ErrorCode SendScoToRemote(bluetooth::hci::ScoPacketView sco_packet);
+  ErrorCode SendScoToRemote(bluetooth::hci::ScoView sco_packet);
   ErrorCode SendAclToRemote(bluetooth::hci::AclView acl_packet);
 
   void StartSimplePairing(const Address& address);
@@ -326,7 +326,7 @@ class LinkLayerController {
   void ReadLocalOobData();
   void ReadLocalOobExtendedData();
 
-  void HandleIso(bluetooth::hci::IsoPacketView iso);
+  void HandleIso(bluetooth::hci::IsoView iso);
 
  protected:
   void SendLeLinkLayerPacket(

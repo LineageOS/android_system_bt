@@ -65,7 +65,7 @@ enum PacketStatusFlag : 2 {
   PARTIALLY_LOST = 3,
 }
 
-packet ScoPacket {
+packet Sco {
   handle : 12,
   packet_status_flag : PacketStatusFlag,
   _reserved_ : 2, // BroadcastFlag
@@ -4744,7 +4744,7 @@ enum TimeStampFlag : 1 {
   PRESENT = 1,
 }
 
-packet IsoPacket {
+packet Iso {
   connection_handle : 12,
   pb_flag : IsoPacketBoundaryFlag,
   ts_flag : TimeStampFlag,
@@ -4760,7 +4760,7 @@ enum IsoPacketStatusFlag : 2 {
   LOST_DATA = 2,
 }
 
-packet IsoPacketWithTimestamp : IsoPacket (ts_flag = PRESENT) {
+packet IsoWithTimestamp : Iso (ts_flag = PRESENT) {
   time_stamp : 32,
   packet_sequence_number : 16,
   _size_(_payload_) : 12, // iso_sdu_length
@@ -4769,7 +4769,7 @@ packet IsoPacketWithTimestamp : IsoPacket (ts_flag = PRESENT) {
   _payload_,
 }
 
-packet IsoPacketWithoutTimestamp : IsoPacket (ts_flag = NOT_PRESENT) {
+packet IsoWithoutTimestamp : Iso (ts_flag = NOT_PRESENT) {
   packet_sequence_number : 16,
   _size_(_payload_) : 12, // iso_sdu_length
   _reserved_ : 2,

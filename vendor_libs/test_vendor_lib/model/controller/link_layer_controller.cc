@@ -834,10 +834,10 @@ void LinkLayerController::IncomingIsoPacket(LinkLayerPacketView incoming) {
     return;
   }
   LOG_INFO("ISO packet scheduling is not implemented");
-  // send_iso_(bluetooth::hci::IsoPacketWithTimestampBuilder::Create())
+  // send_iso_(bluetooth::hci::IsoWithTimestampBuilder::Create())
 }
 
-void LinkLayerController::HandleIso(bluetooth::hci::IsoPacketView iso) {
+void LinkLayerController::HandleIso(bluetooth::hci::IsoView iso) {
   auto cis_handle = iso.GetConnectionHandle();
   if (!connections_.HasCisHandle(cis_handle)) {
     LOG_INFO("Dropping ISO packet to unknown handle 0x%hx", cis_handle);
@@ -878,7 +878,7 @@ void LinkLayerController::HandleIso(bluetooth::hci::IsoPacketView iso) {
     payload->AddOctets1(it);
   }
   if (start_flag == model::packets::StartContinuation::START) {
-    auto timestamped = bluetooth::hci::IsoPacketWithTimestampView::Create(iso);
+    auto timestamped = bluetooth::hci::IsoWithTimestampView::Create(iso);
     ASSERT(timestamped.IsValid());
     uint32_t timestamp = timestamped.GetTimeStamp();
     SendLeLinkLayerPacket(model::packets::IsoStartBuilder::Create(

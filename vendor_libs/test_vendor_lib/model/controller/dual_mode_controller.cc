@@ -334,7 +334,7 @@ void DualModeController::HandleAcl(std::shared_ptr<std::vector<uint8_t>> packet)
 
 void DualModeController::HandleSco(std::shared_ptr<std::vector<uint8_t>> packet) {
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
-  auto sco_packet = bluetooth::hci::ScoPacketView::Create(raw_packet);
+  auto sco_packet = bluetooth::hci::ScoView::Create(raw_packet);
   if (loopback_mode_ == LoopbackMode::ENABLE_LOCAL) {
     uint16_t handle = sco_packet.GetHandle();
     send_sco_(packet);
@@ -352,7 +352,7 @@ void DualModeController::HandleSco(std::shared_ptr<std::vector<uint8_t>> packet)
 void DualModeController::HandleIso(
     std::shared_ptr<std::vector<uint8_t>> packet) {
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
-  auto iso = bluetooth::hci::IsoPacketView::Create(raw_packet);
+  auto iso = bluetooth::hci::IsoView::Create(raw_packet);
   link_layer_controller_.HandleIso(iso);
 }
 
