@@ -80,6 +80,15 @@ const uint8_t
         BTM_PM_GET_MD1,  BTM_PM_GET_MD2,  BTM_PM_GET_COMP};
 
 static const char* mode_to_string(const tBTM_PM_MODE mode);
+static void send_sniff_subrating(const tACL_CONN& p_acl, uint16_t max_lat,
+                                 uint16_t min_rmt_to, uint16_t min_loc_to) {
+  btsnd_hcic_sniff_sub_rate(p_acl.hci_handle, max_lat, min_rmt_to, min_loc_to);
+  btm_cb.history_->Push(
+      "%-32s: %s max_latency:%.2f peer_timeout:%.2f local_timeout:%.2f",
+      "Sniff subrating (seconds)", PRIVATE_ADDRESS(p_acl.remote_addr),
+      ticks_to_seconds(max_lat), ticks_to_seconds(min_rmt_to),
+      ticks_to_seconds(min_loc_to));
+}
 
 /*****************************************************************************/
 /*                     P U B L I C  F U N C T I O N S                        */
@@ -291,8 +300,7 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
   }
 
   if (p_cb->state == BTM_PM_ST_ACTIVE || p_cb->state == BTM_PM_ST_SNIFF) {
-    btsnd_hcic_sniff_sub_rate(p_acl->hci_handle, max_lat, min_rmt_to,
-                              min_loc_to);
+    send_sniff_subrating(*p_acl, max_lat, min_rmt_to, min_loc_to);
     return BTM_SUCCESS;
   }
   LOG_INFO("pm_mode_db state: %d", btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
@@ -502,9 +510,8 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   if (p_cb->chg_ind) /* needs to wake first */
     md_res.mode = BTM_PM_MD_ACTIVE;
   else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
-    btsnd_hcic_sniff_sub_rate(btm_cb.acl_cb_.acl_db[link_ind].hci_handle,
-                              p_cb->max_lat, p_cb->min_rmt_to,
-                              p_cb->min_loc_to);
+    send_sniff_subrating(btm_cb.acl_cb_.acl_db[link_ind], p_cb->max_lat,
+                         p_cb->min_rmt_to, p_cb->min_loc_to);
     p_cb->max_lat = 0;
   }
   /* Default is failure */
