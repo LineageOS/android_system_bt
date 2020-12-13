@@ -29,6 +29,8 @@
 #include "bta/include/utl.h"
 #include "bta/sys/bta_sys.h"
 #include "bta/sys/bta_sys_int.h"
+#include "main/shim/dumpsys.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 
 /*******************************************************************************
@@ -85,8 +87,9 @@ void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback) {
  ******************************************************************************/
 void bta_sys_notify_role_chg(const RawAddress& peer_addr, uint8_t new_role,
                              uint8_t hci_status) {
-  APPL_TRACE_DEBUG("%s: peer %s new_role:%d hci_status:0x%x", __func__,
-                   peer_addr.ToString().c_str(), new_role, hci_status);
+  LOG_DEBUG("Role changed peer:%s new_role:%s hci_status:%s",
+            PRIVATE_ADDRESS(peer_addr), RoleText(new_role).c_str(),
+            hci_error_code_text(hci_status).c_str());
   if (bta_sys_cb.p_role_cb) {
     bta_sys_cb.p_role_cb(BTA_SYS_ROLE_CHANGE, new_role, hci_status, peer_addr);
   }
