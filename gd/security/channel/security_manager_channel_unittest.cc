@@ -278,7 +278,7 @@ TEST_F(SecurityManagerChannelTest, send_io_cap_request_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -294,7 +294,7 @@ TEST_F(SecurityManagerChannelTest, send_io_cap_request_neg_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -327,7 +327,7 @@ TEST_F(SecurityManagerChannelTest, send_pin_code_request_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -342,7 +342,7 @@ TEST_F(SecurityManagerChannelTest, send_pin_code_request_neg_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -371,7 +371,7 @@ TEST_F(SecurityManagerChannelTest, send_user_confirmation_request_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -386,7 +386,7 @@ TEST_F(SecurityManagerChannelTest, send_user_confirmation_request_negative_reply
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -409,7 +409,7 @@ TEST_F(SecurityManagerChannelTest, send_remote_oob_data_request_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -424,7 +424,7 @@ TEST_F(SecurityManagerChannelTest, send_remote_oob_data_request_neg_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -439,7 +439,7 @@ TEST_F(SecurityManagerChannelTest, send_read_local_oob_data) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -454,7 +454,7 @@ TEST_F(SecurityManagerChannelTest, send_read_local_oob_extended_data) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -507,7 +507,7 @@ TEST_F(SecurityManagerChannelTest, send_link_key_request_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -522,7 +522,7 @@ TEST_F(SecurityManagerChannelTest, send_link_key_request_neg_reply) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -537,7 +537,7 @@ TEST_F(SecurityManagerChannelTest, send_read_stored_link_key) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -553,7 +553,7 @@ TEST_F(SecurityManagerChannelTest, send_write_stored_link_key) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -569,7 +569,7 @@ TEST_F(SecurityManagerChannelTest, send_delete_stored_link_key) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -601,7 +601,7 @@ TEST_F(SecurityManagerChannelTest, send_refresh_encryption_key) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -617,7 +617,7 @@ TEST_F(SecurityManagerChannelTest, send_read_encryption_key_size) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -638,7 +638,7 @@ TEST_F(SecurityManagerChannelTest, send_read_simple_pairing_mode) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -653,7 +653,7 @@ TEST_F(SecurityManagerChannelTest, send_write_simple_pairing_mode) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());
@@ -676,7 +676,7 @@ TEST_F(SecurityManagerChannelTest, send_keypress_notification) {
   channel_->SendCommand(std::move(packet));
   auto last_command = std::move(hci_layer_->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  hci::CommandPacketView packet_view = hci::CommandPacketView::Create(command_packet);
+  hci::CommandView packet_view = hci::CommandView::Create(command_packet);
 
   // Assert
   ASSERT_TRUE(packet_view.IsValid());

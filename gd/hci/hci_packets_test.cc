@@ -233,7 +233,7 @@ TEST(HciPacketsTest, testWriteExtendedInquiryResponse) {
       std::make_shared<std::vector<uint8_t>>(pixel_3_xl_write_extended_inquiry_response);
 
   PacketView<kLittleEndian> packet_bytes_view(view_bytes);
-  auto view = WriteExtendedInquiryResponseView::Create(CommandPacketView::Create(packet_bytes_view));
+  auto view = WriteExtendedInquiryResponseView::Create(CommandView::Create(packet_bytes_view));
   ASSERT_TRUE(view.IsValid());
   auto gap_data = view.GetExtendedInquiryResponse();
   ASSERT_GE(gap_data.size(), 4);
@@ -268,8 +268,7 @@ std::vector<uint8_t> le_set_scan_parameters{
 };
 TEST(HciPacketsTest, testLeSetScanParameters) {
   PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_scan_parameters));
-  auto view =
-      LeSetScanParametersView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  auto view = LeSetScanParametersView::Create(LeScanningCommandView::Create(CommandView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(LeScanType::ACTIVE, view.GetLeScanType());
@@ -286,7 +285,7 @@ std::vector<uint8_t> le_set_scan_enable{
 };
 TEST(HciPacketsTest, testLeSetScanEnable) {
   PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_scan_enable));
-  auto view = LeSetScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  auto view = LeSetScanEnableView::Create(LeScanningCommandView::Create(CommandView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(Enable::ENABLED, view.GetLeScanEnable());
@@ -302,8 +301,7 @@ std::vector<uint8_t> le_get_vendor_capabilities{
 };
 TEST(HciPacketsTest, testLeGetVendorCapabilities) {
   PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_get_vendor_capabilities));
-  auto view =
-      LeGetVendorCapabilitiesView::Create(VendorCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  auto view = LeGetVendorCapabilitiesView::Create(VendorCommandView::Create(CommandView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
 }
@@ -338,8 +336,8 @@ std::vector<uint8_t> le_set_extended_scan_parameters{
 
 TEST(HciPacketsTest, testLeSetExtendedScanParameters) {
   PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_parameters));
-  auto view = LeSetExtendedScanParametersView::Create(
-      LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  auto view =
+      LeSetExtendedScanParametersView::Create(LeScanningCommandView::Create(CommandView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetScanningPhys());
@@ -357,8 +355,8 @@ std::vector<uint8_t> le_set_extended_scan_parameters_6553{
 TEST(HciPacketsTest, testLeSetExtendedScanParameters_6553) {
   PacketView<kLittleEndian> packet_bytes_view(
       std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_parameters_6553));
-  auto view = LeSetExtendedScanParametersView::Create(
-      LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  auto view =
+      LeSetExtendedScanParametersView::Create(LeScanningCommandView::Create(CommandView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetScanningPhys());
@@ -384,7 +382,7 @@ std::vector<uint8_t> le_set_extended_scan_enable{
 TEST(HciPacketsTest, testLeSetExtendedScanEnable) {
   PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_enable));
   auto view =
-      LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(FilterDuplicates::DISABLED, view.GetFilterDuplicates());
@@ -401,7 +399,7 @@ TEST(HciPacketsTest, testLeSetExtendedScanEnableDisable) {
   PacketView<kLittleEndian> packet_bytes_view(
       std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_enable_disable));
   auto view =
-      LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(FilterDuplicates::ENABLED, view.GetFilterDuplicates());
@@ -429,7 +427,7 @@ TEST(HciPacketsTest, testLeExtendedCreateConnection) {
       std::make_shared<std::vector<uint8_t>>(le_extended_create_connection);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeExtendedCreateConnectionView::Create(
-      LeConnectionManagementCommandView::Create(AclCommandView::Create(CommandPacketView::Create(packet_bytes_view))));
+      LeConnectionManagementCommandView::Create(AclCommandView::Create(CommandView::Create(packet_bytes_view))));
   ASSERT_TRUE(view.IsValid());
 }
 
@@ -442,7 +440,7 @@ TEST(HciPacketsTest, testLeSetExtendedAdvertisingRandomAddress) {
       std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_random_address);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeSetExtendedAdvertisingRandomAddressView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeAdvertisingCommandView::Create(CommandView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   uint8_t random_address_bytes[] = {0x77, 0x58, 0xeb, 0xd3, 0x1c, 0x6e};
   ASSERT_EQ(0, view.GetAdvertisingHandle());
@@ -465,7 +463,7 @@ TEST(HciPacketsTest, testLeSetExtendedAdvertisingData) {
       std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_data);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeSetExtendedAdvertisingDataRawView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeAdvertisingCommandView::Create(CommandView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(0, view.GetAdvertisingHandle());
   ASSERT_EQ(Operation::COMPLETE_ADVERTISEMENT, view.GetOperation());
@@ -492,7 +490,7 @@ TEST(HciPacketsTest, testLeSetExtendedAdvertisingParametersLegacySet0) {
       std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_parameters_set_0);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeSetExtendedAdvertisingLegacyParametersView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeAdvertisingCommandView::Create(CommandView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(0, view.GetAdvertisingHandle());
   ASSERT_EQ(400, view.GetPrimaryAdvertisingIntervalMin());
@@ -515,7 +513,7 @@ TEST(HciPacketsTest, testLeSetExtendedAdvertisingParametersSet1) {
       std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_parameters_set_1);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeSetExtendedAdvertisingLegacyParametersView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeAdvertisingCommandView::Create(CommandView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetAdvertisingHandle());
   ASSERT_EQ(400, view.GetPrimaryAdvertisingIntervalMin());
@@ -556,8 +554,8 @@ TEST(HciPacketsTest, testLeRemoveAdvertisingSet1) {
   std::shared_ptr<std::vector<uint8_t>> packet_bytes =
       std::make_shared<std::vector<uint8_t>>(le_remove_advertising_set_1);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
-  auto view = LeRemoveAdvertisingSetView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  auto view =
+      LeRemoveAdvertisingSetView::Create(LeAdvertisingCommandView::Create(CommandView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetAdvertisingHandle());
 }
@@ -577,7 +575,7 @@ TEST(HciPacketsTest, testLeSetExtendedAdvertisingDisable1) {
       std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_disable_1);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeSetExtendedAdvertisingDisableView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+      LeAdvertisingCommandView::Create(CommandView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   auto disabled_set = view.GetDisabledSets();
   ASSERT_EQ(1, disabled_set.size());
@@ -603,8 +601,7 @@ TEST(HciPacketsTest, testLeSetAdvertisingDataBuilderLength) {
   packet_bytes->reserve(builder->size());
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
-  auto command_view =
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(PacketView<kLittleEndian>(packet_bytes)));
+  auto command_view = LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes)));
   ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(1 /* data_length */ + 31 /* data */, command_view.GetPayload().size());
   auto view = LeSetAdvertisingDataView::Create(command_view);
@@ -622,8 +619,7 @@ TEST(HciPacketsTest, testLeSetScanResponseDataBuilderLength) {
   packet_bytes->reserve(builder->size());
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
-  auto command_view =
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(PacketView<kLittleEndian>(packet_bytes)));
+  auto command_view = LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes)));
   ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(1 /* data_length */ + 31 /* data */, command_view.GetPayload().size());
   auto view = LeSetScanResponseDataView::Create(command_view);
@@ -643,7 +639,7 @@ TEST(HciPacketsTest, testLeMultiAdvSetAdvertisingDataBuilderLength) {
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
   auto command_view = LeMultiAdvtView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(PacketView<kLittleEndian>(packet_bytes))));
+      LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes))));
   ASSERT_TRUE(command_view.IsValid());
   EXPECT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
   auto view = LeMultiAdvtSetDataView::Create(command_view);
@@ -663,7 +659,7 @@ TEST(HciPacketsTest, testLeMultiAdvSetScanResponseDataBuilderLength) {
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
   auto command_view = LeMultiAdvtView::Create(
-      LeAdvertisingCommandView::Create(CommandPacketView::Create(PacketView<kLittleEndian>(packet_bytes))));
+      LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes))));
   ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
   auto view = LeMultiAdvtSetScanRespView::Create(command_view);

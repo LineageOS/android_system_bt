@@ -106,10 +106,10 @@ class TestHciHal : public hal::HciHal {
     return sent_command_promise_->get_future();
   }
 
-  CommandPacketView GetSentCommand() {
+  CommandView GetSentCommand() {
     auto packetview = GetPacketView(std::move(outgoing_commands_.front()));
     outgoing_commands_.pop_front();
-    return CommandPacketView::Create(packetview);
+    return CommandView::Create(packetview);
   }
 
   std::future<void> GetSentAclFuture() {
@@ -146,12 +146,12 @@ class DependsOnHci : public Module {
  public:
   DependsOnHci() : Module() {}
 
-  void SendHciCommandExpectingStatus(std::unique_ptr<CommandPacketBuilder> command) {
+  void SendHciCommandExpectingStatus(std::unique_ptr<CommandBuilder> command) {
     hci_->EnqueueCommand(std::move(command),
                          GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandStatusView>));
   }
 
-  void SendHciCommandExpectingComplete(std::unique_ptr<CommandPacketBuilder> command) {
+  void SendHciCommandExpectingComplete(std::unique_ptr<CommandBuilder> command) {
     hci_->EnqueueCommand(std::move(command),
                          GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
@@ -295,7 +295,7 @@ class HciTest : public ::testing::Test {
     ASSERT_EQ(1, hal->GetNumSentCommands());
 
     auto sent_command = hal->GetSentCommand();
-    auto reset_view = ResetView::Create(CommandPacketView::Create(sent_command));
+    auto reset_view = ResetView::Create(CommandView::Create(sent_command));
     ASSERT_TRUE(reset_view.IsValid());
 
     // Verify that only one was sent
@@ -421,7 +421,7 @@ TEST_F(HciTest, creditsTest) {
   ASSERT_EQ(1, hal->GetNumSentCommands());
 
   auto sent_command = hal->GetSentCommand();
-  auto version_view = ReadLocalVersionInformationView::Create(CommandPacketView::Create(sent_command));
+  auto version_view = ReadLocalVersionInformationView::Create(CommandView::Create(sent_command));
   ASSERT_TRUE(version_view.IsValid());
 
   // Verify that only one was sent
@@ -457,7 +457,7 @@ TEST_F(HciTest, creditsTest) {
   ASSERT_EQ(1, hal->GetNumSentCommands());
 
   sent_command = hal->GetSentCommand();
-  auto supported_commands_view = ReadLocalSupportedCommandsView::Create(CommandPacketView::Create(sent_command));
+  auto supported_commands_view = ReadLocalSupportedCommandsView::Create(CommandView::Create(sent_command));
   ASSERT_TRUE(supported_commands_view.IsValid());
 
   // Verify that only one was sent
@@ -486,7 +486,7 @@ TEST_F(HciTest, creditsTest) {
   ASSERT_EQ(1, hal->GetNumSentCommands());
 
   sent_command = hal->GetSentCommand();
-  auto supported_features_view = ReadLocalSupportedFeaturesView::Create(CommandPacketView::Create(sent_command));
+  auto supported_features_view = ReadLocalSupportedFeaturesView::Create(CommandView::Create(sent_command));
   ASSERT_TRUE(supported_features_view.IsValid());
 
   // Verify that only one was sent
@@ -518,7 +518,7 @@ TEST_F(HciTest, leSecurityInterfaceTest) {
   // Check the command
   auto sent_command = hal->GetSentCommand();
   ASSERT_LT(0, sent_command.size());
-  LeRandView view = LeRandView::Create(LeSecurityCommandView::Create(CommandPacketView::Create(sent_command)));
+  LeRandView view = LeRandView::Create(LeSecurityCommandView::Create(CommandView::Create(sent_command)));
   ASSERT_TRUE(view.IsValid());
 
   // Send a Command Complete to the host
@@ -549,7 +549,7 @@ TEST_F(HciTest, securityInterfacesTest) {
   // Check the command
   auto sent_command = hal->GetSentCommand();
   ASSERT_LT(0, sent_command.size());
-  auto view = WriteSimplePairingModeView::Create(SecurityCommandView::Create(CommandPacketView::Create(sent_command)));
+  auto view = WriteSimplePairingModeView::Create(SecurityCommandView::Create(CommandView::Create(sent_command)));
   ASSERT_TRUE(view.IsValid());
 
   // Send a Command Complete to the host
@@ -587,7 +587,7 @@ TEST_F(HciTest, createConnectionTest) {
   auto sent_command = hal->GetSentCommand();
   ASSERT_LT(0, sent_command.size());
   CreateConnectionView view = CreateConnectionView::Create(
-      ConnectionManagementCommandView::Create(AclCommandView::Create(CommandPacketView::Create(sent_command))));
+      ConnectionManagementCommandView::Create(AclCommandView::Create(CommandView::Create(sent_command))));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(bd_addr, view.GetBdAddr());
   ASSERT_EQ(packet_type, view.GetPacketType());
