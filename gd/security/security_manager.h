@@ -65,6 +65,13 @@ class SecurityManager : public UICallbacks {
       hci::AddressWithType address, pairing::OobData remote_p192_oob_data, pairing::OobData remote_p256_oob_data);
 
   /**
+   * Get the out of band data from the controller to send to another device
+   *
+   * @param callback pointer to callback used for notifying that a security HCI command completed
+   */
+  void GetOutOfBandData(channel::SecurityCommandStatusCallback callback);
+
+  /**
    * Initiates bond over Low Energy transport with device, if not bonded yet.
    *
    * @param address device address we want to bond with
