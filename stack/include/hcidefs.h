@@ -955,7 +955,7 @@ typedef struct {
 #define HCI_3_SLOT_EDR_ACL_SUPPORTED(x) ((x)[4] & 0x80)
 
 #define HCI_5_SLOT_EDR_ACL_SUPPORTED(x) ((x)[5] & 0x01)
-#define HCI_SNIFF_SUB_RATE_SUPPORTED(x) ((x)[5] & 0x02)
+#define HCI_SNIFF_SUB_RATE_SUPPORTED(x) (static_cast<bool>((x)[5] & 0x02))
 #define HCI_ATOMIC_ENCRYPT_SUPPORTED(x) ((x)[5] & 0x04)
 #define HCI_LMP_AFH_CAP_MASTR_SUPPORTED(x) ((x)[5] & 0x08)
 #define HCI_LMP_AFH_CLASS_MASTR_SUPPORTED(x) ((x)[5] & 0x10)
