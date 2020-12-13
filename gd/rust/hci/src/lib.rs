@@ -7,8 +7,10 @@ pub mod error;
 pub mod facade;
 
 use bt_hal::HalExports;
-use bt_packets::hci::EventChild::{CommandComplete, CommandStatus};
-use bt_packets::hci::{AclPacket, CommandPacket, EventCode, EventPacket, OpCode};
+use bt_packets::hci::EventChild::{CommandComplete, CommandStatus, LeMetaEvent};
+use bt_packets::hci::{
+    AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, OpCode, SubeventCode,
+};
 use error::Result;
 use gddi::{module, provides, Stoppable};
 use std::collections::HashMap;
@@ -32,9 +34,11 @@ module! {
 async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     let (cmd_tx, cmd_rx) = channel::<Command>(10);
     let evt_handlers = Arc::new(Mutex::new(HashMap::new()));
+    let le_evt_handlers = Arc::new(Mutex::new(HashMap::new()));
 
     rt.spawn(dispatch(
         evt_handlers.clone(),
+        le_evt_handlers.clone(),
         hal_exports.evt_rx,
         hal_exports.cmd_tx,
         cmd_rx,
@@ -43,6 +47,7 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     HciExports {
         cmd_tx,
         evt_handlers,
+        le_evt_handlers,
         acl_tx: hal_exports.acl_tx,
         acl_rx: hal_exports.acl_rx,
     }
@@ -68,6 +73,7 @@ struct PendingCommand {
 pub struct HciExports {
     cmd_tx: Sender<Command>,
     evt_handlers: Arc<Mutex<HashMap<EventCode, Sender<EventPacket>>>>,
+    le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
     /// Transmit end of a channel used to send ACL data
     pub acl_tx: Sender<AclPacket>,
     /// Receive end of a channel used to receive ACL data
@@ -102,10 +108,20 @@ impl HciExports {
     ) {
         self.evt_handlers.lock().await.insert(evt_code, sender);
     }
+
+    /// Indicate interest in specific LE events
+    pub async fn register_le_event_handler(
+        &mut self,
+        evt_code: SubeventCode,
+        sender: Sender<LeMetaEventPacket>,
+    ) {
+        self.le_evt_handlers.lock().await.insert(evt_code, sender);
+    }
 }
 
 async fn dispatch(
     evt_handlers: Arc<Mutex<HashMap<EventCode, Sender<EventPacket>>>>,
+    le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
     evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
     cmd_tx: Sender<CommandPacket>,
     mut cmd_rx: Receiver<Command>,
@@ -116,22 +132,33 @@ async fn dispatch(
             Some(evt) = consume(&evt_rx) => {
                 match evt.specialize() {
                     CommandStatus(evt) => {
-                        let opcode = *evt.get_command_op_code();
-                        assert!(pending_cmd.is_some(), "Unexpected status event with opcode {:?}", opcode);
-                        let pending = pending_cmd.take().unwrap();
-                        assert!(pending.opcode == opcode, "Waiting for {:?}, got {:?}", pending.opcode, opcode);
-                        pending.fut.send(evt.into()).unwrap();
+                        let this_opcode = *evt.get_command_op_code();
+                        match pending_cmd.take() {
+                            Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
+                            None => panic!("Unexpected status event with opcode {:?}", this_opcode),
+                        }
                     },
                     CommandComplete(evt) => {
-                        let opcode = *evt.get_command_op_code();
-                        assert!(pending_cmd.is_some(), "Unexpected complete event with opcode {:?}", opcode);
-                        let pending = pending_cmd.take().unwrap();
-                        assert!(pending.opcode == opcode, "Waiting for {:?}, got {:?}", pending.opcode, opcode);
-                        pending.fut.send(evt.into()).unwrap();
+                        let this_opcode = *evt.get_command_op_code();
+                        match pending_cmd.take() {
+                            Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
+                            None => panic!("Unexpected complete event with opcode {:?}", this_opcode),
+                        }
+                    },
+                    LeMetaEvent(evt) => {
+                        let code = evt.get_subevent_code();
+                        match le_evt_handlers.lock().await.get(code) {
+                            Some(sender) => sender.send(evt).await.unwrap(),
+                            None => panic!("Unhandled le subevent {:?}", code),
+                        }
                     },
                     _ => {
-                        if let Some(sender) = evt_handlers.lock().await.get(evt.get_event_code()) {
-                            sender.send(evt).await.unwrap();
+                        let code = evt.get_event_code();
+                        match evt_handlers.lock().await.get(code) {
+                            Some(sender) => sender.send(evt).await.unwrap(),
+                            None => panic!("Unhandled le subevent {:?}", code),
                         }
                     },
                 }
