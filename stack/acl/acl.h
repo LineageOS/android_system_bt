@@ -197,7 +197,20 @@ typedef struct {
   uint8_t sca; /* Sleep clock accuracy */
 } tACL_CONN;
 
+// Power mode states.
+// Used as both value and bitmask
+enum : uint8_t {
+  BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,      // 0x00
+  BTM_PM_ST_HOLD = HCI_MODE_HOLD,          // 0x01
+  BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,        // 0x02
+  BTM_PM_ST_PARK = HCI_MODE_PARK,          // 0x03
+  BTM_PM_ST_UNUSED,                        // 0x04
+  BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,  // 0x05
+  BTM_PM_ST_INVALID = 0x7F,
+  BTM_PM_STORED_MASK = 0x80, /* set this mask if the command is stored */
+};
 typedef uint8_t tBTM_PM_STATE;
+
 typedef struct {
   bool chg_ind;
   tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
