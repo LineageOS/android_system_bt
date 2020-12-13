@@ -223,6 +223,11 @@ tACL_CONN* StackAclBtmAcl::btm_bda_to_acl(const RawAddress& bda,
   return nullptr;
 }
 
+tACL_CONN* acl_get_connection_from_address(const RawAddress& bd_addr,
+                                           tBT_TRANSPORT transport) {
+  return internal_.btm_bda_to_acl(bd_addr, transport);
+}
+
 /*******************************************************************************
  *
  * Function         btm_handle_to_acl_index
