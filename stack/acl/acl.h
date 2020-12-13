@@ -87,7 +87,11 @@ typedef struct {
   RawAddress active_remote_addr;
   RawAddress conn_addr;
   RawAddress remote_addr;
-  bool in_use;
+  bool in_use{false};
+
+ public:
+  bool InUse() const { return in_use; }
+
   bool link_up_issued;
   tBT_TRANSPORT transport;
   bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
