@@ -59,7 +59,7 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     };
 
     assert!(
-        *exports.send(ResetBuilder {}.build()).await.get_status() == ErrorCode::Success,
+        exports.send(ResetBuilder {}.build()).await.get_status() == ErrorCode::Success,
         "reset did not complete successfully"
     );
 
@@ -175,7 +175,7 @@ async fn dispatch(
                 match evt.specialize() {
                     CommandStatus(evt) => {
                         hci_timeout.cancel();
-                        let this_opcode = *evt.get_command_op_code();
+                        let this_opcode = evt.get_command_op_code();
                         match pending_cmd.take() {
                             Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
                             Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
@@ -184,7 +184,7 @@ async fn dispatch(
                     },
                     CommandComplete(evt) => {
                         hci_timeout.cancel();
-                        let this_opcode = *evt.get_command_op_code();
+                        let this_opcode = evt.get_command_op_code();
                         match pending_cmd.take() {
                             Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
                             Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
@@ -193,7 +193,7 @@ async fn dispatch(
                     },
                     LeMetaEvent(evt) => {
                         let code = evt.get_subevent_code();
-                        match le_evt_handlers.lock().await.get(code) {
+                        match le_evt_handlers.lock().await.get(&code) {
                             Some(sender) => sender.send(evt).await.unwrap(),
                             None => panic!("Unhandled le subevent {:?}", code),
                         }
@@ -203,7 +203,7 @@ async fn dispatch(
                     VendorSpecificEvent(_) => {},
                     _ => {
                         let code = evt.get_event_code();
-                        match evt_handlers.lock().await.get(code) {
+                        match evt_handlers.lock().await.get(&code) {
                             Some(sender) => sender.send(evt).await.unwrap(),
                             None => panic!("Unhandled le subevent {:?}", code),
                         }
@@ -212,7 +212,7 @@ async fn dispatch(
             },
             Some(cmd) = cmd_rx.recv(), if pending_cmd.is_none() => {
                 pending_cmd = Some(PendingCommand {
-                    opcode: *cmd.cmd.get_op_code(),
+                    opcode: cmd.cmd.get_op_code(),
                     fut: cmd.fut,
                 });
                 cmd_tx.send(cmd.cmd).await.unwrap();

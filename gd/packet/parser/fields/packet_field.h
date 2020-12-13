@@ -128,6 +128,10 @@ class PacketField : public Loggable {
 
   virtual void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const = 0;
 
+  virtual bool GetterIsByRef() const {
+    return true;
+  }
+
  private:
   ParseLocation loc_;
   std::string name_;

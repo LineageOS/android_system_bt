@@ -1021,9 +1021,15 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
     });
 
     for (auto const& field : fields) {
-      s << "pub fn get_" << field->GetName() << "(&self) -> &" << field->GetRustDataType() << "{";
-      s << " &self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
-      s << "}\n";
+      if (field->GetterIsByRef()) {
+        s << "pub fn get_" << field->GetName() << "(&self) -> &" << field->GetRustDataType() << "{";
+        s << " &self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
+        s << "}\n";
+      } else {
+        s << "pub fn get_" << field->GetName() << "(&self) -> " << field->GetRustDataType() << "{";
+        s << " self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
+        s << "}\n";
+      }
     }
   }
 
