@@ -14,7 +14,7 @@ use bt_packets::hci::EventChild::{
 };
 use bt_packets::hci::{
     AclPacket, CommandExpectations, CommandPacket, ErrorCode, EventCode, EventPacket,
-    LeMetaEventPacket, OpCode, ResetBuilder, SubeventCode,
+    LeMetaEventPacket, ResetBuilder, SubeventCode,
 };
 use error::Result;
 use gddi::{module, provides, Stoppable};
@@ -38,7 +38,7 @@ module! {
 
 #[provides]
 async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
-    let (cmd_tx, cmd_rx) = channel::<Command>(10);
+    let (cmd_tx, cmd_rx) = channel::<QueuedCommand>(10);
     let evt_handlers = Arc::new(Mutex::new(HashMap::new()));
     let le_evt_handlers = Arc::new(Mutex::new(HashMap::new()));
 
@@ -66,25 +66,16 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     exports
 }
 
-/// HCI command entry
-/// Uses a oneshot channel to wait until the event corresponding
-/// to the command is received
 #[derive(Debug)]
-struct Command {
+struct QueuedCommand {
     cmd: CommandPacket,
-    fut: oneshot::Sender<EventPacket>,
-}
-
-#[derive(Debug)]
-struct PendingCommand {
-    opcode: OpCode,
     fut: oneshot::Sender<EventPacket>,
 }
 
 /// HCI interface
 #[derive(Clone, Stoppable)]
 pub struct HciExports {
-    cmd_tx: Sender<Command>,
+    cmd_tx: Sender<QueuedCommand>,
     evt_handlers: Arc<Mutex<HashMap<EventCode, Sender<EventPacket>>>>,
     le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
     /// Transmit end of a channel used to send ACL data
@@ -96,7 +87,7 @@ pub struct HciExports {
 impl HciExports {
     async fn send_raw(&mut self, cmd: CommandPacket) -> Result<EventPacket> {
         let (tx, rx) = oneshot::channel::<EventPacket>();
-        self.cmd_tx.send(Command { cmd, fut: tx }).await?;
+        self.cmd_tx.send(QueuedCommand { cmd, fut: tx }).await?;
         let event = rx.await?;
         Ok(event)
     }
@@ -165,9 +156,9 @@ async fn dispatch(
     le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
     evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
     cmd_tx: Sender<CommandPacket>,
-    mut cmd_rx: Receiver<Command>,
+    mut cmd_rx: Receiver<QueuedCommand>,
 ) {
-    let mut pending_cmd: Option<PendingCommand> = None;
+    let mut pending: Option<QueuedCommand> = None;
     let mut hci_timeout = Alarm::new();
     loop {
         select! {
@@ -176,18 +167,18 @@ async fn dispatch(
                     CommandStatus(evt) => {
                         hci_timeout.cancel();
                         let this_opcode = evt.get_command_op_code();
-                        match pending_cmd.take() {
-                            Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
-                            Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
+                        match pending.take() {
+                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(QueuedCommand{cmd, ..}) => panic!("Waiting for {:?}, got {:?}", cmd.get_op_code(), this_opcode),
                             None => panic!("Unexpected status event with opcode {:?}", this_opcode),
                         }
                     },
                     CommandComplete(evt) => {
                         hci_timeout.cancel();
                         let this_opcode = evt.get_command_op_code();
-                        match pending_cmd.take() {
-                            Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
-                            Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
+                        match pending.take() {
+                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(QueuedCommand{cmd, ..}) => panic!("Waiting for {:?}, got {:?}", cmd.get_op_code(), this_opcode),
                             None => panic!("Unexpected complete event with opcode {:?}", this_opcode),
                         }
                     },
@@ -210,15 +201,12 @@ async fn dispatch(
                     },
                 }
             },
-            Some(cmd) = cmd_rx.recv(), if pending_cmd.is_none() => {
-                pending_cmd = Some(PendingCommand {
-                    opcode: cmd.cmd.get_op_code(),
-                    fut: cmd.fut,
-                });
-                cmd_tx.send(cmd.cmd).await.unwrap();
+            Some(queued) = cmd_rx.recv(), if pending.is_none() => {
+                cmd_tx.send(queued.cmd.clone()).await.unwrap();
                 hci_timeout.reset(Duration::from_secs(2));
+                pending = Some(queued);
             },
-            _ = hci_timeout.expired() => panic!("Timed out waiting for {:?}", pending_cmd.unwrap().opcode),
+            _ = hci_timeout.expired() => panic!("Timed out waiting for {:?}", pending.unwrap().cmd.get_op_code()),
             else => break,
         }
     }
