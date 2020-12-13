@@ -1050,18 +1050,13 @@ void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num,
  *
  ******************************************************************************/
 void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
-  tACL_CONN* p_acl_cb;
-  uint8_t acl_idx;
-
   LOG_WARN("status 0x%02x for handle %d", status, handle);
 
-  acl_idx = btm_handle_to_acl_index(handle);
-  if (acl_idx >= MAX_L2CAP_LINKS) {
+  tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl_cb == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-
-  p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
 
   /* Process supported features only */
   btm_process_remote_ext_features(p_acl_cb, 1);
