@@ -979,14 +979,11 @@ void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num,
                                            uint8_t max_page,
                                            uint8_t* features) {
   /* Validate parameters */
-  uint16_t acl_idx = btm_handle_to_acl_index(handle);
-
-  if (acl_idx >= MAX_L2CAP_LINKS) {
+  auto* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl_cb == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-
-  auto* p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
 
   /* Copy the received features page */
   STREAM_TO_ARRAY(p_acl_cb->peer_lmp_feature_pages[page_num], features,
