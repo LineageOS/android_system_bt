@@ -15,7 +15,7 @@ module! {
 
 macro_rules! assert_success {
     ($hci:ident.send($builder:expr)) => {
-        assert!($hci.send($builder.build()).await.get_status() == ErrorCode::Success);
+        assert!($hci.send($builder).await.get_status() == ErrorCode::Success);
     };
 }
 

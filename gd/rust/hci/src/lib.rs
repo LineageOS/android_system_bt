@@ -1,11 +1,11 @@
 //! Host Controller Interface (HCI)
 
+/// HCI controller info
+pub mod controller;
 /// HCI errors
 pub mod error;
 /// HCI layer facade service
 pub mod facade;
-/// HCI controller info
-pub mod controller;
 
 use bt_common::time::Alarm;
 use bt_hal::HalExports;
@@ -61,7 +61,7 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     };
 
     assert!(
-        exports.send(ResetBuilder {}.build()).await.get_status() == ErrorCode::Success,
+        exports.send(ResetBuilder {}).await.get_status() == ErrorCode::Success,
         "reset did not complete successfully"
     );
 
