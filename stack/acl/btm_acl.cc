@@ -590,15 +590,11 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
  ******************************************************************************/
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable) {
-  tACL_CONN* p;
-  uint8_t xx;
-
-  xx = btm_handle_to_acl_index(handle);
-  /* don't assume that we can never get a bad hci_handle */
-  if (xx < MAX_L2CAP_LINKS)
-    p = &btm_cb.acl_cb_.acl_db[xx];
-  else
+  tACL_CONN* p = internal_.acl_get_connection_from_handle(handle);
+  if (p == nullptr) {
+    LOG_WARN("Unable to find active acl");
     return;
+  }
 
   p->is_encrypted = encr_enable;
 
