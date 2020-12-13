@@ -105,15 +105,25 @@ impl HciExports {
 
     /// Indicate interest in specific HCI events
     pub async fn register_event_handler(&mut self, code: EventCode, sender: Sender<EventPacket>) {
-        assert!(
-            self.evt_handlers
-                .lock()
-                .await
-                .insert(code, sender)
-                .is_none(),
-            "A handler for {:?} is already registered",
-            code
-        );
+        match code {
+            EventCode::CommandStatus
+            | EventCode::CommandComplete
+            | EventCode::LeMetaEvent
+            | EventCode::PageScanRepetitionModeChange
+            | EventCode::MaxSlotsChange
+            | EventCode::VendorSpecific => panic!("{:?} is a protected event", code),
+            _ => {
+                assert!(
+                    self.evt_handlers
+                        .lock()
+                        .await
+                        .insert(code, sender)
+                        .is_none(),
+                    "A handler for {:?} is already registered",
+                    code
+                );
+            }
+        }
     }
 
     /// Remove interest in specific HCI events
