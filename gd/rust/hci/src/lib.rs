@@ -7,7 +7,10 @@ pub mod error;
 pub mod facade;
 
 use bt_hal::HalExports;
-use bt_packets::hci::EventChild::{CommandComplete, CommandStatus, LeMetaEvent};
+use bt_packets::hci::EventChild::{
+    CommandComplete, CommandStatus, LeMetaEvent, MaxSlotsChange, PageScanRepetitionModeChange,
+    VendorSpecificEvent,
+};
 use bt_packets::hci::{
     AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, OpCode, SubeventCode,
 };
@@ -154,6 +157,9 @@ async fn dispatch(
                             None => panic!("Unhandled le subevent {:?}", code),
                         }
                     },
+                    PageScanRepetitionModeChange(_) => {},
+                    MaxSlotsChange(_) => {},
+                    VendorSpecificEvent(_) => {},
                     _ => {
                         let code = evt.get_event_code();
                         match evt_handlers.lock().await.get(code) {
