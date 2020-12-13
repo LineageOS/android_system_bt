@@ -191,8 +191,7 @@ class TestHciLayer : public HciLayer {
     return command;
   }
 
-  void RegisterEventHandler(EventCode event_code,
-                            common::ContextualCallback<void(EventPacketView)> event_handler) override {
+  void RegisterEventHandler(EventCode event_code, common::ContextualCallback<void(EventView)> event_handler) override {
     registered_events_[event_code] = event_handler;
   }
 
@@ -209,9 +208,9 @@ class TestHciLayer : public HciLayer {
     registered_le_events_.erase(subevent_code);
   }
 
-  void IncomingEvent(std::unique_ptr<EventPacketBuilder> event_builder) {
+  void IncomingEvent(std::unique_ptr<EventBuilder> event_builder) {
     auto packet = GetPacketView(std::move(event_builder));
-    EventPacketView event = EventPacketView::Create(packet);
+    EventView event = EventView::Create(packet);
     ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
     ASSERT_NE(registered_events_.find(event_code), registered_events_.end()) << EventCodeText(event_code);
@@ -220,7 +219,7 @@ class TestHciLayer : public HciLayer {
 
   void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder) {
     auto packet = GetPacketView(std::move(event_builder));
-    EventPacketView event = EventPacketView::Create(packet);
+    EventView event = EventView::Create(packet);
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     EXPECT_TRUE(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
@@ -252,14 +251,14 @@ class TestHciLayer : public HciLayer {
     EXPECT_EQ(queue_end->TryDequeue(), nullptr);
   }
 
-  void CommandCompleteCallback(EventPacketView event) {
+  void CommandCompleteCallback(EventView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT_TRUE(complete_view.IsValid());
     std::move(command_complete_callbacks.front()).Invoke(complete_view);
     command_complete_callbacks.pop_front();
   }
 
-  void CommandStatusCallback(EventPacketView event) {
+  void CommandStatusCallback(EventView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
     ASSERT_TRUE(status_view.IsValid());
     std::move(command_status_callbacks.front()).Invoke(status_view);
@@ -293,7 +292,7 @@ class TestHciLayer : public HciLayer {
   }
 
  private:
-  std::map<EventCode, common::ContextualCallback<void(EventPacketView)>> registered_events_;
+  std::map<EventCode, common::ContextualCallback<void(EventView)>> registered_events_;
   std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_;
   std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
   std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;

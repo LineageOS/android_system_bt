@@ -68,7 +68,7 @@ class PairingEvent {
 
   std::optional<CommandView> l2cap_packet;
 
-  std::optional<hci::EventPacketView> hci_event;
+  std::optional<hci::EventView> hci_event;
 
   enum UI_ACTION_TYPE { PAIRING_ACCEPTED, CONFIRM_YESNO, PASSKEY };
   UI_ACTION_TYPE ui_action;
@@ -77,7 +77,7 @@ class PairingEvent {
   PairingEvent(TYPE type) : type(type) {}
   PairingEvent(CommandView l2cap_packet) : type(L2CAP), l2cap_packet(l2cap_packet) {}
   PairingEvent(UI_ACTION_TYPE ui_action, uint32_t ui_value) : type(UI), ui_action(ui_action), ui_value(ui_value) {}
-  PairingEvent(hci::EventPacketView hci_event) : type(HCI_EVENT), hci_event(hci_event) {}
+  PairingEvent(hci::EventView hci_event) : type(HCI_EVENT), hci_event(hci_event) {}
 };
 
 constexpr int SMP_TIMEOUT = 30;
@@ -273,7 +273,7 @@ class PairingHandlerLe {
   }
 
   /* SMP Command received from remote device */
-  void OnHciEvent(hci::EventPacketView hci_event) {
+  void OnHciEvent(hci::EventView hci_event) {
     {
       std::unique_lock<std::mutex> lock(queue_guard);
       queue.push(PairingEvent(std::move(hci_event)));

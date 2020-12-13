@@ -201,7 +201,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     pending_acl_events_.OnIncomingEvent(std::move(incoming));
   }
 
-  void on_event(hci::EventPacketView view) {
+  void on_event(hci::EventView view) {
     ASSERT(view.IsValid());
     LOG_INFO("Got an Event %s", EventCodeText(view.GetEventCode()).c_str());
     Event response;

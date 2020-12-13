@@ -196,15 +196,14 @@ class TestHciLayer : public HciLayer {
         return;
     }
     auto packet = GetPacketView(std::move(event_builder));
-    EventPacketView event = EventPacketView::Create(packet);
+    EventView event = EventView::Create(packet);
     ASSERT_TRUE(event.IsValid());
     CommandCompleteView command_complete = CommandCompleteView::Create(event);
     ASSERT_TRUE(command_complete.IsValid());
     on_complete.Invoke(std::move(command_complete));
   }
 
-  void RegisterEventHandler(EventCode event_code,
-                            common::ContextualCallback<void(EventPacketView)> event_handler) override {
+  void RegisterEventHandler(EventCode event_code, common::ContextualCallback<void(EventView)> event_handler) override {
     EXPECT_EQ(event_code, EventCode::NUMBER_OF_COMPLETED_PACKETS) << "Only NUMBER_OF_COMPLETED_PACKETS is needed";
     number_of_completed_packets_callback_ = event_handler;
   }
@@ -225,7 +224,7 @@ class TestHciLayer : public HciLayer {
     completed_packets.push_back(cp);
     auto event_builder = NumberOfCompletedPacketsBuilder::Create(completed_packets);
     auto packet = GetPacketView(std::move(event_builder));
-    EventPacketView event = EventPacketView::Create(packet);
+    EventView event = EventView::Create(packet);
     ASSERT_TRUE(event.IsValid());
     number_of_completed_packets_callback_.Invoke(event);
   }
@@ -262,7 +261,7 @@ class TestHciLayer : public HciLayer {
   uint64_t le_event_mask = 0;
 
  private:
-  common::ContextualCallback<void(EventPacketView)> number_of_completed_packets_callback_;
+  common::ContextualCallback<void(EventView)> number_of_completed_packets_callback_;
   std::queue<CommandView> command_queue_;
   mutable std::mutex mutex_;
   std::condition_variable not_empty_;

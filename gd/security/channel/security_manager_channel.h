@@ -41,7 +41,7 @@ using SecurityCommandStatusCallback = common::ContextualOnceCallback<void(hci::C
 class ISecurityManagerChannelListener {
  public:
   virtual ~ISecurityManagerChannelListener() = default;
-  virtual void OnHciEventReceived(hci::EventPacketView packet) = 0;
+  virtual void OnHciEventReceived(hci::EventView packet) = 0;
   virtual void OnConnectionClosed(hci::Address) = 0;
 };
 
@@ -112,7 +112,7 @@ class SecurityManagerChannel : public l2cap::classic::LinkSecurityInterfaceListe
    *
    * @param event_packet
    */
-  void OnHciEventReceived(hci::EventPacketView packet);
+  void OnHciEventReceived(hci::EventView packet);
 
   /**
    * Called when an HCI command is completed

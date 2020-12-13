@@ -34,7 +34,7 @@ CarKit::CarKit() : Device(kCarKitPropertiesFile) {
   link_layer_controller_.RegisterAclChannel(
       [](std::shared_ptr<bluetooth::hci::AclPacketBuilder>) {});
   link_layer_controller_.RegisterEventChannel(
-      [](std::shared_ptr<bluetooth::hci::EventPacketBuilder>) {});
+      [](std::shared_ptr<bluetooth::hci::EventBuilder>) {});
   link_layer_controller_.RegisterScoChannel([](std::shared_ptr<std::vector<uint8_t>>) {});
   link_layer_controller_.RegisterRemoteChannel(
       [this](std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet,
