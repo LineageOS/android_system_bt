@@ -1,6 +1,5 @@
 //! Implementation of the HAl that talks to BT controller over Android's HIDL
-use crate::internal::Hal;
-use crate::HalExports;
+use crate::internal::{Hal, RawHalExports};
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 use bytes::Bytes;
 use gddi::{module, provides};
@@ -13,12 +12,12 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 module! {
     hidl_hal_module,
     providers {
-        HalExports => provide_hidl_hal,
+        RawHalExports => provide_hidl_hal,
     }
 }
 
 #[provides]
-async fn provide_hidl_hal(rt: Arc<Runtime>) -> HalExports {
+async fn provide_hidl_hal(rt: Arc<Runtime>) -> RawHalExports {
     let (hal_exports, hal) = Hal::new();
     let (init_tx, mut init_rx) = unbounded_channel();
     *CALLBACKS.lock().unwrap() = Some(Callbacks {
