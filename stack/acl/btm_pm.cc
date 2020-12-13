@@ -79,7 +79,6 @@ const uint8_t
 
         BTM_PM_GET_MD1,  BTM_PM_GET_MD2,  BTM_PM_GET_COMP};
 
-static const char* mode_to_string(const tBTM_PM_MODE mode);
 static void send_sniff_subrating(const tACL_CONN& p_acl, uint16_t max_lat,
                                  uint16_t min_rmt_to, uint16_t min_loc_to) {
   btsnd_hcic_sniff_sub_rate(p_acl.hci_handle, max_lat, min_rmt_to, min_loc_to);
@@ -521,8 +520,8 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   btm_cb.pm_pend_id = pm_id;
 
   LOG_INFO("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
-           mode_to_string(p_cb->state), p_cb->state,
-           mode_to_string(md_res.mode), md_res.mode, link_ind);
+           power_mode_state_text(p_cb->state).c_str(), p_cb->state,
+           power_mode_state_text(md_res.mode).c_str(), md_res.mode, link_ind);
 
   switch (md_res.mode) {
     case BTM_PM_MD_ACTIVE:
@@ -681,8 +680,9 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   p_cb->state = mode;
   p_cb->interval = interval;
 
-  LOG_INFO("switched from [%s] to [%s].", mode_to_string(old_state),
-           mode_to_string(p_cb->state));
+  LOG_INFO("Power mode switched from %s[%hhu] to %s[%hhu]",
+           power_mode_state_text(old_state).c_str(), old_state,
+           power_mode_state_text(p_cb->state).c_str(), p_cb->state);
 
   if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
     l2c_OnHciModeChangeSendPendingPackets(bd_addr);
@@ -846,21 +846,6 @@ tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
     return BTM_CONTRL_SCAN;
   else
     return BTM_CONTRL_IDLE;
-}
-
-static const char* mode_to_string(const tBTM_PM_MODE mode) {
-  switch (mode) {
-    case BTM_PM_MD_ACTIVE:
-      return "ACTIVE";
-    case BTM_PM_MD_SNIFF:
-      return "SNIFF";
-    case BTM_PM_MD_PARK:
-      return "PARK";
-    case BTM_PM_MD_HOLD:
-      return "HOLD";
-    default:
-      return "UNKNOWN";
-  }
 }
 
 void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
