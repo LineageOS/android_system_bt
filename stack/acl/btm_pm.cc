@@ -838,3 +838,9 @@ static const char* mode_to_string(const tBTM_PM_MODE mode) {
       return "UNKNOWN";
   }
 }
+
+void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
+                           tHCI_MODE current_mode, uint16_t interval) {
+  btm_sco_chk_pend_unpark(status, handle);
+  btm_pm_proc_mode_change(status, handle, current_mode, interval);
+}

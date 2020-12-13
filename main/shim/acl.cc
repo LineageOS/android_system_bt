@@ -238,7 +238,9 @@ class ClassicShimAclConnection
   }
 
   void OnModeChange(hci::Mode current_mode, uint16_t interval) override {
-    LOG_INFO("UNIMPLEMENTED");
+    TRY_POSTING_ON_MAIN(interface_.on_mode_change,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        ToLegacyHciMode(current_mode), interval);
   }
 
   void OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate,
