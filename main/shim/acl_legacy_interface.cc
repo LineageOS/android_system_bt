@@ -43,7 +43,7 @@ const acl_interface_t GetAclInterface() {
       .link.classic.on_flow_specification_complete = nullptr,
       .link.classic.on_flush_occurred = nullptr,
       .link.classic.on_central_link_key_complete = nullptr,
-      .link.classic.on_mode_change = nullptr,
+      .link.classic.on_mode_change = btm_pm_on_mode_change,
       .link.classic.on_packet_type_changed = nullptr,
       .link.classic.on_qos_setup_complete = nullptr,
       .link.classic.on_read_afh_channel_map_complete = nullptr,
