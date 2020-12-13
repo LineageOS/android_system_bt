@@ -46,6 +46,13 @@ void SecurityManager::CreateBondOutOfBand(
       remote_p256_oob_data));
 }
 
+void SecurityManager::GetOutOfBandData(channel::SecurityCommandStatusCallback callback) {
+  security_handler_->Post(common::BindOnce(
+      &internal::SecurityManagerImpl::GetOutOfBandData,
+      common::Unretained(security_manager_impl_),
+      std::forward<channel::SecurityCommandStatusCallback>(callback)));
+}
+
 void SecurityManager::CreateBondLe(hci::AddressWithType device) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::CreateBondLe,
                                            common::Unretained(security_manager_impl_),
