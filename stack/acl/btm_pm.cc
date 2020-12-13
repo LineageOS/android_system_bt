@@ -680,8 +680,6 @@ void btm_pm_proc_cmd_status(uint8_t status) {
 void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                              tHCI_MODE hci_mode, uint16_t interval) {
   tBTM_PM_STATUS mode = static_cast<tBTM_PM_STATUS>(hci_mode);
-
-  tBTM_PM_MCB* p_cb = NULL;
   int xx, yy, zz;
   tBTM_PM_STATE old_state;
 
@@ -692,7 +690,13 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   const RawAddress bd_addr = acl_address_from_handle(hci_handle);
 
   /* update control block */
-  p_cb = &(btm_cb.acl_cb_.pm_mode_db[xx]);
+  tBTM_PM_MCB* p_cb =
+      internal_.btm_pm_get_power_manager_from_handle(hci_handle);
+  if (p_cb == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+
   old_state = p_cb->state;
   p_cb->state = mode;
   p_cb->interval = interval;
