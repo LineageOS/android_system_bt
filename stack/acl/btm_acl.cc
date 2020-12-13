@@ -297,10 +297,8 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
 
 void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   uint16_t handle;
-  uint8_t acl_idx;
   uint8_t sca;
   uint8_t status;
-  tACL_CONN* p;
 
   STREAM_TO_UINT8(status, data);
 
@@ -313,14 +311,12 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   STREAM_TO_UINT16(handle, data);
   STREAM_TO_UINT8(sca, data);
 
-  acl_idx = btm_handle_to_acl_index(handle);
-  if (acl_idx >= MAX_L2CAP_LINKS) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-
-  p = &btm_cb.acl_cb_.acl_db[acl_idx];
-  p->sca = sca;
+  p_acl->sca = sca;
 }
 
 /*******************************************************************************
