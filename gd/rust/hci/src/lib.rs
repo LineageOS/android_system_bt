@@ -22,6 +22,8 @@ use tokio::runtime::Runtime;
 use tokio::select;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::{oneshot, Mutex};
+use bt_common::time::Alarm;
+use std::time::Duration;
 
 module! {
     hci_module,
@@ -162,11 +164,13 @@ async fn dispatch(
     mut cmd_rx: Receiver<Command>,
 ) {
     let mut pending_cmd: Option<PendingCommand> = None;
+    let mut hci_timeout = Alarm::new();
     loop {
         select! {
             Some(evt) = consume(&evt_rx) => {
                 match evt.specialize() {
                     CommandStatus(evt) => {
+                        hci_timeout.cancel();
                         let this_opcode = *evt.get_command_op_code();
                         match pending_cmd.take() {
                             Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
@@ -175,6 +179,7 @@ async fn dispatch(
                         }
                     },
                     CommandComplete(evt) => {
+                        hci_timeout.cancel();
                         let this_opcode = *evt.get_command_op_code();
                         match pending_cmd.take() {
                             Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
@@ -207,7 +212,9 @@ async fn dispatch(
                     fut: cmd.fut,
                 });
                 cmd_tx.send(cmd.cmd).await.unwrap();
+                hci_timeout.reset(Duration::from_secs(2));
             },
+            _ = hci_timeout.expired() => panic!("Timed out waiting for {:?}", pending_cmd.unwrap().opcode),
             else => break,
         }
     }
