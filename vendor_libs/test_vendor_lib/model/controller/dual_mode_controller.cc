@@ -314,7 +314,7 @@ void DualModeController::RegisterTaskCancel(std::function<void(AsyncTaskId)> tas
 
 void DualModeController::HandleAcl(std::shared_ptr<std::vector<uint8_t>> packet) {
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
-  auto acl_packet = bluetooth::hci::AclPacketView::Create(raw_packet);
+  auto acl_packet = bluetooth::hci::AclView::Create(raw_packet);
   ASSERT(acl_packet.IsValid());
   if (loopback_mode_ == LoopbackMode::ENABLE_LOCAL) {
     uint16_t handle = acl_packet.GetHandle();
@@ -400,14 +400,13 @@ void DualModeController::RegisterEventChannel(
 
 void DualModeController::RegisterAclChannel(
     const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& callback) {
-  send_acl_ =
-      [callback](std::shared_ptr<bluetooth::hci::AclPacketBuilder> acl_data) {
-        auto bytes = std::make_shared<std::vector<uint8_t>>();
-        bluetooth::packet::BitInserter bit_inserter(*bytes);
-        bytes->reserve(acl_data->size());
-        acl_data->Serialize(bit_inserter);
-        callback(std::move(bytes));
-      };
+  send_acl_ = [callback](std::shared_ptr<bluetooth::hci::AclBuilder> acl_data) {
+    auto bytes = std::make_shared<std::vector<uint8_t>>();
+    bluetooth::packet::BitInserter bit_inserter(*bytes);
+    bytes->reserve(acl_data->size());
+    acl_data->Serialize(bit_inserter);
+    callback(std::move(bytes));
+  };
   link_layer_controller_.RegisterAclChannel(send_acl_);
 }
 

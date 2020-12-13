@@ -129,7 +129,7 @@ class RoundRobinSchedulerTest : public ::testing::Test {
     bytes->reserve(packet->size());
     packet->Serialize(i);
     auto packet_view = bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian>(bytes);
-    AclPacketView acl_packet_view = AclPacketView::Create(packet_view);
+    AclView acl_packet_view = AclView::Create(packet_view);
     ASSERT_TRUE(acl_packet_view.IsValid());
     PacketView<true> count_view = acl_packet_view.GetPayload();
     sent_acl_packets_.push(acl_packet_view);
@@ -158,12 +158,12 @@ class RoundRobinSchedulerTest : public ::testing::Test {
     packet_future_ = std::make_unique<std::future<void>>(packet_promise_->get_future());
   }
 
-  BidiQueue<AclPacketView, AclPacketBuilder> hci_queue_{3};
+  BidiQueue<AclView, AclBuilder> hci_queue_{3};
   Thread* thread_;
   Handler* handler_;
   TestController* controller_;
   RoundRobinScheduler* round_robin_scheduler_;
-  std::queue<AclPacketView> sent_acl_packets_;
+  std::queue<AclView> sent_acl_packets_;
   uint16_t packet_count_;
   std::unique_ptr<std::promise<void>> packet_promise_;
   std::unique_ptr<std::future<void>> packet_future_;

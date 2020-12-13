@@ -174,7 +174,7 @@ class DependsOnHci : public Module {
                          GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
 
-  void SendAclData(std::unique_ptr<AclPacketBuilder> acl) {
+  void SendAclData(std::unique_ptr<AclBuilder> acl) {
     outgoing_acl_.push(std::move(acl));
     auto queue_end = hci_->GetAclQueueEnd();
     queue_end->RegisterEnqueue(GetHandler(), common::Bind(&DependsOnHci::handle_enqueue, common::Unretained(this)));
@@ -202,8 +202,8 @@ class DependsOnHci : public Module {
     return incoming_acl_packets_.size();
   }
 
-  AclPacketView GetReceivedAcl() {
-    AclPacketView packetview = incoming_acl_packets_.front();
+  AclView GetReceivedAcl() {
+    AclView packetview = incoming_acl_packets_.front();
     incoming_acl_packets_.pop_front();
     return packetview;
   }
@@ -233,7 +233,7 @@ class DependsOnHci : public Module {
   const SecurityInterface* security_interface_;
   const LeSecurityInterface* le_security_interface_;
   std::list<EventView> incoming_events_;
-  std::list<AclPacketView> incoming_acl_packets_;
+  std::list<AclView> incoming_acl_packets_;
   std::unique_ptr<std::promise<void>> event_promise_;
   std::unique_ptr<std::promise<void>> acl_promise_;
 
@@ -257,9 +257,9 @@ class DependsOnHci : public Module {
     }
   }
 
-  std::queue<std::unique_ptr<AclPacketBuilder>> outgoing_acl_;
+  std::queue<std::unique_ptr<AclBuilder>> outgoing_acl_;
 
-  std::unique_ptr<AclPacketBuilder> handle_enqueue() {
+  std::unique_ptr<AclBuilder> handle_enqueue() {
     hci_->GetAclQueueEnd()->UnregisterEnqueue();
     auto acl = std::move(outgoing_acl_.front());
     outgoing_acl_.pop();
@@ -633,7 +633,7 @@ TEST_F(HciTest, createConnectionTest) {
   acl_payload->AddOctets2(handle);
   auto incoming_acl_future = upper->GetReceivedAclFuture();
   hal->callbacks->aclDataReceived(
-      GetPacketBytes(AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(acl_payload))));
+      GetPacketBytes(AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(acl_payload))));
 
   // Verify the ACL packet
   auto incoming_acl_status = incoming_acl_future.wait_for(kAclTimeout);
@@ -652,14 +652,14 @@ TEST_F(HciTest, createConnectionTest) {
   acl_payload2->AddOctets2(handle);
   acl_payload2->AddAddress(bd_addr);
   auto sent_acl_future = hal->GetSentAclFuture();
-  upper->SendAclData(AclPacketBuilder::Create(handle, packet_boundary_flag2, broadcast_flag2, std::move(acl_payload2)));
+  upper->SendAclData(AclBuilder::Create(handle, packet_boundary_flag2, broadcast_flag2, std::move(acl_payload2)));
 
   // Verify the ACL packet
   auto sent_acl_status = sent_acl_future.wait_for(kAclTimeout);
   ASSERT_EQ(sent_acl_status, std::future_status::ready);
   auto sent_acl = hal->GetSentAcl();
   ASSERT_LT(0, sent_acl.size());
-  AclPacketView sent_acl_view = AclPacketView::Create(sent_acl);
+  AclView sent_acl_view = AclView::Create(sent_acl);
   ASSERT_TRUE(sent_acl_view.IsValid());
   ASSERT_EQ(bd_addr.length() + sizeof(handle), sent_acl_view.GetPayload().size());
   auto sent_itr = sent_acl_view.GetPayload().begin();
@@ -680,7 +680,7 @@ TEST_F(HciTest, receiveMultipleAclPackets) {
     acl_payload->AddOctets2(handle);
     acl_payload->AddOctets2(i);
     hal->callbacks->aclDataReceived(
-        GetPacketBytes(AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(acl_payload))));
+        GetPacketBytes(AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(acl_payload))));
   }
   auto incoming_acl_future = upper->GetReceivedAclFuture();
   uint16_t received_packets = 0;
@@ -718,7 +718,7 @@ TEST_F(HciTest, receiveMultipleAclPackets) {
   acl_payload->AddOctets2(handle);
   acl_payload->AddOctets2(num_packets);
   hal->callbacks->aclDataReceived(
-      GetPacketBytes(AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(acl_payload))));
+      GetPacketBytes(AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(acl_payload))));
   auto incoming_acl_status = incoming_acl_future.wait_for(kAclTimeout);
   ASSERT_EQ(incoming_acl_status, std::future_status::ready);
   auto acl_view = upper->GetReceivedAcl();

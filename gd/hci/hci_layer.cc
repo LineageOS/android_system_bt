@@ -244,8 +244,8 @@ struct HciLayer::impl {
   Alarm* hci_timeout_alarm_{nullptr};
 
   // Acl packets
-  BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
-  os::EnqueueBuffer<AclPacketView> incoming_acl_buffer_{acl_queue_.GetDownEnd()};
+  BidiQueue<AclView, AclBuilder> acl_queue_{3 /* TODO: Set queue depth */};
+  os::EnqueueBuffer<AclView> incoming_acl_buffer_{acl_queue_.GetDownEnd()};
 };
 
 // All functions here are running on the HAL thread
@@ -260,7 +260,7 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
 
   void aclDataReceived(hal::HciPacket data_bytes) override {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(move(data_bytes)));
-    auto acl = std::make_unique<AclPacketView>(AclPacketView::Create(packet));
+    auto acl = std::make_unique<AclView>(AclView::Create(packet));
     module_.impl_->incoming_acl_buffer_.Enqueue(move(acl), module_.GetHandler());
   }
 
@@ -280,7 +280,7 @@ HciLayer::HciLayer() : impl_(nullptr), hal_callbacks_(nullptr) {}
 HciLayer::~HciLayer() {
 }
 
-common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd() {
+common::BidiQueueEnd<AclBuilder, AclView>* HciLayer::GetAclQueueEnd() {
   return impl_->acl_queue_.GetUpEnd();
 }
 

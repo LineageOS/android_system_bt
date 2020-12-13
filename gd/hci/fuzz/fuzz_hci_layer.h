@@ -67,7 +67,7 @@ class FuzzHciLayer : public HciLayer {
     }
   }
 
-  common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* GetAclQueueEnd() override {
+  common::BidiQueueEnd<hci::AclBuilder, hci::AclView>* GetAclQueueEnd() override {
     return acl_queue_.GetUpEnd();
   }
 
@@ -154,9 +154,9 @@ class FuzzHciLayer : public HciLayer {
 
   FuzzedDataProvider* auto_reply_fdp;
 
-  common::BidiQueue<hci::AclPacketView, hci::AclPacketBuilder> acl_queue_{3};
-  os::fuzz::DevNullQueue<AclPacketBuilder>* acl_dev_null_;
-  os::fuzz::FuzzInjectQueue<AclPacketView>* acl_inject_;
+  common::BidiQueue<hci::AclView, hci::AclBuilder> acl_queue_{3};
+  os::fuzz::DevNullQueue<AclBuilder>* acl_dev_null_;
+  os::fuzz::FuzzInjectQueue<AclView>* acl_inject_;
 
   FuzzCommandInterface<AclCommandBuilder> acl_connection_interface_{};
   FuzzCommandInterface<AclCommandBuilder> le_acl_connection_interface_{};

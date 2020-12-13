@@ -44,7 +44,7 @@ class LinkLayerController {
   ErrorCode SendCommandToRemoteByHandle(
       OpCode opcode, bluetooth::packet::PacketView<true> args, uint16_t handle);
   ErrorCode SendScoToRemote(bluetooth::hci::ScoPacketView sco_packet);
-  ErrorCode SendAclToRemote(bluetooth::hci::AclPacketView acl_packet);
+  ErrorCode SendAclToRemote(bluetooth::hci::AclView acl_packet);
 
   void StartSimplePairing(const Address& address);
   void AuthenticateRemoteStage1(const Address& address, PairingType pairing_type);
@@ -110,8 +110,8 @@ class LinkLayerController {
           send_event);
 
   void RegisterAclChannel(
-      const std::function<
-          void(std::shared_ptr<bluetooth::hci::AclPacketBuilder>)>& send_acl);
+      const std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)>&
+          send_acl);
 
   void RegisterScoChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_sco);
 
@@ -410,8 +410,7 @@ class LinkLayerController {
   std::function<void(AsyncTaskId)> cancel_task_;
 
   // Callbacks to send packets back to the HCI.
-  std::function<void(std::shared_ptr<bluetooth::hci::AclPacketBuilder>)>
-      send_acl_;
+  std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)> send_acl_;
   std::function<void(std::shared_ptr<bluetooth::hci::EventBuilder>)>
       send_event_;
   std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_sco_;

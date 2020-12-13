@@ -48,7 +48,7 @@ enum BroadcastFlag : 2 {
   ACTIVE_PERIPHERAL_BROADCAST = 1,
 }
 
-packet AclPacket {
+packet Acl {
   handle : 12,
   packet_boundary_flag : PacketBoundaryFlag,
   broadcast_flag : BroadcastFlag,

@@ -116,7 +116,7 @@ ErrorCode LinkLayerController::SendCommandToRemoteByHandle(
 }
 
 ErrorCode LinkLayerController::SendAclToRemote(
-    bluetooth::hci::AclPacketView acl_packet) {
+    bluetooth::hci::AclView acl_packet) {
   uint16_t handle = acl_packet.GetHandle();
   if (!connections_.HasHandle(handle)) {
     return ErrorCode::UNKNOWN_CONNECTION;
@@ -151,9 +151,9 @@ ErrorCode LinkLayerController::SendAclToRemote(
   raw_builder_ptr->AddOctets2(static_cast<uint16_t>(payload_bytes.size()));
   raw_builder_ptr->AddOctets(payload_bytes);
 
-  auto acl = model::packets::AclPacketBuilder::Create(
-      my_address.GetAddress(), destination.GetAddress(),
-      std::move(raw_builder_ptr));
+  auto acl = model::packets::AclBuilder::Create(my_address.GetAddress(),
+                                                destination.GetAddress(),
+                                                std::move(raw_builder_ptr));
 
   switch (phy) {
     case Phy::Type::BR_EDR:
@@ -333,7 +333,7 @@ void LinkLayerController::IncomingAclPacket(
            incoming.GetSourceAddress().ToString().c_str(),
            incoming.GetDestinationAddress().ToString().c_str());
 
-  auto acl = model::packets::AclPacketView::Create(incoming);
+  auto acl = model::packets::AclView::Create(incoming);
   ASSERT(acl.IsValid());
   auto payload = acl.GetPayload();
   std::shared_ptr<std::vector<uint8_t>> payload_bytes =
@@ -341,7 +341,7 @@ void LinkLayerController::IncomingAclPacket(
 
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(
       payload_bytes);
-  auto acl_view = bluetooth::hci::AclPacketView::Create(raw_packet);
+  auto acl_view = bluetooth::hci::AclView::Create(raw_packet);
   ASSERT(acl_view.IsValid());
 
   LOG_INFO("Remote handle 0x%x size %d", acl_view.GetHandle(),
@@ -370,7 +370,7 @@ void LinkLayerController::IncomingAclPacket(
                                   &payload_data[end_index]);
     std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
         std::make_unique<bluetooth::packet::RawBuilder>(fragment);
-    auto acl_packet = bluetooth::hci::AclPacketBuilder::Create(
+    auto acl_packet = bluetooth::hci::AclBuilder::Create(
         local_handle, pb_flag_controller_to_host, acl_view.GetBroadcastFlag(),
         std::move(raw_builder_ptr));
     pb_flag_controller_to_host =
@@ -1420,8 +1420,8 @@ void LinkLayerController::RegisterEventChannel(
 }
 
 void LinkLayerController::RegisterAclChannel(
-    const std::function<
-        void(std::shared_ptr<bluetooth::hci::AclPacketBuilder>)>& callback) {
+    const std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)>&
+        callback) {
   send_acl_ = callback;
 }
 
