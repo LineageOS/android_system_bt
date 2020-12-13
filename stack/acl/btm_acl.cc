@@ -2004,7 +2004,6 @@ void btm_read_automatic_flush_timeout_timeout(UNUSED_ATTR void* data) {
 void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
   tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT result;
-  tACL_CONN* p_acl_cb = &btm_cb.acl_cb_.acl_db[0];
 
   alarm_cancel(btm_cb.devcb.read_automatic_flush_timeout_timer);
   btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = nullptr;
@@ -2013,29 +2012,23 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
   if (p_cb) {
     uint16_t handle;
     STREAM_TO_UINT8(result.hci_status, p);
+    result.status = BTM_ERR_PROCESSING;
 
     if (result.hci_status == HCI_SUCCESS) {
       result.status = BTM_SUCCESS;
 
       STREAM_TO_UINT16(handle, p);
-
       STREAM_TO_UINT16(result.automatic_flush_timeout, p);
       LOG_DEBUG(
-          "BTM Automatic Flush Timeout Complete: timeout %u, hci status:%s",
+          "Read automatic flush timeout complete timeout:%hu hci_status:%s",
           result.automatic_flush_timeout,
           hci_error_code_text(result.hci_status).c_str());
 
-      /* Search through the list of active channels for the correct BD Addr */
-      for (uint16_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl_cb++) {
-        if ((p_acl_cb->in_use) && (handle == p_acl_cb->hci_handle)) {
-          result.rem_bda = p_acl_cb->remote_addr;
-          break;
-        }
+      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+      if (p_acl_cb != nullptr) {
+        result.rem_bda = p_acl_cb->remote_addr;
       }
-    } else {
-      result.status = BTM_ERR_PROCESSING;
     }
-
     (*p_cb)(&result);
   }
 }
