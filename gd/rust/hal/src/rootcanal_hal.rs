@@ -4,9 +4,10 @@
 
 use crate::internal::{Hal, RawHalExports};
 use crate::{Result, H4_HEADER_SIZE};
-use bt_packets::hci;
+use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, provides, Stoppable};
+use num_derive::{FromPrimitive, ToPrimitive};
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -15,7 +16,6 @@ use tokio::net::TcpStream;
 use tokio::runtime::Runtime;
 use tokio::select;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
-use num_derive::{FromPrimitive, ToPrimitive};
 
 #[derive(FromPrimitive, ToPrimitive)]
 enum HciPacketType {
@@ -76,8 +76,8 @@ impl RootcanalConfig {
 
 /// Send HCI events received from the HAL to the HCI layer
 async fn dispatch_incoming<R>(
-    evt_tx: UnboundedSender<hci::EventPacket>,
-    acl_tx: UnboundedSender<hci::AclPacket>,
+    evt_tx: UnboundedSender<EventPacket>,
+    acl_tx: UnboundedSender<AclPacket>,
     reader: R,
 ) -> Result<()>
 where
@@ -96,7 +96,9 @@ where
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            evt_tx.send(hci::EventPacket::parse(&buffer.freeze()).unwrap()).unwrap();
+            evt_tx
+                .send(EventPacket::parse(&buffer.freeze()).unwrap())
+                .unwrap();
         } else if buffer[0] == HciPacketType::Acl as u8 {
             buffer.resize(HciPacketHeaderSize::Acl as usize, 0);
             reader.read_exact(&mut buffer).await?;
@@ -105,15 +107,17 @@ where
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            acl_tx.send(hci::AclPacket::parse(&buffer.freeze()).unwrap()).unwrap();
+            acl_tx
+                .send(AclPacket::parse(&buffer.freeze()).unwrap())
+                .unwrap();
         }
     }
 }
 
 /// Send commands received from the HCI later to rootcanal
 async fn dispatch_outgoing<W>(
-    mut cmd_rx: UnboundedReceiver<hci::CommandPacket>,
-    mut acl_rx: UnboundedReceiver<hci::AclPacket>,
+    mut cmd_rx: UnboundedReceiver<CommandPacket>,
+    mut acl_rx: UnboundedReceiver<AclPacket>,
     mut writer: W,
 ) -> Result<()>
 where
