@@ -973,6 +973,27 @@ enum : uint8_t {
 };
 typedef uint8_t tBTM_PM_STATUS;
 
+inline std::string power_mode_status_text(tBTM_PM_STATUS status) {
+  switch (status) {
+    case BTM_PM_STS_ACTIVE:
+      return std::string("active");
+    case BTM_PM_STS_HOLD:
+      return std::string("hold");
+    case BTM_PM_STS_SNIFF:
+      return std::string("sniff");
+    case BTM_PM_STS_PARK:
+      return std::string("park");
+    case BTM_PM_STS_SSR:
+      return std::string("sniff_subrating");
+    case BTM_PM_STS_PENDING:
+      return std::string("pending");
+    case BTM_PM_STS_ERROR:
+      return std::string("error");
+    default:
+      return std::string("UNKNOWN");
+  }
+}
+
 /* BTM Power manager modes */
 enum : uint8_t {
   BTM_PM_MD_ACTIVE = HCI_MODE_ACTIVE,  // 0x00
