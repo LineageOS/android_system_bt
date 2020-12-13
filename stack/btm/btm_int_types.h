@@ -77,14 +77,14 @@ typedef struct {
   uint8_t def_inq_scan_mode; /* ??? limited/general/none */
 } tBTM_CFG;
 
-enum {
+typedef enum : uint8_t {
   BTM_PM_ST_ACTIVE = BTM_PM_STS_ACTIVE,
   BTM_PM_ST_HOLD = BTM_PM_STS_HOLD,
   BTM_PM_ST_SNIFF = BTM_PM_STS_SNIFF,
   BTM_PM_ST_PARK = BTM_PM_STS_PARK,
   BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,
   BTM_PM_ST_INVALID = 0xFF
-};
+} tPOWER_MODE_STATE;
 
 #define BTM_PM_REC_NOT_USED 0
 typedef struct {
