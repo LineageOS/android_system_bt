@@ -292,4 +292,18 @@ typedef struct {
  public:
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
   void set_disconnect_reason(tHCI_STATUS reason) { acl_disc_reason = reason; }
+  uint16_t DefaultPacketTypes() const { return btm_acl_pkt_types_supported; }
+  uint16_t DefaultLinkPolicy() const { return btm_def_link_policy; }
+  uint16_t DefaultSupervisorTimeout() const { return btm_def_link_super_tout; }
+  void SetDefaultSupervisorTimeout(uint16_t timeout) {
+    btm_def_link_super_tout = timeout;
+  }
+
+  unsigned NumberOfActiveLinks() const {
+    unsigned cnt = 0;
+    for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
+      if (acl_db[i].InUse()) ++cnt;
+    }
+    return cnt;
+  }
 } tACL_CB;
