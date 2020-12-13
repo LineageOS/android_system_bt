@@ -760,6 +760,11 @@ void SecurityManagerImpl::SetLeOobDataPresent(OobDataFlag data_present) {
   this->local_le_oob_data_present_ = data_present;
 }
 
+void SecurityManagerImpl::GetOutOfBandData(channel::SecurityCommandStatusCallback callback) {
+  this->security_manager_channel_->SendCommand(
+      hci::ReadLocalOobDataBuilder::Create(), std::forward<channel::SecurityCommandStatusCallback>(callback));
+}
+
 void SecurityManagerImpl::GetLeOutOfBandData(
     std::array<uint8_t, 16>* confirmation_value, std::array<uint8_t, 16>* random_value) {
   local_le_oob_data_ = std::make_optional<MyOobData>(PairingHandlerLe::GenerateOobData());
