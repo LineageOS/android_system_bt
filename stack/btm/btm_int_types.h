@@ -78,11 +78,12 @@ typedef struct {
 } tBTM_CFG;
 
 typedef enum : uint8_t {
-  BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,  // 0x00
-  BTM_PM_ST_HOLD = HCI_MODE_HOLD,      // 0x01
-  BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,    // 0x02
-  BTM_PM_ST_PARK = HCI_MODE_PARK,      // 0x03
-  BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,
+  BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,      // 0x00
+  BTM_PM_ST_HOLD = HCI_MODE_HOLD,          // 0x01
+  BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,        // 0x02
+  BTM_PM_ST_PARK = HCI_MODE_PARK,          // 0x03
+  BTM_PM_ST_UNUSED,                        // 0x04
+  BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,  // 0x05
   BTM_PM_ST_INVALID = 0xFF
 } tPOWER_MODE_STATE;
 
