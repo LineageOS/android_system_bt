@@ -1948,7 +1948,6 @@ void btm_read_failed_contact_counter_timeout(UNUSED_ATTR void* data) {
 void btm_read_failed_contact_counter_complete(uint8_t* p) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
   tBTM_FAILED_CONTACT_COUNTER_RESULT result;
-  tACL_CONN* p_acl_cb = &btm_cb.acl_cb_.acl_db[0];
 
   alarm_cancel(btm_cb.devcb.read_failed_contact_counter_timer);
   btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
@@ -1968,12 +1967,9 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
                 result.failed_contact_counter,
                 RoleText(result.hci_status).c_str());
 
-      /* Search through the list of active channels for the correct BD Addr */
-      for (uint16_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl_cb++) {
-        if ((p_acl_cb->in_use) && (handle == p_acl_cb->hci_handle)) {
-          result.rem_bda = p_acl_cb->remote_addr;
-          break;
-        }
+      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+      if (p_acl_cb != nullptr) {
+        result.rem_bda = p_acl_cb->remote_addr;
       }
     } else {
       result.status = BTM_ERR_PROCESSING;
