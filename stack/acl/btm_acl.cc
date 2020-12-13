@@ -734,12 +734,12 @@ void StackAclBtmAcl::btm_set_default_link_policy(uint16_t settings) {
 }
 
 void BTM_default_unblock_role_switch() {
-  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy |
+  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() |
                                         HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
 void BTM_default_block_role_switch() {
-  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy &
+  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() &
                                         ~HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
@@ -1548,7 +1548,7 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   } else {
     /* Special case for when info for the local device is requested */
     if (addr == *controller_get_interface()->get_address()) {
-      pkt_types = btm_cb.acl_cb_.btm_acl_pkt_types_supported;
+      pkt_types = btm_cb.acl_cb_.DefaultPacketTypes();
     }
   }
 
