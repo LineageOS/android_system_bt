@@ -1880,7 +1880,6 @@ void btm_read_rssi_timeout(UNUSED_ATTR void* data) {
 void btm_read_rssi_complete(uint8_t* p) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
   tBTM_RSSI_RESULT result;
-  tACL_CONN* p_acl_cb = &btm_cb.acl_cb_.acl_db[0];
 
   alarm_cancel(btm_cb.devcb.read_rssi_timer);
   btm_cb.devcb.p_rssi_cmpl_cb = NULL;
@@ -1888,28 +1887,22 @@ void btm_read_rssi_complete(uint8_t* p) {
   /* If there was a registered callback, call it */
   if (p_cb) {
     STREAM_TO_UINT8(result.hci_status, p);
+    result.status = BTM_ERR_PROCESSING;
 
     if (result.hci_status == HCI_SUCCESS) {
       uint16_t handle;
-      result.status = BTM_SUCCESS;
-
       STREAM_TO_UINT16(handle, p);
 
       STREAM_TO_UINT8(result.rssi, p);
-      LOG_DEBUG("read rrsi complete rssi %d, hci status:%s", result.rssi,
+      LOG_DEBUG("Read rrsi complete rssi:%hhd hci status:%s", result.rssi,
                 hci_error_code_text(result.hci_status).c_str());
 
-      /* Search through the list of active channels for the correct BD Addr */
-      for (uint16_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl_cb++) {
-        if ((p_acl_cb->in_use) && (handle == p_acl_cb->hci_handle)) {
-          result.rem_bda = p_acl_cb->remote_addr;
-          break;
-        }
+      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+      if (p_acl_cb != nullptr) {
+        result.rem_bda = p_acl_cb->remote_addr;
+        result.status = BTM_SUCCESS;
       }
-    } else {
-      result.status = BTM_ERR_PROCESSING;
     }
-
     (*p_cb)(&result);
   }
 }
