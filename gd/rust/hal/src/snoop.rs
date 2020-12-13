@@ -1,7 +1,14 @@
 //! BT snoop logger
 
+use crate::internal::RawHalExports;
+use crate::HalExports;
 use bt_common::sys_prop;
-use gddi::Stoppable;
+use gddi::{module, provides, Stoppable};
+use std::sync::Arc;
+use tokio::runtime::Runtime;
+use tokio::select;
+use tokio::sync::mpsc::{channel, UnboundedReceiver};
+use tokio::sync::Mutex;
 
 /// The different modes snoop logging can be in
 #[derive(Clone)]
@@ -74,4 +81,82 @@ fn get_configured_snoop_mode() -> String {
     } else {
         String::default()
     })
+}
+
+module! {
+    snoop_module,
+    providers {
+        HalExports => provide_snooped_hal,
+    },
+}
+
+#[provides]
+async fn provide_snooped_hal(
+    config: SnoopConfig,
+    hal_exports: RawHalExports,
+    rt: Arc<Runtime>,
+) -> HalExports {
+    let (cmd_down_tx, mut cmd_down_rx) = channel(10);
+    let (evt_up_tx, evt_up_rx) = channel(10);
+    let (acl_down_tx, mut acl_down_rx) = channel(10);
+    let (acl_up_tx, acl_up_rx) = channel(10);
+
+    rt.spawn(async move {
+        let logger = SnoopLogger::new(config);
+        loop {
+            select! {
+                Some(evt) = consume(&hal_exports.evt_rx) => {
+                    logger.log(Type::Evt, Direction::Up, &evt);
+                    evt_up_tx.send(evt).await.unwrap();
+                },
+                Some(cmd) = cmd_down_rx.recv() => {
+                    logger.log(Type::Cmd, Direction::Down, &cmd);
+                    hal_exports.cmd_tx.send(cmd).unwrap();
+                },
+                Some(acl) = acl_down_rx.recv() => {
+                    logger.log(Type::Acl, Direction::Down, &acl);
+                    hal_exports.acl_tx.send(acl).unwrap();
+                },
+                Some(acl) = consume(&hal_exports.acl_rx) => {
+                    logger.log(Type::Acl, Direction::Up, &acl);
+                    acl_up_tx.send(acl).await.unwrap();
+                }
+            }
+        }
+    });
+
+    HalExports {
+        cmd_tx: cmd_down_tx,
+        evt_rx: Arc::new(Mutex::new(evt_up_rx)),
+        acl_tx: acl_down_tx,
+        acl_rx: Arc::new(Mutex::new(acl_up_rx)),
+    }
+}
+
+async fn consume<T>(rx: &Arc<Mutex<UnboundedReceiver<T>>>) -> Option<T> {
+    rx.lock().await.recv().await
+}
+
+#[allow(unused)]
+enum Type {
+    Cmd = 1,
+    Acl,
+    Sco,
+    Evt,
+    Iso,
+}
+
+enum Direction {
+    Up,
+    Down,
+}
+
+struct SnoopLogger;
+
+impl SnoopLogger {
+    fn new(_config: SnoopConfig) -> Self {
+        Self {}
+    }
+
+    fn log(&self, _t: Type, _dir: Direction, _bytes: &bytes::Bytes) {}
 }

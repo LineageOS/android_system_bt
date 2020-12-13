@@ -14,7 +14,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::select;
-use tokio::sync::mpsc::{channel, Receiver, Sender, UnboundedReceiver, UnboundedSender};
+use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::{oneshot, Mutex};
 
 module! {
@@ -68,9 +68,9 @@ pub struct HciExports {
     cmd_tx: Sender<Command>,
     evt_handlers: Arc<Mutex<HashMap<u8, Sender<HciEvent>>>>,
     /// Transmit end of a channel used to send ACL data
-    pub acl_tx: UnboundedSender<RawPacket>,
+    pub acl_tx: Sender<RawPacket>,
     /// Receive end of a channel used to receive ACL data
-    pub acl_rx: Arc<Mutex<UnboundedReceiver<RawPacket>>>,
+    pub acl_rx: Arc<Mutex<Receiver<RawPacket>>>,
 }
 
 impl HciExports {
@@ -101,8 +101,8 @@ impl HciExports {
 
 async fn dispatch(
     evt_handlers: Arc<Mutex<HashMap<u8, Sender<HciEvent>>>>,
-    evt_rx: Arc<Mutex<UnboundedReceiver<HciEvent>>>,
-    cmd_tx: UnboundedSender<HciCommand>,
+    evt_rx: Arc<Mutex<Receiver<HciEvent>>>,
+    cmd_tx: Sender<HciCommand>,
     mut cmd_rx: Receiver<Command>,
 ) {
     let mut pending_cmds: Vec<PendingCommand> = Vec::new();
@@ -122,14 +122,14 @@ async fn dispatch(
                     opcode: bt_packet::get_cmd_opcode(&cmd.cmd).unwrap(),
                     fut: cmd.fut,
                 });
-                cmd_tx.send(cmd.cmd).unwrap();
+                cmd_tx.send(cmd.cmd).await.unwrap();
             },
             else => break,
         }
     }
 }
 
-async fn consume(evt_rx: &Arc<Mutex<UnboundedReceiver<HciEvent>>>) -> Option<HciEvent> {
+async fn consume(evt_rx: &Arc<Mutex<Receiver<HciEvent>>>) -> Option<HciEvent> {
     evt_rx.lock().await.recv().await
 }
 
