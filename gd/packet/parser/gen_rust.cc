@@ -74,6 +74,42 @@ bool generate_rust_source_one_file(
   out_file << "// @generated rust packets from " << input_file.filename().string() << "\n\n";
 
   generate_rust_packet_preamble(out_file);
+  if (input_filename == "hci_packets") {
+    out_file << "pub trait CommandExpectations { "
+             << "type ResponseType;"
+             << "fn _to_response_type(pkt: EventPacket) -> Self::ResponseType;"
+             << "}";
+
+    for (const auto& packet_def : decls.packet_defs_queue_) {
+      auto packet = packet_def.second;
+      if (!packet->HasAncestorNamed("Command")) {
+        continue;
+      }
+      auto constraint = packet->parent_constraints_.find("op_code");
+      if (constraint == packet->parent_constraints_.end()) {
+        continue;
+      }
+      auto opcode = std::get<std::string>(constraint->second);
+      for (const auto& other_packet_def : decls.packet_defs_queue_) {
+        auto other_packet = other_packet_def.second;
+        bool command_status = other_packet->HasAncestorNamed("CommandStatus");
+        bool command_complete = other_packet->HasAncestorNamed("CommandComplete");
+        if (!command_status && !command_complete) {
+          continue;
+        }
+        auto other_constraint = other_packet->parent_constraints_.find("command_op_code");
+        if (other_constraint == other_packet->parent_constraints_.end()) {
+          continue;
+        }
+
+        auto other_opcode = std::get<std::string>(other_constraint->second);
+        if (opcode == other_opcode) {
+          packet->complement_ = other_packet;
+          break;
+        }
+      }
+    }
+  }
 
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {

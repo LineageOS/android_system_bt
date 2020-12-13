@@ -945,6 +945,17 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 }
 
 void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
+  if (complement_ != nullptr) {
+    auto complement_root = complement_->GetRootDef();
+    auto complement_root_accessor = util::CamelCaseToUnderScore(complement_root->name_);
+    s << "impl CommandExpectations for " << name_ << "Packet {";
+    s << " type ResponseType = " << complement_->name_ << "Packet;";
+    s << " fn _to_response_type(pkt: EventPacket) -> Self::ResponseType { ";
+    s << complement_->name_ << "Packet::new(pkt." << complement_root_accessor << ".clone())";
+    s << " }";
+    s << "}";
+  }
+
   s << "impl " << name_ << "Packet {";
   if (parent_ == nullptr) {
     s << "pub fn parse(bytes: &[u8]) -> Result<Self> { ";
