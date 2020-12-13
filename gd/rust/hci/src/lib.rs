@@ -6,24 +6,26 @@ pub mod error;
 /// HCI layer facade service
 pub mod facade;
 
+use bt_common::time::Alarm;
 use bt_hal::HalExports;
+use bt_packets::hci::CommandCompleteChild::ResetComplete;
 use bt_packets::hci::EventChild::{
     CommandComplete, CommandStatus, LeMetaEvent, MaxSlotsChange, PageScanRepetitionModeChange,
     VendorSpecificEvent,
 };
 use bt_packets::hci::{
-    AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, OpCode, SubeventCode,
+    AclPacket, CommandCompletePacket, CommandPacket, CommandStatusPacket, ErrorCode, EventCode,
+    EventPacket, LeMetaEventPacket, OpCode, ResetBuilder, SubeventCode,
 };
 use error::Result;
 use gddi::{module, provides, Stoppable};
 use std::collections::HashMap;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::runtime::Runtime;
 use tokio::select;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::{oneshot, Mutex};
-use bt_common::time::Alarm;
-use std::time::Duration;
 
 module! {
     hci_module,
@@ -49,13 +51,24 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
         cmd_rx,
     ));
 
-    HciExports {
+    let mut exports = HciExports {
         cmd_tx,
         evt_handlers,
         le_evt_handlers,
         acl_tx: hal_exports.acl_tx,
         acl_rx: hal_exports.acl_rx,
+    };
+
+    match exports
+        .enqueue_command_with_complete(ResetBuilder {}.build().into())
+        .await
+        .specialize()
+    {
+        ResetComplete(evt) if *evt.get_status() == ErrorCode::Success => {}
+        _ => panic!("reset did not complete successfully"),
     }
+
+    exports
 }
 
 /// HCI command entry
@@ -95,14 +108,23 @@ impl HciExports {
 
     /// Enqueue an HCI command expecting a command complete
     /// response from the controller
-    pub async fn enqueue_command_with_complete(&mut self, cmd: CommandPacket) -> EventPacket {
-        self.send(cmd).await.unwrap()
+    pub async fn enqueue_command_with_complete(
+        &mut self,
+        cmd: CommandPacket,
+    ) -> CommandCompletePacket {
+        match self.send(cmd).await.unwrap().specialize() {
+            CommandComplete(evt) => evt,
+            _ => panic!("Expected command complete, got status instead"),
+        }
     }
 
     /// Enqueue an HCI command expecting a status response
     /// from the controller
-    pub async fn enqueue_command_with_status(&mut self, cmd: CommandPacket) -> EventPacket {
-        self.send(cmd).await.unwrap()
+    pub async fn enqueue_command_with_status(&mut self, cmd: CommandPacket) -> CommandStatusPacket {
+        match self.send(cmd).await.unwrap().specialize() {
+            CommandStatus(evt) => evt,
+            _ => panic!("Expected command status, got complete instead"),
+        }
     }
 
     /// Indicate interest in specific HCI events
