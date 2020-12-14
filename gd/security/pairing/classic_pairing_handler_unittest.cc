@@ -72,7 +72,7 @@ class FakeSecurityManagerChannel : public channel::SecurityManagerChannel {
 
 class TestUI : public UI {
  public:
-  ~TestUI() override {}
+  ~TestUI() = default;
   void DisplayPairingPrompt(const hci::AddressWithType& address, std::string name) override {}
   void Cancel(const hci::AddressWithType& address) override {}
   void DisplayConfirmValue(ConfirmationData data) override {}

@@ -34,7 +34,7 @@ namespace {
 
 class L2capDynamicServiceManagerTest : public ::testing::Test {
  public:
-  ~L2capDynamicServiceManagerTest() override = default;
+  ~L2capDynamicServiceManagerTest() = default;
 
   void OnServiceRegistered(bool expect_success, DynamicChannelManager::RegistrationResult result,
                            std::unique_ptr<DynamicChannelService> user_service) {

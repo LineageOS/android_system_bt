@@ -48,7 +48,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
        DynamicChannelServiceManagerImpl* dynamic_service_manager, FixedChannelServiceManagerImpl* fixed_service_manager,
        LinkManager* link_manager);
 
-  ~Link() override = default;
+  ~Link() = default;
 
   inline hci::AddressWithType GetDevice() const override {
     return acl_connection_->GetRemoteAddress();

@@ -58,7 +58,7 @@ struct classic_impl : public security::ISecurityManagerListener {
         handler_->BindOn(this, &classic_impl::on_read_remote_version_information));
   }
 
-  ~classic_impl() override {
+  ~classic_impl() {
     for (auto event_code : AclConnectionEvents) {
       hci_layer_->UnregisterEventHandler(event_code);
     }
