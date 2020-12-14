@@ -91,7 +91,7 @@ class ConfirmationData {
 // Through this interface we talk to the user, asking for confirmations/acceptance.
 class UI {
  public:
-  virtual ~UI(){};
+  virtual ~UI() = default;
 
   /* Remote LE device tries to initiate pairing, ask user to confirm */
   virtual void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address, std::string name) = 0;

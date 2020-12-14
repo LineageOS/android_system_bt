@@ -185,7 +185,7 @@ void StructDef::GenDefinition(std::ostream& s) const {
   GenConstructor(s);
 
   s << " public:\n";
-  s << "  virtual ~" << name_ << "() override = default;\n";
+  s << "  virtual ~" << name_ << "() = default;\n";
 
   GenSerialize(s);
   s << "\n";

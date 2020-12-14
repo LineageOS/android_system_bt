@@ -33,7 +33,7 @@ namespace internal {
 
 class L2capLeDynamicServiceManagerTest : public ::testing::Test {
  public:
-  ~L2capLeDynamicServiceManagerTest() override = default;
+  ~L2capLeDynamicServiceManagerTest() = default;
 
   void OnServiceRegistered(bool expect_success, DynamicChannelManager::RegistrationResult result,
                            std::unique_ptr<DynamicChannelService> user_service) {
