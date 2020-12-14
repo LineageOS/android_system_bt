@@ -115,7 +115,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   class CommandInterfaceImpl : public CommandInterface<T> {
    public:
     explicit CommandInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-    ~CommandInterfaceImpl() override = default;
+    ~CommandInterfaceImpl() = default;
 
     void EnqueueCommand(std::unique_ptr<T> command,
                         common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
