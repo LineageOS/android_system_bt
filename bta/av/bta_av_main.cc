@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "bt_target.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -895,9 +896,12 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   int i;
   tBTA_AV_API_STOP stop;
 
-  LOG(INFO) << __func__ << ": status=" << +status << ", num_links=" << +id;
+  LOG(INFO) << __func__ << ": status=" << bta_sys_conn_status_text(status)
+            << ", num_links=" << +id;
   if (id) {
     bta_av_cb.sco_occupied = true;
+    LOG_DEBUG("SCO occupied peer:%s status:%s", PRIVATE_ADDRESS(peer_addr),
+              bta_sys_conn_status_text(status).c_str());
 
     if (bta_av_cb.features & BTA_AV_FEAT_NO_SCO_SSPD) {
       return;
@@ -919,6 +923,8 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     }
   } else {
     bta_av_cb.sco_occupied = false;
+    LOG_DEBUG("SCO unoccupied peer:%s status:%s", PRIVATE_ADDRESS(peer_addr),
+              bta_sys_conn_status_text(status).c_str());
 
     if (bta_av_cb.features & BTA_AV_FEAT_NO_SCO_SSPD) {
       return;
