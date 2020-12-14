@@ -21,6 +21,7 @@
 #include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/hcidefs.h"
 #include "types/ble_address_with_type.h"
 
 namespace bluetooth {
@@ -214,6 +215,10 @@ inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
       return static_cast<tHCI_STATUS>(
           hci::ErrorCode::CONNECTION_FAILED_ESTABLISHMENT);
   }
+}
+
+inline tHCI_MODE ToLegacyHciMode(hci::Mode mode) {
+  return static_cast<tHCI_MODE>(mode);
 }
 
 namespace debug {

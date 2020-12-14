@@ -161,16 +161,15 @@ typedef union {
 #define BTA_DM_UNPAIRING 2
 typedef uint8_t tBTA_DM_CONN_STATE;
 
-#define BTA_DM_DI_NONE 0x00 /* nothing special */
-#define BTA_DM_DI_USE_SSR \
-  0x10 /* set this bit if ssr is supported for this link */
-#define BTA_DM_DI_AV_ACTIVE \
-  0x20 /* set this bit if AV is active for this link */
-#define BTA_DM_DI_SET_SNIFF \
-  0x01 /* set this bit if call BTM_SetPowerMode(sniff) */
-#define BTA_DM_DI_INT_SNIFF \
-  0x02 /* set this bit if call BTM_SetPowerMode(sniff) & enter sniff mode */
-#define BTA_DM_DI_ACP_SNIFF 0x04 /* set this bit if peer init sniff */
+typedef enum : uint8_t {
+  BTA_DM_DI_NONE = 0x00,      /* nothing special */
+  BTA_DM_DI_SET_SNIFF = 0x01, /* set this bit if call BTM_SetPowerMode(sniff) */
+  BTA_DM_DI_INT_SNIFF = 0x02, /* set this bit if call BTM_SetPowerMode(sniff) &
+                                 enter sniff mode */
+  BTA_DM_DI_ACP_SNIFF = 0x04, /* set this bit if peer init sniff */
+  BTA_DM_DI_USE_SSR = 0x10, /* set this bit if ssr is supported for this link */
+  BTA_DM_DI_AV_ACTIVE = 0x20, /* set this bit if AV is active for this link */
+} tBTA_DM_DEV_INFO_BITMASK;
 typedef uint8_t tBTA_DM_DEV_INFO;
 
 /* set power mode request type */

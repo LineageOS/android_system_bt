@@ -357,7 +357,19 @@ class SecurityTest(GdBaseTestClass):
         self.dut_security.enable_secure_connections()
         self.cert_security.enable_secure_connections()
 
-    def test_get_oob_data_from_controller_not_present(self):
+    def test_get_oob_data_from_dut_controller_p192_present(self):
+        oob_data = self.dut_security.get_oob_data_from_controller(OobDataPresent.P192_PRESENT)
+        assertThat(len(oob_data)).isEqualTo(4)
+        has192C = not all([i == 0 for i in oob_data[0]])
+        has192R = not all([i == 0 for i in oob_data[1]])
+        has256C = not all([i == 0 for i in oob_data[2]])
+        has256R = not all([i == 0 for i in oob_data[3]])
+        assertThat(has192C).isTrue()
+        assertThat(has192R).isTrue()
+        assertThat(has256C).isFalse()
+        assertThat(has256R).isFalse()
+
+    def test_get_oob_data_from_cert_controller_not_present(self):
         oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.NOT_PRESENT)
         assertThat(len(oob_data)).isEqualTo(4)
         has192C = not all([i == 0 for i in oob_data[0]])
@@ -369,7 +381,7 @@ class SecurityTest(GdBaseTestClass):
         assertThat(has256C).isFalse()
         assertThat(has256R).isFalse()
 
-    def test_get_oob_data_from_controller_p192_present_no_secure_connections(self):
+    def test_get_oob_data_from_cert_controller_p192_present_no_secure_connections(self):
         oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P192_PRESENT)
         assertThat(len(oob_data)).isEqualTo(4)
         has192C = not all([i == 0 for i in oob_data[0]])
@@ -381,7 +393,7 @@ class SecurityTest(GdBaseTestClass):
         assertThat(has256C).isFalse()
         assertThat(has256R).isFalse()
 
-    def test_get_oob_data_from_controller_p192_present(self):
+    def test_get_oob_data_from_cert_controller_p192_present(self):
         self.cert_security.enable_secure_simple_pairing()
         self.cert_security.enable_secure_connections()
         oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P192_PRESENT)
@@ -395,7 +407,7 @@ class SecurityTest(GdBaseTestClass):
         assertThat(has256C).isFalse()
         assertThat(has256R).isFalse()
 
-    def test_get_oob_data_from_controller_p256_present(self):
+    def test_get_oob_data_from_cert_controller_p256_present(self):
         self.cert_security.enable_secure_simple_pairing()
         self.cert_security.enable_secure_connections()
         oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P256_PRESENT)
@@ -409,7 +421,7 @@ class SecurityTest(GdBaseTestClass):
         assertThat(has256C).isTrue()
         assertThat(has256R).isTrue()
 
-    def test_get_oob_data_from_controller_p192_and_p256_present(self):
+    def test_get_oob_data_from_cert_controller_p192_and_p256_present(self):
         self.cert_security.enable_secure_simple_pairing()
         self.cert_security.enable_secure_connections()
         oob_data = self.cert_security.get_oob_data_from_controller(OobDataPresent.P192_AND_256_PRESENT)

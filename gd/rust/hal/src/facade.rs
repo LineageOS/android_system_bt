@@ -35,10 +35,10 @@ async fn provide_facade(hal_exports: HalExports, rt: Arc<Runtime>) -> HciHalFaca
 #[derive(Clone, Stoppable)]
 pub struct HciHalFacadeService {
     rt: Arc<Runtime>,
-    cmd_tx: mpsc::UnboundedSender<HciCommand>,
-    evt_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
-    acl_tx: mpsc::UnboundedSender<RawPacket>,
-    acl_rx: Arc<Mutex<mpsc::UnboundedReceiver<HciEvent>>>,
+    cmd_tx: mpsc::Sender<HciCommand>,
+    evt_rx: Arc<Mutex<mpsc::Receiver<HciEvent>>>,
+    acl_tx: mpsc::Sender<RawPacket>,
+    acl_rx: Arc<Mutex<mpsc::Receiver<HciEvent>>>,
 }
 
 impl GrpcFacade for HciHalFacadeService {
@@ -49,12 +49,18 @@ impl GrpcFacade for HciHalFacadeService {
 
 impl HciHalFacade for HciHalFacadeService {
     fn send_command(&mut self, _ctx: RpcContext<'_>, mut cmd: Command, sink: UnarySink<Empty>) {
-        self.cmd_tx.send(cmd.take_payload().into()).unwrap();
+        let cmd_tx = self.cmd_tx.clone();
+        self.rt.block_on(async move {
+            cmd_tx.send(cmd.take_payload().into()).await.unwrap();
+        });
         sink.success(Empty::default());
     }
 
     fn send_acl(&mut self, _ctx: RpcContext<'_>, mut acl: AclPacket, sink: UnarySink<Empty>) {
-        self.acl_tx.send(acl.take_payload().into()).unwrap();
+        let acl_tx = self.acl_tx.clone();
+        self.rt.block_on(async move {
+            acl_tx.send(acl.take_payload().into()).await.unwrap();
+        });
         sink.success(Empty::default());
     }
 

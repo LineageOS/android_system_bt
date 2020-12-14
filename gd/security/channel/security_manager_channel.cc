@@ -80,6 +80,11 @@ void SecurityManagerChannel::SendCommand(std::unique_ptr<hci::SecurityCommandBui
                                           handler_->BindOnceOn(this, &SecurityManagerChannel::OnCommandComplete));
 }
 
+void SecurityManagerChannel::SendCommand(
+    std::unique_ptr<hci::SecurityCommandBuilder> command, SecurityCommandStatusCallback callback) {
+  hci_security_interface_->EnqueueCommand(std::move(command), std::forward<SecurityCommandStatusCallback>(callback));
+}
+
 void SecurityManagerChannel::OnHciEventReceived(hci::EventPacketView packet) {
   ASSERT_LOG(listener_ != nullptr, "No listener set!");
   ASSERT(packet.IsValid());

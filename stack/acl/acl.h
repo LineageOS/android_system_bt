@@ -87,7 +87,11 @@ typedef struct {
   RawAddress active_remote_addr;
   RawAddress conn_addr;
   RawAddress remote_addr;
-  bool in_use;
+  bool in_use{false};
+
+ public:
+  bool InUse() const { return in_use; }
+
   bool link_up_issued;
   tBT_TRANSPORT transport;
   bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
@@ -193,7 +197,43 @@ typedef struct {
   uint8_t sca; /* Sleep clock accuracy */
 } tACL_CONN;
 
+// Power mode states.
+// Used as both value and bitmask
+enum : uint8_t {
+  BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,      // 0x00
+  BTM_PM_ST_HOLD = HCI_MODE_HOLD,          // 0x01
+  BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,        // 0x02
+  BTM_PM_ST_PARK = HCI_MODE_PARK,          // 0x03
+  BTM_PM_ST_UNUSED,                        // 0x04
+  BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,  // 0x05
+  BTM_PM_ST_INVALID = 0x7F,
+  BTM_PM_STORED_MASK = 0x80, /* set this mask if the command is stored */
+};
 typedef uint8_t tBTM_PM_STATE;
+
+inline std::string power_mode_state_text(tBTM_PM_STATE state) {
+  std::string s =
+      std::string((state & BTM_PM_STORED_MASK) ? "stored:" : "immediate:");
+  switch (state & ~BTM_PM_STORED_MASK) {
+    case BTM_PM_ST_ACTIVE:
+      return s + std::string("active");
+    case BTM_PM_ST_HOLD:
+      return s + std::string("hold");
+    case BTM_PM_ST_SNIFF:
+      return s + std::string("sniff");
+    case BTM_PM_ST_PARK:
+      return s + std::string("park");
+    case BTM_PM_ST_UNUSED:
+      return s + std::string("WARN:UNUSED");
+    case BTM_PM_ST_PENDING:
+      return s + std::string("pending");
+    case BTM_PM_ST_INVALID:
+      return s + std::string("invalid");
+    default:
+      return s + std::string("UNKNOWN");
+  }
+}
+
 typedef struct {
   bool chg_ind;
   tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
@@ -288,4 +328,18 @@ typedef struct {
  public:
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
   void set_disconnect_reason(tHCI_STATUS reason) { acl_disc_reason = reason; }
+  uint16_t DefaultPacketTypes() const { return btm_acl_pkt_types_supported; }
+  uint16_t DefaultLinkPolicy() const { return btm_def_link_policy; }
+  uint16_t DefaultSupervisorTimeout() const { return btm_def_link_super_tout; }
+  void SetDefaultSupervisorTimeout(uint16_t timeout) {
+    btm_def_link_super_tout = timeout;
+  }
+
+  unsigned NumberOfActiveLinks() const {
+    unsigned cnt = 0;
+    for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
+      if (acl_db[i].InUse()) ++cnt;
+    }
+    return cnt;
+  }
 } tACL_CB;

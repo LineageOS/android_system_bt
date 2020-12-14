@@ -36,6 +36,7 @@
 #include "bta_sys.h"
 #include "btm_api.h"
 #include "device/include/controller.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btu.h"
@@ -667,11 +668,18 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
   tBTM_PM_MODE mode = BTM_PM_STS_ACTIVE;
 
   /* if not in park mode, switch to park */
-  BTM_ReadPowerMode(peer_addr, &mode);
+  if (!BTM_ReadPowerMode(peer_addr, &mode)) {
+    LOG_WARN("Unable to read power mode for peer:%s",
+             PRIVATE_ADDRESS(peer_addr));
+  }
 
   if (mode != BTM_PM_MD_PARK) {
-    BTM_SetPowerMode(bta_dm_cb.pm_id, peer_addr,
-                     &p_bta_dm_pm_md[BTA_DM_PM_PARK_IDX]);
+    tBTM_STATUS status = BTM_SetPowerMode(bta_dm_cb.pm_id, peer_addr,
+                                          &p_bta_dm_pm_md[BTA_DM_PM_PARK_IDX]);
+    if (status == BTM_CMD_STORED || status == BTM_CMD_STARTED) {
+      return true;
+    }
+    LOG_WARN("Unable to set park power mode");
   }
   return true;
 }
@@ -691,7 +699,11 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
   tBTM_PM_PWR_MD pwr_md;
   tBTM_STATUS status;
 
-  BTM_ReadPowerMode(p_peer_dev->peer_bdaddr, &mode);
+  if (!BTM_ReadPowerMode(p_peer_dev->peer_bdaddr, &mode)) {
+    LOG_WARN("Unable to read power mode for peer:%s",
+             PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr));
+  }
+
   uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
   APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d, info:x%x", mode, index,
                    p_peer_dev->info);
@@ -758,8 +770,9 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
       current_ssr_index = p_bta_dm_pm_spec[config.spec_idx].ssr;
       if ((config.id == service.id) && ((config.app_id == BTA_ALL_APP_ID) ||
                                         (config.app_id == service.app_id))) {
-        APPL_TRACE_WARNING("%s: conn_srvc id:%d, app_id:%d", __func__,
-                           service.id, service.app_id);
+        LOG_INFO("Found connected service:%s app_id:%d peer:%s",
+                 BtaIdSysText(service.id).c_str(), service.app_id,
+                 PRIVATE_ADDRESS(peer_addr));
         break;
       }
     }
@@ -782,20 +795,27 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
     }
   }
 
-  APPL_TRACE_WARNING("%s ssr:%d, lat:%d", __func__, ssr_index, p_spec->max_lat);
-
   if (p_spec->max_lat) {
+    LOG_DEBUG(
+        "Max latency is non zero max_lat:0x%04x min_loc_to:0x%04x "
+        "min_rmt_to:0x%04x",
+        p_spec->max_lat, p_spec->min_loc_to, p_spec->min_rmt_to);
     /* Avoid SSR reset on device which has SCO connected */
     if (bta_dm_pm_is_sco_active()) {
       int idx = bta_dm_get_sco_index();
       if (idx != -1) {
         if (bta_dm_conn_srvcs.conn_srvc[idx].peer_bdaddr == peer_addr) {
-          APPL_TRACE_WARNING("%s SCO is active on device, ignore SSR",
-                             __func__);
+          LOG_WARN("SCO is active on device, ignore SSR");
           return;
         }
       }
     }
+
+    LOG_DEBUG(
+        "Setting sniff subrating for device:%s max_lat:0x%04x "
+        "min_loc_to:0x%04x min_rmt_to:0x%04x",
+        PRIVATE_ADDRESS(peer_addr), p_spec->max_lat, p_spec->min_loc_to,
+        p_spec->min_rmt_to);
 
     /* set the SSR parameters. */
     BTM_SetSsrParams(peer_addr, p_spec->max_lat, p_spec->min_rmt_to,
@@ -819,7 +839,11 @@ void bta_dm_pm_active(const RawAddress& peer_addr) {
 
   /* switch to active mode */
   pm.mode = BTM_PM_MD_ACTIVE;
-  BTM_SetPowerMode(bta_dm_cb.pm_id, peer_addr, &pm);
+  tBTM_STATUS status = BTM_SetPowerMode(bta_dm_cb.pm_id, peer_addr, &pm);
+  if (status != BTM_CMD_STORED && status != BTM_CMD_STARTED) {
+    LOG_WARN("Unable to set active mode for device:%s",
+             PRIVATE_ADDRESS(peer_addr));
+  }
 }
 
 /** BTM power manager callback */
@@ -1000,8 +1024,6 @@ static bool bta_dm_pm_is_sco_active() {
       break;
     }
   }
-
-  APPL_TRACE_DEBUG("bta_dm_is_sco_active: SCO active: %d", bScoActive);
   return bScoActive;
 }
 
