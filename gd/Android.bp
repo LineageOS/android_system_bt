@@ -251,6 +251,10 @@ cc_binary {
             ],
         },
     },
+    sanitize: {
+        address: true,
+        cfi: true,
+    }
 }
 
 cc_test {
