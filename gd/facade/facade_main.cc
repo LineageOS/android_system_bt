@@ -46,6 +46,10 @@ using ::bluetooth::StackManager;
 using ::bluetooth::hal::HciHalHostRootcanalConfig;
 using ::bluetooth::os::Thread;
 
+extern "C" const char* __asan_default_options() {
+  return "detect_container_overflow=0";
+}
+
 namespace {
 ::bluetooth::facade::GrpcRootServer grpc_root_server;
 
