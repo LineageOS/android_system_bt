@@ -109,6 +109,24 @@ bool generate_rust_source_one_file(
         }
       }
     }
+
+    EnumDef* opcode = nullptr;
+    EnumDef* opcode_index = nullptr;
+    for (const auto& e : decls.type_defs_queue_) {
+      if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
+        auto* enum_def = dynamic_cast<EnumDef*>(e.second);
+        if (enum_def->name_ == "OpCode") {
+          opcode = enum_def;
+        } else if (enum_def->name_ == "OpCodeIndex") {
+          opcode_index = enum_def;
+        }
+      }
+    }
+
+    if (opcode_index != nullptr && opcode != nullptr) {
+      opcode_index->try_from_enum_ = opcode;
+      out_file << "use std::convert::TryFrom;";
+    }
   }
 
   for (const auto& e : decls.type_defs_queue_) {

@@ -362,10 +362,21 @@ void StructDef::GenRustDeclarations(std::ostream& s) const {
   s << "pub struct " << name_ << "{";
 
   // Generate struct fields
-  GenRustFieldNameAndType(s, true);
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
+  });
+  for (const auto& field : fields) {
+    s << "pub ";
+    field->GenRustNameAndType(s);
+    s << ", ";
+  }
 
   // Generate size field
-  auto fields = fields_.GetFieldsWithoutTypes({
+  fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
       CountField::kFieldType,
       PaddingField::kFieldType,
