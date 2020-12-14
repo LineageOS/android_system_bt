@@ -602,21 +602,11 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_ag_sco_event
- *
- * Description
- *
- *
- * Returns          void
- *
- ******************************************************************************/
 static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
   tBTA_AG_SCO_CB* p_sco = &bta_ag_cb.sco;
   uint8_t previous_state = p_sco->state;
-  LOG_INFO("index=0x%04x, device=%s, state=%s[%d], event=%s[%d]",
-           p_scb->sco_idx, p_scb->peer_addr.ToString().c_str(),
+  LOG_INFO("device:%s index:0x%04x state:%s[%d] event:%s[%d]",
+           PRIVATE_ADDRESS(p_scb->peer_addr), p_scb->sco_idx,
            bta_ag_sco_state_str(p_sco->state), p_sco->state,
            bta_ag_sco_evt_str(event), event);
 
