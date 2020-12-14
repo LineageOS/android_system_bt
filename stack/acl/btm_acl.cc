@@ -803,7 +803,7 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t num_read_pages) {
   CHECK(p_acl_cb != nullptr);
   if (!p_acl_cb->peer_lmp_feature_valid[0] ||
-      !p_acl_cb->peer_lmp_feature_valid[0]) {
+      !p_acl_cb->peer_lmp_feature_valid[1]) {
     LOG_WARN(
         "Checking remote features but remote feature read is "
         "incomplete");
