@@ -1104,6 +1104,86 @@ TEST_F(LeExtendedAdvertisingAPITest, set_periodic_data_test) {
   sync_client_handler();
 }
 
+TEST_F(LeExtendedAdvertisingAPITest, set_periodic_data_fragments_test) {
+  // Set advertising data
+  std::vector<GapData> advertising_data{};
+  for (uint8_t i = 0; i < 3; i++) {
+    GapData data_item{};
+    data_item.data_.push_back(0xfa);
+    data_item.data_type_ = GapDataType::SERVICE_DATA_128_BIT_UUIDS;
+    uint8_t uuid[16] = {0xf0, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00, i};
+    std::copy_n(uuid, 16, std::back_inserter(data_item.data_));
+    uint8_t service_data[232];
+    std::copy_n(service_data, 232, std::back_inserter(data_item.data_));
+    advertising_data.push_back(data_item);
+  }
+  le_advertising_manager_->SetPeriodicData(advertiser_id_, advertising_data);
+
+  // First fragment
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_PERIODIC_ADVERTISING_DATA);
+
+  // Intermediate fragment
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_PERIODIC_ADVERTISING_DATA);
+
+  // Last fragment
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_PERIODIC_ADVERTISING_DATA);
+
+  EXPECT_CALL(
+      mock_advertising_callback_,
+      OnPeriodicAdvertisingDataSet(advertiser_id_, AdvertisingCallback::AdvertisingStatus::SUCCESS));
+  test_hci_layer_->IncomingEvent(LeSetPeriodicAdvertisingDataCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(LeSetPeriodicAdvertisingDataCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(LeSetPeriodicAdvertisingDataCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  sync_client_handler();
+}
+
+TEST_F(LeExtendedAdvertisingAPITest, set_perodic_data_with_invalid_ad_structure) {
+  // Set advertising data with AD structure that length greater than 251
+  std::vector<GapData> advertising_data{};
+  GapData data_item{};
+  data_item.data_.push_back(0xfb);
+  data_item.data_type_ = GapDataType::SERVICE_DATA_128_BIT_UUIDS;
+  uint8_t uuid[16] = {0xf0, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00, 0x00};
+  std::copy_n(uuid, 16, std::back_inserter(data_item.data_));
+  uint8_t service_data[233];
+  std::copy_n(service_data, 233, std::back_inserter(data_item.data_));
+  advertising_data.push_back(data_item);
+
+  EXPECT_CALL(
+      mock_advertising_callback_,
+      OnPeriodicAdvertisingDataSet(advertiser_id_, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR));
+
+  le_advertising_manager_->SetPeriodicData(advertiser_id_, advertising_data);
+
+  sync_client_handler();
+}
+
+TEST_F(LeExtendedAdvertisingAPITest, set_perodic_data_with_invalid_length) {
+  // Set advertising data with data that greater than le_maximum_advertising_data_length_
+  std::vector<GapData> advertising_data{};
+  for (uint8_t i = 0; i < 10; i++) {
+    GapData data_item{};
+    data_item.data_.push_back(0xfb);
+    data_item.data_type_ = GapDataType::SERVICE_DATA_128_BIT_UUIDS;
+    uint8_t uuid[16] = {0xf0, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80, 0x00, 0x10, 0x00, 0x00, 0x00, 0x10, 0x00, i};
+    std::copy_n(uuid, 16, std::back_inserter(data_item.data_));
+    uint8_t service_data[200];
+    std::copy_n(service_data, 200, std::back_inserter(data_item.data_));
+    advertising_data.push_back(data_item);
+  }
+
+  EXPECT_CALL(
+      mock_advertising_callback_,
+      OnPeriodicAdvertisingDataSet(advertiser_id_, AdvertisingCallback::AdvertisingStatus::DATA_TOO_LARGE));
+  le_advertising_manager_->SetPeriodicData(advertiser_id_, advertising_data);
+
+  sync_client_handler();
+}
+
 TEST_F(LeExtendedAdvertisingAPITest, disable_enable_periodic_advertiser_test) {
   // disable advertiser
   test_hci_layer_->SetCommandFuture();
