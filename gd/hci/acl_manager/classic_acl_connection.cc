@@ -26,7 +26,7 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
  public:
   AclConnectionTracker(AclConnectionInterface* acl_connection_interface)
       : acl_connection_interface_(acl_connection_interface) {}
-  ~AclConnectionTracker() override {
+  ~AclConnectionTracker() {
     // If callbacks were registered, they should have been delivered.
     ASSERT(client_callbacks_ == nullptr || queued_callbacks_.empty());
   }

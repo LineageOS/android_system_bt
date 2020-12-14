@@ -354,7 +354,7 @@ void PacketDef::GenBuilderDefinition(std::ostream& s) const {
   }
   s << " {";
   s << " public:";
-  s << "  virtual ~" << name_ << "Builder()" << (parent_ != nullptr ? " override" : "") << " = default;";
+  s << "  virtual ~" << name_ << "Builder() = default;";
 
   if (!fields_.HasBody()) {
     GenBuilderCreate(s);

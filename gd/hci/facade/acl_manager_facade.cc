@@ -49,7 +49,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     acl_manager_->RegisterCallbacks(this, facade_handler_);
   }
 
-  ~AclManagerFacadeService() override {
+  ~AclManagerFacadeService() {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     for (auto& connection : acl_connections_) {
       connection.second.connection_->GetAclQueueEnd()->UnregisterDequeue();
