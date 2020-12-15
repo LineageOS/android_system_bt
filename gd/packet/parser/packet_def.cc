@@ -881,6 +881,10 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 
   fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
   });
 
   for (auto const& field : fields) {

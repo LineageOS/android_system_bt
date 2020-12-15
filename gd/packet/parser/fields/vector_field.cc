@@ -302,4 +302,6 @@ void VectorField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
   }
 }
 
-void VectorField::GenRustWriter(std::ostream&, Size, Size) const {}
+void VectorField::GenRustWriter(std::ostream& s, Size, Size) const {
+  s << "unimplemented!();";
+}
