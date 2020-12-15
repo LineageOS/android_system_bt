@@ -159,6 +159,14 @@ void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl,
 
 }  // namespace
 
+static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
+  LOG_INFO("Disconnecting peer:%s reason:%s",
+           PRIVATE_ADDRESS(p_acl.remote_addr),
+           hci_error_code_text(reason).c_str());
+  p_acl.disconnect_reason = reason;
+  btsnd_hcic_disconnect(p_acl.hci_handle, reason);
+}
+
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -624,8 +632,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     /* If a disconnect is pending, issue it now that role switch has completed
      */
     if (p->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-      LOG_WARN("Issuing delayed HCI_Disconnect!!!");
-      btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+      hci_btsnd_hcic_disconnect(*p, HCI_ERR_PEER_USER);
     }
     p->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
@@ -1448,9 +1455,7 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
 
   /* If a disconnect is pending, issue it now that role switch has completed */
   if (p_acl->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-    LOG_WARN("peer %s Issuing delayed HCI_Disconnect!!!",
-             bd_addr.ToString().c_str());
-    btsnd_hcic_disconnect(p_acl->hci_handle, HCI_ERR_PEER_USER);
+    hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER);
   }
   p_acl->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 }
@@ -2135,7 +2140,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   } else /* otherwise can disconnect right away */
   {
     if (hci_handle != HCI_INVALID_HANDLE) {
-      btsnd_hcic_disconnect(hci_handle, HCI_ERR_PEER_USER);
+      hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER);
     } else {
       status = BTM_UNKNOWN_ADDR;
     }
@@ -2818,8 +2823,7 @@ void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
     LOG_WARN("Unable to find active acl");
     return;
   }
-  p_acl->disconnect_reason = reason;
-  btsnd_hcic_disconnect(p_acl->hci_handle, reason);
+  hci_btsnd_hcic_disconnect(*p_acl, reason);
 }
 
 void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
@@ -2840,7 +2844,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
   } else {
     LOG_DEBUG("Sending acl disconnect reason:%s [%hu]",
               hci_error_code_text(reason).c_str(), reason);
-    btsnd_hcic_disconnect(conn_handle, reason);
+    hci_btsnd_hcic_disconnect(*p_acl, reason);
   }
 }
 
