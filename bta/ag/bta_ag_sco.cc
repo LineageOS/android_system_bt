@@ -437,20 +437,19 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
 
     /* Send pending commands to create SCO connection to peer */
     bta_ag_create_pending_sco(p_scb, bta_ag_cb.sco.is_local);
-    APPL_TRACE_API("%s: orig %d, inx 0x%04x, pkt types 0x%04x", __func__,
-                   is_orig, p_scb->sco_idx, params.packet_types);
+    LOG_DEBUG("Initiating AG SCO inx 0x%04x, pkt types 0x%04x", p_scb->sco_idx,
+              params.packet_types);
   } else {
     /* Not initiating, go to listen mode */
-    tBTM_STATUS status = BTM_CreateSco(
+    tBTM_STATUS btm_status = BTM_CreateSco(
         &p_scb->peer_addr, false, params.packet_types, &p_scb->sco_idx,
         bta_ag_sco_conn_cback, bta_ag_sco_disc_cback);
-    if (status == BTM_CMD_STARTED) {
+    if (btm_status == BTM_CMD_STARTED) {
       BTM_RegForEScoEvts(p_scb->sco_idx, bta_ag_esco_connreq_cback);
     }
-
-    APPL_TRACE_API("%s: orig %d, inx 0x%04x, status 0x%x, pkt types 0x%04x",
-                   __func__, is_orig, p_scb->sco_idx, status,
-                   params.packet_types);
+    LOG_DEBUG("Listening AG SCO inx 0x%04x status:%s pkt types 0x%04x",
+              p_scb->sco_idx, btm_status_text(btm_status).c_str(),
+              params.packet_types);
   }
   APPL_TRACE_DEBUG(
       "%s: AFTER codec_updated=%d, codec_fallback=%d, "
