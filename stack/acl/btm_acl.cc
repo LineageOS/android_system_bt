@@ -66,6 +66,8 @@
 
 void gatt_find_in_device_record(const RawAddress& bd_addr,
                                 tBLE_BD_ADDR* address_with_type);
+void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
+                            const RawAddress& p_bda);
 
 struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
