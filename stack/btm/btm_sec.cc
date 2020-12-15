@@ -45,6 +45,7 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
+#include "stack/include/btm_status.h"
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/smp/smp_int.h"
 
@@ -1723,7 +1724,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
         bd_addr, is_originator, security_required, p_callback, p_ref_data);
   }
 
-  BTM_TRACE_DEBUG("%s() is_originator: %d", __func__, is_originator);
   /* Find or get oldest record */
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
 
@@ -1732,8 +1732,8 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
   /* we will process one after another */
   if ((p_dev_rec->p_callback) ||
       (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)) {
-    BTM_TRACE_EVENT("%s() delayed  state: %s", __func__,
-                    btm_pair_state_descr(btm_cb.pairing_state));
+    LOG_DEBUG("Pairing in progress pairing_state:%s",
+              btm_pair_state_descr(btm_cb.pairing_state));
 
     rc = BTM_CMD_STARTED;
 
@@ -1776,28 +1776,22 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
       }
     }
 
-    /* Check whether there is a pending security procedure, if so we should
-     * always queue */
     /* the new security request */
     if (p_dev_rec->sec_state != BTM_SEC_STATE_IDLE) {
-      BTM_TRACE_EVENT("%s: There is a pending security procedure", __func__);
+      LOG_DEBUG("A pending security procedure in progress");
       rc = BTM_CMD_STARTED;
     }
     if (rc == BTM_CMD_STARTED) {
-      BTM_TRACE_EVENT("%s: call btm_sec_queue_mx_request", __func__);
       btm_sec_queue_mx_request(bd_addr, BT_PSM_RFCOMM, is_originator,
                                BTM_SEC_PROTO_RFCOMM, security_required,
                                p_callback, p_ref_data);
     } else /* rc == BTM_SUCCESS */
     {
-      /* access granted */
       if (p_callback) {
+        LOG_DEBUG("Notifying client that security access has been granted");
         (*p_callback)(&bd_addr, transport, p_ref_data, (uint8_t)rc);
       }
     }
-
-    BTM_TRACE_EVENT("%s: return with rc = 0x%02x in delayed state %s", __func__,
-                    rc, btm_pair_state_descr(btm_cb.pairing_state));
     return rc;
   }
 
@@ -1808,10 +1802,11 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
     /* acceptor receives service connection establishment Request for */
     /* Secure Connections Only service */
     if (!(local_supports_sc) || !(p_dev_rec->SupportsSecureConnections())) {
-      BTM_TRACE_DEBUG("%s: SC only service,local_support_for_sc %d,",
-                      "remote_support_for_sc %d: fail pairing", __func__,
-                      local_supports_sc,
-                      p_dev_rec->remote_supports_secure_connections);
+      LOG_DEBUG(
+          "Secure Connection only mode unsupported local_SC_support:%s"
+          " remote_SC_support:%s",
+          logbool(local_supports_sc).c_str(),
+          logbool(p_dev_rec->SupportsSecureConnections()).c_str());
       if (p_callback)
         (*p_callback)(&bd_addr, transport, (void*)p_ref_data,
                       BTM_MODE4_LEVEL4_NOT_SUPPORTED);
@@ -1846,8 +1841,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
               BTM_SEC_AUTHENTICATED);
         BTM_TRACE_DEBUG("%s: sec_flags:0x%x", __func__, p_dev_rec->sec_flags);
       } else {
-        /* If we already have a link key, check if that link key is good enough
-         */
+        LOG_DEBUG("Already have link key; checking if link key is sufficient");
         btm_sec_check_upgrade(p_dev_rec, is_originator);
       }
     }
@@ -1858,6 +1852,9 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
   p_dev_rec->p_ref_data = p_ref_data;
 
   rc = btm_sec_execute_procedure(p_dev_rec);
+  LOG_DEBUG("Started security procedure peer:%s btm_status:%s",
+            PRIVATE_ADDRESS(p_dev_rec->RemoteAddress()),
+            btm_status_text(rc).c_str());
   if (rc != BTM_CMD_STARTED) {
     if (p_callback) {
       p_dev_rec->p_callback = NULL;
@@ -2492,11 +2489,11 @@ void btm_io_capabilities_req(const RawAddress& p) {
         controller_get_interface()->supports_secure_connections();
     /* device in Secure Connections Only mode */
     if (!(local_supports_sc) || !(p_dev_rec->SupportsSecureConnections())) {
-      BTM_TRACE_DEBUG("%s: SC only service, local_support_for_sc %d,",
-                      " remote_support_for_sc 0x%02x -> fail pairing", __func__,
-                      local_supports_sc,
-                      p_dev_rec->remote_supports_secure_connections);
-
+      LOG_DEBUG(
+          "SC only service, local_support_for_sc:%s,"
+          " remote_support_for_sc:%s -> fail pairing",
+          logbool(local_supports_sc).c_str(),
+          logbool(p_dev_rec->SupportsSecureConnections()).c_str());
       err_code = HCI_ERR_PAIRING_NOT_ALLOWED;
     }
   }
