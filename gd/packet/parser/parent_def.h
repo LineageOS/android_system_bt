@@ -63,6 +63,8 @@ class ParentDef : public TypeDef {
 
   const ParentDef* GetRootDef() const;
 
+  std::map<std::string, std::variant<int64_t, std::string>> GetAllConstraints() const;
+
   std::vector<const ParentDef*> GetAncestors() const;
 
   FieldList fields_;

@@ -501,3 +501,12 @@ std::vector<const ParentDef*> ParentDef::GetAncestors() const {
   std::reverse(res.begin(), res.end());
   return res;
 }
+
+std::map<std::string, std::variant<int64_t, std::string>> ParentDef::GetAllConstraints() const {
+  std::map<std::string, std::variant<int64_t, std::string>> res;
+  res.insert(parent_constraints_.begin(), parent_constraints_.end());
+  for (auto parent : GetAncestors()) {
+    res.insert(parent->parent_constraints_.begin(), parent->parent_constraints_.end());
+  }
+  return res;
+}
