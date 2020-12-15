@@ -1,11 +1,11 @@
 //! Main BT lifecycle support
 
-use gddi::{module, Registry, RegistryBuilder, Stoppable};
+use bt_common::GrpcFacade;
 use bt_hal::rootcanal_hal::RootcanalConfig;
 use bt_hal::snoop::{SnoopConfig, SnoopMode};
+use gddi::{module, Registry, RegistryBuilder, Stoppable};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-use bt_common::GrpcFacade;
 
 module! {
     stack_module,
@@ -32,9 +32,7 @@ impl Stack {
     /// Helper to set the rootcanal port
     pub async fn set_rootcanal_port(&self, port: Option<u16>) {
         if let Some(port) = port {
-            self.registry
-                .inject(RootcanalConfig::new("127.0.0.1", port))
-                .await;
+            self.registry.inject(RootcanalConfig::new("127.0.0.1", port)).await;
         }
     }
 
@@ -54,7 +52,9 @@ impl Stack {
     }
 
     /// Helper to get a grpc service
-    pub async fn get_grpc<T: 'static + Clone + Send + Sync + GrpcFacade + Stoppable>(&self) -> grpcio::Service {
+    pub async fn get_grpc<T: 'static + Clone + Send + Sync + GrpcFacade + Stoppable>(
+        &self,
+    ) -> grpcio::Service {
         self.get::<T>().await.into_grpc()
     }
 
