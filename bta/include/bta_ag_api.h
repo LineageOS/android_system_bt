@@ -120,37 +120,74 @@ typedef uint8_t tBTA_AG_STATUS;
 
 #define BTA_AG_HANDLE_SCO_NO_CHANGE 0xFFFF
 
-/* AG result codes used with BTA_AgResult */
-#define BTA_AG_SPK_RES 0         /* Update speaker volume */
-#define BTA_AG_MIC_RES 1         /* Update microphone volume */
-#define BTA_AG_INBAND_RING_RES 2 /* Update inband ring state */
-#define BTA_AG_CIND_RES 3        /* Send indicator response for AT+CIND */
-#define BTA_AG_BINP_RES 4     /* Send phone number for voice tag for AT+BINP */
-#define BTA_AG_IND_RES 5      /* Update an indicator value */
-#define BTA_AG_BVRA_RES 6     /* Update voice recognition state */
-#define BTA_AG_CNUM_RES 7     /* Send subscriber number response for AT+CNUM */
-#define BTA_AG_BTRH_RES 8     /* Send CCAP incoming call hold */
-#define BTA_AG_CLCC_RES 9     /* Query list of calls */
-#define BTA_AG_COPS_RES 10    /* Read network operator */
-#define BTA_AG_IN_CALL_RES 11 /* Indicate incoming phone call */
-#define BTA_AG_IN_CALL_CONN_RES 12  /* Incoming phone call connected */
-#define BTA_AG_CALL_WAIT_RES 13     /* Call waiting notification */
-#define BTA_AG_OUT_CALL_ORIG_RES 14 /* Outgoing phone call origination */
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
 
-/* Outgoing phone call alerting remote party */
-#define BTA_AG_OUT_CALL_ALERT_RES 15
-#define BTA_AG_OUT_CALL_CONN_RES 16 /* Outgoing phone call connected */
+typedef enum : uint8_t {
+  /* AG result codes used with BTA_AgResult */
+  BTA_AG_SPK_RES = 0,         /* Update speaker volume */
+  BTA_AG_MIC_RES = 1,         /* Update microphone volume */
+  BTA_AG_INBAND_RING_RES = 2, /* Update inband ring state */
+  BTA_AG_CIND_RES = 3,        /* Send indicator response for AT+CIND */
+  BTA_AG_BINP_RES = 4,        /* Send phone number for voice tag for AT+BINP */
+  BTA_AG_IND_RES = 5,         /* Update an indicator value */
+  BTA_AG_BVRA_RES = 6,        /* Update voice recognition state */
+  BTA_AG_CNUM_RES = 7,        /* Send subscriber number response for AT+CNUM */
+  BTA_AG_BTRH_RES = 8,        /* Send CCAP incoming call hold */
+  BTA_AG_CLCC_RES = 9,        /* Query list of calls */
+  BTA_AG_COPS_RES = 10,       /* Read network operator */
+  BTA_AG_IN_CALL_RES = 11,    /* Indicate incoming phone call */
+  BTA_AG_IN_CALL_CONN_RES = 12,  /* Incoming phone call connected */
+  BTA_AG_CALL_WAIT_RES = 13,     /* Call waiting notification */
+  BTA_AG_OUT_CALL_ORIG_RES = 14, /* Outgoing phone call origination */
 
-/* Incoming/outgoing 3-way canceled before connected */
-#define BTA_AG_CALL_CANCEL_RES 17
-#define BTA_AG_END_CALL_RES 18     /* End call */
-#define BTA_AG_IN_CALL_HELD_RES 19 /* Incoming call held */
-#define BTA_AG_UNAT_RES 20         /* Response to unknown AT command event */
-#define BTA_AG_MULTI_CALL_RES 21   /* SLC at three way call */
-#define BTA_AG_BIND_RES 22         /* Activate/Deactivate HF indicator */
-#define BTA_AG_IND_RES_ON_DEMAND 33 /* Update an indicator value forcible */
+  /* Outgoing phone call alerting remote party */
+  BTA_AG_OUT_CALL_ALERT_RES = 15,
+  BTA_AG_OUT_CALL_CONN_RES = 16, /* Outgoing phone call connected */
 
-typedef uint8_t tBTA_AG_RES;
+  /* Incoming/outgoing =  3,-way canceled before connected */
+  BTA_AG_CALL_CANCEL_RES = 17,
+  BTA_AG_END_CALL_RES = 18,      /* End call */
+  BTA_AG_IN_CALL_HELD_RES = 19,  /* Incoming call held */
+  BTA_AG_UNAT_RES = 20,          /* Response to unknown AT command event */
+  BTA_AG_MULTI_CALL_RES = 21,    /* SLC at three way call */
+  BTA_AG_BIND_RES = 22,          /* Activate/Deactivate HF indicator */
+  BTA_AG_IND_RES_ON_DEMAND = 33, /* Update an indicator value forcible */
+  BTA_AG_UNKNOWN = 0xff,         // Should be unset
+} tBTA_AG_RES;
+
+inline std::string bta_ag_result_text(const tBTA_AG_RES& result) {
+  switch (result) {
+    CASE_RETURN_TEXT(BTA_AG_SPK_RES);
+    CASE_RETURN_TEXT(BTA_AG_MIC_RES);
+    CASE_RETURN_TEXT(BTA_AG_INBAND_RING_RES);
+    CASE_RETURN_TEXT(BTA_AG_CIND_RES);
+    CASE_RETURN_TEXT(BTA_AG_BINP_RES);
+    CASE_RETURN_TEXT(BTA_AG_IND_RES);
+    CASE_RETURN_TEXT(BTA_AG_BVRA_RES);
+    CASE_RETURN_TEXT(BTA_AG_CNUM_RES);
+    CASE_RETURN_TEXT(BTA_AG_BTRH_RES);
+    CASE_RETURN_TEXT(BTA_AG_CLCC_RES);
+    CASE_RETURN_TEXT(BTA_AG_COPS_RES);
+    CASE_RETURN_TEXT(BTA_AG_IN_CALL_RES);
+    CASE_RETURN_TEXT(BTA_AG_IN_CALL_CONN_RES);
+    CASE_RETURN_TEXT(BTA_AG_CALL_WAIT_RES);
+    CASE_RETURN_TEXT(BTA_AG_OUT_CALL_ORIG_RES);
+    CASE_RETURN_TEXT(BTA_AG_OUT_CALL_ALERT_RES);
+    CASE_RETURN_TEXT(BTA_AG_OUT_CALL_CONN_RES);
+    CASE_RETURN_TEXT(BTA_AG_CALL_CANCEL_RES);
+    CASE_RETURN_TEXT(BTA_AG_END_CALL_RES);
+    CASE_RETURN_TEXT(BTA_AG_IN_CALL_HELD_RES);
+    CASE_RETURN_TEXT(BTA_AG_UNAT_RES);
+    CASE_RETURN_TEXT(BTA_AG_MULTI_CALL_RES);
+    CASE_RETURN_TEXT(BTA_AG_BIND_RES);
+    CASE_RETURN_TEXT(BTA_AG_IND_RES_ON_DEMAND);
+    CASE_RETURN_TEXT(BTA_AG_UNKNOWN);
+    default:
+      return std::string("UNKNOWN");
+  }
+}
 
 /* HFP peer features */
 #define BTA_AG_PEER_FEAT_ECNR 0x0001   /* Echo cancellation/noise reduction */
