@@ -83,6 +83,7 @@ Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
   }
 
   Module* instance = module->ctor_();
+  last_instance_ = "starting " + instance->ToString();
   set_registry_and_handler(instance, thread);
 
   instance->ListDependencies(&instance->dependencies_);
@@ -99,6 +100,7 @@ void ModuleRegistry::StopAll() {
   for (auto it = start_order_.rbegin(); it != start_order_.rend(); it++) {
     auto instance = started_modules_.find(*it);
     ASSERT(instance != started_modules_.end());
+    last_instance_ = "stopping " + instance->second->ToString();
 
     // Clear the handler before stopping the module to allow it to shut down gracefully.
     LOG_INFO("Stopping Handler of Module %s", instance->second->ToString().c_str());

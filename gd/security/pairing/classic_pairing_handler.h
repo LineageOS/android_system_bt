@@ -57,7 +57,7 @@ class ClassicPairingHandler : public PairingHandler {
         user_interface_handler_(user_interface_handler),
         device_name_(std::move(device_name)) {}
 
-  ~ClassicPairingHandler() override = default;
+  ~ClassicPairingHandler() = default;
 
   void Initiate(
       bool locally_initiated,

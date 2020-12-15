@@ -803,7 +803,7 @@ void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                      uint8_t num_read_pages) {
   CHECK(p_acl_cb != nullptr);
   if (!p_acl_cb->peer_lmp_feature_valid[0] ||
-      !p_acl_cb->peer_lmp_feature_valid[0]) {
+      !p_acl_cb->peer_lmp_feature_valid[1]) {
     LOG_WARN(
         "Checking remote features but remote feature read is "
         "incomplete");
@@ -2450,11 +2450,9 @@ bool BTM_IsBleConnection(uint16_t hci_handle) {
     ASSERT_LOG(false, "This should not be invoked from code path");
   }
 
-  uint8_t index = btm_handle_to_acl_index(hci_handle);
-  if (index >= MAX_L2CAP_LINKS) return false;
-
-  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[index];
-  return (p->transport == BT_TRANSPORT_LE);
+  const tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
+  if (p_acl == nullptr) return false;
+  return p_acl->is_transport_ble();
 }
 
 const RawAddress acl_address_from_handle(uint16_t hci_handle) {

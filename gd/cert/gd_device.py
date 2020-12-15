@@ -301,6 +301,12 @@ class GdHostOnlyDevice(GdDeviceBase):
         self.backing_process_profraw_path = pathlib.Path(self.log_path_base).joinpath(
             "%s_%s_backing_coverage.profraw" % (self.type_identifier, self.label))
         self.environment["LLVM_PROFILE_FILE"] = str(self.backing_process_profraw_path)
+        llvm_binutils = pathlib.Path(get_gd_root()).joinpath("llvm_binutils").joinpath("bin")
+        llvm_symbolizer = llvm_binutils.joinpath("llvm-symbolizer")
+        if llvm_symbolizer.is_file():
+            self.environment["ASAN_SYMBOLIZER_PATH"] = llvm_symbolizer
+        else:
+            logging.warning("[%s] Cannot find LLVM symbolizer at %s" % (self.label, str(llvm_symbolizer)))
 
     def teardown(self):
         super().teardown()

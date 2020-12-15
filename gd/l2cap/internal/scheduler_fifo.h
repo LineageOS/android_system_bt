@@ -37,7 +37,7 @@ class DataPipelineManager;
 class Fifo : public Scheduler {
  public:
   Fifo(DataPipelineManager* data_pipeline_manager, LowerQueueUpEnd* link_queue_up_end, os::Handler* handler);
-  ~Fifo() override;
+  ~Fifo();
   void OnPacketsReady(Cid cid, int number_packets) override;
 
  private:

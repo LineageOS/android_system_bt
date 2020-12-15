@@ -34,7 +34,7 @@ namespace internal {
 
 class L2capLeServiceManagerTest : public ::testing::Test {
  public:
-  ~L2capLeServiceManagerTest() override = default;
+  ~L2capLeServiceManagerTest() = default;
 
   void OnServiceRegistered(bool expect_success, FixedChannelManager::RegistrationResult result,
                            std::unique_ptr<FixedChannelService> user_service) {

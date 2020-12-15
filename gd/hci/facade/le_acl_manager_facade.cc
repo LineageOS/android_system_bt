@@ -49,7 +49,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     acl_manager_->RegisterLeCallbacks(this, facade_handler_);
   }
 
-  ~LeAclManagerFacadeService() override {
+  ~LeAclManagerFacadeService() {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     for (auto& conn : acl_connections_) {
       if (conn.second.connection_ != nullptr) {

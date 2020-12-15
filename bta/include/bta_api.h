@@ -482,15 +482,15 @@ typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
 typedef uint8_t tBTA_DM_PM_ACTION;
 
 /* index to bta_dm_ssr_spec */
-#define BTA_DM_PM_SSR0 0
-#define BTA_DM_PM_SSR1                      \
-  1 /* BTA_DM_PM_SSR1 will be dedicated for \
-    HH SSR setting entry, no other profile can use it */
-#define BTA_DM_PM_SSR2 2
-#define BTA_DM_PM_SSR3 3
-#define BTA_DM_PM_SSR4 4
-#define BTA_DM_PM_SSR5 5
-#define BTA_DM_PM_SSR6 6
+enum {
+  BTA_DM_PM_SSR0 = 0,
+  /* BTA_DM_PM_SSR1 will be dedicated for \
+     HH SSR setting entry, no other profile can use it */
+  BTA_DM_PM_SSR1 = 1,
+  BTA_DM_PM_SSR2 = 2,
+  BTA_DM_PM_SSR3 = 3,
+  BTA_DM_PM_SSR4 = 4,
+};
 
 #define BTA_DM_PM_NUM_EVTS 9
 

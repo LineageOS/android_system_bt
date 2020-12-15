@@ -31,6 +31,10 @@ constexpr uint16_t kTestPort = 6401;
 constexpr uint16_t kHciServerPort = 6402;
 constexpr uint16_t kLinkServerPort = 6403;
 
+extern "C" const char* __asan_default_options() {
+  return "detect_container_overflow=0";
+}
+
 bool crash_callback(const void* crash_context, size_t crash_context_size,
                     __attribute__((unused)) void* context) {
   pid_t tid = BACKTRACE_CURRENT_THREAD;
