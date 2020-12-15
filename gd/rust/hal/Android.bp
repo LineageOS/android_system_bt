@@ -51,8 +51,8 @@ genrule {
 cc_library_static {
     name: "libbt_hidl_hal_cxx",
     defaults: ["gd_ffi_defaults"],
-    srcs: ["src/hidl/interop.cc"],
-    local_include_dirs: ["src/hidl"],
+    srcs: ["src/ffi/hidl.cc"],
+    local_include_dirs: ["src/ffi"],
     generated_headers: ["libbt_hidl_hal_bridge_header", "cxx-bridge-header"],
     generated_sources: ["libbt_hidl_hal_bridge_code"],
     shared_libs: [

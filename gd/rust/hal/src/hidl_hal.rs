@@ -36,7 +36,7 @@ async fn provide_hidl_hal(rt: Arc<Runtime>) -> RawHalExports {
 #[cxx::bridge(namespace = bluetooth::hal)]
 mod ffi {
     extern "C" {
-        include!("src/hidl/interop.h");
+        include!("src/ffi/hidl.h");
         fn start_hal();
         fn stop_hal();
         fn send_command(data: &[u8]);
