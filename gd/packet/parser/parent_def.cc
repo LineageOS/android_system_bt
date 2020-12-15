@@ -482,3 +482,22 @@ void ParentDef::GenInstanceOf(std::ostream& s) const {
     s << "return true;}";
   }
 }
+
+const ParentDef* ParentDef::GetRootDef() const {
+  if (parent_ == nullptr) {
+    return this;
+  }
+
+  return parent_->GetRootDef();
+}
+
+std::vector<const ParentDef*> ParentDef::GetAncestors() const {
+  std::vector<const ParentDef*> res;
+  auto parent = parent_;
+  while (parent != nullptr) {
+    res.push_back(parent);
+    parent = parent->parent_;
+  }
+  std::reverse(res.begin(), res.end());
+  return res;
+}

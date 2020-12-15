@@ -742,6 +742,11 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 
 void PacketDef::GenRustChildEnums(std::ostream& s) const {
   if (!children_.empty()) {
+    s << "enum " << name_ << "DataChild {";
+    for (const auto& child : children_) {
+      s << child->name_ << "(Rc<" << child->name_ << "Data>),";
+    }
+    s << "}\n";
     s << "pub enum " << name_ << "Child {";
     for (const auto& child : children_) {
       s << child->name_ << "(" << child->name_ << "Packet),";
@@ -751,10 +756,13 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
 }
 
 void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
-  s << "pub struct " << name_ << "Packet {";
+  s << "struct " << name_ << "Data {";
 
   // Generate struct fields
   GenRustStructFieldNameAndType(s);
+  if (!children_.empty()) {
+    s << "child: " << name_ << "DataChild,";
+  }
 
   // Generate size field
   auto fields = fields_.GetFieldsWithoutTypes({
@@ -767,6 +775,15 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
     s << " size: usize";
   }
   s << "}\n";
+
+  s << "pub struct " << name_ << "Packet {";
+  auto lineage = GetAncestors();
+  lineage.push_back(this);
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    s << util::CamelCaseToUnderScore(def->name_) << ": Rc<" << def->name_ << "Data>,";
+  }
+  s << "}\n";
 }
 
 bool PacketDef::GenRustStructFieldNameAndType(std::ostream& s) const {
@@ -776,6 +793,7 @@ bool PacketDef::GenRustStructFieldNameAndType(std::ostream& s) const {
       PaddingField::kFieldType,
       ReservedField::kFieldType,
       SizeField::kFieldType,
+      PayloadField::kFieldType,
   });
   if (fields.size() == 0) {
     return false;
@@ -794,6 +812,7 @@ void PacketDef::GenRustStructFieldNames(std::ostream& s) const {
       PaddingField::kFieldType,
       ReservedField::kFieldType,
       SizeField::kFieldType,
+      PayloadField::kFieldType,
   });
   for (int i = 0; i < fields.size(); i++) {
     s << fields[i]->GetName();
@@ -817,23 +836,24 @@ void PacketDef::GenRustStructSizeField(std::ostream& s) const {
 }
 
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
-  s << "impl " << name_ << "Packet {";
-  s << "pub fn new(";
+  s << "impl " << name_ << "Data {";
+  s << "fn new(";
   bool fields_exist = GenRustStructFieldNameAndType(s);
-  s << ") -> Self { Self {";
+  s << ") -> Self { unimplemented!();"; /* Self {";
   GenRustStructFieldNames(s);
   if (fields_exist) {
     GenRustStructSizeField(s);
   }
-  s << "}}";
+  s << "}*/
+  s << "}";
 
   // parse function
-  s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
+  s << "fn parse(bytes: &[u8]) -> Result<Self> { unimplemented!();";
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
   });
 
-  for (auto const& field : fields) {
+  /*for (auto const& field : fields) {
     auto start_field_offset = GetOffsetForField(field->GetName(), false);
     auto end_field_offset = GetOffsetForField(field->GetName(), true);
 
@@ -852,6 +872,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
       PaddingField::kFieldType,
       ReservedField::kFieldType,
       SizeField::kFieldType,
+      PayloadField::kFieldType,
   });
 
   if (fields_exist) {
@@ -862,16 +883,8 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     }
     GenRustStructSizeField(s);
   }
-  s << "})}\n";
-
-  // to_bytes function (only on root packet types)
-  if (parent_ == nullptr) {
-    s << "fn to_bytes(self) -> Bytes {";
-    s << " let mut buffer = BytesMut::new();";
-    s << " self.write_to(&mut buffer);";
-    s << " buffer.freeze()";
-    s << "}\n";
-  }
+  s << "})}\n";*/
+  s << "}\n";
 
   // write_to function
   s << "fn write_to(&self, buffer: &mut BytesMut) {";
@@ -907,8 +920,90 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "}\n";
 }
 
+void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
+  s << "impl " << name_ << "Packet {";
+  if (parent_ == nullptr) {
+    s << "pub fn parse(bytes: &[u8]) -> Result<Self> { ";
+    s << "Ok(Self::new(Rc::new(" << name_ << "Data::parse(bytes)?)))";
+    s << "}";
+  }
+  auto root = GetRootDef();
+  auto root_accessor = util::CamelCaseToUnderScore(root->name_);
+
+  s << "pub fn to_bytes(self) -> Bytes {";
+  s << " let mut buffer = BytesMut::new();";
+  s << " self." << root_accessor << ".write_to(&mut buffer);";
+  s << " buffer.freeze()";
+  s << "}\n";
+
+  if (!children_.empty()) {
+    s << " pub fn specialize(self) -> " << name_ << "Child {";
+    s << " match self." << util::CamelCaseToUnderScore(name_) << ".child {";
+    for (const auto& child : children_) {
+      s << name_ << "DataChild::" << child->name_ << "(_) => " << name_ << "Child::" << child->name_ << "("
+        << child->name_ << "Packet::new(self." << root_accessor << ")),";
+    }
+    s << "}}";
+  }
+  auto lineage = GetAncestors();
+  lineage.push_back(this);
+  const ParentDef* prev = nullptr;
+
+  s << " fn new(root: Rc<" << root->name_ << "Data>) -> Self {";
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    auto accessor_name = util::CamelCaseToUnderScore(def->name_);
+    if (prev == nullptr) {
+      s << "let " << accessor_name << " = root;";
+    } else {
+      s << "let " << accessor_name << " = match &" << util::CamelCaseToUnderScore(prev->name_) << ".child {";
+      s << prev->name_ << "DataChild::" << def->name_ << "(value) => (*value).clone(),";
+      s << "_ => panic!(\"inconsistent state - child was not " << def->name_ << "\"),";
+      s << "};";
+    }
+    prev = def;
+  }
+  s << "Self {";
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    s << util::CamelCaseToUnderScore(def->name_) << ",";
+  }
+  s << "}}";
+
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    auto fields = def->fields_.GetFieldsWithoutTypes({
+        BodyField::kFieldType,
+        CountField::kFieldType,
+        PaddingField::kFieldType,
+        ReservedField::kFieldType,
+        SizeField::kFieldType,
+        PayloadField::kFieldType,
+    });
+
+    for (auto const& field : fields) {
+      s << "pub fn get_" << field->GetName() << "(&self) -> &" << field->GetRustDataType() << "{";
+      s << " &self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
+      s << "}\n";
+    }
+  }
+
+  s << "}\n";
+
+  lineage = GetAncestors();
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    s << "impl Into<" << def->name_ << "Packet> for " << name_ << "Packet {";
+    s << " fn into(self) -> " << def->name_ << "Packet {";
+    s << def->name_ << "Packet::new(self." << util::CamelCaseToUnderScore(root->name_) << ")";
+    s << " }";
+    s << "}\n";
+  }
+}
+
 void PacketDef::GenRustDef(std::ostream& s) const {
   GenRustChildEnums(s);
   GenRustStructDeclarations(s);
   GenRustStructImpls(s);
+  GenRustAccessStructImpls(s);
 }
