@@ -338,7 +338,7 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, uint8_t event) {
+static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, tBTA_AG_EVT event) {
   tBTA_AG_HDR sco = {};
   sco.handle = bta_ag_scb_to_idx(p_scb);
   sco.app_id = p_scb->app_id;
