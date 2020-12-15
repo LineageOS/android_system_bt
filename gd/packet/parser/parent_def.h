@@ -61,6 +61,10 @@ class ParentDef : public TypeDef {
 
   void GenInstanceOf(std::ostream& s) const;
 
+  const ParentDef* GetRootDef() const;
+
+  std::vector<const ParentDef*> GetAncestors() const;
+
   FieldList fields_;
 
   ParentDef* parent_{nullptr};
