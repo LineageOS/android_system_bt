@@ -591,12 +591,14 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         for (int i = 0; i < data.size(); i++) {
           if (data[i].size() > kLeMaximumFragmentLength) {
             LOG_WARN("AD data len shall not greater than %d", kLeMaximumFragmentLength);
-            if (set_scan_rsp) {
-              advertising_callbacks_->OnScanResponseDataSet(
-                  advertiser_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
-            } else {
-              advertising_callbacks_->OnAdvertisingDataSet(
-                  advertiser_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
+            if (advertising_callbacks_ != nullptr) {
+              if (set_scan_rsp) {
+                advertising_callbacks_->OnScanResponseDataSet(
+                    advertiser_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
+              } else {
+                advertising_callbacks_->OnAdvertisingDataSet(
+                    advertiser_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
+              }
             }
             return;
           }
@@ -730,13 +732,63 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   }
 
   void set_periodic_data(AdvertiserId advertiser_id, std::vector<GapData> data) {
-    // TODO(b/149221472): Support fragmentation
-    auto operation = Operation::COMPLETE_ADVERTISEMENT;
+    uint16_t data_len = 0;
+    // check data size
+    for (int i = 0; i < data.size(); i++) {
+      if (data[i].size() > kLeMaximumFragmentLength) {
+        LOG_WARN("AD data len shall not greater than %d", kLeMaximumFragmentLength);
+        if (advertising_callbacks_ != nullptr) {
+          advertising_callbacks_->OnPeriodicAdvertisingDataSet(
+              advertiser_id, AdvertisingCallback::AdvertisingStatus::INTERNAL_ERROR);
+        }
+        return;
+      }
+      data_len += data[i].size();
+    }
 
-    le_advertising_interface_->EnqueueCommand(
-        hci::LeSetPeriodicAdvertisingDataBuilder::Create(advertiser_id, operation, data),
-        module_handler_->BindOnceOn(
-            this, &impl::check_status_with_id<LeSetPeriodicAdvertisingDataCompleteView>, advertiser_id));
+    if (data_len > le_maximum_advertising_data_length_) {
+      LOG_WARN(
+          "advertising data len exceeds le_maximum_advertising_data_length_ %d", le_maximum_advertising_data_length_);
+      if (advertising_callbacks_ != nullptr) {
+        advertising_callbacks_->OnPeriodicAdvertisingDataSet(
+            advertiser_id, AdvertisingCallback::AdvertisingStatus::DATA_TOO_LARGE);
+      }
+      return;
+    }
+
+    if (data_len <= kLeMaximumFragmentLength) {
+      send_periodic_data_fragment(advertiser_id, data, Operation::COMPLETE_ADVERTISEMENT);
+    } else {
+      std::vector<GapData> sub_data;
+      uint16_t sub_data_len = 0;
+      Operation operation = Operation::FIRST_FRAGMENT;
+
+      for (int i = 0; i < data.size(); i++) {
+        if (sub_data_len + data[i].size() > kLeMaximumFragmentLength) {
+          send_periodic_data_fragment(advertiser_id, sub_data, operation);
+          operation = Operation::INTERMEDIATE_FRAGMENT;
+          sub_data_len = 0;
+          sub_data.clear();
+        }
+        sub_data.push_back(data[i]);
+        sub_data_len += data[i].size();
+      }
+      send_periodic_data_fragment(advertiser_id, sub_data, Operation::LAST_FRAGMENT);
+    }
+  }
+
+  void send_periodic_data_fragment(AdvertiserId advertiser_id, std::vector<GapData> data, Operation operation) {
+    if (operation == Operation::COMPLETE_ADVERTISEMENT || operation == Operation::LAST_FRAGMENT) {
+      le_advertising_interface_->EnqueueCommand(
+          hci::LeSetPeriodicAdvertisingDataBuilder::Create(advertiser_id, operation, data),
+          module_handler_->BindOnceOn(
+              this, &impl::check_status_with_id<LeSetPeriodicAdvertisingDataCompleteView>, advertiser_id));
+    } else {
+      // For first and intermediate fragment, do not trigger advertising_callbacks_.
+      le_advertising_interface_->EnqueueCommand(
+          hci::LeSetPeriodicAdvertisingDataBuilder::Create(advertiser_id, operation, data),
+          module_handler_->BindOnce(impl::check_status<LeSetPeriodicAdvertisingDataCompleteView>));
+    }
   }
 
   void enable_periodic_advertising(AdvertiserId advertiser_id, bool enable) {
