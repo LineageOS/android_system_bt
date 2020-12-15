@@ -43,7 +43,7 @@ enum : uint8_t {
   BTM_REPEATED_ATTEMPTS,   /* 19 repeated attempts for LE security requests */
   BTM_MODE4_LEVEL4_NOT_SUPPORTED, /* 20 Secure Connections Only Mode can't be
                                      supported */
-  BTM_DEV_BLACKLISTED             /* 21 The device is Blacklisted */
+  BTM_DEV_RESTRICT_LISTED         /* 21 The device is restrict listed */
 };
 typedef uint8_t tBTM_STATUS;
 
@@ -91,8 +91,8 @@ inline std::string btm_status_text(tBTM_STATUS status) {
       return std::string("repeated_attempts");
     case BTM_MODE4_LEVEL4_NOT_SUPPORTED:
       return std::string("level4_security_unsupported");
-    case BTM_DEV_BLACKLISTED:
-      return std::string("reject_listed");
+    case BTM_DEV_RESTRICT_LISTED:
+      return std::string("restrict_listed");
     default:
       return base::StringPrintf("UNKNOWN[%u]", status);
   }
