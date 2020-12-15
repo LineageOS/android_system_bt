@@ -878,6 +878,28 @@ void LogManufacturerInfo(const RawAddress& address,
   }
 }
 
+void LogBluetoothHalCrashReason(const RawAddress& address, uint32_t error_code,
+                                uint32_t vendor_error_code) {
+  std::string obfuscated_id;
+  int metric_id = 0;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField obfuscated_id_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_HAL_CRASH_REASON_REPORTED, metric_id,
+      obfuscated_id_field, error_code, vendor_error_code);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed for " << address << ", error_code "
+                 << loghex(error_code) << ", vendor_error_code "
+                 << loghex(vendor_error_code) << ", error " << ret;
+  }
+}
+
 }  // namespace common
 
 }  // namespace bluetooth
