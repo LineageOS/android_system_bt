@@ -98,4 +98,6 @@ void StructField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
   s << start_offset.bytes() + GetSize().bytes() << "]).unwrap();";
 }
 
-void StructField::GenRustWriter(std::ostream&, Size, Size) const {}
+void StructField::GenRustWriter(std::ostream& s, Size, Size) const {
+  s << "self." << GetName() << ".write_to(buffer);";
+}

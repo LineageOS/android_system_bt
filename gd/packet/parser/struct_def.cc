@@ -438,6 +438,30 @@ void StructDef::GenRustImpls(std::ostream& s) const {
   GenRustSizeField(s);
   s << "})}\n";
 
+  // write_to function
+  s << "fn write_to(&self, buffer: &mut BytesMut) {";
+  fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      SizeField::kFieldType,
+  });
+
+  for (auto const& field : fields) {
+    auto start_field_offset = GetOffsetForField(field->GetName(), false);
+    auto end_field_offset = GetOffsetForField(field->GetName(), true);
+
+    if (start_field_offset.empty() && end_field_offset.empty()) {
+      ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
+                   << "no method exists to determine field location from begin() or end().\n";
+    }
+
+    field->GenRustWriter(s, start_field_offset, end_field_offset);
+  }
+
+  s << "}\n";
+
   if (fields.size() > 0) {
     s << "pub fn get_size(&self) -> usize { self.size }";
   }
