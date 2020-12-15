@@ -332,43 +332,43 @@ struct tBTA_AG_RES_DATA {
   static const tBTA_AG_RES_DATA kEmpty;
 };
 
-/* AG callback events */
-#define BTA_AG_ENABLE_EVT 0      /* AG enabled */
-#define BTA_AG_REGISTER_EVT 1    /* AG registered */
-#define BTA_AG_OPEN_EVT 2        /* AG connection open */
-#define BTA_AG_CLOSE_EVT 3       /* AG connection closed */
-#define BTA_AG_CONN_EVT 4        /* Service level connection opened */
-#define BTA_AG_AUDIO_OPEN_EVT 5  /* Audio connection open */
-#define BTA_AG_AUDIO_CLOSE_EVT 6 /* Audio connection closed */
-#define BTA_AG_SPK_EVT 7         /* Speaker volume changed */
-#define BTA_AG_MIC_EVT 8         /* Microphone volume changed */
-#define BTA_AG_AT_CKPD_EVT 9     /* CKPD from the HS */
-#define BTA_AG_DISABLE_EVT 30    /* AG disabled */
-#define BTA_AG_WBS_EVT 31 /* SCO codec info */
-/* Values below are for HFP only */
-#define BTA_AG_AT_A_EVT 10    /* Answer a call */
-#define BTA_AG_AT_D_EVT 11    /* Place a call using number or memory dial */
-#define BTA_AG_AT_CHLD_EVT 12 /* Call hold */
-#define BTA_AG_AT_CHUP_EVT 13 /* Hang up a call */
-#define BTA_AG_AT_CIND_EVT 14 /* Read indicator settings */
-#define BTA_AG_AT_VTS_EVT 15  /* Transmit DTMF tone */
-#define BTA_AG_AT_BINP_EVT 16 /* Retrieve number from voice tag */
-#define BTA_AG_AT_BLDN_EVT 17 /* Place call to last dialed number */
-#define BTA_AG_AT_BVRA_EVT 18 /* Enable/disable voice recognition */
-#define BTA_AG_AT_NREC_EVT 19 /* Disable echo canceling */
-#define BTA_AG_AT_CNUM_EVT 20 /* Retrieve subscriber number */
-#define BTA_AG_AT_BTRH_EVT 21 /* CCAP-style incoming call hold */
-#define BTA_AG_AT_CLCC_EVT 22 /* Query list of current calls */
-#define BTA_AG_AT_COPS_EVT 23 /* Query list of current calls */
-#define BTA_AG_AT_UNAT_EVT 24 /* Unknown AT command */
-#define BTA_AG_AT_CBC_EVT 25  /* Battery Level report from HF */
-#define BTA_AG_AT_BAC_EVT 26  /* avablable codec */
-#define BTA_AG_AT_BCS_EVT 27  /* Codec select */
-#define BTA_AG_AT_BIND_EVT 28 /* HF indicator */
-#define BTA_AG_AT_BIEV_EVT 29 /* HF indicator updates from peer */
-#define BTA_AG_AT_BIA_EVT 32  /* AG indicator activation event from peer */
-
-typedef uint8_t tBTA_AG_EVT;
+typedef enum : uint8_t {
+  /* AG callback events */
+  BTA_AG_ENABLE_EVT = 0,      /* AG enabled */
+  BTA_AG_REGISTER_EVT = 1,    /* AG registered */
+  BTA_AG_OPEN_EVT = 2,        /* AG connection open */
+  BTA_AG_CLOSE_EVT = 3,       /* AG connection closed */
+  BTA_AG_CONN_EVT = 4,        /* Service level connection opened */
+  BTA_AG_AUDIO_OPEN_EVT = 5,  /* Audio connection open */
+  BTA_AG_AUDIO_CLOSE_EVT = 6, /* Audio connection closed */
+  BTA_AG_SPK_EVT = 7,         /* Speaker volume changed */
+  BTA_AG_MIC_EVT = 8,         /* Microphone volume changed */
+  BTA_AG_AT_CKPD_EVT = 9,     /* CKPD from the HS */
+  BTA_AG_DISABLE_EVT = 30,    /* AG disabled */
+  BTA_AG_WBS_EVT = 31,        /* SCO codec info */
+  /* Values below are for HFP only */
+  BTA_AG_AT_A_EVT = 10,    /* Answer a call */
+  BTA_AG_AT_D_EVT = 11,    /* Place a call using number or memory dial */
+  BTA_AG_AT_CHLD_EVT = 12, /* Call hold */
+  BTA_AG_AT_CHUP_EVT = 13, /* Hang up a call */
+  BTA_AG_AT_CIND_EVT = 14, /* Read indicator settings */
+  BTA_AG_AT_VTS_EVT = 15,  /* Transmit DTMF tone */
+  BTA_AG_AT_BINP_EVT = 16, /* Retrieve number from voice tag */
+  BTA_AG_AT_BLDN_EVT = 17, /* Place call to last dialed number */
+  BTA_AG_AT_BVRA_EVT = 18, /* Enable/disable voice recognition */
+  BTA_AG_AT_NREC_EVT = 19, /* Disable echo canceling */
+  BTA_AG_AT_CNUM_EVT = 20, /* Retrieve subscriber number */
+  BTA_AG_AT_BTRH_EVT = 21, /* CCAP-style incoming call hold */
+  BTA_AG_AT_CLCC_EVT = 22, /* Query list of current calls */
+  BTA_AG_AT_COPS_EVT = 23, /* Query list of current calls */
+  BTA_AG_AT_UNAT_EVT = 24, /* Unknown AT command */
+  BTA_AG_AT_CBC_EVT = 25,  /* Battery Level report from HF */
+  BTA_AG_AT_BAC_EVT = 26,  /* avablable codec */
+  BTA_AG_AT_BCS_EVT = 27,  /* Codec select */
+  BTA_AG_AT_BIND_EVT = 28, /* HF indicator */
+  BTA_AG_AT_BIEV_EVT = 29, /* HF indicator updates from peer */
+  BTA_AG_AT_BIA_EVT = 32,  /* AG indicator activation event from peer */
+} tBTA_AG_EVT;
 
 /* data associated with most non-AT events */
 typedef struct {

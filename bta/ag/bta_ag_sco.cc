@@ -343,7 +343,7 @@ static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, uint8_t event) {
   sco.handle = bta_ag_scb_to_idx(p_scb);
   sco.app_id = p_scb->app_id;
   /* call close cback */
-  (*bta_ag_cb.p_cback)(event, (tBTA_AG*)&sco);
+  (*bta_ag_cb.p_cback)(static_cast<tBTA_AG_EVT>(event), (tBTA_AG*)&sco);
 }
 
 /*******************************************************************************
