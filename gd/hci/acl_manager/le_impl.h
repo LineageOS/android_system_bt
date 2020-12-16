@@ -279,7 +279,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     callbacks->OnReadRemoteVersionInformationComplete(version, manufacturer_name, sub_version);
   }
 
-  void enqueue_command(std::unique_ptr<CommandPacketBuilder> command_packet) {
+  void enqueue_command(std::unique_ptr<CommandBuilder> command_packet) {
     hci_layer_->EnqueueCommand(
         std::move(command_packet),
         handler_->BindOnce(&LeAddressManager::OnCommandComplete, common::Unretained(le_address_manager_)));
