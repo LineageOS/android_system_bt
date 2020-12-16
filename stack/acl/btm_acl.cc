@@ -44,6 +44,7 @@
 #include "include/l2cap_hci_link_interface.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/dumpsys.h"
 #include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
@@ -111,17 +112,52 @@ inline bool IsEprAvailable(const tACL_CONN& p_acl) {
 
 extern tBTM_CB btm_cb;
 
+static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
+static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
+                                            uint8_t num_read_pages);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
-static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
-                                            uint8_t num_read_pages);
-static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
+static void check_link_policy(uint16_t* settings);
+
+namespace {
+void NotifyAclLinkUp(tACL_CONN& p_acl) {
+  if (p_acl.link_up_issued) {
+    LOG_INFO("Already notified BTA layer that the link is up");
+    return;
+  }
+  p_acl.link_up_issued = true;
+  BTA_dm_acl_up(p_acl.remote_addr, p_acl.transport);
+}
+
+void NotifyAclLinkDown(tACL_CONN& p_acl) {
+  /* Only notify if link up has had a chance to be issued */
+  if (p_acl.link_up_issued) {
+    p_acl.link_up_issued = false;
+    BTA_dm_acl_down(p_acl.remote_addr, p_acl.transport);
+  }
+}
+
+void NotifyAclRoleSwitchComplete(const RawAddress& bda, uint8_t new_role,
+                                 tHCI_STATUS hci_status) {
+  BTA_dm_report_role_change(bda, new_role, hci_status);
+}
+
+void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl,
+                                   UNUSED_ATTR uint8_t max_page_number) {
+  ASSERT_LOG(bluetooth::shim::is_gd_acl_enabled(),
+             "For right now only called with gd_acl support");
+  btm_process_remote_ext_features(&p_acl, max_page_number);
+  btm_set_link_policy(&p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
+  BTA_dm_notify_remote_features_complete(p_acl.remote_addr);
+}
+
+}  // namespace
 
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
@@ -398,11 +434,7 @@ void btm_acl_removed(uint16_t handle) {
   }
   p_acl->in_use = false;
 
-  /* Only notify if link up has had a chance to be issued */
-  if (p_acl->link_up_issued) {
-    p_acl->link_up_issued = false;
-    BTA_dm_acl_down(p_acl->remote_addr, p_acl->transport);
-  }
+  NotifyAclLinkDown(*p_acl);
 
   memset(p_acl, 0, sizeof(tACL_CONN));
 }
@@ -584,11 +616,10 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
   else if (p->is_switch_role_encryption_on()) {
     p->reset_switch_role();
     p->set_encryption_idle();
-    auto new_role = btm_cb.acl_cb_.switch_role_ref_data.role;
-    auto hci_status = btm_cb.acl_cb_.switch_role_ref_data.hci_status;
-    BTA_dm_report_role_change(
-        btm_cb.acl_cb_.switch_role_ref_data.remote_bd_addr, new_role,
-        hci_status);
+    NotifyAclRoleSwitchComplete(
+        btm_cb.acl_cb_.switch_role_ref_data.remote_bd_addr,
+        btm_cb.acl_cb_.switch_role_ref_data.role,
+        btm_cb.acl_cb_.switch_role_ref_data.hci_status);
 
     /* If a disconnect is pending, issue it now that role switch has completed
      */
@@ -1049,16 +1080,10 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl_cb) {
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
     internal_.btm_set_packet_types(p_acl_cb,
-                                   btm_cb.acl_cb_.btm_acl_pkt_types_supported);
-    btm_set_link_policy(p_acl_cb, btm_cb.acl_cb_.btm_def_link_policy);
+                                   btm_cb.acl_cb_.DefaultPacketTypes());
+    btm_set_link_policy(p_acl_cb, btm_cb.acl_cb_.DefaultLinkPolicy());
   }
-  if (p_acl_cb->link_up_issued) {
-    LOG_INFO("Already notified BTA layer that the link is up");
-    return;
-  }
-  p_acl_cb->link_up_issued = true;
-
-  BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport);
+  NotifyAclLinkUp(*p_acl_cb);
 }
 
 void btm_establish_continue_from_address(const RawAddress& bda,
@@ -2707,8 +2732,7 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
   if (bluetooth::shim::is_gd_acl_enabled()) {
     tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
     if (p_acl != nullptr) {
-      p_acl->link_up_issued = true;
-      BTA_dm_acl_up(p_acl->remote_addr, p_acl->transport);
+      NotifyAclLinkUp(*p_acl);
     } else {
       LOG_WARN("Unable to find active acl");
     }
@@ -2982,6 +3006,6 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
           .c_str());
 
   if (max_page_number == current_page_number) {
-    btm_process_remote_ext_features(p_acl, max_page_number);
+    NotifyAclFeaturesReadComplete(*p_acl, max_page_number);
   }
 }

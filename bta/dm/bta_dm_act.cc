@@ -36,6 +36,7 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/dumpsys.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -2174,6 +2175,29 @@ void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
       FROM_HERE, base::Bind(handle_role_change, bd_addr, new_role, hci_status));
 }
 
+void handle_remote_features_complete(const RawAddress& bd_addr) {
+  tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
+  if (!p_dev) {
+    LOG_WARN("Unable to find device peer:%s", PRIVATE_ADDRESS(bd_addr));
+    return;
+  }
+
+  if (controller_get_interface()->supports_sniff_subrating() &&
+      acl_peer_supports_sniff_subrating(bd_addr)) {
+    LOG_DEBUG("Device supports sniff subrating peer:%s",
+              PRIVATE_ADDRESS(bd_addr));
+    p_dev->info = BTA_DM_DI_USE_SSR;
+  } else {
+    LOG_DEBUG("Device does NOT support sniff subrating peer:%s",
+              PRIVATE_ADDRESS(bd_addr));
+  }
+}
+
+void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr) {
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(handle_remote_features_complete, bd_addr));
+}
+
 static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
                                                 tBT_TRANSPORT transport) {
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
@@ -2209,6 +2233,12 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
 
   if (controller_get_interface()->supports_sniff_subrating() &&
       acl_peer_supports_sniff_subrating(bd_addr)) {
+    // NOTE: This callback assumes upon ACL connection that
+    // the read remote features has completed and is valid.
+    // The only guaranteed contract for valid read remote features
+    // data is when the BTA_dm_notify_remote_features_complete()
+    // callback has completed.  The below assignment is kept for
+    // transitional informational purposes only.
     device->info = BTA_DM_DI_USE_SSR;
   }
 
