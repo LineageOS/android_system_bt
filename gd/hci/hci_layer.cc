@@ -28,8 +28,8 @@ using bluetooth::common::BindOn;
 using bluetooth::common::BindOnce;
 using bluetooth::common::ContextualCallback;
 using bluetooth::common::ContextualOnceCallback;
+using bluetooth::hci::CommandBuilder;
 using bluetooth::hci::CommandCompleteView;
-using bluetooth::hci::CommandPacketBuilder;
 using bluetooth::hci::CommandStatusView;
 using bluetooth::hci::EventPacketView;
 using bluetooth::hci::LeMetaEventView;
@@ -55,15 +55,15 @@ static void on_hci_timeout(OpCode op_code) {
 
 class CommandQueueEntry {
  public:
-  CommandQueueEntry(unique_ptr<CommandPacketBuilder> command_packet,
-                    ContextualOnceCallback<void(CommandCompleteView)> on_complete_function)
+  CommandQueueEntry(
+      unique_ptr<CommandBuilder> command_packet, ContextualOnceCallback<void(CommandCompleteView)> on_complete_function)
       : command(move(command_packet)), waiting_for_status_(false), on_complete(move(on_complete_function)) {}
 
-  CommandQueueEntry(unique_ptr<CommandPacketBuilder> command_packet,
-                    ContextualOnceCallback<void(CommandStatusView)> on_status_function)
+  CommandQueueEntry(
+      unique_ptr<CommandBuilder> command_packet, ContextualOnceCallback<void(CommandStatusView)> on_status_function)
       : command(move(command_packet)), waiting_for_status_(true), on_status(move(on_status_function)) {}
 
-  unique_ptr<CommandPacketBuilder> command;
+  unique_ptr<CommandBuilder> command;
   bool waiting_for_status_;
   ContextualOnceCallback<void(CommandStatusView)> on_status;
   ContextualOnceCallback<void(CommandCompleteView)> on_complete;
@@ -108,7 +108,7 @@ struct HciLayer::impl {
   }
 
   template <typename TResponse>
-  void enqueue_command(unique_ptr<CommandPacketBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
+  void enqueue_command(unique_ptr<CommandBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
     command_queue_.emplace_back(move(command), move(on_response));
     send_next_command();
   }
@@ -162,7 +162,7 @@ struct HciLayer::impl {
     command_queue_.front().command->Serialize(bi);
     hal_->sendHciCommand(*bytes);
 
-    auto cmd_view = CommandPacketView::Create(PacketView<kLittleEndian>(bytes));
+    auto cmd_view = CommandView::Create(PacketView<kLittleEndian>(bytes));
     ASSERT(cmd_view.IsValid());
     OpCode op_code = cmd_view.GetOpCode();
     waiting_command_ = op_code;
@@ -284,13 +284,13 @@ common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd(
   return impl_->acl_queue_.GetUpEnd();
 }
 
-void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
+void HciLayer::EnqueueCommand(
+    unique_ptr<CommandBuilder> command, ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
   CallOn(impl_, &impl::enqueue_command<CommandCompleteView>, move(command), move(on_complete));
 }
 
-void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              ContextualOnceCallback<void(CommandStatusView)> on_status) {
+void HciLayer::EnqueueCommand(
+    unique_ptr<CommandBuilder> command, ContextualOnceCallback<void(CommandStatusView)> on_status) {
   CallOn(impl_, &impl::enqueue_command<CommandStatusView>, move(command), move(on_status));
 }
 

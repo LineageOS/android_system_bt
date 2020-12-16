@@ -24,7 +24,6 @@ namespace security {
 
 using common::ContextualOnceCallback;
 using hci::CommandCompleteView;
-using hci::CommandPacketBuilder;
 using hci::CommandStatusView;
 using hci::EventCode;
 using hci::EventPacketBuilder;
@@ -43,15 +42,17 @@ PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilde
 
 class CommandQueueEntry {
  public:
-  CommandQueueEntry(std::unique_ptr<CommandPacketBuilder> command_packet,
-                    ContextualOnceCallback<void(CommandCompleteView)> on_complete_function)
+  CommandQueueEntry(
+      std::unique_ptr<hci::CommandBuilder> command_packet,
+      ContextualOnceCallback<void(CommandCompleteView)> on_complete_function)
       : command(std::move(command_packet)), waiting_for_status_(false), on_complete(std::move(on_complete_function)) {}
 
-  CommandQueueEntry(std::unique_ptr<CommandPacketBuilder> command_packet,
-                    ContextualOnceCallback<void(CommandStatusView)> on_status_function)
+  CommandQueueEntry(
+      std::unique_ptr<hci::CommandBuilder> command_packet,
+      ContextualOnceCallback<void(CommandStatusView)> on_status_function)
       : command(std::move(command_packet)), waiting_for_status_(true), on_status(std::move(on_status_function)) {}
 
-  std::unique_ptr<CommandPacketBuilder> command;
+  std::unique_ptr<hci::CommandBuilder> command;
   bool waiting_for_status_;
   ContextualOnceCallback<void(CommandStatusView)> on_status;
   ContextualOnceCallback<void(CommandCompleteView)> on_complete;
@@ -61,14 +62,16 @@ class CommandQueueEntry {
 
 class FakeHciLayer : public HciLayer {
  public:
-  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      ContextualOnceCallback<void(CommandStatusView)> on_status) override {
+  void EnqueueCommand(
+      std::unique_ptr<hci::CommandBuilder> command,
+      ContextualOnceCallback<void(CommandStatusView)> on_status) override {
     auto command_queue_entry = std::make_unique<CommandQueueEntry>(std::move(command), std::move(on_status));
     command_queue_.push(std::move(command_queue_entry));
   }
 
-  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
+  void EnqueueCommand(
+      std::unique_ptr<hci::CommandBuilder> command,
+      ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
     auto command_queue_entry = std::make_unique<CommandQueueEntry>(std::move(command), std::move(on_complete));
     command_queue_.push(std::move(command_queue_entry));
   }
