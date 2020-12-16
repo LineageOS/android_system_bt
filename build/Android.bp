@@ -99,6 +99,18 @@ fluoride_defaults {
             // libstatslog -> libbinder doesn't build on mac
             enabled: false,
         },
+        android: {
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "libhidlbase",
+                "libutils",
+                "libcutils",
+            ],
+            static_libs: [
+                "libbt_common_sys_prop_cxx",
+                "libbt_hidl_hal_cxx",
+            ],
+        },
     },
 }
 
