@@ -49,16 +49,18 @@ class FuzzHciLayer : public HciLayer {
     auto_reply_fdp = nullptr;
   }
 
-  void EnqueueCommand(std::unique_ptr<hci::CommandPacketBuilder> command,
-                      common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {
+  void EnqueueCommand(
+      std::unique_ptr<hci::CommandBuilder> command,
+      common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {
     on_command_complete_ = std::move(on_complete);
     if (auto_reply_fdp != nullptr) {
       injectCommandComplete(bluetooth::fuzz::GetArbitraryBytes(auto_reply_fdp));
     }
   }
 
-  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {
+  void EnqueueCommand(
+      std::unique_ptr<CommandBuilder> command,
+      common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {
     on_command_status_ = std::move(on_status);
     if (auto_reply_fdp != nullptr) {
       injectCommandStatus(bluetooth::fuzz::GetArbitraryBytes(auto_reply_fdp));

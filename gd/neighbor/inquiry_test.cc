@@ -85,23 +85,23 @@ hci::PacketView<hci::kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePa
 class TestHciLayer : public hci::HciLayer {
  public:
   void EnqueueCommand(
-      std::unique_ptr<hci::CommandPacketBuilder> command,
+      std::unique_ptr<hci::CommandBuilder> command,
       common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {
     GetHandler()->Post(common::BindOnce(
         &TestHciLayer::HandleCommand, common::Unretained(this), std::move(command), std::move(on_complete)));
   }
 
   void EnqueueCommand(
-      std::unique_ptr<hci::CommandPacketBuilder> command,
+      std::unique_ptr<hci::CommandBuilder> command,
       common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {
     GetHandler()->Post(common::BindOnce(
         &TestHciLayer::HandleStatus, common::Unretained(this), std::move(command), std::move(on_status)));
   }
 
   void HandleCommand(
-      std::unique_ptr<hci::CommandPacketBuilder> command_builder,
+      std::unique_ptr<hci::CommandBuilder> command_builder,
       common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) {
-    hci::CommandPacketView command = hci::CommandPacketView::Create(GetPacketView(std::move(command_builder)));
+    hci::CommandView command = hci::CommandView::Create(GetPacketView(std::move(command_builder)));
     ASSERT_TRUE(command.IsValid());
 
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
@@ -200,9 +200,9 @@ class TestHciLayer : public hci::HciLayer {
   }
 
   void HandleStatus(
-      std::unique_ptr<hci::CommandPacketBuilder> command_builder,
+      std::unique_ptr<hci::CommandBuilder> command_builder,
       common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) {
-    hci::CommandPacketView command = hci::CommandPacketView::Create(GetPacketView(std::move(command_builder)));
+    hci::CommandView command = hci::CommandView::Create(GetPacketView(std::move(command_builder)));
     ASSERT_TRUE(command.IsValid());
 
     std::unique_ptr<packet::BasePacketBuilder> event_builder;

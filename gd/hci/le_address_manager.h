@@ -37,7 +37,7 @@ class LeAddressManagerCallback {
 class LeAddressManager {
  public:
   LeAddressManager(
-      common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command,
+      common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
       os::Handler* handler,
       Address public_address,
       uint8_t connect_list_size,
@@ -107,7 +107,7 @@ class LeAddressManager {
 
   struct Command {
     CommandType command_type;
-    std::unique_ptr<CommandPacketBuilder> command_packet;
+    std::unique_ptr<CommandBuilder> command_packet;
   };
 
   void pause_registered_clients();
@@ -126,7 +126,7 @@ class LeAddressManager {
   std::chrono::milliseconds get_next_private_address_interval_ms();
   void handle_next_command();
 
-  common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command_;
+  common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command_;
   os::Handler* handler_;
   std::map<LeAddressManagerCallback*, ClientState> registered_clients_;
 

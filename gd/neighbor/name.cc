@@ -61,8 +61,8 @@ struct NameModule::impl {
  private:
   const NameModule& module_;
 
-  void EnqueueCommandComplete(std::unique_ptr<hci::CommandPacketBuilder> command);
-  void EnqueueCommandStatus(std::unique_ptr<hci::CommandPacketBuilder> command);
+  void EnqueueCommandComplete(std::unique_ptr<hci::CommandBuilder> command);
+  void EnqueueCommandStatus(std::unique_ptr<hci::CommandBuilder> command);
 
   void OnCommandComplete(hci::CommandCompleteView view);
   void OnCommandStatus(hci::CommandStatusView status);
@@ -79,11 +79,11 @@ const ModuleFactory neighbor::NameModule::Factory = ModuleFactory([]() { return 
 
 neighbor::NameModule::impl::impl(const neighbor::NameModule& module) : module_(module) {}
 
-void neighbor::NameModule::impl::EnqueueCommandComplete(std::unique_ptr<hci::CommandPacketBuilder> command) {
+void neighbor::NameModule::impl::EnqueueCommandComplete(std::unique_ptr<hci::CommandBuilder> command) {
   hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandComplete));
 }
 
-void neighbor::NameModule::impl::EnqueueCommandStatus(std::unique_ptr<hci::CommandPacketBuilder> command) {
+void neighbor::NameModule::impl::EnqueueCommandStatus(std::unique_ptr<hci::CommandBuilder> command) {
   hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandStatus));
 }
 
