@@ -364,7 +364,7 @@ static BT_HDR* WrapPacketAndCopy(
   return packet;
 }
 
-static void event_callback(bluetooth::hci::EventPacketView event_packet_view) {
+static void event_callback(bluetooth::hci::EventView event_packet_view) {
   if (!send_data_upwards) {
     return;
   }

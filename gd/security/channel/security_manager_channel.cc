@@ -85,7 +85,7 @@ void SecurityManagerChannel::SendCommand(
   hci_security_interface_->EnqueueCommand(std::move(command), std::forward<SecurityCommandStatusCallback>(callback));
 }
 
-void SecurityManagerChannel::OnHciEventReceived(hci::EventPacketView packet) {
+void SecurityManagerChannel::OnHciEventReceived(hci::EventView packet) {
   ASSERT_LOG(listener_ != nullptr, "No listener set!");
   ASSERT(packet.IsValid());
   listener_->OnHciEventReceived(packet);

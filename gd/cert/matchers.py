@@ -96,7 +96,7 @@ class HciMatchers(object):
 
     @staticmethod
     def _extract_matching_event(packet_bytes, event_code):
-        event = hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))
+        event = hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))
         if event is None:
             return None
         if event_code is not None and event.GetEventCode() != event_code:
@@ -144,7 +144,7 @@ class HciMatchers(object):
 
     @staticmethod
     def LogEventCode():
-        return lambda event: logging.info("Received event: %x" % hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(event.payload))).GetEventCode())
+        return lambda event: logging.info("Received event: %x" % hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(event.event))).GetEventCode())
 
     @staticmethod
     def LinkKeyRequest():

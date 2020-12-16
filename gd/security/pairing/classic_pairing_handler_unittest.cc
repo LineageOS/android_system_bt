@@ -86,8 +86,8 @@ class SecurityManagerChannelCallback : public channel::ISecurityManagerChannelLi
  public:
   explicit SecurityManagerChannelCallback(pairing::ClassicPairingHandler* pairing_handler)
       : pairing_handler_(pairing_handler) {}
-  void OnHciEventReceived(hci::EventPacketView packet) override {
-    auto event = hci::EventPacketView::Create(packet);
+  void OnHciEventReceived(hci::EventView packet) override {
+    auto event = hci::EventView::Create(packet);
     ASSERT_LOG(event.IsValid(), "Received invalid packet");
     const hci::EventCode code = event.GetEventCode();
     switch (code) {

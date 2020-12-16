@@ -32,10 +32,10 @@ void HciLayerFuzzClient::Start() {
   aclInject_ = new os::fuzz::FuzzInjectQueue<AclPacketBuilder>(hci_->GetAclQueueEnd(), GetHandler());
 
   // Can't do security right now, due to the Encryption Change conflict between ACL manager & security
-  // security_interface_ = hci_->GetSecurityInterface(common::Bind([](EventPacketView){}), GetHandler());
+  // security_interface_ = hci_->GetSecurityInterface(common::Bind([](EventView){}), GetHandler());
   le_security_interface_ = hci_->GetLeSecurityInterface(GetHandler()->Bind([](LeMetaEventView) {}));
   acl_connection_interface_ = hci_->GetAclConnectionInterface(
-      GetHandler()->Bind([](EventPacketView) {}),
+      GetHandler()->Bind([](EventView) {}),
       GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}),
       GetHandler()->Bind([](uint16_t, uint8_t, uint16_t, uint16_t) {}));
   le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(
