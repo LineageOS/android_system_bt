@@ -159,7 +159,7 @@ class DependsOnHci : public Module {
   void SendSecurityCommandExpectingComplete(std::unique_ptr<SecurityCommandBuilder> command) {
     if (security_interface_ == nullptr) {
       security_interface_ =
-          hci_->GetSecurityInterface(GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventPacketView>));
+          hci_->GetSecurityInterface(GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventView>));
     }
     hci_->EnqueueCommand(std::move(command),
                          GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
@@ -186,8 +186,8 @@ class DependsOnHci : public Module {
     return event_promise_->get_future();
   }
 
-  EventPacketView GetReceivedEvent() {
-    EventPacketView packetview = incoming_events_.front();
+  EventView GetReceivedEvent() {
+    EventView packetview = incoming_events_.front();
     incoming_events_.pop_front();
     return packetview;
   }
@@ -210,8 +210,8 @@ class DependsOnHci : public Module {
 
   void Start() {
     hci_ = GetDependency<HciLayer>();
-    hci_->RegisterEventHandler(EventCode::CONNECTION_COMPLETE,
-                               GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventPacketView>));
+    hci_->RegisterEventHandler(
+        EventCode::CONNECTION_COMPLETE, GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventView>));
     hci_->RegisterLeEventHandler(SubeventCode::CONNECTION_COMPLETE,
                                  GetHandler()->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
     hci_->GetAclQueueEnd()->RegisterDequeue(GetHandler(),
@@ -232,7 +232,7 @@ class DependsOnHci : public Module {
   HciLayer* hci_ = nullptr;
   const SecurityInterface* security_interface_;
   const LeSecurityInterface* le_security_interface_;
-  std::list<EventPacketView> incoming_events_;
+  std::list<EventView> incoming_events_;
   std::list<AclPacketView> incoming_acl_packets_;
   std::unique_ptr<std::promise<void>> event_promise_;
   std::unique_ptr<std::promise<void>> acl_promise_;
@@ -356,7 +356,7 @@ TEST_F(HciTest, leMetaEvent) {
   ASSERT_EQ(event_status, std::future_status::ready);
 
   auto event = upper->GetReceivedEvent();
-  ASSERT_TRUE(LeConnectionCompleteView::Create(LeMetaEventView::Create(EventPacketView::Create(event))).IsValid());
+  ASSERT_TRUE(LeConnectionCompleteView::Create(LeMetaEventView::Create(EventView::Create(event))).IsValid());
 }
 
 TEST_F(HciTest, noOpCredits) {
@@ -400,8 +400,7 @@ TEST_F(HciTest, noOpCredits) {
 
   auto event = upper->GetReceivedEvent();
   ASSERT_TRUE(
-      ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-          .IsValid());
+      ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventView::Create(event))).IsValid());
 }
 
 TEST_F(HciTest, creditsTest) {
@@ -448,8 +447,7 @@ TEST_F(HciTest, creditsTest) {
 
   auto event = upper->GetReceivedEvent();
   ASSERT_TRUE(
-      ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-          .IsValid());
+      ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventView::Create(event))).IsValid());
 
   // Verify that the second one is sent
   command_sent_status = command_future.wait_for(kTimeout);
@@ -478,8 +476,7 @@ TEST_F(HciTest, creditsTest) {
 
   event = upper->GetReceivedEvent();
   ASSERT_TRUE(
-      ReadLocalSupportedCommandsCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-          .IsValid());
+      ReadLocalSupportedCommandsCompleteView::Create(CommandCompleteView::Create(EventView::Create(event))).IsValid());
   // Verify that the third one is sent
   command_sent_status = command_future.wait_for(kTimeout);
   ASSERT_EQ(command_sent_status, std::future_status::ready);
@@ -503,8 +500,7 @@ TEST_F(HciTest, creditsTest) {
   ASSERT_EQ(event_status, std::future_status::ready);
   event = upper->GetReceivedEvent();
   ASSERT_TRUE(
-      ReadLocalSupportedFeaturesCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-          .IsValid());
+      ReadLocalSupportedFeaturesCompleteView::Create(CommandCompleteView::Create(EventView::Create(event))).IsValid());
 }
 
 TEST_F(HciTest, leSecurityInterfaceTest) {

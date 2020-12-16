@@ -72,7 +72,7 @@ void DualModeController::SendCommandCompleteUnknownOpCodeEvent(uint16_t command_
   raw_builder_ptr->AddOctets1(
       static_cast<uint8_t>(ErrorCode::UNKNOWN_HCI_COMMAND));
 
-  auto packet = gd_hci::EventPacketBuilder::Create(
+  auto packet = gd_hci::EventBuilder::Create(
       gd_hci::EventCode::COMMAND_COMPLETE, std::move(raw_builder_ptr));
   send_event_(std::move(packet));
 }
@@ -388,7 +388,7 @@ void DualModeController::HandleCommand(std::shared_ptr<std::vector<uint8_t>> pac
 void DualModeController::RegisterEventChannel(
     const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& callback) {
   send_event_ =
-      [callback](std::shared_ptr<bluetooth::hci::EventPacketBuilder> event) {
+      [callback](std::shared_ptr<bluetooth::hci::EventBuilder> event) {
         auto bytes = std::make_shared<std::vector<uint8_t>>();
         bluetooth::packet::BitInserter bit_inserter(*bytes);
         bytes->reserve(event->size());

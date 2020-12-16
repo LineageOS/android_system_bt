@@ -279,8 +279,8 @@ void SecurityManagerImpl::HandleEvent(T packet) {
   entry->second->OnReceive(packet);
 }
 
-void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
-  auto event = hci::EventPacketView::Create(packet);
+void SecurityManagerImpl::OnHciEventReceived(hci::EventView packet) {
+  auto event = hci::EventView::Create(packet);
   ASSERT_LOG(event.IsValid(), "Received invalid packet");
   const hci::EventCode code = event.GetEventCode();
   switch (code) {

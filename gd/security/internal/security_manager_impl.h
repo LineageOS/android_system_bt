@@ -160,7 +160,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
    *
    * @param packet data received from HCI
    */
-  void OnHciEventReceived(hci::EventPacketView packet) override;
+  void OnHciEventReceived(hci::EventView packet) override;
 
   /**
    * When a conncetion closes we should clean up the pairing handler

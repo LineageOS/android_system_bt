@@ -142,14 +142,14 @@ class LeAclManagerTest(GdBaseTestClass):
             if b'\x3e\x13\x01\x00' in packet_bytes:
                 cc_view = hci_packets.LeConnectionCompleteView(
                     hci_packets.LeMetaEventView(
-                        hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
+                        hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
                 handle = cc_view.GetConnectionHandle()
                 address = cc_view.GetPeerAddress()
                 return True
             if b'\x3e\x13\x0A\x00' in packet_bytes:
                 cc_view = hci_packets.LeEnhancedConnectionCompleteView(
                     hci_packets.LeMetaEventView(
-                        hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
+                        hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
                 handle = cc_view.GetConnectionHandle()
                 address = cc_view.GetPeerResolvablePrivateAddress()
                 return True
@@ -260,13 +260,13 @@ class LeAclManagerTest(GdBaseTestClass):
             if b'\x3e\x13\x01\x00' in packet_bytes:
                 cc_view = hci_packets.LeConnectionCompleteView(
                     hci_packets.LeMetaEventView(
-                        hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
+                        hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
                 handle = cc_view.GetConnectionHandle()
                 return True
             if b'\x3e\x13\x0A\x00' in packet_bytes:
                 cc_view = hci_packets.LeEnhancedConnectionCompleteView(
                     hci_packets.LeMetaEventView(
-                        hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
+                        hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))))
                 handle = cc_view.GetConnectionHandle()
                 return True
             return False
