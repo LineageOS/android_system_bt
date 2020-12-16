@@ -435,7 +435,7 @@ class SecurityTest(GdBaseTestClass):
         assertThat(has256C).isTrue()
         assertThat(has256R).isTrue()
 
-    def test_successful_dut_initiated_ssp_oob(self):
+    def no_test_successful_dut_initiated_ssp_oob(self):
         dut_io_capability = IoCapabilities.NO_INPUT_NO_OUTPUT
         cert_io_capability = IoCapabilities.NO_INPUT_NO_OUTPUT
         dut_auth_reqs = AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION
