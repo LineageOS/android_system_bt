@@ -22,7 +22,6 @@ from cert.closable import Closable
 from cert.closable import safeClose
 from cert.captures import HciCaptures
 from cert.truth import assertThat
-from hal import facade_pb2 as hal_facade
 from bluetooth_packets_python3.hci_packets import WriteScanEnableBuilder
 from bluetooth_packets_python3.hci_packets import ScanEnable
 from bluetooth_packets_python3.hci_packets import AclBuilder
@@ -50,6 +49,7 @@ from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingEnable
 from bluetooth_packets_python3.hci_packets import LeSetExtendedScanEnableBuilder
 from bluetooth_packets_python3.hci_packets import EnabledSet
 from bluetooth_packets_python3.hci_packets import OpCode
+from facade import common_pb2 as common
 
 
 class PyHalAclConnection(IEventStream):
@@ -61,7 +61,7 @@ class PyHalAclConnection(IEventStream):
 
     def send(self, pb_flag, b_flag, data):
         acl = AclBuilder(self.handle, pb_flag, b_flag, RawBuilder(data))
-        self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl.Serialize())))
+        self.device.hal.SendAcl(common.Data(payload=bytes(acl.Serialize())))
 
     def send_first(self, data):
         self.send(PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE, BroadcastFlag.POINT_TO_POINT, bytes(data))
@@ -138,11 +138,11 @@ class PyHal(Closable):
         return self.acl_stream
 
     def send_hci_command(self, command):
-        self.device.hal.SendCommand(hal_facade.Command(payload=bytes(command.Serialize())))
+        self.device.hal.SendCommand(common.Data(payload=bytes(command.Serialize())))
 
     def send_acl(self, handle, pb_flag, b_flag, data):
         acl = AclBuilder(handle, pb_flag, b_flag, RawBuilder(data))
-        self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl.Serialize())))
+        self.device.hal.SendAcl(common.Data(payload=bytes(acl.Serialize())))
 
     def send_acl_first(self, handle, data):
         self.send_acl(handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE, BroadcastFlag.POINT_TO_POINT, data)
