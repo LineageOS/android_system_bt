@@ -109,6 +109,8 @@ extern void btif_hh_disconnect(RawAddress* bd_addr);
 extern void btif_hh_setreport(btif_hh_device_t* p_dev,
                               bthh_report_type_t r_type, uint16_t size,
                               uint8_t* report);
+extern void btif_hh_senddata(btif_hh_device_t* p_dev, uint16_t size,
+                             uint8_t* report);
 extern void btif_hh_getreport(btif_hh_device_t* p_dev,
                               bthh_report_type_t r_type, uint8_t reportId,
                               uint16_t bufferSize);
