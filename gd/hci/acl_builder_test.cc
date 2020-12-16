@@ -64,8 +64,8 @@ TEST(AclBuilderTest, buildAclCount) {
   count_payload->AddOctets(counting_bytes);
   ASSERT_EQ(counting_bytes.size(), count_payload->size());
 
-  std::unique_ptr<AclPacketBuilder> count_packet =
-      AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(count_payload));
+  std::unique_ptr<AclBuilder> count_packet =
+      AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(count_payload));
 
   ASSERT_EQ(counting_bytes.size() + 4, count_packet->size());
 
@@ -74,7 +74,7 @@ TEST(AclBuilderTest, buildAclCount) {
   count_packet->Serialize(it);
 
   PacketView<true> count_packet_bytes_view(count_packet_bytes);
-  AclPacketView count_packet_view = AclPacketView::Create(count_packet_bytes_view);
+  AclView count_packet_view = AclView::Create(count_packet_bytes_view);
   ASSERT_TRUE(count_packet_view.IsValid());
 
   ASSERT_EQ(handle, count_packet_view.GetHandle());
@@ -97,8 +97,8 @@ TEST(AclBuilderTest, buildAclCountInverted) {
   counting_down_bytes_payload->AddOctets(counting_down_bytes);
   ASSERT_EQ(counting_down_bytes.size(), counting_down_bytes_payload->size());
 
-  std::unique_ptr<AclPacketBuilder> counting_down_bytes_packet =
-      AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(counting_down_bytes_payload));
+  std::unique_ptr<AclBuilder> counting_down_bytes_packet =
+      AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(counting_down_bytes_payload));
 
   ASSERT_EQ(counting_down_bytes.size() + 4, counting_down_bytes_packet->size());
 
@@ -106,7 +106,7 @@ TEST(AclBuilderTest, buildAclCountInverted) {
   BitInserter it(*counting_down_bytes_packet_bytes);
   counting_down_bytes_packet->Serialize(it);
   PacketView<true> counting_down_bytes_packet_bytes_view(counting_down_bytes_packet_bytes);
-  AclPacketView counting_down_bytes_packet_view = AclPacketView::Create(counting_down_bytes_packet_bytes_view);
+  AclView counting_down_bytes_packet_view = AclView::Create(counting_down_bytes_packet_bytes_view);
   ASSERT_TRUE(counting_down_bytes_packet_view.IsValid());
 
   ASSERT_EQ(handle, counting_down_bytes_packet_view.GetHandle());
@@ -130,8 +130,8 @@ TEST(AclBuilderTest, buildInformationRequest) {
   payload->AddOctets(payload_bytes);
   ASSERT_EQ(payload_bytes.size(), payload->size());
 
-  std::unique_ptr<AclPacketBuilder> packet =
-      AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(payload));
+  std::unique_ptr<AclBuilder> packet =
+      AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(payload));
 
   ASSERT_EQ(information_request.size(), packet->size());
 
@@ -139,7 +139,7 @@ TEST(AclBuilderTest, buildInformationRequest) {
   BitInserter it(*packet_bytes);
   packet->Serialize(it);
   PacketView<true> packet_bytes_view(packet_bytes);
-  AclPacketView packet_view = AclPacketView::Create(packet_bytes_view);
+  AclView packet_view = AclView::Create(packet_bytes_view);
   ASSERT_TRUE(packet_view.IsValid());
 
   ASSERT_EQ(packet_bytes->size(), information_request.size());

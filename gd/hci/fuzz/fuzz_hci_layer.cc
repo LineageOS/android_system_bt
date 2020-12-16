@@ -65,9 +65,9 @@ hci::LeIsoInterface* FuzzHciLayer::GetLeIsoInterface(ContextualCallback<void(hci
 }
 
 void FuzzHciLayer::Start() {
-  acl_dev_null_ = new os::fuzz::DevNullQueue<AclPacketBuilder>(acl_queue_.GetDownEnd(), GetHandler());
+  acl_dev_null_ = new os::fuzz::DevNullQueue<AclBuilder>(acl_queue_.GetDownEnd(), GetHandler());
   acl_dev_null_->Start();
-  acl_inject_ = new os::fuzz::FuzzInjectQueue<AclPacketView>(acl_queue_.GetDownEnd(), GetHandler());
+  acl_inject_ = new os::fuzz::FuzzInjectQueue<AclView>(acl_queue_.GetDownEnd(), GetHandler());
 }
 
 void FuzzHciLayer::Stop() {
@@ -122,7 +122,7 @@ void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
 }
 
 void FuzzHciLayer::injectAclData(std::vector<uint8_t> data) {
-  CONSTRUCT_VALID_UNIQUE_OTHERWISE_BAIL(hci::AclPacketView, packet, data);
+  CONSTRUCT_VALID_UNIQUE_OTHERWISE_BAIL(hci::AclView, packet, data);
   acl_inject_->Inject(std::move(packet));
 }
 

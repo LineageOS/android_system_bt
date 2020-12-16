@@ -25,7 +25,7 @@ from cert.truth import assertThat
 from hal import facade_pb2 as hal_facade
 from bluetooth_packets_python3.hci_packets import WriteScanEnableBuilder
 from bluetooth_packets_python3.hci_packets import ScanEnable
-from bluetooth_packets_python3.hci_packets import AclPacketBuilder
+from bluetooth_packets_python3.hci_packets import AclBuilder
 from bluetooth_packets_python3 import RawBuilder
 from bluetooth_packets_python3.hci_packets import BroadcastFlag
 from bluetooth_packets_python3.hci_packets import PacketBoundaryFlag
@@ -60,7 +60,7 @@ class PyHalAclConnection(IEventStream):
         self.our_acl_stream = FilteringEventStream(acl_stream, None)
 
     def send(self, pb_flag, b_flag, data):
-        acl = AclPacketBuilder(self.handle, pb_flag, b_flag, RawBuilder(data))
+        acl = AclBuilder(self.handle, pb_flag, b_flag, RawBuilder(data))
         self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl.Serialize())))
 
     def send_first(self, data):
@@ -141,7 +141,7 @@ class PyHal(Closable):
         self.device.hal.SendCommand(hal_facade.Command(payload=bytes(command.Serialize())))
 
     def send_acl(self, handle, pb_flag, b_flag, data):
-        acl = AclPacketBuilder(handle, pb_flag, b_flag, RawBuilder(data))
+        acl = AclBuilder(handle, pb_flag, b_flag, RawBuilder(data))
         self.device.hal.SendAcl(hal_facade.AclPacket(payload=bytes(acl.Serialize())))
 
     def send_acl_first(self, handle, data):
