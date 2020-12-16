@@ -677,7 +677,7 @@ struct LeFixedChannelHelper {
     channel_enqueue_buffer_[device] = nullptr;
     channels_[device]->GetQueueUpEnd()->UnregisterDequeue();
     channels_[device] = nullptr;
-    (freg_.pL2CA_FixedConn_Cb)(cid_, address, true, 0, 2);
+    (freg_.pL2CA_FixedConn_Cb)(cid_, address, false, 0, BT_TRANSPORT_LE);
   }
 
   void on_channel_open(std::unique_ptr<le::FixedChannel> channel) {
