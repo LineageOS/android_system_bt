@@ -6,7 +6,7 @@ rust_library {
     edition: "2018",
     rustlibs: [
         "libbt_packet",
-        "libbt_hal_proto",
+        "libbt_facade_proto",
         "libbytes",
         "libfutures",
         "libthiserror",

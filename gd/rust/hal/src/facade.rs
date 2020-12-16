@@ -2,9 +2,9 @@
 
 use crate::HalExports;
 use bt_common::GrpcFacade;
-use bt_hal_proto::empty::Empty;
-use bt_hal_proto::facade::*;
-use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
+use bt_facade_proto::empty::Empty;
+use bt_facade_proto::hal_facade::*;
+use bt_facade_proto::hal_facade_grpc::{create_hci_hal_facade, HciHalFacade};
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 use futures::sink::SinkExt;
 use gddi::{module, provides, Stoppable};
