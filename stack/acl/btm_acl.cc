@@ -83,6 +83,10 @@ struct StackAclBtmAcl {
 
 namespace {
 StackAclBtmAcl internal_;
+
+const bluetooth::legacy::hci::Interface& GetLegacyHciInterface() {
+  return bluetooth::legacy::hci::GetInterface();
+}
 }
 
 typedef struct {
@@ -171,7 +175,8 @@ static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
     return bluetooth::shim::ACL_Disconnect(p_acl.hci_handle,
                                            p_acl.is_transport_br_edr(), reason);
   } else {
-    btsnd_hcic_disconnect(p_acl.hci_handle, reason);
+    GetLegacyHciInterface().Disconnect(p_acl.hci_handle,
+                                       static_cast<uint16_t>(reason));
   }
 }
 
@@ -2822,7 +2827,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle,
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
   if (p_acl == nullptr) {
     LOG_ERROR("Sending disconnect for unknown acl PLEASE FIX");
-    btsnd_hcic_disconnect(conn_handle, reason);
+    GetLegacyHciInterface().Disconnect(conn_handle, reason);
     return;
   }
 
