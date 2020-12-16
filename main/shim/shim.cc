@@ -55,9 +55,7 @@ EXPORT_SYMBOL extern const module_t gd_shim_module = {
     .dependencies = {kUnusedModuleDependencies}};
 
 bool bluetooth::shim::is_gd_advertising_enabled() {
-  // TODO enable when module ready
-  // return bluetooth::common::init_flags::gd_advertising_is_enabled();
-  return false;
+  return bluetooth::common::init_flags::gd_advertising_is_enabled();
 }
 
 bool bluetooth::shim::is_gd_security_enabled() {
