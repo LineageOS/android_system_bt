@@ -166,7 +166,13 @@ static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
            PRIVATE_ADDRESS(p_acl.remote_addr),
            hci_error_code_text(reason).c_str());
   p_acl.disconnect_reason = reason;
-  btsnd_hcic_disconnect(p_acl.hci_handle, reason);
+
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    return bluetooth::shim::ACL_Disconnect(p_acl.hci_handle,
+                                           p_acl.is_transport_br_edr(), reason);
+  } else {
+    btsnd_hcic_disconnect(p_acl.hci_handle, reason);
+  }
 }
 
 /* 3 seconds timeout waiting for responses */
