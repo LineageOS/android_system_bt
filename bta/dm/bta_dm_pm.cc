@@ -695,7 +695,7 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
  *
  ******************************************************************************/
 static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
-  tBTM_PM_MODE mode = BTM_PM_STS_ACTIVE;
+  tBTM_PM_MODE mode = BTM_PM_MD_ACTIVE;
   tBTM_PM_PWR_MD pwr_md;
   tBTM_STATUS status;
 
@@ -703,10 +703,13 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
     LOG_WARN("Unable to read power mode for peer:%s",
              PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr));
   }
+  tBTM_PM_STATUS mode_status = static_cast<tBTM_PM_STATUS>(mode);
+  LOG_DEBUG("Current power mode:%s[0x%x] peer_mode:x%02x",
+            power_mode_status_text(mode_status).c_str(), mode_status,
+            p_peer_dev->info);
 
   uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
-  APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d, info:x%x", mode, index,
-                   p_peer_dev->info);
+
   const controller_t* controller = controller_get_interface();
   if (mode != BTM_PM_MD_SNIFF ||
       (controller->supports_sniff_subrating() && p_rem_feat &&
