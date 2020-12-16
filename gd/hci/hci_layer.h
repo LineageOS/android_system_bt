@@ -54,7 +54,7 @@ class HciLayer : public Module, public CommandInterface<CommandBuilder> {
       std::unique_ptr<CommandBuilder> command,
       common::ContextualOnceCallback<void(CommandStatusView)> on_status) override;
 
-  virtual common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd();
+  virtual common::BidiQueueEnd<AclBuilder, AclView>* GetAclQueueEnd();
 
   virtual void RegisterEventHandler(EventCode event_code, common::ContextualCallback<void(EventView)> event_handler);
 
