@@ -52,6 +52,7 @@ struct StackAclBtmPm {
   tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
                                 const tBTM_PM_PWR_MD* p_mode);
   tBTM_PM_MCB* btm_pm_get_power_manager_from_address(const RawAddress& bda);
+  tBTM_PM_MCB* btm_pm_get_power_manager_from_handle(uint16_t handle);
 };
 
 namespace {
@@ -583,6 +584,13 @@ tBTM_PM_MCB* StackAclBtmPm::btm_pm_get_power_manager_from_address(
   int acl_index = btm_pm_find_acl_ind(bda);
   if (acl_index == MAX_L2CAP_LINKS) return nullptr;
   return &(btm_cb.acl_cb_.pm_mode_db[acl_index]);
+}
+
+tBTM_PM_MCB* StackAclBtmPm::btm_pm_get_power_manager_from_handle(
+    uint16_t handle) {
+  int xx = btm_handle_to_acl_index(handle);
+  if (xx >= MAX_L2CAP_LINKS) return nullptr;
+  return &(btm_cb.acl_cb_.pm_mode_db[xx]);
 }
 
 /*******************************************************************************
