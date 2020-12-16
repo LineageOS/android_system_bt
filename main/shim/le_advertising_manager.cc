@@ -140,6 +140,12 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
 
     bluetooth::hci::ExtendedAdvertisingConfig config{};
     parse_parameter(config, params);
+    bluetooth::hci::PeriodicAdvertisingParameters periodic_parameters;
+    periodic_parameters.max_interval = periodic_params.max_interval;
+    periodic_parameters.min_interval = periodic_params.min_interval;
+    periodic_parameters.properties =
+        periodic_params.periodic_advertising_properties;
+    config.periodic_advertising_parameters = periodic_parameters;
 
     size_t offset = 0;
     while (offset < advertise_data.size()) {
@@ -166,6 +172,20 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
           data_copy);
       GapData::Parse(&gap_data, packet.begin());
       config.scan_response.push_back(gap_data);
+      offset += len + 1;  // 1 byte for len
+    }
+
+    offset = 0;
+    while (offset < periodic_data.size()) {
+      GapData gap_data;
+      uint8_t len = periodic_data[offset];
+      auto begin = periodic_data.begin() + offset;
+      auto end = begin + len + 1;  // 1 byte for len
+      auto data_copy = std::make_shared<std::vector<uint8_t>>(begin, end);
+      bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian> packet(
+          data_copy);
+      GapData::Parse(&gap_data, packet.begin());
+      config.periodic_data.push_back(gap_data);
       offset += len + 1;  // 1 byte for len
     }
 
