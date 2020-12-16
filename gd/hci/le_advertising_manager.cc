@@ -284,6 +284,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
     set_data(id, false, config.advertisement);
 
+    if (!config.periodic_data.empty()) {
+      set_periodic_parameter(id, config.periodic_advertising_parameters);
+      set_periodic_data(id, config.periodic_data);
+      enable_periodic_advertising(id, true);
+    }
+
     if (!paused) {
       enable_advertiser(id, true, 0, 0);
     } else {

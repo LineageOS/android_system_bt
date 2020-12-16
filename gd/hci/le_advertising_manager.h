@@ -25,6 +25,14 @@
 namespace bluetooth {
 namespace hci {
 
+class PeriodicAdvertisingParameters {
+ public:
+  uint16_t min_interval;
+  uint16_t max_interval;
+  uint16_t properties;
+  enum AdvertisingProperty { INCLUDE_TX_POWER = 0x06 };
+};
+
 class AdvertisingConfig {
  public:
   std::vector<GapData> advertisement;
@@ -54,17 +62,10 @@ class ExtendedAdvertisingConfig : public AdvertisingConfig {
   SecondaryPhyType secondary_advertising_phy;
   uint8_t sid = 0x00;
   Enable enable_scan_request_notifications = Enable::DISABLED;
+  std::vector<GapData> periodic_data;
+  PeriodicAdvertisingParameters periodic_advertising_parameters;
   ExtendedAdvertisingConfig() = default;
   ExtendedAdvertisingConfig(const AdvertisingConfig& config);
-};
-
-class PeriodicAdvertisingParameters {
- public:
-  uint16_t min_interval;
-  uint16_t max_interval;
-  uint16_t properties;
-
-  enum AdvertisingProperty { INCLUDE_TX_POWER = 0x06 };
 };
 
 using AdvertiserId = uint8_t;
