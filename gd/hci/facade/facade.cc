@@ -50,10 +50,9 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     }
   }
 
-  class TestCommandBuilder : public CommandPacketBuilder {
+  class TestCommandBuilder : public CommandBuilder {
    public:
-    explicit TestCommandBuilder(std::vector<uint8_t> bytes)
-        : CommandPacketBuilder(OpCode::NONE), bytes_(std::move(bytes)) {}
+    explicit TestCommandBuilder(std::vector<uint8_t> bytes) : CommandBuilder(OpCode::NONE), bytes_(std::move(bytes)) {}
     size_t size() const override {
       return bytes_.size();
     }

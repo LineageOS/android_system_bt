@@ -92,7 +92,7 @@ void HciLayerFuzzClient::injectAclData(std::vector<uint8_t> data) {
 }
 
 void HciLayerFuzzClient::injectHciCommand(std::vector<uint8_t> data) {
-  inject_command<CommandPacketView, CommandPacketBuilder>(data, hci_);
+  inject_command<CommandView, CommandBuilder>(data, hci_);
 }
 
 void HciLayerFuzzClient::injectSecurityCommand(std::vector<uint8_t> data) {

@@ -274,7 +274,7 @@ class ClassicPairingHandlerTest : public ::testing::Test {
 hci::SecurityCommandView GetLastCommand(FakeHciLayer* hci_layer) {
   auto last_command = std::move(hci_layer->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  auto command_packet_view = hci::CommandPacketView::Create(command_packet);
+  auto command_packet_view = hci::CommandView::Create(command_packet);
   auto security_command_view = hci::SecurityCommandView::Create(command_packet_view);
   if (!security_command_view.IsValid()) {
     LOG_ERROR("Invalid security command received");
