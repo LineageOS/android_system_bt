@@ -130,6 +130,10 @@ cc_defaults {
                 "libutils",
                 "libcutils",
             ],
+            static_libs: [
+                "libbt_common_sys_prop_cxx",
+                "libbt_hidl_hal_cxx",
+            ],
         },
     },
     srcs: [

@@ -26,6 +26,7 @@
 #include "gd/os/thread.h"
 #include "gd/os/utils.h"
 #include "gd/stack_manager.h"
+#include "src/stack.rs.h"
 
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {
@@ -62,6 +63,7 @@ class Stack {
   os::Handler* stack_handler_ = nullptr;
   legacy::Acl* acl_ = nullptr;
   Btm* btm_ = nullptr;
+  ::rust::Box<rust::stack::Stack>* rust_stack_ = nullptr;
 
   void Start(ModuleList* modules);
 };
