@@ -182,8 +182,8 @@ class CertSelfTest(BaseTestClass):
         inside = hci_packets.ReadScanEnableBuilder()
         logging.debug(inside.Serialize())
         logging.debug("building outside")
-        outside = hci_packets.AclPacketBuilder(handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                                               hci_packets.BroadcastFlag.POINT_TO_POINT, inside)
+        outside = hci_packets.AclBuilder(handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+                                         hci_packets.BroadcastFlag.POINT_TO_POINT, inside)
         logging.debug(outside.Serialize())
         logging.debug("Done!")
 
@@ -199,8 +199,8 @@ class CertSelfTest(BaseTestClass):
             [mtu_opt, fcs_opt])
         request_b_frame = l2cap_packets.BasicFrameBuilder(0x01, request)
         handle = 123
-        wrapped = hci_packets.AclPacketBuilder(handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-                                               hci_packets.BroadcastFlag.POINT_TO_POINT, request_b_frame)
+        wrapped = hci_packets.AclBuilder(handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+                                         hci_packets.BroadcastFlag.POINT_TO_POINT, request_b_frame)
         # Size is ACL (4) + L2CAP (4) + Configure (8) + MTU (4) + FCS (3)
         asserts.assert_true(len(wrapped.Serialize()) == 23, "Packet serialized incorrectly")
 

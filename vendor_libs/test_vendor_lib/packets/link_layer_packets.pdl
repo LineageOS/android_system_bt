@@ -55,7 +55,7 @@ packet LinkLayerPacket {
   _body_,
 }
 
-packet AclPacket : LinkLayerPacket (type = ACL) {
+packet Acl : LinkLayerPacket (type = ACL) {
   _payload_,
 }
 

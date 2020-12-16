@@ -116,7 +116,7 @@ struct AclManager::impl {
   Controller* controller_ = nullptr;
   HciLayer* hci_layer_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
-  common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end_ = nullptr;
+  common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end_ = nullptr;
   std::atomic_bool enqueue_registered_ = false;
   uint16_t default_link_policy_settings_ = 0xffff;
 };

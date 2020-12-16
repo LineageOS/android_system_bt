@@ -30,8 +30,8 @@ namespace acl_manager {
 
 class RoundRobinScheduler {
  public:
-  RoundRobinScheduler(os::Handler* handler, Controller* controller,
-                      common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end);
+  RoundRobinScheduler(
+      os::Handler* handler, Controller* controller, common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end);
   ~RoundRobinScheduler();
 
   enum ConnectionType { CLASSIC, LE };
@@ -54,13 +54,13 @@ class RoundRobinScheduler {
   void buffer_packet(std::map<uint16_t, acl_queue_handler>::iterator acl_queue_handler);
   void unregister_all_connections();
   void send_next_fragment();
-  std::unique_ptr<AclPacketBuilder> handle_enqueue_next_fragment();
+  std::unique_ptr<AclBuilder> handle_enqueue_next_fragment();
   void incoming_acl_credits(uint16_t handle, uint16_t credits);
 
   os::Handler* handler_ = nullptr;
   Controller* controller_ = nullptr;
   std::map<uint16_t, acl_queue_handler> acl_queue_handlers_;
-  std::queue<std::pair<ConnectionType, std::unique_ptr<AclPacketBuilder>>> fragments_to_send_;
+  std::queue<std::pair<ConnectionType, std::unique_ptr<AclBuilder>>> fragments_to_send_;
   uint16_t max_acl_packet_credits_ = 0;
   uint16_t acl_packet_credits_ = 0;
   uint16_t le_max_acl_packet_credits_ = 0;
@@ -68,7 +68,7 @@ class RoundRobinScheduler {
   size_t hci_mtu_{0};
   size_t le_hci_mtu_{0};
   std::atomic_bool enqueue_registered_ = false;
-  common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end_ = nullptr;
+  common::BidiQueueEnd<AclBuilder, AclView>* hci_queue_end_ = nullptr;
   // first register queue end for the Round-robin schedule
   std::map<uint16_t, acl_queue_handler>::iterator starting_point_;
 };

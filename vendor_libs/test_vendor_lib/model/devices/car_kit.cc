@@ -32,7 +32,7 @@ CarKit::CarKit() : Device(kCarKitPropertiesFile) {
 
   // Stub in packet handling for now
   link_layer_controller_.RegisterAclChannel(
-      [](std::shared_ptr<bluetooth::hci::AclPacketBuilder>) {});
+      [](std::shared_ptr<bluetooth::hci::AclBuilder>) {});
   link_layer_controller_.RegisterEventChannel(
       [](std::shared_ptr<bluetooth::hci::EventBuilder>) {});
   link_layer_controller_.RegisterScoChannel([](std::shared_ptr<std::vector<uint8_t>>) {});
