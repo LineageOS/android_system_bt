@@ -697,7 +697,7 @@ void LinkLayerController::IncomingInquiryResponsePacket(
       raw_builder_ptr->AddOctets1(inquiry_response.GetRssi());
       raw_builder_ptr->AddOctets(inquiry_response.GetExtendedData());
 
-      auto packet = bluetooth::hci::EventPacketBuilder::Create(
+      auto packet = bluetooth::hci::EventBuilder::Create(
           bluetooth::hci::EventCode::EXTENDED_INQUIRY_RESULT,
           std::move(raw_builder_ptr));
       send_event_(std::move(packet));
@@ -1016,7 +1016,7 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
     raw_builder_ptr->AddOctets1(ad.size());
     raw_builder_ptr->AddOctets(ad);
     raw_builder_ptr->AddOctets1(GetRssi());
-    auto packet = bluetooth::hci::EventPacketBuilder::Create(
+    auto packet = bluetooth::hci::EventBuilder::Create(
         bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
     send_event_(std::move(packet));
   }
@@ -1059,7 +1059,7 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
     raw_builder_ptr->AddAddress(Address::kEmpty);  // Direct_Address
     raw_builder_ptr->AddOctets1(ad.size());
     raw_builder_ptr->AddOctets(ad);
-    send_event_(bluetooth::hci::EventPacketBuilder::Create(
+    send_event_(bluetooth::hci::EventBuilder::Create(
         bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr)));
   }
 
@@ -1288,7 +1288,7 @@ void LinkLayerController::IncomingLeScanResponsePacket(
     raw_builder_ptr->AddOctets1(ad.size());
     raw_builder_ptr->AddOctets(ad);
     raw_builder_ptr->AddOctets1(GetRssi());
-    auto packet = bluetooth::hci::EventPacketBuilder::Create(
+    auto packet = bluetooth::hci::EventBuilder::Create(
         bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
     send_event_(std::move(packet));
   }
@@ -1312,7 +1312,7 @@ void LinkLayerController::IncomingLeScanResponsePacket(
     raw_builder_ptr->AddAddress(Address::kEmpty);  // Direct_Address
     raw_builder_ptr->AddOctets1(ad.size());
     raw_builder_ptr->AddOctets(ad);
-    auto packet = bluetooth::hci::EventPacketBuilder::Create(
+    auto packet = bluetooth::hci::EventBuilder::Create(
         bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
     send_event_(std::move(packet));
   }
@@ -1414,8 +1414,8 @@ void LinkLayerController::LeAdvertising() {
 }
 
 void LinkLayerController::RegisterEventChannel(
-    const std::function<
-        void(std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>& callback) {
+    const std::function<void(std::shared_ptr<bluetooth::hci::EventBuilder>)>&
+        callback) {
   send_event_ = callback;
 }
 

@@ -90,14 +90,14 @@ class TestHciLayer : public HciLayer {
     return command_packet_view;
   }
 
-  void IncomingEvent(std::unique_ptr<EventPacketBuilder> event_builder) {
+  void IncomingEvent(std::unique_ptr<EventBuilder> event_builder) {
     auto packet = GetPacketView(std::move(event_builder));
-    EventPacketView event = EventPacketView::Create(packet);
+    EventView event = EventView::Create(packet);
     ASSERT_TRUE(event.IsValid());
     CommandCompleteCallback(event);
   }
 
-  void CommandCompleteCallback(EventPacketView event) {
+  void CommandCompleteCallback(EventView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT_TRUE(complete_view.IsValid());
     std::move(command_complete_callbacks.front()).Invoke(complete_view);

@@ -85,7 +85,7 @@ struct InquiryModule::impl {
   void EnqueueCommandCompleteSync(std::unique_ptr<hci::CommandBuilder> command);
   void OnCommandCompleteSync(hci::CommandCompleteView view);
 
-  void OnEvent(hci::EventPacketView view);
+  void OnEvent(hci::EventView view);
 
   std::promise<void>* command_sync_{nullptr};
 
@@ -194,7 +194,7 @@ void neighbor::InquiryModule::impl::OnCommandStatus(hci::CommandStatusView statu
   }
 }
 
-void neighbor::InquiryModule::impl::OnEvent(hci::EventPacketView view) {
+void neighbor::InquiryModule::impl::OnEvent(hci::EventView view) {
   switch (view.GetEventCode()) {
     case hci::EventCode::INQUIRY_COMPLETE: {
       auto packet = hci::InquiryCompleteView::Create(view);

@@ -66,7 +66,7 @@ struct NameModule::impl {
 
   void OnCommandComplete(hci::CommandCompleteView view);
   void OnCommandStatus(hci::CommandStatusView status);
-  void OnEvent(hci::EventPacketView view);
+  void OnEvent(hci::EventView view);
 
   std::unordered_map<hci::Address, std::unique_ptr<ReadCallbackHandler>> read_callback_handler_map_;
   std::unordered_map<hci::Address, std::unique_ptr<CancelCallbackHandler>> cancel_callback_handler_map_;
@@ -118,7 +118,7 @@ void neighbor::NameModule::impl::OnCommandStatus(hci::CommandStatusView status) 
   }
 }
 
-void neighbor::NameModule::impl::OnEvent(hci::EventPacketView view) {
+void neighbor::NameModule::impl::OnEvent(hci::EventView view) {
   switch (view.GetEventCode()) {
     case hci::EventCode::REMOTE_NAME_REQUEST_COMPLETE: {
       auto packet = hci::RemoteNameRequestCompleteView::Create(view);

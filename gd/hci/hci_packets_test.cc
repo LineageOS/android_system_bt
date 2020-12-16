@@ -314,8 +314,8 @@ std::vector<uint8_t> le_get_vendor_capabilities_complete{
 TEST(HciPacketsTest, testLeGetVendorCapabilitiesComplete) {
   PacketView<kLittleEndian> packet_bytes_view(
       std::make_shared<std::vector<uint8_t>>(le_get_vendor_capabilities_complete));
-  auto view = LeGetVendorCapabilitiesCompleteView::Create(
-      CommandCompleteView::Create(EventPacketView::Create(packet_bytes_view)));
+  auto view =
+      LeGetVendorCapabilitiesCompleteView::Create(CommandCompleteView::Create(EventView::Create(packet_bytes_view)));
 
   ASSERT_TRUE(view.IsValid());
   auto base_capabilities = view.GetBaseVendorCapabilities();
@@ -536,7 +536,7 @@ TEST(HciPacketsTest, testLeSetExtendedAdvertisingParametersComplete) {
       std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_parameters_complete);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = LeSetExtendedAdvertisingParametersCompleteView::Create(
-      CommandCompleteView::Create(EventPacketView::Create(packet_bytes_view)));
+      CommandCompleteView::Create(EventView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(static_cast<uint8_t>(-11), view.GetSelectedTxPower());
 }

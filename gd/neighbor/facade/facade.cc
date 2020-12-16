@@ -176,7 +176,7 @@ class NeighborFacadeService : public NeighborFacade::Service {
   }
 
  private:
-  void on_incoming_inquiry_result(hci::EventPacketView view) {
+  void on_incoming_inquiry_result(hci::EventView view) {
     InquiryResultMsg inquiry_result_msg;
     inquiry_result_msg.set_packet(std::string(view.begin(), view.end()));
     pending_events_.OnIncomingEvent(std::move(inquiry_result_msg));
