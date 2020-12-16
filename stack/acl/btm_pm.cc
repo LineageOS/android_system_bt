@@ -263,7 +263,7 @@ bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
     return false;
   }
 
-  *p_mode = btm_cb.acl_cb_.pm_mode_db[acl_ind].state;
+  *p_mode = static_cast<tBTM_PM_MODE>(btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
   return true;
 }
 
