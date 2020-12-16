@@ -98,6 +98,7 @@ class ClassicPairingHandler : public PairingHandler {
   void NotifyUiDisplayYesNo();
   void NotifyUiDisplayPasskey(uint32_t passkey);
   void NotifyUiDisplayPasskeyInput();
+  void NotifyUiDisplayPinCodeInput();
   void NotifyUiDisplayCancel();
   void UserClickedYes();
   void UserClickedNo();
@@ -127,6 +128,7 @@ class ClassicPairingHandler : public PairingHandler {
   uint32_t passkey_ = 0;
   bool already_link_key_replied_ = false;
   bool secure_connections_enabled_ = true;
+  bool is_legacy_pin_code_ = false;
 };
 
 }  // namespace pairing
