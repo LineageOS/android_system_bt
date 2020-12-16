@@ -63,10 +63,10 @@ std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle) {
   return std::move(payload);
 }
 
-std::unique_ptr<AclPacketBuilder> NextAclPacket(uint16_t handle) {
+std::unique_ptr<AclBuilder> NextAclPacket(uint16_t handle) {
   PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
   BroadcastFlag broadcast_flag = BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST;
-  return AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, NextPayload(handle));
+  return AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, NextPayload(handle));
 }
 
 class TestController : public Controller {
@@ -236,10 +236,10 @@ class TestHciLayer : public HciLayer {
                                common::Bind(
                                    [](decltype(queue_end) queue_end, uint16_t handle, std::promise<void> promise) {
                                      auto packet = GetPacketView(NextAclPacket(handle));
-                                     AclPacketView acl2 = AclPacketView::Create(packet);
+                                     AclView acl2 = AclView::Create(packet);
                                      queue_end->UnregisterEnqueue();
                                      promise.set_value();
-                                     return std::make_unique<AclPacketView>(acl2);
+                                     return std::make_unique<AclView>(acl2);
                                    },
                                    queue_end, handle, common::Passed(std::move(promise))));
     auto status = future.wait_for(kTimeout);
@@ -267,7 +267,7 @@ class TestHciLayer : public HciLayer {
 
   PacketView<kLittleEndian> OutgoingAclData() {
     auto queue_end = acl_queue_.GetDownEnd();
-    std::unique_ptr<AclPacketBuilder> received;
+    std::unique_ptr<AclBuilder> received;
     do {
       received = queue_end->TryDequeue();
     } while (received == nullptr);
@@ -275,7 +275,7 @@ class TestHciLayer : public HciLayer {
     return GetPacketView(std::move(received));
   }
 
-  BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd() override {
+  BidiQueueEnd<AclBuilder, AclView>* GetAclQueueEnd() override {
     return acl_queue_.GetUpEnd();
   }
 
@@ -296,7 +296,7 @@ class TestHciLayer : public HciLayer {
   std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_;
   std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
   std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;
-  BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
+  BidiQueue<AclView, AclBuilder> acl_queue_{3 /* TODO: Set queue depth */};
 
   std::queue<std::unique_ptr<CommandBuilder>> command_queue_;
   std::unique_ptr<std::promise<void>> command_promise_;

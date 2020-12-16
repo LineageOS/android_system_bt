@@ -74,7 +74,7 @@ from bluetooth_packets_python3.hci_packets import PacketBoundaryFlag
 from bluetooth_packets_python3.hci_packets import ResetBuilder
 from bluetooth_packets_python3.hci_packets import Lap
 from bluetooth_packets_python3.hci_packets import OpCode
-from bluetooth_packets_python3.hci_packets import AclPacketBuilder
+from bluetooth_packets_python3.hci_packets import AclBuilder
 from bluetooth_packets_python3 import RawBuilder
 
 
