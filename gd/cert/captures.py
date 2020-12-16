@@ -32,25 +32,25 @@ class HalCaptures(object):
         return Capture(
             lambda packet: packet.payload[0:5] == b'\x0e\x0a\x01\x09\x10', lambda packet: hci_packets.ReadBdAddrCompleteView(
                 hci_packets.CommandCompleteView(
-                    hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet.payload))))))
+                    hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet.payload))))))
 
     @staticmethod
     def ConnectionRequestCapture():
         return Capture(
             lambda packet: packet.payload[0:2] == b'\x04\x0a', lambda packet: hci_packets.ConnectionRequestView(
-                hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet.payload)))))
+                hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet.payload)))))
 
     @staticmethod
     def ConnectionCompleteCapture():
         return Capture(
             lambda packet: packet.payload[0:3] == b'\x03\x0b\x00', lambda packet: hci_packets.ConnectionCompleteView(
-                hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet.payload)))))
+                hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet.payload)))))
 
     @staticmethod
     def DisconnectionCompleteCapture():
         return Capture(
             lambda packet: packet.payload[0:2] == b'\x05\x04', lambda packet: hci_packets.DisconnectionCompleteView(
-                hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet.payload)))))
+                hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet.payload)))))
 
     @staticmethod
     def LeConnectionCompleteCapture():
@@ -58,7 +58,7 @@ class HalCaptures(object):
             lambda packet: packet.payload[0] == 0x3e and (packet.payload[2] == 0x01 or packet.payload[2] == 0x0a),
             lambda packet: hci_packets.LeConnectionCompleteView(
                 hci_packets.LeMetaEventView(
-                    hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(packet.payload))))))
+                    hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(packet.payload))))))
 
 
 class HciCaptures(object):

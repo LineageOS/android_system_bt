@@ -138,7 +138,7 @@ struct Controller::impl {
     hci_ = nullptr;
   }
 
-  void NumberOfCompletedPackets(EventPacketView event) {
+  void NumberOfCompletedPackets(EventView event) {
     if (acl_credits_callback_.IsEmpty()) {
       LOG_WARN("Received event when AclManager is not listening");
       return;

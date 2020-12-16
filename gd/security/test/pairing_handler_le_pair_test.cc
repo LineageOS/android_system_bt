@@ -41,8 +41,8 @@ using bluetooth::hci::CommandStatusView;
 using bluetooth::hci::EncryptionChangeBuilder;
 using bluetooth::hci::EncryptionEnabled;
 using bluetooth::hci::ErrorCode;
-using bluetooth::hci::EventPacketBuilder;
-using bluetooth::hci::EventPacketView;
+using bluetooth::hci::EventBuilder;
+using bluetooth::hci::EventView;
 using bluetooth::hci::LeSecurityCommandBuilder;
 
 // run:
@@ -61,13 +61,13 @@ CommandView CommandBuilderToView(std::unique_ptr<BasePacketBuilder> builder) {
   return CommandView::Create(temp_cmd_view);
 }
 
-EventPacketView EventBuilderToView(std::unique_ptr<EventPacketBuilder> builder) {
+EventView EventBuilderToView(std::unique_ptr<EventBuilder> builder) {
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter it(*packet_bytes);
   builder->Serialize(it);
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
-  auto temp_evt_view = EventPacketView::Create(packet_bytes_view);
-  return EventPacketView::Create(temp_evt_view);
+  auto temp_evt_view = EventView::Create(packet_bytes_view);
+  return EventView::Create(temp_evt_view);
 }
 }  // namespace security
 }  // namespace bluetooth
