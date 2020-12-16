@@ -498,7 +498,7 @@ bool is_state_getting_name(void* data, void* context);
  *
  ******************************************************************************/
 void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
-                                       uint8_t* p_bd_name, uint8_t status);
+                                       uint8_t* p_bd_name, tHCI_STATUS status);
 
 /*******************************************************************************
  *
@@ -609,7 +609,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status);
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
+void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
                             uint8_t encr_enable);
 
 /*******************************************************************************
@@ -622,8 +622,8 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
-                       uint8_t enc_mode);
+void btm_sec_connected(const RawAddress& bda, uint16_t handle,
+                       tHCI_STATUS status, uint8_t enc_mode);
 
 /*******************************************************************************
  *

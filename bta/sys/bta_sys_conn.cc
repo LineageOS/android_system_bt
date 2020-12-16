@@ -134,7 +134,8 @@ void bta_sys_notify_collision(const RawAddress& peer_addr) {
   for (index = 0; index < MAX_COLLISION_REG; index++) {
     if ((bta_sys_cb.colli_reg.id[index] != 0) &&
         (bta_sys_cb.colli_reg.p_coll_cback[index] != NULL)) {
-      bta_sys_cb.colli_reg.p_coll_cback[index](0, BTA_ID_SYS, 0, peer_addr);
+      bta_sys_cb.colli_reg.p_coll_cback[index](BTA_SYS_CONN_OPEN, BTA_ID_SYS, 0,
+                                               peer_addr);
     }
   }
 }
