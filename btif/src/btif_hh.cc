@@ -655,6 +655,26 @@ void btif_hh_setreport(btif_hh_device_t* p_dev, bthh_report_type_t r_type,
 
 /*******************************************************************************
  *
+ * Function         btif_btif_hh_senddata
+ *
+ * Description      senddata initiated from the BTIF thread context
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btif_hh_senddata(btif_hh_device_t* p_dev, uint16_t size, uint8_t* report) {
+  BT_HDR* p_buf = create_pbuf(size, report);
+  if (p_buf == NULL) {
+    APPL_TRACE_ERROR("%s: Error, failed to allocate RPT buffer, size = %d",
+                     __func__, size);
+    return;
+  }
+  p_buf->layer_specific = BTA_HH_RPTT_OUTPUT;
+  BTA_HhSendData(p_dev->dev_handle, p_dev->bd_addr, p_buf);
+}
+
+/*******************************************************************************
+ *
  * Function         btif_hh_service_registration
  *
  * Description      Registers or derigisters the hid host service
