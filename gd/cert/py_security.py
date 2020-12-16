@@ -65,7 +65,7 @@ class PySecurity(Closable):
     _oob_data_event_stream = None
 
     def __init__(self, device):
-        logging.debug("DUT: Init")
+        logging.info("DUT: Init")
         self._device = device
         self._device.wait_channel_ready()
         self._ui_event_stream = EventStream(self._device.security.FetchUiEvents(empty_proto.Empty()))
@@ -80,7 +80,7 @@ class PySecurity(Closable):
         """
             Triggers stack under test to create bond
         """
-        logging.debug("DUT: Creating bond to '%s' from '%s'" % (str(address), str(self._device.address)))
+        logging.info("DUT: Creating bond to '%s' from '%s'" % (str(address), str(self._device.address)))
         self._device.security.CreateBond(
             common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type))
 
@@ -89,7 +89,7 @@ class PySecurity(Closable):
             Triggers stack under test to create bond using Out of Band method
         """
 
-        logging.debug("DUT: Creating OOB bond to '%s' from '%s'" % (str(address), str(self._device.address)))
+        logging.info("DUT: Creating OOB bond to '%s' from '%s'" % (str(address), str(self._device.address)))
 
         self._device.security.CreateBondOutOfBand(
             OobDataBondMessage(
@@ -116,7 +116,7 @@ class PySecurity(Closable):
         """
             Set the IO Capabilities used for the DUT
         """
-        logging.debug("DUT: setting IO Capabilities data to '%s'" % self._io_capabilities_name_lookup.get(
+        logging.info("DUT: setting IO Capabilities data to '%s'" % self._io_capabilities_name_lookup.get(
             io_capabilities, "ERROR"))
         self._device.security.SetIoCapability(IoCapabilityMessage(capability=io_capabilities))
 
@@ -124,7 +124,7 @@ class PySecurity(Closable):
         """
             Establish authentication requirements for the stack
         """
-        logging.debug("DUT: setting Authentication Requirements data to '%s'" % self._auth_reqs_name_lookup.get(
+        logging.info("DUT: setting Authentication Requirements data to '%s'" % self._auth_reqs_name_lookup.get(
             auth_reqs, "ERROR"))
         self._device.security.SetAuthenticationRequirements(AuthenticationRequirementsMessage(requirement=auth_reqs))
 
@@ -132,7 +132,7 @@ class PySecurity(Closable):
         """
             Send a callback from the UI as if the user pressed a button on the dialog
         """
-        logging.debug("DUT: Sending user input response uid: %d; response: %s" % (uid, b))
+        logging.info("DUT: Sending user input response uid: %d; response: %s" % (uid, b))
         self._device.security.SendUiCallback(
             UiCallbackMsg(
                 message_type=callback_type,
@@ -183,7 +183,7 @@ class PySecurity(Closable):
                 return True
             return False
 
-        logging.debug("DUT: Waiting for expected UI event")
+        logging.info("DUT: Waiting for expected UI event")
         assertThat(self._ui_event_stream).emits(get_passkey)
         return passkey
 
@@ -191,6 +191,7 @@ class PySecurity(Closable):
         """
             Respond to the UI event
         """
+        logging.info("DUT: Inputting pin code: %s" % str(pin))
         self.on_user_input(
             cert_address=cert_address, reply_boolean=True, expected_ui_event=UiMsgType.DISPLAY_PIN_ENTRY, pin=pin)
 
@@ -210,7 +211,7 @@ class PySecurity(Closable):
                 return True
             return False
 
-        logging.debug("DUT: Waiting for expected UI event")
+        logging.info("DUT: Waiting for expected UI event")
         assertThat(self._ui_event_stream).emits(get_unique_id)
         callback_type = UiCallbackType.YES_NO if len(pin) == 0 else UiCallbackType.PIN
         self.__send_ui_callback(cert_address, callback_type, reply_boolean, ui_id, pin)
@@ -224,7 +225,7 @@ class PySecurity(Closable):
             is complete.  For the DUT we need to wait for it,
             for Cert it isn't needed.
         """
-        logging.debug("DUT: Waiting for Bond Event")
+        logging.info("DUT: Waiting for Bond Event: %s " % expected_bond_event)
         assertThat(self._bond_event_stream).emits(
             lambda event: event.message_type == expected_bond_event or logging.info("DUT: Actual Bond Event: %s" % event.message_type)
         )
@@ -245,7 +246,7 @@ class PySecurity(Closable):
             The Address is expected to be returned
         """
         logging.info("DUT: Waiting for Disconnect Event")
-        assertThat(self._disconnect_event_stream).emits(lambda event: 1 == 1)
+        assertThat(self._disconnect_event_stream).emits(lambda event: logging.info("event: %s" % event.address) or True)
 
     def enforce_security_policy(self, address, type, policy):
         """

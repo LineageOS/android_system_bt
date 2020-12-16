@@ -60,6 +60,15 @@ void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayEnterPasskeyDialog, data);
 }
 
+void ClassicPairingHandler::NotifyUiDisplayPinCodeInput() {
+  ASSERT(user_interface_handler_ != nullptr);
+  ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
+  data.SetRemoteIoCaps(remote_io_capability_);
+  data.SetRemoteAuthReqs(remote_authentication_requirements_);
+  data.SetRemoteOobDataPresent(remote_oob_present_);
+  user_interface_handler_->CallOn(user_interface_, &UI::DisplayEnterPinDialog, data);
+}
+
 void ClassicPairingHandler::NotifyUiDisplayCancel() {
   ASSERT(user_interface_handler_ != nullptr);
   user_interface_handler_->CallOn(user_interface_, &UI::Cancel, *GetRecord()->GetPseudoAddress());
@@ -166,7 +175,8 @@ void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
-  NotifyUiDisplayPasskeyInput();
+  is_legacy_pin_code_ = true;
+  NotifyUiDisplayPinCodeInput();
 }
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
@@ -199,6 +209,9 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
   if (!has_gotten_name_response_) {
     link_key_notification_ = std::make_optional<hci::LinkKeyNotificationView>(packet);
     return;
+  }
+  if (is_legacy_pin_code_) {
+    last_status_ = hci::ErrorCode::SUCCESS;
   }
   Cancel();
 }

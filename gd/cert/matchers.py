@@ -144,7 +144,7 @@ class HciMatchers(object):
 
     @staticmethod
     def LogEventCode():
-        return lambda event: logging.info("Received event: %x" % hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(event.event))).GetEventCode())
+        return lambda event: logging.info("Received event: %x" % hci_packets.EventPacketView(bt_packets.PacketViewLittleEndian(list(event.payload))).GetEventCode())
 
     @staticmethod
     def LinkKeyRequest():
@@ -193,6 +193,10 @@ class HciMatchers(object):
     @staticmethod
     def RemoteOobDataRequest():
         return lambda event: HciMatchers.EventWithCode(EventCode.REMOTE_OOB_DATA_REQUEST)
+
+    @staticmethod
+    def PinCodeRequest():
+        return lambda event: HciMatchers.EventWithCode(EventCode.PIN_CODE_REQUEST)
 
     @staticmethod
     def LoopbackOf(packet):
