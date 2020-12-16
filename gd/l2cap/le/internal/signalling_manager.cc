@@ -295,7 +295,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
   data_controller->OnCredit(initial_credits);
   std::unique_ptr<DynamicChannel> user_channel =
       std::make_unique<DynamicChannel>(new_channel, handler_, link_, actual_mtu);
-  dynamic_service_manager_->GetService(command_just_sent_.psm_)->NotifyChannelCreation(std::move(user_channel));
+  link_->NotifyChannelCreation(new_channel->GetCid(), std::move(user_channel));
 }
 
 void LeSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid cid, Cid remote_cid) {
