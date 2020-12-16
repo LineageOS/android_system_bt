@@ -74,7 +74,7 @@ inline std::string link_policy_text(tLINK_POLICY policy) {
  */
 typedef struct {
   RawAddress remote_bd_addr; /* Remote BD addr involved with the switch */
-  uint8_t hci_status;        /* HCI status returned with the event */
+  tHCI_STATUS hci_status;    /* HCI status returned with the event */
   uint8_t role;              /* HCI_ROLE_CENTRAL or HCI_ROLE_PERIPHERAL */
 } tBTM_ROLE_SWITCH_CMPL;
 

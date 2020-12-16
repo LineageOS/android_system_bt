@@ -182,7 +182,7 @@ void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     /* Let the incoming connection goes through.                        */
     /* Issue collision for this scb for now.                            */
     /* We will decide what to do when we find incoming connetion later. */
-    bta_ag_collision_cback(0, BTA_ID_AG, 0, p_scb->peer_addr);
+    bta_ag_collision_cback(BTA_SYS_CONN_OPEN, BTA_ID_AG, 0, p_scb->peer_addr);
     return;
   }
 

@@ -1059,7 +1059,8 @@ static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len) {
 
   btm_process_remote_name(&bd_addr, p, evt_len, status);
 
-  btm_sec_rmt_name_request_complete(&bd_addr, p, status);
+  btm_sec_rmt_name_request_complete(&bd_addr, p,
+                                    static_cast<tHCI_STATUS>(status));
 }
 
 constexpr uint8_t MIN_KEY_SIZE = 7;
@@ -1090,8 +1091,10 @@ static void read_encryption_key_size_complete_after_encryption_change(uint8_t st
   }
 
   // good key size - succeed
-  btm_acl_encrypt_change(handle, status, 1 /* enable */);
-  btm_sec_encrypt_change(handle, status, 1 /* enable */);
+  btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                         1 /* enable */);
+  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                         1 /* enable */);
 }
 /*******************************************************************************
  *
@@ -1117,8 +1120,10 @@ static void btu_hcif_encryption_change_evt(uint8_t* p) {
       return;
     }
 
-    btm_acl_encrypt_change(handle, status, encr_enable);
-    btm_sec_encrypt_change(handle, status, encr_enable);
+    btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                           encr_enable);
+    btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                           encr_enable);
   } else {
     btsnd_hcic_read_encryption_key_size(handle, base::Bind(&read_encryption_key_size_complete_after_encryption_change));
   }
@@ -1412,14 +1417,16 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       if (status != HCI_SUCCESS) {
         // Device refused to start encryption
         // This is treated as an encryption failure
-        btm_sec_encrypt_change(HCI_INVALID_HANDLE, status, false);
+        btm_sec_encrypt_change(HCI_INVALID_HANDLE,
+                               static_cast<tHCI_STATUS>(status), false);
       }
       break;
     case HCI_RMT_NAME_REQUEST:
       if (status != HCI_SUCCESS) {
         // Tell inquiry processing that we are done
         btm_process_remote_name(nullptr, nullptr, 0, status);
-        btm_sec_rmt_name_request_complete(nullptr, nullptr, status);
+        btm_sec_rmt_name_request_complete(nullptr, nullptr,
+                                          static_cast<tHCI_STATUS>(status));
       }
       break;
     case HCI_READ_RMT_EXT_FEATURES:
@@ -1677,7 +1684,8 @@ static void read_encryption_key_size_complete_after_key_refresh(uint8_t status, 
     return;
   }
 
-  btm_sec_encrypt_change(handle, status, 1 /* enc_enable */);
+  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                         1 /* enc_enable */);
 }
 
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
@@ -1688,7 +1696,8 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
 
   if (status != HCI_SUCCESS || BTM_IsBleConnection(handle)) {
-    btm_sec_encrypt_change(handle, status, (status == HCI_SUCCESS) ? 1 : 0);
+    btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
+                           (status == HCI_SUCCESS) ? 1 : 0);
   } else {
     btsnd_hcic_read_encryption_key_size(handle, base::Bind(&read_encryption_key_size_complete_after_key_refresh));
   }

@@ -1215,7 +1215,7 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
  ******************************************************************************/
 void btm_ble_read_remote_name_cmpl(bool status, const RawAddress& bda,
                                    uint16_t length, char* p_name) {
-  uint8_t hci_status = HCI_SUCCESS;
+  tHCI_STATUS hci_status = HCI_SUCCESS;
   BD_NAME bd_name;
 
   memset(bd_name, 0, (BD_NAME_LEN + 1));
