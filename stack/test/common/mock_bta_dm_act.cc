@@ -37,6 +37,10 @@ void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
 void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport) {
   mock_function_count_map[__func__]++;
 }
+void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr) {
+  mock_function_count_map[__func__]++;
+}
+
 void BTA_dm_on_hw_off() { mock_function_count_map[__func__]++; }
 void BTA_dm_on_hw_on() { mock_function_count_map[__func__]++; }
 void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
