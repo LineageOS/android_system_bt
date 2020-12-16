@@ -59,6 +59,9 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
 
   void ConfigureLePrivacy(bool is_le_privacy_enabled);
 
+  void DisconnectClassic(uint16_t handle, tHCI_STATUS reason);
+  void DisconnectLe(uint16_t handle, tHCI_STATUS reason);
+
   void Dump(int fd) const;
 
  protected:
