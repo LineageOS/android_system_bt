@@ -50,7 +50,8 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
     // Register callback
     bluetooth::shim::GetAdvertising()->RegisterAdvertisingCallback(this);
 
-    if (!bluetooth::common::init_flags::gd_security_is_enabled()) {
+    if (!bluetooth::common::init_flags::gd_security_is_enabled() &&
+        !bluetooth::common::init_flags::gd_acl_is_enabled()) {
       // Set private policy
       auto address = bluetooth::shim::GetController()->GetMacAddress();
       bluetooth::hci::AddressWithType address_with_type(
