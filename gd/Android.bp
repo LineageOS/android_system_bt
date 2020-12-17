@@ -602,8 +602,8 @@ filegroup {
     srcs: [
         "facade/common.proto",
         "facade/rootservice.proto",
-        "hal/facade.proto",
-        "hci/facade/facade.proto",
+        "hal/hal_facade.proto",
+        "hci/facade/hci_facade.proto",
         "hci/facade/acl_manager_facade.proto",
         "hci/facade/controller_facade.proto",
         "hci/facade/le_acl_manager_facade.proto",
@@ -633,10 +633,10 @@ genrule {
         "facade/common.pb.h",
         "facade/rootservice.grpc.pb.h",
         "facade/rootservice.pb.h",
-        "hal/facade.grpc.pb.h",
-        "hal/facade.pb.h",
-        "hci/facade/facade.grpc.pb.h",
-        "hci/facade/facade.pb.h",
+        "hal/hal_facade.grpc.pb.h",
+        "hal/hal_facade.pb.h",
+        "hci/facade/hci_facade.grpc.pb.h",
+        "hci/facade/hci_facade.pb.h",
         "hci/facade/acl_manager_facade.grpc.pb.h",
         "hci/facade/acl_manager_facade.pb.h",
         "hci/facade/controller_facade.grpc.pb.h",
@@ -677,10 +677,10 @@ genrule {
         "facade/common.pb.cc",
         "facade/rootservice.grpc.pb.cc",
         "facade/rootservice.pb.cc",
-        "hal/facade.grpc.pb.cc",
-        "hal/facade.pb.cc",
-        "hci/facade/facade.grpc.pb.cc",
-        "hci/facade/facade.pb.cc",
+        "hal/hal_facade.grpc.pb.cc",
+        "hal/hal_facade.pb.cc",
+        "hci/facade/hci_facade.grpc.pb.cc",
+        "hci/facade/hci_facade.pb.cc",
         "hci/facade/acl_manager_facade.grpc.pb.cc",
         "hci/facade/acl_manager_facade.pb.cc",
         "hci/facade/controller_facade.grpc.pb.cc",
@@ -824,34 +824,14 @@ cc_library_host_shared {
 }
 
 rust_protobuf {
-    name: "libbt_hci_proto",
-    crate_name: "bt_hci_proto",
-    grpc_protos: ["hci/facade/facade.proto"],
-    source_stem: "facade",
-    host_supported: true,
-}
-
-rust_protobuf {
-    name: "libbt_hal_proto",
-    crate_name: "bt_hal_proto",
-    grpc_protos: ["hal/facade.proto"],
-    source_stem: "facade",
-    host_supported: true,
-}
-
-rust_protobuf {
-    name: "libbt_facade_rootservice_proto",
-    crate_name: "bt_facade_rootservice_proto",
-    protos: ["facade/rootservice.proto"],
-    source_stem: "rootservice",
-    header_libs: ["libprotobuf-cpp-full"],
-    host_supported: true,
-}
-
-rust_protobuf {
-    name: "libbt_facade_common_proto",
-    crate_name: "bt_facade_common_proto",
+    name: "libbt_facade_proto",
+    crate_name: "bt_facade_proto",
     protos: ["facade/common.proto"],
-    source_stem: "common",
+    grpc_protos: [
+        "hci/facade/hci_facade.proto",
+        "hal/hal_facade.proto",
+        "facade/rootservice.proto",
+    ],
+    source_stem: "facade",
     host_supported: true,
 }

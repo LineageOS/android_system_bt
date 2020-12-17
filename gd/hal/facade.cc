@@ -20,7 +20,7 @@
 #include <mutex>
 
 #include "grpc/grpc_event_queue.h"
-#include "hal/facade.grpc.pb.h"
+#include "hal/hal_facade.grpc.pb.h"
 #include "hal/hci_hal.h"
 
 using ::grpc::ServerAsyncResponseWriter;
