@@ -22,7 +22,7 @@ from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
-from hci.facade import facade_pb2 as hci_facade
+from hci.facade import hci_facade_pb2 as hci_facade
 from hci.facade import \
   le_advertising_manager_facade_pb2 as le_advertising_facade
 from bluetooth_packets_python3 import hci_packets
@@ -44,7 +44,7 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.Command(payload=cmd_bytes)
+        cmd = common.Data(payload=cmd_bytes)
         if (expect_complete):
             self.cert.hci.SendCommandWithComplete(cmd)
         else:

@@ -47,7 +47,7 @@ class AclManagerTest(GdBaseTestClass):
             cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
             dut_acl.send(b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
 
-            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
             assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
     def test_cert_connects(self):
@@ -63,7 +63,7 @@ class AclManagerTest(GdBaseTestClass):
 
             cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
-            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
             assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
     def test_reject_broadcast(self):
@@ -98,7 +98,7 @@ class AclManagerTest(GdBaseTestClass):
 
             cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
-            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
             assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
             dut_acl.disconnect(hci_packets.DisconnectReason.REMOTE_USER_TERMINATED_CONNECTION)

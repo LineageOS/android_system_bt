@@ -24,9 +24,10 @@ from facade import common_pb2 as common
 from hci.facade import le_acl_manager_facade_pb2 as le_acl_manager_facade
 from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
 from hci.facade import le_initiator_address_facade_pb2 as le_initiator_address_facade
-from hci.facade import facade_pb2 as hci_facade
+from hci.facade import hci_facade_pb2 as hci_facade
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets
+from bluetooth_packets_python3 import RawBuilder
 
 
 class LeAclManagerTest(GdBaseTestClass):
@@ -64,16 +65,15 @@ class LeAclManagerTest(GdBaseTestClass):
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.Command(payload=cmd_bytes)
+        cmd = common.Data(payload=cmd_bytes)
         if (expect_complete):
             self.cert.hci.SendCommandWithComplete(cmd)
         else:
             self.cert.hci.SendCommandWithStatus(cmd)
 
-    def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
-        acl_msg = hci_facade.AclPacket(
-            handle=int(handle), packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=acl)
-        self.cert.hci.SendAcl(acl_msg)
+    def enqueue_acl_data(self, handle, pb_flag, b_flag, data):
+        acl = hci_packets.AclBuilder(handle, pb_flag, b_flag, RawBuilder(data))
+        self.cert.hci.SendAcl(common.Data(payload=bytes(acl.Serialize())))
 
     def dut_connects(self, check_address):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
@@ -167,7 +167,7 @@ class LeAclManagerTest(GdBaseTestClass):
                               bytes(b'\x19\x00\x07\x00SomeAclData from the Cert'))
 
         self.dut_le_acl.send(b'\x1C\x00\x07\x00SomeMoreAclData from the DUT')
-        self.cert_acl_data_stream.assert_event_occurs(lambda packet: b'SomeMoreAclData' in packet.data)
+        self.cert_acl_data_stream.assert_event_occurs(lambda packet: b'SomeMoreAclData' in packet.payload)
         assertThat(self.dut_le_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
     def test_dut_connects(self):

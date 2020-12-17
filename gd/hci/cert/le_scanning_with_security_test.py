@@ -18,7 +18,7 @@ from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from cert.truth import assertThat
 from google.protobuf import empty_pb2 as empty_proto
-from hci.facade import facade_pb2 as hci_facade
+from hci.facade import hci_facade_pb2 as hci_facade
 from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
 from hci.facade import le_initiator_address_facade_pb2 as le_initiator_address_facade
 from bluetooth_packets_python3 import hci_packets
@@ -40,7 +40,7 @@ class LeScanningWithSecurityTest(GdBaseTestClass):
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
+        cmd = common.Data(command=cmd_bytes)
         if (expect_complete):
             self.cert.hci.EnqueueCommandWithComplete(cmd)
         else:
