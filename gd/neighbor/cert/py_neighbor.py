@@ -23,7 +23,7 @@ from cert.closable import Closable
 from cert.closable import safeClose
 from cert.truth import assertThat
 from google.protobuf import empty_pb2 as empty_proto
-from hci.facade import facade_pb2 as hci_facade
+from hci.facade import hci_facade_pb2 as hci_facade
 from neighbor.facade import facade_pb2 as neighbor_facade
 
 
