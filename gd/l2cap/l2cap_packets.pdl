@@ -227,6 +227,11 @@ enum CommandCode : 8 {
   MOVE_CHANNEL_RESPONSE = 0x0F,
   MOVE_CHANNEL_CONFIRMATION_REQUEST = 0x10,
   MOVE_CHANNEL_CONFIRMATION_RESPONSE = 0x11,
+  FLOW_CONTROL_CREDIT = 0x16,  // Core 5.2 COC
+  CREDIT_BASED_CONNECTION_REQUEST = 0x17,
+  CREDIT_BASED_CONNECTION_RESPONSE = 0x18,
+  CREDIT_BASED_RECONFIGURE_REQUEST = 0x19,
+  CREDIT_BASED_RECONFIGURE_RESPONSE = 0x1A,
 }
 
 packet ControlFrame : BasicFrame (channel_id = 0x0001) {
@@ -457,7 +462,8 @@ packet InformationResponseExtendedFeatures : InformationResponse (info_type = EX
   fixed_channels : 1,
   extended_window_size : 1,
   unicast_connectionless_data_reception : 1,
-  _reserved_ : 22,
+  enhanced_credit_based_flow_control_mode : 1,
+  _reserved_ : 21,
 }
 
 packet InformationResponseFixedChannels : InformationResponse (info_type = FIXED_CHANNELS_SUPPORTED) {
@@ -529,6 +535,61 @@ packet MoveChannelConfirmationResponse : Control (code = MOVE_CHANNEL_CONFIRMATI
   initiator_cid : 16,
 }
 
+// Core 5.2 COC
+
+packet FlowControlCredit : Control (code = FLOW_CONTROL_CREDIT) {
+  cid : 16, // Receiver's destination CID
+  credits : 16,
+}
+
+packet CreditBasedConnectionRequest : Control (code = CREDIT_BASED_CONNECTION_REQUEST) {
+  spsm : 16,
+  mtu : 16,
+  mps : 16,
+  initial_credits : 16,
+  source_cid : 16[],
+}
+
+enum CreditBasedConnectionResponseResult : 16 {
+  SUCCESS = 0x0000,
+  SPSM_NOT_SUPPORTED = 0x0002,
+  SOME_REFUSED_NO_RESOURCES_AVAILABLE = 0x0004,
+  ALL_REFUSED_INSUFFICIENT_AUTHENTICATION = 0x0005,
+  ALL_REFUSED_INSUFFICIENT_AUTHORIZATION = 0x0006,
+  ALL_REFUSED_INSUFFICIENT_ENCRYPTION_KEY_SIZE = 0x0007,
+  ALL_REFUSED_INSUFFICIENT_ENCRYPTION = 0x0008,
+  SOME_REFUSED_INVALID_SOURCE_CID = 0x0009,
+  SOME_REFUSED_SOURCE_CID_ALREADY_ALLOCATED = 0x000A,
+  ALL_REFUSED_UNACCEPTABLE_PARAMETERS = 0x000B,
+  ALL_REFUSED_INVALID_PARAMETERS = 0x000C,
+}
+
+packet CreditBasedConnectionResponse : Control (code = CREDIT_BASED_CONNECTION_RESPONSE) {
+  mtu : 16,
+  mps : 16,
+  initial_credits : 16,
+  result : CreditBasedConnectionResponseResult,
+  destination_cid : 16[],
+}
+
+packet CreditBasedReconfigureRequest : Control (code = CREDIT_BASED_RECONFIGURE_REQUEST) {
+  mtu : 16,
+  mps : 16,
+  destination_cid : 16[],
+}
+
+enum CreditBasedReconfigureResponseResult : 16 {
+  SUCCESS = 0x0000,
+  MTU_NOT_ALLOWED = 0x01,
+  MPS_NOT_ALLOWED = 0x02,
+  INVALID_DESTINATION_CID = 0x03,
+  UNACCEPTABLE_PARAMETERS = 0x04,
+}
+
+packet CreditBasedReconfigureResponse : Control (code = CREDIT_BASED_RECONFIGURE_RESPONSE) {
+  result: CreditBasedReconfigureResponseResult,
+}
+
 enum LeCommandCode : 8 {
   COMMAND_REJECT = 0x01,
   DISCONNECTION_REQUEST = 0x06,
@@ -538,6 +599,10 @@ enum LeCommandCode : 8 {
   LE_CREDIT_BASED_CONNECTION_REQUEST = 0x14,
   LE_CREDIT_BASED_CONNECTION_RESPONSE = 0x15,
   LE_FLOW_CONTROL_CREDIT = 0x16,
+  CREDIT_BASED_CONNECTION_REQUEST = 0x17,  // Core 5.2 COC
+  CREDIT_BASED_CONNECTION_RESPONSE = 0x18,
+  CREDIT_BASED_RECONFIGURE_REQUEST = 0x19,
+  CREDIT_BASED_RECONFIGURE_RESPONSE = 0x1A,
 }
 
 packet LeControlFrame : BasicFrame (channel_id = 0x0005) {
@@ -629,3 +694,28 @@ packet LeFlowControlCredit : LeControl (code = LE_FLOW_CONTROL_CREDIT) {
   credits : 16,
 }
 
+packet LeEnhancedCreditBasedConnectionRequest : LeControl (code = CREDIT_BASED_CONNECTION_REQUEST) {
+  spsm : 16,
+  mtu : 16,
+  mps : 16,
+  initial_credits : 16,
+  source_cid : 16[],
+}
+
+packet LeEnhancedCreditBasedConnectionResponse : LeControl (code = CREDIT_BASED_CONNECTION_RESPONSE) {
+  mtu : 16,
+  mps : 16,
+  initial_credits : 16,
+  result : CreditBasedConnectionResponseResult,
+  destination_cid : 16[],
+}
+
+packet LeEnhancedCreditBasedReconfigureRequest : LeControl (code = CREDIT_BASED_RECONFIGURE_REQUEST) {
+  mtu : 16,
+  mps : 16,
+  destination_cid : 16[],
+}
+
+packet LeEnhancedCreditBasedReconfigureResponse : LeControl (code = CREDIT_BASED_RECONFIGURE_RESPONSE) {
+  result: CreditBasedReconfigureResponseResult,
+}
