@@ -34,6 +34,9 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
 
+void btsnd_hcic_switch_role(const RawAddress& bd_addr,
+                            uint8_t role);  // TODO remove
+
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task);
 
@@ -211,7 +214,8 @@ void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
       } else {
         p_acl->set_switch_role_in_progress();
         p_acl->rs_disc_pending = BTM_SEC_RS_PENDING;
-        btsnd_hcic_switch_role(p_acl->remote_addr, HCI_ROLE_CENTRAL);
+        bluetooth::legacy::hci::GetInterface().StartRoleSwitch(
+            p_acl->remote_addr, HCI_ROLE_CENTRAL);
       }
     }
   }

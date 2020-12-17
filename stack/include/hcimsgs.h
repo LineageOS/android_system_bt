@@ -86,6 +86,7 @@ namespace legacy {
 namespace hci {
 struct Interface {
   void (*Disconnect)(uint16_t handle, uint8_t reason);
+  void (*StartRoleSwitch)(const RawAddress& bd_addr, uint8_t role);
 };
 const Interface& GetInterface();
 }  // namespace hci
@@ -328,9 +329,6 @@ extern void btsnd_hcic_qos_setup(uint16_t handle, uint8_t flags,
 #define HCI_QOS_LATENCY_OFF 12
 #define HCI_QOS_DELAY_VAR_OFF 16
 /* QoS Setup */
-
-/* Switch Role Request */
-extern void btsnd_hcic_switch_role(const RawAddress& bd_addr, uint8_t role);
 
 #define HCIC_PARAM_SIZE_SWITCH_ROLE 7
 
