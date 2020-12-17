@@ -27,6 +27,7 @@
 #include "bt_target.h"
 #include "bt_types.h"
 #include "btm_int.h"
+#include "main/shim/dumpsys.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack_config.h"
 
@@ -79,4 +80,20 @@ void btm_free(void) {
   btm_inq_db_free();
 
   btm_cb.Free();
+}
+
+constexpr size_t kMaxLogHistoryTagLength = 6;
+constexpr size_t kMaxLogHistoryMsgLength = 25;
+
+void BTM_LogHistory(const std::string& tag, const RawAddress& bd_addr,
+                    const std::string& msg, const std::string& extra) {
+  btm_cb.history_->Push("%-6s %-25s: %s %s",
+                        tag.substr(0, kMaxLogHistoryTagLength).c_str(),
+                        msg.substr(0, kMaxLogHistoryMsgLength).c_str(),
+                        PRIVATE_ADDRESS(bd_addr), extra.c_str());
+}
+
+void BTM_LogHistory(const std::string& tag, const RawAddress& bd_addr,
+                    const std::string& msg) {
+  BTM_LogHistory(tag, bd_addr, msg, std::string());
 }

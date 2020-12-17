@@ -66,6 +66,8 @@
 
 void gatt_find_in_device_record(const RawAddress& bd_addr,
                                 tBLE_BD_ADDR* address_with_type);
+void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
+                            const RawAddress& p_bda);
 
 struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
@@ -81,6 +83,10 @@ struct StackAclBtmAcl {
 
 namespace {
 StackAclBtmAcl internal_;
+
+const bluetooth::legacy::hci::Interface& GetLegacyHciInterface() {
+  return bluetooth::legacy::hci::GetInterface();
+}
 }
 
 typedef struct {
@@ -158,6 +164,21 @@ void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl,
 }
 
 }  // namespace
+
+static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
+  LOG_INFO("Disconnecting peer:%s reason:%s",
+           PRIVATE_ADDRESS(p_acl.remote_addr),
+           hci_error_code_text(reason).c_str());
+  p_acl.disconnect_reason = reason;
+
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    return bluetooth::shim::ACL_Disconnect(p_acl.hci_handle,
+                                           p_acl.is_transport_br_edr(), reason);
+  } else {
+    GetLegacyHciInterface().Disconnect(p_acl.hci_handle,
+                                       static_cast<uint16_t>(reason));
+  }
+}
 
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
@@ -289,10 +310,8 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
 
 void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   uint16_t handle;
-  uint8_t acl_idx;
   uint8_t sca;
   uint8_t status;
-  tACL_CONN* p;
 
   STREAM_TO_UINT8(status, data);
 
@@ -305,14 +324,12 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   STREAM_TO_UINT16(handle, data);
   STREAM_TO_UINT8(sca, data);
 
-  acl_idx = btm_handle_to_acl_index(handle);
-  if (acl_idx >= MAX_L2CAP_LINKS) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-
-  p = &btm_cb.acl_cb_.acl_db[acl_idx];
-  p->sca = sca;
+  p_acl->sca = sca;
 }
 
 /*******************************************************************************
@@ -586,15 +603,11 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
  ******************************************************************************/
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable) {
-  tACL_CONN* p;
-  uint8_t xx;
-
-  xx = btm_handle_to_acl_index(handle);
-  /* don't assume that we can never get a bad hci_handle */
-  if (xx < MAX_L2CAP_LINKS)
-    p = &btm_cb.acl_cb_.acl_db[xx];
-  else
+  tACL_CONN* p = internal_.acl_get_connection_from_handle(handle);
+  if (p == nullptr) {
+    LOG_WARN("Unable to find active acl");
     return;
+  }
 
   p->is_encrypted = encr_enable;
 
@@ -624,8 +637,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     /* If a disconnect is pending, issue it now that role switch has completed
      */
     if (p->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-      LOG_WARN("Issuing delayed HCI_Disconnect!!!");
-      btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
+      hci_btsnd_hcic_disconnect(*p, HCI_ERR_PEER_USER);
     }
     p->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
@@ -1043,18 +1055,13 @@ void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num,
  *
  ******************************************************************************/
 void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
-  tACL_CONN* p_acl_cb;
-  uint8_t acl_idx;
-
   LOG_WARN("status 0x%02x for handle %d", status, handle);
 
-  acl_idx = btm_handle_to_acl_index(handle);
-  if (acl_idx >= MAX_L2CAP_LINKS) {
+  tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl_cb == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-
-  p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
 
   /* Process supported features only */
   btm_process_remote_ext_features(p_acl_cb, 1);
@@ -1448,9 +1455,7 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
 
   /* If a disconnect is pending, issue it now that role switch has completed */
   if (p_acl->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-    LOG_WARN("peer %s Issuing delayed HCI_Disconnect!!!",
-             bd_addr.ToString().c_str());
-    btsnd_hcic_disconnect(p_acl->hci_handle, HCI_ERR_PEER_USER);
+    hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER);
   }
   p_acl->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 }
@@ -1948,7 +1953,6 @@ void btm_read_failed_contact_counter_timeout(UNUSED_ATTR void* data) {
 void btm_read_failed_contact_counter_complete(uint8_t* p) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
   tBTM_FAILED_CONTACT_COUNTER_RESULT result;
-  tACL_CONN* p_acl_cb = &btm_cb.acl_cb_.acl_db[0];
 
   alarm_cancel(btm_cb.devcb.read_failed_contact_counter_timer);
   btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;
@@ -1968,12 +1972,9 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
                 result.failed_contact_counter,
                 RoleText(result.hci_status).c_str());
 
-      /* Search through the list of active channels for the correct BD Addr */
-      for (uint16_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl_cb++) {
-        if ((p_acl_cb->in_use) && (handle == p_acl_cb->hci_handle)) {
-          result.rem_bda = p_acl_cb->remote_addr;
-          break;
-        }
+      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+      if (p_acl_cb != nullptr) {
+        result.rem_bda = p_acl_cb->remote_addr;
       }
     } else {
       result.status = BTM_ERR_PROCESSING;
@@ -2071,7 +2072,6 @@ void btm_read_link_quality_timeout(UNUSED_ATTR void* data) {
 void btm_read_link_quality_complete(uint8_t* p) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_link_qual_cmpl_cb;
   tBTM_LINK_QUALITY_RESULT result;
-  tACL_CONN* p_acl_cb = &btm_cb.acl_cb_.acl_db[0];
 
   alarm_cancel(btm_cb.devcb.read_link_quality_timer);
   btm_cb.devcb.p_link_qual_cmpl_cb = NULL;
@@ -2091,12 +2091,9 @@ void btm_read_link_quality_complete(uint8_t* p) {
                 result.link_quality,
                 hci_error_code_text(result.hci_status).c_str());
 
-      /* Search through the list of active channels for the correct BD Addr */
-      for (uint16_t index = 0; index < MAX_L2CAP_LINKS; index++, p_acl_cb++) {
-        if ((p_acl_cb->in_use) && (handle == p_acl_cb->hci_handle)) {
-          result.rem_bda = p_acl_cb->remote_addr;
-          break;
-        }
+      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
+      if (p_acl_cb != nullptr) {
+        result.rem_bda = p_acl_cb->remote_addr;
       }
     } else {
       result.status = BTM_ERR_PROCESSING;
@@ -2135,7 +2132,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   } else /* otherwise can disconnect right away */
   {
     if (hci_handle != HCI_INVALID_HANDLE) {
-      btsnd_hcic_disconnect(hci_handle, HCI_ERR_PEER_USER);
+      hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER);
     } else {
       status = BTM_UNKNOWN_ADDR;
     }
@@ -2812,20 +2809,25 @@ void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
 }
 
 void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                    uint8_t reason) {
+                    tHCI_STATUS reason) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-  p_acl->disconnect_reason = reason;
-  btsnd_hcic_disconnect(p_acl->hci_handle, reason);
+  hci_btsnd_hcic_disconnect(*p_acl, reason);
 }
 
-void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
+void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason) {
+  acl_disconnect_after_role_switch(handle, reason);
+}
+
+void acl_disconnect_after_role_switch(uint16_t conn_handle,
+                                      tHCI_STATUS reason) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
   if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
+    LOG_ERROR("Sending disconnect for unknown acl PLEASE FIX");
+    GetLegacyHciInterface().Disconnect(conn_handle, reason);
     return;
   }
 
@@ -2840,7 +2842,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle, uint16_t reason) {
   } else {
     LOG_DEBUG("Sending acl disconnect reason:%s [%hu]",
               hci_error_code_text(reason).c_str(), reason);
-    btsnd_hcic_disconnect(conn_handle, reason);
+    hci_btsnd_hcic_disconnect(*p_acl, reason);
   }
 }
 
