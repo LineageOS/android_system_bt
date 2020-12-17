@@ -7,8 +7,7 @@ rust_library {
     rustlibs: [
       "libbt_hal",
       "libbt_hci",
-      "libbt_facade_rootservice_proto",
-      "libbt_facade_common_proto",
+      "libbt_facade_proto",
       "libfutures",
       "libgrpcio",
       "libprotobuf",
