@@ -26,7 +26,6 @@ from cert.py_security import PySecurity
 from cert.truth import assertThat
 from datetime import datetime
 from google.protobuf import empty_pb2 as empty_proto
-from hci.facade import facade_pb2 as hci_facade
 from l2cap.classic import facade_pb2 as l2cap_facade
 from security.facade_pb2 import IoCapabilities
 from security.facade_pb2 import AuthenticationRequirements

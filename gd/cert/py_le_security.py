@@ -26,7 +26,6 @@ from cert.truth import assertThat
 from datetime import timedelta
 from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
-from hci.facade import facade_pb2 as hci_facade
 from security.facade_pb2 import IoCapabilityMessage
 from security.facade_pb2 import AuthenticationRequirementsMessage
 from security.facade_pb2 import LeAuthRequirementsMessage

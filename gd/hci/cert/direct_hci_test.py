@@ -23,7 +23,8 @@ from cert.matchers import HciMatchers
 from cert.py_hal import PyHal
 from cert.py_hci import PyHci
 from cert.truth import assertThat
-from hci.facade import facade_pb2 as hci_facade
+from hci.facade import hci_facade_pb2 as hci_facade
+from facade import common_pb2 as common
 from bluetooth_packets_python3.hci_packets import EventCode
 from bluetooth_packets_python3.hci_packets import LoopbackMode
 from bluetooth_packets_python3.hci_packets import WriteLoopbackModeBuilder
@@ -94,10 +95,9 @@ class DirectHciTest(GdBaseTestClass):
         self.cert_hal.close()
         super().teardown_test()
 
-    def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
-        acl_msg = hci_facade.AclPacket(
-            handle=int(handle), packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=acl)
-        self.dut.hci.SendAcl(acl_msg)
+    def enqueue_acl_data(self, handle, pb_flag, b_flag, data):
+        acl = AclBuilder(handle, pb_flag, b_flag, RawBuilder(data))
+        self.dut.hci.SendAcl(common.Data(payload=bytes(acl.Serialize())))
 
     def test_local_hci_cmd_and_event(self):
         # Loopback mode responds with ACL and SCO connection complete
@@ -230,7 +230,7 @@ class DirectHciTest(GdBaseTestClass):
         assertThat(self.cert_hal.get_acl_stream()).emits(
             lambda packet: logging.debug(packet.payload) or b'SomeAclData' in packet.payload)
         assertThat(self.dut_hci.get_raw_acl_stream()).emits(
-            lambda packet: logging.debug(packet.data) or b'SomeMoreAclData' in packet.data)
+            lambda packet: logging.debug(packet.payload) or b'SomeMoreAclData' in packet.payload)
 
     def test_le_connect_list_connection_cert_advertises(self):
         self.dut_hci.register_for_le_events(SubeventCode.CONNECTION_COMPLETE, SubeventCode.ENHANCED_CONNECTION_COMPLETE)
@@ -273,7 +273,7 @@ class DirectHciTest(GdBaseTestClass):
         cert_acl.send_first(b'Just SomeMoreAclData')
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
-        assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+        assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
 
     def test_connection_cert_connects(self):
         self.cert_hal.send_hci_command(WritePageTimeoutBuilder(0x4000))
@@ -290,4 +290,4 @@ class DirectHciTest(GdBaseTestClass):
         cert_acl.send_first(b'This is just SomeMoreAclData')
 
         assertThat(self.cert_hal.get_acl_stream()).emits(lambda packet: b'SomeAclData' in packet.payload)
-        assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+        assertThat(self.dut_hci.get_raw_acl_stream()).emits(lambda packet: b'SomeMoreAclData' in packet.payload)
