@@ -118,7 +118,7 @@ void btsnd_hcic_create_conn(const RawAddress& dest, uint16_t packet_types,
   btm_acl_paging(p, dest);
 }
 
-void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
+static void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1432,4 +1432,13 @@ void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode, uint8_t len,
   ARRAY_TO_STREAM(pp, p_data, len);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+bluetooth::legacy::hci::Interface interface_ = {
+    .Disconnect = btsnd_hcic_disconnect,
+};
+
+const bluetooth::legacy::hci::Interface&
+bluetooth::legacy::hci::GetInterface() {
+  return interface_;
 }

@@ -150,6 +150,8 @@ class ShimAclConnection {
     TRY_POSTING_ON_MAIN(send_data_upwards_, p_buf);
   }
 
+  virtual void InitiateDisconnect(hci::DisconnectReason reason) = 0;
+
  protected:
   const uint16_t handle_{kInvalidHciHandle};
   os::Handler* handler_;
@@ -340,6 +342,10 @@ class ClassicShimAclConnection
 
   hci::Address GetRemoteAddress() const { return connection_->GetAddress(); }
 
+  void InitiateDisconnect(hci::DisconnectReason reason) override {
+    connection_->Disconnect(reason);
+  }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_classic_link_interface_t interface_;
@@ -398,6 +404,10 @@ class LeShimAclConnection
 
   hci::AddressWithType GetRemoteAddressWithType() const {
     return connection_->GetRemoteAddress();
+  }
+
+  void InitiateDisconnect(hci::DisconnectReason reason) override {
+    connection_->Disconnect(reason);
   }
 
  private:
@@ -474,6 +484,11 @@ void DumpsysAcl(int fd) {
                   common::ToString(acl_conn.peer_lmp_feature_valid[j]).c_str(),
                   bd_features_text(acl_conn.peer_lmp_feature_pages[j]).c_str());
     }
+    LOG_DUMPSYS(fd, "      sniff_subrating:%s",
+                common::ToString(HCI_SNIFF_SUB_RATE_SUPPORTED(
+                                     acl_conn.peer_lmp_feature_pages[0]))
+                    .c_str());
+
     LOG_DUMPSYS(fd, "remote_addr:%s", acl_conn.remote_addr.ToString().c_str());
     LOG_DUMPSYS(fd, "    handle:0x%04x", acl_conn.hci_handle);
     LOG_DUMPSYS(fd, "    [le] active_remote_addr:%s",
@@ -755,4 +770,39 @@ void bluetooth::shim::legacy::Acl::ConfigureLePrivacy(
   GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
       address_policy, empty_address_with_type, rotation_irk,
       minimum_rotation_time, maximum_rotation_time);
+}
+
+void bluetooth::shim::legacy::Acl::DisconnectClassic(uint16_t handle,
+                                                     tHCI_STATUS reason) {
+  auto connection = pimpl_->handle_to_classic_connection_map_.find(handle);
+  if (connection != pimpl_->handle_to_classic_connection_map_.end()) {
+    auto remote_address = connection->second->GetRemoteAddress();
+    connection->second->InitiateDisconnect(
+        ToDisconnectReasonFromLegacy(reason));
+    LOG_DEBUG("Disconnection initiated classic remote:%s handle:%hu",
+              PRIVATE_ADDRESS(remote_address), handle);
+    btm_cb.history_->Push("%-32s: %s classic", "Disconnection initiated",
+                          PRIVATE_ADDRESS(remote_address));
+  } else {
+    LOG_WARN("Unable to disconnect unknown classic connection handle:0x%04x",
+             handle);
+  }
+}
+
+void bluetooth::shim::legacy::Acl::DisconnectLe(uint16_t handle,
+                                                tHCI_STATUS reason) {
+  auto connection = pimpl_->handle_to_le_connection_map_.find(handle);
+  if (connection != pimpl_->handle_to_le_connection_map_.end()) {
+    auto remote_address_with_type =
+        connection->second->GetRemoteAddressWithType();
+    connection->second->InitiateDisconnect(
+        ToDisconnectReasonFromLegacy(reason));
+    LOG_DEBUG("Disconnection initiated le remote:%s handle:%hu",
+              PRIVATE_ADDRESS(remote_address_with_type), handle);
+    btm_cb.history_->Push("%-32s: %s le", "Disconnection initiated",
+                          PRIVATE_ADDRESS(remote_address_with_type));
+  } else {
+    LOG_WARN("Unable to disconnect unknown le connection handle:0x%04x",
+             handle);
+  }
 }
