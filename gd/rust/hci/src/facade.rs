@@ -2,9 +2,9 @@
 
 use crate::HciExports;
 use bt_common::GrpcFacade;
-use bt_hci_proto::empty::Empty;
-use bt_hci_proto::facade::*;
-use bt_hci_proto::facade_grpc::{create_hci_layer_facade, HciLayerFacade};
+use bt_facade_proto::empty::Empty;
+use bt_facade_proto::hci_facade::*;
+use bt_facade_proto::hci_facade_grpc::{create_hci_layer_facade, HciLayerFacade};
 use bt_packet::HciEvent;
 use futures::sink::SinkExt;
 use gddi::{module, provides, Stoppable};
@@ -54,10 +54,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         mut cmd: Command,
         sink: UnarySink<Empty>,
     ) {
-        self.rt.block_on(
-            self.hci_exports
-                .enqueue_command_with_complete(cmd.take_payload().into()),
-        );
+        self.rt.block_on(self.hci_exports.enqueue_command_with_complete(cmd.take_payload().into()));
         sink.success(Empty::default());
     }
 
@@ -67,10 +64,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         mut cmd: Command,
         sink: UnarySink<Empty>,
     ) {
-        self.rt.block_on(
-            self.hci_exports
-                .enqueue_command_with_complete(cmd.take_payload().into()),
-        );
+        self.rt.block_on(self.hci_exports.enqueue_command_with_complete(cmd.take_payload().into()));
         sink.success(Empty::default());
     }
 
