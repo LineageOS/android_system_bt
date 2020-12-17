@@ -21,7 +21,7 @@
 #include "common/bind.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/controller.h"
-#include "hci/facade/facade.grpc.pb.h"
+#include "hci/facade/hci_facade.grpc.pb.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 
