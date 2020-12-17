@@ -51,7 +51,7 @@ void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
   hcic_interface->CreateCis(num_cis, cis_cfg, std::move(cb));
 }
 
-void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
+static void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
   hcic_interface->Disconnect(handle, reason);
 }
 
@@ -102,4 +102,13 @@ void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle,
 
 void btsnd_hcic_term_big(uint8_t big_handle, uint8_t reason) {
   hcic_interface->TerminateBig(big_handle, reason);
+}
+
+bluetooth::legacy::hci::Interface interface_ = {
+    .Disconnect = btsnd_hcic_disconnect,
+};
+
+const bluetooth::legacy::hci::Interface&
+bluetooth::legacy::hci::GetInterface() {
+  return interface_;
 }

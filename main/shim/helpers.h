@@ -221,6 +221,10 @@ inline tHCI_MODE ToLegacyHciMode(hci::Mode mode) {
   return static_cast<tHCI_MODE>(mode);
 }
 
+inline hci::DisconnectReason ToDisconnectReasonFromLegacy(tHCI_STATUS reason) {
+  return static_cast<hci::DisconnectReason>(reason);
+}
+
 namespace debug {
 
 inline void DumpBtHdr(const BT_HDR* p_buf, const char* token) {

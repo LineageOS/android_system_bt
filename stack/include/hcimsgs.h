@@ -81,7 +81,16 @@ extern void btsnd_hcic_create_conn(const RawAddress& dest,
 /* Create Connection */
 
 /* Disconnect */
-extern void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason);
+namespace bluetooth {
+namespace legacy {
+namespace hci {
+struct Interface {
+  void (*Disconnect)(uint16_t handle, uint8_t reason);
+};
+const Interface& GetInterface();
+}  // namespace hci
+}  // namespace legacy
+}  // namespace bluetooth
 
 #define HCIC_PARAM_SIZE_DISCONNECT 3
 
