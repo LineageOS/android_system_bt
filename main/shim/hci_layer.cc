@@ -316,11 +316,11 @@ static bool event_already_registered_in_le_advertising_manager(
 }  // namespace
 
 namespace cpp {
-bluetooth::common::BidiQueueEnd<bluetooth::hci::AclPacketBuilder,
-                                bluetooth::hci::AclPacketView>* hci_queue_end =
+bluetooth::common::BidiQueueEnd<bluetooth::hci::AclBuilder,
+                                bluetooth::hci::AclView>* hci_queue_end =
     nullptr;
-static bluetooth::os::EnqueueBuffer<bluetooth::hci::AclPacketBuilder>*
-    pending_data = nullptr;
+static bluetooth::os::EnqueueBuffer<bluetooth::hci::AclBuilder>* pending_data =
+    nullptr;
 
 class OsiObject {
  public:
@@ -364,7 +364,7 @@ static BT_HDR* WrapPacketAndCopy(
   return packet;
 }
 
-static void event_callback(bluetooth::hci::EventPacketView event_packet_view) {
+static void event_callback(bluetooth::hci::EventView event_packet_view) {
   if (!send_data_upwards) {
     return;
   }
@@ -420,7 +420,7 @@ static void transmit_command(BT_HDR* command,
 
   auto payload = MakeUniquePacket(data, len);
   auto packet =
-      bluetooth::hci::CommandPacketBuilder::Create(op_code, std::move(payload));
+      bluetooth::hci::CommandBuilder::Create(op_code, std::move(payload));
 
   LOG_DEBUG("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
 
@@ -452,8 +452,8 @@ static void transmit_fragment(uint8_t* stream, size_t length) {
   stream += 2;
   length -= 2;
   auto payload = MakeUniquePacket(stream, length);
-  auto acl_packet = bluetooth::hci::AclPacketBuilder::Create(
-      handle, pb_flag, bc_flag, std::move(payload));
+  auto acl_packet = bluetooth::hci::AclBuilder::Create(handle, pb_flag, bc_flag,
+                                                       std::move(payload));
   pending_data->Enqueue(std::move(acl_packet),
                         bluetooth::shim::GetGdShimHandler());
 }
@@ -498,9 +498,8 @@ static void register_for_acl() {
                                    bluetooth::common::Bind(acl_data_callback));
   }
 
-  pending_data =
-      new bluetooth::os::EnqueueBuffer<bluetooth::hci::AclPacketBuilder>(
-          hci_queue_end);
+  pending_data = new bluetooth::os::EnqueueBuffer<bluetooth::hci::AclBuilder>(
+      hci_queue_end);
 }
 
 static void on_shutting_down() {

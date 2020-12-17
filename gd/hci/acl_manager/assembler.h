@@ -34,7 +34,7 @@ constexpr int kL2capBasicFrameHeaderSize = 4;
 
 // Per spec 5.1 Vol 2 Part B 5.3, ACL link shall carry L2CAP data. Therefore, an ACL packet shall contain L2CAP PDU.
 // This function returns the PDU size of the L2CAP data if it's a starting packet. Returns 0 if it's invalid.
-uint16_t GetL2capPduSize(AclPacketView packet) {
+uint16_t GetL2capPduSize(AclView packet) {
   auto l2cap_payload = packet.GetPayload();
   if (l2cap_payload.size() < kL2capBasicFrameHeaderSize) {
     LOG_ERROR("Controller sent an invalid L2CAP starting packet!");
@@ -72,7 +72,7 @@ struct assembler {
     return std::make_unique<PacketView<kLittleEndian>>(packet);
   }
 
-  void on_incoming_packet(AclPacketView packet) {
+  void on_incoming_packet(AclView packet) {
     PacketView<kLittleEndian> payload = packet.GetPayload();
     auto payload_size = payload.size();
     auto broadcast_flag = packet.GetBroadcastFlag();

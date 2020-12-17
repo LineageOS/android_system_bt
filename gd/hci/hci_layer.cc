@@ -28,10 +28,10 @@ using bluetooth::common::BindOn;
 using bluetooth::common::BindOnce;
 using bluetooth::common::ContextualCallback;
 using bluetooth::common::ContextualOnceCallback;
+using bluetooth::hci::CommandBuilder;
 using bluetooth::hci::CommandCompleteView;
-using bluetooth::hci::CommandPacketBuilder;
 using bluetooth::hci::CommandStatusView;
-using bluetooth::hci::EventPacketView;
+using bluetooth::hci::EventView;
 using bluetooth::hci::LeMetaEventView;
 using bluetooth::os::Handler;
 using common::BidiQueue;
@@ -55,15 +55,15 @@ static void on_hci_timeout(OpCode op_code) {
 
 class CommandQueueEntry {
  public:
-  CommandQueueEntry(unique_ptr<CommandPacketBuilder> command_packet,
-                    ContextualOnceCallback<void(CommandCompleteView)> on_complete_function)
+  CommandQueueEntry(
+      unique_ptr<CommandBuilder> command_packet, ContextualOnceCallback<void(CommandCompleteView)> on_complete_function)
       : command(move(command_packet)), waiting_for_status_(false), on_complete(move(on_complete_function)) {}
 
-  CommandQueueEntry(unique_ptr<CommandPacketBuilder> command_packet,
-                    ContextualOnceCallback<void(CommandStatusView)> on_status_function)
+  CommandQueueEntry(
+      unique_ptr<CommandBuilder> command_packet, ContextualOnceCallback<void(CommandStatusView)> on_status_function)
       : command(move(command_packet)), waiting_for_status_(true), on_status(move(on_status_function)) {}
 
-  unique_ptr<CommandPacketBuilder> command;
+  unique_ptr<CommandBuilder> command;
   bool waiting_for_status_;
   ContextualOnceCallback<void(CommandStatusView)> on_status;
   ContextualOnceCallback<void(CommandCompleteView)> on_complete;
@@ -95,7 +95,7 @@ struct HciLayer::impl {
     command_queue_.clear();
   }
 
-  void drop(EventPacketView event) {
+  void drop(EventView event) {
     LOG_INFO("Dropping event %s", EventCodeText(event.GetEventCode()).c_str());
   }
 
@@ -108,21 +108,21 @@ struct HciLayer::impl {
   }
 
   template <typename TResponse>
-  void enqueue_command(unique_ptr<CommandPacketBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
+  void enqueue_command(unique_ptr<CommandBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
     command_queue_.emplace_back(move(command), move(on_response));
     send_next_command();
   }
 
-  void on_command_status(EventPacketView event) {
+  void on_command_status(EventView event) {
     handle_command_response<CommandStatusView>(event, "status");
   }
 
-  void on_command_complete(EventPacketView event) {
+  void on_command_complete(EventView event) {
     handle_command_response<CommandCompleteView>(event, "complete");
   }
 
   template <typename TResponse>
-  void handle_command_response(EventPacketView event, std::string logging_id) {
+  void handle_command_response(EventView event, std::string logging_id) {
     TResponse response_view = TResponse::Create(event);
     ASSERT(response_view.IsValid());
     command_credits_ = response_view.GetNumHciCommandPackets();
@@ -162,7 +162,7 @@ struct HciLayer::impl {
     command_queue_.front().command->Serialize(bi);
     hal_->sendHciCommand(*bytes);
 
-    auto cmd_view = CommandPacketView::Create(PacketView<kLittleEndian>(bytes));
+    auto cmd_view = CommandView::Create(PacketView<kLittleEndian>(bytes));
     ASSERT(cmd_view.IsValid());
     OpCode op_code = cmd_view.GetOpCode();
     waiting_command_ = op_code;
@@ -170,7 +170,7 @@ struct HciLayer::impl {
     hci_timeout_alarm_->Schedule(BindOnce(&on_hci_timeout, op_code), kHciTimeoutMs);
   }
 
-  void register_event(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
+  void register_event(EventCode event, ContextualCallback<void(EventView)> handler) {
     ASSERT_LOG(
         event != EventCode::LE_META_EVENT,
         "Can not register handler for %02hhx (%s)",
@@ -185,7 +185,7 @@ struct HciLayer::impl {
     event_handlers_.erase(event);
   }
 
-  void register_le_meta_event(ContextualCallback<void(EventPacketView)> handler) {
+  void register_le_meta_event(ContextualCallback<void(EventView)> handler) {
     ASSERT_LOG(
         event_handlers_.count(EventCode::LE_META_EVENT) == 0,
         "Can not register a second handler for %02hhx (%s)",
@@ -208,7 +208,7 @@ struct HciLayer::impl {
     subevent_handlers_.erase(subevent_handlers_.find(event));
   }
 
-  void on_hci_event(EventPacketView event) {
+  void on_hci_event(EventView event) {
     ASSERT(event.IsValid());
     EventCode event_code = event.GetEventCode();
     ASSERT_LOG(
@@ -219,7 +219,7 @@ struct HciLayer::impl {
     event_handlers_[event_code].Invoke(event);
   }
 
-  void on_le_meta_event(EventPacketView event) {
+  void on_le_meta_event(EventView event) {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     ASSERT(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
@@ -237,15 +237,15 @@ struct HciLayer::impl {
   // Command Handling
   std::list<CommandQueueEntry> command_queue_;
 
-  std::map<EventCode, ContextualCallback<void(EventPacketView)>> event_handlers_;
+  std::map<EventCode, ContextualCallback<void(EventView)>> event_handlers_;
   std::map<SubeventCode, ContextualCallback<void(LeMetaEventView)>> subevent_handlers_;
   OpCode waiting_command_{OpCode::NONE};
   uint8_t command_credits_{1};  // Send reset first
   Alarm* hci_timeout_alarm_{nullptr};
 
   // Acl packets
-  BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
-  os::EnqueueBuffer<AclPacketView> incoming_acl_buffer_{acl_queue_.GetDownEnd()};
+  BidiQueue<AclView, AclBuilder> acl_queue_{3 /* TODO: Set queue depth */};
+  os::EnqueueBuffer<AclView> incoming_acl_buffer_{acl_queue_.GetDownEnd()};
 };
 
 // All functions here are running on the HAL thread
@@ -254,13 +254,13 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
 
   void hciEventReceived(hal::HciPacket event_bytes) override {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(event_bytes));
-    EventPacketView event = EventPacketView::Create(packet);
+    EventView event = EventView::Create(packet);
     module_.CallOn(module_.impl_, &impl::on_hci_event, move(event));
   }
 
   void aclDataReceived(hal::HciPacket data_bytes) override {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(move(data_bytes)));
-    auto acl = std::make_unique<AclPacketView>(AclPacketView::Create(packet));
+    auto acl = std::make_unique<AclView>(AclView::Create(packet));
     module_.impl_->incoming_acl_buffer_.Enqueue(move(acl), module_.GetHandler());
   }
 
@@ -280,25 +280,25 @@ HciLayer::HciLayer() : impl_(nullptr), hal_callbacks_(nullptr) {}
 HciLayer::~HciLayer() {
 }
 
-common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd() {
+common::BidiQueueEnd<AclBuilder, AclView>* HciLayer::GetAclQueueEnd() {
   return impl_->acl_queue_.GetUpEnd();
 }
 
-void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
+void HciLayer::EnqueueCommand(
+    unique_ptr<CommandBuilder> command, ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
   CallOn(impl_, &impl::enqueue_command<CommandCompleteView>, move(command), move(on_complete));
 }
 
-void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              ContextualOnceCallback<void(CommandStatusView)> on_status) {
+void HciLayer::EnqueueCommand(
+    unique_ptr<CommandBuilder> command, ContextualOnceCallback<void(CommandStatusView)> on_status) {
   CallOn(impl_, &impl::enqueue_command<CommandStatusView>, move(command), move(on_status));
 }
 
-void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
+void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(EventView)> handler) {
   CallOn(impl_, &impl::register_event, event, handler);
 }
 
-void HciLayer::RegisterLeMetaEventHandler(ContextualCallback<void(EventPacketView)> handler) {
+void HciLayer::RegisterLeMetaEventHandler(ContextualCallback<void(EventView)> handler) {
   CallOn(impl_, &impl::register_le_meta_event, handler);
 }
 
@@ -314,7 +314,7 @@ void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
   CallOn(impl_, &impl::unregister_le_event, event);
 }
 
-void HciLayer::on_disconnection_complete(EventPacketView event_view) {
+void HciLayer::on_disconnection_complete(EventView event_view) {
   auto disconnection_view = DisconnectionCompleteView::Create(event_view);
   if (!disconnection_view.IsValid()) {
     LOG_INFO("Dropping invalid disconnection packet");
@@ -332,7 +332,7 @@ void HciLayer::Disconnect(uint16_t handle, ErrorCode reason) {
   }
 }
 
-void HciLayer::on_read_remote_version_complete(EventPacketView event_view) {
+void HciLayer::on_read_remote_version_complete(EventView event_view) {
   auto view = ReadRemoteVersionInformationCompleteView::Create(event_view);
   ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");
   if (view.GetStatus() != ErrorCode::SUCCESS) {
@@ -352,7 +352,7 @@ void HciLayer::ReadRemoteVersion(uint16_t handle, uint8_t version, uint16_t manu
 }
 
 AclConnectionInterface* HciLayer::GetAclConnectionInterface(
-    ContextualCallback<void(EventPacketView)> event_handler,
+    ContextualCallback<void(EventView)> event_handler,
     ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect,
     ContextualCallback<void(uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
         on_read_remote_version) {
@@ -377,7 +377,7 @@ LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
   return &le_acl_connection_manager_interface_;
 }
 
-SecurityInterface* HciLayer::GetSecurityInterface(ContextualCallback<void(EventPacketView)> event_handler) {
+SecurityInterface* HciLayer::GetSecurityInterface(ContextualCallback<void(EventView)> event_handler) {
   for (const auto event : SecurityEvents) {
     RegisterEventHandler(event, event_handler);
   }

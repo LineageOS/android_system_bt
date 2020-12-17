@@ -85,23 +85,23 @@ hci::PacketView<hci::kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePa
 class TestHciLayer : public hci::HciLayer {
  public:
   void EnqueueCommand(
-      std::unique_ptr<hci::CommandPacketBuilder> command,
+      std::unique_ptr<hci::CommandBuilder> command,
       common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {
     GetHandler()->Post(common::BindOnce(
         &TestHciLayer::HandleCommand, common::Unretained(this), std::move(command), std::move(on_complete)));
   }
 
   void EnqueueCommand(
-      std::unique_ptr<hci::CommandPacketBuilder> command,
+      std::unique_ptr<hci::CommandBuilder> command,
       common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {
     GetHandler()->Post(common::BindOnce(
         &TestHciLayer::HandleStatus, common::Unretained(this), std::move(command), std::move(on_status)));
   }
 
   void HandleCommand(
-      std::unique_ptr<hci::CommandPacketBuilder> command_builder,
+      std::unique_ptr<hci::CommandBuilder> command_builder,
       common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) {
-    hci::CommandPacketView command = hci::CommandPacketView::Create(GetPacketView(std::move(command_builder)));
+    hci::CommandView command = hci::CommandView::Create(GetPacketView(std::move(command_builder)));
     ASSERT_TRUE(command.IsValid());
 
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
@@ -188,7 +188,7 @@ class TestHciLayer : public hci::HciLayer {
         LOG_INFO("Dropping unhandled command:%s", hci::OpCodeText(command.GetOpCode()).c_str());
         return;
     }
-    hci::EventPacketView event = hci::EventPacketView::Create(GetPacketView(std::move(event_builder)));
+    hci::EventView event = hci::EventView::Create(GetPacketView(std::move(event_builder)));
     ASSERT_TRUE(event.IsValid());
     hci::CommandCompleteView command_complete = hci::CommandCompleteView::Create(event);
     ASSERT_TRUE(command_complete.IsValid());
@@ -200,9 +200,9 @@ class TestHciLayer : public hci::HciLayer {
   }
 
   void HandleStatus(
-      std::unique_ptr<hci::CommandPacketBuilder> command_builder,
+      std::unique_ptr<hci::CommandBuilder> command_builder,
       common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) {
-    hci::CommandPacketView command = hci::CommandPacketView::Create(GetPacketView(std::move(command_builder)));
+    hci::CommandView command = hci::CommandView::Create(GetPacketView(std::move(command_builder)));
     ASSERT_TRUE(command.IsValid());
 
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
@@ -219,7 +219,7 @@ class TestHciLayer : public hci::HciLayer {
         LOG_INFO("Dropping unhandled status expecting command:%s", hci::OpCodeText(command.GetOpCode()).c_str());
         return;
     }
-    hci::EventPacketView event = hci::EventPacketView::Create(GetPacketView(std::move(event_builder)));
+    hci::EventView event = hci::EventView::Create(GetPacketView(std::move(event_builder)));
     ASSERT_TRUE(event.IsValid());
     hci::CommandStatusView command_status = hci::CommandStatusView::Create(event);
     ASSERT_TRUE(command_status.IsValid());
@@ -231,7 +231,7 @@ class TestHciLayer : public hci::HciLayer {
   }
 
   void RegisterEventHandler(
-      hci::EventCode event_code, common::ContextualCallback<void(hci::EventPacketView)> event_handler) override {
+      hci::EventCode event_code, common::ContextualCallback<void(hci::EventView)> event_handler) override {
     switch (event_code) {
       case hci::EventCode::INQUIRY_RESULT:
         inquiry_result_callback_ = event_handler;
@@ -289,7 +289,7 @@ class TestHciLayer : public hci::HciLayer {
   }
 
   void InjectInquiryResult(std::unique_ptr<hci::InquiryResultBuilder> result) {
-    hci::EventPacketView view = hci::EventPacketView::Create(GetPacketView(std::move(result)));
+    hci::EventView view = hci::EventView::Create(GetPacketView(std::move(result)));
     ASSERT_TRUE(view.IsValid());
     inquiry_result_callback_.Invoke(std::move(view));
   }
@@ -301,10 +301,10 @@ class TestHciLayer : public hci::HciLayer {
  private:
   std::promise<hci::OpCode>* promise_sync_complete_{nullptr};
 
-  common::ContextualCallback<void(hci::EventPacketView)> inquiry_result_callback_;
-  common::ContextualCallback<void(hci::EventPacketView)> inquiry_result_with_rssi_callback_;
-  common::ContextualCallback<void(hci::EventPacketView)> extended_inquiry_result_callback_;
-  common::ContextualCallback<void(hci::EventPacketView)> inquiry_complete_callback_;
+  common::ContextualCallback<void(hci::EventView)> inquiry_result_callback_;
+  common::ContextualCallback<void(hci::EventView)> inquiry_result_with_rssi_callback_;
+  common::ContextualCallback<void(hci::EventView)> extended_inquiry_result_callback_;
+  common::ContextualCallback<void(hci::EventView)> inquiry_complete_callback_;
 };
 
 class InquiryTest : public ::testing::Test {

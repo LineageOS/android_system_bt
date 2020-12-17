@@ -48,7 +48,7 @@ void FuzzHciHal::injectArbitrary(FuzzedDataProvider& fdp) {
 }
 
 void FuzzHciHal::sendHciCommand(HciPacket packet) {
-  hci::CommandPacketView command = hci::CommandPacketView::FromBytes(packet);
+  hci::CommandView command = hci::CommandView::FromBytes(packet);
   if (!command.IsValid()) {
     return;
   }
@@ -58,7 +58,7 @@ void FuzzHciHal::sendHciCommand(HciPacket packet) {
 }
 
 void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
-  hci::EventPacketView event = hci::EventPacketView::FromBytes(data);
+  hci::EventView event = hci::EventView::FromBytes(data);
   if (!event.IsValid()) {
     return;
   }
@@ -85,7 +85,7 @@ void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
 }
 
 void FuzzHciHal::injectAclData(std::vector<uint8_t> data) {
-  hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
+  hci::AclView aclPacket = hci::AclView::FromBytes(data);
   if (!aclPacket.IsValid()) {
     return;
   }
@@ -94,7 +94,7 @@ void FuzzHciHal::injectAclData(std::vector<uint8_t> data) {
 }
 
 void FuzzHciHal::injectScoData(std::vector<uint8_t> data) {
-  hci::ScoPacketView scoPacket = hci::ScoPacketView::FromBytes(data);
+  hci::ScoView scoPacket = hci::ScoView::FromBytes(data);
   if (!scoPacket.IsValid()) {
     return;
   }

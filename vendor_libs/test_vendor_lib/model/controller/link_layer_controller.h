@@ -43,8 +43,8 @@ class LinkLayerController {
       const Address& remote);
   ErrorCode SendCommandToRemoteByHandle(
       OpCode opcode, bluetooth::packet::PacketView<true> args, uint16_t handle);
-  ErrorCode SendScoToRemote(bluetooth::hci::ScoPacketView sco_packet);
-  ErrorCode SendAclToRemote(bluetooth::hci::AclPacketView acl_packet);
+  ErrorCode SendScoToRemote(bluetooth::hci::ScoView sco_packet);
+  ErrorCode SendAclToRemote(bluetooth::hci::AclView acl_packet);
 
   void StartSimplePairing(const Address& address);
   void AuthenticateRemoteStage1(const Address& address, PairingType pairing_type);
@@ -106,12 +106,12 @@ class LinkLayerController {
 
   // Set the callbacks for sending packets to the HCI.
   void RegisterEventChannel(
-      const std::function<void(
-          std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>& send_event);
+      const std::function<void(std::shared_ptr<bluetooth::hci::EventBuilder>)>&
+          send_event);
 
   void RegisterAclChannel(
-      const std::function<
-          void(std::shared_ptr<bluetooth::hci::AclPacketBuilder>)>& send_acl);
+      const std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)>&
+          send_acl);
 
   void RegisterScoChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_sco);
 
@@ -326,7 +326,7 @@ class LinkLayerController {
   void ReadLocalOobData();
   void ReadLocalOobExtendedData();
 
-  void HandleIso(bluetooth::hci::IsoPacketView iso);
+  void HandleIso(bluetooth::hci::IsoView iso);
 
  protected:
   void SendLeLinkLayerPacket(
@@ -410,9 +410,8 @@ class LinkLayerController {
   std::function<void(AsyncTaskId)> cancel_task_;
 
   // Callbacks to send packets back to the HCI.
-  std::function<void(std::shared_ptr<bluetooth::hci::AclPacketBuilder>)>
-      send_acl_;
-  std::function<void(std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>
+  std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)> send_acl_;
+  std::function<void(std::shared_ptr<bluetooth::hci::EventBuilder>)>
       send_event_;
   std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_sco_;
   std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_iso_;

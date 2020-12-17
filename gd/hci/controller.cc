@@ -42,7 +42,6 @@ struct Controller::impl {
 
     le_set_event_mask(kDefaultLeEventMask);
     set_event_mask(kDefaultEventMask);
-    write_simple_pairing_mode(Enable::ENABLED);
     write_le_host_support(Enable::ENABLED);
     hci_->EnqueueCommand(ReadLocalNameBuilder::Create(),
                          handler->BindOnceOn(this, &Controller::impl::read_local_name_complete_handler));
@@ -139,7 +138,7 @@ struct Controller::impl {
     hci_ = nullptr;
   }
 
-  void NumberOfCompletedPackets(EventPacketView event) {
+  void NumberOfCompletedPackets(EventView event) {
     if (acl_credits_callback_.IsEmpty()) {
       LOG_WARN("Received event when AclManager is not listening");
       return;
@@ -440,13 +439,6 @@ struct Controller::impl {
     std::unique_ptr<SetEventMaskBuilder> packet = SetEventMaskBuilder::Create(event_mask);
     hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
                                                 this, &Controller::impl::check_status<SetEventMaskCompleteView>));
-  }
-
-  void write_simple_pairing_mode(Enable enable) {
-    std::unique_ptr<WriteSimplePairingModeBuilder> packet = WriteSimplePairingModeBuilder::Create(enable);
-    hci_->EnqueueCommand(
-        std::move(packet),
-        module_.GetHandler()->BindOnceOn(this, &Controller::impl::check_status<WriteSimplePairingModeCompleteView>));
   }
 
   void write_le_host_support(Enable enable) {

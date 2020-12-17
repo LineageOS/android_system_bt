@@ -174,8 +174,8 @@ void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
   CancelBond(device);
   security_manager_channel_->Disconnect(device.GetAddress());
   security_database_.Remove(device);
-  security_manager_channel_->SendCommand(
-      hci::DeleteStoredLinkKeyBuilder::Create(device.GetAddress(), hci::DeleteStoredLinkKeyDeleteAllFlag::ALL));
+  security_manager_channel_->SendCommand(hci::DeleteStoredLinkKeyBuilder::Create(
+      device.GetAddress(), hci::DeleteStoredLinkKeyDeleteAllFlag::SPECIFIED_BD_ADDR));
   NotifyDeviceUnbonded(device);
 }
 
@@ -279,8 +279,8 @@ void SecurityManagerImpl::HandleEvent(T packet) {
   entry->second->OnReceive(packet);
 }
 
-void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
-  auto event = hci::EventPacketView::Create(packet);
+void SecurityManagerImpl::OnHciEventReceived(hci::EventView packet) {
+  auto event = hci::EventView::Create(packet);
   ASSERT_LOG(event.IsValid(), "Received invalid packet");
   const hci::EventCode code = event.GetEventCode();
   switch (code) {

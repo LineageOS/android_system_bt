@@ -50,10 +50,9 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     }
   }
 
-  class TestCommandBuilder : public CommandPacketBuilder {
+  class TestCommandBuilder : public CommandBuilder {
    public:
-    explicit TestCommandBuilder(std::vector<uint8_t> bytes)
-        : CommandPacketBuilder(OpCode::NONE), bytes_(std::move(bytes)) {}
+    explicit TestCommandBuilder(std::vector<uint8_t> bytes) : CommandBuilder(OpCode::NONE), bytes_(std::move(bytes)) {}
     size_t size() const override {
       return bytes_.size();
     }
@@ -120,11 +119,11 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     return pending_le_events_.RunLoop(context, writer);
   };
 
-  class TestAclBuilder : public AclPacketBuilder {
+  class TestAclBuilder : public AclBuilder {
    public:
     explicit TestAclBuilder(
         uint16_t handle, uint8_t packet_boundary_flag, uint8_t broadcast_flag, std::vector<uint8_t> payload)
-        : AclPacketBuilder(0xbad, PacketBoundaryFlag::CONTINUING_FRAGMENT, BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST),
+        : AclBuilder(0xbad, PacketBoundaryFlag::CONTINUING_FRAGMENT, BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST),
           handle_(handle),
           pb_flag_(packet_boundary_flag),
           b_flag_(broadcast_flag),
@@ -186,7 +185,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   };
 
  private:
-  std::unique_ptr<AclPacketBuilder> handle_enqueue_acl(std::promise<void>* promise) {
+  std::unique_ptr<AclBuilder> handle_enqueue_acl(std::promise<void>* promise) {
     promise->set_value();
     hci_layer_->GetAclQueueEnd()->UnregisterEnqueue();
     return std::move(waiting_acl_packet_);
@@ -202,7 +201,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     pending_acl_events_.OnIncomingEvent(std::move(incoming));
   }
 
-  void on_event(hci::EventPacketView view) {
+  void on_event(hci::EventView view) {
     ASSERT(view.IsValid());
     LOG_INFO("Got an Event %s", EventCodeText(view.GetEventCode()).c_str());
     Event response;

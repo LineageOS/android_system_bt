@@ -75,7 +75,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     }
   }
 
-  void on_classic_event(EventPacketView event_packet) {
+  void on_classic_event(EventView event_packet) {
     EventCode event_code = event_packet.GetEventCode();
     switch (event_code) {
       case EventCode::CONNECTION_COMPLETE:
@@ -141,7 +141,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     client_handler_ = handler;
   }
 
-  void on_incoming_connection(EventPacketView packet) {
+  void on_incoming_connection(EventView packet) {
     ConnectionRequestView request = ConnectionRequestView::Create(packet);
     ASSERT(request.IsValid());
     Address address = request.GetBdAddr();
@@ -198,7 +198,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     }
   }
 
-  void on_connection_complete(EventPacketView packet) {
+  void on_connection_complete(EventView packet) {
     ConnectionCompleteView connection_complete = ConnectionCompleteView::Create(packet);
     ASSERT(connection_complete.IsValid());
     auto status = connection_complete.GetStatus();
@@ -251,7 +251,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     }
   }
 
-  void on_connection_packet_type_changed(EventPacketView packet) {
+  void on_connection_packet_type_changed(EventView packet) {
     ConnectionPacketTypeChangedView packet_type_changed = ConnectionPacketTypeChangedView::Create(packet);
     if (!packet_type_changed.IsValid()) {
       LOG_ERROR("Received on_connection_packet_type_changed with invalid packet");
@@ -272,7 +272,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     // We don't handle this event; we didn't do this in legacy stack either.
   }
 
-  void on_central_link_key_complete(EventPacketView packet) {
+  void on_central_link_key_complete(EventView packet) {
     CentralLinkKeyCompleteView complete_view = CentralLinkKeyCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
       LOG_ERROR("Received on_central_link_key_complete with invalid packet");
@@ -294,7 +294,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     callbacks->OnCentralLinkKeyComplete(key_flag);
   }
 
-  void on_authentication_complete(EventPacketView packet) {
+  void on_authentication_complete(EventView packet) {
     AuthenticationCompleteView authentication_complete = AuthenticationCompleteView::Create(packet);
     if (!authentication_complete.IsValid()) {
       LOG_ERROR("Received on_authentication_complete with invalid packet");
@@ -351,7 +351,7 @@ struct classic_impl : public security::ISecurityManagerListener {
         handler_->BindOnceOn(this, &classic_impl::on_accept_connection_status, address));
   }
 
-  void on_change_connection_link_key_complete(EventPacketView packet) {
+  void on_change_connection_link_key_complete(EventView packet) {
     ChangeConnectionLinkKeyCompleteView complete_view = ChangeConnectionLinkKeyCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
       LOG_ERROR("Received on_change_connection_link_key_complete with invalid packet");
@@ -372,7 +372,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     callbacks->OnChangeConnectionLinkKeyComplete();
   }
 
-  void on_read_clock_offset_complete(EventPacketView packet) {
+  void on_read_clock_offset_complete(EventView packet) {
     ReadClockOffsetCompleteView complete_view = ReadClockOffsetCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
       LOG_ERROR("Received on_read_clock_offset_complete with invalid packet");
@@ -394,7 +394,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     callbacks->OnReadClockOffsetComplete(clock_offset);
   }
 
-  void on_mode_change(EventPacketView packet) {
+  void on_mode_change(EventView packet) {
     ModeChangeView mode_change_view = ModeChangeView::Create(packet);
     if (!mode_change_view.IsValid()) {
       LOG_ERROR("Received on_mode_change with invalid packet");
@@ -417,7 +417,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     callbacks->OnModeChange(current_mode, interval);
   }
 
-  void on_qos_setup_complete(EventPacketView packet) {
+  void on_qos_setup_complete(EventView packet) {
     QosSetupCompleteView complete_view = QosSetupCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
       LOG_ERROR("Received on_qos_setup_complete with invalid packet");
@@ -443,7 +443,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     callbacks->OnQosSetupComplete(service_type, token_rate, peak_bandwidth, latency, delay_variation);
   }
 
-  void on_role_change(EventPacketView packet) {
+  void on_role_change(EventView packet) {
     RoleChangeView role_change_view = RoleChangeView::Create(packet);
     if (!role_change_view.IsValid()) {
       LOG_ERROR("Received on_role_change with invalid packet");
@@ -463,7 +463,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     }
   }
 
-  void on_flow_specification_complete(EventPacketView packet) {
+  void on_flow_specification_complete(EventView packet) {
     FlowSpecificationCompleteView complete_view = FlowSpecificationCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
       LOG_ERROR("Received on_flow_specification_complete with invalid packet");
@@ -491,7 +491,7 @@ struct classic_impl : public security::ISecurityManagerListener {
         flow_direction, service_type, token_rate, token_bucket_size, peak_bandwidth, access_latency);
   }
 
-  void on_flush_occurred(EventPacketView packet) {
+  void on_flush_occurred(EventView packet) {
     FlushOccurredView flush_occurred_view = FlushOccurredView::Create(packet);
     if (!flush_occurred_view.IsValid()) {
       LOG_ERROR("Received on_flush_occurred with invalid packet");
@@ -518,7 +518,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     callbacks->OnReadRemoteVersionInformationComplete(version, manufacturer_name, sub_version);
   }
 
-  void on_read_remote_supported_features_complete(EventPacketView packet) {
+  void on_read_remote_supported_features_complete(EventView packet) {
     auto view = ReadRemoteSupportedFeaturesCompleteView::Create(packet);
     ASSERT_LOG(view.IsValid(), "Read remote supported features packet invalid");
     uint16_t handle = view.GetConnectionHandle();
@@ -531,7 +531,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     callbacks->OnReadRemoteExtendedFeaturesComplete(0, 1, view.GetLmpFeatures());
   }
 
-  void on_read_remote_extended_features_complete(EventPacketView packet) {
+  void on_read_remote_extended_features_complete(EventView packet) {
     auto view = ReadRemoteExtendedFeaturesCompleteView::Create(packet);
     ASSERT_LOG(view.IsValid(), "Read remote extended features packet invalid");
     uint16_t handle = view.GetConnectionHandle();
@@ -545,7 +545,7 @@ struct classic_impl : public security::ISecurityManagerListener {
         view.GetPageNumber(), view.GetMaximumPageNumber(), view.GetExtendedLmpFeatures());
   }
 
-  void on_link_supervision_timeout_changed(EventPacketView packet) {
+  void on_link_supervision_timeout_changed(EventView packet) {
     auto view = LinkSupervisionTimeoutChangedView::Create(packet);
     ASSERT_LOG(view.IsValid(), "Link supervision timeout changed packet invalid");
     LOG_INFO("UNIMPLEMENTED called");

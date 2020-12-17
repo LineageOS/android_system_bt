@@ -86,8 +86,8 @@ class SecurityManagerChannelCallback : public channel::ISecurityManagerChannelLi
  public:
   explicit SecurityManagerChannelCallback(pairing::ClassicPairingHandler* pairing_handler)
       : pairing_handler_(pairing_handler) {}
-  void OnHciEventReceived(hci::EventPacketView packet) override {
-    auto event = hci::EventPacketView::Create(packet);
+  void OnHciEventReceived(hci::EventView packet) override {
+    auto event = hci::EventView::Create(packet);
     ASSERT_LOG(event.IsValid(), "Received invalid packet");
     const hci::EventCode code = event.GetEventCode();
     switch (code) {
@@ -274,7 +274,7 @@ class ClassicPairingHandlerTest : public ::testing::Test {
 hci::SecurityCommandView GetLastCommand(FakeHciLayer* hci_layer) {
   auto last_command = std::move(hci_layer->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
-  auto command_packet_view = hci::CommandPacketView::Create(command_packet);
+  auto command_packet_view = hci::CommandView::Create(command_packet);
   auto security_command_view = hci::SecurityCommandView::Create(command_packet_view);
   if (!security_command_view.IsValid()) {
     LOG_ERROR("Invalid security command received");

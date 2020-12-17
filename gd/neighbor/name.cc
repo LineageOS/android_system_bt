@@ -61,12 +61,12 @@ struct NameModule::impl {
  private:
   const NameModule& module_;
 
-  void EnqueueCommandComplete(std::unique_ptr<hci::CommandPacketBuilder> command);
-  void EnqueueCommandStatus(std::unique_ptr<hci::CommandPacketBuilder> command);
+  void EnqueueCommandComplete(std::unique_ptr<hci::CommandBuilder> command);
+  void EnqueueCommandStatus(std::unique_ptr<hci::CommandBuilder> command);
 
   void OnCommandComplete(hci::CommandCompleteView view);
   void OnCommandStatus(hci::CommandStatusView status);
-  void OnEvent(hci::EventPacketView view);
+  void OnEvent(hci::EventView view);
 
   std::unordered_map<hci::Address, std::unique_ptr<ReadCallbackHandler>> read_callback_handler_map_;
   std::unordered_map<hci::Address, std::unique_ptr<CancelCallbackHandler>> cancel_callback_handler_map_;
@@ -79,11 +79,11 @@ const ModuleFactory neighbor::NameModule::Factory = ModuleFactory([]() { return 
 
 neighbor::NameModule::impl::impl(const neighbor::NameModule& module) : module_(module) {}
 
-void neighbor::NameModule::impl::EnqueueCommandComplete(std::unique_ptr<hci::CommandPacketBuilder> command) {
+void neighbor::NameModule::impl::EnqueueCommandComplete(std::unique_ptr<hci::CommandBuilder> command) {
   hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandComplete));
 }
 
-void neighbor::NameModule::impl::EnqueueCommandStatus(std::unique_ptr<hci::CommandPacketBuilder> command) {
+void neighbor::NameModule::impl::EnqueueCommandStatus(std::unique_ptr<hci::CommandBuilder> command) {
   hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandStatus));
 }
 
@@ -118,7 +118,7 @@ void neighbor::NameModule::impl::OnCommandStatus(hci::CommandStatusView status) 
   }
 }
 
-void neighbor::NameModule::impl::OnEvent(hci::EventPacketView view) {
+void neighbor::NameModule::impl::OnEvent(hci::EventView view) {
   switch (view.GetEventCode()) {
     case hci::EventCode::REMOTE_NAME_REQUEST_COMPLETE: {
       auto packet = hci::RemoteNameRequestCompleteView::Create(view);

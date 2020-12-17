@@ -21,21 +21,21 @@ namespace bluetooth {
 namespace hci {
 namespace fuzz {
 using bluetooth::fuzz::GetArbitraryBytes;
-using bluetooth::hci::AclPacketView;
+using bluetooth::hci::AclView;
 
 const ModuleFactory HciLayerFuzzClient::Factory = ModuleFactory([]() { return new HciLayerFuzzClient(); });
 
 void HciLayerFuzzClient::Start() {
   hci_ = GetDependency<hci::HciLayer>();
-  aclDevNull_ = new os::fuzz::DevNullQueue<AclPacketView>(hci_->GetAclQueueEnd(), GetHandler());
+  aclDevNull_ = new os::fuzz::DevNullQueue<AclView>(hci_->GetAclQueueEnd(), GetHandler());
   aclDevNull_->Start();
-  aclInject_ = new os::fuzz::FuzzInjectQueue<AclPacketBuilder>(hci_->GetAclQueueEnd(), GetHandler());
+  aclInject_ = new os::fuzz::FuzzInjectQueue<AclBuilder>(hci_->GetAclQueueEnd(), GetHandler());
 
   // Can't do security right now, due to the Encryption Change conflict between ACL manager & security
-  // security_interface_ = hci_->GetSecurityInterface(common::Bind([](EventPacketView){}), GetHandler());
+  // security_interface_ = hci_->GetSecurityInterface(common::Bind([](EventView){}), GetHandler());
   le_security_interface_ = hci_->GetLeSecurityInterface(GetHandler()->Bind([](LeMetaEventView) {}));
   acl_connection_interface_ = hci_->GetAclConnectionInterface(
-      GetHandler()->Bind([](EventPacketView) {}),
+      GetHandler()->Bind([](EventView) {}),
       GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}),
       GetHandler()->Bind([](uint16_t, uint8_t, uint16_t, uint16_t) {}));
   le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(
@@ -83,16 +83,16 @@ void HciLayerFuzzClient::injectArbitrary(FuzzedDataProvider& fdp) {
 }
 
 void HciLayerFuzzClient::injectAclData(std::vector<uint8_t> data) {
-  hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
+  hci::AclView aclPacket = hci::AclView::FromBytes(data);
   if (!aclPacket.IsValid()) {
     return;
   }
 
-  aclInject_->Inject(AclPacketBuilder::FromView(aclPacket));
+  aclInject_->Inject(AclBuilder::FromView(aclPacket));
 }
 
 void HciLayerFuzzClient::injectHciCommand(std::vector<uint8_t> data) {
-  inject_command<CommandPacketView, CommandPacketBuilder>(data, hci_);
+  inject_command<CommandView, CommandBuilder>(data, hci_);
 }
 
 void HciLayerFuzzClient::injectSecurityCommand(std::vector<uint8_t> data) {

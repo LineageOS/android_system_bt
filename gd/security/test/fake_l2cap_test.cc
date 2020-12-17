@@ -42,8 +42,8 @@ using bluetooth::hci::CommandStatusView;
 using bluetooth::hci::EncryptionChangeBuilder;
 using bluetooth::hci::EncryptionEnabled;
 using bluetooth::hci::ErrorCode;
-using bluetooth::hci::EventPacketBuilder;
-using bluetooth::hci::EventPacketView;
+using bluetooth::hci::EventBuilder;
+using bluetooth::hci::EventView;
 using bluetooth::hci::LeSecurityCommandBuilder;
 
 namespace bluetooth {

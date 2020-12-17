@@ -39,23 +39,24 @@
 namespace bluetooth {
 namespace hci {
 
-class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
+class HciLayer : public Module, public CommandInterface<CommandBuilder> {
   // LINT.IfChange
  public:
   HciLayer();
   virtual ~HciLayer();
   DISALLOW_COPY_AND_ASSIGN(HciLayer);
 
-  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override;
+  void EnqueueCommand(
+      std::unique_ptr<CommandBuilder> command,
+      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override;
 
-  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override;
+  void EnqueueCommand(
+      std::unique_ptr<CommandBuilder> command,
+      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override;
 
-  virtual common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd();
+  virtual common::BidiQueueEnd<AclBuilder, AclView>* GetAclQueueEnd();
 
-  virtual void RegisterEventHandler(EventCode event_code,
-                                    common::ContextualCallback<void(EventPacketView)> event_handler);
+  virtual void RegisterEventHandler(EventCode event_code, common::ContextualCallback<void(EventView)> event_handler);
 
   virtual void UnregisterEventHandler(EventCode event_code);
 
@@ -64,12 +65,12 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
 
-  virtual SecurityInterface* GetSecurityInterface(common::ContextualCallback<void(EventPacketView)> event_handler);
+  virtual SecurityInterface* GetSecurityInterface(common::ContextualCallback<void(EventView)> event_handler);
 
   virtual LeSecurityInterface* GetLeSecurityInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
   virtual AclConnectionInterface* GetAclConnectionInterface(
-      common::ContextualCallback<void(EventPacketView)> event_handler,
+      common::ContextualCallback<void(EventView)> event_handler,
       common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
       common::ContextualCallback<void(uint16_t, uint8_t, uint16_t, uint16_t)> on_read_remote_version_complete);
 
@@ -103,7 +104,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   virtual void Disconnect(uint16_t handle, ErrorCode reason);
   virtual void ReadRemoteVersion(uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version);
-  virtual void RegisterLeMetaEventHandler(common::ContextualCallback<void(EventPacketView)> event_handler);
+  virtual void RegisterLeMetaEventHandler(common::ContextualCallback<void(EventView)> event_handler);
 
  private:
   struct impl;
@@ -131,8 +132,8 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   std::list<common::ContextualCallback<void(uint16_t, ErrorCode)>> disconnect_handlers_;
   std::list<common::ContextualCallback<void(uint16_t, uint8_t, uint16_t, uint16_t)>> read_remote_version_handlers_;
-  void on_disconnection_complete(EventPacketView event_view);
-  void on_read_remote_version_complete(EventPacketView event_view);
+  void on_disconnection_complete(EventView event_view);
+  void on_read_remote_version_complete(EventView event_view);
 
   // Interfaces
   CommandInterfaceImpl<AclCommandBuilder> acl_connection_manager_interface_{*this};

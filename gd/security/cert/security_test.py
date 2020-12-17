@@ -171,6 +171,18 @@ class SecurityTest(GdBaseTestClass):
         initiator.wait_for_bond_event(expected_init_bond_event)
         responder.wait_for_bond_event(expected_resp_bond_event)
 
+    def _run_pin(self, initiator, responder, expected_init_bond_event, expected_resp_bond_event):
+        initiator.create_bond(responder.get_address(), common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self._verify_pin(initiator, responder, expected_init_bond_event, expected_resp_bond_event)
+
+    def _verify_pin(self, initiator, responder, expected_init_bond_event, expected_resp_bond_event):
+        pin = b'123456789A'
+        logging.info("pin: %s" % pin)
+        initiator.input_pin(responder.get_address(), pin)
+        responder.input_pin(initiator.get_address(), pin)
+        initiator.wait_for_bond_event(expected_init_bond_event)
+        responder.wait_for_bond_event(expected_resp_bond_event)
+
     def test_setup_teardown(self):
         """
             Make sure our setup and teardown is sane
@@ -435,7 +447,7 @@ class SecurityTest(GdBaseTestClass):
         assertThat(has256C).isTrue()
         assertThat(has256R).isTrue()
 
-    def no_test_successful_dut_initiated_ssp_oob(self):
+    def test_successful_dut_initiated_ssp_oob(self):
         dut_io_capability = IoCapabilities.NO_INPUT_NO_OUTPUT
         cert_io_capability = IoCapabilities.NO_INPUT_NO_OUTPUT
         dut_auth_reqs = AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION
@@ -492,6 +504,27 @@ class SecurityTest(GdBaseTestClass):
         self.cert_security.set_authentication_requirements(cert_auth_reqs)
 
         self._run_ssp_passkey(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
+            expected_resp_bond_event=BondMsgType.DEVICE_BONDED)
+
+        self.dut_security.remove_bond(self.cert_security.get_address(),
+                                      common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self.cert_security.remove_bond(self.dut_security.get_address(),
+                                       common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+
+        self.dut_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+        self.cert_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+
+        self.dut_security.wait_for_disconnect_event()
+        self.cert_security.wait_for_disconnect_event()
+
+    def test_successful_dut_initiated_pin(self):
+        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
+
+        self._run_pin(
             initiator=self.dut_security,
             responder=self.cert_security,
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,

@@ -60,6 +60,15 @@ void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
   user_interface_handler_->CallOn(user_interface_, &UI::DisplayEnterPasskeyDialog, data);
 }
 
+void ClassicPairingHandler::NotifyUiDisplayPinCodeInput() {
+  ASSERT(user_interface_handler_ != nullptr);
+  ConfirmationData data(*GetRecord()->GetPseudoAddress(), device_name_);
+  data.SetRemoteIoCaps(remote_io_capability_);
+  data.SetRemoteAuthReqs(remote_authentication_requirements_);
+  data.SetRemoteOobDataPresent(remote_oob_present_);
+  user_interface_handler_->CallOn(user_interface_, &UI::DisplayEnterPinDialog, data);
+}
+
 void ClassicPairingHandler::NotifyUiDisplayCancel() {
   ASSERT(user_interface_handler_ != nullptr);
   user_interface_handler_->CallOn(user_interface_, &UI::Cancel, *GetRecord()->GetPseudoAddress());
@@ -132,9 +141,13 @@ void ClassicPairingHandler::OnNameRequestComplete(hci::Address address, bool suc
     device_name_ = tmp_name;
   }
   has_gotten_name_response_ = true;
+  // For SSP/Numeric comparison flow
   if (user_confirmation_request_) {
     this->OnReceive(*user_confirmation_request_);
-    user_confirmation_request_ = std::nullopt;
+  }
+  // For OOB Flow; we go to link key notification and must wait for name
+  if (link_key_notification_) {
+    this->OnReceive(*link_key_notification_);
   }
 }
 
@@ -162,7 +175,8 @@ void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
-  NotifyUiDisplayPasskeyInput();
+  is_legacy_pin_code_ = true;
+  NotifyUiDisplayPinCodeInput();
 }
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
@@ -192,6 +206,13 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
   GetRecord()->SetLinkKey(packet.GetLinkKey(), packet.GetKeyType());
+  if (!has_gotten_name_response_) {
+    link_key_notification_ = std::make_optional<hci::LinkKeyNotificationView>(packet);
+    return;
+  }
+  if (is_legacy_pin_code_) {
+    last_status_ = hci::ErrorCode::SUCCESS;
+  }
   Cancel();
 }
 
@@ -273,7 +294,6 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
   has_gotten_io_cap_response_ = true;
   if (user_confirmation_request_) {
     this->OnReceive(*user_confirmation_request_);
-    user_confirmation_request_ = std::nullopt;
   }
 }
 
@@ -393,6 +413,7 @@ void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
 
 void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
   // Ensure we have io cap response otherwise checks will be wrong if it comes late
+  // Ensure we have the name response otherwise we cannot show a name for the device to the user
   if (!has_gotten_io_cap_response_ || !has_gotten_name_response_) {
     user_confirmation_request_ = std::make_optional<hci::UserConfirmationRequestView>(packet);
     return;

@@ -98,6 +98,7 @@ class ClassicPairingHandler : public PairingHandler {
   void NotifyUiDisplayYesNo();
   void NotifyUiDisplayPasskey(uint32_t passkey);
   void NotifyUiDisplayPasskeyInput();
+  void NotifyUiDisplayPinCodeInput();
   void NotifyUiDisplayCancel();
   void UserClickedYes();
   void UserClickedNo();
@@ -120,12 +121,14 @@ class ClassicPairingHandler : public PairingHandler {
   bool has_gotten_io_cap_response_ = false;
   bool has_gotten_name_response_ = false;
   std::optional<hci::UserConfirmationRequestView> user_confirmation_request_ = std::nullopt;
+  std::optional<hci::LinkKeyNotificationView> link_key_notification_ = std::nullopt;
 
   hci::ErrorCode last_status_ = hci::ErrorCode::UNKNOWN_HCI_COMMAND;
   bool locally_initiated_ = false;
   uint32_t passkey_ = 0;
   bool already_link_key_replied_ = false;
   bool secure_connections_enabled_ = true;
+  bool is_legacy_pin_code_ = false;
 };
 
 }  // namespace pairing
