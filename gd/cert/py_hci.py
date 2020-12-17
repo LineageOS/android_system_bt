@@ -23,7 +23,8 @@ from cert.closable import safeClose
 from cert.captures import HciCaptures
 from bluetooth_packets_python3 import hci_packets
 from cert.truth import assertThat
-from hci.facade import facade_pb2 as hci_facade
+from hci.facade import hci_facade_pb2 as hci_facade
+from facade import common_pb2 as common
 from cert.matchers import HciMatchers
 from bluetooth_packets_python3.hci_packets import FilterDuplicates
 from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingLegacyParametersBuilder
@@ -44,6 +45,8 @@ from bluetooth_packets_python3.hci_packets import LeSetExtendedAdvertisingEnable
 from bluetooth_packets_python3.hci_packets import LeSetExtendedScanEnableBuilder
 from bluetooth_packets_python3.hci_packets import EnabledSet
 from bluetooth_packets_python3.hci_packets import OpCode
+from bluetooth_packets_python3.hci_packets import AclBuilder
+from bluetooth_packets_python3 import RawBuilder
 
 
 class PyHciAclConnection(IEventStream):
@@ -55,9 +58,8 @@ class PyHciAclConnection(IEventStream):
         self.our_acl_stream = FilteringEventStream(acl_stream, None)
 
     def send(self, pb_flag, b_flag, data):
-        acl_msg = hci_facade.AclPacket(
-            handle=self.handle, packet_boundary_flag=int(pb_flag), broadcast_flag=int(b_flag), data=data)
-        self.device.hci.SendAcl(acl_msg)
+        acl = AclBuilder(self.handle, pb_flag, b_flag, RawBuilder(data))
+        self.device.hci.SendAcl(common.Data(payload=bytes(acl.Serialize())))
 
     def send_first(self, data):
         self.send(hci_packets.PacketBoundaryFlag.FIRST_AUTOMATICALLY_FLUSHABLE,
@@ -149,10 +151,10 @@ class PyHci(Closable):
             self.device.hci.RequestLeSubevent(hci_facade.EventRequest(code=int(event_code)))
 
     def send_command_with_complete(self, command):
-        self.device.hci.SendCommandWithComplete(hci_facade.Command(payload=bytes(command.Serialize())))
+        self.device.hci.SendCommandWithComplete(common.Data(payload=bytes(command.Serialize())))
 
     def send_command_with_status(self, command):
-        self.device.hci.SendCommandWithStatus(hci_facade.Command(payload=bytes(command.Serialize())))
+        self.device.hci.SendCommandWithStatus(common.Data(payload=bytes(command.Serialize())))
 
     def enable_inquiry_and_page_scan(self):
         self.send_command_with_complete(

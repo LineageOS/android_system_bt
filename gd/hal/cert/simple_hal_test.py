@@ -24,7 +24,7 @@ from cert.matchers import HciMatchers
 from cert.captures import HciCaptures
 from google.protobuf import empty_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
-from hal import facade_pb2 as hal_facade_pb2
+from hal import hal_facade_pb2 as hal_facade_pb2
 from bluetooth_packets_python3 import hci_packets
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3.hci_packets import AclBuilder

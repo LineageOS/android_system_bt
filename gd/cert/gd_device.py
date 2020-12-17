@@ -46,8 +46,8 @@ from cert.os_utils import is_subprocess_alive
 from cert.os_utils import make_ports_available
 from cert.os_utils import TerminalColor
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
-from hal import facade_pb2_grpc as hal_facade_pb2_grpc
-from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
+from hal import hal_facade_pb2_grpc
+from hci.facade import hci_facade_pb2_grpc
 from hci.facade import acl_manager_facade_pb2_grpc
 from hci.facade import controller_facade_pb2_grpc
 from hci.facade import le_acl_manager_facade_pb2_grpc
