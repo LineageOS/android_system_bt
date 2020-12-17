@@ -83,6 +83,7 @@ using bluetooth::Uuid;
 #define BTIF_STORAGE_KEY_LOCAL_IO_CAPS_BLE "LocalIOCapsBLE"
 #define BTIF_STORAGE_KEY_ADAPTER_DISC_TIMEOUT "DiscoveryTimeout"
 #define BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED "GattClientSupportedFeatures"
+#define BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH "GattClientDatabaseHash"
 
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
@@ -851,6 +852,9 @@ bt_status_t btif_storage_remove_bonded_device(
   }
   if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED)) {
     ret &= btif_config_remove(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED);
+  }
+  if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH)) {
+    ret &= btif_config_remove(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH);
   }
 
   /* write bonded info immediately */
@@ -1782,4 +1786,62 @@ uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr) {
                    name.c_str(), value);
 
   return value;
+}
+
+/** Remove client supported features */
+void btif_storage_remove_gatt_cl_supp_feat(const RawAddress& bd_addr) {
+  do_in_jni_thread(
+      FROM_HERE, Bind(
+                     [](const RawAddress& bd_addr) {
+                       auto bdstr = bd_addr.ToString();
+                       if (btif_config_exist(
+                               bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED)) {
+                         btif_config_remove(
+                             bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED);
+                         btif_config_save();
+                       }
+                     },
+                     bd_addr));
+}
+
+/** Store last server database hash for remote client */
+void btif_storage_set_gatt_cl_db_hash(const RawAddress& bd_addr, Octet16 hash) {
+  do_in_jni_thread(FROM_HERE, Bind(
+                                  [](const RawAddress& bd_addr, Octet16 hash) {
+                                    auto bdstr = bd_addr.ToString();
+                                    btif_config_set_bin(
+                                        bdstr,
+                                        BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH,
+                                        hash.data(), hash.size());
+                                    btif_config_save();
+                                  },
+                                  bd_addr, hash));
+}
+
+/** Get last server database hash for remote client */
+Octet16 btif_storage_get_gatt_cl_db_hash(const RawAddress& bd_addr) {
+  auto bdstr = bd_addr.ToString();
+
+  Octet16 hash;
+  size_t size = hash.size();
+  btif_config_get_bin(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH, hash.data(),
+                      &size);
+
+  return hash;
+}
+
+/** Remove las server database hash for remote client */
+void btif_storage_remove_gatt_cl_db_hash(const RawAddress& bd_addr) {
+  do_in_jni_thread(FROM_HERE,
+                   Bind(
+                       [](const RawAddress& bd_addr) {
+                         auto bdstr = bd_addr.ToString();
+                         if (btif_config_exist(
+                                 bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH)) {
+                           btif_config_remove(
+                               bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH);
+                           btif_config_save();
+                         }
+                       },
+                       bd_addr));
 }
