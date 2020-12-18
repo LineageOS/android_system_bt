@@ -33,12 +33,12 @@ namespace bluetooth {
 namespace hci {
 namespace facade {
 
-class HciLayerFacadeService : public HciLayerFacade::Service {
+class HciFacadeService : public HciFacade::Service {
  public:
-  HciLayerFacadeService(HciLayer* hci_layer, Controller* controller, ::bluetooth::os::Handler* facade_handler)
+  HciFacadeService(HciLayer* hci_layer, Controller* controller, ::bluetooth::os::Handler* facade_handler)
       : hci_layer_(hci_layer), controller_(controller), facade_handler_(facade_handler) {}
 
-  virtual ~HciLayerFacadeService() {
+  virtual ~HciFacadeService() {
     if (unregister_acl_dequeue_) {
       hci_layer_->GetAclQueueEnd()->UnregisterDequeue();
     }
@@ -72,8 +72,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
       ::google::protobuf::Empty* response) override {
     auto packet = std::make_unique<TestCommandBuilder>(
         std::vector<uint8_t>(command->payload().begin(), command->payload().end()));
-    hci_layer_->EnqueueCommand(std::move(packet),
-                               facade_handler_->BindOnceOn(this, &HciLayerFacadeService::on_complete));
+    hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciFacadeService::on_complete));
     return ::grpc::Status::OK;
   }
 
@@ -83,7 +82,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
       ::google::protobuf::Empty* response) override {
     auto packet = std::make_unique<TestCommandBuilder>(
         std::vector<uint8_t>(command->payload().begin(), command->payload().end()));
-    hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciLayerFacadeService::on_status));
+    hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciFacadeService::on_status));
     return ::grpc::Status::OK;
   }
 
@@ -91,8 +90,8 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
       ::grpc::ServerContext* context,
       const ::bluetooth::hci::EventRequest* event,
       ::google::protobuf::Empty* response) override {
-    hci_layer_->RegisterEventHandler(static_cast<EventCode>(event->code()),
-                                     facade_handler_->BindOn(this, &HciLayerFacadeService::on_event));
+    hci_layer_->RegisterEventHandler(
+        static_cast<EventCode>(event->code()), facade_handler_->BindOn(this, &HciFacadeService::on_event));
     return ::grpc::Status::OK;
   }
 
@@ -100,8 +99,8 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
       ::grpc::ServerContext* context,
       const ::bluetooth::hci::EventRequest* event,
       ::google::protobuf::Empty* response) override {
-    hci_layer_->RegisterLeEventHandler(static_cast<SubeventCode>(event->code()),
-                                       facade_handler_->BindOn(this, &HciLayerFacadeService::on_le_subevent));
+    hci_layer_->RegisterLeEventHandler(
+        static_cast<SubeventCode>(event->code()), facade_handler_->BindOn(this, &HciFacadeService::on_le_subevent));
     return ::grpc::Status::OK;
   }
 
@@ -152,8 +151,8 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
       completed_packets_callback_registered_ = true;
     }
     hci_layer_->GetAclQueueEnd()->RegisterEnqueue(
-        facade_handler_, common::Bind(&HciLayerFacadeService::handle_enqueue_acl, common::Unretained(this),
-                                      common::Unretained(&enqueued)));
+        facade_handler_,
+        common::Bind(&HciFacadeService::handle_enqueue_acl, common::Unretained(this), common::Unretained(&enqueued)));
     auto result = future.wait_for(std::chrono::milliseconds(100));
     ASSERT(std::future_status::ready == result);
     return ::grpc::Status::OK;
@@ -164,7 +163,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
       const ::google::protobuf::Empty* request,
       ::grpc::ServerWriter<::bluetooth::facade::Data>* writer) override {
     hci_layer_->GetAclQueueEnd()->RegisterDequeue(
-        facade_handler_, common::Bind(&HciLayerFacadeService::on_acl_ready, common::Unretained(this)));
+        facade_handler_, common::Bind(&HciFacadeService::on_acl_ready, common::Unretained(this)));
     unregister_acl_dequeue_ = true;
     return pending_acl_events_.RunLoop(context, writer);
   };
@@ -229,28 +228,27 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   bool completed_packets_callback_registered_{false};
 };
 
-void HciLayerFacadeModule::ListDependencies(ModuleList* list) {
+void HciFacadeModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
   list->add<HciLayer>();
   list->add<Controller>();
 }
 
-void HciLayerFacadeModule::Start() {
+void HciFacadeModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
-  service_ = new HciLayerFacadeService(GetDependency<HciLayer>(), GetDependency<Controller>(), GetHandler());
+  service_ = new HciFacadeService(GetDependency<HciLayer>(), GetDependency<Controller>(), GetHandler());
 }
 
-void HciLayerFacadeModule::Stop() {
+void HciFacadeModule::Stop() {
   delete service_;
   ::bluetooth::grpc::GrpcFacadeModule::Stop();
 }
 
-::grpc::Service* HciLayerFacadeModule::GetService() const {
+::grpc::Service* HciFacadeModule::GetService() const {
   return service_;
 }
 
-const ModuleFactory HciLayerFacadeModule::Factory =
-    ::bluetooth::ModuleFactory([]() { return new HciLayerFacadeModule(); });
+const ModuleFactory HciFacadeModule::Factory = ::bluetooth::ModuleFactory([]() { return new HciFacadeModule(); });
 
 }  // namespace facade
 }  // namespace hci

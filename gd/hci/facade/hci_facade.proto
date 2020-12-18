@@ -5,7 +5,7 @@ package bluetooth.hci;
 import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
-service HciLayerFacade {
+service HciFacade {
   rpc SendCommandWithComplete(facade.Data) returns (google.protobuf.Empty) {}
   rpc SendCommandWithStatus(facade.Data) returns (google.protobuf.Empty) {}
 
