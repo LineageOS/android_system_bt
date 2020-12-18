@@ -82,7 +82,7 @@ impl HciHalFacade for HciHalFacadeService {
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
                 let mut output = Data::default();
-                output.set_payload(event.to_bytes().to_vec());
+                output.set_payload(event.to_vec());
                 sink.send((output, WriteFlags::default())).await.unwrap();
             }
         });
@@ -93,7 +93,7 @@ impl HciHalFacade for HciHalFacadeService {
         self.rt.spawn(async move {
             while let Some(acl) = acl_rx.lock().await.recv().await {
                 let mut output = Data::default();
-                output.set_payload(acl.to_bytes().to_vec());
+                output.set_payload(acl.to_vec());
                 sink.send((output, WriteFlags::default())).await.unwrap();
             }
         });

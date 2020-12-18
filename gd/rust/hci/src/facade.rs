@@ -112,7 +112,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
                 let mut evt = Data::default();
-                evt.set_payload(event.to_bytes().to_vec());
+                evt.set_payload(event.to_vec());
                 resp.send((evt, WriteFlags::default())).await.unwrap();
             }
         });
@@ -138,7 +138,7 @@ impl HciLayerFacade for HciLayerFacadeService {
         self.rt.spawn(async move {
             while let Some(data) = acl_rx.lock().await.recv().await {
                 let mut packet = Data::default();
-                packet.set_payload(data.to_bytes().to_vec());
+                packet.set_payload(data.to_vec());
                 resp.send((packet, WriteFlags::default())).await.unwrap();
             }
         });
