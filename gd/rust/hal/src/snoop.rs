@@ -3,7 +3,6 @@
 use crate::internal::RawHalExports;
 use crate::HalExports;
 use bt_common::sys_prop;
-use bt_packet::{HciCommand, HciEvent, RawPacket};
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, provides, Stoppable};
 use log::error;
@@ -16,6 +15,7 @@ use tokio::runtime::Runtime;
 use tokio::select;
 use tokio::sync::mpsc::{channel, UnboundedReceiver};
 use tokio::sync::Mutex;
+use bt_packets::hci;
 
 /// The different modes snoop logging can be in
 #[derive(Clone)]
@@ -103,10 +103,10 @@ async fn provide_snooped_hal(
     hal_exports: RawHalExports,
     rt: Arc<Runtime>,
 ) -> HalExports {
-    let (cmd_down_tx, mut cmd_down_rx) = channel::<HciCommand>(10);
-    let (evt_up_tx, evt_up_rx) = channel::<HciEvent>(10);
-    let (acl_down_tx, mut acl_down_rx) = channel::<RawPacket>(10);
-    let (acl_up_tx, acl_up_rx) = channel::<RawPacket>(10);
+    let (cmd_down_tx, mut cmd_down_rx) = channel::<hci::CommandPacket>(10);
+    let (evt_up_tx, evt_up_rx) = channel::<hci::EventPacket>(10);
+    let (acl_down_tx, mut acl_down_rx) = channel::<hci::AclPacket>(10);
+    let (acl_up_tx, acl_up_rx) = channel::<hci::AclPacket>(10);
 
     rt.spawn(async move {
         let mut logger = SnoopLogger::new(config).await;
@@ -114,19 +114,19 @@ async fn provide_snooped_hal(
             select! {
                 Some(evt) = consume(&hal_exports.evt_rx) => {
                     evt_up_tx.send(evt.clone()).await.unwrap();
-                    logger.log(Type::Evt, Direction::Up, evt).await;
+                    logger.log(Type::Evt, Direction::Up, evt.to_bytes()).await;
                 },
                 Some(cmd) = cmd_down_rx.recv() => {
                     hal_exports.cmd_tx.send(cmd.clone()).unwrap();
-                    logger.log(Type::Cmd, Direction::Down, cmd).await;
+                    logger.log(Type::Cmd, Direction::Down, cmd.to_bytes()).await;
                 },
                 Some(acl) = acl_down_rx.recv() => {
                     hal_exports.acl_tx.send(acl.clone()).unwrap();
-                    logger.log(Type::Acl, Direction::Down, acl).await;
+                    logger.log(Type::Acl, Direction::Down, acl.to_bytes()).await;
                 },
                 Some(acl) = consume(&hal_exports.acl_rx) => {
                     acl_up_tx.send(acl.clone()).await.unwrap();
-                    logger.log(Type::Acl, Direction::Up, acl).await;
+                    logger.log(Type::Acl, Direction::Up, acl.to_bytes()).await;
                 }
             }
         }
