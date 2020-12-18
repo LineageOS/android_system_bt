@@ -6,7 +6,9 @@ use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
 use bt_facade_proto::hci_facade::EventRequest;
 use bt_facade_proto::hci_facade_grpc::{create_hci_layer_facade, HciLayerFacade};
-use bt_packets::hci;
+use bt_packets::hci::{
+    AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, SubeventCode,
+};
 use futures::sink::SinkExt;
 use gddi::{module, provides, Stoppable};
 use grpcio::*;
@@ -25,8 +27,8 @@ module! {
 
 #[provides]
 async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciLayerFacadeService {
-    let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<hci::EventPacket>(10);
-    let (from_hci_le_evt_tx, to_grpc_le_evt_rx) = channel::<hci::LeMetaEventPacket>(10);
+    let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<EventPacket>(10);
+    let (from_hci_le_evt_tx, to_grpc_le_evt_rx) = channel::<LeMetaEventPacket>(10);
     HciLayerFacadeService {
         hci_exports,
         rt,
@@ -42,10 +44,10 @@ async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciLayerFa
 pub struct HciLayerFacadeService {
     hci_exports: HciExports,
     rt: Arc<Runtime>,
-    from_hci_evt_tx: Sender<hci::EventPacket>,
-    to_grpc_evt_rx: Arc<Mutex<Receiver<hci::EventPacket>>>,
-    from_hci_le_evt_tx: Sender<hci::LeMetaEventPacket>,
-    to_grpc_le_evt_rx: Arc<Mutex<Receiver<hci::LeMetaEventPacket>>>,
+    from_hci_evt_tx: Sender<EventPacket>,
+    to_grpc_evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
+    from_hci_le_evt_tx: Sender<LeMetaEventPacket>,
+    to_grpc_le_evt_rx: Arc<Mutex<Receiver<LeMetaEventPacket>>>,
 }
 
 impl GrpcFacade for HciLayerFacadeService {
@@ -63,7 +65,7 @@ impl HciLayerFacade for HciLayerFacadeService {
     ) {
         self.rt
             .block_on(
-                self.hci_exports.send_raw(hci::CommandPacket::parse(&data.take_payload()).unwrap()),
+                self.hci_exports.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()),
             )
             .unwrap();
         sink.success(Empty::default());
@@ -77,15 +79,15 @@ impl HciLayerFacade for HciLayerFacadeService {
     ) {
         self.rt
             .block_on(
-                self.hci_exports.send_raw(hci::CommandPacket::parse(&data.take_payload()).unwrap()),
+                self.hci_exports.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()),
             )
             .unwrap();
         sink.success(Empty::default());
     }
 
-    fn request_event(&mut self, _ctx: RpcContext<'_>, code: EventRequest, sink: UnarySink<Empty>) {
+    fn request_event(&mut self, _ctx: RpcContext<'_>, req: EventRequest, sink: UnarySink<Empty>) {
         self.rt.block_on(self.hci_exports.register_event_handler(
-            hci::EventCode::from_u32(code.get_code()).unwrap(),
+            EventCode::from_u32(req.get_code()).unwrap(),
             self.from_hci_evt_tx.clone(),
         ));
         sink.success(Empty::default());
@@ -94,11 +96,11 @@ impl HciLayerFacade for HciLayerFacadeService {
     fn request_le_subevent(
         &mut self,
         _ctx: RpcContext<'_>,
-        code: EventRequest,
+        req: EventRequest,
         sink: UnarySink<Empty>,
     ) {
         self.rt.block_on(self.hci_exports.register_le_event_handler(
-            hci::SubeventCode::from_u32(code.get_code()).unwrap(),
+            SubeventCode::from_u32(req.get_code()).unwrap(),
             self.from_hci_le_evt_tx.clone(),
         ));
         sink.success(Empty::default());
@@ -107,7 +109,7 @@ impl HciLayerFacade for HciLayerFacadeService {
     fn send_acl(&mut self, _ctx: RpcContext<'_>, mut packet: Data, sink: UnarySink<Empty>) {
         let acl_tx = self.hci_exports.acl_tx.clone();
         self.rt.block_on(async move {
-            acl_tx.send(hci::AclPacket::parse(&packet.take_payload()).unwrap()).await.unwrap();
+            acl_tx.send(AclPacket::parse(&packet.take_payload()).unwrap()).await.unwrap();
         });
         sink.success(Empty::default());
     }
@@ -139,7 +141,7 @@ impl HciLayerFacade for HciLayerFacadeService {
 
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
-                let mut evt = LeSubevent::default();
+                let mut evt = Data::default();
                 evt.set_payload(event.to_vec());
                 resp.send((evt, WriteFlags::default())).await.unwrap();
             }
