@@ -246,8 +246,8 @@ static bool bta_ag_remove_sco(tBTA_AG_SCB* p_scb, bool only_active) {
   if (p_scb->sco_idx != BTM_INVALID_SCO_INDEX) {
     if (!only_active || p_scb->sco_idx == bta_ag_cb.sco.cur_idx) {
       tBTM_STATUS status = BTM_RemoveSco(p_scb->sco_idx);
-      APPL_TRACE_DEBUG("%s: SCO index 0x%04x, status %d", __func__,
-                       p_scb->sco_idx, status);
+      LOG_DEBUG("Removed SCO index:0x%04x status:%s", p_scb->sco_idx,
+                btm_status_text(status).c_str());
       if (status == BTM_CMD_STARTED) {
         /* SCO is connected; set current control block */
         bta_ag_cb.sco.p_curr_scb = p_scb;
