@@ -1448,7 +1448,7 @@ static void bta_ag_hsp_result(tBTA_AG_SCB* p_scb,
  ******************************************************************************/
 static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
                               const tBTA_AG_API_RESULT& result) {
-  APPL_TRACE_DEBUG("bta_ag_hfp_result : res = %d", result.result);
+  LOG_DEBUG("HFP connection result:%s", result.ToString().c_str());
 
   switch (result.result) {
     case BTA_AG_SPK_RES:
