@@ -3,6 +3,7 @@
 use crate::internal::RawHalExports;
 use crate::HalExports;
 use bt_common::sys_prop;
+use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, provides, Stoppable};
 use log::error;
@@ -15,7 +16,6 @@ use tokio::runtime::Runtime;
 use tokio::select;
 use tokio::sync::mpsc::{channel, UnboundedReceiver};
 use tokio::sync::Mutex;
-use bt_packets::hci;
 
 /// The different modes snoop logging can be in
 #[derive(Clone)]
@@ -59,9 +59,7 @@ impl SnoopConfig {
             path: "/data/misc/bluetooth/logs/btsnoop_hci.log".to_string(),
             max_packets_per_file: sys_prop::get_u32("persist.bluetooth.btsnoopsize")
                 .unwrap_or(0xFFFF),
-            mode: get_configured_snoop_mode()
-                .parse()
-                .unwrap_or(SnoopMode::Disabled),
+            mode: get_configured_snoop_mode().parse().unwrap_or(SnoopMode::Disabled),
         }
     }
 
@@ -103,10 +101,10 @@ async fn provide_snooped_hal(
     hal_exports: RawHalExports,
     rt: Arc<Runtime>,
 ) -> HalExports {
-    let (cmd_down_tx, mut cmd_down_rx) = channel::<hci::CommandPacket>(10);
-    let (evt_up_tx, evt_up_rx) = channel::<hci::EventPacket>(10);
-    let (acl_down_tx, mut acl_down_rx) = channel::<hci::AclPacket>(10);
-    let (acl_up_tx, acl_up_rx) = channel::<hci::AclPacket>(10);
+    let (cmd_down_tx, mut cmd_down_rx) = channel::<CommandPacket>(10);
+    let (evt_up_tx, evt_up_rx) = channel::<EventPacket>(10);
+    let (acl_down_tx, mut acl_down_rx) = channel::<AclPacket>(10);
+    let (acl_up_tx, acl_up_rx) = channel::<AclPacket>(10);
 
     rt.spawn(async move {
         let mut logger = SnoopLogger::new(config).await;
@@ -178,16 +176,10 @@ impl SnoopLogger {
         remove_file(config.path.clone() + ".last").await.ok();
         if let SnoopMode::Disabled = config.mode {
             remove_file(config.path.clone() + ".filtered").await.ok();
-            remove_file(config.path.clone() + ".filtered.last")
-                .await
-                .ok();
+            remove_file(config.path.clone() + ".filtered.last").await.ok();
         }
 
-        let mut ret = Self {
-            config,
-            file: None,
-            packets: 0,
-        };
+        let mut ret = Self { config, file: None, packets: 0 };
         ret.open_next_file().await;
 
         ret
@@ -207,10 +199,7 @@ impl SnoopLogger {
         }
 
         let timestamp: u64 = u64::try_from(
-            SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_micros(),
+            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_micros(),
         )
         .unwrap()
             + SNOOP_EPOCH_DELTA;
@@ -255,12 +244,8 @@ impl SnoopLogger {
     async fn open_next_file(&mut self) {
         self.close_file().await;
 
-        rename(&self.config.path, self.config.path.clone() + ".last")
-            .await
-            .ok();
-        let mut file = File::create(&self.config.path)
-            .await
-            .expect("could not open snoop log");
+        rename(&self.config.path, self.config.path.clone() + ".last").await.ok();
+        let mut file = File::create(&self.config.path).await.expect("could not open snoop log");
         file.write_all(b"btsnoop\x00\x00\x00\x00\x01\x00\x00\x03\xea")
             .await
             .expect("could not write snoop header");

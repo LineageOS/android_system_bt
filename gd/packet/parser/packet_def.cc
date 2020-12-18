@@ -960,6 +960,8 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
   s << " buffer.freeze()";
   s << "}\n";
 
+  s << "pub fn to_vec(self) -> Vec<u8> { self.to_bytes().to_vec() }\n";
+
   if (!children_.empty()) {
     s << " pub fn specialize(&self) -> " << name_ << "Child {";
     s << " match &self." << util::CamelCaseToUnderScore(name_) << ".child {";
