@@ -2,9 +2,9 @@
 
 use crate::HalExports;
 use bt_common::GrpcFacade;
-use bt_hal_proto::empty::Empty;
-use bt_hal_proto::facade::*;
-use bt_hal_proto::facade_grpc::{create_hci_hal_facade, HciHalFacade};
+use bt_facade_proto::common::Data;
+use bt_facade_proto::empty::Empty;
+use bt_facade_proto::hal_facade_grpc::{create_hci_hal_facade, HciHalFacade};
 use bt_packet::{HciCommand, HciEvent, RawPacket};
 use futures::sink::SinkExt;
 use gddi::{module, provides, Stoppable};
@@ -48,27 +48,27 @@ impl GrpcFacade for HciHalFacadeService {
 }
 
 impl HciHalFacade for HciHalFacadeService {
-    fn send_command(&mut self, _ctx: RpcContext<'_>, mut cmd: Command, sink: UnarySink<Empty>) {
+    fn send_command(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         let cmd_tx = self.cmd_tx.clone();
         self.rt.block_on(async move {
-            cmd_tx.send(cmd.take_payload().into()).await.unwrap();
+            cmd_tx.send(data.take_payload().into()).await.unwrap();
         });
         sink.success(Empty::default());
     }
 
-    fn send_acl(&mut self, _ctx: RpcContext<'_>, mut acl: AclPacket, sink: UnarySink<Empty>) {
+    fn send_acl(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         let acl_tx = self.acl_tx.clone();
         self.rt.block_on(async move {
-            acl_tx.send(acl.take_payload().into()).await.unwrap();
+            acl_tx.send(data.take_payload().into()).await.unwrap();
         });
         sink.success(Empty::default());
     }
 
-    fn send_sco(&mut self, _ctx: RpcContext<'_>, _sco: ScoPacket, _sink: UnarySink<Empty>) {
+    fn send_sco(&mut self, _ctx: RpcContext<'_>, _sco: Data, _sink: UnarySink<Empty>) {
         unimplemented!()
     }
 
-    fn send_iso(&mut self, _ctx: RpcContext<'_>, _iso: IsoPacket, _sink: UnarySink<Empty>) {
+    fn send_iso(&mut self, _ctx: RpcContext<'_>, _iso: Data, _sink: UnarySink<Empty>) {
         unimplemented!()
     }
 
@@ -76,49 +76,34 @@ impl HciHalFacade for HciHalFacadeService {
         &mut self,
         _ctx: RpcContext<'_>,
         _: Empty,
-        mut sink: ServerStreamingSink<Event>,
+        mut sink: ServerStreamingSink<Data>,
     ) {
         let evt_rx = self.evt_rx.clone();
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
-                let mut output = Event::default();
+                let mut output = Data::default();
                 output.set_payload(event.to_vec());
                 sink.send((output, WriteFlags::default())).await.unwrap();
             }
         });
     }
 
-    fn stream_acl(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        _: Empty,
-        mut sink: ServerStreamingSink<AclPacket>,
-    ) {
+    fn stream_acl(&mut self, _ctx: RpcContext<'_>, _: Empty, mut sink: ServerStreamingSink<Data>) {
         let acl_rx = self.acl_rx.clone();
         self.rt.spawn(async move {
             while let Some(acl) = acl_rx.lock().await.recv().await {
-                let mut output = AclPacket::default();
+                let mut output = Data::default();
                 output.set_payload(acl.to_vec());
                 sink.send((output, WriteFlags::default())).await.unwrap();
             }
         });
     }
 
-    fn stream_sco(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        _: Empty,
-        _sink: ServerStreamingSink<ScoPacket>,
-    ) {
+    fn stream_sco(&mut self, _ctx: RpcContext<'_>, _: Empty, _sink: ServerStreamingSink<Data>) {
         unimplemented!()
     }
 
-    fn stream_iso(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        _: Empty,
-        _sink: ServerStreamingSink<IsoPacket>,
-    ) {
+    fn stream_iso(&mut self, _ctx: RpcContext<'_>, _: Empty, _sink: ServerStreamingSink<Data>) {
         unimplemented!()
     }
 }

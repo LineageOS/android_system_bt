@@ -51,3 +51,10 @@ void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
 void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   Stack::GetInstance()->GetAcl()->ConfigureLePrivacy(is_le_privacy_enabled);
 }
+
+void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
+                                     tHCI_STATUS reason) {
+  (is_classic)
+      ? Stack::GetInstance()->GetAcl()->DisconnectClassic(handle, reason)
+      : Stack::GetInstance()->GetAcl()->DisconnectLe(handle, reason);
+}

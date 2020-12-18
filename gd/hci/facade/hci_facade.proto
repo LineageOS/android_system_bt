@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package bluetooth.hci;
+
+import "google/protobuf/empty.proto";
+import "facade/common.proto";
+
+service HciLayerFacade {
+  rpc SendCommandWithComplete(facade.Data) returns (google.protobuf.Empty) {}
+  rpc SendCommandWithStatus(facade.Data) returns (google.protobuf.Empty) {}
+
+  rpc RequestEvent(EventRequest) returns (google.protobuf.Empty) {}
+  rpc StreamEvents(google.protobuf.Empty) returns (stream facade.Data) {}
+
+  rpc RequestLeSubevent(EventRequest) returns (google.protobuf.Empty) {}
+  rpc StreamLeSubevents(google.protobuf.Empty) returns (stream facade.Data) {}
+
+  rpc SendAcl(facade.Data) returns (google.protobuf.Empty) {}
+  rpc StreamAcl(google.protobuf.Empty) returns (stream facade.Data) {}
+}
+
+message EventRequest {
+  uint32 code = 1;
+}

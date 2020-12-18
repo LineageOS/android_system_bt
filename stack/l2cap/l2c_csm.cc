@@ -1150,8 +1150,8 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           }
         }
 
-        btsnd_hcic_disconnect(p_ccb->p_lcb->Handle(),
-                              HCI_ERR_CONN_CAUSE_LOCAL_HOST);
+        acl_disconnect_from_handle(p_ccb->p_lcb->Handle(),
+                                   HCI_ERR_CONN_CAUSE_LOCAL_HOST);
         return;
       }
 

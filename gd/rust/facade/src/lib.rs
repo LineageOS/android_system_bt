@@ -1,26 +1,16 @@
 //! Bluetooth testing root facade service
 
-mod rootservice_grpc;
-
-/// Refer to the following on why we are doing this and for possible solutions:
-/// https://github.com/tikv/grpc-rs/issues/276
-pub mod empty {
-    pub use protobuf::well_known_types::Empty;
-}
-
-use bt_facade_common_proto::common;
-use bt_facade_rootservice_proto::rootservice;
+use bt_facade_proto::rootservice::*;
+use bt_facade_proto::rootservice_grpc::{create_root_facade, RootFacade};
 use bt_hal::facade::HciHalFacadeService;
 use bt_hci::facade::HciLayerFacadeService;
+use bt_main::Stack;
 use futures::executor::block_on;
 use grpcio::*;
-use rootservice::*;
-use rootservice_grpc::{create_root_facade, RootFacade};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{channel, Sender};
 use tokio::sync::oneshot;
-use bt_main::Stack;
 
 /// Bluetooth testing root facade service
 #[derive(Clone)]
@@ -68,13 +58,8 @@ impl RootFacade for RootFacadeService {
 
 #[derive(Debug)]
 enum LifecycleCommand {
-    Start {
-        req: StartStackRequest,
-        done: oneshot::Sender<()>,
-    },
-    Stop {
-        done: oneshot::Sender<()>,
-    },
+    Start { req: StartStackRequest, done: oneshot::Sender<()> },
+    Stop { done: oneshot::Sender<()> },
 }
 
 #[derive(Clone)]
@@ -122,7 +107,12 @@ impl FacadeServer {
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
 
 impl FacadeServiceManager {
-    fn create(rt: Arc<Runtime>, grpc_port: u16, rootcanal_port: Option<u16>, snoop_path: Option<String>) -> Self {
+    fn create(
+        rt: Arc<Runtime>,
+        grpc_port: u16,
+        rootcanal_port: Option<u16>,
+        snoop_path: Option<String>,
+    ) -> Self {
         let (tx, mut rx) = channel::<LifecycleCommand>(1);
         let local_rt = rt.clone();
         rt.spawn(async move {
@@ -152,18 +142,14 @@ impl FacadeServiceManager {
 
     async fn start(&self, req: StartStackRequest) -> Result<()> {
         let (tx, rx) = oneshot::channel();
-        self.lifecycle_tx
-            .send(LifecycleCommand::Start { req, done: tx })
-            .await?;
+        self.lifecycle_tx.send(LifecycleCommand::Start { req, done: tx }).await?;
         rx.await?;
         Ok(())
     }
 
     async fn stop(&self) -> Result<()> {
         let (tx, rx) = oneshot::channel();
-        self.lifecycle_tx
-            .send(LifecycleCommand::Stop { done: tx })
-            .await?;
+        self.lifecycle_tx.send(LifecycleCommand::Stop { done: tx }).await?;
         rx.await?;
         Ok(())
     }

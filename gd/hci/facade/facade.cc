@@ -21,7 +21,7 @@
 #include "common/bind.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/controller.h"
-#include "hci/facade/facade.grpc.pb.h"
+#include "hci/facade/hci_facade.grpc.pb.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 
@@ -68,7 +68,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
 
   ::grpc::Status SendCommandWithComplete(
       ::grpc::ServerContext* context,
-      const ::bluetooth::hci::Command* command,
+      const ::bluetooth::facade::Data* command,
       ::google::protobuf::Empty* response) override {
     auto packet = std::make_unique<TestCommandBuilder>(
         std::vector<uint8_t>(command->payload().begin(), command->payload().end()));
@@ -79,7 +79,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
 
   ::grpc::Status SendCommandWithStatus(
       ::grpc::ServerContext* context,
-      const ::bluetooth::hci::Command* command,
+      const ::bluetooth::facade::Data* command,
       ::google::protobuf::Empty* response) override {
     auto packet = std::make_unique<TestCommandBuilder>(
         std::vector<uint8_t>(command->payload().begin(), command->payload().end()));
@@ -108,57 +108,42 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   ::grpc::Status StreamEvents(
       ::grpc::ServerContext* context,
       const ::google::protobuf::Empty* request,
-      ::grpc::ServerWriter<Event>* writer) override {
+      ::grpc::ServerWriter<::bluetooth::facade::Data>* writer) override {
     return pending_events_.RunLoop(context, writer);
   };
 
   ::grpc::Status StreamLeSubevents(
       ::grpc::ServerContext* context,
       const ::google::protobuf::Empty* request,
-      ::grpc::ServerWriter<LeSubevent>* writer) override {
+      ::grpc::ServerWriter<::bluetooth::facade::Data>* writer) override {
     return pending_le_events_.RunLoop(context, writer);
   };
 
   class TestAclBuilder : public AclBuilder {
    public:
-    explicit TestAclBuilder(
-        uint16_t handle, uint8_t packet_boundary_flag, uint8_t broadcast_flag, std::vector<uint8_t> payload)
+    explicit TestAclBuilder(std::vector<uint8_t> payload)
         : AclBuilder(0xbad, PacketBoundaryFlag::CONTINUING_FRAGMENT, BroadcastFlag::ACTIVE_PERIPHERAL_BROADCAST),
-          handle_(handle),
-          pb_flag_(packet_boundary_flag),
-          b_flag_(broadcast_flag),
           bytes_(std::move(payload)) {}
 
     size_t size() const override {
       return bytes_.size();
     }
     void Serialize(BitInserter& bit_inserter) const override {
-      LOG_INFO("handle 0x%hx boundary 0x%hhx broadcast 0x%hhx", handle_, pb_flag_, b_flag_);
-      bit_inserter.insert_byte(handle_);
-      bit_inserter.insert_bits((handle_ >> 8) & 0xf, 4);
-      bit_inserter.insert_bits(pb_flag_, 2);
-      bit_inserter.insert_bits(b_flag_, 2);
-      bit_inserter.insert_byte(bytes_.size() & 0xff);
-      bit_inserter.insert_byte((bytes_.size() & 0xff00) >> 8);
       for (auto&& b : bytes_) {
         bit_inserter.insert_byte(b);
       }
     }
 
    private:
-    uint16_t handle_;
-    uint8_t pb_flag_;
-    uint8_t b_flag_;
     std::vector<uint8_t> bytes_;
   };
 
   ::grpc::Status SendAcl(
       ::grpc::ServerContext* context,
-      const ::bluetooth::hci::AclPacket* acl,
+      const ::bluetooth::facade::Data* acl,
       ::google::protobuf::Empty* response) override {
     waiting_acl_packet_ =
-        std::make_unique<TestAclBuilder>(acl->handle(), acl->packet_boundary_flag(), acl->broadcast_flag(),
-                                         std::vector<uint8_t>(acl->data().begin(), acl->data().end()));
+        std::make_unique<TestAclBuilder>(std::vector<uint8_t>(acl->payload().begin(), acl->payload().end()));
     std::promise<void> enqueued;
     auto future = enqueued.get_future();
     if (!completed_packets_callback_registered_) {
@@ -177,7 +162,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   ::grpc::Status StreamAcl(
       ::grpc::ServerContext* context,
       const ::google::protobuf::Empty* request,
-      ::grpc::ServerWriter<AclPacket>* writer) override {
+      ::grpc::ServerWriter<::bluetooth::facade::Data>* writer) override {
     hci_layer_->GetAclQueueEnd()->RegisterDequeue(
         facade_handler_, common::Bind(&HciLayerFacadeService::on_acl_ready, common::Unretained(this)));
     unregister_acl_dequeue_ = true;
@@ -196,15 +181,15 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     ASSERT(acl_ptr != nullptr);
     ASSERT(acl_ptr->IsValid());
     LOG_INFO("Got an Acl message for handle 0x%hx", acl_ptr->GetHandle());
-    AclPacket incoming;
-    incoming.set_data(std::string(acl_ptr->begin(), acl_ptr->end()));
+    ::bluetooth::facade::Data incoming;
+    incoming.set_payload(std::string(acl_ptr->begin(), acl_ptr->end()));
     pending_acl_events_.OnIncomingEvent(std::move(incoming));
   }
 
   void on_event(hci::EventView view) {
     ASSERT(view.IsValid());
     LOG_INFO("Got an Event %s", EventCodeText(view.GetEventCode()).c_str());
-    Event response;
+    ::bluetooth::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));
     pending_events_.OnIncomingEvent(std::move(response));
   }
@@ -212,7 +197,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   void on_le_subevent(hci::LeMetaEventView view) {
     ASSERT(view.IsValid());
     LOG_INFO("Got an LE Event %s", SubeventCodeText(view.GetSubeventCode()).c_str());
-    LeSubevent response;
+    ::bluetooth::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));
     pending_le_events_.OnIncomingEvent(std::move(response));
   }
@@ -220,7 +205,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   void on_complete(hci::CommandCompleteView view) {
     ASSERT(view.IsValid());
     LOG_INFO("Got a Command complete %s", OpCodeText(view.GetCommandOpCode()).c_str());
-    Event response;
+    ::bluetooth::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));
     pending_events_.OnIncomingEvent(std::move(response));
   }
@@ -228,7 +213,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   void on_status(hci::CommandStatusView view) {
     ASSERT(view.IsValid());
     LOG_INFO("Got a Command status %s", OpCodeText(view.GetCommandOpCode()).c_str());
-    Event response;
+    ::bluetooth::facade::Data response;
     response.set_payload(std::string(view.begin(), view.end()));
     pending_events_.OnIncomingEvent(std::move(response));
   }
@@ -236,9 +221,9 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
   HciLayer* hci_layer_;
   Controller* controller_;
   ::bluetooth::os::Handler* facade_handler_;
-  ::bluetooth::grpc::GrpcEventQueue<Event> pending_events_{"StreamEvents"};
-  ::bluetooth::grpc::GrpcEventQueue<LeSubevent> pending_le_events_{"StreamLeSubevents"};
-  ::bluetooth::grpc::GrpcEventQueue<AclPacket> pending_acl_events_{"StreamAcl"};
+  ::bluetooth::grpc::GrpcEventQueue<::bluetooth::facade::Data> pending_events_{"StreamEvents"};
+  ::bluetooth::grpc::GrpcEventQueue<::bluetooth::facade::Data> pending_le_events_{"StreamLeSubevents"};
+  ::bluetooth::grpc::GrpcEventQueue<::bluetooth::facade::Data> pending_acl_events_{"StreamAcl"};
   bool unregister_acl_dequeue_{false};
   std::unique_ptr<TestAclBuilder> waiting_acl_packet_;
   bool completed_packets_callback_registered_{false};
