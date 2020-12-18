@@ -57,26 +57,7 @@ impl GrpcFacade for HciFacadeService {
 }
 
 impl HciFacade for HciFacadeService {
-    fn send_command_with_complete(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        mut data: Data,
-        sink: UnarySink<Empty>,
-    ) {
-        self.rt
-            .block_on(
-                self.hci_exports.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()),
-            )
-            .unwrap();
-        sink.success(Empty::default());
-    }
-
-    fn send_command_with_status(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        mut data: Data,
-        sink: UnarySink<Empty>,
-    ) {
+    fn send_command(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         self.rt
             .block_on(
                 self.hci_exports.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()),

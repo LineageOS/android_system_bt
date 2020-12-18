@@ -53,58 +53,6 @@ static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 static const packet_fragmenter_t* packet_fragmenter;
 
 namespace {
-bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
-  switch (op_code) {
-    case bluetooth::hci::OpCode::INQUIRY:
-    case bluetooth::hci::OpCode::CREATE_CONNECTION:
-    case bluetooth::hci::OpCode::DISCONNECT:
-    case bluetooth::hci::OpCode::ACCEPT_CONNECTION_REQUEST:
-    case bluetooth::hci::OpCode::REJECT_CONNECTION_REQUEST:
-    case bluetooth::hci::OpCode::CHANGE_CONNECTION_PACKET_TYPE:
-    case bluetooth::hci::OpCode::AUTHENTICATION_REQUESTED:
-    case bluetooth::hci::OpCode::SET_CONNECTION_ENCRYPTION:
-    case bluetooth::hci::OpCode::CHANGE_CONNECTION_LINK_KEY:
-    case bluetooth::hci::OpCode::CENTRAL_LINK_KEY:
-    case bluetooth::hci::OpCode::REMOTE_NAME_REQUEST:
-    case bluetooth::hci::OpCode::READ_REMOTE_SUPPORTED_FEATURES:
-    case bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES:
-    case bluetooth::hci::OpCode::READ_REMOTE_VERSION_INFORMATION:
-    case bluetooth::hci::OpCode::READ_CLOCK_OFFSET:
-    case bluetooth::hci::OpCode::SETUP_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::ACCEPT_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::REJECT_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::HOLD_MODE:
-    case bluetooth::hci::OpCode::SNIFF_MODE:
-    case bluetooth::hci::OpCode::EXIT_SNIFF_MODE:
-    case bluetooth::hci::OpCode::QOS_SETUP:
-    case bluetooth::hci::OpCode::SWITCH_ROLE:
-    case bluetooth::hci::OpCode::FLOW_SPECIFICATION:
-    case bluetooth::hci::OpCode::REFRESH_ENCRYPTION_KEY:
-    case bluetooth::hci::OpCode::ENHANCED_FLUSH:
-    case bluetooth::hci::OpCode::LE_CREATE_CONNECTION:
-    case bluetooth::hci::OpCode::LE_CONNECTION_UPDATE:
-    case bluetooth::hci::OpCode::LE_READ_REMOTE_FEATURES:
-    case bluetooth::hci::OpCode::LE_START_ENCRYPTION:
-    case bluetooth::hci::OpCode::LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND:
-    case bluetooth::hci::OpCode::LE_GENERATE_DHKEY_COMMAND:
-    case bluetooth::hci::OpCode::LE_SET_PHY:
-    case bluetooth::hci::OpCode::LE_EXTENDED_CREATE_CONNECTION:
-    case bluetooth::hci::OpCode::LE_PERIODIC_ADVERTISING_CREATE_SYNC:
-    case bluetooth::hci::OpCode::LE_ACCEPT_CIS_REQUEST:
-    case bluetooth::hci::OpCode::LE_CREATE_BIG:
-    case bluetooth::hci::OpCode::LE_TERMINATE_BIG:
-    case bluetooth::hci::OpCode::LE_BIG_CREATE_SYNC:
-    case bluetooth::hci::OpCode::LE_REQUEST_PEER_SCA:
-    case bluetooth::hci::OpCode::LE_READ_REMOTE_TRANSMIT_POWER_LEVEL:
-
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool is_valid_event_code(uint8_t event_code_raw) {
   auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
   switch (event_code) {
@@ -435,7 +383,7 @@ static void transmit_command(BT_HDR* command,
 
   LOG_DEBUG("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
 
-  if (IsCommandStatusOpcode(op_code)) {
+  if (bluetooth::hci::Checker::IsCommandStatusOpcode(op_code)) {
     auto command_unique = std::make_unique<OsiObject>(command);
     bluetooth::shim::GetHciLayer()->EnqueueCommand(
         std::move(packet), bluetooth::shim::GetGdShimHandler()->BindOnce(

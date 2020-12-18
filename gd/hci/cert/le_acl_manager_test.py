@@ -63,13 +63,10 @@ class LeAclManagerTest(GdBaseTestClass):
         msg = hci_facade.EventRequest(code=int(event_code))
         self.cert.hci.RequestLeSubevent(msg)
 
-    def enqueue_hci_command(self, command, expect_complete):
+    def enqueue_hci_command(self, command):
         cmd_bytes = bytes(command.Serialize())
         cmd = common.Data(payload=cmd_bytes)
-        if (expect_complete):
-            self.cert.hci.SendCommandWithComplete(cmd)
-        else:
-            self.cert.hci.SendCommandWithStatus(cmd)
+        self.cert.hci.SendCommand(cmd)
 
     def enqueue_acl_data(self, handle, pb_flag, b_flag, data):
         acl = hci_packets.AclBuilder(handle, pb_flag, b_flag, RawBuilder(data))
@@ -95,11 +92,10 @@ class LeAclManagerTest(GdBaseTestClass):
                 0xF8,
                 1,  #SID
                 hci_packets.Enable.DISABLED  # Scan request notification
-            ),
-            True)
+            ))
 
         self.enqueue_hci_command(
-            hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0C:05:04:03:02:01'), True)
+            hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0C:05:04:03:02:01'))
 
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
@@ -108,7 +104,7 @@ class LeAclManagerTest(GdBaseTestClass):
         self.enqueue_hci_command(
             hci_packets.LeSetExtendedAdvertisingDataBuilder(
                 advertising_handle, hci_packets.Operation.COMPLETE_ADVERTISEMENT,
-                hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_name]), True)
+                hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_name]))
 
         gap_short_name = hci_packets.GapData()
         gap_short_name.data_type = hci_packets.GapDataType.SHORTENED_LOCAL_NAME
@@ -117,14 +113,14 @@ class LeAclManagerTest(GdBaseTestClass):
         self.enqueue_hci_command(
             hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
                 advertising_handle, hci_packets.Operation.COMPLETE_ADVERTISEMENT,
-                hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_short_name]), True)
+                hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT, [gap_short_name]))
 
         enabled_set = hci_packets.EnabledSet()
         enabled_set.advertising_handle = advertising_handle
         enabled_set.duration = 0
         enabled_set.max_extended_advertising_events = 0
         self.enqueue_hci_command(
-            hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.ENABLED, [enabled_set]), True)
+            hci_packets.LeSetExtendedAdvertisingEnableBuilder(hci_packets.Enable.ENABLED, [enabled_set]))
 
         self.dut_le_acl = self.dut_le_acl_manager.connect_to_remote(
             remote_addr=common.BluetoothAddressWithType(
@@ -235,7 +231,7 @@ class LeAclManagerTest(GdBaseTestClass):
         self.dut.hci_le_advertising_manager.CreateAdvertiser(request)
 
         # Cert Connects
-        self.enqueue_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'), True)
+        self.enqueue_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
         phy_scan_params = hci_packets.LeCreateConnPhyScanParameters()
         phy_scan_params.scan_interval = 0x60
         phy_scan_params.scan_window = 0x30
@@ -249,7 +245,7 @@ class LeAclManagerTest(GdBaseTestClass):
             hci_packets.LeExtendedCreateConnectionBuilder(hci_packets.InitiatorFilterPolicy.USE_PEER_ADDRESS,
                                                           hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
                                                           hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                                                          self.dut_address.decode(), 1, [phy_scan_params]), False)
+                                                          self.dut_address.decode(), 1, [phy_scan_params]))
 
         # Cert gets ConnectionComplete with a handle and sends ACL data
         handle = 0xfff

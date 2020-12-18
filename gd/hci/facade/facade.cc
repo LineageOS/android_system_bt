@@ -66,23 +66,18 @@ class HciFacadeService : public HciFacade::Service {
     std::vector<uint8_t> bytes_;
   };
 
-  ::grpc::Status SendCommandWithComplete(
+  ::grpc::Status SendCommand(
       ::grpc::ServerContext* context,
       const ::bluetooth::facade::Data* command,
       ::google::protobuf::Empty* response) override {
-    auto packet = std::make_unique<TestCommandBuilder>(
-        std::vector<uint8_t>(command->payload().begin(), command->payload().end()));
-    hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciFacadeService::on_complete));
-    return ::grpc::Status::OK;
-  }
-
-  ::grpc::Status SendCommandWithStatus(
-      ::grpc::ServerContext* context,
-      const ::bluetooth::facade::Data* command,
-      ::google::protobuf::Empty* response) override {
-    auto packet = std::make_unique<TestCommandBuilder>(
-        std::vector<uint8_t>(command->payload().begin(), command->payload().end()));
-    hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciFacadeService::on_status));
+    auto payload = std::vector<uint8_t>(command->payload().begin(), command->payload().end());
+    auto packet = std::make_unique<TestCommandBuilder>(payload);
+    auto opcode = static_cast<const bluetooth::hci::OpCode>(payload.at(1) << 8 | payload.at(0));
+    if (Checker::IsCommandStatusOpcode(opcode)) {
+      hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciFacadeService::on_status));
+    } else {
+      hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciFacadeService::on_complete));
+    }
     return ::grpc::Status::OK;
   }
 

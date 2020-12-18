@@ -42,13 +42,10 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
         msg = hci_facade.EventRequest(code=int(event_code))
         self.cert.hci.RequestLeSubevent(msg)
 
-    def enqueue_hci_command(self, command, expect_complete):
+    def enqueue_hci_command(self, command):
         cmd_bytes = bytes(command.Serialize())
         cmd = common.Data(payload=cmd_bytes)
-        if (expect_complete):
-            self.cert.hci.SendCommandWithComplete(cmd)
-        else:
-            self.cert.hci.SendCommandWithStatus(cmd)
+        self.cert.hci.SendCommand(cmd)
 
     def test_le_ad_scan_dut_advertises(self):
         self.register_for_le_event(hci_packets.SubeventCode.ADVERTISING_REPORT)
@@ -56,7 +53,7 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
         with EventStream(self.cert.hci.StreamLeSubevents(empty_proto.Empty())) as hci_le_event_stream:
 
             # CERT Scans
-            self.enqueue_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'), True)
+            self.enqueue_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
             scan_parameters = hci_packets.PhyScanParameters()
             scan_parameters.le_scan_type = hci_packets.LeScanType.ACTIVE
             scan_parameters.le_scan_interval = 40
@@ -64,10 +61,10 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
                                                                hci_packets.LeScanningFilterPolicy.ACCEPT_ALL, 1,
-                                                               [scan_parameters]), True)
+                                                               [scan_parameters]))
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
-                                                           hci_packets.FilterDuplicates.DISABLED, 0, 0), True)
+                                                           hci_packets.FilterDuplicates.DISABLED, 0, 0))
 
             # DUT Advertises
             gap_name = hci_packets.GapData()
@@ -91,4 +88,4 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
             remove_request = le_advertising_facade.RemoveAdvertiserRequest(advertiser_id=create_response.advertiser_id)
             self.dut.hci_le_advertising_manager.RemoveAdvertiser(remove_request)
             self.enqueue_hci_command(
-                hci_packets.LeSetScanEnableBuilder(hci_packets.Enable.DISABLED, hci_packets.Enable.DISABLED), True)
+                hci_packets.LeSetScanEnableBuilder(hci_packets.Enable.DISABLED, hci_packets.Enable.DISABLED))

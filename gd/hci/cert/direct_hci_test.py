@@ -102,9 +102,9 @@ class DirectHciTest(GdBaseTestClass):
     def test_local_hci_cmd_and_event(self):
         # Loopback mode responds with ACL and SCO connection complete
         self.dut_hci.register_for_events(EventCode.LOOPBACK_COMMAND)
-        self.dut_hci.send_command_with_complete(WriteLoopbackModeBuilder(LoopbackMode.ENABLE_LOCAL))
+        self.dut_hci.send_command(WriteLoopbackModeBuilder(LoopbackMode.ENABLE_LOCAL))
 
-        self.dut_hci.send_command_with_complete(ReadLocalNameBuilder())
+        self.dut_hci.send_command(ReadLocalNameBuilder())
         assertThat(self.dut_hci.get_event_stream()).emits(HciMatchers.LoopbackOf(ReadLocalNameBuilder()))
 
     def test_inquiry_from_dut(self):
@@ -113,24 +113,23 @@ class DirectHciTest(GdBaseTestClass):
         self.cert_hal.enable_inquiry_and_page_scan()
         lap = Lap()
         lap.lap = 0x33
-        self.dut_hci.send_command_with_status(InquiryBuilder(lap, 0x30, 0xff))
+        self.dut_hci.send_command(InquiryBuilder(lap, 0x30, 0xff))
         assertThat(self.dut_hci.get_event_stream()).emits(HciMatchers.EventWithCode(EventCode.INQUIRY_RESULT))
 
     def test_le_ad_scan_cert_advertises(self):
         self.dut_hci.register_for_le_events(SubeventCode.EXTENDED_ADVERTISING_REPORT, SubeventCode.ADVERTISING_REPORT)
 
         # DUT Scans
-        self.dut_hci.send_command_with_complete(LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
+        self.dut_hci.send_command(LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
         phy_scan_params = PhyScanParameters()
         phy_scan_params.le_scan_interval = 6553
         phy_scan_params.le_scan_window = 6553
         phy_scan_params.le_scan_type = LeScanType.ACTIVE
 
-        self.dut_hci.send_command_with_complete(
+        self.dut_hci.send_command(
             LeSetExtendedScanParametersBuilder(OwnAddressType.RANDOM_DEVICE_ADDRESS, LeScanningFilterPolicy.ACCEPT_ALL,
                                                1, [phy_scan_params]))
-        self.dut_hci.send_command_with_complete(
-            LeSetExtendedScanEnableBuilder(Enable.ENABLED, FilterDuplicates.DISABLED, 0, 0))
+        self.dut_hci.send_command(LeSetExtendedScanEnableBuilder(Enable.ENABLED, FilterDuplicates.DISABLED, 0, 0))
 
         # CERT Advertises
         advertising_handle = 0
@@ -177,8 +176,7 @@ class DirectHciTest(GdBaseTestClass):
         assertThat(self.dut_hci.get_le_event_stream()).emits(lambda packet: b'Im_A_Cert' in packet.payload)
 
         self.cert_hal.send_hci_command(LeSetExtendedAdvertisingEnableBuilder(Enable.DISABLED, [enabled_set]))
-        self.dut_hci.send_command_with_complete(
-            LeSetExtendedScanEnableBuilder(Enable.DISABLED, FilterDuplicates.DISABLED, 0, 0))
+        self.dut_hci.send_command(LeSetExtendedScanEnableBuilder(Enable.DISABLED, FilterDuplicates.DISABLED, 0, 0))
 
     def _verify_le_connection_complete(self):
         cert_conn_complete_capture = HalCaptures.LeConnectionCompleteCapture()
@@ -235,11 +233,10 @@ class DirectHciTest(GdBaseTestClass):
     def test_le_connect_list_connection_cert_advertises(self):
         self.dut_hci.register_for_le_events(SubeventCode.CONNECTION_COMPLETE, SubeventCode.ENHANCED_CONNECTION_COMPLETE)
         # DUT Connects
-        self.dut_hci.send_command_with_complete(LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
-        self.dut_hci.send_command_with_complete(
-            LeAddDeviceToConnectListBuilder(ConnectListAddressType.RANDOM, '0C:05:04:03:02:01'))
+        self.dut_hci.send_command(LeSetRandomAddressBuilder('0D:05:04:03:02:01'))
+        self.dut_hci.send_command(LeAddDeviceToConnectListBuilder(ConnectListAddressType.RANDOM, '0C:05:04:03:02:01'))
         phy_scan_params = DirectHciTest._create_phy_scan_params()
-        self.dut_hci.send_command_with_status(
+        self.dut_hci.send_command(
             LeExtendedCreateConnectionBuilder(InitiatorFilterPolicy.USE_CONNECT_LIST,
                                               OwnAddressType.RANDOM_DEVICE_ADDRESS, AddressType.RANDOM_DEVICE_ADDRESS,
                                               'BA:D5:A4:A3:A2:A1', 1, [phy_scan_params]))
@@ -259,7 +256,7 @@ class DirectHciTest(GdBaseTestClass):
         self._verify_le_connection_complete()
 
     def test_connection_dut_connects(self):
-        self.dut_hci.send_command_with_complete(WritePageTimeoutBuilder(0x4000))
+        self.dut_hci.send_command(WritePageTimeoutBuilder(0x4000))
 
         self.cert_hal.enable_inquiry_and_page_scan()
         address = self.cert_hal.read_own_address()
