@@ -1,7 +1,6 @@
 //! Implementation of the HAl that talks to BT controller over Android's HIDL
 use crate::internal::{Hal, RawHalExports};
-use bt_packet::{HciCommand, HciEvent, RawPacket};
-use bytes::Bytes;
+use bt_packets::hci;
 use gddi::{module, provides};
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -54,8 +53,8 @@ mod ffi {
 
 struct Callbacks {
     init_tx: UnboundedSender<()>,
-    evt_tx: UnboundedSender<HciEvent>,
-    acl_tx: UnboundedSender<RawPacket>,
+    evt_tx: UnboundedSender<hci::EventPacket>,
+    acl_tx: UnboundedSender<hci::AclPacket>,
 }
 
 lazy_static! {
@@ -73,7 +72,7 @@ fn on_event(data: &[u8]) {
         .as_ref()
         .unwrap()
         .evt_tx
-        .send(Bytes::copy_from_slice(data))
+        .send(hci::EventPacket::parse(data).unwrap())
         .unwrap();
 }
 
@@ -83,20 +82,20 @@ fn on_acl(data: &[u8]) {
         .as_ref()
         .unwrap()
         .acl_tx
-        .send(Bytes::copy_from_slice(data))
+        .send(hci::AclPacket::parse(data).unwrap())
         .unwrap();
 }
 
 fn on_sco(_data: &[u8]) {}
 
 async fn dispatch_outgoing(
-    mut cmd_rx: UnboundedReceiver<HciCommand>,
-    mut acl_rx: UnboundedReceiver<RawPacket>,
+    mut cmd_rx: UnboundedReceiver<hci::CommandPacket>,
+    mut acl_rx: UnboundedReceiver<hci::AclPacket>,
 ) {
     loop {
         select! {
-            Some(cmd) = cmd_rx.recv() => ffi::send_command(&cmd),
-            Some(acl) = acl_rx.recv() => ffi::send_acl(&acl),
+            Some(cmd) = cmd_rx.recv() => ffi::send_command(&cmd.to_bytes()),
+            Some(acl) = acl_rx.recv() => ffi::send_acl(&acl.to_bytes()),
             else => break,
         }
     }

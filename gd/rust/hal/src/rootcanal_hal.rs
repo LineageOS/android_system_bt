@@ -4,7 +4,7 @@
 
 use crate::internal::{Hal, RawHalExports};
 use crate::{Result, H4_HEADER_SIZE};
-use bt_packet::{HciCommand, HciEvent, HciPacketHeaderSize, HciPacketType, RawPacket};
+use bt_packets::hci;
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, provides, Stoppable};
 use std::net::{IpAddr, SocketAddr};
@@ -15,6 +15,22 @@ use tokio::net::TcpStream;
 use tokio::runtime::Runtime;
 use tokio::select;
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
+use num_derive::{FromPrimitive, ToPrimitive};
+
+#[derive(FromPrimitive, ToPrimitive)]
+enum HciPacketType {
+    Command = 0x01,
+    Acl = 0x02,
+    Sco = 0x03,
+    Event = 0x04,
+}
+
+#[derive(FromPrimitive, ToPrimitive)]
+enum HciPacketHeaderSize {
+    Event = 2,
+    Sco = 3,
+    Acl = 4,
+}
 
 module! {
     rootcanal_hal_module,
@@ -60,8 +76,8 @@ impl RootcanalConfig {
 
 /// Send HCI events received from the HAL to the HCI layer
 async fn dispatch_incoming<R>(
-    evt_tx: UnboundedSender<HciEvent>,
-    acl_tx: UnboundedSender<RawPacket>,
+    evt_tx: UnboundedSender<hci::EventPacket>,
+    acl_tx: UnboundedSender<hci::AclPacket>,
     reader: R,
 ) -> Result<()>
 where
@@ -80,7 +96,7 @@ where
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            evt_tx.send(buffer.freeze()).unwrap();
+            evt_tx.send(hci::EventPacket::parse(&buffer.freeze()).unwrap()).unwrap();
         } else if buffer[0] == HciPacketType::Acl as u8 {
             buffer.resize(HciPacketHeaderSize::Acl as usize, 0);
             reader.read_exact(&mut buffer).await?;
@@ -89,15 +105,15 @@ where
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            acl_tx.send(buffer.freeze()).unwrap();
+            acl_tx.send(hci::AclPacket::parse(&buffer.freeze()).unwrap()).unwrap();
         }
     }
 }
 
 /// Send commands received from the HCI later to rootcanal
 async fn dispatch_outgoing<W>(
-    mut cmd_rx: UnboundedReceiver<HciCommand>,
-    mut acl_rx: UnboundedReceiver<RawPacket>,
+    mut cmd_rx: UnboundedReceiver<hci::CommandPacket>,
+    mut acl_rx: UnboundedReceiver<hci::AclPacket>,
     mut writer: W,
 ) -> Result<()>
 where
@@ -105,8 +121,8 @@ where
 {
     loop {
         select! {
-            Some(cmd) = cmd_rx.recv() => write_with_type(&mut writer, HciPacketType::Command, cmd).await?,
-            Some(acl) = acl_rx.recv() => write_with_type(&mut writer, HciPacketType::Acl, acl).await?,
+            Some(cmd) = cmd_rx.recv() => write_with_type(&mut writer, HciPacketType::Command, cmd.to_bytes()).await?,
+            Some(acl) = acl_rx.recv() => write_with_type(&mut writer, HciPacketType::Acl, acl.to_bytes()).await?,
             else => break,
         }
     }

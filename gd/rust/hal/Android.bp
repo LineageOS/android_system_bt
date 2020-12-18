@@ -5,8 +5,8 @@ rust_library {
     srcs: ["src/lib.rs"],
     edition: "2018",
     rustlibs: [
-        "libbt_packet",
         "libbt_facade_proto",
+        "libbt_packets",
         "libbytes",
         "libfutures",
         "libthiserror",
@@ -19,6 +19,10 @@ rust_library {
         "liblazy_static",
         "liblog_rust",
         "libbt_common",
+        "libnum_traits",
+    ],
+    proc_macros: [
+        "libnum_derive",
     ],
     target: {
         android: {
