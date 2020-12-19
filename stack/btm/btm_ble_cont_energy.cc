@@ -20,13 +20,13 @@
 #include "bt_target.h"
 
 #include "bt_types.h"
-#include "bt_utils.h"
 #include "btm_ble_api.h"
 #include "btm_int.h"
 #include "btu.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "stack/btm/btm_int_types.h"
+#include "utils/include/bt_utils.h"
 
 extern tBTM_CB btm_cb;
 
