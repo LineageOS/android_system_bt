@@ -510,3 +510,14 @@ std::map<std::string, std::variant<int64_t, std::string>> ParentDef::GetAllConst
   }
   return res;
 }
+
+bool ParentDef::HasAncestorNamed(std::string name) const {
+  auto parent = parent_;
+  while (parent != nullptr) {
+    if (parent->name_ == name) {
+      return true;
+    }
+    parent = parent->parent_;
+  }
+  return false;
+}

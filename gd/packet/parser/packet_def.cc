@@ -945,6 +945,17 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 }
 
 void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
+  if (complement_ != nullptr) {
+    auto complement_root = complement_->GetRootDef();
+    auto complement_root_accessor = util::CamelCaseToUnderScore(complement_root->name_);
+    s << "impl CommandExpectations for " << name_ << "Packet {";
+    s << " type ResponseType = " << complement_->name_ << "Packet;";
+    s << " fn _to_response_type(pkt: EventPacket) -> Self::ResponseType { ";
+    s << complement_->name_ << "Packet::new(pkt." << complement_root_accessor << ".clone())";
+    s << " }";
+    s << "}";
+  }
+
   s << "impl " << name_ << "Packet {";
   if (parent_ == nullptr) {
     s << "pub fn parse(bytes: &[u8]) -> Result<Self> { ";
@@ -1010,9 +1021,15 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
     });
 
     for (auto const& field : fields) {
-      s << "pub fn get_" << field->GetName() << "(&self) -> &" << field->GetRustDataType() << "{";
-      s << " &self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
-      s << "}\n";
+      if (field->GetterIsByRef()) {
+        s << "pub fn get_" << field->GetName() << "(&self) -> &" << field->GetRustDataType() << "{";
+        s << " &self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
+        s << "}\n";
+      } else {
+        s << "pub fn get_" << field->GetName() << "(&self) -> " << field->GetRustDataType() << "{";
+        s << " self." << util::CamelCaseToUnderScore(def->name_) << ".as_ref()." << field->GetName();
+        s << "}\n";
+      }
     }
   }
 
@@ -1030,6 +1047,17 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
 }
 
 void PacketDef::GenRustBuilderStructImpls(std::ostream& s) const {
+  if (complement_ != nullptr) {
+    auto complement_root = complement_->GetRootDef();
+    auto complement_root_accessor = util::CamelCaseToUnderScore(complement_root->name_);
+    s << "impl CommandExpectations for " << name_ << "Builder {";
+    s << " type ResponseType = " << complement_->name_ << "Packet;";
+    s << " fn _to_response_type(pkt: EventPacket) -> Self::ResponseType { ";
+    s << complement_->name_ << "Packet::new(pkt." << complement_root_accessor << ".clone())";
+    s << " }";
+    s << "}";
+  }
+
   s << "impl " << name_ << "Builder {";
   s << "pub fn build(self) -> " << name_ << "Packet {";
   auto lineage = GetAncestors();
@@ -1087,6 +1115,13 @@ void PacketDef::GenRustBuilderStructImpls(std::ostream& s) const {
   s << "}\n";
 
   s << "}\n";
+  lineage = GetAncestors();
+  for (auto it = lineage.begin(); it != lineage.end(); it++) {
+    auto def = *it;
+    s << "impl Into<" << def->name_ << "Packet> for " << name_ << "Builder {";
+    s << " fn into(self) -> " << def->name_ << "Packet { self.build().into() }";
+    s << "}\n";
+  }
 }
 
 void PacketDef::GenRustDef(std::ostream& s) const {
