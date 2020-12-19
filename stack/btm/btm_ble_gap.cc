@@ -617,8 +617,6 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
  *
  ******************************************************************************/
 extern void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB* p_cmn_vsc_cb) {
-  BTM_TRACE_DEBUG("BTM_BleGetVendorCapabilities");
-
   if (NULL != p_cmn_vsc_cb) {
     *p_cmn_vsc_cb = btm_cb.cmn_ble_vsc_cb;
   }
