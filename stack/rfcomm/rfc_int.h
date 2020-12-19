@@ -143,17 +143,40 @@ typedef struct {
 /*
  * Define states and events for the RFC multiplexer state machine
 */
-#define RFC_MX_STATE_IDLE 0
-#define RFC_MX_STATE_WAIT_CONN_CNF 1
-#define RFC_MX_STATE_CONFIGURE 2
-#define RFC_MX_STATE_SABME_WAIT_UA 3
-#define RFC_MX_STATE_WAIT_SABME 4
-#define RFC_MX_STATE_CONNECTED 5
-#define RFC_MX_STATE_DISC_WAIT_UA 6
+typedef enum : uint16_t {
+  RFC_MX_STATE_IDLE = 0,
+  RFC_MX_STATE_WAIT_CONN_CNF = 1,
+  RFC_MX_STATE_CONFIGURE = 2,
+  RFC_MX_STATE_SABME_WAIT_UA = 3,
+  RFC_MX_STATE_WAIT_SABME = 4,
+  RFC_MX_STATE_CONNECTED = 5,
+  RFC_MX_STATE_DISC_WAIT_UA = 6,
+} tRFC_MX_STATE;
+
+inline std::string rfcomm_mx_state_text(tRFC_MX_STATE state) {
+  switch (state) {
+    case RFC_MX_STATE_IDLE:
+      return std::string("idle");
+    case RFC_MX_STATE_WAIT_CONN_CNF:
+      return std::string("wait_config");
+    case RFC_MX_STATE_CONFIGURE:
+      return std::string("configure");
+    case RFC_MX_STATE_SABME_WAIT_UA:
+      return std::string("sabme_wait_ua");
+    case RFC_MX_STATE_WAIT_SABME:
+      return std::string("wait_sabme");
+    case RFC_MX_STATE_CONNECTED:
+      return std::string("connected");
+    case RFC_MX_STATE_DISC_WAIT_UA:
+      return std::string("disconnect_wait_ua");
+    default:
+      return std::string("UNKNOWN");
+  }
+}
 
 /*
  * Define port states
-*/
+ */
 #define RFC_STATE_CLOSED 0
 #define RFC_STATE_SABME_WAIT_UA 1
 #define RFC_STATE_ORIG_WAIT_SEC_CHECK 2
