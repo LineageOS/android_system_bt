@@ -5,7 +5,7 @@ use bt_common::GrpcFacade;
 use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
 use bt_facade_proto::hal_facade_grpc::{create_hci_hal_facade, HciHalFacade};
-use bt_packet::{HciCommand, HciEvent, RawPacket};
+use bt_packets::hci;
 use futures::sink::SinkExt;
 use gddi::{module, provides, Stoppable};
 use grpcio::*;
@@ -35,10 +35,10 @@ async fn provide_facade(hal_exports: HalExports, rt: Arc<Runtime>) -> HciHalFaca
 #[derive(Clone, Stoppable)]
 pub struct HciHalFacadeService {
     rt: Arc<Runtime>,
-    cmd_tx: mpsc::Sender<HciCommand>,
-    evt_rx: Arc<Mutex<mpsc::Receiver<HciEvent>>>,
-    acl_tx: mpsc::Sender<RawPacket>,
-    acl_rx: Arc<Mutex<mpsc::Receiver<HciEvent>>>,
+    cmd_tx: mpsc::Sender<hci::CommandPacket>,
+    evt_rx: Arc<Mutex<mpsc::Receiver<hci::EventPacket>>>,
+    acl_tx: mpsc::Sender<hci::AclPacket>,
+    acl_rx: Arc<Mutex<mpsc::Receiver<hci::AclPacket>>>,
 }
 
 impl GrpcFacade for HciHalFacadeService {
@@ -51,7 +51,7 @@ impl HciHalFacade for HciHalFacadeService {
     fn send_command(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         let cmd_tx = self.cmd_tx.clone();
         self.rt.block_on(async move {
-            cmd_tx.send(data.take_payload().into()).await.unwrap();
+            cmd_tx.send(hci::CommandPacket::parse(&data.take_payload()).unwrap()).await.unwrap();
         });
         sink.success(Empty::default());
     }
@@ -59,7 +59,7 @@ impl HciHalFacade for HciHalFacadeService {
     fn send_acl(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         let acl_tx = self.acl_tx.clone();
         self.rt.block_on(async move {
-            acl_tx.send(data.take_payload().into()).await.unwrap();
+            acl_tx.send(hci::AclPacket::parse(&data.take_payload()).unwrap()).await.unwrap();
         });
         sink.success(Empty::default());
     }

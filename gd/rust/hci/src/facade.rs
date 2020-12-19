@@ -6,7 +6,7 @@ use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
 use bt_facade_proto::hci_facade::EventRequest;
 use bt_facade_proto::hci_facade_grpc::{create_hci_layer_facade, HciLayerFacade};
-use bt_packet::HciEvent;
+use bt_packets::hci;
 use futures::sink::SinkExt;
 use gddi::{module, provides, Stoppable};
 use grpcio::*;
@@ -14,6 +14,7 @@ use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 use tokio::sync::Mutex;
+use num_traits::FromPrimitive;
 
 module! {
     facade_module,
@@ -24,7 +25,7 @@ module! {
 
 #[provides]
 async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciLayerFacadeService {
-    let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<HciEvent>(10);
+    let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<hci::EventPacket>(10);
     HciLayerFacadeService {
         hci_exports,
         rt,
@@ -38,8 +39,8 @@ async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciLayerFa
 pub struct HciLayerFacadeService {
     hci_exports: HciExports,
     rt: Arc<Runtime>,
-    from_hci_evt_tx: Sender<HciEvent>,
-    to_grpc_evt_rx: Arc<Mutex<Receiver<HciEvent>>>,
+    from_hci_evt_tx: Sender<hci::EventPacket>,
+    to_grpc_evt_rx: Arc<Mutex<Receiver<hci::EventPacket>>>,
 }
 
 impl GrpcFacade for HciLayerFacadeService {
@@ -55,8 +56,10 @@ impl HciLayerFacade for HciLayerFacadeService {
         mut data: Data,
         sink: UnarySink<Empty>,
     ) {
-        self.rt
-            .block_on(self.hci_exports.enqueue_command_with_complete(data.take_payload().into()));
+        self.rt.block_on(
+            self.hci_exports
+                .enqueue_command_with_complete(hci::CommandPacket::parse(&data.take_payload()).unwrap()),
+        );
         sink.success(Empty::default());
     }
 
@@ -66,15 +69,17 @@ impl HciLayerFacade for HciLayerFacadeService {
         mut data: Data,
         sink: UnarySink<Empty>,
     ) {
-        self.rt
-            .block_on(self.hci_exports.enqueue_command_with_complete(data.take_payload().into()));
+        self.rt.block_on(
+            self.hci_exports
+                .enqueue_command_with_complete(hci::CommandPacket::parse(&data.take_payload()).unwrap()),
+        );
         sink.success(Empty::default());
     }
 
     fn request_event(&mut self, _ctx: RpcContext<'_>, code: EventRequest, sink: UnarySink<Empty>) {
         self.rt.block_on(
             self.hci_exports
-                .register_event_handler(code.get_code() as u8, self.from_hci_evt_tx.clone()),
+                .register_event_handler(hci::EventCode::from_u32(code.get_code()).unwrap(), self.from_hci_evt_tx.clone()),
         );
         sink.success(Empty::default());
     }
@@ -91,7 +96,7 @@ impl HciLayerFacade for HciLayerFacadeService {
     fn send_acl(&mut self, _ctx: RpcContext<'_>, mut packet: Data, sink: UnarySink<Empty>) {
         let acl_tx = self.hci_exports.acl_tx.clone();
         self.rt.block_on(async move {
-            acl_tx.send(packet.take_payload().into()).await.unwrap();
+            acl_tx.send(hci::AclPacket::parse(&packet.take_payload()).unwrap()).await.unwrap();
         });
         sink.success(Empty::default());
     }

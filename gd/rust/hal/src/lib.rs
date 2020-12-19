@@ -12,7 +12,7 @@ pub mod snoop;
 #[cfg(target_os = "android")]
 mod hidl_hal;
 
-use bt_packet::{HciCommand, HciEvent, RawPacket};
+use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
 use gddi::{module, Stoppable};
 use std::sync::Arc;
 use thiserror::Error;
@@ -47,17 +47,17 @@ const H4_HEADER_SIZE: usize = 1;
 #[derive(Clone, Stoppable)]
 pub struct HalExports {
     /// Transmit end of a channel used to send HCI commands
-    pub cmd_tx: Sender<HciCommand>,
+    pub cmd_tx: Sender<CommandPacket>,
     /// Receive end of a channel used to receive HCI events
-    pub evt_rx: Arc<Mutex<Receiver<HciEvent>>>,
+    pub evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
     /// Transmit end of a channel used to send ACL data
-    pub acl_tx: Sender<RawPacket>,
+    pub acl_tx: Sender<AclPacket>,
     /// Receive end of a channel used to receive ACL data
-    pub acl_rx: Arc<Mutex<Receiver<RawPacket>>>,
+    pub acl_rx: Arc<Mutex<Receiver<AclPacket>>>,
 }
 
 mod internal {
-    use bt_packet::{HciCommand, HciEvent, RawPacket};
+    use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
     use gddi::Stoppable;
     use std::sync::Arc;
     use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
@@ -65,17 +65,17 @@ mod internal {
 
     #[derive(Clone, Stoppable)]
     pub struct RawHalExports {
-        pub cmd_tx: UnboundedSender<HciCommand>,
-        pub evt_rx: Arc<Mutex<UnboundedReceiver<HciEvent>>>,
-        pub acl_tx: UnboundedSender<RawPacket>,
-        pub acl_rx: Arc<Mutex<UnboundedReceiver<RawPacket>>>,
+        pub cmd_tx: UnboundedSender<CommandPacket>,
+        pub evt_rx: Arc<Mutex<UnboundedReceiver<EventPacket>>>,
+        pub acl_tx: UnboundedSender<AclPacket>,
+        pub acl_rx: Arc<Mutex<UnboundedReceiver<AclPacket>>>,
     }
 
     pub struct Hal {
-        pub cmd_rx: UnboundedReceiver<HciCommand>,
-        pub evt_tx: UnboundedSender<HciEvent>,
-        pub acl_rx: UnboundedReceiver<RawPacket>,
-        pub acl_tx: UnboundedSender<RawPacket>,
+        pub cmd_rx: UnboundedReceiver<CommandPacket>,
+        pub evt_tx: UnboundedSender<EventPacket>,
+        pub acl_rx: UnboundedReceiver<AclPacket>,
+        pub acl_tx: UnboundedSender<AclPacket>,
     }
 
     impl Hal {
