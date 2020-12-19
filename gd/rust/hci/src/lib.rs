@@ -1,21 +1,21 @@
 //! Host Controller Interface (HCI)
 
+/// HCI controller info
+pub mod controller;
 /// HCI errors
 pub mod error;
-
 /// HCI layer facade service
 pub mod facade;
 
 use bt_common::time::Alarm;
 use bt_hal::HalExports;
-use bt_packets::hci::CommandCompleteChild::ResetComplete;
 use bt_packets::hci::EventChild::{
     CommandComplete, CommandStatus, LeMetaEvent, MaxSlotsChange, PageScanRepetitionModeChange,
     VendorSpecificEvent,
 };
 use bt_packets::hci::{
-    AclPacket, CommandCompletePacket, CommandPacket, CommandStatusPacket, ErrorCode, EventCode,
-    EventPacket, LeMetaEventPacket, OpCode, ResetBuilder, SubeventCode,
+    AclPacket, CommandExpectations, CommandPacket, ErrorCode, EventCode, EventPacket,
+    LeMetaEventPacket, ResetBuilder, SubeventCode,
 };
 use error::Result;
 use gddi::{module, provides, Stoppable};
@@ -31,6 +31,7 @@ module! {
     hci_module,
     submodules {
         facade::facade_module,
+        controller::controller_module,
     },
     providers {
         HciExports => provide_hci,
@@ -39,7 +40,7 @@ module! {
 
 #[provides]
 async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
-    let (cmd_tx, cmd_rx) = channel::<Command>(10);
+    let (cmd_tx, cmd_rx) = channel::<QueuedCommand>(10);
     let evt_handlers = Arc::new(Mutex::new(HashMap::new()));
     let le_evt_handlers = Arc::new(Mutex::new(HashMap::new()));
 
@@ -59,37 +60,24 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
         acl_rx: hal_exports.acl_rx,
     };
 
-    match exports
-        .enqueue_command_with_complete(ResetBuilder {}.build().into())
-        .await
-        .specialize()
-    {
-        ResetComplete(evt) if *evt.get_status() == ErrorCode::Success => {}
-        _ => panic!("reset did not complete successfully"),
-    }
+    assert!(
+        exports.send(ResetBuilder {}).await.get_status() == ErrorCode::Success,
+        "reset did not complete successfully"
+    );
 
     exports
 }
 
-/// HCI command entry
-/// Uses a oneshot channel to wait until the event corresponding
-/// to the command is received
 #[derive(Debug)]
-struct Command {
+struct QueuedCommand {
     cmd: CommandPacket,
-    fut: oneshot::Sender<EventPacket>,
-}
-
-#[derive(Debug)]
-struct PendingCommand {
-    opcode: OpCode,
     fut: oneshot::Sender<EventPacket>,
 }
 
 /// HCI interface
 #[derive(Clone, Stoppable)]
 pub struct HciExports {
-    cmd_tx: Sender<Command>,
+    cmd_tx: Sender<QueuedCommand>,
     evt_handlers: Arc<Mutex<HashMap<EventCode, Sender<EventPacket>>>>,
     le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
     /// Transmit end of a channel used to send ACL data
@@ -99,32 +87,19 @@ pub struct HciExports {
 }
 
 impl HciExports {
-    async fn send(&mut self, cmd: CommandPacket) -> Result<EventPacket> {
+    async fn send_raw(&mut self, cmd: CommandPacket) -> Result<EventPacket> {
         let (tx, rx) = oneshot::channel::<EventPacket>();
-        self.cmd_tx.send(Command { cmd, fut: tx }).await?;
+        self.cmd_tx.send(QueuedCommand { cmd, fut: tx }).await?;
         let event = rx.await?;
         Ok(event)
     }
 
-    /// Enqueue an HCI command expecting a command complete
-    /// response from the controller
-    pub async fn enqueue_command_with_complete(
+    /// Send a command to the controller, getting an expected response back
+    pub async fn send<T: Into<CommandPacket> + CommandExpectations>(
         &mut self,
-        cmd: CommandPacket,
-    ) -> CommandCompletePacket {
-        match self.send(cmd).await.unwrap().specialize() {
-            CommandComplete(evt) => evt,
-            _ => panic!("Expected command complete, got status instead"),
-        }
-    }
-
-    /// Enqueue an HCI command expecting a status response
-    /// from the controller
-    pub async fn enqueue_command_with_status(&mut self, cmd: CommandPacket) -> CommandStatusPacket {
-        match self.send(cmd).await.unwrap().specialize() {
-            CommandStatus(evt) => evt,
-            _ => panic!("Expected command status, got complete instead"),
-        }
+        cmd: T,
+    ) -> T::ResponseType {
+        T::_to_response_type(self.send_raw(cmd.into()).await.unwrap())
     }
 
     /// Indicate interest in specific HCI events
@@ -183,9 +158,9 @@ async fn dispatch(
     le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
     evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
     cmd_tx: Sender<CommandPacket>,
-    mut cmd_rx: Receiver<Command>,
+    mut cmd_rx: Receiver<QueuedCommand>,
 ) {
-    let mut pending_cmd: Option<PendingCommand> = None;
+    let mut pending: Option<QueuedCommand> = None;
     let mut hci_timeout = Alarm::new();
     loop {
         select! {
@@ -193,25 +168,25 @@ async fn dispatch(
                 match evt.specialize() {
                     CommandStatus(evt) => {
                         hci_timeout.cancel();
-                        let this_opcode = *evt.get_command_op_code();
-                        match pending_cmd.take() {
-                            Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
-                            Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
+                        let this_opcode = evt.get_command_op_code();
+                        match pending.take() {
+                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(QueuedCommand{cmd, ..}) => panic!("Waiting for {:?}, got {:?}", cmd.get_op_code(), this_opcode),
                             None => panic!("Unexpected status event with opcode {:?}", this_opcode),
                         }
                     },
                     CommandComplete(evt) => {
                         hci_timeout.cancel();
-                        let this_opcode = *evt.get_command_op_code();
-                        match pending_cmd.take() {
-                            Some(PendingCommand{opcode, fut}) if opcode == this_opcode  => fut.send(evt.into()).unwrap(),
-                            Some(PendingCommand{opcode, ..}) => panic!("Waiting for {:?}, got {:?}", opcode, this_opcode),
+                        let this_opcode = evt.get_command_op_code();
+                        match pending.take() {
+                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(QueuedCommand{cmd, ..}) => panic!("Waiting for {:?}, got {:?}", cmd.get_op_code(), this_opcode),
                             None => panic!("Unexpected complete event with opcode {:?}", this_opcode),
                         }
                     },
                     LeMetaEvent(evt) => {
                         let code = evt.get_subevent_code();
-                        match le_evt_handlers.lock().await.get(code) {
+                        match le_evt_handlers.lock().await.get(&code) {
                             Some(sender) => sender.send(evt).await.unwrap(),
                             None => panic!("Unhandled le subevent {:?}", code),
                         }
@@ -221,22 +196,19 @@ async fn dispatch(
                     VendorSpecificEvent(_) => {},
                     _ => {
                         let code = evt.get_event_code();
-                        match evt_handlers.lock().await.get(code) {
+                        match evt_handlers.lock().await.get(&code) {
                             Some(sender) => sender.send(evt).await.unwrap(),
                             None => panic!("Unhandled le subevent {:?}", code),
                         }
                     },
                 }
             },
-            Some(cmd) = cmd_rx.recv(), if pending_cmd.is_none() => {
-                pending_cmd = Some(PendingCommand {
-                    opcode: *cmd.cmd.get_op_code(),
-                    fut: cmd.fut,
-                });
-                cmd_tx.send(cmd.cmd).await.unwrap();
+            Some(queued) = cmd_rx.recv(), if pending.is_none() => {
+                cmd_tx.send(queued.cmd.clone()).await.unwrap();
                 hci_timeout.reset(Duration::from_secs(2));
+                pending = Some(queued);
             },
-            _ = hci_timeout.expired() => panic!("Timed out waiting for {:?}", pending_cmd.unwrap().opcode),
+            _ = hci_timeout.expired() => panic!("Timed out waiting for {:?}", pending.unwrap().cmd.get_op_code()),
             else => break,
         }
     }
