@@ -46,7 +46,15 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api_types.h"
+#include "stack/include/btm_status.h"
 #include "stack/include/l2cap_hci_link_interface.h"
+#include "types/raw_address.h"
+
+void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote);
+void btm_sco_chk_pend_unpark(tHCI_STATUS status, uint16_t handle);
+
+extern tBTM_CB btm_cb;
 
 struct StackAclBtmPm {
   tBTM_STATUS btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id, int link_ind,
