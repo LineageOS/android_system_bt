@@ -67,4 +67,25 @@ void EnumGen::GenRustDef(std::ostream& stream) {
     stream << util::ConstantCaseToCamelCase(pair.second) << " = 0x" << std::hex << pair.first << std::dec << ",";
   }
   stream << "}";
+
+  if (e_.try_from_enum_ != nullptr) {
+    std::vector<std::string> other_items;
+    for (const auto& pair : e_.try_from_enum_->constants_) {
+      other_items.push_back(pair.second);
+    }
+    stream << "impl TryFrom<" << e_.try_from_enum_->name_ << "> for " << e_.name_ << " {";
+    stream << "type Error = &'static str;";
+    stream << "fn try_from(value: " << e_.try_from_enum_->name_ << ") -> std::result::Result<Self, Self::Error> {";
+    stream << "match value {";
+    for (const auto& pair : e_.constants_) {
+      if (std::find(other_items.begin(), other_items.end(), pair.second) == other_items.end()) {
+        continue;
+      }
+      auto constant_name = util::ConstantCaseToCamelCase(pair.second);
+      stream << e_.try_from_enum_->name_ << "::" << constant_name << " => Ok(" << e_.name_ << "::" << constant_name
+             << "),";
+    }
+    stream << "_ => Err(\"No mapping for provided key\"),";
+    stream << "}}}";
+  }
 }

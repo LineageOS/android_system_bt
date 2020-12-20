@@ -39,4 +39,6 @@ class EnumDef : public TypeDef {
   // data
   std::map<uint32_t, std::string> constants_;
   std::set<std::string> entries_;
+
+  EnumDef* try_from_enum_ = nullptr;
 };
