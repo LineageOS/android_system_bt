@@ -350,11 +350,9 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
     case HCI_ESCO_CONNECTION_CHANGED_EVT:
       btu_hcif_esco_connection_chg_evt(p);
       break;
-#if (BTM_SSR_INCLUDED == TRUE)
     case HCI_SNIFF_SUB_RATE_EVT:
       btm_pm_proc_ssr_evt(p, hci_evt_len);
       break;
-#endif /* BTM_SSR_INCLUDED == TRUE */
     case HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT:
       btm_sec_rmt_host_support_feat_evt(p);
       break;

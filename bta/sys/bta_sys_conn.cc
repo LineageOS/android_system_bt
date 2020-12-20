@@ -70,11 +70,10 @@ void bta_sys_role_chg_register(tBTA_SYS_CONN_CBACK* p_cback) {
  * Returns          void
  *
  ******************************************************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
 void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback) {
   bta_sys_cb.p_ssr_cb = p_cback;
 }
-#endif
+
 /*******************************************************************************
  *
  * Function         bta_sys_role_chg_register
@@ -338,14 +337,12 @@ void bta_sys_sco_unuse(uint8_t id, uint8_t app_id,
  * Returns          void
  *
  ******************************************************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
 void bta_sys_chg_ssr_config(uint8_t id, uint8_t app_id, uint16_t max_latency,
                             uint16_t min_tout) {
   if (bta_sys_cb.p_ssr_cb) {
     bta_sys_cb.p_ssr_cb(id, app_id, max_latency, min_tout);
   }
 }
-#endif
 
 /*******************************************************************************
  *

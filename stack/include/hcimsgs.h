@@ -358,7 +358,6 @@ extern void btsnd_hcic_write_def_policy_set(uint16_t settings);
 /******************************************
  *    Lisbon Features
  ******************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
 /* Sniff Subrating */
 extern void btsnd_hcic_sniff_sub_rate(uint16_t handle, uint16_t max_lat,
                                       uint16_t min_remote_lat,
@@ -371,14 +370,6 @@ extern void btsnd_hcic_sniff_sub_rate(uint16_t handle, uint16_t max_lat,
 #define HCI_SNIFF_SUB_RATE_MIN_REM_LAT_OFF 4
 #define HCI_SNIFF_SUB_RATE_MIN_LOC_LAT_OFF 6
 /* Sniff Subrating */
-
-#else /* BTM_SSR_INCLUDED == FALSE */
-
-#define btsnd_hcic_sniff_sub_rate(handle, max_lat, min_remote_lat, \
-                                  min_local_lat)                   \
-  false
-
-#endif /* BTM_SSR_INCLUDED */
 
 /* Extended Inquiry Response */
 extern void btsnd_hcic_write_ext_inquiry_response(void* buffer,
