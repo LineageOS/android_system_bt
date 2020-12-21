@@ -518,13 +518,13 @@ bool bta_jv_check_psm(uint16_t psm) {
     if (psm < 0x1001) {
       /* see if this is defined by spec */
       switch (psm) {
-        case SDP_PSM:       /* 1 */
+        case BT_PSM_SDP:
         case BT_PSM_RFCOMM: /* 3 */
           /* do not allow java app to use these 2 PSMs */
           break;
 
-        case TCS_PSM_INTERCOM: /* 5 */
-        case TCS_PSM_CORDLESS: /* 7 */
+        case BT_PSM_TCS:
+        case BT_PSM_CTP:
           if (!bta_sys_is_register(BTA_ID_CT) &&
               !bta_sys_is_register(BTA_ID_CG))
             ret = true;
@@ -534,8 +534,8 @@ bool bta_jv_check_psm(uint16_t psm) {
           if (!bta_sys_is_register(BTA_ID_PAN)) ret = true;
           break;
 
-        case HID_PSM_CONTROL:   /* 0x11 */
-        case HID_PSM_INTERRUPT: /* 0x13 */
+        case BT_PSM_HIDC:
+        case BT_PSM_HIDI:
           // FIX: allow HID Device and HID Host to coexist
           if (!bta_sys_is_register(BTA_ID_HD) ||
               !bta_sys_is_register(BTA_ID_HH))
