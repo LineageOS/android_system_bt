@@ -106,6 +106,13 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
   }
 }
 
+#define BTM_PM_REC_NOT_USED 0
+typedef struct {
+  tBTM_PM_STATUS_CBACK*
+      cback;    /* to notify the registered party of mode change event */
+  uint8_t mask; /* registered request mask. 0, if this entry is not used */
+} tBTM_PM_RCB;
+
 /* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
  * function) in response to BTM_SwitchRoleToCentral call.
  */
@@ -334,6 +341,10 @@ typedef struct {
   void SetDefaultSupervisorTimeout(uint16_t timeout) {
     btm_def_link_super_tout = timeout;
   }
+
+  tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
+
+  uint8_t pm_pend_id{0}; /* the id pf the module, which has a pending PM cmd */
 
   unsigned NumberOfActiveLinks() const {
     unsigned cnt = 0;
