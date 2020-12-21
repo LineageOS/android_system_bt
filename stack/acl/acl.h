@@ -79,6 +79,17 @@ typedef struct {
 } tBTM_ROLE_SWITCH_CMPL;
 
 typedef struct {
+  bool chg_ind;
+  tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
+  tBTM_PM_PWR_MD set_mode;
+  tBTM_PM_STATE state;
+  uint16_t interval;
+  uint16_t max_lat;
+  uint16_t min_loc_to;
+  uint16_t min_rmt_to;
+} tBTM_PM_MCB;
+
+typedef struct {
   BD_FEATURES peer_le_features;
   bool peer_le_features_valid;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
@@ -233,17 +244,6 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
       return s + std::string("UNKNOWN");
   }
 }
-
-typedef struct {
-  bool chg_ind;
-  tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
-  tBTM_PM_PWR_MD set_mode;
-  tBTM_PM_STATE state;
-  uint16_t interval;
-  uint16_t max_lat;
-  uint16_t min_loc_to;
-  uint16_t min_rmt_to;
-} tBTM_PM_MCB;
 
 /****************************************************
  **      ACL Management API
