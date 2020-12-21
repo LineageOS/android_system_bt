@@ -37,6 +37,10 @@
 
 extern tBTM_CB btm_cb;
 
+namespace {
+constexpr char kBtmLogTag[] = "SCO";
+};  // namespace
+
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
@@ -456,8 +460,8 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
       }
 
       *p_sco_inx = xx;
-      BTM_TRACE_API("%s: BTM_CreateSco succeeded", __func__);
-      BTM_LogHistory("SCO", *remote_bda, "Connecting", "local initiated");
+      LOG_DEBUG("SCO connection successfully requested");
+      BTM_LogHistory(kBtmLogTag, *remote_bda, "Connecting", "local initiated");
       return BTM_CMD_STARTED;
     }
   }
@@ -676,6 +680,11 @@ void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
 
   btm_cb.sco_cb.sco_disc_reason = hci_status;
 
+  if (bda == nullptr) {
+    LOG_ERROR("Received null pointer for remote address");
+    return;
+  }
+
   for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if (((p->state == SCO_ST_CONNECTING) || (p->state == SCO_ST_LISTENING) ||
          (p->state == SCO_ST_W4_CONN_RSP)) &&
@@ -711,6 +720,21 @@ void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
 
       p->state = SCO_ST_CONNECTED;
       p->hci_handle = hci_handle;
+
+      RawAddress bd_addr(*bda);
+
+      if (hci_status == HCI_SUCCESS) {
+        BTM_LogHistory(kBtmLogTag, bd_addr, "Connection success",
+                       base::StringPrintf("handle:0x%04x %s", hci_handle,
+                                          (spt) ? "listener" : "initiator"));
+      } else {
+        BTM_LogHistory(
+            kBtmLogTag, bd_addr, "Connection failed",
+            base::StringPrintf(
+                "reason:%s",
+                hci_reason_code_text(static_cast<tHCI_REASON>(hci_status))
+                    .c_str()));
+      }
 
       if (!btm_cb.sco_cb.esco_supported) {
         p->esco.data.link_type = BTM_LINK_TYPE_SCO;
@@ -777,7 +801,7 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   p->state = SCO_ST_DISCONNECTING;
 
   acl_disconnect_from_handle(p->hci_handle, HCI_ERR_PEER_USER);
-  BTM_LogHistory("SCO", p->esco.data.bd_addr, "Disconnecting",
+  BTM_LogHistory(kBtmLogTag, p->esco.data.bd_addr, "Disconnecting",
                  "local initiated");
 
   return (BTM_CMD_STARTED);
