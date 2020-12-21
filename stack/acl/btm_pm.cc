@@ -30,6 +30,7 @@
 
 #define LOG_TAG "bt_btm_pm"
 
+#include <base/strings/stringprintf.h>
 #include <cstdint>
 
 #include "bt_target.h"
@@ -41,6 +42,7 @@
 #include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/l2cap_hci_link_interface.h"
@@ -60,6 +62,8 @@ struct StackAclBtmPm {
 
 namespace {
 StackAclBtmPm internal_;
+
+constexpr char kBtmLogTag[] = "ACL";
 }
 
 /*****************************************************************************/
@@ -87,11 +91,11 @@ const uint8_t
 static void send_sniff_subrating(const tACL_CONN& p_acl, uint16_t max_lat,
                                  uint16_t min_rmt_to, uint16_t min_loc_to) {
   btsnd_hcic_sniff_sub_rate(p_acl.hci_handle, max_lat, min_rmt_to, min_loc_to);
-  btm_cb.history_->Push(
-      "%-32s: %s max_latency:%.2f peer_timeout:%.2f local_timeout:%.2f",
-      "Sniff subrating (seconds)", PRIVATE_ADDRESS(p_acl.remote_addr),
-      ticks_to_seconds(max_lat), ticks_to_seconds(min_rmt_to),
-      ticks_to_seconds(min_loc_to));
+  BTM_LogHistory(kBtmLogTag, p_acl.remote_addr, "Sniff subrating",
+                 base::StringPrintf(
+                     "max_latency:%.2f peer_timeout:%.2f local_timeout:%.2f",
+                     ticks_to_seconds(max_lat), ticks_to_seconds(min_rmt_to),
+                     ticks_to_seconds(min_loc_to)));
 }
 
 /*****************************************************************************/
@@ -579,14 +583,16 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id,
   /* send the appropriate HCI command */
   btm_cb.acl_cb_.pm_pend_id = pm_id;
 
-  LOG_INFO("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
+  LOG_INFO("Switching from %s[0x%02x] to %s[0x%02x]",
            power_mode_state_text(p_cb->State()).c_str(), p_cb->State(),
-           power_mode_state_text(md_res.mode).c_str(), md_res.mode, link_ind);
-  btm_cb.history_->Push(
-      "%-32s: %s  %s(0x%02x) ==> %s(0x%02x)", "Power mode change",
-      PRIVATE_ADDRESS(btm_cb.acl_cb_.acl_db[link_ind].remote_addr),
-      power_mode_state_text(p_cb->State()).c_str(), p_cb->State(),
-      power_mode_state_text(md_res.mode).c_str(), md_res.mode);
+           power_mode_state_text(md_res.mode).c_str(), md_res.mode);
+  BTM_LogHistory(
+      kBtmLogTag, btm_cb.acl_cb_.acl_db[link_ind].remote_addr,
+      "Power mode change",
+      base::StringPrintf(
+          "%s[0x%02x] ==> %s[0x%02x]",
+          power_mode_state_text(p_cb->State()).c_str(), p_cb->State(),
+          power_mode_state_text(md_res.mode).c_str(), md_res.mode));
 
   switch (md_res.mode) {
     case BTM_PM_MD_ACTIVE:
