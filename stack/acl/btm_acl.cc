@@ -308,6 +308,10 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
   return &btm_cb.acl_cb_.acl_db[index];
 }
 
+tACL_CONN* acl_get_connection_from_handle(uint16_t handle) {
+  return internal_.acl_get_connection_from_handle(handle);
+}
+
 void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   uint16_t handle;
   uint8_t sca;
