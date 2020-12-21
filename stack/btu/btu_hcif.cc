@@ -1472,7 +1472,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       if (status != HCI_SUCCESS) {
         // Allow SCO initiation to continue if waiting for change mode event
         STREAM_TO_UINT16(handle, p_cmd);
-        btm_sco_chk_pend_unpark(status, handle);
+        btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
       }
       FALLTHROUGH_INTENDED; /* FALLTHROUGH */
     case HCI_HOLD_MODE:
@@ -1581,9 +1581,9 @@ static void btu_hcif_mode_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(current_mode, p);
   STREAM_TO_UINT16(interval, p);
-  btm_sco_chk_pend_unpark(status, handle);
-  btm_pm_proc_mode_change(status, handle, static_cast<tHCI_MODE>(current_mode),
-                          interval);
+  btm_sco_chk_pend_unpark(static_cast<tHCI_STATUS>(status), handle);
+  btm_pm_proc_mode_change(static_cast<tHCI_STATUS>(status), handle,
+                          static_cast<tHCI_MODE>(current_mode), interval);
 
 #if (HID_DEV_INCLUDED == TRUE && HID_DEV_PM_INCLUDED == TRUE)
   hidd_pm_proc_mode_change(status, current_mode, interval);
