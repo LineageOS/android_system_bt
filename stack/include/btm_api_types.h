@@ -1004,6 +1004,22 @@ enum : uint8_t {
 };
 typedef uint8_t tBTM_PM_MODE;
 
+inline std::string power_mode_text(tBTM_PM_MODE mode) {
+  std::string s = base::StringPrintf((mode & BTM_PM_MD_FORCE) ? "" : "forced:");
+  switch (mode & ~BTM_PM_MD_FORCE) {
+    case BTM_PM_MD_ACTIVE:
+      return s + std::string("active");
+    case BTM_PM_MD_HOLD:
+      return s + std::string("hold");
+    case BTM_PM_MD_SNIFF:
+      return s + std::string("sniff");
+    case BTM_PM_MD_PARK:
+      return s + std::string("park");
+    default:
+      return s + std::string("UNKNOWN");
+  }
+}
+
 #define BTM_PM_SET_ONLY_ID 0x80
 
 /* Operation codes */
