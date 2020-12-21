@@ -538,7 +538,29 @@ void DumpsysBtm(int fd) {
 }
 #undef DUMPSYS_TAG
 
+#define DUMPSYS_TAG "shim::legacy::record"
+void DumpsysRecord(int fd) {
+  LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
+
+  if (btm_cb.sec_dev_rec == nullptr) {
+    LOG_DUMPSYS(fd, "Record is empty - no devices");
+    return;
+  }
+
+  unsigned cnt = 0;
+  list_node_t* end = list_end(btm_cb.sec_dev_rec);
+  for (list_node_t* node = list_begin(btm_cb.sec_dev_rec); node != end;
+       node = list_next(node)) {
+    tBTM_SEC_DEV_REC* p_dev_rec =
+        static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
+
+    LOG_DUMPSYS(fd, "%03u %s", ++cnt, p_dev_rec->ToString().c_str());
+  }
+}
+#undef DUMPSYS_TAG
+
 void bluetooth::shim::legacy::Acl::Dump(int fd) const {
+  DumpsysRecord(fd);
   DumpsysAcl(fd);
   DumpsysL2cap(fd);
   DumpsysBtm(fd);
