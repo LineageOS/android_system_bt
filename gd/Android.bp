@@ -269,6 +269,9 @@ cc_test {
         "gd_clang_coverage_bin",
     ],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     target: {
         linux: {
             srcs: [
@@ -346,6 +349,9 @@ cc_test {
         "gd_clang_coverage_bin",
     ],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     srcs: [
         ":BluetoothCommonSources",
         ":BluetoothPacketSources",
