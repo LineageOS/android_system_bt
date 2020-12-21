@@ -62,7 +62,7 @@ enum {
 };
 
 /* AT command interpreter table for HSP */
-const tBTA_AG_AT_CMD bta_ag_hsp_cmd[] = {
+static const tBTA_AG_AT_CMD bta_ag_hsp_cmd[] = {
     {"+CKPD", BTA_AG_AT_CKPD_EVT, BTA_AG_AT_SET, BTA_AG_AT_INT, 200, 200},
     {"+VGS", BTA_AG_SPK_EVT, BTA_AG_AT_SET, BTA_AG_AT_INT, 0, 15},
     {"+VGM", BTA_AG_MIC_EVT, BTA_AG_AT_SET, BTA_AG_AT_INT, 0, 15},
@@ -70,7 +70,7 @@ const tBTA_AG_AT_CMD bta_ag_hsp_cmd[] = {
     {"", 0, 0, 0, 0, 0}};
 
 /* AT command interpreter table for HFP */
-const tBTA_AG_AT_CMD bta_ag_hfp_cmd[] = {
+static const tBTA_AG_AT_CMD bta_ag_hfp_cmd[] = {
     {"A", BTA_AG_AT_A_EVT, BTA_AG_AT_NONE, BTA_AG_AT_STR, 0, 0},
     {"D", BTA_AG_AT_D_EVT, BTA_AG_AT_NONE | BTA_AG_AT_FREE, BTA_AG_AT_STR, 0,
      0},
@@ -138,7 +138,7 @@ enum {
 };
 
 /* AT result code constant table */
-const tBTA_AG_RESULT bta_ag_result_tbl[] = {
+static const tBTA_AG_RESULT bta_ag_result_tbl[] = {
     {"OK", BTA_AG_LOCAL_RES_OK, BTA_AG_RES_FMT_NONE},
     {"ERROR", BTA_AG_LOCAL_RES_ERROR, BTA_AG_RES_FMT_NONE},
     {"RING", BTA_AG_LOCAL_RES_RING, BTA_AG_RES_FMT_NONE},
@@ -179,7 +179,7 @@ typedef struct {
 } tBTA_AG_INDICATOR_MAP;
 
 /* callsetup indicator value lookup table */
-const tBTA_AG_INDICATOR_MAP callsetup_indicator_map[] = {
+static const tBTA_AG_INDICATOR_MAP callsetup_indicator_map[] = {
     {BTA_AG_IN_CALL_RES, BTA_AG_CALLSETUP_INCOMING},
     {BTA_AG_CALL_WAIT_RES, BTA_AG_CALLSETUP_INCOMING},
     {BTA_AG_OUT_CALL_ORIG_RES, BTA_AG_CALLSETUP_OUTGOING},
@@ -1346,7 +1346,8 @@ void bta_ag_at_err_cback(tBTA_AG_SCB* p_scb, bool unknown, const char* p_arg) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_hsp_result(tBTA_AG_SCB* p_scb, const tBTA_AG_API_RESULT& result) {
+static void bta_ag_hsp_result(tBTA_AG_SCB* p_scb,
+                              const tBTA_AG_API_RESULT& result) {
   APPL_TRACE_DEBUG("bta_ag_hsp_result : res = %d", result.result);
 
   switch (result.result) {
@@ -1441,7 +1442,8 @@ void bta_ag_hsp_result(tBTA_AG_SCB* p_scb, const tBTA_AG_API_RESULT& result) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_hfp_result(tBTA_AG_SCB* p_scb, const tBTA_AG_API_RESULT& result) {
+static void bta_ag_hfp_result(tBTA_AG_SCB* p_scb,
+                              const tBTA_AG_API_RESULT& result) {
   APPL_TRACE_DEBUG("bta_ag_hfp_result : res = %d", result.result);
 
   switch (result.result) {
