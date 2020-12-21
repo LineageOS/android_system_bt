@@ -1516,13 +1516,13 @@ void btm_set_packet_types_from_address(const RawAddress& bd_addr,
     LOG_WARN("Unable to set packet types on le transport");
     return;
   }
-  if (btm_pm_is_le_link(bd_addr)) {
-    LOG_DEBUG("Unable to set packet types on provided le acl");
-    return;
-  }
   tACL_CONN* p_acl_cb = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl_cb == nullptr) {
     LOG_WARN("Unable to find active acl");
+    return;
+  }
+  if (p_acl_cb->is_transport_ble()) {
+    LOG_DEBUG("Unable to set packet types on provided le acl");
     return;
   }
   tBTM_STATUS status = internal_.btm_set_packet_types(p_acl_cb, pkt_types);
