@@ -30,21 +30,14 @@
 
 #define LOG_TAG "bt_btm_pm"
 
-#include <stddef.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btm_int_types.h"
+#include "bt_target.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
