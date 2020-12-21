@@ -40,16 +40,6 @@ extern tBTM_CB btm_cb;
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
 
-#define SCO_ST_UNUSED 0
-#define SCO_ST_LISTENING 1
-#define SCO_ST_W4_CONN_RSP 2
-#define SCO_ST_CONNECTING 3
-#define SCO_ST_CONNECTED 4
-#define SCO_ST_DISCONNECTING 5
-#define SCO_ST_PEND_UNPARK 6
-#define SCO_ST_PEND_ROLECHANGE 7
-#define SCO_ST_PEND_MODECHANGE 8
-
 #define BTM_SCO_PKT_TYPE_MASK \
   (HCI_PKT_TYPES_MASK_HV1 | HCI_PKT_TYPES_MASK_HV2 | HCI_PKT_TYPES_MASK_HV3)
 
@@ -1163,6 +1153,9 @@ uint8_t BTM_GetNumScoLinks(void) {
       case SCO_ST_DISCONNECTING:
       case SCO_ST_PEND_UNPARK:
         num_scos++;
+        break;
+      default:
+        break;
     }
   }
   return (num_scos);
