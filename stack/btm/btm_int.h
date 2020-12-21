@@ -91,7 +91,6 @@ extern void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data);
  *******************************************
 */
 extern void btm_sco_init(void);
-extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
 extern void btm_sco_acl_removed(const RawAddress* bda);
 extern void btm_route_sco_data(BT_HDR* p_msg);
 
