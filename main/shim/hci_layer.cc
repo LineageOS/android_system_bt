@@ -30,6 +30,7 @@
 #include "hci/le_acl_connection_interface.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/shim.h"
+#include "main/shim/stack.h"
 #include "osi/include/allocator.h"
 #include "osi/include/future.h"
 #include "packet/raw_builder.h"
@@ -536,23 +537,35 @@ static void transmit_command(BT_HDR* command,
 }
 
 static void transmit_fragment(uint8_t* stream, size_t length) {
-  bluetooth::shim::rust::hci_send_acl(::rust::Slice(stream, length));
+  bluetooth::shim::rust::hci_send_acl(
+      **bluetooth::shim::Stack::Stack::GetInstance()->GetRustHci(),
+      ::rust::Slice(stream, length));
 }
 
 static void register_event(bluetooth::hci::EventCode event_code) {
   bluetooth::shim::rust::hci_register_event(
-      static_cast<uint8_t>(event_code),
-      std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
+      static_cast<uint8_t>(event_code));
 }
 
 static void register_le_event(bluetooth::hci::SubeventCode subevent_code) {
   bluetooth::shim::rust::hci_register_le_event(
-      static_cast<uint8_t>(subevent_code),
+      **bluetooth::shim::Stack::Stack::GetInstance()->GetRustHci(),
+      static_cast<uint8_t>(subevent_code));
+}
+
+static void hci_on_reset_complete() {
+  bluetooth::shim::rust::hci_set_evt_callback(
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
+      std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
+  bluetooth::shim::rust::hci_set_le_evt_callback(
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
       std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
 }
 
 static void register_for_acl() {
   bluetooth::shim::rust::hci_set_acl_callback(
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
       std::make_unique<u8SliceCallback>(Bind(rust::on_acl)));
 }
 
@@ -656,6 +669,10 @@ const hci_t* bluetooth::shim::hci_layer_get_interface() {
 
 void bluetooth::shim::hci_on_reset_complete() {
   ASSERT(send_data_upwards);
+  if (bluetooth::common::init_flags::gd_rust_is_enabled()) {
+    ::rust::hci_on_reset_complete();
+  }
+
   for (uint8_t event_code_raw = 0; event_code_raw < 0xFF; event_code_raw++) {
     if (!is_valid_event_code(event_code_raw)) {
       continue;

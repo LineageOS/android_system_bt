@@ -87,7 +87,10 @@ pub struct HciExports {
 }
 
 impl HciExports {
-    async fn send_raw(&mut self, cmd: CommandPacket) -> Result<EventPacket> {
+    /// Send a command, but does not automagically associate the expected returning event type.
+    ///
+    /// Only really useful for facades & shims.
+    pub async fn send_raw(&mut self, cmd: CommandPacket) -> Result<EventPacket> {
         let (tx, rx) = oneshot::channel::<EventPacket>();
         self.cmd_tx.send(QueuedCommand { cmd, fut: tx }).await?;
         let event = rx.await?;
@@ -113,11 +116,7 @@ impl HciExports {
             | EventCode::VendorSpecific => panic!("{:?} is a protected event", code),
             _ => {
                 assert!(
-                    self.evt_handlers
-                        .lock()
-                        .await
-                        .insert(code, sender)
-                        .is_none(),
+                    self.evt_handlers.lock().await.insert(code, sender).is_none(),
                     "A handler for {:?} is already registered",
                     code
                 );
@@ -137,11 +136,7 @@ impl HciExports {
         sender: Sender<LeMetaEventPacket>,
     ) {
         assert!(
-            self.le_evt_handlers
-                .lock()
-                .await
-                .insert(code, sender)
-                .is_none(),
+            self.le_evt_handlers.lock().await.insert(code, sender).is_none(),
             "A handler for {:?} is already registered",
             code
         );
