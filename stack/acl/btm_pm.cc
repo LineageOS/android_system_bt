@@ -49,7 +49,7 @@
 #include "stack/include/l2cap_hci_link_interface.h"
 
 struct StackAclBtmPm {
-  tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
+  tBTM_STATUS btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id, int link_ind,
                                 const tBTM_PM_PWR_MD* p_mode);
   tBTM_PM_MCB* btm_pm_get_power_manager_from_address(const RawAddress& bda);
   tBTM_PM_MCB* btm_pm_get_power_manager_from_handle(uint16_t handle);
@@ -156,6 +156,13 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     return BTM_ILLEGAL_VALUE;
   }
 
+  tACL_CONN* p_acl =
+      acl_get_connection_from_address(remote_bda, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find acl");
+    return BTM_UNKNOWN_ADDR;
+  }
+
   /* take out the force bit */
   tBTM_PM_MODE mode = p_mode->mode & ~BTM_PM_MD_FORCE;
 
@@ -235,7 +242,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
            remote_bda.ToString().c_str(), p_mode->mode, p_cb->state,
            btm_cb.acl_cb_.pm_pend_link);
 
-  return internal_.btm_pm_snd_md_req(pm_id, acl_ind, p_mode);
+  return internal_.btm_pm_snd_md_req(*p_acl, pm_id, acl_ind, p_mode);
 }
 
 /*******************************************************************************
@@ -485,7 +492,8 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
  * Returns      tBTM_STATUS
  *, bool    *p_chg_ind
  ******************************************************************************/
-tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
+tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id,
+                                             int link_ind,
                                              const tBTM_PM_PWR_MD* p_mode) {
   tBTM_PM_PWR_MD md_res;
   tBTM_PM_MODE mode;
@@ -655,7 +663,8 @@ void btm_pm_proc_cmd_status(uint8_t status) {
     if (btm_cb.acl_cb_.pm_mode_db[xx].state & BTM_PM_STORED_MASK) {
       btm_cb.acl_cb_.pm_mode_db[xx].state &= ~BTM_PM_STORED_MASK;
       BTM_TRACE_DEBUG("btm_pm_check_stored :%d", xx);
-      internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
+      internal_.btm_pm_snd_md_req(btm_cb.acl_cb_.acl_db[xx], BTM_PM_SET_ONLY_ID,
+                                  xx, NULL);
       break;
     }
   }
@@ -683,6 +692,12 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   tBTM_PM_STATUS mode = static_cast<tBTM_PM_STATUS>(hci_mode);
   int xx, yy, zz;
   tBTM_PM_STATE old_state;
+
+  tACL_CONN* p_acl = acl_get_connection_from_handle(hci_handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find acl");
+    return;
+  }
 
   /* get the index to acl_db */
   xx = btm_handle_to_acl_index(hci_handle);
@@ -721,12 +736,13 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   /* new request has been made. - post a message to BTU task */
   if (old_state & BTM_PM_STORED_MASK) {
     LOG_VERBOSE("Sending stored req: %d", xx);
-    internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
+    internal_.btm_pm_snd_md_req(*p_acl, BTM_PM_SET_ONLY_ID, xx, NULL);
   } else {
     for (zz = 0; zz < MAX_L2CAP_LINKS; zz++) {
       if (btm_cb.acl_cb_.pm_mode_db[zz].chg_ind) {
         LOG_VERBOSE("Sending PM req :%d", zz);
-        internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, zz, NULL);
+        internal_.btm_pm_snd_md_req(btm_cb.acl_cb_.acl_db[zz],
+                                    BTM_PM_SET_ONLY_ID, zz, NULL);
         break;
       }
     }
