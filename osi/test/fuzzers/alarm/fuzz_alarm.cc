@@ -31,9 +31,9 @@ using bluetooth::common::MessageLoopThread;
 
 static semaphore_t* semaphore;
 static int cb_counter;
-static base::MessageLoop* message_loop_;
+static MessageLoopThread* thread("fake main thread");
 
-base::MessageLoop* get_main_message_loop() { return message_loop_; }
+bluetooth::common::MessageLoopThread* get_main_thread() { return thread; }
 
 static void cb(void* data) {
   ++cb_counter;

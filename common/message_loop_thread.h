@@ -135,19 +135,6 @@ class MessageLoopThread final {
    */
   base::MessageLoop* message_loop() const;
 
- private:
-  /**
-   * Static method to run the thread
-   *
-   * This is used instead of a C++ lambda because of the use of std::shared_ptr
-   *
-   * @param context needs to be a pointer to an instance of MessageLoopThread
-   * @param start_up_promise a std::promise that is used to notify calling
-   * thread the completion of message loop start-up
-   */
-  static void RunThread(MessageLoopThread* context,
-                        std::promise<void> start_up_promise);
-
   /**
    * Post a task to run on this thread after a specified delay. If the task
    * needs to be cancelable before it's run, use base::CancelableClosure type
@@ -176,8 +163,18 @@ class MessageLoopThread final {
   bool DoInThreadDelayed(const base::Location& from_here,
                          base::OnceClosure task, const base::TimeDelta& delay);
 
-  friend class RepeatingTimer;  // allow Timer to use DoInThreadDelayed()
-  friend class OnceTimer;       // allow OnceTimer to use DoInThreadDelayed()
+ private:
+  /**
+   * Static method to run the thread
+   *
+   * This is used instead of a C++ lambda because of the use of std::shared_ptr
+   *
+   * @param context needs to be a pointer to an instance of MessageLoopThread
+   * @param start_up_promise a std::promise that is used to notify calling
+   * thread the completion of message loop start-up
+   */
+  static void RunThread(MessageLoopThread* context,
+                        std::promise<void> start_up_promise);
 
   /**
    * Actual method to run the thread, blocking until ShutDown() is called

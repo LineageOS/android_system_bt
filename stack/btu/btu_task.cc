@@ -87,10 +87,6 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
 
 bluetooth::common::MessageLoopThread* get_main_thread() { return &main_thread; }
 
-base::MessageLoop* get_main_message_loop() {
-  return main_thread.message_loop();
-}
-
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task) {
   if (!main_thread.DoInThread(from_here, std::move(task))) {
@@ -103,8 +99,7 @@ bt_status_t do_in_main_thread(const base::Location& from_here,
 bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
                                       base::OnceClosure task,
                                       const base::TimeDelta& delay) {
-  if (!get_main_message_loop()->task_runner()->PostDelayedTask(
-          from_here, std::move(task), delay)) {
+  if (!main_thread.DoInThreadDelayed(from_here, std::move(task), delay)) {
     LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
     return BT_STATUS_FAIL;
   }

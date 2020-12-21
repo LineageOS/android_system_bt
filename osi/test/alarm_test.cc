@@ -40,9 +40,9 @@ static const uint64_t EPSILON_MS = 50;
 
 static void msleep(uint64_t ms) { usleep(ms * 1000); }
 
-static base::MessageLoop* message_loop_;
+static base::MessageLoop* thread_;
 
-base::MessageLoop* get_main_message_loop() { return message_loop_; }
+bluetooth::common::MessageLoopThread* get_main_thread() { return thread_; }
 
 class AlarmTest : public AlarmTestHarness {
  protected:
@@ -308,7 +308,7 @@ TEST_F(AlarmTest, test_callback_ordering_on_mloop) {
   if (!message_loop_thread.IsRunning()) {
     FAIL() << "unable to create btu message loop thread.";
   }
-  message_loop_ = message_loop_thread.message_loop();
+  thread_ = message_loop_thread;
 
   for (int i = 0; i < 100; i++) {
     const std::string alarm_name =

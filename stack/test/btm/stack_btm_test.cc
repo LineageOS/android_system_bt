@@ -29,7 +29,7 @@
 #include "stack/include/btm_client_interface.h"
 #include "types/raw_address.h"
 
-base::MessageLoop* get_main_message_loop() { return nullptr; }
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 
 const hci_packet_factory_t* hci_packet_factory_get_interface() {
   return nullptr;
