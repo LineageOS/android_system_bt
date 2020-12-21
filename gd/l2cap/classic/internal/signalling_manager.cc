@@ -662,7 +662,7 @@ void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, Informat
     case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
       auto response = InformationResponseExtendedFeaturesBuilder::Create(
           signal_id.Value(), InformationRequestResult::SUCCESS, 0, 0, 0, 1 /* ERTM */, 0 /* Streaming mode */,
-          1 /* FCS */, 0, 1 /* Fixed Channels */, 0, 0);
+          1 /* FCS */, 0, 1 /* Fixed Channels */, 0, 0, 0 /* COC */);
       enqueue_buffer_->Enqueue(std::move(response), handler_);
       break;
     }
