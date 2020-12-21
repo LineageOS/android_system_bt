@@ -24,6 +24,8 @@
 #ifndef BTA_AG_INT_H
 #define BTA_AG_INT_H
 
+#include <cstdint>
+
 #include "bta_ag_api.h"
 #include "bta_ag_at.h"
 #include "bta_api.h"
@@ -96,7 +98,7 @@ enum {
 };
 
 /* sco states */
-enum {
+typedef enum : uint8_t {
   BTA_AG_SCO_SHUTDOWN_ST,   /* no sco listening, all sco connections closed */
   BTA_AG_SCO_LISTEN_ST,     /* sco listening */
   BTA_AG_SCO_CODEC_ST,      /* sco codec negotiation */
@@ -108,7 +110,7 @@ enum {
   BTA_AG_SCO_CLOSE_OP_ST,   /* closing sco being opened */
   BTA_AG_SCO_CLOSE_XFER_ST, /* closing sco being transferred */
   BTA_AG_SCO_SHUTTING_ST    /* sco shutting down */
-};
+} tBTA_AG_SCO;
 
 /*****************************************************************************
  *  Data types
@@ -252,7 +254,7 @@ typedef struct {
   tBTA_AG_SCB* p_curr_scb;  /* SCB associated with SCO connection */
   tBTA_AG_SCB* p_xfer_scb;  /* SCB associated with SCO transfer */
   uint16_t cur_idx;         /* SCO handle */
-  uint8_t state;            /* SCO state variable */
+  tBTA_AG_SCO state;        /* SCO state variable */
   bool is_local;            /* SCO connection initiated locally or remotely */
 } tBTA_AG_SCO_CB;
 
