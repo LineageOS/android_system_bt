@@ -2830,8 +2830,12 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle,
                                       tHCI_STATUS reason) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
   if (p_acl == nullptr) {
-    LOG_ERROR("Sending disconnect for unknown acl PLEASE FIX");
+    LOG_ERROR("Sending disconnect for unknown acl:%hu PLEASE FIX", conn_handle);
     GetLegacyHciInterface().Disconnect(conn_handle, reason);
+    if (bluetooth::shim::is_gd_acl_enabled() &&
+        btm_sco_removed(conn_handle, HCI_ERR_CONN_CAUSE_LOCAL_HOST))
+      LOG_ERROR(
+          "Assuming this was a SCO connection and short circuiting disconnect");
     return;
   }
 
