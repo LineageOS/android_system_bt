@@ -1059,7 +1059,7 @@ typedef struct {
  *************************************/
 typedef void(tBTM_PM_STATUS_CBACK)(const RawAddress& p_bda,
                                    tBTM_PM_STATUS status, uint16_t value,
-                                   uint8_t hci_status);
+                                   tHCI_STATUS hci_status);
 
 /************************
  *  Stored Linkkey Types
