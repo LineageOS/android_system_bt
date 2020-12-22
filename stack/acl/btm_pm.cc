@@ -30,26 +30,27 @@
 
 #define LOG_TAG "bt_btm_pm"
 
-#include <stddef.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btm_int_types.h"
+#include "bt_target.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api_types.h"
+#include "stack/include/btm_status.h"
 #include "stack/include/l2cap_hci_link_interface.h"
+#include "types/raw_address.h"
+
+void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote);
+void btm_sco_chk_pend_unpark(tHCI_STATUS status, uint16_t handle);
+
+extern tBTM_CB btm_cb;
 
 struct StackAclBtmPm {
-  tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
+  tBTM_STATUS btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id, int link_ind,
                                 const tBTM_PM_PWR_MD* p_mode);
   tBTM_PM_MCB* btm_pm_get_power_manager_from_address(const RawAddress& bda);
   tBTM_PM_MCB* btm_pm_get_power_manager_from_handle(uint16_t handle);
@@ -71,6 +72,7 @@ StackAclBtmPm internal_;
 uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 tACL_CONN* acl_get_connection_from_address(const RawAddress& bd_addr,
                                            tBT_TRANSPORT transport);
+tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
 
 const uint8_t
     btm_pm_md_comp_matrix[BTM_PM_NUM_SET_MODES * BTM_PM_NUM_SET_MODES] = {
@@ -111,19 +113,19 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
   /* de-register */
   if (mask & BTM_PM_DEREG) {
     if (*p_pm_id >= BTM_MAX_PM_RECORDS) return BTM_ILLEGAL_VALUE;
-    btm_cb.pm_reg_db[*p_pm_id].mask = BTM_PM_REC_NOT_USED;
+    btm_cb.acl_cb_.pm_reg_db[*p_pm_id].mask = BTM_PM_REC_NOT_USED;
     return BTM_SUCCESS;
   }
 
   for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
     /* find an unused entry */
-    if (btm_cb.pm_reg_db[xx].mask == BTM_PM_REC_NOT_USED) {
+    if (btm_cb.acl_cb_.pm_reg_db[xx].mask == BTM_PM_REC_NOT_USED) {
       /* if register for notification, should provide callback routine */
       if (mask & BTM_PM_REG_NOTIF) {
         if (p_cb == NULL) return BTM_ILLEGAL_VALUE;
-        btm_cb.pm_reg_db[xx].cback = p_cb;
+        btm_cb.acl_cb_.pm_reg_db[xx].cback = p_cb;
       }
-      btm_cb.pm_reg_db[xx].mask = mask;
+      btm_cb.acl_cb_.pm_reg_db[xx].mask = mask;
       *p_pm_id = xx;
       return BTM_SUCCESS;
     }
@@ -153,6 +155,13 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     LOG_ERROR("pm_id: %u, p_mode is null for %s", unsigned(pm_id),
               remote_bda.ToString().c_str());
     return BTM_ILLEGAL_VALUE;
+  }
+
+  tACL_CONN* p_acl =
+      acl_get_connection_from_address(remote_bda, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find acl");
+    return BTM_UNKNOWN_ADDR;
   }
 
   /* take out the force bit */
@@ -206,12 +215,12 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 
   /* update mode database */
   if (((pm_id != BTM_PM_SET_ONLY_ID) &&
-       (btm_cb.pm_reg_db[pm_id].mask & BTM_PM_REG_SET)) ||
+       (btm_cb.acl_cb_.pm_reg_db[pm_id].mask & BTM_PM_REG_SET)) ||
       ((pm_id == BTM_PM_SET_ONLY_ID) &&
        (btm_cb.acl_cb_.pm_pend_link != MAX_L2CAP_LINKS))) {
     LOG_VERBOSE("saving cmd acl_ind %d temp_pm_id %d", acl_ind, temp_pm_id);
     /* Make sure mask is set to BTM_PM_REG_SET */
-    btm_cb.pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
+    btm_cb.acl_cb_.pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
     *(&p_cb->req_mode[temp_pm_id]) = *p_mode;
     p_cb->chg_ind = true;
   }
@@ -234,7 +243,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
            remote_bda.ToString().c_str(), p_mode->mode, p_cb->state,
            btm_cb.acl_cb_.pm_pend_link);
 
-  return internal_.btm_pm_snd_md_req(pm_id, acl_ind, p_mode);
+  return internal_.btm_pm_snd_md_req(*p_acl, pm_id, acl_ind, p_mode);
 }
 
 /*******************************************************************************
@@ -327,14 +336,15 @@ void btm_pm_reset(void) {
   tBTM_PM_STATUS_CBACK* cb = NULL;
 
   /* clear the pending request for application */
-  if ((btm_cb.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (btm_cb.pm_reg_db[btm_cb.pm_pend_id].mask & BTM_PM_REG_NOTIF)) {
-    cb = btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback;
+  if ((btm_cb.acl_cb_.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
+      (btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].mask &
+       BTM_PM_REG_NOTIF)) {
+    cb = btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].cback;
   }
 
   /* clear the register record */
   for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
-    btm_cb.pm_reg_db[xx].mask = BTM_PM_REC_NOT_USED;
+    btm_cb.acl_cb_.pm_reg_db[xx].mask = BTM_PM_REC_NOT_USED;
   }
 
   if (cb != NULL && btm_cb.acl_cb_.pm_pend_link < MAX_L2CAP_LINKS) {
@@ -445,7 +455,7 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
 
   for (xx = 0; xx < loop_max; xx++) {
     /* g through all the registered "set" parties */
-    if (btm_cb.pm_reg_db[xx].mask & BTM_PM_REG_SET) {
+    if (btm_cb.acl_cb_.pm_reg_db[xx].mask & BTM_PM_REG_SET) {
       if (p_cb->req_mode[xx].mode == BTM_PM_MD_ACTIVE) {
         /* if at least one registered (SET) party says ACTIVE, stay active */
         return BTM_PM_MD_ACTIVE;
@@ -484,7 +494,8 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
  * Returns      tBTM_STATUS
  *, bool    *p_chg_ind
  ******************************************************************************/
-tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
+tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id,
+                                             int link_ind,
                                              const tBTM_PM_PWR_MD* p_mode) {
   tBTM_PM_PWR_MD md_res;
   tBTM_PM_MODE mode;
@@ -522,7 +533,7 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 
   /* send the appropriate HCI command */
-  btm_cb.pm_pend_id = pm_id;
+  btm_cb.acl_cb_.pm_pend_id = pm_id;
 
   LOG_INFO("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
            power_mode_state_text(p_cb->state).c_str(), p_cb->state,
@@ -626,11 +637,13 @@ void btm_pm_proc_cmd_status(uint8_t status) {
   }
 
   /* notify the caller is appropriate */
-  if ((btm_cb.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (btm_cb.pm_reg_db[btm_cb.pm_pend_id].mask & BTM_PM_REG_NOTIF)) {
+  if ((btm_cb.acl_cb_.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
+      (btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].mask &
+       BTM_PM_REG_NOTIF)) {
     const RawAddress bd_addr =
         btm_cb.acl_cb_.acl_db[btm_cb.acl_cb_.pm_pend_link].remote_addr;
-    (*btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback)(bd_addr, pm_status, 0, status);
+    (*btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].cback)(
+        bd_addr, pm_status, 0, status);
   }
 
   /* no pending cmd now */
@@ -654,7 +667,8 @@ void btm_pm_proc_cmd_status(uint8_t status) {
     if (btm_cb.acl_cb_.pm_mode_db[xx].state & BTM_PM_STORED_MASK) {
       btm_cb.acl_cb_.pm_mode_db[xx].state &= ~BTM_PM_STORED_MASK;
       BTM_TRACE_DEBUG("btm_pm_check_stored :%d", xx);
-      internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
+      internal_.btm_pm_snd_md_req(btm_cb.acl_cb_.acl_db[xx], BTM_PM_SET_ONLY_ID,
+                                  xx, NULL);
       break;
     }
   }
@@ -682,6 +696,12 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   tBTM_PM_STATUS mode = static_cast<tBTM_PM_STATUS>(hci_mode);
   int xx, yy, zz;
   tBTM_PM_STATE old_state;
+
+  tACL_CONN* p_acl = acl_get_connection_from_handle(hci_handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find acl");
+    return;
+  }
 
   /* get the index to acl_db */
   xx = btm_handle_to_acl_index(hci_handle);
@@ -720,12 +740,13 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   /* new request has been made. - post a message to BTU task */
   if (old_state & BTM_PM_STORED_MASK) {
     LOG_VERBOSE("Sending stored req: %d", xx);
-    internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
+    internal_.btm_pm_snd_md_req(*p_acl, BTM_PM_SET_ONLY_ID, xx, NULL);
   } else {
     for (zz = 0; zz < MAX_L2CAP_LINKS; zz++) {
       if (btm_cb.acl_cb_.pm_mode_db[zz].chg_ind) {
         LOG_VERBOSE("Sending PM req :%d", zz);
-        internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, zz, NULL);
+        internal_.btm_pm_snd_md_req(btm_cb.acl_cb_.acl_db[zz],
+                                    BTM_PM_SET_ONLY_ID, zz, NULL);
         break;
       }
     }
@@ -733,8 +754,9 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
 
   /* notify registered parties */
   for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.pm_reg_db[yy].cback)(bd_addr, mode, interval, hci_status);
+    if (btm_cb.acl_cb_.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
+      (*btm_cb.acl_cb_.pm_reg_db[yy].cback)(bd_addr, mode, interval,
+                                            hci_status);
     }
   }
   /*check if sco disconnect  is waiting for the mode change */
@@ -787,8 +809,9 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
 
   /* notify registered parties */
   for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR, use_ssr, status);
+    if (btm_cb.acl_cb_.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
+      (*btm_cb.acl_cb_.pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR, use_ssr,
+                                            status);
     }
   }
 }

@@ -69,6 +69,50 @@ inline std::string link_policy_text(tLINK_POLICY policy) {
   return s;
 }
 
+// Power mode states.
+// Used as both value and bitmask
+enum : uint8_t {
+  BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,      // 0x00
+  BTM_PM_ST_HOLD = HCI_MODE_HOLD,          // 0x01
+  BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,        // 0x02
+  BTM_PM_ST_PARK = HCI_MODE_PARK,          // 0x03
+  BTM_PM_ST_UNUSED,                        // 0x04
+  BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,  // 0x05
+  BTM_PM_ST_INVALID = 0x7F,
+  BTM_PM_STORED_MASK = 0x80, /* set this mask if the command is stored */
+};
+typedef uint8_t tBTM_PM_STATE;
+
+inline std::string power_mode_state_text(tBTM_PM_STATE state) {
+  std::string s =
+      std::string((state & BTM_PM_STORED_MASK) ? "stored:" : "immediate:");
+  switch (state & ~BTM_PM_STORED_MASK) {
+    case BTM_PM_ST_ACTIVE:
+      return s + std::string("active");
+    case BTM_PM_ST_HOLD:
+      return s + std::string("hold");
+    case BTM_PM_ST_SNIFF:
+      return s + std::string("sniff");
+    case BTM_PM_ST_PARK:
+      return s + std::string("park");
+    case BTM_PM_ST_UNUSED:
+      return s + std::string("WARN:UNUSED");
+    case BTM_PM_ST_PENDING:
+      return s + std::string("pending");
+    case BTM_PM_ST_INVALID:
+      return s + std::string("invalid");
+    default:
+      return s + std::string("UNKNOWN");
+  }
+}
+
+#define BTM_PM_REC_NOT_USED 0
+typedef struct {
+  tBTM_PM_STATUS_CBACK*
+      cback;    /* to notify the registered party of mode change event */
+  uint8_t mask; /* registered request mask. 0, if this entry is not used */
+} tBTM_PM_RCB;
+
 /* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
  * function) in response to BTM_SwitchRoleToCentral call.
  */
@@ -77,6 +121,17 @@ typedef struct {
   tHCI_STATUS hci_status;    /* HCI status returned with the event */
   uint8_t role;              /* HCI_ROLE_CENTRAL or HCI_ROLE_PERIPHERAL */
 } tBTM_ROLE_SWITCH_CMPL;
+
+typedef struct {
+  bool chg_ind;
+  tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
+  tBTM_PM_PWR_MD set_mode;
+  tBTM_PM_STATE state;
+  uint16_t interval;
+  uint16_t max_lat;
+  uint16_t min_loc_to;
+  uint16_t min_rmt_to;
+} tBTM_PM_MCB;
 
 typedef struct {
   BD_FEATURES peer_le_features;
@@ -197,54 +252,6 @@ typedef struct {
   uint8_t sca; /* Sleep clock accuracy */
 } tACL_CONN;
 
-// Power mode states.
-// Used as both value and bitmask
-enum : uint8_t {
-  BTM_PM_ST_ACTIVE = HCI_MODE_ACTIVE,      // 0x00
-  BTM_PM_ST_HOLD = HCI_MODE_HOLD,          // 0x01
-  BTM_PM_ST_SNIFF = HCI_MODE_SNIFF,        // 0x02
-  BTM_PM_ST_PARK = HCI_MODE_PARK,          // 0x03
-  BTM_PM_ST_UNUSED,                        // 0x04
-  BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,  // 0x05
-  BTM_PM_ST_INVALID = 0x7F,
-  BTM_PM_STORED_MASK = 0x80, /* set this mask if the command is stored */
-};
-typedef uint8_t tBTM_PM_STATE;
-
-inline std::string power_mode_state_text(tBTM_PM_STATE state) {
-  std::string s =
-      std::string((state & BTM_PM_STORED_MASK) ? "stored:" : "immediate:");
-  switch (state & ~BTM_PM_STORED_MASK) {
-    case BTM_PM_ST_ACTIVE:
-      return s + std::string("active");
-    case BTM_PM_ST_HOLD:
-      return s + std::string("hold");
-    case BTM_PM_ST_SNIFF:
-      return s + std::string("sniff");
-    case BTM_PM_ST_PARK:
-      return s + std::string("park");
-    case BTM_PM_ST_UNUSED:
-      return s + std::string("WARN:UNUSED");
-    case BTM_PM_ST_PENDING:
-      return s + std::string("pending");
-    case BTM_PM_ST_INVALID:
-      return s + std::string("invalid");
-    default:
-      return s + std::string("UNKNOWN");
-  }
-}
-
-typedef struct {
-  bool chg_ind;
-  tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
-  tBTM_PM_PWR_MD set_mode;
-  tBTM_PM_STATE state;
-  uint16_t interval;
-  uint16_t max_lat;
-  uint16_t min_loc_to;
-  uint16_t min_rmt_to;
-} tBTM_PM_MCB;
-
 /****************************************************
  **      ACL Management API
  ****************************************************/
@@ -334,6 +341,10 @@ typedef struct {
   void SetDefaultSupervisorTimeout(uint16_t timeout) {
     btm_def_link_super_tout = timeout;
   }
+
+  tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
+
+  uint8_t pm_pend_id{0}; /* the id pf the module, which has a pending PM cmd */
 
   unsigned NumberOfActiveLinks() const {
     unsigned cnt = 0;

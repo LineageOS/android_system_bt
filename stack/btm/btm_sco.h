@@ -17,12 +17,48 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "device/include/esco_parameters.h"
 #include "stack/include/btm_api_types.h"
 
 /* Define the structures needed by sco
  */
+
+typedef enum : uint16_t {
+  SCO_ST_UNUSED = 0,
+  SCO_ST_LISTENING = 1,
+  SCO_ST_W4_CONN_RSP = 2,
+  SCO_ST_CONNECTING = 3,
+  SCO_ST_CONNECTED = 4,
+  SCO_ST_DISCONNECTING = 5,
+  SCO_ST_PEND_UNPARK = 6,
+  SCO_ST_PEND_ROLECHANGE = 7,
+  SCO_ST_PEND_MODECHANGE = 8,
+} tSCO_STATE;
+
+inline std::string sco_state_text(const tSCO_STATE& state) {
+  switch (state) {
+    case SCO_ST_UNUSED:
+      return std::string("unused");
+    case SCO_ST_LISTENING:
+      return std::string("listening");
+    case SCO_ST_W4_CONN_RSP:
+      return std::string("connect_response");
+    case SCO_ST_CONNECTING:
+      return std::string("connecting");
+    case SCO_ST_CONNECTED:
+      return std::string("connected");
+    case SCO_ST_DISCONNECTING:
+      return std::string("disconnecting");
+    case SCO_ST_PEND_UNPARK:
+      return std::string("pending_unpark");
+    case SCO_ST_PEND_ROLECHANGE:
+      return std::string("pending_role_change");
+    case SCO_ST_PEND_MODECHANGE:
+      return std::string("pending_mode_change");
+  }
+}
 
 typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
 
@@ -40,7 +76,7 @@ typedef struct {
   tBTM_ESCO_INFO esco;    /* Current settings             */
   tBTM_SCO_CB* p_conn_cb; /* Callback for when connected  */
   tBTM_SCO_CB* p_disc_cb; /* Callback for when disconnect */
-  uint16_t state;         /* The state of the SCO link    */
+  tSCO_STATE state;       /* The state of the SCO link    */
   uint16_t hci_handle;    /* HCI Handle                   */
   bool is_orig;           /* true if the originator       */
   bool rem_bd_known;      /* true if remote BD addr known */

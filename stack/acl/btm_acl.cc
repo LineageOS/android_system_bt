@@ -308,6 +308,10 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
   return &btm_cb.acl_cb_.acl_db[index];
 }
 
+tACL_CONN* acl_get_connection_from_handle(uint16_t handle) {
+  return internal_.acl_get_connection_from_handle(handle);
+}
+
 void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   uint16_t handle;
   uint8_t sca;
@@ -367,7 +371,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     p_acl->hci_handle = hci_handle;
     p_acl->link_role = link_role;
     p_acl->transport = transport;
-    btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
+    btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
     LOG_WARN(
         "Unable to create duplicate acl when one already exists handle:%hu"
         " role:%s transport:%s",
@@ -394,7 +398,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   acl_initialize_power_mode(*p_acl);
 
   LOG_DEBUG("Created new ACL connection");
-  btm_set_link_policy(p_acl, btm_cb.acl_cb_.btm_def_link_policy);
+  btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
 
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_refresh_local_resolvable_private_addr(
@@ -1512,13 +1516,13 @@ void btm_set_packet_types_from_address(const RawAddress& bd_addr,
     LOG_WARN("Unable to set packet types on le transport");
     return;
   }
-  if (btm_pm_is_le_link(bd_addr)) {
-    LOG_DEBUG("Unable to set packet types on provided le acl");
-    return;
-  }
   tACL_CONN* p_acl_cb = internal_.btm_bda_to_acl(bd_addr, transport);
   if (p_acl_cb == nullptr) {
     LOG_WARN("Unable to find active acl");
+    return;
+  }
+  if (p_acl_cb->is_transport_ble()) {
+    LOG_DEBUG("Unable to set packet types on provided le acl");
     return;
   }
   tBTM_STATUS status = internal_.btm_set_packet_types(p_acl_cb, pkt_types);
@@ -2826,8 +2830,12 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle,
                                       tHCI_STATUS reason) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(conn_handle);
   if (p_acl == nullptr) {
-    LOG_ERROR("Sending disconnect for unknown acl PLEASE FIX");
+    LOG_ERROR("Sending disconnect for unknown acl:%hu PLEASE FIX", conn_handle);
     GetLegacyHciInterface().Disconnect(conn_handle, reason);
+    if (bluetooth::shim::is_gd_acl_enabled() &&
+        btm_sco_removed(conn_handle, HCI_ERR_CONN_CAUSE_LOCAL_HOST))
+      LOG_ERROR(
+          "Assuming this was a SCO connection and short circuiting disconnect");
     return;
   }
 

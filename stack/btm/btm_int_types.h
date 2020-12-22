@@ -77,13 +77,6 @@ typedef struct {
   uint8_t def_inq_scan_mode; /* ??? limited/general/none */
 } tBTM_CFG;
 
-#define BTM_PM_REC_NOT_USED 0
-typedef struct {
-  tBTM_PM_STATUS_CBACK*
-      cback;    /* to notify the registered party of mode change event */
-  uint8_t mask; /* registered request mask. 0, if this entry is not used */
-} tBTM_PM_RCB;
-
 /* Pairing State */
 enum {
   BTM_PAIR_STATE_IDLE, /* Idle                                         */
@@ -202,13 +195,6 @@ typedef struct {
 typedef struct {
   tBTM_CFG cfg; /* Device configuration */
 
-  /****************************************************
-  **      Power Management
-  ****************************************************/
-  tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
-
-  uint8_t pm_pend_id{0}; /* the id pf the module, which has a pending PM cmd */
-
   /*****************************************************
   **      Device control
   *****************************************************/
@@ -310,7 +296,6 @@ typedef struct {
 
   void Init(uint8_t initial_security_mode) {
     memset(&cfg, 0, sizeof(cfg));
-    memset(pm_reg_db, 0, sizeof(pm_reg_db));
     memset(&devcb, 0, sizeof(devcb));
     memset(&ble_ctr_cb, 0, sizeof(ble_ctr_cb));
     memset(&enc_rand, 0, sizeof(enc_rand));
