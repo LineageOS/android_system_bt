@@ -246,6 +246,14 @@ struct tBTA_AG_SCB {
   tBTA_AG_HF_IND
       local_hf_indicators[BTA_AG_MAX_NUM_LOCAL_HF_IND]; /* Local supported
                                                     HF indicators */
+
+  std::string ToString() const {
+    return base::StringPrintf(
+        "codec_updated=%d, codec_fallback=%d, "
+        "sco_codec=%d, peer_codec=%d, msbc_settings=%d, device=%s",
+        codec_updated, codec_fallback, sco_codec, peer_codecs,
+        codec_msbc_settings, peer_addr.ToString().c_str());
+  }
 };
 
 /* type for sco data */
