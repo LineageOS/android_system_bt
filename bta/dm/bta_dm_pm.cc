@@ -521,12 +521,18 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
   uint8_t timer_idx, available_timer = BTA_DM_PM_MODE_TIMER_MAX;
   uint64_t remaining_ms = 0;
 
-  if (!bta_dm_cb.device_list.count) return;
+  if (!bta_dm_cb.device_list.count) {
+    LOG_INFO("Device list count is zero");
+    return;
+  }
 
   /* see if any attempt to put device in low power mode failed */
   p_peer_device = bta_dm_find_peer_device(peer_addr);
   /* if no peer device found return */
-  if (p_peer_device == NULL) return;
+  if (p_peer_device == NULL) {
+    LOG_INFO("No peer device found");
+    return;
+  }
 
   failed_pm = p_peer_device->pm_mode_failed;
 
@@ -546,9 +552,13 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
       p_act0 = &p_pm_spec->actn_tbl[p_srvcs->state][0];
       p_act1 = &p_pm_spec->actn_tbl[p_srvcs->state][1];
 
-      APPL_TRACE_DEBUG("bta_dm_pm_set_mode: srvcsid: %d, state: %d, j: %d",
-                       p_srvcs->id, p_srvcs->state, j);
       allowed_modes |= p_pm_spec->allow_mask;
+      LOG_DEBUG(
+          "Service:%s[%hhu] state:%s[%hhu] allowed_modes:0x%02x "
+          "service_index:%hhu ",
+          BtaIdSysText(p_srvcs->id).c_str(), p_srvcs->id,
+          bta_sys_conn_status_text(p_srvcs->state).c_str(), p_srvcs->state,
+          allowed_modes, j);
 
       /* PM actions are in the order of strictness */
 
@@ -630,10 +640,8 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
                                 timeout_ms, p_srvcs->id, pm_action);
           timer_started = true;
         }
-      }
-      /* no more timers */
-      else {
-        APPL_TRACE_WARNING("bta_dm_act dm_pm_timer no more");
+      } else {
+        LOG_WARN("no more timers");
       }
     }
     return;
@@ -641,22 +649,30 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
   /* if pending power mode timer expires, and currecnt link is in a
      lower power mode than current profile requirement, igonre it */
   if (pm_req == BTA_DM_PM_EXECUTE && pm_request < pm_action) {
-    APPL_TRACE_ERROR("Ignore the power mode request: %d", pm_request)
+    LOG_ERROR("Ignore the power mode request: %d", pm_request);
     return;
   }
   if (pm_action == BTA_DM_PM_PARK) {
     p_peer_device->pm_mode_attempted = BTA_DM_PM_PARK;
     bta_dm_pm_park(peer_addr);
+    LOG_WARN("DEPRECATED Setting link to park mode peer:%s",
+             PRIVATE_ADDRESS(peer_addr));
   } else if (pm_action & BTA_DM_PM_SNIFF) {
     /* dont initiate SNIFF, if link_policy has it disabled */
     if (BTM_is_sniff_allowed_for(peer_addr)) {
+      LOG_DEBUG(
+          "Link policy allows sniff mode so setting mode "
+          "peer:%s",
+          PRIVATE_ADDRESS(peer_addr));
       p_peer_device->pm_mode_attempted = BTA_DM_PM_SNIFF;
       bta_dm_pm_sniff(p_peer_device, (uint8_t)(pm_action & 0x0F));
     } else {
-      APPL_TRACE_DEBUG(
-          "bta_dm_pm_set_mode: Link policy disallows SNIFF, ignore request");
+      LOG_DEBUG("Link policy disallows sniff mode, ignore request peer:%s",
+                PRIVATE_ADDRESS(peer_addr));
     }
   } else if (pm_action == BTA_DM_PM_ACTIVE) {
+    LOG_DEBUG("Setting link to active mode peer:%s",
+              PRIVATE_ADDRESS(peer_addr));
     bta_dm_pm_active(peer_addr);
   }
 }
