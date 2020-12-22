@@ -33,31 +33,47 @@ async fn provide_facade(
     acl: AclHal,
     rt: Arc<Runtime>,
 ) -> HciFacadeService {
-    let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<EventPacket>(10);
-    let (from_hci_le_evt_tx, to_grpc_le_evt_rx) = channel::<LeMetaEventPacket>(10);
+    let (evt_tx, evt_rx) = channel::<EventPacket>(10);
+    let (le_evt_tx, le_evt_rx) = channel::<LeMetaEventPacket>(10);
     HciFacadeService {
         commands,
         events,
         acl,
         rt,
-        from_hci_evt_tx,
-        to_grpc_evt_rx: Arc::new(Mutex::new(to_grpc_evt_rx)),
-        from_hci_le_evt_tx,
-        to_grpc_le_evt_rx: Arc::new(Mutex::new(to_grpc_le_evt_rx)),
+        evt_tx,
+        evt_rx: Arc::new(Mutex::new(evt_rx)),
+        le_evt_tx,
+        le_evt_rx: Arc::new(Mutex::new(le_evt_rx)),
     }
 }
 
 /// HCI layer facade service
+#[allow(missing_docs)]
 #[derive(Clone, Stoppable)]
 pub struct HciFacadeService {
-    commands: RawCommandSender,
+    pub commands: RawCommandSender,
     events: EventRegistry,
-    acl: AclHal,
+    pub acl: AclHal,
     rt: Arc<Runtime>,
-    from_hci_evt_tx: Sender<EventPacket>,
-    to_grpc_evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
-    from_hci_le_evt_tx: Sender<LeMetaEventPacket>,
-    to_grpc_le_evt_rx: Arc<Mutex<Receiver<LeMetaEventPacket>>>,
+    evt_tx: Sender<EventPacket>,
+    pub evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
+    le_evt_tx: Sender<LeMetaEventPacket>,
+    pub le_evt_rx: Arc<Mutex<Receiver<LeMetaEventPacket>>>,
+}
+
+impl HciFacadeService {
+    /// Register for the event & plug in the channel to get them back on
+    pub async fn register_event(&self, code: u32) {
+        self.events.clone().register(EventCode::from_u32(code).unwrap(), self.evt_tx.clone()).await;
+    }
+
+    /// Register for the le event & plug in the channel to get them back on
+    pub async fn register_le_event(&self, code: u32) {
+        self.events
+            .clone()
+            .register_le(SubeventCode::from_u32(code).unwrap(), self.le_evt_tx.clone())
+            .await;
+    }
 }
 
 impl GrpcFacade for HciFacadeService {
@@ -75,12 +91,7 @@ impl HciFacade for HciFacadeService {
     }
 
     fn request_event(&mut self, _ctx: RpcContext<'_>, req: EventRequest, sink: UnarySink<Empty>) {
-        self.rt.block_on(
-            self.events.register(
-                EventCode::from_u32(req.get_code()).unwrap(),
-                self.from_hci_evt_tx.clone(),
-            ),
-        );
+        self.rt.block_on(self.register_event(req.get_code()));
         sink.success(Empty::default());
     }
 
@@ -90,10 +101,7 @@ impl HciFacade for HciFacadeService {
         req: EventRequest,
         sink: UnarySink<Empty>,
     ) {
-        self.rt.block_on(self.events.register_le(
-            SubeventCode::from_u32(req.get_code()).unwrap(),
-            self.from_hci_le_evt_tx.clone(),
-        ));
+        self.rt.block_on(self.register_le_event(req.get_code()));
         sink.success(Empty::default());
     }
 
@@ -111,7 +119,7 @@ impl HciFacade for HciFacadeService {
         _req: Empty,
         mut resp: ServerStreamingSink<Data>,
     ) {
-        let evt_rx = self.to_grpc_evt_rx.clone();
+        let evt_rx = self.evt_rx.clone();
 
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
@@ -128,7 +136,7 @@ impl HciFacade for HciFacadeService {
         _req: Empty,
         mut resp: ServerStreamingSink<Data>,
     ) {
-        let evt_rx = self.to_grpc_le_evt_rx.clone();
+        let evt_rx = self.le_evt_rx.clone();
 
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
