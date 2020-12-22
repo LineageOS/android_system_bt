@@ -92,6 +92,8 @@ inline std::string BtaIdSysText(tBTA_SYS_ID sys_id) {
   switch (sys_id) {
     case BTA_ID_DM_SEARCH:
       return std::string("Scanner");
+    case BTA_ID_AG:
+      return std::string("Audio gateway");
     case BTA_ID_PAN:
       return std::string("PAN Personal area network");
     case BTA_ID_AV:
