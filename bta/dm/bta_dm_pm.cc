@@ -945,11 +945,19 @@ static void bta_dm_pm_timer_cback(void* data) {
 
 /** Process pm status event from btm */
 void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
-                          uint16_t value, uint8_t hci_status) {
-  APPL_TRACE_DEBUG("%s status: %d", __func__, status);
+                          uint16_t interval, tHCI_STATUS hci_status) {
+  LOG_DEBUG(
+      "Power mode notification event status:%s peer:%s interval:%hu "
+      "hci_status:%s",
+      power_mode_status_text(status).c_str(), PRIVATE_ADDRESS(bd_addr),
+      interval, hci_error_code_text(hci_status).c_str());
 
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
-  if (NULL == p_dev) return;
+  if (p_dev == nullptr) {
+    LOG_INFO("Unable to process power event for peer:%s",
+             PRIVATE_ADDRESS(bd_addr));
+    return;
+  }
 
   tBTA_DM_DEV_INFO info = p_dev->Info();
   /* check new mode */
@@ -990,7 +998,10 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
       break;
 
     case BTM_PM_STS_SSR:
-      if (value)
+      if (hci_status != 0) {
+        LOG_WARN("Received error when attempting to set sniff subrating mode");
+      }
+      if (interval) {
         p_dev->info |= BTA_DM_DI_USE_SSR;
       else
         p_dev->info &= ~BTA_DM_DI_USE_SSR;
@@ -1019,8 +1030,9 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
       break;
 
     default:
+      LOG_ERROR("Received unknown power mode status event:%hhu", status);
       break;
-  }
+      }
 }
 
 /** Process pm timer event from btm */
