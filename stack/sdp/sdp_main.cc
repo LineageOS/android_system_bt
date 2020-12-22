@@ -90,7 +90,7 @@ void sdp_init(void) {
   sdp_cb.reg_info.pL2CA_Error_Cb = sdp_on_l2cap_error;
 
   /* Now, register with L2CAP */
-  if (!L2CA_Register2(SDP_PSM, sdp_cb.reg_info, true /* enable_snoop */,
+  if (!L2CA_Register2(BT_PSM_SDP, sdp_cb.reg_info, true /* enable_snoop */,
                       nullptr, SDP_MTU_SIZE, 0, BTM_SEC_NONE)) {
     SDP_TRACE_ERROR("SDP Registration failed");
   }
@@ -343,7 +343,7 @@ tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr) {
    */
   p_ccb->con_state = SDP_STATE_CONN_SETUP;
 
-  cid = L2CA_ConnectReq2(SDP_PSM, p_bd_addr, BTM_SEC_NONE);
+  cid = L2CA_ConnectReq2(BT_PSM_SDP, p_bd_addr, BTM_SEC_NONE);
 
   /* Check if L2CAP started the connection process */
   if (cid == 0) {
