@@ -121,6 +121,9 @@ cc_test {
     name: "bluetooth_flatbuffer_test",
     test_suites: ["device-tests"],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     static_libs: [
         "libgmock",
         "libflatbuffers-cpp",
