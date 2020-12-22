@@ -165,14 +165,15 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   }
 
   tBTM_PM_MODE mode = p_mode->mode;
+  if (!is_legal_power_mode(mode)) {
+    LOG_ERROR("Unable to set illegal power mode value:0x%02x", mode);
+    return BTM_ILLEGAL_VALUE;
+  }
+
   if (p_mode->mode & BTM_PM_MD_FORCE) {
     LOG_INFO("Attempting to force into this power mode");
     /* take out the force bit */
     mode &= (~BTM_PM_MD_FORCE);
-  }
-  if (!(mode & 0xf8)) {
-    LOG_ERROR("Unable to set illegal power mode value:0x%02x", mode);
-    return BTM_ILLEGAL_VALUE;
   }
 
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
@@ -236,8 +237,11 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   /* if mode == hold or pending, return */
   if ((p_cb->state == BTM_PM_STS_HOLD) || (p_cb->state == BTM_PM_STS_PENDING) ||
       (btm_cb.acl_cb_.pm_pend_link != MAX_L2CAP_LINKS)) {
-    LOG_INFO("storing pm setup, state: %d, pm_pending_link: %d", p_cb->state,
-             btm_cb.acl_cb_.pm_pend_link);
+    LOG_INFO(
+        "Current power mode is hold or pending status or pending links"
+        " state:%s[%hhu] pm_pending_link:%hhu",
+        power_mode_state_text(p_cb->state).c_str(), p_cb->state,
+        btm_cb.acl_cb_.pm_pend_link);
     /* command pending */
     if (acl_ind != btm_cb.acl_cb_.pm_pend_link) {
       /* set the stored mask */
@@ -247,9 +251,10 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     return BTM_CMD_STORED;
   }
 
-  LOG_INFO("pm_id: %d, bda: %s, mode: %d, state: %d, pending_link: %d", pm_id,
-           remote_bda.ToString().c_str(), p_mode->mode, p_cb->state,
-           btm_cb.acl_cb_.pm_pend_link);
+  LOG_INFO(
+      "Setting power mode for peer:%s current_mode:%s[%hhu] new_mode:%s[%hhu]",
+      PRIVATE_ADDRESS(remote_bda), power_mode_state_text(p_cb->state).c_str(),
+      p_cb->state, power_mode_text(p_mode->mode).c_str(), p_mode->mode);
 
   return internal_.btm_pm_snd_md_req(*p_acl, pm_id, acl_ind, p_mode);
 }
