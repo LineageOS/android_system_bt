@@ -727,14 +727,11 @@ void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
              PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr));
   }
   tBTM_PM_STATUS mode_status = static_cast<tBTM_PM_STATUS>(mode);
-  LOG_DEBUG("Current power mode:%s[0x%x] peer_mode:x%02x",
+  LOG_DEBUG("Current power mode:%s[0x%x] peer_info:%s[0x%02x]",
             power_mode_status_text(mode_status).c_str(), mode_status,
-            p_peer_dev->Info());
+            device_info_text(p_peer_dev->Info()).c_str(), p_peer_dev->Info());
 
   uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
-  LOG_DEBUG("Current power mode:%s[0x%x] peer_info:%s",
-            power_mode_status_text(mode).c_str(), mode,
-            device_info_text(p_peer_dev->info).c_str());
 
   const controller_t* controller = controller_get_interface();
   if (mode != BTM_PM_MD_SNIFF ||
@@ -747,7 +744,8 @@ void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
      * DUT supported range of Sniff intervals.*/
     if ((mode == BTM_PM_MD_SNIFF) &&
         (p_peer_dev->Info() & BTA_DM_DI_ACP_SNIFF)) {
-      APPL_TRACE_DEBUG("%s: already in remote initiate sniff", __func__);
+      LOG_DEBUG("Link already in sniff mode peer:%s",
+                PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr));
       return;
     }
   }
@@ -755,6 +753,7 @@ void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
    * If sniff, but SSR is not used in this link, still issue the command */
   memcpy(&pwr_md, &p_bta_dm_pm_md[index], sizeof(tBTM_PM_PWR_MD));
   if (p_peer_dev->Info() & BTA_DM_DI_INT_SNIFF) {
+    LOG_DEBUG("Trying to force power mode");
     pwr_md.mode |= BTM_PM_MD_FORCE;
   }
   status = BTM_SetPowerMode(bta_dm_cb.pm_id, p_peer_dev->peer_bdaddr, &pwr_md);
@@ -765,10 +764,10 @@ void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
     APPL_TRACE_DEBUG("bta_dm_pm_sniff BTM_SetPowerMode() returns BTM_SUCCESS");
     p_peer_dev->info &=
         ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
-  } else /* error */
-  {
-    APPL_TRACE_ERROR(
-        "bta_dm_pm_sniff BTM_SetPowerMode() returns ERROR status=%d", status);
+  } else {
+    LOG_ERROR("Unable to set power mode peer:%s status:%s",
+              PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr),
+              btm_status_text(status).c_str());
     p_peer_dev->info &=
         ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
   }
@@ -1003,8 +1002,13 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
       }
       if (interval) {
         p_dev->info |= BTA_DM_DI_USE_SSR;
-      else
+        LOG_DEBUG("Enabling sniff subrating mode for peer:%s",
+                  PRIVATE_ADDRESS(bd_addr));
+      } else {
         p_dev->info &= ~BTA_DM_DI_USE_SSR;
+        LOG_DEBUG("Disabling sniff subrating mode for peer:%s",
+                  PRIVATE_ADDRESS(bd_addr));
+      }
       break;
     case BTM_PM_STS_SNIFF:
       if (hci_status == 0) {
