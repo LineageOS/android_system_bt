@@ -1,6 +1,6 @@
 //! BT HCI HAL facade
 
-use crate::Hal;
+use crate::{AclHal, ControlHal};
 use bt_common::GrpcFacade;
 use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
@@ -20,15 +20,16 @@ module! {
 }
 
 #[provides]
-async fn provide_facade(hal: Hal, rt: Arc<Runtime>) -> HciHalFacadeService {
-    HciHalFacadeService { rt, hal }
+async fn provide_facade(control: ControlHal, acl: AclHal, rt: Arc<Runtime>) -> HciHalFacadeService {
+    HciHalFacadeService { rt, control, acl }
 }
 
 /// HCI HAL facade service
 #[derive(Clone, Stoppable)]
 pub struct HciHalFacadeService {
     rt: Arc<Runtime>,
-    hal: Hal,
+    control: ControlHal,
+    acl: AclHal,
 }
 
 impl GrpcFacade for HciHalFacadeService {
@@ -39,7 +40,7 @@ impl GrpcFacade for HciHalFacadeService {
 
 impl HciHalFacade for HciHalFacadeService {
     fn send_command(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
-        let cmd_tx = self.hal.cmd_tx.clone();
+        let cmd_tx = self.control.tx.clone();
         self.rt.block_on(async move {
             cmd_tx.send(CommandPacket::parse(&data.take_payload()).unwrap()).await.unwrap();
         });
@@ -47,7 +48,7 @@ impl HciHalFacade for HciHalFacadeService {
     }
 
     fn send_acl(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
-        let acl_tx = self.hal.acl_tx.clone();
+        let acl_tx = self.acl.tx.clone();
         self.rt.block_on(async move {
             acl_tx.send(AclPacket::parse(&data.take_payload()).unwrap()).await.unwrap();
         });
@@ -68,7 +69,7 @@ impl HciHalFacade for HciHalFacadeService {
         _: Empty,
         mut sink: ServerStreamingSink<Data>,
     ) {
-        let evt_rx = self.hal.evt_rx.clone();
+        let evt_rx = self.control.rx.clone();
         self.rt.spawn(async move {
             while let Some(event) = evt_rx.lock().await.recv().await {
                 let mut output = Data::default();
@@ -79,7 +80,7 @@ impl HciHalFacade for HciHalFacadeService {
     }
 
     fn stream_acl(&mut self, _ctx: RpcContext<'_>, _: Empty, mut sink: ServerStreamingSink<Data>) {
-        let acl_rx = self.hal.acl_rx.clone();
+        let acl_rx = self.acl.rx.clone();
         self.rt.spawn(async move {
             while let Some(acl) = acl_rx.lock().await.recv().await {
                 let mut output = Data::default();

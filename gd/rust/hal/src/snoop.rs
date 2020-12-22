@@ -1,11 +1,10 @@
 //! BT snoop logger
 
 use crate::internal::RawHal;
-use crate::Hal;
 use bt_common::sys_prop;
 use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
 use bytes::{BufMut, Bytes, BytesMut};
-use gddi::{module, provides, Stoppable};
+use gddi::{module, part_out, provides, Stoppable};
 use log::error;
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -14,8 +13,33 @@ use tokio::fs::{remove_file, rename, File};
 use tokio::io::AsyncWriteExt;
 use tokio::runtime::Runtime;
 use tokio::select;
-use tokio::sync::mpsc::{channel, UnboundedReceiver};
+use tokio::sync::mpsc::{channel, Receiver, Sender, UnboundedReceiver};
 use tokio::sync::Mutex;
+
+#[part_out]
+#[derive(Clone, Stoppable)]
+struct Hal {
+    control: ControlHal,
+    acl: AclHal,
+}
+
+/// Command & event tx/rx
+#[derive(Clone, Stoppable)]
+pub struct ControlHal {
+    /// Transmit end
+    pub tx: Sender<CommandPacket>,
+    /// Receive end
+    pub rx: Arc<Mutex<Receiver<EventPacket>>>,
+}
+
+/// Acl tx/rx
+#[derive(Clone, Stoppable)]
+pub struct AclHal {
+    /// Transmit end
+    pub tx: Sender<AclPacket>,
+    /// Receive end
+    pub rx: Arc<Mutex<Receiver<AclPacket>>>,
+}
 
 /// The different modes snoop logging can be in
 #[derive(Clone)]
@@ -91,7 +115,7 @@ fn get_configured_snoop_mode() -> String {
 module! {
     snoop_module,
     providers {
-        Hal => provide_snooped_hal,
+        parts Hal => provide_snooped_hal,
     },
 }
 
@@ -127,10 +151,8 @@ async fn provide_snooped_hal(config: SnoopConfig, raw_hal: RawHal, rt: Arc<Runti
     });
 
     Hal {
-        cmd_tx: cmd_down_tx,
-        evt_rx: Arc::new(Mutex::new(evt_up_rx)),
-        acl_tx: acl_down_tx,
-        acl_rx: Arc::new(Mutex::new(acl_up_rx)),
+        control: ControlHal { tx: cmd_down_tx, rx: Arc::new(Mutex::new(evt_up_rx)) },
+        acl: AclHal { tx: acl_down_tx, rx: Arc::new(Mutex::new(acl_up_rx)) },
     }
 }
 

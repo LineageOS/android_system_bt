@@ -1,6 +1,7 @@
 //! Hci shim
 
-use bt_hci::{EventRegistry, HciForAcl, RawCommandSender};
+use bt_hal::AclHal;
+use bt_hci::{EventRegistry, RawCommandSender};
 use bt_packets::hci::{
     AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, SubeventCode,
 };
@@ -43,7 +44,7 @@ unsafe impl Send for ffi::u8SliceOnceCallback {}
 pub struct Hci {
     commands: RawCommandSender,
     events: EventRegistry,
-    acl: HciForAcl,
+    acl: AclHal,
     rt: Arc<Runtime>,
     acl_callback_set: bool,
     evt_callback_set: bool,
@@ -59,7 +60,7 @@ impl Hci {
         rt: Arc<Runtime>,
         commands: RawCommandSender,
         events: EventRegistry,
-        acl: HciForAcl,
+        acl: AclHal,
     ) -> Self {
         let (evt_tx, evt_rx) = channel::<EventPacket>(10);
         let (le_evt_tx, le_evt_rx) = channel::<LeMetaEventPacket>(10);

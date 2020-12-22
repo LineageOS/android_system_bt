@@ -11,14 +11,14 @@ pub use bt_hci_custom_types::*;
 pub use controller::ControllerExports;
 
 use bt_common::time::Alarm;
-use bt_hal::Hal;
+use bt_hal::ControlHal;
 use bt_packets::hci::EventChild::{
     CommandComplete, CommandStatus, LeMetaEvent, MaxSlotsChange, PageScanRepetitionModeChange,
     VendorSpecificEvent,
 };
 use bt_packets::hci::{
-    AclPacket, CommandExpectations, CommandPacket, ErrorCode, EventCode, EventPacket,
-    LeMetaEventPacket, ResetBuilder, SubeventCode,
+    CommandExpectations, CommandPacket, ErrorCode, EventCode, EventPacket, LeMetaEventPacket,
+    ResetBuilder, SubeventCode,
 };
 use error::Result;
 use gddi::{module, part_out, provides, Stoppable};
@@ -47,11 +47,10 @@ struct Hci {
     raw_commands: RawCommandSender,
     commands: CommandSender,
     events: EventRegistry,
-    acl: HciForAcl,
 }
 
 #[provides]
-async fn provide_hci(hal: Hal, rt: Arc<Runtime>) -> Hci {
+async fn provide_hci(control: ControlHal, rt: Arc<Runtime>) -> Hci {
     let (cmd_tx, cmd_rx) = channel::<QueuedCommand>(10);
     let evt_handlers = Arc::new(Mutex::new(HashMap::new()));
     let le_evt_handlers = Arc::new(Mutex::new(HashMap::new()));
@@ -59,8 +58,8 @@ async fn provide_hci(hal: Hal, rt: Arc<Runtime>) -> Hci {
     rt.spawn(dispatch(
         evt_handlers.clone(),
         le_evt_handlers.clone(),
-        hal.evt_rx,
-        hal.cmd_tx,
+        control.rx,
+        control.tx,
         cmd_rx,
     ));
 
@@ -72,12 +71,7 @@ async fn provide_hci(hal: Hal, rt: Arc<Runtime>) -> Hci {
         "reset did not complete successfully"
     );
 
-    Hci {
-        raw_commands,
-        commands,
-        events: EventRegistry { evt_handlers, le_evt_handlers },
-        acl: HciForAcl { tx: hal.acl_tx, rx: hal.acl_rx },
-    }
+    Hci { raw_commands, commands, events: EventRegistry { evt_handlers, le_evt_handlers } }
 }
 
 #[derive(Debug)]
@@ -118,15 +112,6 @@ impl CommandSender {
     ) -> T::ResponseType {
         T::_to_response_type(self.raw.send(cmd.into()).await.unwrap())
     }
-}
-
-/// Exposes the ACL send/receive interface
-#[derive(Clone, Stoppable)]
-pub struct HciForAcl {
-    /// Transmit end
-    pub tx: Sender<AclPacket>,
-    /// Receive end
-    pub rx: Arc<Mutex<Receiver<AclPacket>>>,
 }
 
 /// Provides ability to register and unregister for HCI events

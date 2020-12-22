@@ -1,11 +1,12 @@
 //! HCI layer facade
 
-use crate::{EventRegistry, HciForAcl, RawCommandSender};
+use crate::{EventRegistry, RawCommandSender};
 use bt_common::GrpcFacade;
 use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
 use bt_facade_proto::hci_facade::EventRequest;
 use bt_facade_proto::hci_facade_grpc::{create_hci_facade, HciFacade};
+use bt_hal::AclHal;
 use bt_packets::hci::{
     AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, SubeventCode,
 };
@@ -29,7 +30,7 @@ module! {
 async fn provide_facade(
     commands: RawCommandSender,
     events: EventRegistry,
-    acl: HciForAcl,
+    acl: AclHal,
     rt: Arc<Runtime>,
 ) -> HciFacadeService {
     let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<EventPacket>(10);
@@ -51,7 +52,7 @@ async fn provide_facade(
 pub struct HciFacadeService {
     commands: RawCommandSender,
     events: EventRegistry,
-    acl: HciForAcl,
+    acl: AclHal,
     rt: Arc<Runtime>,
     from_hci_evt_tx: Sender<EventPacket>,
     to_grpc_evt_rx: Arc<Mutex<Receiver<EventPacket>>>,

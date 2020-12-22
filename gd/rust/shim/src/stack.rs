@@ -59,7 +59,7 @@ pub fn get_hci(stack: &mut Stack) -> Box<Hci> {
         stack.get_runtime(),
         stack.get_blocking::<bt_hci::RawCommandSender>(),
         stack.get_blocking::<bt_hci::EventRegistry>(),
-        stack.get_blocking::<bt_hci::HciForAcl>(),
+        stack.get_blocking::<bt_hal::AclHal>(),
     ))
 }
 
