@@ -1,7 +1,7 @@
 //! BT snoop logger
 
-use crate::internal::RawHalExports;
-use crate::HalExports;
+use crate::internal::RawHal;
+use crate::Hal;
 use bt_common::sys_prop;
 use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
 use bytes::{BufMut, Bytes, BytesMut};
@@ -91,16 +91,12 @@ fn get_configured_snoop_mode() -> String {
 module! {
     snoop_module,
     providers {
-        HalExports => provide_snooped_hal,
+        Hal => provide_snooped_hal,
     },
 }
 
 #[provides]
-async fn provide_snooped_hal(
-    config: SnoopConfig,
-    hal_exports: RawHalExports,
-    rt: Arc<Runtime>,
-) -> HalExports {
+async fn provide_snooped_hal(config: SnoopConfig, raw_hal: RawHal, rt: Arc<Runtime>) -> Hal {
     let (cmd_down_tx, mut cmd_down_rx) = channel::<CommandPacket>(10);
     let (evt_up_tx, evt_up_rx) = channel::<EventPacket>(10);
     let (acl_down_tx, mut acl_down_rx) = channel::<AclPacket>(10);
@@ -110,19 +106,19 @@ async fn provide_snooped_hal(
         let mut logger = SnoopLogger::new(config).await;
         loop {
             select! {
-                Some(evt) = consume(&hal_exports.evt_rx) => {
+                Some(evt) = consume(&raw_hal.evt_rx) => {
                     evt_up_tx.send(evt.clone()).await.unwrap();
                     logger.log(Type::Evt, Direction::Up, evt.to_bytes()).await;
                 },
                 Some(cmd) = cmd_down_rx.recv() => {
-                    hal_exports.cmd_tx.send(cmd.clone()).unwrap();
+                    raw_hal.cmd_tx.send(cmd.clone()).unwrap();
                     logger.log(Type::Cmd, Direction::Down, cmd.to_bytes()).await;
                 },
                 Some(acl) = acl_down_rx.recv() => {
-                    hal_exports.acl_tx.send(acl.clone()).unwrap();
+                    raw_hal.acl_tx.send(acl.clone()).unwrap();
                     logger.log(Type::Acl, Direction::Down, acl.to_bytes()).await;
                 },
-                Some(acl) = consume(&hal_exports.acl_rx) => {
+                Some(acl) = consume(&raw_hal.acl_rx) => {
                     acl_up_tx.send(acl.clone()).await.unwrap();
                     logger.log(Type::Acl, Direction::Up, acl.to_bytes()).await;
                 }
@@ -130,7 +126,7 @@ async fn provide_snooped_hal(
         }
     });
 
-    HalExports {
+    Hal {
         cmd_tx: cmd_down_tx,
         evt_rx: Arc::new(Mutex::new(evt_up_rx)),
         acl_tx: acl_down_tx,

@@ -1,5 +1,5 @@
 //! Implementation of the HAl that talks to BT controller over Android's HIDL
-use crate::internal::{Hal, RawHalExports};
+use crate::internal::{InnerHal, RawHal};
 use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
 use gddi::{module, provides};
 use std::sync::Arc;
@@ -11,25 +11,22 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
 module! {
     hidl_hal_module,
     providers {
-        RawHalExports => provide_hidl_hal,
+        RawHal => provide_hidl_hal,
     }
 }
 
 #[provides]
-async fn provide_hidl_hal(rt: Arc<Runtime>) -> RawHalExports {
-    let (hal_exports, hal) = Hal::new();
+async fn provide_hidl_hal(rt: Arc<Runtime>) -> RawHal {
+    let (raw_hal, inner_hal) = InnerHal::new();
     let (init_tx, mut init_rx) = unbounded_channel();
-    *CALLBACKS.lock().unwrap() = Some(Callbacks {
-        init_tx,
-        evt_tx: hal.evt_tx,
-        acl_tx: hal.acl_tx,
-    });
+    *CALLBACKS.lock().unwrap() =
+        Some(Callbacks { init_tx, evt_tx: inner_hal.evt_tx, acl_tx: inner_hal.acl_tx });
     ffi::start_hal();
     init_rx.recv().await.unwrap();
 
-    rt.spawn(dispatch_outgoing(hal.cmd_rx, hal.acl_rx));
+    rt.spawn(dispatch_outgoing(inner_hal.cmd_rx, inner_hal.acl_rx));
 
-    hal_exports
+    raw_hal
 }
 
 #[cxx::bridge(namespace = bluetooth::hal)]
@@ -68,22 +65,12 @@ fn on_init_complete() {
 
 fn on_event(data: &[u8]) {
     let callbacks = CALLBACKS.lock().unwrap();
-    callbacks
-        .as_ref()
-        .unwrap()
-        .evt_tx
-        .send(EventPacket::parse(data).unwrap())
-        .unwrap();
+    callbacks.as_ref().unwrap().evt_tx.send(EventPacket::parse(data).unwrap()).unwrap();
 }
 
 fn on_acl(data: &[u8]) {
     let callbacks = CALLBACKS.lock().unwrap();
-    callbacks
-        .as_ref()
-        .unwrap()
-        .acl_tx
-        .send(AclPacket::parse(data).unwrap())
-        .unwrap();
+    callbacks.as_ref().unwrap().acl_tx.send(AclPacket::parse(data).unwrap()).unwrap();
 }
 
 fn on_sco(_data: &[u8]) {}
