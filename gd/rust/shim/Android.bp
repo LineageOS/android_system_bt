@@ -35,6 +35,9 @@ rust_ffi_static {
         "libnix",
         "liblog_rust",
     ],
+    proc_macros: [
+        "libpaste",
+    ],
     static_libs: [
         "libbt_callbacks_cxx",
     ],
@@ -47,6 +50,7 @@ cc_library_static {
         "libbt_init_flags_bridge_header",
         "libbt_shim_bridge_header",
         "libbt_hci_bridge_header",
+        "libbt_controller_bridge_header",
         "libbt_message_loop_thread_bridge_header",
         "cxx-bridge-header",
     ],
@@ -54,12 +58,14 @@ cc_library_static {
         "libbt_init_flags_bridge_code",
         "libbt_shim_bridge_code",
         "libbt_hci_bridge_code",
+        "libbt_controller_bridge_code",
         "libbt_message_loop_thread_bridge_code",
     ],
     export_generated_headers: [
         "libbt_init_flags_bridge_header",
         "libbt_shim_bridge_header",
         "libbt_hci_bridge_header",
+        "libbt_controller_bridge_header",
         "libbt_message_loop_thread_bridge_header",
         "cxx-bridge-header",
     ],
@@ -161,4 +167,20 @@ genrule {
     cmd: "$(location cxxbridge) $(in) >> $(out)",
     srcs: ["src/message_loop_thread.rs"],
     out: ["message_loop_thread.cc"],
+}
+
+genrule {
+    name: "libbt_controller_bridge_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: ["src/controller.rs"],
+    out: ["src/controller.rs.h"],
+}
+
+genrule {
+    name: "libbt_controller_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/controller.rs"],
+    out: ["controller.cc"],
 }

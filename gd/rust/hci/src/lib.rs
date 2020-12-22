@@ -8,6 +8,7 @@ pub mod error;
 pub mod facade;
 
 pub use bt_hci_custom_types::*;
+pub use controller::ControllerExports;
 
 use bt_common::time::Alarm;
 use bt_hal::HalExports;

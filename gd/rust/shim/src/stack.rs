@@ -1,5 +1,6 @@
 //! Stack management
 
+use crate::controller::Controller;
 use crate::hci::Hci;
 use bt_common::init_flags;
 use bt_main::Stack;
@@ -17,12 +18,14 @@ mod ffi {
     extern "Rust" {
         type Stack;
         type Hci;
+        type Controller;
 
         fn stack_create() -> Box<Stack>;
         fn stack_start(stack: &mut Stack);
         fn stack_stop(stack: &mut Stack);
 
         fn get_hci(stack: &mut Stack) -> Box<Hci>;
+        fn get_controller(stack: &mut Stack) -> Box<Controller>;
     }
 }
 
@@ -57,4 +60,11 @@ pub fn get_hci(stack: &mut Stack) -> Box<Hci> {
     assert!(init_flags::gd_hci_is_enabled());
 
     Box::new(Hci::new(stack.get_runtime(), stack.get_blocking::<bt_hci::HciExports>()))
+}
+
+pub fn get_controller(stack: &mut Stack) -> Box<Controller> {
+    assert!(init_flags::gd_rust_is_enabled());
+    assert!(init_flags::gd_controller_is_enabled());
+
+    Box::new(stack.get_blocking::<Controller>())
 }
