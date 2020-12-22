@@ -1,5 +1,6 @@
 //! Hci shim
 
+use bt_hci::{EventRegistry, HciForAcl, RawCommandSender};
 use bt_packets::hci::{
     AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, SubeventCode,
 };
@@ -40,8 +41,10 @@ unsafe impl Send for ffi::u8SliceCallback {}
 unsafe impl Send for ffi::u8SliceOnceCallback {}
 
 pub struct Hci {
+    commands: RawCommandSender,
+    events: EventRegistry,
+    acl: HciForAcl,
     rt: Arc<Runtime>,
-    internal: bt_hci::Hci,
     acl_callback_set: bool,
     evt_callback_set: bool,
     le_evt_callback_set: bool,
@@ -52,12 +55,19 @@ pub struct Hci {
 }
 
 impl Hci {
-    pub fn new(rt: Arc<Runtime>, internal: bt_hci::Hci) -> Self {
+    pub fn new(
+        rt: Arc<Runtime>,
+        commands: RawCommandSender,
+        events: EventRegistry,
+        acl: HciForAcl,
+    ) -> Self {
         let (evt_tx, evt_rx) = channel::<EventPacket>(10);
         let (le_evt_tx, le_evt_rx) = channel::<LeMetaEventPacket>(10);
         Self {
             rt,
-            internal,
+            commands,
+            events,
+            acl,
             acl_callback_set: false,
             evt_callback_set: false,
             le_evt_callback_set: false,
@@ -75,35 +85,32 @@ pub fn hci_send_command(
     callback: cxx::UniquePtr<ffi::u8SliceOnceCallback>,
 ) {
     let packet = CommandPacket::parse(data).unwrap();
-    let mut clone_internal = hci.internal.clone();
+    let mut commands = hci.commands.clone();
     hci.rt.spawn(async move {
-        let resp = clone_internal.send_raw(packet).await.unwrap();
+        let resp = commands.send(packet).await.unwrap();
         callback.Run(&resp.to_bytes());
     });
 }
 
 pub fn hci_send_acl(hci: &mut Hci, data: &[u8]) {
-    hci.rt.block_on(hci.internal.acl_tx.send(AclPacket::parse(data).unwrap())).unwrap();
+    hci.rt.block_on(hci.acl.tx.send(AclPacket::parse(data).unwrap())).unwrap();
 }
 
 pub fn hci_register_event(hci: &mut Hci, event: u8) {
-    hci.rt.block_on(
-        hci.internal.register_event_handler(EventCode::from_u8(event).unwrap(), hci.evt_tx.clone()),
-    );
+    hci.rt.block_on(hci.events.register(EventCode::from_u8(event).unwrap(), hci.evt_tx.clone()));
 }
 
 pub fn hci_register_le_event(hci: &mut Hci, subevent: u8) {
-    hci.rt.block_on(hci.internal.register_le_event_handler(
-        SubeventCode::from_u8(subevent).unwrap(),
-        hci.le_evt_tx.clone(),
-    ));
+    hci.rt.block_on(
+        hci.events.register_le(SubeventCode::from_u8(subevent).unwrap(), hci.le_evt_tx.clone()),
+    );
 }
 
 pub fn hci_set_acl_callback(hci: &mut Hci, callback: cxx::UniquePtr<ffi::u8SliceCallback>) {
     assert!(!hci.acl_callback_set);
     hci.acl_callback_set = true;
 
-    let stream = hci.internal.acl_rx.clone();
+    let stream = hci.acl.rx.clone();
     hci.rt.spawn(async move {
         while let Some(item) = stream.lock().await.recv().await {
             callback.Run(&item.to_bytes());

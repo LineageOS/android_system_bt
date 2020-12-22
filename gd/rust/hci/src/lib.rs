@@ -21,7 +21,7 @@ use bt_packets::hci::{
     LeMetaEventPacket, ResetBuilder, SubeventCode,
 };
 use error::Result;
-use gddi::{module, provides, Stoppable};
+use gddi::{module, part_out, provides, Stoppable};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -37,8 +37,17 @@ module! {
         controller::controller_module,
     },
     providers {
-        Hci => provide_hci,
+        parts Hci => provide_hci,
     },
+}
+
+#[part_out]
+#[derive(Clone, Stoppable)]
+struct Hci {
+    raw_commands: RawCommandSender,
+    commands: CommandSender,
+    events: EventRegistry,
+    acl: HciForAcl,
 }
 
 #[provides]
@@ -55,15 +64,20 @@ async fn provide_hci(hal: Hal, rt: Arc<Runtime>) -> Hci {
         cmd_rx,
     ));
 
-    let mut hci =
-        Hci { cmd_tx, evt_handlers, le_evt_handlers, acl_tx: hal.acl_tx, acl_rx: hal.acl_rx };
+    let raw_commands = RawCommandSender { cmd_tx };
+    let mut commands = CommandSender { raw: raw_commands.clone() };
 
     assert!(
-        hci.send(ResetBuilder {}).await.get_status() == ErrorCode::Success,
+        commands.send(ResetBuilder {}).await.get_status() == ErrorCode::Success,
         "reset did not complete successfully"
     );
 
-    hci
+    Hci {
+        raw_commands,
+        commands,
+        events: EventRegistry { evt_handlers, le_evt_handlers },
+        acl: HciForAcl { tx: hal.acl_tx, rx: hal.acl_rx },
+    }
 }
 
 #[derive(Debug)]
@@ -72,39 +86,59 @@ struct QueuedCommand {
     fut: oneshot::Sender<EventPacket>,
 }
 
-/// HCI interface
+/// Sends raw commands. Only useful for facades & shims, or wrapped as a CommandSender.
 #[derive(Clone, Stoppable)]
-pub struct Hci {
+pub struct RawCommandSender {
     cmd_tx: Sender<QueuedCommand>,
-    evt_handlers: Arc<Mutex<HashMap<EventCode, Sender<EventPacket>>>>,
-    le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
-    /// Transmit end of a channel used to send ACL data
-    pub acl_tx: Sender<AclPacket>,
-    /// Receive end of a channel used to receive ACL data
-    pub acl_rx: Arc<Mutex<Receiver<AclPacket>>>,
 }
 
-impl Hci {
+impl RawCommandSender {
     /// Send a command, but does not automagically associate the expected returning event type.
     ///
     /// Only really useful for facades & shims.
-    pub async fn send_raw(&mut self, cmd: CommandPacket) -> Result<EventPacket> {
+    pub async fn send(&mut self, cmd: CommandPacket) -> Result<EventPacket> {
         let (tx, rx) = oneshot::channel::<EventPacket>();
         self.cmd_tx.send(QueuedCommand { cmd, fut: tx }).await?;
         let event = rx.await?;
         Ok(event)
     }
+}
 
+/// Sends commands to the controller
+#[derive(Clone, Stoppable)]
+pub struct CommandSender {
+    raw: RawCommandSender,
+}
+
+impl CommandSender {
     /// Send a command to the controller, getting an expected response back
     pub async fn send<T: Into<CommandPacket> + CommandExpectations>(
         &mut self,
         cmd: T,
     ) -> T::ResponseType {
-        T::_to_response_type(self.send_raw(cmd.into()).await.unwrap())
+        T::_to_response_type(self.raw.send(cmd.into()).await.unwrap())
     }
+}
 
+/// Exposes the ACL send/receive interface
+#[derive(Clone, Stoppable)]
+pub struct HciForAcl {
+    /// Transmit end
+    pub tx: Sender<AclPacket>,
+    /// Receive end
+    pub rx: Arc<Mutex<Receiver<AclPacket>>>,
+}
+
+/// Provides ability to register and unregister for HCI events
+#[derive(Clone, Stoppable)]
+pub struct EventRegistry {
+    evt_handlers: Arc<Mutex<HashMap<EventCode, Sender<EventPacket>>>>,
+    le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
+}
+
+impl EventRegistry {
     /// Indicate interest in specific HCI events
-    pub async fn register_event_handler(&mut self, code: EventCode, sender: Sender<EventPacket>) {
+    pub async fn register(&mut self, code: EventCode, sender: Sender<EventPacket>) {
         match code {
             EventCode::CommandStatus
             | EventCode::CommandComplete
@@ -123,16 +157,12 @@ impl Hci {
     }
 
     /// Remove interest in specific HCI events
-    pub async fn unregister_event_handler(&mut self, code: EventCode) {
+    pub async fn unregister(&mut self, code: EventCode) {
         self.evt_handlers.lock().await.remove(&code);
     }
 
     /// Indicate interest in specific LE events
-    pub async fn register_le_event_handler(
-        &mut self,
-        code: SubeventCode,
-        sender: Sender<LeMetaEventPacket>,
-    ) {
+    pub async fn register_le(&mut self, code: SubeventCode, sender: Sender<LeMetaEventPacket>) {
         assert!(
             self.le_evt_handlers.lock().await.insert(code, sender).is_none(),
             "A handler for {:?} is already registered",
@@ -141,7 +171,7 @@ impl Hci {
     }
 
     /// Remove interest in specific LE events
-    pub async fn unregister_le_event_handler(&mut self, code: SubeventCode) {
+    pub async fn unregister_le(&mut self, code: SubeventCode) {
         self.le_evt_handlers.lock().await.remove(&code);
     }
 }
