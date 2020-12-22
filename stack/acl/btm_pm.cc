@@ -767,44 +767,57 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
  * Returns          none.
  *
  ******************************************************************************/
-void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
-  uint8_t status;
-  uint16_t handle;
-  uint16_t max_rx_lat;
-  int xx, yy;
-  tBTM_PM_MCB* p_cb;
-  uint16_t use_ssr = true;
-
-  STREAM_TO_UINT8(status, p);
-
-  STREAM_TO_UINT16(handle, p);
-  /* get the index to acl_db */
-  xx = btm_handle_to_acl_index(handle);
-  if (xx >= MAX_L2CAP_LINKS) return;
-
-  p += 2;
-  STREAM_TO_UINT16(max_rx_lat, p);
-  p_cb = &(btm_cb.acl_cb_.pm_mode_db[xx]);
-
+static void process_ssr_event(tHCI_STATUS status, uint16_t handle,
+                              UNUSED_ATTR uint16_t max_tx_lat,
+                              uint16_t max_rx_lat) {
   const RawAddress bd_addr = acl_address_from_handle(handle);
   if (bd_addr == RawAddress::kEmpty) {
-    BTM_TRACE_EVENT("%s Received sniff subrating event with no active ACL",
-                    __func__);
+    LOG_WARN("Received sniff subrating event with no active ACL");
     return;
   }
 
-  if (p_cb->interval == max_rx_lat) {
-    /* using legacy sniff */
-    use_ssr = false;
+  tBTM_PM_MCB* p_cb = internal_.btm_pm_get_power_manager_from_handle(handle);
+  if (p_cb == nullptr) {
+    LOG_WARN("Received sniff subrating event with no active ACL");
+    return;
   }
 
-  /* notify registered parties */
-  for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
+  bool use_ssr = true;
+  if (p_cb->interval == max_rx_lat) {
+    LOG_DEBUG("Sniff subrating unsupported so dropping to legacy sniff mode");
+    use_ssr = false;
+  } else {
+    LOG_DEBUG("Sniff subrating enabled");
+  }
+
+  int cnt = 0;
+  for (int yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
     if (btm_cb.acl_cb_.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.acl_cb_.pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR, use_ssr,
-                                            status);
+      (*btm_cb.acl_cb_.pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR,
+                                            (use_ssr) ? 1 : 0, status);
+      cnt++;
     }
   }
+  LOG_DEBUG(
+      "Notified sniff subrating registered clients cnt:%d peer:%s use_ssr:%s "
+      "status:%s",
+      cnt, PRIVATE_ADDRESS(bd_addr), logbool(use_ssr).c_str(),
+      hci_error_code_text(status).c_str());
+}
+
+void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
+  uint8_t status;
+  uint16_t handle;
+  uint16_t max_tx_lat;
+  uint16_t max_rx_lat;
+
+  STREAM_TO_UINT8(status, p);
+  STREAM_TO_UINT16(handle, p);
+  STREAM_TO_UINT16(max_tx_lat, p);
+  STREAM_TO_UINT16(max_rx_lat, p);
+
+  process_ssr_event(static_cast<tHCI_STATUS>(status), handle, max_tx_lat,
+                    max_rx_lat);
 }
 
 /*******************************************************************************
