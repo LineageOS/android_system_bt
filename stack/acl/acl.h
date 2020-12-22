@@ -146,6 +146,7 @@ typedef struct {
   uint16_t max_lat;
   uint16_t min_loc_to;
   uint16_t min_rmt_to;
+  void Init() { state = BTM_PM_ST_ACTIVE; }
 } tBTM_PM_MCB;
 
 typedef struct {
@@ -310,9 +311,10 @@ typedef struct {
   friend void btm_acl_process_sca_cmpl_pkt(uint8_t evt_len, uint8_t* p);
   friend void btm_acl_role_changed(tHCI_STATUS hci_status,
                                    const RawAddress& bd_addr, uint8_t new_role);
-  friend void btm_pm_proc_cmd_status(uint8_t status);
-  friend void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
-                                      tHCI_MODE mode, uint16_t interval);
+  friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
+  friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
+                                      uint16_t hci_handle, tHCI_MODE mode,
+                                      uint16_t interval);
   friend void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
   friend void btm_pm_reset(void);
   friend void btm_pm_sm_alloc(uint8_t ind);
