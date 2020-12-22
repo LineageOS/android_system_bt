@@ -126,7 +126,22 @@ typedef struct {
   bool chg_ind;
   tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
   tBTM_PM_PWR_MD set_mode;
+
+ private:
+  friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
+                                      const RawAddress& remote_bda,
+                                      const tBTM_PM_PWR_MD* p_mode);
+  friend tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda,
+                                      uint16_t max_lat, uint16_t min_rmt_to,
+                                      uint16_t min_loc_to);
+  friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
+  friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
+                                      uint16_t hci_handle, tHCI_MODE mode,
+                                      uint16_t interval);
   tBTM_PM_STATE state;
+
+ public:
+  tBTM_PM_STATE State() const { return state; }
   uint16_t interval;
   uint16_t max_lat;
   uint16_t min_loc_to;
