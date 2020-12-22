@@ -610,20 +610,19 @@ tBTM_PM_MCB* StackAclBtmPm::btm_pm_get_power_manager_from_handle(
  * Returns          none.
  *
  ******************************************************************************/
-void btm_pm_proc_cmd_status(uint8_t status) {
-  if (btm_cb.acl_cb_.pm_pend_link >= MAX_L2CAP_LINKS) {
-    LOG_ERROR("pending_link: %d", btm_cb.acl_cb_.pm_pend_link);
+void btm_pm_proc_cmd_status(tHCI_STATUS status) {
+  if (btm_cb.acl_cb_.pm_pend_link == MAX_L2CAP_LINKS) {
+    LOG_ERROR("There are no links pending power mode changes");
     return;
   }
 
   tBTM_PM_MCB* p_cb = &btm_cb.acl_cb_.pm_mode_db[btm_cb.acl_cb_.pm_pend_link];
-  tBTM_PM_STATUS pm_status;
+
+  // if the command was not successful. Stay in the same state
+  tBTM_PM_STATUS pm_status = BTM_PM_STS_ERROR;
   if (status == HCI_SUCCESS) {
     p_cb->state = BTM_PM_ST_PENDING;
     pm_status = BTM_PM_STS_PENDING;
-  } else {
-    // the command was not successful. Stay in the same state
-    pm_status = BTM_PM_STS_ERROR;
   }
 
   /* notify the caller is appropriate */
@@ -632,13 +631,14 @@ void btm_pm_proc_cmd_status(uint8_t status) {
        BTM_PM_REG_NOTIF)) {
     const RawAddress bd_addr =
         btm_cb.acl_cb_.acl_db[btm_cb.acl_cb_.pm_pend_link].remote_addr;
+    LOG_DEBUG("Notifying callback that link power mode is complete peer:%s",
+              PRIVATE_ADDRESS(bd_addr));
     (*btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].cback)(
         bd_addr, pm_status, 0, status);
   }
 
-  /* no pending cmd now */
-  LOG_INFO("state: %d, pend_link: %d", p_cb->state,
-           btm_cb.acl_cb_.pm_pend_link);
+  LOG_INFO("Clearing pending power mode link state:%s",
+           power_mode_state_text(p_cb->state).c_str());
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 
   /*******************************************************************************
@@ -656,7 +656,8 @@ void btm_pm_proc_cmd_status(uint8_t status) {
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++) {
     if (btm_cb.acl_cb_.pm_mode_db[xx].state & BTM_PM_STORED_MASK) {
       btm_cb.acl_cb_.pm_mode_db[xx].state &= ~BTM_PM_STORED_MASK;
-      BTM_TRACE_DEBUG("btm_pm_check_stored :%d", xx);
+      LOG_DEBUG("Found another link requiring power mode change:%s",
+                PRIVATE_ADDRESS(btm_cb.acl_cb_.acl_db[xx].remote_addr));
       internal_.btm_pm_snd_md_req(btm_cb.acl_cb_.acl_db[xx], BTM_PM_SET_ONLY_ID,
                                   xx, NULL);
       break;
