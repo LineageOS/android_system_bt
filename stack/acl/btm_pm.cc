@@ -265,7 +265,7 @@ bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
     LOG_WARN("Unknown device:%s", PRIVATE_ADDRESS(remote_bda));
     return false;
   }
-  *p_mode = static_cast<tBTM_PM_MODE>(p_mcb->state);
+  *p_mode = static_cast<tBTM_PM_MODE>(p_mcb->State());
   return true;
 }
 
@@ -494,7 +494,7 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id,
   mode = btm_pm_get_set_mode(pm_id, p_cb, p_mode, &md_res);
   md_res.mode = mode;
 
-  if (p_cb->state == mode) {
+  if (p_cb->State() == mode) {
     LOG_INFO("Link already in requested mode pm_id:%hhu link_ind:%d mode:%d",
              pm_id, link_ind, mode);
 
@@ -508,12 +508,13 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id,
   p_cb->chg_ind = chg_ind;
 
   /* cannot go directly from current mode to resulting mode. */
-  if (mode != BTM_PM_MD_ACTIVE && p_cb->state != BTM_PM_MD_ACTIVE)
+  if (mode != BTM_PM_MD_ACTIVE && p_cb->State() != BTM_PM_MD_ACTIVE)
     p_cb->chg_ind = true; /* needs to wake, then sleep */
 
   if (p_cb->chg_ind) /* needs to wake first */
     md_res.mode = BTM_PM_MD_ACTIVE;
   else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
+    LOG_DEBUG("Sending sniff subrating to controller");
     send_sniff_subrating(btm_cb.acl_cb_.acl_db[link_ind], p_cb->max_lat,
                          p_cb->min_rmt_to, p_cb->min_loc_to);
     p_cb->max_lat = 0;
@@ -525,17 +526,17 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id,
   btm_cb.acl_cb_.pm_pend_id = pm_id;
 
   LOG_INFO("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
-           power_mode_state_text(p_cb->state).c_str(), p_cb->state,
+           power_mode_state_text(p_cb->State()).c_str(), p_cb->State(),
            power_mode_state_text(md_res.mode).c_str(), md_res.mode, link_ind);
   btm_cb.history_->Push(
       "%-32s: %s  %s(0x%02x) ==> %s(0x%02x)", "Power mode change",
       PRIVATE_ADDRESS(btm_cb.acl_cb_.acl_db[link_ind].remote_addr),
-      power_mode_state_text(p_cb->state).c_str(), p_cb->state,
+      power_mode_state_text(p_cb->State()).c_str(), p_cb->State(),
       power_mode_state_text(md_res.mode).c_str(), md_res.mode);
 
   switch (md_res.mode) {
     case BTM_PM_MD_ACTIVE:
-      switch (p_cb->state) {
+      switch (p_cb->State()) {
         case BTM_PM_MD_SNIFF:
           btsnd_hcic_exit_sniff_mode(
               btm_cb.acl_cb_.acl_db[link_ind].hci_handle);
