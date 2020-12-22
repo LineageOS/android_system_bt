@@ -46,9 +46,6 @@
 #define SDP_DB_FULL 0xFFF4
 #define SDP_CANCEL 0xFFF8
 
-/* Define the PSM that SDP uses */
-#define SDP_PSM 0x0001
-
 /* Masks for attr_value field of tSDP_DISC_ATTR */
 #define SDP_DISC_ATTR_LEN_MASK 0x0FFF
 #define SDP_DISC_ATTR_TYPE(len_type) ((len_type) >> 12)
