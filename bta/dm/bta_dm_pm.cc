@@ -49,7 +49,7 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
 static void bta_dm_pm_timer_cback(void* data);
 static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
-                                uint8_t hci_status);
+                                tHCI_STATUS hci_status);
 static bool bta_dm_pm_park(const RawAddress& peer_addr);
 void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static bool bta_dm_pm_is_sco_active();
@@ -895,7 +895,7 @@ void bta_dm_pm_active(const RawAddress& peer_addr) {
 /** BTM power manager callback */
 static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
-                                uint8_t hci_status) {
+                                tHCI_STATUS hci_status) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_pm_btm_status, bd_addr, status,
                                           value, hci_status));
 }

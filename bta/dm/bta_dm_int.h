@@ -206,7 +206,7 @@ struct sBTA_DM_PEER_DEVICE {
   friend void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport);
   friend void bta_dm_pm_btm_status(const RawAddress& bd_addr,
                                    tBTM_PM_STATUS status, uint16_t value,
-                                   uint8_t hci_status);
+                                   tHCI_STATUS hci_status);
   friend void bta_dm_pm_sniff(struct sBTA_DM_PEER_DEVICE* p_peer_dev,
                               uint8_t index);
   friend void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
@@ -467,7 +467,7 @@ extern void bta_dm_remove_device(const RawAddress& bd_addr);
 extern void bta_dm_close_acl(const RawAddress&, bool, tBT_TRANSPORT);
 
 extern void bta_dm_pm_btm_status(const RawAddress&, tBTM_PM_STATUS, uint16_t,
-                                 uint8_t);
+                                 tHCI_STATUS);
 extern void bta_dm_pm_timer(const RawAddress&, tBTA_DM_PM_ACTION);
 extern void bta_dm_add_ampkey(tBTA_DM_MSG* p_data);
 

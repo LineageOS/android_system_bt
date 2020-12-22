@@ -339,7 +339,7 @@ void btm_pm_reset(void) {
   if (cb != NULL && btm_cb.acl_cb_.pm_pend_link < MAX_L2CAP_LINKS) {
     const RawAddress raw_address =
         btm_cb.acl_cb_.acl_db[btm_cb.acl_cb_.pm_pend_link].remote_addr;
-    (*cb)(raw_address, BTM_PM_STS_ERROR, BTM_DEV_RESET, 0);
+    (*cb)(raw_address, BTM_PM_STS_ERROR, BTM_DEV_RESET, HCI_SUCCESS);
   }
   /* no command pending */
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
@@ -681,7 +681,7 @@ void btm_pm_proc_cmd_status(uint8_t status) {
  * Returns          none.
  *
  ******************************************************************************/
-void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
+void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
                              tHCI_MODE hci_mode, uint16_t interval) {
   tBTM_PM_STATUS mode = static_cast<tBTM_PM_STATUS>(hci_mode);
   int xx, yy, zz;
