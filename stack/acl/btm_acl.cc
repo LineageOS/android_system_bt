@@ -2452,12 +2452,12 @@ bool BTM_IsBleConnection(uint16_t hci_handle) {
   return p_acl->is_transport_ble();
 }
 
-const RawAddress acl_address_from_handle(uint16_t hci_handle) {
-  uint8_t index = btm_handle_to_acl_index(hci_handle);
-  if (index >= MAX_L2CAP_LINKS) {
+const RawAddress acl_address_from_handle(uint16_t handle) {
+  tACL_CONN* p_acl = acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
     return RawAddress::kEmpty;
   }
-  return btm_cb.acl_cb_.acl_db[index].remote_addr;
+  return p_acl->remote_addr;
 }
 
 tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {
