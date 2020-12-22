@@ -301,6 +301,13 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
   }
 
   if (p_cb->state == BTM_PM_ST_ACTIVE || p_cb->state == BTM_PM_ST_SNIFF) {
+    LOG_INFO(
+        "Set sniff subrating state:%s[%d] max_latency:0x%04x "
+        "min_remote_timeout:0x%04x"
+        " min_local_timeout:0x%04x",
+        power_mode_state_text(btm_cb.acl_cb_.pm_mode_db[acl_ind].state).c_str(),
+        btm_cb.acl_cb_.pm_mode_db[acl_ind].state, max_lat, min_rmt_to,
+        min_loc_to);
     send_sniff_subrating(*p_acl, max_lat, min_rmt_to, min_loc_to);
     return BTM_SUCCESS;
   }
