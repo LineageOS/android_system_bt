@@ -2419,6 +2419,10 @@ void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
   tBTA_PREF_ROLES role;
   tBTA_DM_PEER_DEVICE* p_dev;
 
+  LOG_DEBUG("BTA Role management callback count:%d status:%s peer:%s",
+            bta_dm_cb.cur_av_count, bta_sys_conn_status_text(status).c_str(),
+            PRIVATE_ADDRESS(peer_addr));
+
   p_dev = bta_dm_find_peer_device(peer_addr);
   if (status == BTA_SYS_CONN_OPEN) {
     if (p_dev) {
@@ -2455,8 +2459,6 @@ void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
       /* get cur_av_count from connected services */
       if (BTA_ID_AV == id) bta_dm_cb.cur_av_count = bta_dm_get_av_count();
     }
-    APPL_TRACE_WARNING("bta_dm_rm_cback:%d, status:%d", bta_dm_cb.cur_av_count,
-                       status);
   }
 
   /* Don't adjust roles for each busy/idle state transition to avoid
