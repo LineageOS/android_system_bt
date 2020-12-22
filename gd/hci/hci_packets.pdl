@@ -624,7 +624,7 @@ packet DiscoveryCommand : Command { _payload_, }
 packet AclCommand : Command { _payload_, }
 packet ConnectionManagementCommand : AclCommand { _payload_, }
 packet SecurityCommand : Command { _payload_, }
-packet ScoConnectionCommand : Command { _payload_, }
+packet ScoConnectionCommand : AclCommand { _payload_, }
 packet LeAdvertisingCommand : Command { _payload_, }
 packet LeScanningCommand : Command { _payload_, }
 packet LeConnectionManagementCommand : AclCommand { _payload_, }
@@ -1097,7 +1097,11 @@ packet AcceptSynchronousConnection : ScoConnectionCommand (op_code = ACCEPT_SYNC
 }
 
 packet RejectSynchronousConnection : ScoConnectionCommand (op_code = REJECT_SYNCHRONOUS_CONNECTION) {
-  _payload_,  // placeholder (unimplemented)
+  bd_addr : Address,
+  reason : ErrorCode,
+}
+
+packet RejectSynchronousConnectionStatus : CommandStatus (command_op_code = REJECT_SYNCHRONOUS_CONNECTION) {
 }
 
 enum IoCapability : 8 {
@@ -1202,12 +1206,164 @@ packet IoCapabilityRequestNegativeReplyComplete : CommandComplete (command_op_co
   bd_addr : Address,
 }
 
+enum ScoCodingFormatValues : 8 {
+  ULAW_LONG = 0x00,
+  ALAW_LONG = 0x01,
+  CVSD = 0x02,
+  TRANSPARENT = 0x03,
+  LINEAR_PCM = 0x04,
+  MSBC = 0x05,
+  LC3 = 0x06,
+  VENDOR_SPECIFIC = 0xFF,
+}
+
+struct ScoCodingFormat {
+  coding_format : ScoCodingFormatValues,
+  company_id : 16,
+  vendor_specific_codec_id : 16,
+}
+
+enum ScoPcmDataFormat : 8 {
+  NOT_USED = 0x00,
+  ONES_COMPLEMENT = 0X01,
+  TWOS_COMPLEMENT = 0x02,
+  SIGN_MAGNITUDE = 0x03,
+  UNSIGNED = 0x04,
+}
+
+enum ScoDataPath : 8 {
+  HCI = 0x00,
+  // 0x01 to 0xFE are Logical_Channel_Number.
+  // The meaning of the logical channels will be vendor specific.
+  // In GD and legacy Android Bluetooth stack, we use channel 0x01 for hardware
+  // offloaded SCO encoding
+  GD_PCM = 0x01,
+  AUDIO_TEST_MODE = 0xFF,
+}
+
+enum SynchronousPacketTypeBits : 16 {
+  HV1_ALLOWED = 0x0000,
+  HV2_ALLOWED = 0x0001,
+  HV3_ALLOWED = 0x0002,
+  EV3_ALLOWED = 0x0004,
+  EV4_ALLOWED = 0x0008,
+  EV5_ALLOWED = 0x0010,
+  NO_2_EV3_ALLOWED = 0x0020,
+  NO_3_EV3_ALLOWED = 0x0040,
+  NO_2_EV5_ALLOWED = 0x0080,
+  NO_3_EV5_ALLOWED = 0x0100,
+}
+
+enum RetransmissionEffort : 8 {
+  NO_RETRANSMISSION = 0x00,
+  OPTIMIZED_FOR_POWER = 0x01,
+  OPTIMIZED_FOR_LINK_QUALITY = 0x02,
+  DO_NOT_CARE = 0xFF,
+}
+
 packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (op_code = ENHANCED_SETUP_SYNCHRONOUS_CONNECTION) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle: 12,
+  _reserved_ : 4,
+  // Next two items
+  // [0x00000000, 0xFFFFFFFE] Bandwidth in octets per second.
+  // [0xFFFFFFFF]: Don't care
+  transmit_bandwidth : 32,
+  receive_bandwidth : 32,
+  transmit_coding_format : ScoCodingFormat,
+  receive_coding_format : ScoCodingFormat,
+  // Next two items
+  // [0x0001, 0xFFFF]: the actual size of the over-the-air encoded frame in
+  //                   octets.
+  transmit_codec_frame_size : 16,
+  receive_codec_frame_size : 16,
+  // Next two items
+  // Host to Controller nominal data rate in octets per second.
+  input_bandwidth : 32,
+  output_bandwidth : 32,
+  input_coding_format : ScoCodingFormat,
+  output_coding_format : ScoCodingFormat,
+  // Next two items
+  // Size, in bits, of the sample or framed data
+  input_coded_data_bits : 16,
+  output_coded_data_bits : 16,
+  input_pcm_data_format : ScoPcmDataFormat,
+  output_pcm_data_format : ScoPcmDataFormat,
+  // Next two items
+  // The number of bit positions within an audio sample that the MSB of the
+  // sample is away from starting at the MSB of the data.
+  input_pcm_sample_payload_msb_position : 8,
+  output_pcm_sample_payload_msb_position : 8,
+  input_data_path : ScoDataPath,
+  output_data_path : ScoDataPath,
+  // Next two items
+  // [1, 255] The number of bits in each unit of data received from the Host
+  //          over the audio data transport.
+  // [0] Not applicable (implied by the choice of audio data transport)
+  input_transport_unit_bits : 8,
+  output_transport_unit_bits : 8,
+  // [0x0004, 0xFFFE]: in milliseconds
+  //     Upper limit represent the sum of the synchronous interval and the size
+  //     of the eSCO window, where the eSCO window is reserved slots plus the
+  //     retransmission window
+  // [0xFFFF]: don't care
+  max_latency_ms: 16,
+  packet_type : 16, // Or together SynchronousPacketTypeBits
+  retransmission_effort : RetransmissionEffort,
+}
+
+packet EnhancedSetupSynchronousConnectionStatus : CommandStatus (command_op_code = ENHANCED_SETUP_SYNCHRONOUS_CONNECTION) {
 }
 
 packet EnhancedAcceptSynchronousConnection : ScoConnectionCommand (op_code = ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION) {
-  _payload_,  // placeholder (unimplemented)
+  bd_addr : Address,
+  // Next two items
+  // [0x00000000, 0xFFFFFFFE] Bandwidth in octets per second.
+  // [0xFFFFFFFF]: Don't care
+  transmit_bandwidth : 32,
+  receive_bandwidth : 32,
+  transmit_coding_format : ScoCodingFormat,
+  receive_coding_format : ScoCodingFormat,
+  // Next two items
+  // [0x0001, 0xFFFF]: the actual size of the over-the-air encoded frame in
+  //                   octets.
+  transmit_codec_frame_size : 16,
+  receive_codec_frame_size : 16,
+  // Next two items
+  // Host to Controller nominal data rate in octets per second.
+  input_bandwidth : 32,
+  output_bandwidth : 32,
+  input_coding_format : ScoCodingFormat,
+  output_coding_format : ScoCodingFormat,
+  // Next two items
+  // Size, in bits, of the sample or framed data
+  input_coded_data_bits : 16,
+  output_coded_data_bits : 16,
+  input_pcm_data_format : ScoPcmDataFormat,
+  output_pcm_data_format : ScoPcmDataFormat,
+  // Next two items
+  // The number of bit positions within an audio sample that the MSB of the
+  // sample is away from starting at the MSB of the data.
+  input_pcm_sample_payload_msb_position : 8,
+  output_pcm_sample_payload_msb_position : 8,
+  input_data_path : ScoDataPath,
+  output_data_path : ScoDataPath,
+  // Next two items
+  // [1, 255] The number of bits in each unit of data received from the Host
+  //          over the audio data transport.
+  // [0] Not applicable (implied by the choice of audio data transport)
+  input_transport_unit_bits : 8,
+  output_transport_unit_bits : 8,
+  // [0x0004, 0xFFFE]: in milliseconds
+  //     Upper limit represent the sum of the synchronous interval and the size
+  //     of the eSCO window, where the eSCO window is reserved slots plus the
+  //     retransmission window
+  // [0xFFFF]: don't care
+  max_latency : 16,
+  packet_type : 16, // Or together SynchronousPacketTypeBits
+  retransmission_effort : RetransmissionEffort,
+}
+
+packet EnhancedAcceptSynchronousConnectionStatus : CommandStatus (command_op_code = ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION) {
 }
 
 packet RemoteOobExtendedDataRequestReply : SecurityCommand (op_code = REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY) {
@@ -1766,15 +1922,29 @@ packet ReadTransmitPowerLevelComplete : CommandComplete (command_op_code = READ_
 }
 
 packet ReadSynchronousFlowControlEnable : Command (op_code = READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadSynchronousFlowControlEnableComplete : CommandComplete (command_op_code = READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
+  status : ErrorCode,
+  enable : Enable,
 }
 
 packet WriteSynchronousFlowControlEnable : Command (op_code = WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
-  _payload_,  // placeholder (unimplemented)
+  enable : Enable,
+}
+
+packet WriteSynchronousFlowControlEnableComplete : CommandComplete (command_op_code = WRITE_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
+  status : ErrorCode,
 }
 
 packet SetControllerToHostFlowControl : Command (op_code = SET_CONTROLLER_TO_HOST_FLOW_CONTROL) {
-  _payload_,  // placeholder (unimplemented)
+  acl : 1,
+  synchronous : 1,
+  _reserved_ : 6,
+}
+
+packet SetControllerToHostFlowControlComplete : CommandComplete (command_op_code = SET_CONTROLLER_TO_HOST_FLOW_CONTROL) {
+  status : ErrorCode,
 }
 
 packet HostBufferSize : Command (op_code = HOST_BUFFER_SIZE) {
@@ -4137,12 +4307,52 @@ packet ReadRemoteExtendedFeaturesComplete : Event (event_code = READ_REMOTE_EXTE
   extended_lmp_features : 64,
 }
 
+enum ScoLinkType : 8 {
+  SCO = 0x00,
+  ESCO = 0x02,
+}
+
+enum ScoAirMode : 8 {
+  ULAW_LOG = 0x00,
+  ALAW_LOG = 0x01,
+  CVSD = 0x02,
+  TRANSPARENT = 0x03,
+}
+
 packet SynchronousConnectionComplete : Event (event_code = SYNCHRONOUS_CONNECTION_COMPLETE){
-  _payload_, // placeholder (unimplemented)
+  status : ErrorCode,
+  connection_handle : 12,
+   _reserved_ : 4,
+  bd_addr : Address,
+  link_type : ScoLinkType,
+  // Time between two consecutive eSCO instants measured in slots.
+  // eSCO only, Shall be zero for SCO links.
+  transmission_interval_slots : 8,
+  // The size of the retransmission window measured in slots.
+  // eSCO only. Shall be zero for SCO links.
+  retransmission_window_slots : 8,
+  // Length in bytes of the eSCO payload in the receive direction.
+  // eSCO only. Shall be zero for SCO links.
+  rx_packet_length : 16,
+  // Length in bytes of the eSCO payload in the transmit direction.
+  // eSCO only. Shall be zero for SCO links.
+  tx_packet_length : 16,
+  air_mode : ScoAirMode,
 }
 
 packet SynchronousConnectionChanged : Event (event_code = SYNCHRONOUS_CONNECTION_CHANGED){
-  _payload_, // placeholder (unimplemented)
+  status : ErrorCode,
+  connection_handle : 12,
+   _reserved_ : 4,
+  // Time between two consecutive eSCO instants measured in slots.
+  // eSCO only, Shall be zero for SCO links.
+  transmission_interval_slots : 8,
+  // Time between two consecutive SCO/eSCO instants measured in slots.
+  retransmission_window_slots : 8,
+  // Length in bytes of the SCO/eSCO payload in the receive direction.
+  rx_packet_length : 16,
+  // Length in bytes of the SCO/eSCO payload in the transmit direction.
+  tx_packet_length : 16,
 }
 
 packet SniffSubratingEvent : Event (event_code = SNIFF_SUBRATING){
