@@ -21,6 +21,7 @@ cc_defaults {
         "system/bt/udrv/include",
         "system/bt/vnd/include",
         "system/bt/utils/include",
+        "system/bt/gd/rust/shim",
     ],
     shared_libs: [
         "libcutils",

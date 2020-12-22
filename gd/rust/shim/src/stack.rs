@@ -4,7 +4,13 @@ use crate::hci::Hci;
 use bt_common::init_flags;
 use bt_main::Stack;
 use std::sync::Arc;
-use tokio::runtime::Runtime;
+use tokio::runtime::{Builder, Runtime};
+
+lazy_static! {
+    pub static ref RUNTIME: Arc<Runtime> = Arc::new(
+        Builder::new_multi_thread().worker_threads(1).max_threads(1).enable_all().build().unwrap()
+    );
+}
 
 #[cxx::bridge(namespace = bluetooth::shim::rust)]
 mod ffi {
@@ -23,9 +29,8 @@ mod ffi {
 pub fn stack_create() -> Box<Stack> {
     assert!(init_flags::gd_rust_is_enabled());
 
-    let rt = Arc::new(Runtime::new().unwrap());
-    let local_rt = rt.clone();
-    rt.block_on(async move {
+    let local_rt = RUNTIME.clone();
+    RUNTIME.block_on(async move {
         let stack = Stack::new(local_rt).await;
         stack.use_default_snoop().await;
 

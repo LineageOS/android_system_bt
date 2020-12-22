@@ -32,6 +32,8 @@ rust_ffi_static {
         "libbt_packets",
         "libfutures",
         "libnum_traits",
+        "libnix",
+        "liblog_rust",
     ],
     static_libs: [
         "libbt_callbacks_cxx",
@@ -45,17 +47,20 @@ cc_library_static {
         "libbt_init_flags_bridge_header",
         "libbt_shim_bridge_header",
         "libbt_hci_bridge_header",
+        "libbt_message_loop_thread_bridge_header",
         "cxx-bridge-header",
     ],
     generated_sources: [
         "libbt_init_flags_bridge_code",
         "libbt_shim_bridge_code",
         "libbt_hci_bridge_code",
+        "libbt_message_loop_thread_bridge_code",
     ],
     export_generated_headers: [
         "libbt_init_flags_bridge_header",
         "libbt_shim_bridge_header",
         "libbt_hci_bridge_header",
+        "libbt_message_loop_thread_bridge_header",
         "cxx-bridge-header",
     ],
     header_libs: ["libbt_callbacks_cxx_headers"],
@@ -140,4 +145,20 @@ genrule {
     cmd: "$(location cxxbridge) $(in) >> $(out)",
     srcs: ["src/hci.rs"],
     out: ["hci.cc"],
+}
+
+genrule {
+    name: "libbt_message_loop_thread_bridge_header",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) --header > $(out)",
+    srcs: ["src/message_loop_thread.rs"],
+    out: ["src/message_loop_thread.rs.h"],
+}
+
+genrule {
+    name: "libbt_message_loop_thread_bridge_code",
+    tools: ["cxxbridge"],
+    cmd: "$(location cxxbridge) $(in) >> $(out)",
+    srcs: ["src/message_loop_thread.rs"],
+    out: ["message_loop_thread.cc"],
 }

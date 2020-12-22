@@ -10,6 +10,7 @@ cc_library_static {
         "system/bt/btcore/include",
         "system/bt/internal_include",
         "system/bt/stack/include",
+        "system/bt/gd/rust/shim",
     ],
     export_include_dirs: ["./"],
     srcs: [

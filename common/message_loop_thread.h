@@ -27,6 +27,7 @@
 #include <base/message_loop/message_loop.h>
 #include <base/run_loop.h>
 #include <base/threading/platform_thread.h>
+#include "src/message_loop_thread.rs.h"
 
 namespace bluetooth {
 
@@ -44,6 +45,7 @@ class MessageLoopThread final {
    * @param thread_name name of this worker thread
    */
   explicit MessageLoopThread(const std::string& thread_name);
+  explicit MessageLoopThread(const std::string& thread_name, bool is_main);
 
   /**
    * Destroys the message loop thread automatically when it goes out of scope
@@ -194,6 +196,8 @@ class MessageLoopThread final {
   pid_t linux_tid_;
   base::WeakPtrFactory<MessageLoopThread> weak_ptr_factory_;
   bool shutting_down_;
+  bool is_main_;
+  ::rust::Box<shim::rust::MessageLoopThread>* rust_thread_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(MessageLoopThread);
 };
