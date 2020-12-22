@@ -350,7 +350,7 @@ void acl_initialize_power_mode(const tACL_CONN& p_acl) {
   tBTM_PM_MCB* p_db =
       &btm_cb.acl_cb_.pm_mode_db[btm_handle_to_acl_index(p_acl.hci_handle)];
   memset(p_db, 0, sizeof(tBTM_PM_MCB));
-  p_db->state = BTM_PM_ST_ACTIVE;
+  p_db->Init();
 }
 
 tACL_CONN* StackAclBtmAcl::acl_allocate_connection() {
