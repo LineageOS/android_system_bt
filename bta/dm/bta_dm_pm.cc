@@ -49,9 +49,9 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
 static void bta_dm_pm_timer_cback(void* data);
 static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
-                                uint8_t hci_status);
+                                tHCI_STATUS hci_status);
 static bool bta_dm_pm_park(const RawAddress& peer_addr);
-static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
+void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static bool bta_dm_pm_is_sco_active();
 static int bta_dm_get_sco_index();
 static void bta_dm_pm_hid_check(bool bScoActive);
@@ -360,7 +360,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
 
   p_dev = bta_dm_find_peer_device(peer_addr);
   if (p_dev) {
-    LOG_DEBUG("Device info:%s", device_info_text(p_dev->info).c_str());
+    LOG_DEBUG("Device info:%s", device_info_text(p_dev->Info()).c_str());
   } else {
     LOG_ERROR("Unable to find peer device...yet soldiering on...");
   }
@@ -368,7 +368,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   /* set SSR parameters on SYS CONN OPEN */
   int index = BTA_DM_PM_SSR0;
   if ((BTA_SYS_CONN_OPEN == status) && p_dev &&
-      (p_dev->info & BTA_DM_DI_USE_SSR)) {
+      (p_dev->Info() & BTA_DM_DI_USE_SSR)) {
     index = p_bta_dm_pm_spec[p_bta_dm_pm_cfg[i].spec_idx].ssr;
   } else if (BTA_ID_AV == id) {
     if (BTA_SYS_CONN_BUSY == status) {
@@ -427,7 +427,8 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     bta_dm_conn_srvcs.conn_srvc[j].new_request = true;
     bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr = peer_addr;
 
-    LOG_INFO("New connection service id:%d app_id:%d", id, app_id);
+    LOG_INFO("New connection service:%s[%hhu] app_id:%d",
+             BtaIdSysText(id).c_str(), id, app_id);
 
     bta_dm_conn_srvcs.count++;
     bta_dm_conn_srvcs.conn_srvc[j].state = status;
@@ -521,12 +522,18 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
   uint8_t timer_idx, available_timer = BTA_DM_PM_MODE_TIMER_MAX;
   uint64_t remaining_ms = 0;
 
-  if (!bta_dm_cb.device_list.count) return;
+  if (!bta_dm_cb.device_list.count) {
+    LOG_INFO("Device list count is zero");
+    return;
+  }
 
   /* see if any attempt to put device in low power mode failed */
   p_peer_device = bta_dm_find_peer_device(peer_addr);
   /* if no peer device found return */
-  if (p_peer_device == NULL) return;
+  if (p_peer_device == NULL) {
+    LOG_INFO("No peer device found");
+    return;
+  }
 
   failed_pm = p_peer_device->pm_mode_failed;
 
@@ -546,9 +553,13 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
       p_act0 = &p_pm_spec->actn_tbl[p_srvcs->state][0];
       p_act1 = &p_pm_spec->actn_tbl[p_srvcs->state][1];
 
-      APPL_TRACE_DEBUG("bta_dm_pm_set_mode: srvcsid: %d, state: %d, j: %d",
-                       p_srvcs->id, p_srvcs->state, j);
       allowed_modes |= p_pm_spec->allow_mask;
+      LOG_DEBUG(
+          "Service:%s[%hhu] state:%s[%hhu] allowed_modes:0x%02x "
+          "service_index:%hhu ",
+          BtaIdSysText(p_srvcs->id).c_str(), p_srvcs->id,
+          bta_sys_conn_status_text(p_srvcs->state).c_str(), p_srvcs->state,
+          allowed_modes, j);
 
       /* PM actions are in the order of strictness */
 
@@ -630,10 +641,8 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
                                 timeout_ms, p_srvcs->id, pm_action);
           timer_started = true;
         }
-      }
-      /* no more timers */
-      else {
-        APPL_TRACE_WARNING("bta_dm_act dm_pm_timer no more");
+      } else {
+        LOG_WARN("no more timers");
       }
     }
     return;
@@ -641,22 +650,30 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
   /* if pending power mode timer expires, and currecnt link is in a
      lower power mode than current profile requirement, igonre it */
   if (pm_req == BTA_DM_PM_EXECUTE && pm_request < pm_action) {
-    APPL_TRACE_ERROR("Ignore the power mode request: %d", pm_request)
+    LOG_ERROR("Ignore the power mode request: %d", pm_request);
     return;
   }
   if (pm_action == BTA_DM_PM_PARK) {
     p_peer_device->pm_mode_attempted = BTA_DM_PM_PARK;
     bta_dm_pm_park(peer_addr);
+    LOG_WARN("DEPRECATED Setting link to park mode peer:%s",
+             PRIVATE_ADDRESS(peer_addr));
   } else if (pm_action & BTA_DM_PM_SNIFF) {
     /* dont initiate SNIFF, if link_policy has it disabled */
     if (BTM_is_sniff_allowed_for(peer_addr)) {
+      LOG_DEBUG(
+          "Link policy allows sniff mode so setting mode "
+          "peer:%s",
+          PRIVATE_ADDRESS(peer_addr));
       p_peer_device->pm_mode_attempted = BTA_DM_PM_SNIFF;
       bta_dm_pm_sniff(p_peer_device, (uint8_t)(pm_action & 0x0F));
     } else {
-      APPL_TRACE_DEBUG(
-          "bta_dm_pm_set_mode: Link policy disallows SNIFF, ignore request");
+      LOG_DEBUG("Link policy disallows sniff mode, ignore request peer:%s",
+                PRIVATE_ADDRESS(peer_addr));
     }
   } else if (pm_action == BTA_DM_PM_ACTIVE) {
+    LOG_DEBUG("Setting link to active mode peer:%s",
+              PRIVATE_ADDRESS(peer_addr));
     bta_dm_pm_active(peer_addr);
   }
 }
@@ -700,7 +717,7 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
  * Returns          true if sniff attempted, false otherwise.
  *
  ******************************************************************************/
-static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
+void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
   tBTM_PM_MODE mode = BTM_PM_MD_ACTIVE;
   tBTM_PM_PWR_MD pwr_md;
   tBTM_STATUS status;
@@ -710,33 +727,33 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
              PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr));
   }
   tBTM_PM_STATUS mode_status = static_cast<tBTM_PM_STATUS>(mode);
-  LOG_DEBUG("Current power mode:%s[0x%x] peer_mode:x%02x",
+  LOG_DEBUG("Current power mode:%s[0x%x] peer_info:%s[0x%02x]",
             power_mode_status_text(mode_status).c_str(), mode_status,
-            p_peer_dev->info);
+            device_info_text(p_peer_dev->Info()).c_str(), p_peer_dev->Info());
 
   uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
-  LOG_DEBUG("Current power mode:%s[0x%x] peer_info:%s",
-            power_mode_status_text(mode).c_str(), mode,
-            device_info_text(p_peer_dev->info).c_str());
 
   const controller_t* controller = controller_get_interface();
   if (mode != BTM_PM_MD_SNIFF ||
       (controller->supports_sniff_subrating() && p_rem_feat &&
        HCI_SNIFF_SUB_RATE_SUPPORTED(p_rem_feat) &&
-       !(p_peer_dev->info & BTA_DM_DI_USE_SSR))) {
+       !(p_peer_dev->Info() & BTA_DM_DI_USE_SSR))) {
     /* Dont initiate Sniff if controller has alreay accepted
      * remote sniff params. This avoid sniff loop issue with
      * some agrresive headsets who use sniff latencies more than
      * DUT supported range of Sniff intervals.*/
-    if ((mode == BTM_PM_MD_SNIFF) && (p_peer_dev->info & BTA_DM_DI_ACP_SNIFF)) {
-      APPL_TRACE_DEBUG("%s: already in remote initiate sniff", __func__);
+    if ((mode == BTM_PM_MD_SNIFF) &&
+        (p_peer_dev->Info() & BTA_DM_DI_ACP_SNIFF)) {
+      LOG_DEBUG("Link already in sniff mode peer:%s",
+                PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr));
       return;
     }
   }
   /* if the current mode is not sniff, issue the sniff command.
    * If sniff, but SSR is not used in this link, still issue the command */
   memcpy(&pwr_md, &p_bta_dm_pm_md[index], sizeof(tBTM_PM_PWR_MD));
-  if (p_peer_dev->info & BTA_DM_DI_INT_SNIFF) {
+  if (p_peer_dev->Info() & BTA_DM_DI_INT_SNIFF) {
+    LOG_DEBUG("Trying to force power mode");
     pwr_md.mode |= BTM_PM_MD_FORCE;
   }
   status = BTM_SetPowerMode(bta_dm_cb.pm_id, p_peer_dev->peer_bdaddr, &pwr_md);
@@ -747,10 +764,10 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
     APPL_TRACE_DEBUG("bta_dm_pm_sniff BTM_SetPowerMode() returns BTM_SUCCESS");
     p_peer_dev->info &=
         ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
-  } else /* error */
-  {
-    APPL_TRACE_ERROR(
-        "bta_dm_pm_sniff BTM_SetPowerMode() returns ERROR status=%d", status);
+  } else {
+    LOG_ERROR("Unable to set power mode peer:%s status:%s",
+              PRIVATE_ADDRESS(p_peer_dev->peer_bdaddr),
+              btm_status_text(status).c_str());
     p_peer_dev->info &=
         ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
   }
@@ -878,7 +895,7 @@ void bta_dm_pm_active(const RawAddress& peer_addr) {
 /** BTM power manager callback */
 static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
-                                uint8_t hci_status) {
+                                tHCI_STATUS hci_status) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_pm_btm_status, bd_addr, status,
                                           value, hci_status));
 }
@@ -927,13 +944,21 @@ static void bta_dm_pm_timer_cback(void* data) {
 
 /** Process pm status event from btm */
 void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
-                          uint16_t value, uint8_t hci_status) {
-  APPL_TRACE_DEBUG("%s status: %d", __func__, status);
+                          uint16_t interval, tHCI_STATUS hci_status) {
+  LOG_DEBUG(
+      "Power mode notification event status:%s peer:%s interval:%hu "
+      "hci_status:%s",
+      power_mode_status_text(status).c_str(), PRIVATE_ADDRESS(bd_addr),
+      interval, hci_error_code_text(hci_status).c_str());
 
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
-  if (NULL == p_dev) return;
+  if (p_dev == nullptr) {
+    LOG_INFO("Unable to process power event for peer:%s",
+             PRIVATE_ADDRESS(bd_addr));
+    return;
+  }
 
-  tBTA_DM_DEV_INFO info = p_dev->info;
+  tBTA_DM_DEV_INFO info = p_dev->Info();
   /* check new mode */
   switch (status) {
     case BTM_PM_STS_ACTIVE:
@@ -972,10 +997,18 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
       break;
 
     case BTM_PM_STS_SSR:
-      if (value)
+      if (hci_status != 0) {
+        LOG_WARN("Received error when attempting to set sniff subrating mode");
+      }
+      if (interval) {
         p_dev->info |= BTA_DM_DI_USE_SSR;
-      else
+        LOG_DEBUG("Enabling sniff subrating mode for peer:%s",
+                  PRIVATE_ADDRESS(bd_addr));
+      } else {
         p_dev->info &= ~BTA_DM_DI_USE_SSR;
+        LOG_DEBUG("Disabling sniff subrating mode for peer:%s",
+                  PRIVATE_ADDRESS(bd_addr));
+      }
       break;
     case BTM_PM_STS_SNIFF:
       if (hci_status == 0) {
@@ -1001,8 +1034,9 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
       break;
 
     default:
+      LOG_ERROR("Received unknown power mode status event:%hhu", status);
       break;
-  }
+      }
 }
 
 /** Process pm timer event from btm */

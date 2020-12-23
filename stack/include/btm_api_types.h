@@ -1003,6 +1003,17 @@ enum : uint8_t {
   BTM_PM_MD_FORCE = 0x10 /* OR this to force ACL link to a certain mode */
 };
 typedef uint8_t tBTM_PM_MODE;
+inline bool is_legal_power_mode(tBTM_PM_MODE mode) {
+  switch (mode & ~BTM_PM_MD_FORCE) {
+    case BTM_PM_MD_ACTIVE:
+    case BTM_PM_MD_HOLD:
+    case BTM_PM_MD_SNIFF:
+    case BTM_PM_MD_PARK:
+      return true;
+    default:
+      return false;
+  }
+}
 
 inline std::string power_mode_text(tBTM_PM_MODE mode) {
   std::string s = base::StringPrintf((mode & BTM_PM_MD_FORCE) ? "" : "forced:");
@@ -1048,7 +1059,7 @@ typedef struct {
  *************************************/
 typedef void(tBTM_PM_STATUS_CBACK)(const RawAddress& p_bda,
                                    tBTM_PM_STATUS status, uint16_t value,
-                                   uint8_t hci_status);
+                                   tHCI_STATUS hci_status);
 
 /************************
  *  Stored Linkkey Types

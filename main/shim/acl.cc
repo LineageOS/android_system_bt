@@ -512,7 +512,7 @@ void DumpsysAcl(int fd) {
     LOG_DUMPSYS(fd, "    chg_ind:%s", (btm_pm_mcb.chg_ind) ? "true" : "false");
     LOG_DUMPSYS(fd, "    role:%s", RoleText(acl_conn.link_role).c_str());
     LOG_DUMPSYS(fd, "    power_mode_state:%s",
-                power_mode_state_text(btm_pm_mcb.state).c_str());
+                power_mode_state_text(btm_pm_mcb.State()).c_str());
   }
 }
 #undef DUMPSYS_TAG

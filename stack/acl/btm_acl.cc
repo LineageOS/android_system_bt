@@ -350,7 +350,7 @@ void acl_initialize_power_mode(const tACL_CONN& p_acl) {
   tBTM_PM_MCB* p_db =
       &btm_cb.acl_cb_.pm_mode_db[btm_handle_to_acl_index(p_acl.hci_handle)];
   memset(p_db, 0, sizeof(tBTM_PM_MCB));
-  p_db->state = BTM_PM_ST_ACTIVE;
+  p_db->Init();
 }
 
 tACL_CONN* StackAclBtmAcl::acl_allocate_connection() {
@@ -734,12 +734,12 @@ void StackAclBtmAcl::btm_set_default_link_policy(uint16_t settings) {
 }
 
 void BTM_default_unblock_role_switch() {
-  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy |
+  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() |
                                         HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
 void BTM_default_block_role_switch() {
-  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy &
+  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() &
                                         ~HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
@@ -1548,7 +1548,7 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   } else {
     /* Special case for when info for the local device is requested */
     if (addr == *controller_get_interface()->get_address()) {
-      pkt_types = btm_cb.acl_cb_.btm_acl_pkt_types_supported;
+      pkt_types = btm_cb.acl_cb_.DefaultPacketTypes();
     }
   }
 
@@ -2452,12 +2452,12 @@ bool BTM_IsBleConnection(uint16_t hci_handle) {
   return p_acl->is_transport_ble();
 }
 
-const RawAddress acl_address_from_handle(uint16_t hci_handle) {
-  uint8_t index = btm_handle_to_acl_index(hci_handle);
-  if (index >= MAX_L2CAP_LINKS) {
+const RawAddress acl_address_from_handle(uint16_t handle) {
+  tACL_CONN* p_acl = acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
     return RawAddress::kEmpty;
   }
-  return btm_cb.acl_cb_.acl_db[index].remote_addr;
+  return p_acl->remote_addr;
 }
 
 tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {

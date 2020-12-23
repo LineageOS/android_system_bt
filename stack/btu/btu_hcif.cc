@@ -1478,7 +1478,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
     case HCI_HOLD_MODE:
     case HCI_SNIFF_MODE:
     case HCI_PARK_MODE:
-      btm_pm_proc_cmd_status(status);
+      btm_pm_proc_cmd_status(static_cast<tHCI_STATUS>(status));
       break;
 
     default:

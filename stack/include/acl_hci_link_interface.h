@@ -38,8 +38,8 @@ void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                           uint8_t new_role);
 void btm_blacklist_role_change_device(const RawAddress& bd_addr,
                                       uint8_t hci_status);
-void btm_pm_proc_cmd_status(uint8_t status);
-void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
+void btm_pm_proc_cmd_status(tHCI_STATUS status);
+void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
                              tHCI_MODE mode, uint16_t interval);
 void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
 void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset);

@@ -126,11 +126,27 @@ typedef struct {
   bool chg_ind;
   tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
   tBTM_PM_PWR_MD set_mode;
+
+ private:
+  friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
+                                      const RawAddress& remote_bda,
+                                      const tBTM_PM_PWR_MD* p_mode);
+  friend tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda,
+                                      uint16_t max_lat, uint16_t min_rmt_to,
+                                      uint16_t min_loc_to);
+  friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
+  friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
+                                      uint16_t hci_handle, tHCI_MODE mode,
+                                      uint16_t interval);
   tBTM_PM_STATE state;
+
+ public:
+  tBTM_PM_STATE State() const { return state; }
   uint16_t interval;
   uint16_t max_lat;
   uint16_t min_loc_to;
   uint16_t min_rmt_to;
+  void Init() { state = BTM_PM_ST_ACTIVE; }
 } tBTM_PM_MCB;
 
 typedef struct {
@@ -262,7 +278,6 @@ typedef struct {
                                 tBTM_PM_MODE* p_mode);
   friend bool acl_is_role_switch_allowed();
   friend bool btm_pm_is_le_link(const RawAddress& remote_bda);
-  friend const RawAddress acl_address_from_handle(uint16_t hci_handle);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
   friend tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                    tBT_TRANSPORT transport);
@@ -295,9 +310,10 @@ typedef struct {
   friend void btm_acl_process_sca_cmpl_pkt(uint8_t evt_len, uint8_t* p);
   friend void btm_acl_role_changed(tHCI_STATUS hci_status,
                                    const RawAddress& bd_addr, uint8_t new_role);
-  friend void btm_pm_proc_cmd_status(uint8_t status);
-  friend void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
-                                      tHCI_MODE mode, uint16_t interval);
+  friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
+  friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
+                                      uint16_t hci_handle, tHCI_MODE mode,
+                                      uint16_t interval);
   friend void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
   friend void btm_pm_reset(void);
   friend void btm_pm_sm_alloc(uint8_t ind);

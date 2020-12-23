@@ -28,10 +28,9 @@
 #include <memory>
 #include <string>
 #include "bt_target.h"
+#include "bta/include/bta_gatt_api.h"
 #include "bta/sys/bta_sys.h"
 #include "main/shim/dumpsys.h"
-
-#include "bta/include/bta_gatt_api.h"
 
 /*****************************************************************************
  *  Constants and data types
@@ -197,19 +196,35 @@ inline std::string device_info_text(tBTA_DM_DEV_INFO info) {
 #define BTA_DM_PM_EXECUTE 3
 typedef uint8_t tBTA_DM_PM_REQ;
 
-typedef struct {
+struct sBTA_DM_PEER_DEVICE {
   RawAddress peer_bdaddr;
   tBTA_DM_CONN_STATE conn_state;
   tBTA_PREF_ROLES pref_role;
   bool in_use;
+
+ private:
+  friend void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+  friend void bta_dm_pm_btm_status(const RawAddress& bd_addr,
+                                   tBTM_PM_STATUS status, uint16_t value,
+                                   tHCI_STATUS hci_status);
+  friend void bta_dm_pm_sniff(struct sBTA_DM_PEER_DEVICE* p_peer_dev,
+                              uint8_t index);
+  friend void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
+                              uint8_t app_id, const RawAddress& peer_addr);
+  friend void handle_remote_features_complete(const RawAddress& bd_addr);
   tBTA_DM_DEV_INFO info;
+
+ public:
+  tBTA_DM_DEV_INFO Info() const { return info; }
+
   tBTA_DM_ENCRYPT_CBACK* p_encrypt_cback;
   tBTM_PM_STATUS prev_low; /* previous low power mode used */
   tBTA_DM_PM_ACTION pm_mode_attempted;
   tBTA_DM_PM_ACTION pm_mode_failed;
   bool remove_dev_pending;
   tBT_TRANSPORT transport;
-} tBTA_DM_PEER_DEVICE;
+};
+typedef struct sBTA_DM_PEER_DEVICE tBTA_DM_PEER_DEVICE;
 
 /* structure to store list of
   active connections */
@@ -452,7 +467,7 @@ extern void bta_dm_remove_device(const RawAddress& bd_addr);
 extern void bta_dm_close_acl(const RawAddress&, bool, tBT_TRANSPORT);
 
 extern void bta_dm_pm_btm_status(const RawAddress&, tBTM_PM_STATUS, uint16_t,
-                                 uint8_t);
+                                 tHCI_STATUS);
 extern void bta_dm_pm_timer(const RawAddress&, tBTA_DM_PM_ACTION);
 extern void bta_dm_add_ampkey(tBTA_DM_MSG* p_data);
 
