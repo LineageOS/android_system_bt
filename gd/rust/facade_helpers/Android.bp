@@ -1,0 +1,18 @@
+rust_library {
+    name: "libbt_facade_helpers",
+    defaults: ["gd_rust_defaults"],
+    crate_name: "bt_facade_helpers",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libbt_facade_proto",
+        "libbt_packets",
+        "libbytes",
+        "libfutures",
+        "libgrpcio",
+        "libtokio",
+        "libprotobuf",
+        "liblog_rust",
+        "libcxx",
+    ],
+}

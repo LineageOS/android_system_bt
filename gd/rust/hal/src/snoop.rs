@@ -2,7 +2,7 @@
 
 use crate::internal::RawHal;
 use bt_common::sys_prop;
-use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
+use bt_packets::hci::{AclPacket, CommandPacket, EventPacket, Packet};
 use bytes::{BufMut, Bytes, BytesMut};
 use gddi::{module, part_out, provides, Stoppable};
 use log::error;

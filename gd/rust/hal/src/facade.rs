@@ -5,7 +5,7 @@ use bt_common::GrpcFacade;
 use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
 use bt_facade_proto::hal_facade_grpc::{create_hci_hal_facade, HciHalFacade};
-use bt_packets::hci::{AclPacket, CommandPacket};
+use bt_packets::hci::{AclPacket, CommandPacket, Packet};
 use futures::sink::SinkExt;
 use gddi::{module, provides, Stoppable};
 use grpcio::*;

@@ -1,7 +1,8 @@
 //! Hci shim
 
+use bt_facade_helpers::U8SliceRunnable;
 use bt_hci::facade::HciFacadeService;
-use bt_packets::hci::{AclPacket, CommandPacket};
+use bt_packets::hci::{AclPacket, CommandPacket, Packet};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 
@@ -35,23 +36,24 @@ mod ffi {
 unsafe impl Send for ffi::u8SliceCallback {}
 unsafe impl Send for ffi::u8SliceOnceCallback {}
 
+struct CallbackWrapper {
+    cb: cxx::UniquePtr<ffi::u8SliceCallback>,
+}
+
+impl U8SliceRunnable for CallbackWrapper {
+    fn run(&self, data: &[u8]) {
+        self.cb.Run(data);
+    }
+}
+
 pub struct Hci {
     internal: HciFacadeService,
     rt: Arc<Runtime>,
-    acl_callback_set: bool,
-    evt_callback_set: bool,
-    le_evt_callback_set: bool,
 }
 
 impl Hci {
     pub fn new(rt: Arc<Runtime>, internal: HciFacadeService) -> Self {
-        Self {
-            rt,
-            internal,
-            acl_callback_set: false,
-            evt_callback_set: false,
-            le_evt_callback_set: false,
-        }
+        Self { rt, internal }
     }
 }
 
@@ -69,7 +71,7 @@ pub fn hci_send_command(
 }
 
 pub fn hci_send_acl(hci: &mut Hci, data: &[u8]) {
-    hci.rt.block_on(hci.internal.acl.tx.send(AclPacket::parse(data).unwrap())).unwrap();
+    hci.rt.block_on(hci.internal.acl_tx.send(AclPacket::parse(data).unwrap())).unwrap();
 }
 
 pub fn hci_register_event(hci: &mut Hci, event: u8) {
@@ -80,38 +82,14 @@ pub fn hci_register_le_event(hci: &mut Hci, subevent: u8) {
     hci.rt.block_on(hci.internal.register_le_event(subevent.into()));
 }
 
-pub fn hci_set_acl_callback(hci: &mut Hci, callback: cxx::UniquePtr<ffi::u8SliceCallback>) {
-    assert!(!hci.acl_callback_set);
-    hci.acl_callback_set = true;
-
-    let stream = hci.internal.acl.rx.clone();
-    hci.rt.spawn(async move {
-        while let Some(item) = stream.lock().await.recv().await {
-            callback.Run(&item.to_bytes());
-        }
-    });
+pub fn hci_set_acl_callback(hci: &mut Hci, cb: cxx::UniquePtr<ffi::u8SliceCallback>) {
+    hci.internal.acl_rx.stream_runnable(&hci.rt, CallbackWrapper { cb });
 }
 
-pub fn hci_set_evt_callback(hci: &mut Hci, callback: cxx::UniquePtr<ffi::u8SliceCallback>) {
-    assert!(!hci.evt_callback_set);
-    hci.evt_callback_set = true;
-
-    let stream = hci.internal.evt_rx.clone();
-    hci.rt.spawn(async move {
-        while let Some(item) = stream.lock().await.recv().await {
-            callback.Run(&item.to_bytes());
-        }
-    });
+pub fn hci_set_evt_callback(hci: &mut Hci, cb: cxx::UniquePtr<ffi::u8SliceCallback>) {
+    hci.internal.evt_rx.stream_runnable(&hci.rt, CallbackWrapper { cb });
 }
 
-pub fn hci_set_le_evt_callback(hci: &mut Hci, callback: cxx::UniquePtr<ffi::u8SliceCallback>) {
-    assert!(!hci.le_evt_callback_set);
-    hci.le_evt_callback_set = true;
-
-    let stream = hci.internal.le_evt_rx.clone();
-    hci.rt.spawn(async move {
-        while let Some(item) = stream.lock().await.recv().await {
-            callback.Run(&item.to_bytes());
-        }
-    });
+pub fn hci_set_le_evt_callback(hci: &mut Hci, cb: cxx::UniquePtr<ffi::u8SliceCallback>) {
+    hci.internal.le_evt_rx.stream_runnable(&hci.rt, CallbackWrapper { cb });
 }
