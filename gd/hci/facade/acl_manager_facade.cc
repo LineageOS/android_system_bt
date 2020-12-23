@@ -415,6 +415,20 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       LOG_INFO("OnModeChange Mode:%d, interval:%d", (uint8_t)current_mode, interval);
     };
 
+    void OnSniffSubrating(
+        uint16_t maximum_transmit_latency,
+        uint16_t maximum_receive_latency,
+        uint16_t minimum_remote_timeout,
+        uint16_t minimum_local_timeout) override {
+      LOG_INFO(
+          "OnSniffSubrating maximum_transmit_latency:%d, maximum_receive_latency:%d"
+          " minimum_remote_timeout:%d minimum_local_timeout:%d",
+          maximum_transmit_latency,
+          maximum_receive_latency,
+          minimum_remote_timeout,
+          minimum_local_timeout);
+    }
+
     void OnQosSetupComplete(
         ServiceType service_type,
         uint32_t token_rate,
