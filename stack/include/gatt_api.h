@@ -109,10 +109,15 @@ typedef enum : uint8_t {
   GATT_HANDLE_VALUE_NOTIF = 0x1B,
   GATT_HANDLE_VALUE_IND = 0x1D,
   GATT_HANDLE_VALUE_CONF = 0x1E,
+
+  GATT_REQ_READ_MULTI_VAR = 0x20,
+  GATT_RSP_READ_MULTI_VAR = 0x21,
+  GATT_HANDLE_MULTI_VALUE_NOTIF = 0x23,
+
   /* changed in V4.0 1101-0010 (signed write)  see write cmd above*/
   GATT_SIGN_CMD_WRITE = 0xD2,
   /* 0x1E = 30 + 1 = 31*/
-  GATT_OP_CODE_MAX = (GATT_HANDLE_VALUE_CONF + 1),
+  GATT_OP_CODE_MAX = (GATT_HANDLE_MULTI_VALUE_NOTIF + 1),
 } tGATT_OP_CODE;
 
 inline std::string gatt_op_code_text(const tGATT_OP_CODE& op_code) {
@@ -171,6 +176,12 @@ inline std::string gatt_op_code_text(const tGATT_OP_CODE& op_code) {
       return std::string("GATT_HANDLE_VALUE_IND");
     case GATT_HANDLE_VALUE_CONF:
       return std::string("GATT_HANDLE_VALUE_CONF");
+    case GATT_REQ_READ_MULTI_VAR:
+      return std::string("GATT_REQ_READ_MULTI_VAR");
+    case GATT_RSP_READ_MULTI_VAR:
+      return std::string("GATT_RSP_READ_MULTI_VAR");
+    case GATT_HANDLE_MULTI_VALUE_NOTIF:
+      return std::string("GATT_HANDLE_MULTI_VALUE_NOTIF");
     case GATT_SIGN_CMD_WRITE:
       return std::string("GATT_SIGN_CMD_WRITE");
     case GATT_OP_CODE_MAX:
@@ -499,6 +510,7 @@ typedef struct {
   tGATT_AUTH_REQ auth_req;
   uint16_t num_handles;                          /* number of handles to read */
   uint16_t handles[GATT_MAX_READ_MULTI_HANDLES]; /* handles list to be read */
+  bool variable_len;
 } tGATT_READ_MULTI;
 
 /*   Read By Handle Request (GATT_READ_BY_HANDLE) data */
