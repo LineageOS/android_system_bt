@@ -76,7 +76,7 @@ struct StackAclBtmAcl {
   tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
   void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
-  void btm_set_default_link_policy(uint16_t settings);
+  void btm_set_default_link_policy(tLINK_POLICY settings);
   void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                             uint8_t new_role);
 };
@@ -128,8 +128,8 @@ static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
-static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
-static void check_link_policy(uint16_t* settings);
+static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
+static void check_link_policy(tLINK_POLICY* settings);
 
 namespace {
 void NotifyAclLinkUp(tACL_CONN& p_acl) {
@@ -647,7 +647,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
   }
 }
 
-static void check_link_policy(uint16_t* settings) {
+static void check_link_policy(tLINK_POLICY* settings) {
   const controller_t* controller = controller_get_interface();
 
   if ((*settings & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
@@ -672,14 +672,15 @@ static void check_link_policy(uint16_t* settings) {
   }
 }
 
-static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy) {
+static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
   conn->link_policy = policy;
   check_link_policy(&conn->link_policy);
   if ((conn->link_policy & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
       interop_match_addr(INTEROP_DISABLE_SNIFF, &(conn->remote_addr))) {
     conn->link_policy &= (~HCI_ENABLE_SNIFF_MODE);
   }
-  btsnd_hcic_write_policy_set(conn->hci_handle, conn->link_policy);
+  btsnd_hcic_write_policy_set(conn->hci_handle,
+                              static_cast<uint16_t>(conn->link_policy));
 }
 
 static void btm_toggle_policy_on_for(const RawAddress& peer_addr,
@@ -727,7 +728,7 @@ void BTM_block_role_switch_for(const RawAddress& peer_addr) {
   btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
-void StackAclBtmAcl::btm_set_default_link_policy(uint16_t settings) {
+void StackAclBtmAcl::btm_set_default_link_policy(tLINK_POLICY settings) {
   check_link_policy(&settings);
   btm_cb.acl_cb_.btm_def_link_policy = settings;
   btsnd_hcic_write_def_policy_set(settings);
