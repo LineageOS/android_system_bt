@@ -37,6 +37,14 @@ enum class AdvertisingApiType {
   EXTENDED = 3,
 };
 
+enum class AdvertisingFlag : uint8_t {
+  LE_LIMITED_DISCOVERABLE = 0x01,
+  LE_GENERAL_DISCOVERABLE = 0x02,
+  BR_EDR_NOT_SUPPORTED = 0x04,
+  SIMULTANEOUS_LE_AND_BR_EDR_CONTROLLER = 0x08,
+  SIMULTANEOUS_LE_AND_BR_EDR_HOST = 0x10,
+};
+
 struct Advertiser {
   os::Handler* handler;
   AddressWithType current_address;
@@ -45,6 +53,7 @@ struct Advertiser {
   int8_t tx_power;
   uint16_t duration;
   bool started = false;
+  bool connectable = false;
 };
 
 ExtendedAdvertisingConfig::ExtendedAdvertisingConfig(const AdvertisingConfig& config) : AdvertisingConfig(config) {
@@ -345,6 +354,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   }
 
   void set_parameters(AdvertiserId advertiser_id, ExtendedAdvertisingConfig config) {
+    advertising_sets_[advertiser_id].connectable = config.connectable;
+
     switch (advertising_api_type_) {
       case (AdvertisingApiType::LEGACY): {
         le_advertising_interface_->EnqueueCommand(
@@ -451,6 +462,17 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   }
 
   void set_data(AdvertiserId advertiser_id, bool set_scan_rsp, std::vector<GapData> data) {
+    if (!set_scan_rsp && advertising_sets_[advertiser_id].connectable) {
+      GapData gap_data;
+      gap_data.data_type_ = GapDataType::FLAGS;
+      if (advertising_sets_[advertiser_id].duration == 0) {
+        gap_data.data_.push_back(static_cast<uint8_t>(AdvertisingFlag::LE_GENERAL_DISCOVERABLE));
+      } else {
+        gap_data.data_.push_back(static_cast<uint8_t>(AdvertisingFlag::LE_LIMITED_DISCOVERABLE));
+      }
+      data.insert(data.begin(), gap_data);
+    }
+
     switch (advertising_api_type_) {
       case (AdvertisingApiType::LEGACY): {
         if (set_scan_rsp) {
