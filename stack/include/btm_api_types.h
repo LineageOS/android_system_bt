@@ -1000,7 +1000,8 @@ enum : uint8_t {
   BTM_PM_MD_HOLD = HCI_MODE_HOLD,      // 0x01
   BTM_PM_MD_SNIFF = HCI_MODE_SNIFF,    // 0x02
   BTM_PM_MD_PARK = HCI_MODE_PARK,      // 0x03
-  BTM_PM_MD_FORCE = 0x10 /* OR this to force ACL link to a certain mode */
+  BTM_PM_MD_FORCE = 0x10, /* OR this to force ACL link to a certain mode */
+  BTM_PM_MD_UNKNOWN = 0xEF,
 };
 typedef uint8_t tBTM_PM_MODE;
 inline bool is_legal_power_mode(tBTM_PM_MODE mode) {
