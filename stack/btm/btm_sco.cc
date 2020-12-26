@@ -789,8 +789,8 @@ void BTM_RemoveSco(const RawAddress& bda) {
  *
  * Function         btm_sco_removed
  *
- * Description      This function is called by BTIF when an SCO connection
- *                  is removed.
+ * Description      This function is called by lower layers when an
+ *                  disconnect is received.
  *
  * Returns          true if the link is known about, else false
  *
@@ -811,7 +811,8 @@ bool btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
       p->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
       btm_cb.sco_cb.sco_disc_reason = reason;
       (*p->p_disc_cb)(xx);
-
+      LOG_DEBUG("Disconnected SCO link handle:%hu reason:%s", hci_handle,
+                hci_error_code_text(reason).c_str());
       return true;
     }
   }
