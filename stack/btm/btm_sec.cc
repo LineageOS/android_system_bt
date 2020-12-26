@@ -502,13 +502,11 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 
   p_srec->security_flags |= (uint16_t)(sec_level | BTM_SEC_IN_USE);
 
-  BTM_TRACE_API(
-      "BTM_SEC_REG[%d]: id %d, is_orig %d, psm 0x%04x, proto_id %d, chan_id %d",
-      index, service_id, is_originator, psm, mx_proto_id, mx_chan_id);
-
-  BTM_TRACE_API(
-      "               : sec: 0x%x, service name [%s] (up to %d chars saved)",
-      p_srec->security_flags, p_name, BT_MAX_SERVICE_NAME_LEN);
+  LOG_DEBUG(
+      "[%d]: id:%d, is_orig:%s psm:0x%04x proto_id:%d chan_id:%d"
+      "  : sec:0x%x service_name:[%s] (up to %d chars saved)",
+      index, service_id, logbool(is_originator).c_str(), psm, mx_proto_id,
+      mx_chan_id, p_srec->security_flags, p_name, BT_MAX_SERVICE_NAME_LEN);
 
   return (record_allocated);
 }
