@@ -604,7 +604,11 @@ void bta_ag_at_hsp_cback(tBTA_AG_SCB* p_scb, uint16_t command_id,
   strlcpy(val.str, p_arg, sizeof(val.str));
 
   /* call callback with event */
-  (*bta_ag_cb.p_cback)(static_cast<tBTA_AG_EVT>(command_id), (tBTA_AG*)&val);
+  if (command_id & 0xff00) {
+    LOG_WARN("Received value that exceeds data type - lost information");
+  }
+  tBTA_AG_EVT event = static_cast<tBTA_AG_EVT>(command_id);
+  (*bta_ag_cb.p_cback)(event, (tBTA_AG*)&val);
 }
 
 static void remove_spaces(char* str) {
