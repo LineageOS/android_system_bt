@@ -741,7 +741,8 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 }
 
 void PacketDef::GenRustChildEnums(std::ostream& s) const {
-  if (!children_.empty()) {
+  if (HasChildEnums()) {
+    bool payload = fields_.HasPayload();
     s << "#[derive(Debug)] ";
     s << "enum " << name_ << "DataChild {";
     for (const auto& child : children_) {
@@ -749,6 +750,9 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
         continue;
       }
       s << child->name_ << "(Arc<" << child->name_ << "Data>),";
+    }
+    if (payload) {
+      s << "Payload(Arc<Vec<u8>>),";
     }
     s << "None,";
     s << "}\n";
@@ -759,6 +763,9 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
         continue;
       }
       s << child->name_ << "(" << child->name_ << "Packet),";
+    }
+    if (payload) {
+      s << "Payload(Arc<Vec<u8>>),";
     }
     s << "None,";
     s << "}\n";
@@ -771,7 +778,7 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
 
   // Generate struct fields
   GenRustStructFieldNameAndType(s);
-  if (!children_.empty()) {
+  if (HasChildEnums()) {
     s << "child: " << name_ << "DataChild,";
   }
   s << "}\n";
@@ -798,6 +805,9 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
     s << "pub ";
     param->GenRustNameAndType(s);
     s << ", ";
+  }
+  if (fields_.HasPayload()) {
+    s << "pub payload: Option<Vec<u8>>,";
   }
   s << "}\n";
 }
@@ -855,21 +865,6 @@ void PacketDef::GenRustStructSizeField(std::ostream& s) const {
 
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Data {";
-  s << "fn new(";
-  bool fields_exist = GenRustStructFieldNameAndType(s);
-  if (!children_.empty()) {
-    s << "child: " << name_ << "DataChild,";
-  }
-  s << ") -> Self { ";
-
-  s << "Self { ";
-  GenRustStructFieldNames(s);
-  if (!children_.empty()) {
-    s << "child";
-  }
-
-  s << "}";
-  s << "}";
 
   // parse function
   if (parent_constraints_.empty() && !children_.empty() && parent_ != nullptr) {
@@ -913,46 +908,50 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 
   if (!children_.empty()) {
     s << "let child = match " << constraint_name << " {";
-  }
 
-  for (const auto& desc : constrained_descendants) {
-    if (desc.first->name_.rfind("LeGetVendorCapabilitiesComplete", 0) == 0) {
-      continue;
-    }
-    auto desc_path = FindPathToDescendant(desc.first->name_);
-    std::reverse(desc_path.begin(), desc_path.end());
-    auto constraint_field = GetParamList().GetField(constraint_name);
-    auto constraint_type = constraint_field->GetFieldType();
-
-    if (constraint_type == EnumField::kFieldType) {
-      auto type = std::get<std::string>(desc.second);
-      auto variant_name = type.substr(type.find("::") + 2, type.length());
-      auto enum_type = type.substr(0, type.find("::"));
-      auto enum_variant = enum_type + "::"
-          + util::UnderscoreToCamelCase(util::ToLowerCase(variant_name));
-      s << enum_variant;
-      s << " => {";
-      s << name_ << "DataChild::";
-      s << desc_path[0]->name_ << "(Arc::new(";
-      if (desc_path[0]->parent_constraints_.empty()) {
-        s << desc_path[0]->name_ << "Data::parse(&bytes[" << payload_offset.bytes() << "..]";
-        s << ", " << enum_variant << ")?))";
-      } else {
-        s << desc_path[0]->name_ << "Data::parse(&bytes[" << payload_offset.bytes() << "..])?))";
+    for (const auto& desc : constrained_descendants) {
+      if (desc.first->name_.rfind("LeGetVendorCapabilitiesComplete", 0) == 0) {
+        continue;
       }
-    } else if (constraint_type == ScalarField::kFieldType) {
-      s << std::get<int64_t>(desc.second) << " => {";
-      s << "unimplemented!();";
+      auto desc_path = FindPathToDescendant(desc.first->name_);
+      std::reverse(desc_path.begin(), desc_path.end());
+      auto constraint_field = GetParamList().GetField(constraint_name);
+      auto constraint_type = constraint_field->GetFieldType();
+
+      if (constraint_type == EnumField::kFieldType) {
+        auto type = std::get<std::string>(desc.second);
+        auto variant_name = type.substr(type.find("::") + 2, type.length());
+        auto enum_type = type.substr(0, type.find("::"));
+        auto enum_variant = enum_type + "::"
+            + util::UnderscoreToCamelCase(util::ToLowerCase(variant_name));
+        s << enum_variant;
+        s << " => {";
+        s << name_ << "DataChild::";
+        s << desc_path[0]->name_ << "(Arc::new(";
+        if (desc_path[0]->parent_constraints_.empty()) {
+          s << desc_path[0]->name_ << "Data::parse(&bytes[" << payload_offset.bytes() << "..]";
+          s << ", " << enum_variant << ")?))";
+        } else {
+          s << desc_path[0]->name_ << "Data::parse(&bytes[" << payload_offset.bytes() << "..])?))";
+        }
+      } else if (constraint_type == ScalarField::kFieldType) {
+        s << std::get<int64_t>(desc.second) << " => {";
+        s << "unimplemented!();";
+      }
+      s << "}\n";
     }
-    s << "}\n";
-  }
 
-  if (!constrained_descendants.empty()) {
-    s << "_ => panic!(\"unexpected value " << "\"),";
-  }
+    if (!constrained_descendants.empty()) {
+      s << "_ => panic!(\"unexpected value " << "\"),";
+    }
 
-  if (!children_.empty()) {
     s << "};\n";
+  } else if (fields_.HasPayload()) {
+    s << "let child = if payload.len() > 0 {";
+    s << name_ << "DataChild::Payload(Arc::new(payload))";
+    s << "} else {";
+    s << name_ << "DataChild::None";
+    s << "};";
   }
 
   s << "Ok(Self {";
@@ -966,7 +965,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
       FixedScalarField::kFieldType,
   });
 
-  if (fields_exist) {
+  if (fields.size() > 0) {
     for (int i = 0; i < fields.size(); i++) {
       auto field_type = fields[i]->GetFieldType();
       s << fields[i]->GetName();
@@ -974,7 +973,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     }
   }
 
-  if (!children_.empty()) {
+  if (HasChildEnums()) {
     s << "child,";
   }
   s << "})\n";
@@ -982,7 +981,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 
   // write_to function
   s << "fn write_to(&self, buffer: &mut BytesMut) {";
-  if (fields_exist) {
+  if (fields.size() > 0) {
     s << " buffer.resize(buffer.len() + self.get_size(), 0);";
   }
 
@@ -1007,7 +1006,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     field->GenRustWriter(s, start_field_offset, end_field_offset);
   }
 
-  if (!children_.empty()) {
+  if (HasChildEnums()) {
     s << "match &self.child {";
     for (const auto& child : children_) {
       if (child->name_.rfind("LeGetVendorCapabilitiesComplete", 0) == 0) {
@@ -1015,13 +1014,16 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
       }
       s << name_ << "DataChild::" << child->name_ << "(value) => value.write_to(buffer),";
     }
+    if (fields_.HasPayload()) {
+      s << name_ << "DataChild::Payload(p) => buffer.put(&p[..]),";
+    }
     s << name_ << "DataChild::None => {}";
     s << "}";
   }
 
   s << "}\n";
 
-  if (fields_exist) {
+  if (fields.size() > 0) {
     s << "pub fn get_size(&self) -> usize {";
     GenRustStructSizeField(s);
     s << "}";
@@ -1061,7 +1063,7 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
     s << "}";
   }
 
-  if (!children_.empty()) {
+  if (HasChildEnums()) {
     s << " pub fn specialize(&self) -> " << name_ << "Child {";
     s << " match &self." << util::CamelCaseToUnderScore(name_) << ".child {";
     for (const auto& child : children_) {
@@ -1070,6 +1072,9 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
       }
       s << name_ << "DataChild::" << child->name_ << "(_) => " << name_ << "Child::" << child->name_ << "("
         << child->name_ << "Packet::new(self." << root_accessor << ".clone())),";
+    }
+    if (fields_.HasPayload()) {
+      s << name_ << "DataChild::Payload(p) => " << name_ << "Child::Payload(p.clone()),";
     }
     s << name_ << "DataChild::None => " << name_ << "Child::None,";
     s << "}}";
@@ -1190,9 +1195,16 @@ void PacketDef::GenRustBuilderStructImpls(std::ostream& s) const {
       }
       s << ", ";
     }
-    if (!ancestor->children_.empty()) {
+    if (ancestor->HasChildEnums()) {
       if (prev == nullptr) {
-        s << "child: " << name_ << "DataChild::None,";
+        if (ancestor->fields_.HasPayload()) {
+          s << "child: match self.payload { ";
+          s << "None => " << name_ << "DataChild::None,";
+          s << "Some(vec) => " << name_ << "DataChild::Payload(Arc::new(vec)),";
+          s << "},";
+        } else {
+          s << "child: " << name_ << "DataChild::None,";
+        }
       } else {
         s << "child: " << ancestor->name_ << "DataChild::" << prev->name_ << "("
           << util::CamelCaseToUnderScore(prev->name_) << "),";

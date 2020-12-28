@@ -22,7 +22,7 @@
 void generate_rust_packet_preamble(std::ostream& s) {
   s <<
       R"(
-use bytes::{Bytes, BytesMut};
+use bytes::{Bytes, BytesMut, BufMut};
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::{FromPrimitive, ToPrimitive};
 use std::convert::TryInto;
