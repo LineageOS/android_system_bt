@@ -752,7 +752,7 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
       s << child->name_ << "(Arc<" << child->name_ << "Data>),";
     }
     if (payload) {
-      s << "Payload(Arc<Vec<u8>>),";
+      s << "Payload(Bytes),";
     }
     s << "None,";
     s << "}\n";
@@ -765,7 +765,7 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
       s << child->name_ << "(" << child->name_ << "Packet),";
     }
     if (payload) {
-      s << "Payload(Arc<Vec<u8>>),";
+      s << "Payload(Bytes),";
     }
     s << "None,";
     s << "}\n";
@@ -807,7 +807,7 @@ void PacketDef::GenRustStructDeclarations(std::ostream& s) const {
     s << ", ";
   }
   if (fields_.HasPayload()) {
-    s << "pub payload: Option<Vec<u8>>,";
+    s << "pub payload: Option<Bytes>,";
   }
   s << "}\n";
 }
@@ -948,7 +948,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     s << "};\n";
   } else if (fields_.HasPayload()) {
     s << "let child = if payload.len() > 0 {";
-    s << name_ << "DataChild::Payload(Arc::new(payload))";
+    s << name_ << "DataChild::Payload(Bytes::from(payload))";
     s << "} else {";
     s << name_ << "DataChild::None";
     s << "};";
@@ -1200,7 +1200,7 @@ void PacketDef::GenRustBuilderStructImpls(std::ostream& s) const {
         if (ancestor->fields_.HasPayload()) {
           s << "child: match self.payload { ";
           s << "None => " << name_ << "DataChild::None,";
-          s << "Some(vec) => " << name_ << "DataChild::Payload(Arc::new(vec)),";
+          s << "Some(bytes) => " << name_ << "DataChild::Payload(bytes),";
           s << "},";
         } else {
           s << "child: " << name_ << "DataChild::None,";

@@ -1,15 +1,20 @@
 //! ACL management
 
+mod fragment;
+
 use bt_hal::AclHal;
 use bt_packets::hci::AclPacket;
+use bytes::Bytes;
 use gddi::{module, provides, Stoppable};
 use log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::runtime::Runtime;
 use tokio::select;
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::mpsc::{channel, Receiver};
 use tokio::sync::Mutex;
+
+use fragment::Reassembler;
 
 module! {
     acl_module,
@@ -18,29 +23,28 @@ module! {
     },
 }
 
-/// Base ACL connection trait
-pub trait Connection {
-    /// Get the handle of this connection
-    fn get_handle(&self) -> u16;
-    /// Get the sender side of inbound traffic
-    fn get_tx(&self) -> &Sender<AclPacket>;
+struct Connection {
+    reassembler: Reassembler,
 }
 
 /// Manages rx and tx for open ACL connections
 #[derive(Clone, Stoppable)]
 pub struct AclDispatch {
-    connections: Arc<Mutex<HashMap<u16, Box<dyn Connection + Sync + Send>>>>,
+    connections: Arc<Mutex<HashMap<u16, Connection>>>,
 }
 
 impl AclDispatch {
     /// Register the provided connection with the ACL dispatch
-    pub async fn register(&mut self, connection: Box<dyn Connection + Sync + Send>) {
+    pub async fn register(&mut self, handle: u16) -> Receiver<Bytes> {
+        let (tx, rx) = channel(10);
         assert!(self
             .connections
             .lock()
             .await
-            .insert(connection.get_handle(), connection)
+            .insert(handle, Connection { reassembler: Reassembler::new(tx) })
             .is_none());
+
+        rx
     }
 }
 
@@ -48,15 +52,14 @@ const QCOM_DEBUG_HANDLE: u16 = 0xedc;
 
 #[provides]
 async fn provide_acl_dispatch(acl: AclHal, rt: Arc<Runtime>) -> AclDispatch {
-    let connections: Arc<Mutex<HashMap<u16, Box<dyn Connection + Sync + Send>>>> =
-        Arc::new(Mutex::new(HashMap::new()));
+    let connections: Arc<Mutex<HashMap<u16, Connection>>> = Arc::new(Mutex::new(HashMap::new()));
     let clone_connections = connections.clone();
 
     rt.spawn(async move {
         select! {
             Some(acl) = consume(&acl.rx) => {
-                match connections.lock().await.get(&acl.get_handle()) {
-                    Some(connection) => connection.get_tx().send(acl).await.unwrap(),
+                match connections.lock().await.get_mut(&acl.get_handle()) {
+                    Some(connection) => connection.reassembler.on_packet(acl).await,
                     None if acl.get_handle() == QCOM_DEBUG_HANDLE => {},
                     None => info!("no acl for {}", acl.get_handle()),
                 }
