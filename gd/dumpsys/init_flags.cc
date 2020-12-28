@@ -24,6 +24,7 @@ flatbuffers::Offset<bluetooth::common::InitFlagsData> bluetooth::dumpsys::InitFl
   common::InitFlagsDataBuilder builder(*fb_builder);
   builder.add_title(title);
   builder.add_gd_advertising_enabled(bluetooth::common::init_flags::gd_advertising_is_enabled());
+  builder.add_gd_scanning_enabled(bluetooth::common::init_flags::gd_scanning_is_enabled());
   builder.add_gd_security_enabled(bluetooth::common::init_flags::gd_security_is_enabled());
   builder.add_gd_acl_enabled(bluetooth::common::init_flags::gd_acl_is_enabled());
   builder.add_gd_hci_enabled(bluetooth::common::init_flags::gd_hci_is_enabled());
