@@ -58,6 +58,12 @@ bool bluetooth::shim::is_gd_advertising_enabled() {
   return bluetooth::common::init_flags::gd_advertising_is_enabled();
 }
 
+bool bluetooth::shim::is_gd_scanning_enabled() {
+  // TODO enable when scanning module ready
+  // return bluetooth::common::init_flags::gd_scanning_is_enabled();
+  return false;
+}
+
 bool bluetooth::shim::is_gd_security_enabled() {
   return bluetooth::common::init_flags::gd_security_is_enabled();
 }
