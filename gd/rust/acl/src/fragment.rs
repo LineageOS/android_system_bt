@@ -1,9 +1,14 @@
 //! Handles fragmentation & reassembly of ACL packets into whole L2CAP payloads
 
-use bt_packets::hci::{AclChild, AclPacket, BroadcastFlag, PacketBoundaryFlag};
+use bt_common::Bluetooth;
+use bt_packets::hci::PacketBoundaryFlag::{
+    ContinuingFragment, FirstAutomaticallyFlushable, FirstNonAutomaticallyFlushable,
+};
+use bt_packets::hci::{AclBuilder, AclChild, AclPacket, BroadcastFlag};
 use bytes::{Buf, Bytes, BytesMut};
+use futures::stream::{self, StreamExt};
 use log::{error, info, warn};
-use tokio::sync::mpsc::Sender;
+use tokio::sync::mpsc::{Receiver, Sender};
 
 const L2CAP_BASIC_FRAME_HEADER_LEN: usize = 4;
 
@@ -35,8 +40,8 @@ impl Reassembler {
         }
 
         match packet.get_packet_boundary_flag() {
-            PacketBoundaryFlag::FirstNonAutomaticallyFlushable => error!("not allowed to send FIRST_NON_AUTOMATICALLY_FLUSHABLE to host except loopback mode"),
-            PacketBoundaryFlag::FirstAutomaticallyFlushable => {
+            FirstNonAutomaticallyFlushable => error!("not allowed to send FIRST_NON_AUTOMATICALLY_FLUSHABLE to host except loopback mode"),
+            FirstAutomaticallyFlushable => {
                 if self.buffer.take().is_some() {
                     error!("got a start packet without finishing previous reassembly - dropping previous");
                 }
@@ -51,7 +56,7 @@ impl Reassembler {
                     self.out.send(payload).await.unwrap();
                 }
             },
-            PacketBoundaryFlag::ContinuingFragment => {
+            ContinuingFragment => {
                 match self.buffer.take() {
                     None => warn!("got continuation packet without pending reassembly"),
                     Some(_) if self.remaining < payload.len() => warn!("remote sent unexpected L2CAP PDU - dropping entire packet"),
@@ -78,4 +83,35 @@ fn get_l2cap_pdu_size(first_packet: &Bytes) -> usize {
     } else {
         (&first_packet[..]).get_u16_le() as usize
     }
+}
+
+pub fn fragmenting_stream(
+    rx: Receiver<Bytes>,
+    mtu: usize,
+    handle: u16,
+    bt: Bluetooth,
+) -> std::pin::Pin<
+    std::boxed::Box<dyn futures::Stream<Item = bt_packets::hci::AclPacket> + std::marker::Send>,
+> {
+    rx.flat_map(move |data| {
+        stream::iter(
+            data.chunks(mtu)
+                .enumerate()
+                .map(move |(i, chunk)| {
+                    AclBuilder {
+                        handle,
+                        packet_boundary_flag: match bt {
+                            Bluetooth::Classic if i == 0 => FirstAutomaticallyFlushable,
+                            Bluetooth::Le if i == 0 => FirstNonAutomaticallyFlushable,
+                            _ => ContinuingFragment,
+                        },
+                        broadcast_flag: BroadcastFlag::PointToPoint,
+                        payload: Some(Bytes::copy_from_slice(chunk)),
+                    }
+                    .build()
+                })
+                .collect::<Vec<AclPacket>>(),
+        )
+    })
+    .boxed()
 }
