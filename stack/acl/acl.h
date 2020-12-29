@@ -298,6 +298,8 @@ struct sACL_CONN {
  public:
   uint8_t sca; /* Sleep clock accuracy */
 
+  void Reset();
+
   struct sPolicy {
     tBTM_PM_MODE Mode() const;
     struct {
