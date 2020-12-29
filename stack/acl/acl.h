@@ -53,6 +53,10 @@ typedef enum : uint16_t {
 } tLINK_POLICY_BITMASK;
 typedef uint16_t tLINK_POLICY;
 
+constexpr tLINK_POLICY kAllLinkPoliciesEnabled =
+    (HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE |
+     HCI_ENABLE_SNIFF_MODE);
+
 static const char* link_policy_string[] = {
     " role_switch ",
     " hold_mode ",
