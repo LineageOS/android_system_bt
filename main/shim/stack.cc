@@ -102,9 +102,11 @@ void Stack::StartEverything() {
   if (common::init_flags::gd_advertising_is_enabled()) {
     modules.add<hci::LeAdvertisingManager>();
   }
+  if (common::init_flags::gd_scanning_is_enabled()) {
+    modules.add<hci::LeScanningManager>();
+  }
   if (common::init_flags::gd_core_is_enabled()) {
     modules.add<att::AttModule>();
-    modules.add<hci::LeScanningManager>();
     modules.add<neighbor::ConnectabilityModule>();
     modules.add<neighbor::DiscoverabilityModule>();
     modules.add<neighbor::InquiryModule>();
