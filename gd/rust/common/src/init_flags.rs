@@ -77,6 +77,7 @@ init_flags!(
     flags: {
         gd_core,
         gd_advertising,
+        gd_scanning,
         gd_security,
         gd_acl,
         gd_l2cap,
