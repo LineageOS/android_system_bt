@@ -139,6 +139,8 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
         config,
         common::Bind(&LeAdvertiser::ScanCallback, common::Unretained(&le_advertiser)),
         common::Bind(&LeAdvertiser::TerminatedCallback, common::Unretained(&le_advertiser)),
+        0,
+        0,
         facade_handler_);
     if (advertiser_id != LeAdvertisingManager::kInvalidId) {
       le_advertiser.SetAdvertiserId(advertiser_id);
