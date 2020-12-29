@@ -76,6 +76,10 @@ bool bluetooth::shim::is_gd_stack_started_up() {
   mock_function_count_map[__func__]++;
   return false;
 }
+bool bluetooth::shim::is_gd_link_policy_enabled() {
+  mock_function_count_map[__func__]++;
+  return false;
+}
 future_t* GeneralShutDown() {
   mock_function_count_map[__func__]++;
   return nullptr;
