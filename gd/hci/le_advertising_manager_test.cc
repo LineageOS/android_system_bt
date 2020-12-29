@@ -396,7 +396,7 @@ class LeAdvertisingAPITest : public LeAdvertisingManagerTest {
 
     test_hci_layer_->SetCommandFuture();
     advertiser_id_ = le_advertising_manager_->ExtendedCreateAdvertiser(
-        0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
+        0x00, advertising_config, scan_callback, set_terminated_callback, 0, 0, client_handler_);
     ASSERT_NE(LeAdvertisingManager::kInvalidId, advertiser_id_);
     EXPECT_CALL(
         mock_advertising_callback_,
@@ -458,7 +458,7 @@ class LeAndroidHciAdvertisingAPITest : public LeAndroidHciAdvertisingManagerTest
 
     test_hci_layer_->SetSubCommandFuture(SubOcf::SET_PARAM);
     advertiser_id_ = le_advertising_manager_->ExtendedCreateAdvertiser(
-        0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
+        0x00, advertising_config, scan_callback, set_terminated_callback, 0, 0, client_handler_);
     ASSERT_NE(LeAdvertisingManager::kInvalidId, advertiser_id_);
     std::vector<SubOcf> sub_ocf = {
         SubOcf::SET_PARAM,
@@ -518,7 +518,7 @@ class LeExtendedAdvertisingAPITest : public LeExtendedAdvertisingManagerTest {
 
     test_hci_layer_->SetCommandFuture();
     advertiser_id_ = le_advertising_manager_->ExtendedCreateAdvertiser(
-        0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
+        0x00, advertising_config, scan_callback, set_terminated_callback, 0, 0, client_handler_);
     ASSERT_NE(LeAdvertisingManager::kInvalidId, advertiser_id_);
     EXPECT_CALL(
         mock_advertising_callback_,
@@ -573,7 +573,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
 
   test_hci_layer_->SetCommandFuture();
   auto id = le_advertising_manager_->ExtendedCreateAdvertiser(
-      0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
+      0x00, advertising_config, scan_callback, set_terminated_callback, 0, 0, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   std::vector<OpCode> adv_opcodes = {
       OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER,
@@ -624,7 +624,7 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
 
   test_hci_layer_->SetSubCommandFuture(SubOcf::SET_PARAM);
   auto id = le_advertising_manager_->ExtendedCreateAdvertiser(
-      0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
+      0x00, advertising_config, scan_callback, set_terminated_callback, 0, 0, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   std::vector<SubOcf> sub_ocf = {
       SubOcf::SET_PARAM, SubOcf::SET_DATA, SubOcf::SET_SCAN_RESP, SubOcf::SET_RANDOM_ADDR, SubOcf::SET_ENABLE,
@@ -669,7 +669,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
 
   test_hci_layer_->SetCommandFuture();
   auto id = le_advertising_manager_->ExtendedCreateAdvertiser(
-      0x00, advertising_config, scan_callback, set_terminated_callback, client_handler_);
+      0x00, advertising_config, scan_callback, set_terminated_callback, 0, 0, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   EXPECT_CALL(
       mock_advertising_callback_,
