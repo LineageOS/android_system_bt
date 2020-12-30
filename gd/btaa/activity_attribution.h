@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "hal/snoop_logger.h"
 #include "hci/address.h"
 #include "module.h"
 
@@ -37,6 +38,7 @@ class ActivityAttribution : public bluetooth::Module {
   ActivityAttribution() = default;
   ~ActivityAttribution() = default;
 
+  void Capture(const hal::HciPacket& packet, hal::SnoopLogger::PacketType type);
   void RegisterActivityAttributionCallback(ActivityAttributionCallback* callback);
 
   static const ModuleFactory Factory;
