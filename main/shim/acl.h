@@ -42,6 +42,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
       const bluetooth::hci::AddressWithType& address_with_type);
   void CancelLeConnection(
       const bluetooth::hci::AddressWithType& address_with_type);
+  void DisconnectClassic(uint16_t handle, tHCI_STATUS reason);
+  void DisconnectLe(uint16_t handle, tHCI_STATUS reason);
 
   void OnLeConnectSuccess(
       hci::AddressWithType,
@@ -58,9 +60,6 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
                  std::unique_ptr<bluetooth::packet::RawBuilder> packet);
 
   void ConfigureLePrivacy(bool is_le_privacy_enabled);
-
-  void DisconnectClassic(uint16_t handle, tHCI_STATUS reason);
-  void DisconnectLe(uint16_t handle, tHCI_STATUS reason);
 
   void Dump(int fd) const;
 
