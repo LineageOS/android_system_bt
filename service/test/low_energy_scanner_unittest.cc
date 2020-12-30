@@ -41,7 +41,8 @@ class MockScannerHandler : public BleScannerInterface {
   MockScannerHandler() {}
   ~MockScannerHandler() override = default;
 
-  MOCK_METHOD1(RegisterScanner, void(BleScannerInterface::RegisterCallback));
+  MOCK_METHOD2(RegisterScanner, void(const bluetooth::Uuid& app_uuid,
+                                     BleScannerInterface::RegisterCallback));
   MOCK_METHOD1(Unregister, void(int));
   MOCK_METHOD1(Scan, void(bool));
 
@@ -70,6 +71,8 @@ class MockScannerHandler : public BleScannerInterface {
   MOCK_METHOD7(StartSync, void(uint8_t, RawAddress, uint16_t, uint16_t,
                                StartSyncCb, SyncReportCb, SyncLostCb));
   MOCK_METHOD1(StopSync, void(uint16_t));
+
+  MOCK_METHOD1(RegisterCallbacks, void(ScanningCallbacks* callbacks));
 
   void ScanFilterAdd(int filter_index, std::vector<ApcfCommand> filters,
                      FilterConfigCallback cb) override{};
@@ -171,9 +174,10 @@ class LowEnergyScannerPostRegisterTest : public LowEnergyScannerTest {
     };
 
     BleScannerInterface::RegisterCallback reg_scanner_cb;
-    EXPECT_CALL(*mock_handler_, RegisterScanner(_))
+    Uuid uuid_empty;
+    EXPECT_CALL(*mock_handler_, RegisterScanner(_, _))
         .Times(1)
-        .WillOnce(SaveArg<0>(&reg_scanner_cb));
+        .WillOnce(DoAll(SaveArg<0>(&uuid_empty), SaveArg<1>(&reg_scanner_cb)));
 
     ble_factory_->RegisterInstance(uuid, api_callback);
 
@@ -192,9 +196,10 @@ class LowEnergyScannerPostRegisterTest : public LowEnergyScannerTest {
 
 TEST_F(LowEnergyScannerTest, RegisterInstance) {
   BleScannerInterface::RegisterCallback reg_scanner_cb1;
-  EXPECT_CALL(*mock_handler_, RegisterScanner(_))
+  Uuid uuid_empty1;
+  EXPECT_CALL(*mock_handler_, RegisterScanner(_, _))
       .Times(1)
-      .WillOnce(SaveArg<0>(&reg_scanner_cb1));
+      .WillOnce(DoAll(SaveArg<0>(&uuid_empty1), SaveArg<1>(&reg_scanner_cb1)));
 
   // These will be asynchronously populated with a result when the callback
   // executes.
@@ -227,9 +232,10 @@ TEST_F(LowEnergyScannerTest, RegisterInstance) {
   // Call with a different Uuid while one is pending.
   Uuid uuid1 = Uuid::GetRandom();
   BleScannerInterface::RegisterCallback reg_scanner_cb2;
-  EXPECT_CALL(*mock_handler_, RegisterScanner(_))
+  Uuid uuid_empty2;
+  EXPECT_CALL(*mock_handler_, RegisterScanner(_, _))
       .Times(1)
-      .WillOnce(SaveArg<0>(&reg_scanner_cb2));
+      .WillOnce(DoAll(SaveArg<0>(&uuid_empty2), SaveArg<1>(&reg_scanner_cb2)));
   EXPECT_TRUE(ble_factory_->RegisterInstance(uuid1, callback));
 
   // |uuid0| succeeds.
