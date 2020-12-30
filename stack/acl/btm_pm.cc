@@ -259,6 +259,20 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   return internal_.btm_pm_snd_md_req(*p_acl, pm_id, acl_ind, p_mode);
 }
 
+bool BTM_SetLinkPolicyActiveMode(const RawAddress& remote_bda) {
+  tBTM_PM_PWR_MD settings;
+  memset((void*)&settings, 0, sizeof(settings));
+  settings.mode = BTM_PM_MD_ACTIVE;
+
+  switch (BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, remote_bda, &settings)) {
+    case BTM_CMD_STORED:
+    case BTM_SUCCESS:
+      return true;
+    default:
+      return false;
+  }
+}
+
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
   if (p_mode == nullptr) {
     LOG_ERROR("power mode is nullptr");
