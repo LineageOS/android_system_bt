@@ -706,6 +706,7 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
  ******************************************************************************/
 tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
                              const tBTM_PM_PWR_MD* p_mode);
+bool BTM_SetLinkPolicyActiveMode(const RawAddress& remote_bda);
 
 /*******************************************************************************
  *
