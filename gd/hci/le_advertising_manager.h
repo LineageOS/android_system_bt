@@ -109,13 +109,16 @@ class LeAdvertisingManager : public bluetooth::Module {
       const ExtendedAdvertisingConfig config,
       const common::Callback<void(Address, AddressType)>& scan_callback,
       const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+      uint16_t duration,
+      uint8_t max_extended_advertising_events,
       os::Handler* handler);
 
   void SetParameters(AdvertiserId advertiser_id, ExtendedAdvertisingConfig config);
 
   void SetData(AdvertiserId advertiser_id, bool set_scan_rsp, std::vector<GapData> data);
 
-  void EnableAdvertiser(AdvertiserId advertiser_id, bool enable, uint16_t duration, uint8_t maxExtAdvEvents);
+  void EnableAdvertiser(
+      AdvertiserId advertiser_id, bool enable, uint16_t duration, uint8_t max_extended_advertising_events);
 
   void SetPeriodicParameters(AdvertiserId advertiser_id, PeriodicAdvertisingParameters periodic_advertising_parameters);
 

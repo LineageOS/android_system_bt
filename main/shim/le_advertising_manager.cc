@@ -197,8 +197,8 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
 
     bluetooth::hci::AdvertiserId id =
         bluetooth::shim::GetAdvertising()->ExtendedCreateAdvertiser(
-            reg_id, config, scan_callback, set_terminated_callback,
-            bluetooth::shim::GetGdShimHandler());
+            reg_id, config, scan_callback, set_terminated_callback, duration,
+            maxExtAdvEvents, bluetooth::shim::GetGdShimHandler());
 
     LOG(INFO) << "create advertising set, reg_id:" << reg_id
               << ", id:" << (uint16_t)id;

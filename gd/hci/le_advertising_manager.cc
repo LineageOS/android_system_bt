@@ -37,13 +37,23 @@ enum class AdvertisingApiType {
   EXTENDED = 3,
 };
 
+enum class AdvertisingFlag : uint8_t {
+  LE_LIMITED_DISCOVERABLE = 0x01,
+  LE_GENERAL_DISCOVERABLE = 0x02,
+  BR_EDR_NOT_SUPPORTED = 0x04,
+  SIMULTANEOUS_LE_AND_BR_EDR_CONTROLLER = 0x08,
+  SIMULTANEOUS_LE_AND_BR_EDR_HOST = 0x10,
+};
+
 struct Advertiser {
   os::Handler* handler;
   AddressWithType current_address;
   common::Callback<void(Address, AddressType)> scan_callback;
   common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback;
   int8_t tx_power;
+  uint16_t duration;
   bool started = false;
+  bool connectable = false;
 };
 
 ExtendedAdvertisingConfig::ExtendedAdvertisingConfig(const AdvertisingConfig& config) : AdvertisingConfig(config) {
@@ -249,6 +259,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       const ExtendedAdvertisingConfig config,
       const common::Callback<void(Address, AddressType)>& scan_callback,
       const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+      uint16_t duration,
+      uint8_t max_ext_adv_events,
       os::Handler* handler) {
     id_map_[id] = reg_id;
 
@@ -259,6 +271,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
     advertising_sets_[id].scan_callback = scan_callback;
     advertising_sets_[id].set_terminated_callback = set_terminated_callback;
+    advertising_sets_[id].duration = duration;
     advertising_sets_[id].handler = handler;
 
     if (!address_manager_registered) {
@@ -291,12 +304,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     if (!paused) {
-      enable_advertiser(id, true, 0, 0);
+      enable_advertiser(id, true, duration, max_ext_adv_events);
     } else {
       EnabledSet curr_set;
       curr_set.advertising_handle_ = id;
-      curr_set.duration_ = 0;                         // TODO: 0 means until the host disables it
-      curr_set.max_extended_advertising_events_ = 0;  // TODO: 0 is no maximum
+      curr_set.duration_ = duration;
+      curr_set.max_extended_advertising_events_ = max_ext_adv_events;
       std::vector<EnabledSet> enabled_sets = {curr_set};
       enabled_sets_[id] = curr_set;
     }
@@ -341,6 +354,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   }
 
   void set_parameters(AdvertiserId advertiser_id, ExtendedAdvertisingConfig config) {
+    advertising_sets_[advertiser_id].connectable = config.connectable;
+
     switch (advertising_api_type_) {
       case (AdvertisingApiType::LEGACY): {
         le_advertising_interface_->EnqueueCommand(
@@ -447,6 +462,17 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   }
 
   void set_data(AdvertiserId advertiser_id, bool set_scan_rsp, std::vector<GapData> data) {
+    if (!set_scan_rsp && advertising_sets_[advertiser_id].connectable) {
+      GapData gap_data;
+      gap_data.data_type_ = GapDataType::FLAGS;
+      if (advertising_sets_[advertiser_id].duration == 0) {
+        gap_data.data_.push_back(static_cast<uint8_t>(AdvertisingFlag::LE_GENERAL_DISCOVERABLE));
+      } else {
+        gap_data.data_.push_back(static_cast<uint8_t>(AdvertisingFlag::LE_LIMITED_DISCOVERABLE));
+      }
+      data.insert(data.begin(), gap_data);
+    }
+
     switch (advertising_api_type_) {
       case (AdvertisingApiType::LEGACY): {
         if (set_scan_rsp) {
@@ -561,11 +587,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
   }
 
-  void enable_advertiser(AdvertiserId advertiser_id, bool enable, uint16_t duration, uint8_t maxExtAdvEvents) {
+  void enable_advertiser(
+      AdvertiserId advertiser_id, bool enable, uint16_t duration, uint8_t max_extended_advertising_events) {
     EnabledSet curr_set;
     curr_set.advertising_handle_ = advertiser_id;
     curr_set.duration_ = duration;
-    curr_set.max_extended_advertising_events_ = maxExtAdvEvents;
+    curr_set.max_extended_advertising_events_ = max_extended_advertising_events;
     std::vector<EnabledSet> enabled_sets = {curr_set};
     Enable enable_value = enable ? Enable::ENABLED : Enable::DISABLED;
 
@@ -1054,6 +1081,8 @@ AdvertiserId LeAdvertisingManager::ExtendedCreateAdvertiser(
     const ExtendedAdvertisingConfig config,
     const common::Callback<void(Address, AddressType)>& scan_callback,
     const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
+    uint16_t duration,
+    uint8_t max_extended_advertising_events,
     os::Handler* handler) {
   AdvertisingApiType advertising_api_type = pimpl_->get_advertising_api_type();
   if (advertising_api_type != AdvertisingApiType::EXTENDED) {
@@ -1096,6 +1125,8 @@ AdvertiserId LeAdvertisingManager::ExtendedCreateAdvertiser(
       config,
       scan_callback,
       set_terminated_callback,
+      duration,
+      max_extended_advertising_events,
       handler);
   return id;
 }
@@ -1109,8 +1140,8 @@ void LeAdvertisingManager::SetData(AdvertiserId advertiser_id, bool set_scan_rsp
 }
 
 void LeAdvertisingManager::EnableAdvertiser(
-    AdvertiserId advertiser_id, bool enable, uint16_t duration, uint8_t maxExtAdvEvents) {
-  CallOn(pimpl_.get(), &impl::enable_advertiser, advertiser_id, enable, duration, maxExtAdvEvents);
+    AdvertiserId advertiser_id, bool enable, uint16_t duration, uint8_t max_extended_advertising_events) {
+  CallOn(pimpl_.get(), &impl::enable_advertiser, advertiser_id, enable, duration, max_extended_advertising_events);
 }
 
 void LeAdvertisingManager::SetPeriodicParameters(

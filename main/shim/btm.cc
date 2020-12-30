@@ -672,7 +672,7 @@ void Btm::StartAdvertising() {
       0x00, config,
       common::Bind([](hci::Address, hci::AddressType) { /*OnScan*/ }),
       common::Bind([](hci::ErrorCode, uint8_t, uint8_t) { /*OnTerminated*/ }),
-      GetGdShimHandler());
+      0, 0, GetGdShimHandler());
   if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
     LOG_WARN("%s Unable to start advertising", __func__);
     return;

@@ -40,6 +40,8 @@ class MockLeAdvertisingManager : public LeAdvertisingManager {
        const ExtendedAdvertisingConfig,
        const common::Callback<void(Address, AddressType)>&,
        const common::Callback<void(ErrorCode, uint8_t, uint8_t)>&,
+       uint16_t,
+       uint8_t,
        os::Handler*));
   MOCK_METHOD(void, RemoveAdvertiser, (AdvertiserId));
   MOCK_METHOD(
