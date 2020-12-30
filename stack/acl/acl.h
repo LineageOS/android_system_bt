@@ -112,6 +112,13 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
   }
 }
 
+typedef struct {
+  uint16_t max_xmit_latency;
+  uint16_t max_recv_latency;
+  uint16_t min_remote_timeout;
+  uint16_t min_local_timeout;
+} tSSR_PARAMS;
+
 #define BTM_PM_REC_NOT_USED 0
 typedef struct {
   tBTM_PM_STATUS_CBACK*
