@@ -1,5 +1,7 @@
 //! ACL management
 
+/// Exposes classic ACL functionality
+pub mod classic;
 mod fragment;
 
 use bt_common::Bluetooth::{self, Classic, Le};
@@ -21,6 +23,9 @@ use tokio::sync::{oneshot, Mutex};
 
 module! {
     acl_module,
+    submodules {
+        classic::classic_acl_module,
+    },
     providers {
         AclDispatch => provide_acl_dispatch,
     },
