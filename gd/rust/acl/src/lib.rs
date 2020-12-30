@@ -52,10 +52,7 @@ impl Connection {
     /// Close this connection. Consumes self.
     pub async fn close(self) {
         let (tx, rx) = oneshot::channel();
-        self.requests
-            .send(Request::Unregister(UnregisterRequest { handle: self.handle, fut: tx }))
-            .await
-            .unwrap();
+        self.requests.send(Request::Unregister { handle: self.handle, fut: tx }).await.unwrap();
         rx.await.unwrap()
     }
 }
@@ -77,31 +74,15 @@ impl AclDispatch {
     /// Register the provided connection with the ACL dispatch
     pub async fn register(&mut self, handle: u16, bt: Bluetooth) -> Connection {
         let (tx, rx) = oneshot::channel();
-        self.requests
-            .send(Request::Register(RegisterRequest { handle, bt, fut: tx }))
-            .await
-            .unwrap();
+        self.requests.send(Request::Register { handle, bt, fut: tx }).await.unwrap();
         rx.await.unwrap()
     }
 }
 
 #[derive(Debug)]
 enum Request {
-    Register(RegisterRequest),
-    Unregister(UnregisterRequest),
-}
-
-#[derive(Debug)]
-struct RegisterRequest {
-    handle: u16,
-    bt: Bluetooth,
-    fut: oneshot::Sender<Connection>,
-}
-
-#[derive(Debug)]
-struct UnregisterRequest {
-    handle: u16,
-    fut: oneshot::Sender<()>,
+    Register { handle: u16, bt: Bluetooth, fut: oneshot::Sender<Connection> },
+    Unregister { handle: u16, fut: oneshot::Sender<()> },
 }
 
 const QCOM_DEBUG_HANDLE: u16 = 0xedc;
@@ -131,43 +112,45 @@ async fn provide_acl_dispatch(
             select! {
                 Some(req) = req_rx.recv() => {
                     match req {
-                        Request::Register(req) => {
+                        Request::Register { handle, bt, fut } => {
                             let (out_tx, out_rx) = channel(10);
                             let (in_tx, in_rx) = channel(10);
                             let (evt_tx, evt_rx) = channel(3);
                             let (close_tx, close_rx) = oneshot::channel();
 
                             assert!(connections.insert(
-                                req.handle,
+                                handle,
                                 ConnectionInternal {
                                     reassembler: Reassembler::new(out_tx),
-                                    bt: req.bt,
+                                    bt,
                                     close_tx,
                                     evt_tx,
                                 }).is_none());
 
-                            match req.bt {
+                            match bt {
                                 Classic => {
                                     classic_outbound.push(fragmenting_stream(
-                                        in_rx, controller.acl_buffer_length.into(), req.handle, req.bt, close_rx));
+                                        in_rx, controller.acl_buffer_length.into(), handle, bt, close_rx));
                                 },
                                 Le => {
                                     le_outbound.push(fragmenting_stream(
-                                        in_rx, controller.le_buffer_length.into(), req.handle, req.bt, close_rx));
+                                        in_rx, controller.le_buffer_length.into(), handle, bt, close_rx));
                                 },
                             }
 
-                            req.fut.send(Connection {
+                            fut.send(Connection {
                                 rx: out_rx,
                                 tx: in_tx,
-                                handle: req.handle,
+                                handle,
                                 requests: req_tx_clone.clone(),
-                                evt_rx}).unwrap();
+                                evt_rx
+                            }).unwrap();
                         },
-                        Request::Unregister(req) => {
-                            if let Some(connection) = connections.remove(&req.handle) {
+                        Request::Unregister { handle, fut } => {
+                            if let Some(connection) = connections.remove(&handle) {
                                 connection.close_tx.send(()).unwrap();
                             }
+                            fut.send(()).unwrap();
                         }
                     }
                 },
