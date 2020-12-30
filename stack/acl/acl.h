@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
@@ -367,6 +368,10 @@ typedef struct {
   tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
 
   uint8_t pm_pend_id{0}; /* the id pf the module, which has a pending PM cmd */
+
+  struct {
+    std::vector<tBTM_PM_STATUS_CBACK*> clients;
+  } link_policy;
 
   unsigned NumberOfActiveLinks() const {
     unsigned cnt = 0;
