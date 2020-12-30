@@ -9,6 +9,7 @@ use bytes::{Buf, Bytes, BytesMut};
 use futures::stream::{self, StreamExt};
 use log::{error, info, warn};
 use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::oneshot;
 
 const L2CAP_BASIC_FRAME_HEADER_LEN: usize = 4;
 
@@ -90,6 +91,7 @@ pub fn fragmenting_stream(
     mtu: usize,
     handle: u16,
     bt: Bluetooth,
+    close_rx: oneshot::Receiver<()>,
 ) -> std::pin::Pin<
     std::boxed::Box<dyn futures::Stream<Item = bt_packets::hci::AclPacket> + std::marker::Send>,
 > {
@@ -113,5 +115,6 @@ pub fn fragmenting_stream(
                 .collect::<Vec<AclPacket>>(),
         )
     })
+    .take_until(close_rx)
     .boxed()
 }
