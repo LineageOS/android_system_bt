@@ -50,7 +50,8 @@ typedef enum : uint16_t {
   HCI_ENABLE_HOLD_MODE = (1u << 1),
   HCI_ENABLE_SNIFF_MODE = (1u << 2),
   HCI_ENABLE_PARK_MODE = (1u << 3),
-} tLINK_POLICY;
+} tLINK_POLICY_BITMASK;
+typedef uint16_t tLINK_POLICY;
 
 static const char* link_policy_string[] = {
     " role_switch ",
@@ -173,7 +174,8 @@ typedef struct {
 
   uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
-  uint16_t link_policy;
+  tLINK_POLICY link_policy;
+
   uint16_t link_super_tout;
   uint16_t pkt_types_mask;
   tBLE_ADDR_TYPE active_remote_addr_type;
