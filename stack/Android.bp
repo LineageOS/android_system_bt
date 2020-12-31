@@ -102,6 +102,7 @@ cc_library_static {
         "bnep/bnep_main.cc",
         "bnep/bnep_utils.cc",
         "btm/ble_advertiser_hci_interface.cc",
+        "acl/acl.cc",
         "acl/btm_acl.cc",
         "acl/ble_acl.cc",
         "btm/ble_scanner_hci_interface.cc",
@@ -658,6 +659,7 @@ cc_test {
         "system/bt/vnd/ble",
     ],
     srcs: crypto_toolbox_srcs + [
+        "acl/acl.cc",
         "acl/ble_acl.cc",
         "acl/btm_acl.cc",
         "acl/btm_ble_connection_establishment.cc",
