@@ -23,6 +23,7 @@
 #include <aidl/android/system/suspend/ISuspendControlService.h>
 #include <android/binder_manager.h>
 
+#include "btaa/attribution_processor.h"
 #include "module.h"
 #include "os/log.h"
 
@@ -39,6 +40,7 @@ namespace activity_attribution {
 const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() { return new ActivityAttribution(); });
 
 static const std::string kBtWakelockName("hal_bluetooth_lock");
+static const std::string kBtWakeupReason("hs_uart_wakeup");
 
 struct wakelock_callback : public BnWakelockCallback {
   wakelock_callback(ActivityAttribution* module) : module_(module) {}
@@ -57,6 +59,12 @@ struct wakeup_callback : public BnSuspendCallback {
   wakeup_callback(ActivityAttribution* module) : module_(module) {}
 
   Status notifyWakeup(bool success, const std::vector<std::string>& wakeup_reasons) override {
+    for (auto& wakeup_reason : wakeup_reasons) {
+      if (wakeup_reason.find(kBtWakeupReason) != std::string::npos) {
+        module_->OnWakeup();
+        break;
+      }
+    }
     return Status::ok();
   }
 
@@ -91,11 +99,16 @@ struct ActivityAttribution::impl {
 
   void on_hci_packet(hal::HciPacket packet, hal::SnoopLogger::PacketType type, uint16_t length) {}
 
+  void on_wakeup() {
+    attribution_processor_.OnWakeup();
+  }
+
   void register_callback(ActivityAttributionCallback* callback) {
     callback_ = callback;
   }
 
   ActivityAttributionCallback* callback_;
+  AttributionProcessor attribution_processor_;
 };
 
 void ActivityAttribution::Capture(const hal::HciPacket& packet, hal::SnoopLogger::PacketType type) {
@@ -120,6 +133,10 @@ void ActivityAttribution::Capture(const hal::HciPacket& packet, hal::SnoopLogger
 
   hal::HciPacket truncate_packet(packet.begin(), packet.begin() + truncate_length);
   CallOn(pimpl_.get(), &impl::on_hci_packet, truncate_packet, type, original_length);
+}
+
+void ActivityAttribution::OnWakeup() {
+  CallOn(pimpl_.get(), &impl::on_wakeup);
 }
 
 void ActivityAttribution::RegisterActivityAttributionCallback(ActivityAttributionCallback* callback) {

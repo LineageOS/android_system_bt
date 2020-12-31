@@ -119,6 +119,7 @@ cc_defaults {
     target: {
         linux: {
             srcs: [
+                ":BluetoothBtaaSources_linux_generic",
                 ":BluetoothOsSources_linux_generic",
             ],
         },

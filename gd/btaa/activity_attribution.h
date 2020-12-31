@@ -50,6 +50,7 @@ class ActivityAttribution : public bluetooth::Module {
   ~ActivityAttribution() = default;
 
   void Capture(const hal::HciPacket& packet, hal::SnoopLogger::PacketType type);
+  void OnWakeup();
   void RegisterActivityAttributionCallback(ActivityAttributionCallback* callback);
 
   static const ModuleFactory Factory;

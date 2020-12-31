@@ -14,30 +14,18 @@
  * limitations under the License.
  */
 
-#include "btaa/activity_attribution.h"
-
-#include "module.h"
+#pragma once
 
 namespace bluetooth {
 namespace activity_attribution {
 
-struct ActivityAttribution::impl {};
+class AttributionProcessor {
+ public:
+  void OnWakeup();
 
-void ActivityAttribution::OnWakeup() {}
-
-void ActivityAttribution::RegisterActivityAttributionCallback(ActivityAttributionCallback* callback) {}
-
-std::string ActivityAttribution::ToString() const {
-  return "Btaa Module";
-}
-
-void ActivityAttribution::ListDependencies(ModuleList* list) {}
-
-void ActivityAttribution::Start() {}
-
-void ActivityAttribution::Stop() {}
-
-const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() { return new ActivityAttribution(); });
+ private:
+  bool wakeup_ = false;
+};
 
 }  // namespace activity_attribution
 }  // namespace bluetooth
