@@ -15,6 +15,7 @@ mod ffi {
         fn gatt_robust_caching_is_enabled() -> bool;
         fn btaa_hci_is_enabled() -> bool;
         fn gd_rust_is_enabled() -> bool;
+        fn gd_link_policy_is_enabled() -> bool;
     }
 }
 
