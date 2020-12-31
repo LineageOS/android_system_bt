@@ -192,6 +192,7 @@ struct sACL_CONN {
 
  public:
   bool InUse() const { return in_use; }
+  const RawAddress RemoteAddress() const { return remote_addr; }
 
   bool link_up_issued;
   tBT_TRANSPORT transport;
