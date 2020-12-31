@@ -81,7 +81,7 @@ typedef enum {
 /** We need to build on this */
 
 typedef enum {
-  BT_STATUS_SUCCESS,
+  BT_STATUS_SUCCESS = 0,
   BT_STATUS_FAIL,
   BT_STATUS_NOT_READY,
   BT_STATUS_NOMEM,
@@ -97,6 +97,43 @@ typedef enum {
   BT_STATUS_JNI_THREAD_ATTACH_ERROR,
   BT_STATUS_WAKELOCK_ERROR
 } bt_status_t;
+
+inline std::string bt_status_text(const bt_status_t& status) {
+  switch (status) {
+    case BT_STATUS_SUCCESS:
+      return std::string("success");
+    case BT_STATUS_FAIL:
+      return std::string("fail");
+    case BT_STATUS_NOT_READY:
+      return std::string("not_ready");
+    case BT_STATUS_NOMEM:
+      return std::string("no_memory");
+    case BT_STATUS_BUSY:
+      return std::string("busy");
+    case BT_STATUS_DONE:
+      return std::string("already_done");
+    case BT_STATUS_UNSUPPORTED:
+      return std::string("unsupported");
+    case BT_STATUS_PARM_INVALID:
+      return std::string("parameter_invalid");
+    case BT_STATUS_UNHANDLED:
+      return std::string("unhandled");
+    case BT_STATUS_AUTH_FAILURE:
+      return std::string("failure");
+    case BT_STATUS_RMT_DEV_DOWN:
+      return std::string("remote_device_down");
+    case BT_STATUS_AUTH_REJECTED:
+      return std::string("rejected");
+    case BT_STATUS_JNI_ENVIRONMENT_ERROR:
+      return std::string("jni_env_error");
+    case BT_STATUS_JNI_THREAD_ATTACH_ERROR:
+      return std::string("jni_thread_error");
+    case BT_STATUS_WAKELOCK_ERROR:
+      return std::string("wakelock_error");
+    default:
+      return std::string("UNKNOWN");
+  }
+}
 
 /** Bluetooth PinKey Code */
 typedef struct { uint8_t pin[16]; } __attribute__((packed)) bt_pin_code_t;
