@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
@@ -50,7 +51,12 @@ typedef enum : uint16_t {
   HCI_ENABLE_HOLD_MODE = (1u << 1),
   HCI_ENABLE_SNIFF_MODE = (1u << 2),
   HCI_ENABLE_PARK_MODE = (1u << 3),
-} tLINK_POLICY;
+} tLINK_POLICY_BITMASK;
+typedef uint16_t tLINK_POLICY;
+
+constexpr tLINK_POLICY kAllLinkPoliciesEnabled =
+    (HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE |
+     HCI_ENABLE_SNIFF_MODE);
 
 static const char* link_policy_string[] = {
     " role_switch ",
@@ -105,6 +111,13 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
       return s + std::string("UNKNOWN");
   }
 }
+
+typedef struct {
+  uint16_t max_xmit_latency;
+  uint16_t max_recv_latency;
+  uint16_t min_remote_timeout;
+  uint16_t min_local_timeout;
+} tSSR_PARAMS;
 
 #define BTM_PM_REC_NOT_USED 0
 typedef struct {
@@ -173,7 +186,8 @@ typedef struct {
 
   uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
-  uint16_t link_policy;
+  tLINK_POLICY link_policy;
+
   uint16_t link_super_tout;
   uint16_t pkt_types_mask;
   tBLE_ADDR_TYPE active_remote_addr_type;
@@ -361,6 +375,10 @@ typedef struct {
   tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
 
   uint8_t pm_pend_id{0}; /* the id pf the module, which has a pending PM cmd */
+
+  struct {
+    std::vector<tBTM_PM_STATUS_CBACK*> clients;
+  } link_policy;
 
   unsigned NumberOfActiveLinks() const {
     unsigned cnt = 0;
