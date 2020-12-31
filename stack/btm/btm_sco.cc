@@ -27,6 +27,7 @@
 
 #include "device/include/controller.h"
 #include "device/include/esco_parameters.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/security_device_record.h"
@@ -382,9 +383,9 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
               LOG(INFO) << __func__ << ": " << *remote_bda
                         << " in sniff, park or pending mode "
                         << unsigned(state);
-              tBTM_PM_PWR_MD pm = {};
-              pm.mode = BTM_PM_MD_ACTIVE;
-              BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, *remote_bda, &pm);
+              if (!BTM_SetLinkPolicyActiveMode(*remote_bda)) {
+                LOG_WARN("Unable to set link policy active");
+              }
               p->state = SCO_ST_PEND_UNPARK;
             }
           } else {
