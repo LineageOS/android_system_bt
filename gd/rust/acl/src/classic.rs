@@ -5,9 +5,10 @@ use bt_common::Bluetooth;
 use bt_hci::{Address, CommandSender, EventRegistry};
 use bt_packets::hci::EventChild::ConnectionComplete;
 use bt_packets::hci::{
-    ClockOffsetValid, CreateConnectionBuilder, CreateConnectionCancelBuilder,
-    CreateConnectionRoleSwitch, DisconnectBuilder, DisconnectReason, ErrorCode, EventCode,
-    PageScanRepetitionMode, Role,
+    AcceptConnectionRequestBuilder, AcceptConnectionRequestRole, ClockOffsetValid,
+    CreateConnectionBuilder, CreateConnectionCancelBuilder, CreateConnectionRoleSwitch,
+    DisconnectBuilder, DisconnectReason, ErrorCode, EventChild, EventCode, PageScanRepetitionMode,
+    RejectConnectionReason, RejectConnectionRequestBuilder, Role,
 };
 use bytes::Bytes;
 use gddi::{module, provides, Stoppable};
@@ -114,7 +115,6 @@ enum Request {
 #[derive(Eq, PartialEq)]
 enum PendingConnect {
     Outgoing(Address),
-    #[allow(dead_code)]
     Incoming(Address),
     None,
 }
@@ -141,7 +141,8 @@ async fn provide_acl_manager(
         let mut pending = PendingConnect::None;
 
         let (evt_tx, mut evt_rx) = channel(3);
-        events.register(EventCode::ConnectionComplete, evt_tx).await;
+        events.register(EventCode::ConnectionComplete, evt_tx.clone()).await;
+        events.register(EventCode::ConnectionRequest, evt_tx).await;
 
         loop {
             select! {
@@ -150,6 +151,7 @@ async fn provide_acl_manager(
                         Request::Connect { addr } => {
                             if connections.lock().await.values().any(|c| c.addr == addr) {
                                 warn!("already connected: {}", addr);
+                                return;
                             }
                             if let PendingConnect::None = pending {
                                 pending = PendingConnect::Outgoing(addr);
@@ -205,6 +207,22 @@ async fn provide_acl_manager(
                                 _ => conn_evt_tx.send(Event::ConnectFail { addr, reason: status }).await.unwrap(),
                             }
                         },
+                        EventChild::ConnectionRequest(evt) => {
+                            let addr = evt.get_bd_addr();
+                            pending = PendingConnect::Incoming(addr);
+                            if connections.lock().await.values().any(|c| c.addr == addr) {
+                                hci.send(RejectConnectionRequestBuilder {
+                                    bd_addr: addr,
+                                    reason: RejectConnectionReason::UnacceptableBdAddr
+                                }).await;
+                            } else {
+                                hci.send(AcceptConnectionRequestBuilder {
+                                    bd_addr: addr,
+                                    role: AcceptConnectionRequestRole::BecomeCentral
+                                }).await;
+                            }
+
+                        }
                         _ => unimplemented!(),
                     }
                 }
