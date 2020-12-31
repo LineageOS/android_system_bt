@@ -831,6 +831,15 @@ static void process_ssr_event(tHCI_STATUS status, uint16_t handle,
       hci_error_code_text(status).c_str());
 }
 
+void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
+                               uint16_t maximum_transmit_latency,
+                               uint16_t maximum_receive_latency,
+                               UNUSED_ATTR uint16_t minimum_remote_timeout,
+                               UNUSED_ATTR uint16_t minimum_local_timeout) {
+  process_ssr_event(status, handle, maximum_transmit_latency,
+                    maximum_receive_latency);
+}
+
 void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   uint8_t status;
   uint16_t handle;
