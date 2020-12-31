@@ -31,6 +31,7 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "device/include/controller.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
+#include "main/shim/link_policy.h"
 #include "main/shim/shim.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/raw_address.h"
@@ -443,5 +444,28 @@ void btm_api_process_inquiry_result_with_rssi(RawAddress raw_address,
                                               DEV_CLASS device_class,
                                               uint16_t clock_offset,
                                               int8_t rssi) {
+  mock_function_count_map[__func__]++;
+}
+tBTM_STATUS bluetooth::shim::BTM_SetPowerMode(tACL_CONN&,
+                                              tBTM_PM_PWR_MD const&) {
+  mock_function_count_map[__func__]++;
+  return BTM_SUCCESS;
+}
+void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
+                                            tHCI_MODE current_mode,
+                                            uint16_t interval) {
+  mock_function_count_map[__func__]++;
+}
+tBTM_STATUS bluetooth::shim::BTM_SetSsrParams(tACL_CONN&, uint16_t max_lat,
+                                              uint16_t min_rmt_to,
+                                              uint16_t min_loc_to) {
+  mock_function_count_map[__func__]++;
+  return BTM_SUCCESS;
+}
+void bluetooth::shim::btm_pm_on_sniff_subrating(
+    tHCI_STATUS status, uint16_t handle, uint16_t maximum_transmit_latency,
+    uint16_t maximum_receive_latency,
+    UNUSED_ATTR uint16_t minimum_remote_timeout,
+    UNUSED_ATTR uint16_t minimum_local_timeout) {
   mock_function_count_map[__func__]++;
 }
