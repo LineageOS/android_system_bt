@@ -14,34 +14,25 @@
  * limitations under the License.
  */
 
-#include "btaa/activity_attribution.h"
+#pragma once
 
-#include "module.h"
+#include <chrono>
+#include <cstdint>
 
 namespace bluetooth {
 namespace activity_attribution {
 
-struct ActivityAttribution::impl {};
+class WakelockProcessor {
+ public:
+  WakelockProcessor();
 
-void ActivityAttribution::OnWakelockAcquired() {}
+  uint32_t OnWakelockReleased();
+  void OnWakelockAcquired();
 
-void ActivityAttribution::OnWakelockReleased() {}
-
-void ActivityAttribution::OnWakeup() {}
-
-void ActivityAttribution::RegisterActivityAttributionCallback(ActivityAttributionCallback* callback) {}
-
-std::string ActivityAttribution::ToString() const {
-  return "Btaa Module";
-}
-
-void ActivityAttribution::ListDependencies(ModuleList* list) {}
-
-void ActivityAttribution::Start() {}
-
-void ActivityAttribution::Stop() {}
-
-const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() { return new ActivityAttribution(); });
+ private:
+  std::chrono::time_point<std::chrono::system_clock> wakelock_acquired_time_;
+  uint8_t wakelock_net_count_;
+};
 
 }  // namespace activity_attribution
 }  // namespace bluetooth

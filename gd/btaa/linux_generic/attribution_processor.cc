@@ -21,6 +21,8 @@
 namespace bluetooth {
 namespace activity_attribution {
 
+void AttributionProcessor::OnWakelockReleased(uint32_t duration_ms) {}
+
 void AttributionProcessor::OnWakeup() {
   if (wakeup_) {
     LOG_INFO("Previous wakeup notification is not consumed.");

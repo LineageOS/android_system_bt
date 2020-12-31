@@ -16,11 +16,14 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace bluetooth {
 namespace activity_attribution {
 
 class AttributionProcessor {
  public:
+  void OnWakelockReleased(uint32_t duration_ms);
   void OnWakeup();
 
  private:

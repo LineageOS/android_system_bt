@@ -24,5 +24,6 @@ filegroup {
     name: "BluetoothBtaaSources_linux_generic",
     srcs: [
         "linux_generic/attribution_processor.cc",
+        "linux_generic/wakelock_processor.cc",
     ],
 }

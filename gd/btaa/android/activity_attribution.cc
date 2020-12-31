@@ -24,6 +24,7 @@
 #include <android/binder_manager.h>
 
 #include "btaa/attribution_processor.h"
+#include "btaa/wakelock_processor.h"
 #include "module.h"
 #include "os/log.h"
 
@@ -46,9 +47,11 @@ struct wakelock_callback : public BnWakelockCallback {
   wakelock_callback(ActivityAttribution* module) : module_(module) {}
 
   Status notifyAcquired() override {
+    module_->OnWakelockAcquired();
     return Status::ok();
   }
   Status notifyReleased() override {
+    module_->OnWakelockReleased();
     return Status::ok();
   }
 
@@ -99,6 +102,19 @@ struct ActivityAttribution::impl {
 
   void on_hci_packet(hal::HciPacket packet, hal::SnoopLogger::PacketType type, uint16_t length) {}
 
+  void on_wakelock_acquired() {
+    wakelock_processor_.OnWakelockAcquired();
+  }
+
+  void on_wakelock_released() {
+    uint32_t wakelock_duration_ms = 0;
+
+    wakelock_duration_ms = wakelock_processor_.OnWakelockReleased();
+    if (wakelock_duration_ms != 0) {
+      attribution_processor_.OnWakelockReleased(wakelock_duration_ms);
+    }
+  }
+
   void on_wakeup() {
     attribution_processor_.OnWakeup();
   }
@@ -109,6 +125,7 @@ struct ActivityAttribution::impl {
 
   ActivityAttributionCallback* callback_;
   AttributionProcessor attribution_processor_;
+  WakelockProcessor wakelock_processor_;
 };
 
 void ActivityAttribution::Capture(const hal::HciPacket& packet, hal::SnoopLogger::PacketType type) {
@@ -133,6 +150,14 @@ void ActivityAttribution::Capture(const hal::HciPacket& packet, hal::SnoopLogger
 
   hal::HciPacket truncate_packet(packet.begin(), packet.begin() + truncate_length);
   CallOn(pimpl_.get(), &impl::on_hci_packet, truncate_packet, type, original_length);
+}
+
+void ActivityAttribution::OnWakelockAcquired() {
+  CallOn(pimpl_.get(), &impl::on_wakelock_acquired);
+}
+
+void ActivityAttribution::OnWakelockReleased() {
+  CallOn(pimpl_.get(), &impl::on_wakelock_released);
 }
 
 void ActivityAttribution::OnWakeup() {
