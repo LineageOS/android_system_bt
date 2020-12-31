@@ -1,11 +1,14 @@
 //! Classic ACL manager
 
+use crate::core;
+use bt_common::Bluetooth;
 use bt_hci::{Address, CommandSender, EventRegistry};
 use bt_packets::hci::EventChild::ConnectionComplete;
 use bt_packets::hci::{
     ClockOffsetValid, CreateConnectionBuilder, CreateConnectionCancelBuilder,
     CreateConnectionRoleSwitch, ErrorCode, EventCode, PageScanRepetitionMode, Role,
 };
+use bytes::Bytes;
 use gddi::{module, provides, Stoppable};
 use log::warn;
 use std::collections::HashMap;
@@ -48,6 +51,8 @@ pub enum Event {
 #[derive(Debug)]
 pub struct Connection {
     addr: Address,
+    rx: Receiver<Bytes>,
+    tx: Sender<Bytes>,
     shared: Arc<Mutex<ConnectionShared>>,
 }
 
@@ -100,6 +105,7 @@ impl PendingConnect {
 async fn provide_acl_manager(
     mut hci: CommandSender,
     mut events: EventRegistry,
+    mut dispatch: core::AclDispatch,
     rt: Arc<Runtime>,
 ) -> AclManager {
     let (req_tx, mut req_rx) = channel::<Request>(10);
@@ -151,16 +157,21 @@ async fn provide_acl_manager(
 
                             match status {
                                 ErrorCode::Success => {
+                                    let mut core_conn = dispatch.register(handle, Bluetooth::Classic).await;
                                     let shared = Arc::new(Mutex::new(ConnectionShared { role }));
-                                    assert!(connections.insert(
-                                        handle,
-                                        ConnectionInternal { addr, shared: shared.clone() }
-                                    ).is_none());
-
-                                    conn_evt_tx.send(Event::ConnectSuccess(Connection {
+                                    let connection = Connection {
                                         addr,
-                                        shared
-                                    })).await.unwrap();
+                                        shared: shared.clone(),
+                                        rx: core_conn.rx.take().unwrap(),
+                                        tx: core_conn.tx.take().unwrap(),
+                                    };
+                                    let connection_internal = ConnectionInternal {
+                                        addr,
+                                        shared,
+                                    };
+
+                                    assert!(connections.insert(handle, connection_internal).is_none());
+                                    conn_evt_tx.send(Event::ConnectSuccess(connection)).await.unwrap();
                                 },
                                 _ => conn_evt_tx.send(Event::ConnectFail { addr, reason: status }).await.unwrap(),
                             }

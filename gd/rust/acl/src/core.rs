@@ -27,8 +27,8 @@ module! {
 /// A basic ACL connection
 #[derive(Debug)]
 pub struct Connection {
-    rx: Receiver<Bytes>,
-    tx: Sender<Bytes>,
+    pub rx: Option<Receiver<Bytes>>,
+    pub tx: Option<Sender<Bytes>>,
     handle: u16,
     requests: Sender<Request>,
     evt_rx: Receiver<Event>,
@@ -134,8 +134,8 @@ async fn provide_acl_dispatch(
                             }
 
                             fut.send(Connection {
-                                rx: out_rx,
-                                tx: in_tx,
+                                rx: Some(out_rx),
+                                tx: Some(in_tx),
                                 handle,
                                 requests: req_tx_clone.clone(),
                                 evt_rx
