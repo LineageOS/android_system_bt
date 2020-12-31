@@ -566,13 +566,8 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
   };
 
   if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
-    tBTM_PM_PWR_MD settings;
-    memset((void*)&settings, 0, sizeof(settings));
-    settings.mode = BTM_PM_MD_ACTIVE;
-    tBTM_STATUS status =
-        BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_acl->remote_addr, &settings);
-    if (status != BTM_CMD_STARTED) {
-      LOG_WARN("Unable to set power mode before attempting switch");
+    if (!BTM_SetLinkPolicyActiveMode(p_acl->remote_addr)) {
+      LOG_WARN("Unable to set link policy active before attempting switch");
       return BTM_WRONG_MODE;
     }
     p_acl->set_switch_role_changing();
