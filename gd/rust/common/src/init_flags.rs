@@ -85,13 +85,15 @@ init_flags!(
         gd_controller,
         gatt_robust_caching,
         btaa_hci,
-        gd_rust
+        gd_rust,
+        gd_link_policy
     },
     dependencies: {
         gd_core => gd_security,
         gd_security => gd_acl,
         gd_acl => gd_controller,
-        gd_controller => gd_hci
+        gd_controller => gd_hci,
+        gd_link_policy => gd_acl
     }
 );
 
