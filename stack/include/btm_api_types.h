@@ -1004,6 +1004,8 @@ enum : uint8_t {
   BTM_PM_MD_UNKNOWN = 0xEF,
 };
 typedef uint8_t tBTM_PM_MODE;
+#define HCI_TO_BTM_POWER_MODE(mode) (static_cast<tBTM_PM_MODE>(mode))
+
 inline bool is_legal_power_mode(tBTM_PM_MODE mode) {
   switch (mode & ~BTM_PM_MD_FORCE) {
     case BTM_PM_MD_ACTIVE:
