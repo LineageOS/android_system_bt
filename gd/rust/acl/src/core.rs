@@ -127,47 +127,43 @@ async fn provide_acl_dispatch(
                         },
                     }
                 },
-                Some(packet) = consume(&acl.rx) => {
-                    match connections.get_mut(&packet.get_handle()) {
-                        Some(connection) => connection.reassembler.on_packet(packet).await,
-                        None if packet.get_handle() == QCOM_DEBUG_HANDLE => {},
-                        None => info!("no acl for {}", packet.get_handle()),
+                Some(p) = consume(&acl.rx) => {
+                    match connections.get_mut(&p.get_handle()) {
+                        Some(c) => c.reassembler.on_packet(p).await,
+                        None if p.get_handle() == QCOM_DEBUG_HANDLE => {},
+                        None => info!("no acl for {}", p.get_handle()),
                     }
                 },
-                Some(packet) = classic_outbound.next(), if classic_credits > 0 => {
-                    acl.tx.send(packet).await.unwrap();
+                Some(p) = classic_outbound.next(), if classic_credits > 0 => {
+                    acl.tx.send(p).await.unwrap();
                     classic_credits -= 1;
                 },
-                Some(packet) = le_outbound.next(), if le_credits > 0 => {
-                    acl.tx.send(packet).await.unwrap();
+                Some(p) = le_outbound.next(), if le_credits > 0 => {
+                    acl.tx.send(p).await.unwrap();
                     le_credits -= 1;
                 },
                 Some(evt) = evt_rx.recv() => {
                     match evt.specialize() {
                         NumberOfCompletedPackets(evt) => {
-                            for info in evt.get_completed_packets() {
-                                match connections.get(&info.connection_handle) {
-                                    Some(connection) => {
-                                        let credits = info.host_num_of_completed_packets;
-                                        match connection.bt {
-                                            Classic => {
-                                                classic_credits += credits;
-                                                assert!(classic_credits <= controller.acl_buffers);
-                                            },
-                                            Le => {
-                                                le_credits += credits;
-                                                assert!(le_credits <= controller.le_buffers.into());
-                                            },
+                            for entry in evt.get_completed_packets() {
+                                match connections.get(&entry.connection_handle) {
+                                    Some(conn) => {
+                                        let credits = entry.host_num_of_completed_packets;
+                                        match conn.bt {
+                                            Classic => classic_credits += credits,
+                                            Le => le_credits += credits,
                                         }
+                                        assert!(classic_credits <= controller.acl_buffers);
+                                        assert!(le_credits <= controller.le_buffers.into());
                                     },
-                                    None => info!("dropping credits for unknown connection {}", info.connection_handle),
+                                    None => info!("dropping credits for unknown connection {}", entry.connection_handle),
                                 }
                             }
                         },
                         DisconnectionComplete(evt) => {
-                            if let Some(connection) = connections.remove(&evt.get_connection_handle()) {
-                                connection.close_tx.send(()).unwrap();
-                                connection.evt_tx.send(evt.into()).await.unwrap();
+                            if let Some(c) = connections.remove(&evt.get_connection_handle()) {
+                                c.close_tx.send(()).unwrap();
+                                c.evt_tx.send(evt.into()).await.unwrap();
                             }
                         },
                         _ => unimplemented!(),

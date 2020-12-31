@@ -139,8 +139,9 @@ async fn provide_acl_manager(
 ) -> AclManager {
     let (req_tx, mut req_rx) = channel::<Request>(10);
     let (conn_evt_tx, conn_evt_rx) = channel::<Event>(10);
+    let local_rt = rt.clone();
 
-    rt.clone().spawn(async move {
+    local_rt.spawn(async move {
         let connections: Arc<Mutex<HashMap<u16, ConnectionInternal>>> = Arc::new(Mutex::new(HashMap::new()));
         let mut connect_queue: Vec<Address> = Vec::new();
         let mut pending = PendingConnect::None;
