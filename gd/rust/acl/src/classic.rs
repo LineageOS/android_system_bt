@@ -3,12 +3,14 @@
 use crate::core;
 use bt_common::Bluetooth;
 use bt_hci::{Address, CommandSender, EventRegistry};
-use bt_packets::hci::EventChild::ConnectionComplete;
+use bt_packets::hci::EventChild::{
+    AuthenticationComplete, ConnectionComplete, DisconnectionComplete,
+};
 use bt_packets::hci::{
     AcceptConnectionRequestBuilder, AcceptConnectionRequestRole, ClockOffsetValid,
     CreateConnectionBuilder, CreateConnectionCancelBuilder, CreateConnectionRoleSwitch,
-    DisconnectBuilder, DisconnectReason, ErrorCode, EventChild, EventCode, PageScanRepetitionMode,
-    RejectConnectionReason, RejectConnectionRequestBuilder, Role,
+    DisconnectBuilder, DisconnectReason, ErrorCode, EventChild, EventCode, EventPacket,
+    PageScanRepetitionMode, RejectConnectionReason, RejectConnectionRequestBuilder, Role,
 };
 use bytes::Bytes;
 use gddi::{module, provides, Stoppable};
@@ -65,6 +67,8 @@ pub struct Connection {
 pub enum ConnectionEvent {
     /// Connection was disconnected with the specified code.
     Disconnected(ErrorCode),
+    /// Connection authentication was completed
+    AuthenticationComplete,
 }
 
 impl Connection {
@@ -85,6 +89,7 @@ struct ConnectionInternal {
     addr: Address,
     #[allow(dead_code)]
     shared: Arc<Mutex<ConnectionShared>>,
+    hci_evt_tx: Sender<EventPacket>,
 }
 
 #[derive(Debug)]
@@ -142,7 +147,8 @@ async fn provide_acl_manager(
 
         let (evt_tx, mut evt_rx) = channel(3);
         events.register(EventCode::ConnectionComplete, evt_tx.clone()).await;
-        events.register(EventCode::ConnectionRequest, evt_tx).await;
+        events.register(EventCode::ConnectionRequest, evt_tx.clone()).await;
+        events.register(EventCode::AuthenticationComplete, evt_tx).await;
 
         loop {
             select! {
@@ -198,6 +204,7 @@ async fn provide_acl_manager(
                                     let connection_internal = ConnectionInternal {
                                         addr,
                                         shared,
+                                        hci_evt_tx: core_conn.evt_tx.clone(),
                                     };
 
                                     assert!(connections.lock().await.insert(handle, connection_internal).is_none());
@@ -221,8 +228,8 @@ async fn provide_acl_manager(
                                     role: AcceptConnectionRequestRole::BecomeCentral
                                 }).await;
                             }
-
-                        }
+                        },
+                        AuthenticationComplete(e) => dispatch_to(e.get_connection_handle(), &connections, evt).await,
                         _ => unimplemented!(),
                     }
                 }
@@ -244,6 +251,16 @@ fn build_create_connection(bd_addr: Address) -> CreateConnectionBuilder {
     }
 }
 
+async fn dispatch_to(
+    handle: u16,
+    connections: &Arc<Mutex<HashMap<u16, ConnectionInternal>>>,
+    event: EventPacket,
+) {
+    if let Some(c) = connections.lock().await.get_mut(&handle) {
+        c.hci_evt_tx.send(event).await.unwrap();
+    }
+}
+
 async fn run_connection(
     handle: u16,
     evt_tx: Sender<ConnectionEvent>,
@@ -255,12 +272,14 @@ async fn run_connection(
     loop {
         select! {
             Some(evt) = core.evt_rx.recv() => {
-                match evt {
-                    core::Event::Disconnected(reason) => {
+                match evt.specialize() {
+                    DisconnectionComplete(evt) => {
                         connections.lock().await.remove(&handle);
-                        evt_tx.send(ConnectionEvent::Disconnected(reason)).await.unwrap();
+                        evt_tx.send(ConnectionEvent::Disconnected(evt.get_reason())).await.unwrap();
                         return; // At this point, there is nothing more to run on the connection.
-                    }
+                    },
+                    AuthenticationComplete(_) => evt_tx.send(ConnectionEvent::AuthenticationComplete).await.unwrap(),
+                    _ => unimplemented!(),
                 }
             },
             Some(req) = req_rx.recv() => {
