@@ -248,14 +248,9 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         l2ble_sec_access_req(p_ccb->p_lcb->remote_bd_addr, p_ccb->p_rcb->psm,
                              true, &l2c_link_sec_comp2, p_ccb);
       } else {
-        /* Cancel sniff mode if needed */
-        tBTM_PM_PWR_MD settings;
-        memset((void*)&settings, 0, sizeof(settings));
-        settings.mode = BTM_PM_MD_ACTIVE;
-
-        BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_ccb->p_lcb->remote_bd_addr,
-                         &settings);
-
+        if (!BTM_SetLinkPolicyActiveMode(p_ccb->p_lcb->remote_bd_addr)) {
+          LOG_WARN("Unable to set link policy active");
+        }
         /* If sec access does not result in started SEC_COM or COMP_NEG are
          * already processed */
         if (btm_sec_l2cap_access_req(
@@ -321,16 +316,9 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             break;
         }
       } else {
-        /* Cancel sniff mode if needed */
-        {
-          tBTM_PM_PWR_MD settings;
-          memset((void*)&settings, 0, sizeof(settings));
-          settings.mode = BTM_PM_MD_ACTIVE;
-
-          BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_ccb->p_lcb->remote_bd_addr,
-                           &settings);
+        if (!BTM_SetLinkPolicyActiveMode(p_ccb->p_lcb->remote_bd_addr)) {
+          LOG_WARN("Unable to set link policy active");
         }
-
         p_ccb->chnl_state = CST_TERM_W4_SEC_COMP;
         auto status = btm_sec_l2cap_access_req(p_ccb->p_lcb->remote_bd_addr,
                                                p_ccb->p_rcb->psm, false,
@@ -1248,13 +1236,8 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
     case L2CEVT_L2CAP_DISCONNECT_REQ: /* Peer disconnected request */
       if (p_ccb->p_lcb->transport != BT_TRANSPORT_LE) {
-        /* Make sure we are not in sniff mode */
-        {
-          tBTM_PM_PWR_MD settings;
-          memset((void*)&settings, 0, sizeof(settings));
-          settings.mode = BTM_PM_MD_ACTIVE;
-          BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_ccb->p_lcb->remote_bd_addr,
-                           &settings);
+        if (!BTM_SetLinkPolicyActiveMode(p_ccb->p_lcb->remote_bd_addr)) {
+          LOG_WARN("Unable to set link policy active");
         }
       }
 
@@ -1276,12 +1259,8 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     case L2CEVT_L2CA_DISCONNECT_REQ: /* Upper wants to disconnect */
       if (p_ccb->p_lcb->transport != BT_TRANSPORT_LE) {
         /* Make sure we are not in sniff mode */
-        {
-          tBTM_PM_PWR_MD settings;
-          memset((void*)&settings, 0, sizeof(settings));
-          settings.mode = BTM_PM_MD_ACTIVE;
-          BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_ccb->p_lcb->remote_bd_addr,
-                           &settings);
+        if (!BTM_SetLinkPolicyActiveMode(p_ccb->p_lcb->remote_bd_addr)) {
+          LOG_WARN("Unable to set link policy active");
         }
       }
 
