@@ -1573,7 +1573,7 @@ bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr) {
     return false;
   }
 
-  return (p_dev_rec->remote_supports_secure_connections);
+  return (p_dev_rec->SupportsSecureConnections());
 }
 
 /*******************************************************************************
@@ -1791,12 +1791,11 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
         controller_get_interface()->supports_secure_connections();
     /* acceptor receives L2CAP Channel Connect Request for Secure Connections
      * Only service */
-    if (!(local_supports_sc) ||
-        !(p_dev_rec->remote_supports_secure_connections)) {
+    if (!(local_supports_sc) || !(p_dev_rec->SupportsSecureConnections())) {
       BTM_TRACE_DEBUG("%s: SC only service, local_support_for_sc %d",
-                      "rmt_support_for_sc : %d -> fail pairing", __func__,
+                      "rmt_support_for_sc : %s -> fail pairing", __func__,
                       local_supports_sc,
-                      p_dev_rec->remote_supports_secure_connections);
+                      logbool(p_dev_rec->SupportsSecureConnections()).c_str());
       if (p_callback)
         (*p_callback)(&bd_addr, transport, (void*)p_ref_data,
                       BTM_MODE4_LEVEL4_NOT_SUPPORTED);
@@ -2219,13 +2218,11 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
         controller_get_interface()->supports_secure_connections();
     /* acceptor receives service connection establishment Request for */
     /* Secure Connections Only service */
-    if (!(local_supports_sc) ||
-        !(p_dev_rec->remote_supports_secure_connections)) {
+    if (!(local_supports_sc) || !(p_dev_rec->SupportsSecureConnections())) {
       BTM_TRACE_DEBUG("%s: SC only service,local_support_for_sc %d,",
                       "remote_support_for_sc %d: fail pairing", __func__,
                       local_supports_sc,
-                      p_dev_rec->remote_supports_secure_connections);
-
+                      p_dev_rec->SupportsSecureConnections());
       if (p_callback)
         (*p_callback)(&bd_addr, transport, (void*)p_ref_data,
                       BTM_MODE4_LEVEL4_NOT_SUPPORTED);
@@ -3021,12 +3018,11 @@ void btm_io_capabilities_req(const RawAddress& p) {
     bool local_supports_sc =
         controller_get_interface()->supports_secure_connections();
     /* device in Secure Connections Only mode */
-    if (!(local_supports_sc) ||
-        !(p_dev_rec->remote_supports_secure_connections)) {
+    if (!(local_supports_sc) || !(p_dev_rec->SupportsSecureConnections())) {
       BTM_TRACE_DEBUG("%s: SC only service, local_support_for_sc %d,",
                       " remote_support_for_sc 0x%02x -> fail pairing", __func__,
                       local_supports_sc,
-                      p_dev_rec->remote_supports_secure_connections);
+                      p_dev_rec->SupportsSecureConnections());
 
       err_code = HCI_ERR_PAIRING_NOT_ALLOWED;
     }
@@ -5581,7 +5577,7 @@ void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
 
   BTM_TRACE_API("%s: sm4: 0x%02x, rmt_support_for_secure_connections %d",
                 __func__, p_dev_rec->sm4,
-                p_dev_rec->remote_supports_secure_connections);
+                p_dev_rec->SupportsSecureConnections());
 
   if (p_dev_rec->remote_features_needed) {
     BTM_TRACE_EVENT(
