@@ -318,7 +318,17 @@ typedef struct {
   uint8_t sm4;                /* BTM_SM4_TRUE, if the peer supports SM4 */
   tBTM_IO_CAP rmt_io_caps;    /* IO capability of the peer device */
   tBTM_AUTH_REQ rmt_auth_req; /* the auth_req flag as in the IO caps rsp evt */
+
   bool remote_supports_secure_connections;
+  friend void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
+                                        bool sc_supported,
+                                        bool hci_role_switch_supported);
+
+ public:
+  bool SupportsSecureConnections() const {
+    return remote_supports_secure_connections;
+  }
+
   bool remote_features_needed; /* set to true if the local device is in */
   /* "Secure Connections Only" mode and it receives */
   /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
