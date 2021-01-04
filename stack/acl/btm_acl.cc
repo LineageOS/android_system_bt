@@ -3009,3 +3009,11 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
     NotifyAclFeaturesReadComplete(*p_acl, max_page_number);
   }
 }
+
+void ACL_RegisterClient(struct acl_client_callback_s* callbacks) {
+  LOG_DEBUG("UNIMPLEMENTED");
+}
+
+void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
+  LOG_DEBUG("UNIMPLEMENTED");
+}
