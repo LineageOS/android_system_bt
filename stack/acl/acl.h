@@ -162,7 +162,7 @@ typedef struct {
   void Init() { state = BTM_PM_ST_ACTIVE; }
 } tBTM_PM_MCB;
 
-typedef struct {
+struct sACL_CONN {
   BD_FEATURES peer_le_features;
   bool peer_le_features_valid;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
@@ -280,7 +280,8 @@ typedef struct {
 
  public:
   uint8_t sca; /* Sleep clock accuracy */
-} tACL_CONN;
+};
+typedef sACL_CONN tACL_CONN;
 
 /****************************************************
  **      ACL Management API
