@@ -58,9 +58,7 @@ typedef struct {
   tBTA_SYS_EIR_CBACK* eir_cb; /* add/remove UUID into EIR */
   tBTA_SYS_CUST_EIR_CBACK* cust_eir_cb; /* add/remove customer UUID into EIR */
 #endif
-#if (BTM_SSR_INCLUDED == TRUE)
   tBTA_SYS_SSR_CFG_CBACK* p_ssr_cb;
-#endif
   /* VS event handler */
   tBTA_SYS_VS_EVT_HDLR* p_vs_evt_hdlr;
 
