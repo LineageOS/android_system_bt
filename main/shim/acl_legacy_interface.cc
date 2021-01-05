@@ -48,7 +48,7 @@ const acl_interface_t GetAclInterface() {
       .link.classic.on_qos_setup_complete = nullptr,
       .link.classic.on_read_afh_channel_map_complete = nullptr,
       .link.classic.on_read_automatic_flush_timeout_complete = nullptr,
-      .link.classic.on_sniff_subrating = nullptr,
+      .link.classic.on_sniff_subrating = btm_pm_on_sniff_subrating,
       .link.classic.on_read_clock_complete = nullptr,
       .link.classic.on_read_clock_offset_complete = nullptr,
       .link.classic.on_read_failed_contact_counter_complete = nullptr,
