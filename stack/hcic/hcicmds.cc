@@ -598,7 +598,7 @@ void btsnd_hcic_qos_setup(uint16_t handle, uint8_t flags, uint8_t service_type,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_switch_role(const RawAddress& bd_addr, uint8_t role) {
+static void btsnd_hcic_switch_role(const RawAddress& bd_addr, uint8_t role) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1433,6 +1433,7 @@ void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode, uint8_t len,
 
 bluetooth::legacy::hci::Interface interface_ = {
     .Disconnect = btsnd_hcic_disconnect,
+    .StartRoleSwitch = btsnd_hcic_switch_role,
 };
 
 const bluetooth::legacy::hci::Interface&

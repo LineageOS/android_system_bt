@@ -1111,7 +1111,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
             << ", call_state=" << dump_hf_call_state(call_setup_state)
             << ", prev_call_state="
             << dump_hf_call_state(control_block.call_setup_state);
-  tBTA_AG_RES res = 0xFF;
+  tBTA_AG_RES res = BTA_AG_UNKNOWN;
   bt_status_t status = BT_STATUS_SUCCESS;
   bool active_call_updated = false;
 
