@@ -340,6 +340,14 @@ void Link::OnModeChange(hci::Mode current_mode, uint16_t interval) {
   LOG_INFO("UNIMPLEMENTED %s mode:%s interval:%d", __func__, hci::ModeText(current_mode).c_str(), interval);
 }
 
+void Link::OnSniffSubrating(
+    uint16_t maximum_transmit_latency,
+    uint16_t maximum_receive_latency,
+    uint16_t minimum_remote_timeout,
+    uint16_t minimum_local_timeout) {
+  LOG_INFO("UNIMPLEMENTED");
+}
+
 void Link::OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
                               uint32_t latency, uint32_t delay_variation) {
   LOG_INFO(
