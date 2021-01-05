@@ -946,8 +946,6 @@ void btsnd_hcic_write_cur_iac_lap(uint8_t num_cur_iac, LAP* const iac_lap) {
 /******************************************
  *    Lisbon Features
  ******************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
-
 void btsnd_hcic_sniff_sub_rate(uint16_t handle, uint16_t max_lat,
                                uint16_t min_remote_lat,
                                uint16_t min_local_lat) {
@@ -967,7 +965,6 @@ void btsnd_hcic_sniff_sub_rate(uint16_t handle, uint16_t max_lat,
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
-#endif /* BTM_SSR_INCLUDED */
 
 /**** Extended Inquiry Response Commands ****/
 void btsnd_hcic_write_ext_inquiry_response(void* buffer, uint8_t fec_req) {
