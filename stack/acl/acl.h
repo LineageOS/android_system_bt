@@ -112,6 +112,23 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
   }
 }
 
+struct sACL_CONN;
+
+namespace bluetooth {
+namespace shim {
+tBTM_STATUS BTM_SetPowerMode(sACL_CONN& p_acl, const tBTM_PM_PWR_MD& new_mode);
+tBTM_STATUS BTM_SetSsrParams(sACL_CONN& p_acl, uint16_t max_lat,
+                             uint16_t min_rmt_to, uint16_t min_loc_to);
+void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
+                           tHCI_MODE hci_mode, uint16_t interval);
+void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
+                               uint16_t maximum_transmit_latency,
+                               uint16_t maximum_receive_latency,
+                               uint16_t minimum_remote_timeout,
+                               uint16_t minimum_local_timeout);
+}  // namespace shim
+}  // namespace bluetooth
+
 typedef struct {
   uint16_t max_xmit_latency;
   uint16_t max_recv_latency;
@@ -280,6 +297,62 @@ struct sACL_CONN {
 
  public:
   uint8_t sca; /* Sleep clock accuracy */
+
+  struct sPolicy {
+    tBTM_PM_MODE Mode() const;
+    struct {
+      bool IsPending() const { return pending_ != BTM_PM_MD_UNKNOWN; }
+      tBTM_PM_MODE Pending() const { return pending_; }
+      uint16_t Interval() const { return interval_; }
+
+     private:
+      tBTM_PM_MODE mode_{BTM_PM_MD_ACTIVE};
+      tBTM_PM_MODE pending_{BTM_PM_MD_UNKNOWN};
+      uint16_t interval_{0};
+      friend tBTM_STATUS bluetooth::shim::BTM_SetPowerMode(
+          sACL_CONN& p_acl, const tBTM_PM_PWR_MD& new_mode);
+      friend void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status,
+                                                         uint16_t handle,
+                                                         tHCI_MODE hci_mode,
+                                                         uint16_t interval);
+      friend void sACL_CONN::Reset();
+      friend tBTM_PM_MODE sACL_CONN::sPolicy::Mode() const;
+    } mode;
+
+    hci_role_t Role() const;
+    struct {
+      unsigned RoleSwitchFailedCount() const { return role_switch_failed_cnt_; }
+
+     private:
+      hci_role_t role_{HCI_ROLE_CENTRAL};
+      unsigned role_switch_failed_cnt_{0};
+      friend void sACL_CONN::Reset();
+      friend tBTM_PM_MODE sACL_CONN::sPolicy::Role() const;
+    } role;
+
+    struct {
+      bool IsPending() const { return pending_; }
+
+     private:
+      bool pending_{false};
+      friend tBTM_STATUS bluetooth::shim::BTM_SetSsrParams(sACL_CONN& p_acl,
+                                                           uint16_t max_lat,
+                                                           uint16_t min_rmt_to,
+                                                           uint16_t min_loc_to);
+      friend void bluetooth::shim::btm_pm_on_sniff_subrating(
+          tHCI_STATUS status, uint16_t handle,
+          uint16_t maximum_transmit_latency, uint16_t maximum_receive_latency,
+          uint16_t minimum_remote_timeout, uint16_t minimum_local_timeout);
+      friend void sACL_CONN::Reset();
+    } sniff_subrating;
+
+    tLINK_POLICY Settings() const { return settings_; }
+
+   private:
+    tLINK_POLICY settings_{kAllLinkPoliciesEnabled};
+    friend void btm_set_link_policy(sACL_CONN* conn, tLINK_POLICY policy);
+    friend void sACL_CONN::Reset();
+  } policy;
 };
 typedef sACL_CONN tACL_CONN;
 
