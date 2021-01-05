@@ -454,10 +454,8 @@ void btm_acl_removed(uint16_t handle) {
     return;
   }
   p_acl->in_use = false;
-
   NotifyAclLinkDown(*p_acl);
-
-  memset(p_acl, 0, sizeof(tACL_CONN));
+  p_acl->Reset();
 }
 
 /*******************************************************************************
