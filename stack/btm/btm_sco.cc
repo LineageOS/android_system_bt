@@ -541,8 +541,10 @@ void btm_sco_chk_pend_rolechange(uint16_t hci_handle) {
 void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
 
-  BTM_TRACE_DEBUG("%s: hci_handle 0x%04x, p->state 0x%02x", __func__,
-                  hci_handle, p->state);
+  LOG_DEBUG(
+      "Checking for SCO pending mode change events hci_handle:0x%04x "
+      "p->state:%s",
+      hci_handle, sco_state_text(p->state).c_str());
 
   for (uint16_t xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if ((p->state == SCO_ST_PEND_MODECHANGE) &&
@@ -550,7 +552,7 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
             hci_handle)
 
     {
-      BTM_TRACE_DEBUG("%s: SCO Link handle 0x%04x", __func__, p->hci_handle);
+      LOG_DEBUG("Removing SCO Link handle 0x%04x", p->hci_handle);
       BTM_RemoveSco(xx);
     }
   }
@@ -770,6 +772,8 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   p->state = SCO_ST_DISCONNECTING;
 
   acl_disconnect_from_handle(p->hci_handle, HCI_ERR_PEER_USER);
+  BTM_LogHistory("SCO", p->esco.data.bd_addr, "Disconnecting",
+                 "local initiated");
 
   return (BTM_CMD_STARTED);
 }

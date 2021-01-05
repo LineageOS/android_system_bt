@@ -296,6 +296,7 @@ void btsnd_hcic_write_voice_settings(uint16_t flags) {
 
 bluetooth::legacy::hci::Interface interface_ = {
     .Disconnect = btsnd_hcic_disconnect,
+    .StartRoleSwitch = btsnd_hcic_switch_role,
 };
 
 const bluetooth::legacy::hci::Interface&

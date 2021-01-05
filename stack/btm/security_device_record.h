@@ -152,6 +152,20 @@ typedef enum : uint8_t {
   BTM_SEC_STATE_DISCONNECTING_BOTH = 9,
 } tSECURITY_STATE;
 
+typedef enum : uint8_t {
+  BTM_SM4_UNKNOWN = 0x00,
+  BTM_SM4_KNOWN = 0x10,
+  BTM_SM4_TRUE = 0x11,
+  BTM_SM4_REQ_PEND = 0x08, /* set this bit when getting remote features */
+  BTM_SM4_UPGRADE = 0x04,  /* set this bit when upgrading link key */
+  BTM_SM4_RETRY = 0x02,    /* set this bit to retry on HCI_ERR_KEY_MISSING or \
+                              HCI_ERR_LMP_ERR_TRANS_COLLISION */
+  BTM_SM4_DD_ACP =
+      0x20, /* set this bit to indicate peer initiated dedicated bonding */
+  BTM_SM4_CONN_PEND = 0x40, /* set this bit to indicate accepting acl conn; to
+                             be cleared on \ btm_acl_created */
+} tBTM_SM4_BIT;
+
 /*
  * Define structure for Security Device Record.
  * A record exists for each device authenticated with this device
@@ -302,23 +316,20 @@ typedef struct {
                              name */
   uint8_t link_key_type;  /* Type of key used in pairing   */
 
-#define BTM_SM4_UNKNOWN 0x00
-#define BTM_SM4_KNOWN 0x10
-#define BTM_SM4_TRUE 0x11
-#define BTM_SM4_REQ_PEND 0x08 /* set this bit when getting remote features */
-#define BTM_SM4_UPGRADE 0x04  /* set this bit when upgrading link key */
-#define BTM_SM4_RETRY                                     \
-  0x02 /* set this bit to retry on HCI_ERR_KEY_MISSING or \
-          HCI_ERR_LMP_ERR_TRANS_COLLISION */
-#define BTM_SM4_DD_ACP \
-  0x20 /* set this bit to indicate peer initiated dedicated bonding */
-#define BTM_SM4_CONN_PEND                                               \
-  0x40 /* set this bit to indicate accepting acl conn; to be cleared on \
-          btm_acl_created */
   uint8_t sm4;                /* BTM_SM4_TRUE, if the peer supports SM4 */
   tBTM_IO_CAP rmt_io_caps;    /* IO capability of the peer device */
   tBTM_AUTH_REQ rmt_auth_req; /* the auth_req flag as in the IO caps rsp evt */
+
   bool remote_supports_secure_connections;
+  friend void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
+                                        bool sc_supported,
+                                        bool hci_role_switch_supported);
+
+ public:
+  bool SupportsSecureConnections() const {
+    return remote_supports_secure_connections;
+  }
+
   bool remote_features_needed; /* set to true if the local device is in */
   /* "Secure Connections Only" mode and it receives */
   /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */

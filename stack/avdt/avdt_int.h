@@ -98,7 +98,7 @@ enum {
 };
 
 /* state machine action enumeration list */
-enum {
+enum : uint8_t {
   AVDT_CCB_CHAN_OPEN,
   AVDT_CCB_CHAN_CLOSE,
   AVDT_CCB_CHK_CLOSE,
