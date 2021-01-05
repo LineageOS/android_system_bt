@@ -704,6 +704,7 @@ cc_test {
         "test/common/mock_main_shim_l2c_api.cc",
         "test/common/mock_main_shim_btm_api.cc",
         "test/common/mock_main_shim_controller.cc",
+        "test/common/mock_main_shim_link_policy.cc",
         "test/common/mock_smp_smp_act.cc",
         "test/common/mock_smp_smp_api.cc",
     ],
