@@ -205,6 +205,8 @@ struct sACL_CONN {
   uint16_t hci_handle;
   tLINK_POLICY link_policy;
 
+ public:
+  uint16_t Handle() const { return hci_handle; }
   uint16_t link_super_tout;
   uint16_t pkt_types_mask;
   tBLE_ADDR_TYPE active_remote_addr_type;
