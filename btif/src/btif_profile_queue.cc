@@ -99,14 +99,13 @@ static void queue_int_add(uint16_t uuid, const RawAddress& bda,
   ConnectNode param(bda, uuid, connect_cb);
   for (const auto& node : connect_queue) {
     if (node.uuid() == param.uuid() && node.address() == param.address()) {
-      LOG_ERROR("%s: dropping duplicate connection request: %s", __func__,
+      LOG_ERROR("Dropping duplicate profile connection request:%s",
                 param.ToString().c_str());
       return;
     }
   }
 
-  LOG_INFO("%s: adding connection request: %s", __func__,
-           param.ToString().c_str());
+  LOG_INFO("Queueing profile connection request:%s", param.ToString().c_str());
   connect_queue.push_back(param);
 
   btif_queue_connect_next();
