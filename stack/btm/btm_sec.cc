@@ -39,6 +39,7 @@
 #include "hcimsgs.h"
 #include "l2c_api.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/dumpsys.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -758,6 +759,9 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
 
   p_dev_rec->security_required = BTM_SEC_OUT_AUTHENTICATE;
   p_dev_rec->is_originator = true;
+
+  BTM_LogHistory("Sec", bd_addr, "Bonding initiated",
+                 BtTransportText(transport));
 
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_init_pseudo_addr(p_dev_rec, bd_addr);
@@ -3077,6 +3081,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
         btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_PEER_USER,
                                     p_dev_rec->hci_handle);
     } else {
+      BTM_LogHistory("Sec", p_dev_rec->bd_addr, "Bonding completed",
+                     hci_error_code_text(status));
       BTM_TRACE_DEBUG("TRYING TO DECIDE IF CAN USE SMP_BR_CHNL");
       if (p_dev_rec->new_encryption_key_is_p256 &&
           (btm_sec_use_smp_br_chnl(p_dev_rec))
