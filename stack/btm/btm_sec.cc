@@ -116,6 +116,15 @@ static const bool btm_sec_io_map[BTM_IO_CAP_MAX][BTM_IO_CAP_MAX] = {
 /*  BTM_IO_CAP_IN       2   KeyboardOnly */
 /*  BTM_IO_CAP_NONE     3   NoInputNoOutput */
 
+static void NotifyBondingChange(tBTM_SEC_DEV_REC& p_dev_rec,
+                                tHCI_STATUS status) {
+  if (btm_cb.api.p_auth_complete_callback != nullptr) {
+    (*btm_cb.api.p_auth_complete_callback)(
+        p_dev_rec.bd_addr, static_cast<uint8_t*>(p_dev_rec.dev_class),
+        p_dev_rec.sec_bd_name, status);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btm_dev_authenticated
@@ -669,10 +678,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
       btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
       p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_AUTHED;
 
-      if (btm_cb.api.p_auth_complete_callback)
-        (*btm_cb.api.p_auth_complete_callback)(
-            p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-            HCI_ERR_AUTH_FAILURE);
+      NotifyBondingChange(*p_dev_rec, HCI_ERR_AUTH_FAILURE);
     }
     return;
   }
@@ -2237,11 +2243,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
       if (status != HCI_SUCCESS) {
         btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
 
-        if (btm_cb.api.p_auth_complete_callback)
-          (*btm_cb.api.p_auth_complete_callback)(
-              p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-              status);
-        return;
+        return NotifyBondingChange(*p_dev_rec, status);
       }
 
       /* if peer is very old legacy devices, HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT is
@@ -2283,11 +2285,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
 
           btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
 
-          if (btm_cb.api.p_auth_complete_callback) {
-            (*btm_cb.api.p_auth_complete_callback)(
-                p_dev_rec->bd_addr, p_dev_rec->dev_class,
-                p_dev_rec->sec_bd_name, HCI_ERR_MEMORY_FULL);
-          }
+          NotifyBondingChange(*p_dev_rec, HCI_ERR_MEMORY_FULL);
         }
       }
       return;
@@ -2296,11 +2294,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
       if (BTM_ReadRemoteDeviceName(btm_cb.pairing_bda, NULL,
                                    BT_TRANSPORT_BR_EDR) != BTM_CMD_STARTED) {
         BTM_TRACE_ERROR("%s: failed to start remote name request", __func__);
-        if (btm_cb.api.p_auth_complete_callback) {
-          (*btm_cb.api.p_auth_complete_callback)(
-              p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-              HCI_ERR_MEMORY_FULL);
-        }
+        NotifyBondingChange(*p_dev_rec, HCI_ERR_MEMORY_FULL);
       };
       return;
     }
@@ -3057,11 +3051,8 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
   }
 
   if (was_authenticating == false) {
-    if ((btm_cb.api.p_auth_complete_callback && status != HCI_SUCCESS) &&
-        (old_state != BTM_PAIR_STATE_IDLE)) {
-      (*btm_cb.api.p_auth_complete_callback)(p_dev_rec->bd_addr,
-                                             p_dev_rec->dev_class,
-                                             p_dev_rec->sec_bd_name, status);
+    if (status != HCI_SUCCESS && old_state != BTM_PAIR_STATE_IDLE) {
+      NotifyBondingChange(*p_dev_rec, status);
     }
     return;
   }
@@ -3309,10 +3300,7 @@ static void btm_sec_connect_after_reject_timeout(UNUSED_ATTR void* data) {
 
     btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
 
-    if (btm_cb.api.p_auth_complete_callback)
-      (*btm_cb.api.p_auth_complete_callback)(
-          p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-          HCI_ERR_MEMORY_FULL);
+    NotifyBondingChange(*p_dev_rec, HCI_ERR_MEMORY_FULL);
   }
 }
 
@@ -3472,11 +3460,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
       btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
 
       /* We need to notify host that the key is not known any more */
-      if (btm_cb.api.p_auth_complete_callback) {
-        (*btm_cb.api.p_auth_complete_callback)(p_dev_rec->bd_addr,
-                                               p_dev_rec->dev_class,
-                                               p_dev_rec->sec_bd_name, status);
-      }
+      NotifyBondingChange(*p_dev_rec, status);
     }
     /*
         Do not send authentication failure, if following conditions hold good
@@ -3504,11 +3488,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
 #endif
 
       /* We need to notify host that the key is not known any more */
-      if (btm_cb.api.p_auth_complete_callback) {
-        (*btm_cb.api.p_auth_complete_callback)(p_dev_rec->bd_addr,
-                                               p_dev_rec->dev_class,
-                                               p_dev_rec->sec_bd_name, status);
-      }
+      NotifyBondingChange(*p_dev_rec, status);
     }
 
     /* p_auth_complete_callback might have freed the p_dev_rec, ensure it exists
@@ -3674,9 +3654,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
       } else if (old_pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
         result = HCI_ERR_HOST_REJECT_SECURITY;
       }
-      (*btm_cb.api.p_auth_complete_callback)(p_dev_rec->bd_addr,
-                                             p_dev_rec->dev_class,
-                                             p_dev_rec->sec_bd_name, result);
+      NotifyBondingChange(*p_dev_rec, result);
 
       // |btm_cb.api.p_auth_complete_callback| may cause |p_dev_rec| to be
       // deallocated.
@@ -3941,9 +3919,7 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
           (*btm_cb.api.p_auth_complete_callback)(p_cb->pairing_bda, NULL, name,
                                                  HCI_ERR_CONNECTION_TOUT);
         } else
-          (*btm_cb.api.p_auth_complete_callback)(
-              p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-              HCI_ERR_CONNECTION_TOUT);
+          NotifyBondingChange(*p_dev_rec, HCI_ERR_CONNECTION_TOUT);
       }
       break;
 
@@ -3996,10 +3972,9 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
           name[0] = 0;
           (*btm_cb.api.p_auth_complete_callback)(p_cb->pairing_bda, NULL, name,
                                                  HCI_ERR_CONNECTION_TOUT);
-        } else
-          (*btm_cb.api.p_auth_complete_callback)(
-              p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-              HCI_ERR_CONNECTION_TOUT);
+        } else {
+          NotifyBondingChange(*p_dev_rec, HCI_ERR_CONNECTION_TOUT);
+        }
       }
       break;
 
