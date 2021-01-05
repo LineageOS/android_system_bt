@@ -25,6 +25,7 @@
 #include "gd/os/handler.h"
 #include "gd/packet/raw_builder.h"
 #include "main/shim/acl_legacy_interface.h"
+#include "main/shim/link_connection_interface.h"
 #include "main/shim/link_policy_interface.h"
 #include "stack/include/bt_types.h"
 
@@ -34,6 +35,7 @@ namespace legacy {
 
 class Acl : public hci::acl_manager::ConnectionCallbacks,
             public hci::acl_manager::LeConnectionCallbacks,
+            public LinkConnectionInterface,
             public LinkPolicyInterface {
  public:
   Acl(os::Handler* handler, const acl_interface_t& acl_interface);
@@ -52,13 +54,14 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void OnLeConnectFail(hci::AddressWithType, hci::ErrorCode reason) override;
   void OnLeLinkDisconnected(uint16_t handle, hci::ErrorCode reason);
 
-  void CreateClassicConnection(const bluetooth::hci::Address& address);
+  // LinkConnectionInterface
+  void CreateClassicConnection(const bluetooth::hci::Address& address) override;
   void CreateLeConnection(
-      const bluetooth::hci::AddressWithType& address_with_type);
+      const bluetooth::hci::AddressWithType& address_with_type) override;
   void CancelLeConnection(
-      const bluetooth::hci::AddressWithType& address_with_type);
-  void DisconnectClassic(uint16_t handle, tHCI_STATUS reason);
-  void DisconnectLe(uint16_t handle, tHCI_STATUS reason);
+      const bluetooth::hci::AddressWithType& address_with_type) override;
+  void DisconnectClassic(uint16_t handle, tHCI_STATUS reason) override;
+  void DisconnectLe(uint16_t handle, tHCI_STATUS reason) override;
 
   // LinkPolicyInterface
   bool HoldMode(uint16_t hci_handle, uint16_t max_interval,
