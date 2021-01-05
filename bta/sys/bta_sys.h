@@ -226,11 +226,9 @@ extern void bta_sys_idle(uint8_t id, uint8_t app_id,
 extern void bta_sys_busy(uint8_t id, uint8_t app_id,
                          const RawAddress& peer_addr);
 
-#if (BTM_SSR_INCLUDED == TRUE)
 extern void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback);
 extern void bta_sys_chg_ssr_config(uint8_t id, uint8_t app_id,
                                    uint16_t max_latency, uint16_t min_tout);
-#endif
 
 extern void bta_sys_role_chg_register(tBTA_SYS_CONN_CBACK* p_cback);
 extern void bta_sys_notify_role_chg(const RawAddress& peer_addr,
