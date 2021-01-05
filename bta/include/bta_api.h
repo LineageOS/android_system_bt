@@ -419,7 +419,8 @@ typedef struct {
 typedef struct {
   RawAddress bd_addr; /* BD address peer device. */
   BD_NAME bd_name;  /* Name of peer device. */
-  bluetooth::Uuid service; /* GATT based Services UUID found on peer device. */
+  std::vector<bluetooth::Uuid>*
+      services; /* GATT based Services UUID found on peer device. */
 } tBTA_DM_DISC_BLE_RES;
 
 /* Union of all search callback structures */
