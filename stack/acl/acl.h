@@ -366,8 +366,6 @@ typedef sACL_CONN tACL_CONN;
 typedef struct {
  private:
   friend bool BTM_IsBleConnection(uint16_t hci_handle);
-  friend bool BTM_ReadPowerMode(const RawAddress& remote_bda,
-                                tBTM_PM_MODE* p_mode);
   friend bool acl_is_role_switch_allowed();
   friend bool btm_pm_is_le_link(const RawAddress& remote_bda);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
@@ -382,7 +380,6 @@ typedef struct {
                                       uint16_t min_loc_to);
   friend tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                                tBTM_PM_STATE* pmState);
-  friend uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
   friend uint16_t BTM_GetNumAclLinks(void);
   friend uint16_t acl_get_link_supervision_timeout();
   friend uint16_t acl_get_supported_packet_types();
@@ -399,32 +396,12 @@ typedef struct {
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
   friend void btm_acl_init(void);
-  friend void btm_acl_process_sca_cmpl_pkt(uint8_t evt_len, uint8_t* p);
-  friend void btm_acl_role_changed(tHCI_STATUS hci_status,
-                                   const RawAddress& bd_addr, uint8_t new_role);
   friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
   friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
                                       uint16_t hci_handle, tHCI_MODE mode,
                                       uint16_t interval);
   friend void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
   friend void btm_pm_reset(void);
-  friend void btm_pm_sm_alloc(uint8_t ind);
-  friend void btm_process_clk_off_comp_evt(uint16_t hci_handle,
-                                           uint16_t clock_offset);
-  friend void btm_read_automatic_flush_timeout_complete(uint8_t* p);
-  friend void btm_read_failed_contact_counter_complete(uint8_t* p);
-  friend void btm_read_link_quality_complete(uint8_t* p);
-  friend void btm_read_remote_ext_features_complete(uint16_t handle,
-                                                    uint8_t page_num,
-                                                    uint8_t max_page,
-                                                    uint8_t* features);
-  friend void btm_read_remote_ext_features_failed(uint8_t status,
-                                                  uint16_t handle);
-  friend void btm_read_remote_features_complete(uint16_t handle,
-                                                uint8_t* features);
-  friend void btm_read_remote_version_complete_raw(uint8_t* p);
-  friend void btm_read_rssi_complete(uint8_t* p);
-  friend void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
   friend void DumpsysL2cap(int fd);
   friend void DumpsysAcl(int fd);
 
