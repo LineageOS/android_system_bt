@@ -128,8 +128,8 @@ static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
-static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
 static void check_link_policy(tLINK_POLICY* settings);
+void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
 
 namespace {
 void NotifyAclLinkUp(tACL_CONN& p_acl) {
@@ -667,7 +667,7 @@ static void check_link_policy(tLINK_POLICY* settings) {
   }
 }
 
-static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
+void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
   conn->link_policy = policy;
   check_link_policy(&conn->link_policy);
   if ((conn->link_policy & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
