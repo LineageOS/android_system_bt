@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <string>
+
 /*
  *  Definitions for HCI Error Codes that are passed in the events
  */

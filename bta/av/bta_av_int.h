@@ -32,6 +32,10 @@
 #include "osi/include/list.h"
 #include "stack/include/a2dp_api.h"
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
@@ -226,13 +230,25 @@ typedef struct {
   uint16_t service_uuid;
 } tBTA_AV_API_REG;
 
-enum {
+typedef enum : uint8_t {
   BTA_AV_RS_NONE, /* straight API call */
   BTA_AV_RS_OK,   /* the role switch result - successful */
   BTA_AV_RS_FAIL, /* the role switch result - failed */
   BTA_AV_RS_DONE  /* the role switch is done - continue */
-};
-typedef uint8_t tBTA_AV_RS_RES;
+} tBTA_AV_RS_RES;
+
+inline std::string bta_av_role_switch_result_text(
+    const tBTA_AV_RS_RES& result) {
+  switch (result) {
+    CASE_RETURN_TEXT(BTA_AV_RS_NONE);
+    CASE_RETURN_TEXT(BTA_AV_RS_OK);
+    CASE_RETURN_TEXT(BTA_AV_RS_FAIL);
+    CASE_RETURN_TEXT(BTA_AV_RS_DONE);
+    default:
+      return std::string("UNKNOWN");
+  }
+}
+
 /* data type for BTA_AV_API_OPEN_EVT */
 typedef struct {
   BT_HDR hdr;
