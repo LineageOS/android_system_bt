@@ -245,6 +245,16 @@ class ClassicShimAclConnection
                         ToLegacyHciMode(current_mode), interval);
   }
 
+  void OnSniffSubrating(uint16_t maximum_transmit_latency,
+                        uint16_t maximum_receive_latency,
+                        uint16_t minimum_remote_timeout,
+                        uint16_t minimum_local_timeout) {
+    TRY_POSTING_ON_MAIN(interface_.on_sniff_subrating,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        maximum_transmit_latency, maximum_receive_latency,
+                        minimum_remote_timeout, minimum_local_timeout);
+  }
+
   void OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate,
                           uint32_t peak_bandwidth, uint32_t latency,
                           uint32_t delay_variation) override {
