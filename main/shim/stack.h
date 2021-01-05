@@ -20,6 +20,7 @@
 
 #include "main/shim/acl.h"
 #include "main/shim/btm.h"
+#include "main/shim/link_policy_interface.h"
 
 #include "gd/module.h"
 #include "gd/os/handler.h"
@@ -50,6 +51,8 @@ class Stack {
 
   StackManager* GetStackManager();
   legacy::Acl* GetAcl();
+  LinkPolicyInterface* LinkPolicy();
+
   Btm* GetBtm();
   os::Handler* GetHandler();
 
