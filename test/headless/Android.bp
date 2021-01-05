@@ -8,6 +8,7 @@ cc_test {
         "headless.cc",
         "main.cc",
         "pairing/pairing.cc",
+        "dumpsys/dumpsys.cc",
         "sdp/sdp.cc",
         "sdp/sdp_db.cc",
         "nop/nop.cc",
@@ -16,6 +17,7 @@ cc_test {
     ],
     include_dirs: [
         "system/bt",
+        "system/bt/gd",
         "system/bt/stack/include",
     ],
     whole_static_libs: [
@@ -63,4 +65,7 @@ cc_test {
         "libutils",
     ],
     ldflags: ["-rdynamic"],
+    sanitize: {
+      cfi: false,
+    },
 }
