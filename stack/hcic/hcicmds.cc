@@ -35,6 +35,454 @@
 #include "btm_int.h" /* Included for UIPC_* macro definitions */
 #include "stack/include/acl_hci_link_interface.h"
 
+#include "bt_target.h"
+#include "bt_types.h"
+#include "device/include/esco_parameters.h"
+#include "hcidefs.h"
+
+#include <base/callback_forward.h>
+
+void bte_main_hci_send(BT_HDR* p_msg, uint16_t event);
+
+/* Message by message.... */
+
+#define HCIC_PARAM_SIZE_INQUIRY 5
+
+#define HCIC_INQ_INQ_LAP_OFF 0
+#define HCIC_INQ_DUR_OFF 3
+#define HCIC_INQ_RSP_CNT_OFF 4
+/* Inquiry */
+
+/* Inquiry Cancel */
+#define HCIC_PARAM_SIZE_INQ_CANCEL 0
+
+/* Periodic Inquiry Mode */
+#define HCIC_PARAM_SIZE_PER_INQ_MODE 9
+
+#define HCI_PER_INQ_MAX_INTRVL_OFF 0
+#define HCI_PER_INQ_MIN_INTRVL_OFF 2
+#define HCI_PER_INQ_INQ_LAP_OFF 4
+#define HCI_PER_INQ_DURATION_OFF 7
+#define HCI_PER_INQ_RSP_CNT_OFF 8
+/* Periodic Inquiry Mode */
+
+/* Exit Periodic Inquiry Mode */
+#define HCIC_PARAM_SIZE_EXIT_PER_INQ 0
+
+/* Create Connection */
+#define HCIC_PARAM_SIZE_CREATE_CONN 13
+
+#define HCIC_CR_CONN_BD_ADDR_OFF 0
+#define HCIC_CR_CONN_PKT_TYPES_OFF 6
+#define HCIC_CR_CONN_REP_MODE_OFF 8
+#define HCIC_CR_CONN_PAGE_SCAN_MODE_OFF 9
+#define HCIC_CR_CONN_CLK_OFF_OFF 10
+#define HCIC_CR_CONN_ALLOW_SWITCH_OFF 12
+/* Create Connection */
+
+/* Disconnect */
+#define HCIC_PARAM_SIZE_DISCONNECT 3
+
+#define HCI_DISC_HANDLE_OFF 0
+#define HCI_DISC_REASON_OFF 2
+/* Disconnect */
+
+/* Add SCO Connection */
+#define HCIC_PARAM_SIZE_ADD_SCO_CONN 4
+
+#define HCI_ADD_SCO_HANDLE_OFF 0
+#define HCI_ADD_SCO_PACKET_TYPES_OFF 2
+/* Add SCO Connection */
+
+/* Create Connection Cancel */
+#define HCIC_PARAM_SIZE_CREATE_CONN_CANCEL 6
+
+#define HCIC_CR_CONN_CANCEL_BD_ADDR_OFF 0
+/* Create Connection Cancel */
+
+/* Accept Connection Request */
+#define HCIC_PARAM_SIZE_ACCEPT_CONN 7
+
+#define HCI_ACC_CONN_BD_ADDR_OFF 0
+#define HCI_ACC_CONN_ROLE_OFF 6
+/* Accept Connection Request */
+
+/* Reject Connection Request */
+#define HCIC_PARAM_SIZE_REJECT_CONN 7
+
+#define HCI_REJ_CONN_BD_ADDR_OFF 0
+#define HCI_REJ_CONN_REASON_OFF 6
+/* Reject Connection Request */
+
+/* Link Key Request Reply */
+#define HCIC_PARAM_SIZE_LINK_KEY_REQ_REPLY 22
+
+#define HCI_LINK_KEY_REPLY_BD_ADDR_OFF 0
+#define HCI_LINK_KEY_REPLY_LINK_KEY_OFF 6
+/* Link Key Request Reply  */
+
+/* Link Key Request Neg Reply */
+#define HCIC_PARAM_SIZE_LINK_KEY_NEG_REPLY 6
+
+#define HCI_LINK_KEY_NEG_REP_BD_ADR_OFF 0
+/* Link Key Request Neg Reply  */
+
+/* PIN Code Request Reply */
+#define HCIC_PARAM_SIZE_PIN_CODE_REQ_REPLY 23
+
+#define HCI_PIN_CODE_REPLY_BD_ADDR_OFF 0
+#define HCI_PIN_CODE_REPLY_PIN_LEN_OFF 6
+#define HCI_PIN_CODE_REPLY_PIN_CODE_OFF 7
+/* PIN Code Request Reply  */
+
+/* Link Key Request Neg Reply */
+#define HCIC_PARAM_SIZE_PIN_CODE_NEG_REPLY 6
+
+#define HCI_PIN_CODE_NEG_REP_BD_ADR_OFF 0
+/* Link Key Request Neg Reply  */
+
+/* Change Connection Type */
+#define HCIC_PARAM_SIZE_CHANGE_CONN_TYPE 4
+
+#define HCI_CHNG_PKT_TYPE_HANDLE_OFF 0
+#define HCI_CHNG_PKT_TYPE_PKT_TYPE_OFF 2
+/* Change Connection Type */
+
+#define HCIC_PARAM_SIZE_CMD_HANDLE 2
+
+#define HCI_CMD_HANDLE_HANDLE_OFF 0
+
+/* Set Connection Encryption */
+#define HCIC_PARAM_SIZE_SET_CONN_ENCRYPT 3
+
+#define HCI_SET_ENCRYPT_HANDLE_OFF 0
+#define HCI_SET_ENCRYPT_ENABLE_OFF 2
+/* Set Connection Encryption */
+
+/* Remote Name Request */
+#define HCIC_PARAM_SIZE_RMT_NAME_REQ 10
+
+#define HCI_RMT_NAME_BD_ADDR_OFF 0
+#define HCI_RMT_NAME_REP_MODE_OFF 6
+#define HCI_RMT_NAME_PAGE_SCAN_MODE_OFF 7
+#define HCI_RMT_NAME_CLK_OFF_OFF 8
+/* Remote Name Request */
+
+/* Remote Name Request Cancel */
+#define HCIC_PARAM_SIZE_RMT_NAME_REQ_CANCEL 6
+
+#define HCI_RMT_NAME_CANCEL_BD_ADDR_OFF 0
+/* Remote Name Request Cancel */
+
+/* Remote Extended Features */
+#define HCIC_PARAM_SIZE_RMT_EXT_FEATURES 3
+
+#define HCI_RMT_EXT_FEATURES_HANDLE_OFF 0
+#define HCI_RMT_EXT_FEATURES_PAGE_NUM_OFF 2
+/* Remote Extended Features */
+
+#define HCIC_PARAM_SIZE_SETUP_ESCO 17
+
+#define HCI_SETUP_ESCO_HANDLE_OFF 0
+#define HCI_SETUP_ESCO_TX_BW_OFF 2
+#define HCI_SETUP_ESCO_RX_BW_OFF 6
+#define HCI_SETUP_ESCO_MAX_LAT_OFF 10
+#define HCI_SETUP_ESCO_VOICE_OFF 12
+#define HCI_SETUP_ESCO_RETRAN_EFF_OFF 14
+#define HCI_SETUP_ESCO_PKT_TYPES_OFF 15
+
+#define HCIC_PARAM_SIZE_ACCEPT_ESCO 21
+
+#define HCI_ACCEPT_ESCO_BDADDR_OFF 0
+#define HCI_ACCEPT_ESCO_TX_BW_OFF 6
+#define HCI_ACCEPT_ESCO_RX_BW_OFF 10
+#define HCI_ACCEPT_ESCO_MAX_LAT_OFF 14
+#define HCI_ACCEPT_ESCO_VOICE_OFF 16
+#define HCI_ACCEPT_ESCO_RETRAN_EFF_OFF 18
+#define HCI_ACCEPT_ESCO_PKT_TYPES_OFF 19
+
+#define HCIC_PARAM_SIZE_REJECT_ESCO 7
+
+#define HCI_REJECT_ESCO_BDADDR_OFF 0
+#define HCI_REJECT_ESCO_REASON_OFF 6
+
+/* Hold Mode */
+#define HCIC_PARAM_SIZE_HOLD_MODE 6
+
+#define HCI_HOLD_MODE_HANDLE_OFF 0
+#define HCI_HOLD_MODE_MAX_PER_OFF 2
+#define HCI_HOLD_MODE_MIN_PER_OFF 4
+/* Hold Mode */
+
+/* Sniff Mode */
+#define HCIC_PARAM_SIZE_SNIFF_MODE 10
+
+#define HCI_SNIFF_MODE_HANDLE_OFF 0
+#define HCI_SNIFF_MODE_MAX_PER_OFF 2
+#define HCI_SNIFF_MODE_MIN_PER_OFF 4
+#define HCI_SNIFF_MODE_ATTEMPT_OFF 6
+#define HCI_SNIFF_MODE_TIMEOUT_OFF 8
+/* Sniff Mode */
+
+/* Park Mode */
+#define HCIC_PARAM_SIZE_PARK_MODE 6
+
+#define HCI_PARK_MODE_HANDLE_OFF 0
+#define HCI_PARK_MODE_MAX_PER_OFF 2
+#define HCI_PARK_MODE_MIN_PER_OFF 4
+/* Park Mode */
+
+/* QoS Setup */
+#define HCIC_PARAM_SIZE_QOS_SETUP 20
+
+#define HCI_QOS_HANDLE_OFF 0
+#define HCI_QOS_FLAGS_OFF 2
+#define HCI_QOS_SERVICE_TYPE_OFF 3
+#define HCI_QOS_TOKEN_RATE_OFF 4
+#define HCI_QOS_PEAK_BANDWIDTH_OFF 8
+#define HCI_QOS_LATENCY_OFF 12
+#define HCI_QOS_DELAY_VAR_OFF 16
+/* QoS Setup */
+
+#define HCIC_PARAM_SIZE_SWITCH_ROLE 7
+
+#define HCI_SWITCH_BD_ADDR_OFF 0
+#define HCI_SWITCH_ROLE_OFF 6
+/* Switch Role Request */
+
+/* Write Policy Settings */
+#define HCIC_PARAM_SIZE_WRITE_POLICY_SET 4
+
+#define HCI_WRITE_POLICY_HANDLE_OFF 0
+#define HCI_WRITE_POLICY_SETTINGS_OFF 2
+/* Write Policy Settings */
+
+/* Write Default Policy Settings */
+#define HCIC_PARAM_SIZE_WRITE_DEF_POLICY_SET 2
+
+#define HCI_WRITE_DEF_POLICY_SETTINGS_OFF 0
+/* Write Default Policy Settings */
+
+#define HCIC_PARAM_SIZE_SNIFF_SUB_RATE 8
+
+#define HCI_SNIFF_SUB_RATE_HANDLE_OFF 0
+#define HCI_SNIFF_SUB_RATE_MAX_LAT_OFF 2
+#define HCI_SNIFF_SUB_RATE_MIN_REM_LAT_OFF 4
+#define HCI_SNIFF_SUB_RATE_MIN_LOC_LAT_OFF 6
+/* Sniff Subrating */
+
+/* Extended Inquiry Response */
+#define HCIC_PARAM_SIZE_EXT_INQ_RESP 241
+
+#define HCIC_EXT_INQ_RESP_FEC_OFF 0
+#define HCIC_EXT_INQ_RESP_RESPONSE 1
+/* IO Capabilities Response */
+#define HCIC_PARAM_SIZE_IO_CAP_RESP 9
+
+#define HCI_IO_CAP_BD_ADDR_OFF 0
+#define HCI_IO_CAPABILITY_OFF 6
+#define HCI_IO_CAP_OOB_DATA_OFF 7
+#define HCI_IO_CAP_AUTH_REQ_OFF 8
+
+/* IO Capabilities Req Neg Reply */
+#define HCIC_PARAM_SIZE_IO_CAP_NEG_REPLY 7
+
+#define HCI_IO_CAP_NR_BD_ADDR_OFF 0
+#define HCI_IO_CAP_NR_ERR_CODE 6
+
+/* Read Local OOB Data */
+#define HCIC_PARAM_SIZE_R_LOCAL_OOB 0
+
+#define HCIC_PARAM_SIZE_UCONF_REPLY 6
+
+#define HCI_USER_CONF_BD_ADDR_OFF 0
+
+#define HCIC_PARAM_SIZE_U_PKEY_REPLY 10
+
+#define HCI_USER_PASSKEY_BD_ADDR_OFF 0
+#define HCI_USER_PASSKEY_VALUE_OFF 6
+
+#define HCIC_PARAM_SIZE_U_PKEY_NEG_REPLY 6
+
+#define HCI_USER_PASSKEY_NEG_BD_ADDR_OFF 0
+
+/* Remote OOB Data Request Reply */
+#define HCIC_PARAM_SIZE_REM_OOB_REPLY 38
+
+#define HCI_REM_OOB_DATA_BD_ADDR_OFF 0
+#define HCI_REM_OOB_DATA_C_OFF 6
+#define HCI_REM_OOB_DATA_R_OFF 22
+
+/* Remote OOB Data Request Negative Reply */
+#define HCIC_PARAM_SIZE_REM_OOB_NEG_REPLY 6
+
+#define HCI_REM_OOB_DATA_NEG_BD_ADDR_OFF 0
+
+/* Read Tx Power Level */
+#define HCIC_PARAM_SIZE_R_TX_POWER 0
+
+/* Read Default Erroneous Data Reporting */
+#define HCIC_PARAM_SIZE_R_ERR_DATA_RPT 0
+
+#define HCIC_PARAM_SIZE_ENHANCED_FLUSH 3
+
+#define HCIC_PARAM_SIZE_SEND_KEYPRESS_NOTIF 7
+
+#define HCI_SEND_KEYPRESS_NOTIF_BD_ADDR_OFF 0
+#define HCI_SEND_KEYPRESS_NOTIF_NOTIF_OFF 6
+
+/**** end of Simple Pairing Commands ****/
+
+#define HCIC_PARAM_SIZE_SET_EVT_FILTER 9
+
+#define HCI_FILT_COND_FILT_TYPE_OFF 0
+#define HCI_FILT_COND_COND_TYPE_OFF 1
+#define HCI_FILT_COND_FILT_OFF 2
+/* Set Event Filter */
+
+/* Delete Stored Key */
+#define HCIC_PARAM_SIZE_DELETE_STORED_KEY 7
+
+#define HCI_DELETE_KEY_BD_ADDR_OFF 0
+#define HCI_DELETE_KEY_ALL_FLAG_OFF 6
+/* Delete Stored Key */
+
+/* Change Local Name */
+#define HCIC_PARAM_SIZE_CHANGE_NAME BD_NAME_LEN
+
+#define HCI_CHANGE_NAME_NAME_OFF 0
+/* Change Local Name */
+
+#define HCIC_PARAM_SIZE_READ_CMD 0
+
+#define HCIC_PARAM_SIZE_WRITE_PARAM1 1
+
+#define HCIC_WRITE_PARAM1_PARAM_OFF 0
+
+#define HCIC_PARAM_SIZE_WRITE_PARAM2 2
+
+#define HCIC_WRITE_PARAM2_PARAM_OFF 0
+
+#define HCIC_PARAM_SIZE_WRITE_PARAM3 3
+
+#define HCIC_WRITE_PARAM3_PARAM_OFF 0
+
+#define HCIC_PARAM_SIZE_SET_AFH_CHANNELS 10
+
+#define HCIC_PARAM_SIZE_ENH_SET_ESCO_CONN 59
+#define HCIC_PARAM_SIZE_ENH_ACC_ESCO_CONN 63
+
+#define HCIC_PARAM_SIZE_WRITE_PAGESCAN_CFG 4
+
+#define HCI_SCAN_CFG_INTERVAL_OFF 0
+#define HCI_SCAN_CFG_WINDOW_OFF 2
+/* Write Page Scan Activity */
+
+/* Write Inquiry Scan Activity */
+#define HCIC_PARAM_SIZE_WRITE_INQSCAN_CFG 4
+
+#define HCI_SCAN_CFG_INTERVAL_OFF 0
+#define HCI_SCAN_CFG_WINDOW_OFF 2
+/* Write Inquiry Scan Activity */
+
+/* Host Controller to Host flow control */
+#define HCI_HOST_FLOW_CTRL_OFF 0
+#define HCI_HOST_FLOW_CTRL_ACL_ON 1
+#define HCI_HOST_FLOW_CTRL_SCO_ON 2
+#define HCI_HOST_FLOW_CTRL_BOTH_ON 3
+
+#define HCIC_PARAM_SIZE_WRITE_AUTOMATIC_FLUSH_TIMEOUT 4
+
+#define HCI_FLUSH_TOUT_HANDLE_OFF 0
+#define HCI_FLUSH_TOUT_TOUT_OFF 2
+
+#define HCIC_PARAM_SIZE_READ_TX_POWER 3
+
+#define HCI_READ_TX_POWER_HANDLE_OFF 0
+#define HCI_READ_TX_POWER_TYPE_OFF 2
+
+/* Read transmit power level parameter */
+#define HCI_READ_CURRENT 0x00
+#define HCI_READ_MAXIMUM 0x01
+
+#define HCIC_PARAM_SIZE_NUM_PKTS_DONE_SIZE sizeof(btmsg_hcic_num_pkts_done_t)
+
+#define MAX_DATA_HANDLES 10
+
+#define HCI_PKTS_DONE_NUM_HANDLES_OFF 0
+#define HCI_PKTS_DONE_HANDLE_OFF 1
+#define HCI_PKTS_DONE_NUM_PKTS_OFF 3
+
+#define HCIC_PARAM_SIZE_WRITE_LINK_SUPER_TOUT 4
+
+#define HCI_LINK_SUPER_TOUT_HANDLE_OFF 0
+#define HCI_LINK_SUPER_TOUT_TOUT_OFF 2
+/* Write Link Supervision Timeout */
+
+#define MAX_IAC_LAPS 0x40
+
+#define HCI_WRITE_IAC_LAP_NUM_OFF 0
+#define HCI_WRITE_IAC_LAP_LAP_OFF 1
+/* Write Current IAC LAP */
+
+/*******************************************************************************
+ * BLE Commands
+ *      Note: "local_controller_id" is for transport, not counted in HCI
+ *             message size
+ ******************************************************************************/
+#define HCIC_BLE_RAND_DI_SIZE 8
+#define HCIC_BLE_IRK_SIZE 16
+
+#define HCIC_PARAM_SIZE_SET_USED_FEAT_CMD 8
+#define HCIC_PARAM_SIZE_WRITE_RANDOM_ADDR_CMD 6
+#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_PARAMS 15
+#define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_RSP 31
+#define HCIC_PARAM_SIZE_WRITE_ADV_ENABLE 1
+#define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_PARAM 7
+#define HCIC_PARAM_SIZE_BLE_WRITE_SCAN_ENABLE 2
+#define HCIC_PARAM_SIZE_BLE_CREATE_LL_CONN 25
+#define HCIC_PARAM_SIZE_BLE_CREATE_CONN_CANCEL 0
+#define HCIC_PARAM_SIZE_CLEAR_ACCEPTLIST 0
+#define HCIC_PARAM_SIZE_ADD_ACCEPTLIST 7
+#define HCIC_PARAM_SIZE_REMOVE_ACCEPTLIST 7
+#define HCIC_PARAM_SIZE_BLE_UPD_LL_CONN_PARAMS 14
+#define HCIC_PARAM_SIZE_SET_HOST_CHNL_CLASS 5
+#define HCIC_PARAM_SIZE_READ_CHNL_MAP 2
+#define HCIC_PARAM_SIZE_BLE_READ_REMOTE_FEAT 2
+#define HCIC_PARAM_SIZE_BLE_ENCRYPT 32
+#define HCIC_PARAM_SIZE_WRITE_LE_HOST_SUPPORTED 2
+
+#define HCIC_BLE_RAND_DI_SIZE 8
+#define HCIC_BLE_ENCRYPT_KEY_SIZE 16
+#define HCIC_PARAM_SIZE_BLE_START_ENC \
+  (4 + HCIC_BLE_RAND_DI_SIZE + HCIC_BLE_ENCRYPT_KEY_SIZE)
+#define HCIC_PARAM_SIZE_LTK_REQ_REPLY (2 + HCIC_BLE_ENCRYPT_KEY_SIZE)
+#define HCIC_PARAM_SIZE_LTK_REQ_NEG_REPLY 2
+#define HCIC_BLE_CHNL_MAP_SIZE 5
+#define HCIC_PARAM_SIZE_BLE_WRITE_ADV_DATA 31
+
+#define HCIC_PARAM_SIZE_BLE_ADD_DEV_RESOLVING_LIST (7 + HCIC_BLE_IRK_SIZE * 2)
+#define HCIC_PARAM_SIZE_BLE_RM_DEV_RESOLVING_LIST 7
+#define HCIC_PARAM_SIZE_BLE_SET_PRIVACY_MODE 8
+#define HCIC_PARAM_SIZE_BLE_CLEAR_RESOLVING_LIST 0
+#define HCIC_PARAM_SIZE_BLE_READ_RESOLVING_LIST_SIZE 0
+#define HCIC_PARAM_SIZE_BLE_READ_RESOLVABLE_ADDR_PEER 7
+#define HCIC_PARAM_SIZE_BLE_READ_RESOLVABLE_ADDR_LOCAL 7
+#define HCIC_PARAM_SIZE_BLE_SET_ADDR_RESOLUTION_ENABLE 1
+#define HCIC_PARAM_SIZE_BLE_SET_RAND_PRIV_ADDR_TIMOUT 2
+
+#define HCIC_PARAM_SIZE_BLE_READ_PHY 2
+#define HCIC_PARAM_SIZE_BLE_SET_DEFAULT_PHY 3
+#define HCIC_PARAM_SIZE_BLE_SET_PHY 7
+#define HCIC_PARAM_SIZE_BLE_ENH_RX_TEST 3
+#define HCIC_PARAM_SIZE_BLE_ENH_TX_TEST 4
+
+#define HCIC_PARAM_SIZE_BLE_SET_DATA_LENGTH 6
+#define HCIC_PARAM_SIZE_BLE_WRITE_EXTENDED_SCAN_PARAM 11
+
+#define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_REPLY 14
+#define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_NEG_REPLY 3
+
 static void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
                                uint8_t response_cnt) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
