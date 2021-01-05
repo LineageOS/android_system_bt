@@ -1410,8 +1410,8 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
   }
 
   tBTM_ROLE_SWITCH_CMPL* p_switch_role = &btm_cb.acl_cb_.switch_role_ref_data;
-  LOG_DEBUG("Role change event peer:%s hci_status:%s new_role:%s",
-            bd_addr.ToString().c_str(), hci_error_code_text(hci_status).c_str(),
+  LOG_DEBUG("Role change event received peer:%s hci_status:%s new_role:%s",
+            PRIVATE_ADDRESS(bd_addr), hci_error_code_text(hci_status).c_str(),
             RoleText(new_role).c_str());
 
   p_switch_role->hci_status = hci_status;
@@ -1495,8 +1495,7 @@ tBTM_STATUS StackAclBtmAcl::btm_set_packet_types(tACL_CONN* p,
   /* Exclude packet types not supported by the peer */
   btm_acl_chk_peer_pkt_type_support(p, &temp_pkt_types);
 
-  LOG_DEBUG("SetPacketType Mask -> 0x%04x", temp_pkt_types);
-
+  LOG_DEBUG("Setting link packet types:0x%04x", pkt_types);
   btsnd_hcic_change_conn_type(p->hci_handle, temp_pkt_types);
   p->pkt_types_mask = temp_pkt_types;
 
