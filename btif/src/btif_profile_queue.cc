@@ -37,6 +37,7 @@
 
 #include "bt_common.h"
 #include "btif_common.h"
+#include "main/shim/dumpsys.h"
 #include "stack_manager.h"
 
 /*******************************************************************************
@@ -192,8 +193,7 @@ bt_status_t btif_queue_connect_next(void) {
 
   ConnectNode& head = connect_queue.front();
 
-  LOG_INFO("%s: executing connection request: %s", __func__,
-           head.ToString().c_str());
+  LOG_INFO("Executing profile connection request:%s", head.ToString().c_str());
   bt_status_t b_status = head.connect();
   if (b_status != BT_STATUS_SUCCESS) {
     LOG_INFO("%s: connect %s failed, advance to next scheduled connection.",
