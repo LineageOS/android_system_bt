@@ -43,11 +43,16 @@ constexpr char kHeadlessStopSentinel[] =
 
 class HeadlessStack {
  protected:
-  HeadlessStack() = default;
+  HeadlessStack(const char** stack_init_flags)
+      : stack_init_flags_(stack_init_flags) {}
   virtual ~HeadlessStack() = default;
 
   void SetUp();
   void TearDown();
+  const char** StackInitFlags() const { return stack_init_flags_; }
+
+ private:
+  const char** stack_init_flags_;
 };
 
 class HeadlessRun : public HeadlessStack {
@@ -56,7 +61,7 @@ class HeadlessRun : public HeadlessStack {
   unsigned long loop_{0};
 
   HeadlessRun(const bluetooth::test::headless::GetOpt& options)
-      : options_(options) {}
+      : HeadlessStack(options.StackInitFlags()), options_(options) {}
 
   template <typename T>
   T RunOnHeadlessStack(ExecutionUnit<T> func) {

@@ -20,9 +20,14 @@
 #include <map>
 #include <string>
 
+#include "base/logging.h"     // LOG() stdout and android log
+#include "osi/include/log.h"  // android log only
+#include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
+#include "stack/include/hci_error_code.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "test/headless/connect/connect.h"
+#include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/interface.h"
 #include "types/raw_address.h"
@@ -50,7 +55,7 @@ void callback_interface(interface_data_t data) {
 
 namespace {
 
-int do_mode(unsigned int num_loops, const RawAddress& bd_addr) {
+int do_connect(unsigned int num_loops, const RawAddress& bd_addr) {
   headless_add_callback("acl_state_changed", callback_interface);
 
   acl_state_changed_promise = std::promise<acl_state_changed_params_t>();
@@ -77,6 +82,7 @@ int do_mode(unsigned int num_loops, const RawAddress& bd_addr) {
 }  // namespace
 
 int bluetooth::test::headless::Mode::Run() {
-  return RunOnHeadlessStack<int>(
-      [this]() { return do_mode(options_.loop_, options_.device_.front()); });
+  return RunOnHeadlessStack<int>([this]() {
+    return do_connect(options_.loop_, options_.device_.front());
+  });
 }

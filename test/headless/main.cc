@@ -20,6 +20,8 @@
 
 #include "base/logging.h"     // LOG() stdout and android log
 #include "osi/include/log.h"  // android log only
+#include "test/headless/connect/connect.h"
+#include "test/headless/dumpsys/dumpsys.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/nop/nop.h"
@@ -35,6 +37,11 @@ class Main : public HeadlessTest<int> {
  public:
   Main(const bluetooth::test::headless::GetOpt& options)
       : HeadlessTest<int>(options) {
+    test_nodes_.emplace(
+        "dumpsys",
+        std::make_unique<bluetooth::test::headless::Dumpsys>(options));
+    test_nodes_.emplace(
+        "mode", std::make_unique<bluetooth::test::headless::Mode>(options));
     test_nodes_.emplace(
         "nop", std::make_unique<bluetooth::test::headless::Nop>(options));
     test_nodes_.emplace(
