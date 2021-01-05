@@ -127,6 +127,12 @@ static void NotifyBondingChange(tBTM_SEC_DEV_REC& p_dev_rec,
   }
 }
 
+void NotifyBondingCanceled(tBTM_STATUS btm_status) {
+  if (btm_cb.api.p_bond_cancel_cmpl_callback) {
+    btm_cb.api.p_bond_cancel_cmpl_callback(BTM_SUCCESS);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btm_dev_authenticated
