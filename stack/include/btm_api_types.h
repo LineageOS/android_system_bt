@@ -609,14 +609,15 @@ enum {
 };
 typedef uint8_t tBTM_SP_EVT;
 
-#define BTM_IO_CAP_OUT 0    /* DisplayOnly */
-#define BTM_IO_CAP_IO 1     /* DisplayYesNo */
-#define BTM_IO_CAP_IN 2     /* KeyboardOnly */
-#define BTM_IO_CAP_NONE 3   /* NoInputNoOutput */
-#define BTM_IO_CAP_KBDISP 4 /* Keyboard display */
-#define BTM_IO_CAP_MAX 5
-#define BTM_IO_CAP_UNKNOWN 0xFF /* Unknown value */
-
+enum : uint8_t {
+  BTM_IO_CAP_OUT = 0,    /* DisplayOnly */
+  BTM_IO_CAP_IO = 1,     /* DisplayYesNo */
+  BTM_IO_CAP_IN = 2,     /* KeyboardOnly */
+  BTM_IO_CAP_NONE = 3,   /* NoInputNoOutput */
+  BTM_IO_CAP_KBDISP = 4, /* Keyboard display */
+  BTM_IO_CAP_MAX = 5,
+  BTM_IO_CAP_UNKNOWN = 0xFF /* Unknown value */
+};
 typedef uint8_t tBTM_IO_CAP;
 
 #define BTM_MAX_PASSKEY_VAL (999999)
@@ -787,21 +788,22 @@ typedef void(tBTM_BOND_CANCEL_CMPL_CALLBACK)(tBTM_STATUS result);
 #define BTM_LE_CONSENT_REQ_EVT SMP_CONSENT_REQ_EVT
 typedef uint8_t tBTM_LE_EVT;
 
-#define BTM_LE_KEY_NONE 0
-/* encryption information of peer device */
-#define BTM_LE_KEY_PENC SMP_SEC_KEY_TYPE_ENC
-/* identity key of the peer device */
-#define BTM_LE_KEY_PID SMP_SEC_KEY_TYPE_ID
-/* peer SRK */
-#define BTM_LE_KEY_PCSRK SMP_SEC_KEY_TYPE_CSRK
-#define BTM_LE_KEY_PLK SMP_SEC_KEY_TYPE_LK
-#define BTM_LE_KEY_LLK (SMP_SEC_KEY_TYPE_LK << 4)
-/* central role security information:div */
-#define BTM_LE_KEY_LENC (SMP_SEC_KEY_TYPE_ENC << 4)
-/* central device ID key */
-#define BTM_LE_KEY_LID (SMP_SEC_KEY_TYPE_ID << 4)
-/* local CSRK has been deliver to peer */
-#define BTM_LE_KEY_LCSRK (SMP_SEC_KEY_TYPE_CSRK << 4)
+enum : uint8_t {
+  BTM_LE_KEY_NONE = 0,
+  BTM_LE_KEY_PENC = SMP_SEC_KEY_TYPE_ENC,
+  /* identity key of the peer device */
+  BTM_LE_KEY_PID = SMP_SEC_KEY_TYPE_ID,
+  /* peer SRK */
+  BTM_LE_KEY_PCSRK = SMP_SEC_KEY_TYPE_CSRK,
+  BTM_LE_KEY_PLK = SMP_SEC_KEY_TYPE_LK,
+  BTM_LE_KEY_LLK = (SMP_SEC_KEY_TYPE_LK << 4),
+  /* master role security information:div */
+  BTM_LE_KEY_LENC = (SMP_SEC_KEY_TYPE_ENC << 4),
+  /* master device ID key */
+  BTM_LE_KEY_LID = (SMP_SEC_KEY_TYPE_ID << 4),
+  /* local CSRK has been deliver to peer */
+  BTM_LE_KEY_LCSRK = (SMP_SEC_KEY_TYPE_CSRK << 4),
+};
 typedef uint8_t tBTM_LE_KEY_TYPE;
 
 #define BTM_LE_AUTH_REQ_NO_BOND SMP_AUTH_NO_BOND /* 0 */

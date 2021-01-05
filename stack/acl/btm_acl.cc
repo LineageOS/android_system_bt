@@ -180,6 +180,13 @@ static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
   }
 }
 
+static void hci_start_role_switch_to_central(tACL_CONN& p_acl) {
+  GetLegacyHciInterface().StartRoleSwitch(
+      p_acl.remote_addr, static_cast<uint8_t>(HCI_ROLE_CENTRAL));
+  p_acl.set_switch_role_in_progress();
+  p_acl.rs_disc_pending = BTM_SEC_RS_PENDING;
+}
+
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -577,9 +584,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
       p_acl->set_encryption_off();
       p_acl->set_switch_role_encryption_off();
     } else {
-      btsnd_hcic_switch_role(remote_bd_addr, HCI_ROLE_CENTRAL);
-      p_acl->set_switch_role_in_progress();
-      p_acl->rs_disc_pending = BTM_SEC_RS_PENDING;
+      hci_start_role_switch_to_central(*p_acl);
     }
   }
 
@@ -618,9 +623,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
       p->set_encryption_switching();
       p->set_switch_role_switching();
     }
-
-    btsnd_hcic_switch_role(p->remote_addr, HCI_ROLE_CENTRAL);
-    p->rs_disc_pending = BTM_SEC_RS_PENDING;
+    hci_start_role_switch_to_central(*p);
   }
   /* Finished enabling Encryption after role switch */
   else if (p->is_switch_role_encryption_on()) {
@@ -2176,9 +2179,7 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
               and/or change of link key */
     {
       if (p->is_switch_role_mode_change()) {
-        p->set_switch_role_in_progress();
-        p->rs_disc_pending = BTM_SEC_RS_PENDING;
-        btsnd_hcic_switch_role(p->remote_addr, HCI_ROLE_CENTRAL);
+        hci_start_role_switch_to_central(*p);
       }
     }
   }
@@ -3008,4 +3009,12 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
   if (max_page_number == current_page_number) {
     NotifyAclFeaturesReadComplete(*p_acl, max_page_number);
   }
+}
+
+void ACL_RegisterClient(struct acl_client_callback_s* callbacks) {
+  LOG_DEBUG("UNIMPLEMENTED");
+}
+
+void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
+  LOG_DEBUG("UNIMPLEMENTED");
 }

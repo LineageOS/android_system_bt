@@ -116,6 +116,7 @@ cc_library_static {
         "btm/btm_ble_gap.cc",
         "btm/btm_ble_multi_adv.cc",
         "btm/btm_ble_privacy.cc",
+        "btm/btm_client_interface.cc",
         "btm/btm_dev.cc",
         "btm/btm_devctl.cc",
         "btm/btm_inq.cc",

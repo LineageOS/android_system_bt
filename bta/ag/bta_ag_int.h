@@ -133,6 +133,9 @@ typedef struct {
 typedef struct {
   tBTA_AG_RES result;
   tBTA_AG_RES_DATA data;
+  std::string ToString() const {
+    return base::StringPrintf("result:%s", bta_ag_result_text(result).c_str());
+  }
 } tBTA_AG_API_RESULT;
 
 /* data type for BTA_AG_API_SETCODEC_EVT */
