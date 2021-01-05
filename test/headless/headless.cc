@@ -180,7 +180,8 @@ bt_os_callouts_t bt_os_callouts{
 void HeadlessStack::SetUp() {
   LOG(INFO) << __func__ << " Entry";
 
-  int status = bluetoothInterface.init(&bt_callbacks, false, false, 0, nullptr, false);
+  int status = bluetoothInterface.init(&bt_callbacks, false, false, 0,
+                                       StackInitFlags(), false);
   (status == BT_STATUS_SUCCESS)
       ? LOG(INFO) << __func__ << " Initialized bluetooth callbacks"
       : LOG(FATAL) << "Failed to initialize Bluetooth stack";
