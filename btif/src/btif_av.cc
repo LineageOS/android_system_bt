@@ -46,6 +46,7 @@
 #include "btif_util.h"
 #include "btu.h"
 #include "common/state_machine.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -2845,14 +2846,15 @@ static void set_active_peer_int(uint8_t peer_sep,
 }
 
 static bt_status_t src_connect_sink(const RawAddress& peer_address) {
-  BTIF_TRACE_EVENT("%s: Peer %s", __func__, peer_address.ToString().c_str());
-
   if (!btif_av_source.Enabled()) {
-    BTIF_TRACE_WARNING("%s: BTIF AV Source is not enabled", __func__);
+    LOG_WARN("BTIF AV Source is not enabled");
     return BT_STATUS_NOT_READY;
   }
 
   RawAddress peer_address_copy(peer_address);
+  LOG_DEBUG("Connecting to AV sink peer:%s",
+            PRIVATE_ADDRESS(peer_address_copy));
+
   return btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, &peer_address_copy,
                             connect_int);
 }
