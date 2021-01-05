@@ -452,6 +452,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
 
       *p_sco_inx = xx;
       BTM_TRACE_API("%s: BTM_CreateSco succeeded", __func__);
+      BTM_LogHistory("SCO", *remote_bda, "Connecting", "local initiated");
       return BTM_CMD_STARTED;
     }
   }
