@@ -267,9 +267,9 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
         btm_cb.acl_cb_.pm_pend_link);
     /* command pending */
     if (acl_ind != btm_cb.acl_cb_.pm_pend_link) {
-      /* set the stored mask */
       p_cb->state |= BTM_PM_STORED_MASK;
-      LOG_INFO("btm_pm state stored: %d", acl_ind);
+      LOG_INFO("Setting stored bitmask for peer:%s",
+               PRIVATE_ADDRESS(remote_bda));
     }
     return BTM_CMD_STORED;
   }
