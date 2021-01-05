@@ -3,6 +3,7 @@ cc_test {
     test_suites: ["device-tests"],
     defaults: ["fluoride_defaults"],
     srcs: [
+        "connect/connect.cc",
         "get_options.cc",
         "headless.cc",
         "main.cc",
