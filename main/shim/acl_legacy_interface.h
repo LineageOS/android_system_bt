@@ -62,6 +62,11 @@ typedef struct {
   void (*on_central_link_key_complete)(uint8_t key_flag);
   void (*on_mode_change)(tHCI_STATUS status, uint16_t handle,
                          tHCI_MODE current_mode, uint16_t interval);
+  void (*on_sniff_subrating)(tHCI_STATUS status, uint16_t handle,
+                             uint16_t maximum_transmit_latency,
+                             uint16_t maximum_receive_latency,
+                             uint16_t minimum_remote_timeout,
+                             uint16_t minimum_local_timeout);
   void (*on_packet_type_changed)(uint16_t packet_type);
   void (*on_qos_setup_complete)(uint16_t service_type, uint32_t token_rate,
                                 uint32_t peak_bandwidth, uint32_t latency,

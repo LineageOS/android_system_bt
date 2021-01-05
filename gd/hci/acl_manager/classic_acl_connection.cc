@@ -67,6 +67,18 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   void OnModeChange(Mode current_mode, uint16_t interval) override {
     SAVE_OR_CALL(OnModeChange, current_mode, interval)
   }
+  void OnSniffSubrating(
+      uint16_t maximum_transmit_latency,
+      uint16_t maximum_receive_latency,
+      uint16_t minimum_remote_timeout,
+      uint16_t minimum_local_timeout) override {
+    SAVE_OR_CALL(
+        OnSniffSubrating,
+        maximum_transmit_latency,
+        maximum_receive_latency,
+        minimum_remote_timeout,
+        minimum_local_timeout);
+  }
   void OnQosSetupComplete(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth, uint32_t latency,
                           uint32_t delay_variation) override {
     SAVE_OR_CALL(OnQosSetupComplete, service_type, token_rate, peak_bandwidth, latency, delay_variation)
