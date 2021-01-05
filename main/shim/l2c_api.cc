@@ -799,14 +799,14 @@ uint16_t L2CA_SendFixedChnlData(uint16_t cid, const RawAddress& rem_bda,
                                 BT_HDR* p_buf) {
   if (cid != kAttCid && cid != kSmpCid) {
     LOG(ERROR) << "Invalid cid " << cid;
-    return false;
+    return L2CAP_DW_FAILED;
   }
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
   auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
   auto len = p_buf->len;
   auto* data = p_buf->data + p_buf->offset;
   bool sent = helper->send(remote, MakeUniquePacket(data, len));
-  return sent ? len : 0;
+  return sent ? L2CAP_DW_SUCCESS : L2CAP_DW_FAILED;
 }
 
 bool L2CA_RemoveFixedChnl(uint16_t cid, const RawAddress& rem_bda) {
