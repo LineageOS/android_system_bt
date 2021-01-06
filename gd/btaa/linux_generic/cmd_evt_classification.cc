@@ -327,5 +327,75 @@ CmdEvtActivityClassification lookup_cmd(hci::OpCode opcode) {
   return classification;
 }
 
+CmdEvtActivityClassification lookup_event(hci::EventCode event_code) {
+  CmdEvtActivityClassification classification = {};
+  switch (event_code) {
+    case hci::EventCode::INQUIRY_COMPLETE:
+      classification = {.activity = Activity::SCAN, .connection_handle_pos = 0, .address_pos = 0};
+      break;
+    case hci::EventCode::CONNECTION_COMPLETE:
+    case hci::EventCode::SYNCHRONOUS_CONNECTION_COMPLETE:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 3, .address_pos = 5};
+      break;
+
+    case hci::EventCode::CONNECTION_REQUEST:
+    case hci::EventCode::PIN_CODE_REQUEST:
+    case hci::EventCode::LINK_KEY_REQUEST:
+    case hci::EventCode::LINK_KEY_NOTIFICATION:
+    case hci::EventCode::USER_PASSKEY_NOTIFICATION:
+    case hci::EventCode::KEYPRESS_NOTIFICATION:
+    case hci::EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION:
+    case hci::EventCode::IO_CAPABILITY_REQUEST:
+    case hci::EventCode::IO_CAPABILITY_RESPONSE:
+    case hci::EventCode::USER_CONFIRMATION_REQUEST:
+    case hci::EventCode::USER_PASSKEY_REQUEST:
+    case hci::EventCode::REMOTE_OOB_DATA_REQUEST:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 0, .address_pos = 2};
+      break;
+
+    case hci::EventCode::DISCONNECTION_COMPLETE:
+    case hci::EventCode::AUTHENTICATION_COMPLETE:
+    case hci::EventCode::ENCRYPTION_CHANGE:
+    case hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE:
+    case hci::EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED:
+    case hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE:
+    case hci::EventCode::CENTRAL_LINK_KEY_COMPLETE:
+    case hci::EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE:
+    case hci::EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE:
+    case hci::EventCode::QOS_SETUP_COMPLETE:
+    case hci::EventCode::MODE_CHANGE:
+    case hci::EventCode::READ_CLOCK_OFFSET_COMPLETE:
+    case hci::EventCode::CONNECTION_PACKET_TYPE_CHANGED:
+    case hci::EventCode::FLOW_SPECIFICATION_COMPLETE:
+    case hci::EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE:
+    case hci::EventCode::SYNCHRONOUS_CONNECTION_CHANGED:
+    case hci::EventCode::SNIFF_SUBRATING:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 3, .address_pos = 0};
+      break;
+
+    case hci::EventCode::REMOTE_NAME_REQUEST_COMPLETE:
+    case hci::EventCode::EXTENDED_INQUIRY_RESULT:
+      classification = {.activity = Activity::SCAN, .connection_handle_pos = 0, .address_pos = 3};
+      break;
+    case hci::EventCode::FLUSH_OCCURRED:
+    case hci::EventCode::MAX_SLOTS_CHANGE:
+    case hci::EventCode::QOS_VIOLATION:
+    case hci::EventCode::ENHANCED_FLUSH_COMPLETE:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 2, .address_pos = 0};
+      break;
+    case hci::EventCode::ROLE_CHANGE:
+    case hci::EventCode::SIMPLE_PAIRING_COMPLETE:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 0, .address_pos = 3};
+      break;
+    case hci::EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE:
+      classification = {.activity = Activity::SCAN, .connection_handle_pos = 0, .address_pos = 2};
+      break;
+
+    default:
+      classification = {.activity = Activity::UNKNOWN, .connection_handle_pos = 0, .address_pos = 0};
+  }
+  return classification;
+}
+
 }  // namespace activity_attribution
 }  // namespace bluetooth

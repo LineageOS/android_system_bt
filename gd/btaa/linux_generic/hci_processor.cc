@@ -38,8 +38,13 @@ class DeviceParser {
   std::map<uint16_t, hci::Address> connection_lookup_table;
 };
 
+struct PendingCommand {
+  hci::OpCode opcode;
+  BtaaHciPacket btaa_hci_packet;
+};
+
 static DeviceParser device_parser;
-static std::pair<hci::OpCode, BtaaHciPacket> pending_command;
+static PendingCommand pending_command;
 
 static void process_command(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
@@ -64,9 +69,68 @@ static void process_command(
     address_value = address_value_it.extract<hci::Address>();
   }
   device_parser.match_handle_with_address(connection_handle_value, address_value);
-  pending_command.second = BtaaHciPacket(cmd_info.activity, address_value, byte_count);
+  pending_command.btaa_hci_packet = BtaaHciPacket(cmd_info.activity, address_value, byte_count);
 
-  pending_command.first = opcode;
+  pending_command.opcode = opcode;
+}
+
+static void process_event(
+    std::vector<BtaaHciPacket>& btaa_hci_packets,
+    packet::PacketView<packet::kLittleEndian>& packet_view,
+    uint16_t byte_count) {
+  hci::EventView event = hci::EventView::Create(packet_view);
+  if (!event.IsValid()) {
+    return;
+  }
+
+  uint16_t connection_handle_value = 0;
+  hci::Address address_value;
+  auto event_code = event.GetEventCode();
+  auto event_info = lookup_event(event_code);
+
+  if (event_info.activity != Activity::UNKNOWN) {
+    // lookup_event returns all simple classic event which does not require additional processing.
+    if (event_info.connection_handle_pos) {
+      auto connection_handle_it = event.begin() + event_info.connection_handle_pos;
+      connection_handle_value = connection_handle_it.extract<uint16_t>();
+    }
+    if (event_info.address_pos) {
+      auto address_value_it = event.begin() + event_info.address_pos;
+      address_value = address_value_it.extract<hci::Address>();
+    }
+    device_parser.match_handle_with_address(connection_handle_value, address_value);
+    btaa_hci_packets.push_back(BtaaHciPacket(event_info.activity, address_value, byte_count));
+  } else {
+    // The event requires additional processing.
+    switch (event_code) {
+      case hci::EventCode::COMMAND_COMPLETE: {
+        auto packet_view = hci::CommandCompleteView::Create(event);
+        if (packet_view.IsValid() && packet_view.GetCommandOpCode() == pending_command.opcode) {
+          pending_command.btaa_hci_packet.byte_count += byte_count;
+          btaa_hci_packets.push_back(std::move(pending_command.btaa_hci_packet));
+        } else {
+          btaa_hci_packets.push_back(BtaaHciPacket(Activity::UNKNOWN, address_value, byte_count));
+        }
+      } break;
+      case hci::EventCode::COMMAND_STATUS: {
+        auto packet_view = hci::CommandStatusView::Create(event);
+        if (packet_view.IsValid() && packet_view.GetCommandOpCode() == pending_command.opcode) {
+          pending_command.btaa_hci_packet.byte_count += byte_count;
+          btaa_hci_packets.push_back(std::move(pending_command.btaa_hci_packet));
+        } else {
+          btaa_hci_packets.push_back(BtaaHciPacket(Activity::UNKNOWN, address_value, byte_count));
+        }
+        break;
+      }
+      case hci::EventCode::LE_META_EVENT:
+        break;
+      case hci::EventCode::VENDOR_SPECIFIC:
+        btaa_hci_packets.push_back(BtaaHciPacket(Activity::VENDOR, address_value, byte_count));
+        break;
+      default:
+        break;
+    }
+  }
 }
 
 std::vector<BtaaHciPacket> HciProcessor::OnHciPacket(
@@ -78,6 +142,7 @@ std::vector<BtaaHciPacket> HciProcessor::OnHciPacket(
       process_command(btaa_hci_packets, packet_view, length);
       break;
     case hal::SnoopLogger::PacketType::EVT:
+      process_event(btaa_hci_packets, packet_view, length);
       break;
     case hal::SnoopLogger::PacketType::ACL:
       break;
