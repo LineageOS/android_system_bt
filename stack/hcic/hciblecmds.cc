@@ -367,11 +367,11 @@ void btsnd_hcic_ble_encrypt(uint8_t* key, uint8_t key_len, uint8_t* plain_text,
 
   memset(pp, 0, HCIC_PARAM_SIZE_BLE_ENCRYPT);
 
-  if (key_len > HCIC_BLE_ENCRYT_KEY_SIZE) key_len = HCIC_BLE_ENCRYT_KEY_SIZE;
-  if (pt_len > HCIC_BLE_ENCRYT_KEY_SIZE) pt_len = HCIC_BLE_ENCRYT_KEY_SIZE;
+  if (key_len > HCIC_BLE_ENCRYPT_KEY_SIZE) key_len = HCIC_BLE_ENCRYPT_KEY_SIZE;
+  if (pt_len > HCIC_BLE_ENCRYPT_KEY_SIZE) pt_len = HCIC_BLE_ENCRYPT_KEY_SIZE;
 
   ARRAY_TO_STREAM(pp, key, key_len);
-  pp += (HCIC_BLE_ENCRYT_KEY_SIZE - key_len);
+  pp += (HCIC_BLE_ENCRYPT_KEY_SIZE - key_len);
   ARRAY_TO_STREAM(pp, plain_text, pt_len);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
@@ -404,7 +404,7 @@ void btsnd_hcic_ble_start_enc(uint16_t handle,
   UINT16_TO_STREAM(pp, handle);
   ARRAY_TO_STREAM(pp, rand, HCIC_BLE_RAND_DI_SIZE);
   UINT16_TO_STREAM(pp, ediv);
-  ARRAY_TO_STREAM(pp, ltk.data(), HCIC_BLE_ENCRYT_KEY_SIZE);
+  ARRAY_TO_STREAM(pp, ltk.data(), HCIC_BLE_ENCRYPT_KEY_SIZE);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
@@ -420,7 +420,7 @@ void btsnd_hcic_ble_ltk_req_reply(uint16_t handle, const Octet16& ltk) {
   UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_LTK_REQ_REPLY);
 
   UINT16_TO_STREAM(pp, handle);
-  ARRAY_TO_STREAM(pp, ltk.data(), HCIC_BLE_ENCRYT_KEY_SIZE);
+  ARRAY_TO_STREAM(pp, ltk.data(), HCIC_BLE_ENCRYPT_KEY_SIZE);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
@@ -558,8 +558,8 @@ void btsnd_hcic_ble_add_device_resolving_list(uint8_t addr_type_peer,
   UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_BLE_ADD_DEV_RESOLVING_LIST);
   UINT8_TO_STREAM(pp, addr_type_peer);
   BDADDR_TO_STREAM(pp, bda_peer);
-  ARRAY_TO_STREAM(pp, irk_peer.data(), HCIC_BLE_ENCRYT_KEY_SIZE);
-  ARRAY_TO_STREAM(pp, irk_local.data(), HCIC_BLE_ENCRYT_KEY_SIZE);
+  ARRAY_TO_STREAM(pp, irk_peer.data(), HCIC_BLE_ENCRYPT_KEY_SIZE);
+  ARRAY_TO_STREAM(pp, irk_local.data(), HCIC_BLE_ENCRYPT_KEY_SIZE);
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
