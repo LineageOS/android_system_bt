@@ -46,6 +46,86 @@ struct PendingCommand {
 static DeviceParser device_parser;
 static PendingCommand pending_command;
 
+static void process_le_event(std::vector<BtaaHciPacket>& btaa_hci_packets, int16_t byte_count, hci::EventView& event) {
+  uint16_t connection_handle_value = 0;
+  hci::Address address_value;
+
+  auto le_packet_view = hci::LeMetaEventView::Create(event);
+  if (!le_packet_view.IsValid()) {
+    return;
+  }
+
+  auto subevent_code = le_packet_view.GetSubeventCode();
+  auto le_event_info = lookup_le_event(subevent_code);
+
+  if (le_event_info.activity != Activity::UNKNOWN) {
+    // lookup_le_event returns all simple classic event which does not require additional processing.
+    if (le_event_info.connection_handle_pos) {
+      auto connection_handle_it = event.begin() + le_event_info.connection_handle_pos;
+      connection_handle_value = connection_handle_it.extract<uint16_t>();
+    }
+    if (le_event_info.address_pos) {
+      auto address_value_it = event.begin() + le_event_info.address_pos;
+      address_value = address_value_it.extract<hci::Address>();
+    }
+    device_parser.match_handle_with_address(connection_handle_value, address_value);
+    btaa_hci_packets.push_back(BtaaHciPacket(le_event_info.activity, address_value, byte_count));
+  }
+}
+
+static void process_special_event(
+    std::vector<BtaaHciPacket>& btaa_hci_packets,
+    hci::EventCode event_code,
+    uint16_t byte_count,
+    hci::EventView& event) {
+  uint16_t avg_byte_count;
+  hci::Address address_value;
+
+  switch (event_code) {
+    case hci::EventCode::INQUIRY_RESULT:
+    case hci::EventCode::INQUIRY_RESULT_WITH_RSSI: {
+      auto packet_view = hci::InquiryResultView::Create(event);
+      if (!packet_view.IsValid()) {
+        return;
+      }
+      auto inquiry_results = packet_view.GetInquiryResults();
+      avg_byte_count = byte_count / inquiry_results.size();
+      for (auto& inquiry_result : inquiry_results) {
+        btaa_hci_packets.push_back(BtaaHciPacket(Activity::SCAN, inquiry_result.bd_addr_, avg_byte_count));
+      }
+    } break;
+
+    case hci::EventCode::NUMBER_OF_COMPLETED_PACKETS: {
+      auto packet_view = hci::NumberOfCompletedPacketsView::Create(event);
+      if (!packet_view.IsValid()) {
+        return;
+      }
+      auto completed_packets = packet_view.GetCompletedPackets();
+      avg_byte_count = byte_count / completed_packets.size();
+      for (auto& completed_packet : completed_packets) {
+        device_parser.match_handle_with_address(completed_packet.connection_handle_, address_value);
+        btaa_hci_packets.push_back(BtaaHciPacket(Activity::CONNECT, address_value, avg_byte_count));
+      }
+    } break;
+
+    case hci::EventCode::RETURN_LINK_KEYS: {
+      auto packet_view = hci::ReturnLinkKeysView::Create(event);
+      if (!packet_view.IsValid()) {
+        return;
+      }
+      auto keys_and_addresses = packet_view.GetKeys();
+      avg_byte_count = byte_count / keys_and_addresses.size();
+      for (auto& key_and_address : keys_and_addresses) {
+        btaa_hci_packets.push_back(BtaaHciPacket(Activity::CONNECT, key_and_address.address_, avg_byte_count));
+      }
+    } break;
+
+    default: {
+      btaa_hci_packets.push_back(BtaaHciPacket(Activity::UNKNOWN, address_value, byte_count));
+    } break;
+  }
+}
+
 static void process_command(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
     packet::PacketView<packet::kLittleEndian>& packet_view,
@@ -123,11 +203,13 @@ static void process_event(
         break;
       }
       case hci::EventCode::LE_META_EVENT:
+        process_le_event(btaa_hci_packets, byte_count, event);
         break;
       case hci::EventCode::VENDOR_SPECIFIC:
         btaa_hci_packets.push_back(BtaaHciPacket(Activity::VENDOR, address_value, byte_count));
         break;
       default:
+        process_special_event(btaa_hci_packets, event_code, byte_count, event);
         break;
     }
   }

@@ -30,6 +30,7 @@ struct CmdEvtActivityClassification {
 
 CmdEvtActivityClassification lookup_cmd(hci::OpCode opcode);
 CmdEvtActivityClassification lookup_event(hci::EventCode event_code);
+CmdEvtActivityClassification lookup_le_event(hci::SubeventCode subevent_code);
 
 }  // namespace activity_attribution
 }  // namespace bluetooth

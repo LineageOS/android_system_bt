@@ -397,5 +397,69 @@ CmdEvtActivityClassification lookup_event(hci::EventCode event_code) {
   return classification;
 }
 
+CmdEvtActivityClassification lookup_le_event(hci::SubeventCode subevent_code) {
+  CmdEvtActivityClassification classification = {};
+  switch (subevent_code) {
+    case hci::SubeventCode::CONNECTION_COMPLETE:
+    case hci::SubeventCode::ENHANCED_CONNECTION_COMPLETE:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 4, .address_pos = 7};
+      break;
+
+    case hci::SubeventCode::CONNECTION_UPDATE_COMPLETE:
+    case hci::SubeventCode::READ_REMOTE_FEATURES_COMPLETE:
+    case hci::SubeventCode::PHY_UPDATE_COMPLETE:
+    case hci::SubeventCode::CTE_REQUEST_FAILED:
+    case hci::SubeventCode::TRANSMIT_POWER_REPORTING:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 4, .address_pos = 0};
+      break;
+
+    case hci::SubeventCode::LONG_TERM_KEY_REQUEST:
+    case hci::SubeventCode::REMOTE_CONNECTION_PARAMETER_REQUEST:
+    case hci::SubeventCode::DATA_LENGTH_CHANGE:
+    case hci::SubeventCode::CHANNEL_SELECTION_ALGORITHM:
+    case hci::SubeventCode::CONNECTION_IQ_REPORT:
+    case hci::SubeventCode::PATH_LOSS_THRESHOLD:
+      classification = {.activity = Activity::CONNECT, .connection_handle_pos = 3, .address_pos = 0};
+      break;
+
+    case hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE:
+    case hci::SubeventCode::GENERATE_DHKEY_COMPLETE:
+      classification = {.activity = Activity::CONTROL, .connection_handle_pos = 0, .address_pos = 0};
+      break;
+
+    case hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED:
+    case hci::SubeventCode::PERIODIC_ADVERTISING_REPORT:
+    case hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST:
+    case hci::SubeventCode::ADVERTISING_SET_TERMINATED:
+      classification = {.activity = Activity::ADVERTISE, .connection_handle_pos = 0, .address_pos = 0};
+      break;
+
+    case hci::SubeventCode::SCAN_TIMEOUT:
+    case hci::SubeventCode::BIG_INFO_ADVERTISING_REPORT:
+    case hci::SubeventCode::CONNECTIONLESS_IQ_REPORT:
+    case hci::SubeventCode::CREATE_BIG_COMPLETE:
+    case hci::SubeventCode::TERMINATE_BIG_COMPLETE:
+    case hci::SubeventCode::BIG_SYNC_ESTABLISHED:
+    case hci::SubeventCode::BIG_SYNC_LOST:
+    case hci::SubeventCode::REQUEST_PEER_SCA_COMPLETE:
+      classification = {.activity = Activity::SCAN, .connection_handle_pos = 0, .address_pos = 0};
+      break;
+
+    case hci::SubeventCode::SCAN_REQUEST_RECEIVED:
+      classification = {.activity = Activity::ADVERTISE, .connection_handle_pos = 0, .address_pos = 5};
+      break;
+
+    case hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED:
+    case hci::SubeventCode::CIS_ESTABLISHED:
+    case hci::SubeventCode::CIS_REQUEST:
+      classification = {.activity = Activity::SCAN, .connection_handle_pos = 4, .address_pos = 0};
+      break;
+
+    default:
+      classification = {.activity = Activity::UNKNOWN, .connection_handle_pos = 0, .address_pos = 0};
+  }
+  return classification;
+}
+
 }  // namespace activity_attribution
 }  // namespace bluetooth
