@@ -130,6 +130,7 @@ filegroup {
         "android/bluetooth/le/IScannerCallback.aidl",
         "android/bluetooth/IBluetoothConnectionCallback.aidl",
         "android/bluetooth/IBluetoothDeviceGroup.aidl",
-        "android/bluetooth/IBluetoothGroupCallback.aidl"
+        "android/bluetooth/IBluetoothGroupCallback.aidl",
+        "android/bluetooth/IBluetoothVcp.aidl",
     ],
 }
