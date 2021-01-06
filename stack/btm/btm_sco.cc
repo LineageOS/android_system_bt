@@ -991,25 +991,31 @@ const RawAddress* BTM_ReadScoBdAddr(uint16_t sco_inx) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SetEScoMode(enh_esco_params_t* p_parms) {
+  ASSERT_LOG(p_parms != nullptr, "eSCO parameters must have a value");
   enh_esco_params_t* p_def = &btm_cb.sco_cb.def_esco_parms;
 
   if (btm_cb.sco_cb.esco_supported) {
     *p_def = *p_parms;
+    LOG_DEBUG(
+        "Setting eSCO mode parameters txbw:0x%08x rxbw:0x%08x max_lat:0x%04x"
+        " pkt:0x%04x rtx_effort:0x%02x",
+        p_def->transmit_bandwidth, p_def->receive_bandwidth,
+        p_def->max_latency_ms, p_def->packet_types,
+        p_def->retransmission_effort);
   } else {
     /* Load defaults for SCO only */
     *p_def = esco_parameters_for_codec(ESCO_CODEC_CVSD);
     p_def->packet_types &= BTM_SCO_LINK_ONLY_MASK;
     p_def->retransmission_effort = ESCO_RETRANSMISSION_OFF;
     p_def->max_latency_ms = 12;
-    BTM_TRACE_WARNING("%s: eSCO not supported", __func__);
+    LOG_WARN("eSCO not supported so setting SCO parameters instead");
+    LOG_DEBUG(
+        "Setting SCO mode parameters txbw:0x%08x rxbw:0x%08x max_lat:0x%04x"
+        " pkt:0x%04x rtx_effort:0x%02x",
+        p_def->transmit_bandwidth, p_def->receive_bandwidth,
+        p_def->max_latency_ms, p_def->packet_types,
+        p_def->retransmission_effort);
   }
-
-  BTM_TRACE_API(
-      "%s: txbw 0x%08x, rxbw 0x%08x, max_lat 0x%04x, "
-      "pkt 0x%04x, rtx effort 0x%02x",
-      __func__, p_def->transmit_bandwidth, p_def->receive_bandwidth,
-      p_def->max_latency_ms, p_def->packet_types, p_def->retransmission_effort);
-
   return BTM_SUCCESS;
 }
 
