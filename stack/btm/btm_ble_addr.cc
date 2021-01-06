@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "bt_types.h"
-#include "btm_int.h"
 #include "btu.h"
 #include "device/include/controller.h"
 #include "gap_api.h"

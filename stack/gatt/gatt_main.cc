@@ -28,7 +28,6 @@
 #include "bt_utils.h"
 #include "btif_storage.h"
 #include "btm_ble_int.h"
-#include "btm_int.h"
 #include "connection_manager.h"
 #include "device/include/interop.h"
 #include "eatt.h"

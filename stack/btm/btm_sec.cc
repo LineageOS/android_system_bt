@@ -32,7 +32,6 @@
 
 #include "bt_types.h"
 #include "btif/include/btif_storage.h"
-#include "btm_int.h"
 #include "common/metrics.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"

@@ -29,7 +29,6 @@
 #include "bt_common.h"
 #include "stdio.h"
 
-#include "btm_int.h"
 #include "connection_manager.h"
 #include "gatt_api.h"
 #include "gatt_int.h"

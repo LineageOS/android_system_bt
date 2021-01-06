@@ -24,7 +24,6 @@
 #include "hci/include/hci_packet_factory.h"
 #include "internal_include/stack_config.h"
 #include "osi/include/osi.h"
-#include "stack/btm/btm_int.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "types/raw_address.h"
