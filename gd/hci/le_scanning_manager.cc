@@ -41,6 +41,11 @@ enum class ScanApiType {
   EXTENDED = 3,
 };
 
+struct Scanner {
+  Uuid app_uuid;
+  bool in_use;
+};
+
 struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {
   impl(Module* module) : module_(module), le_scanning_interface_(nullptr) {}
 
@@ -64,6 +69,11 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
       api_type_ = ScanApiType::ANDROID_HCI;
     } else {
       api_type_ = ScanApiType::LEGACY;
+    }
+    scanners_ = std::vector<Scanner>(kMaxAppNum + 1);
+    for (size_t i = 0; i < scanners_.size(); i++) {
+      scanners_[i].app_uuid = Uuid::kEmpty;
+      scanners_[i].in_use = false;
     }
     configure_scan();
   }
@@ -146,6 +156,43 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
                                                     filter_policy_),
             module_handler_->BindOnce(impl::check_status));
         break;
+    }
+  }
+
+  void register_scanner(const Uuid app_uuid) {
+    for (uint8_t i = 1; i <= kMaxAppNum; i++) {
+      if (scanners_[i].in_use && scanners_[i].app_uuid == app_uuid) {
+        LOG_ERROR("Application already registered %s", app_uuid.ToString().c_str());
+        scanning_callbacks_->OnScannerRegistered(app_uuid, 0x00, ScanningCallback::ScanningStatus::INTERNAL_ERROR);
+        return;
+      }
+    }
+
+    // valid value of scanner id : 1 ~ kMaxAppNum
+    for (uint8_t i = 1; i <= kMaxAppNum; i++) {
+      if (!scanners_[i].in_use) {
+        scanners_[i].app_uuid = app_uuid;
+        scanners_[i].in_use = true;
+        scanning_callbacks_->OnScannerRegistered(app_uuid, i, ScanningCallback::ScanningStatus::SUCCESS);
+        return;
+      }
+    }
+
+    LOG_ERROR("Unable to register scanner, max client reached:%d", kMaxAppNum);
+    scanning_callbacks_->OnScannerRegistered(app_uuid, 0x00, ScanningCallback::ScanningStatus::NO_RESOURCES);
+  }
+
+  void unregister_scanner(ScannerId scanner_id) {
+    if (scanner_id <= 0 || scanner_id > kMaxAppNum) {
+      LOG_WARN("Invalid scanner id");
+      return;
+    }
+
+    if (scanners_[scanner_id].in_use) {
+      scanners_[scanner_id].in_use = false;
+      scanners_[scanner_id].app_uuid = Uuid::kEmpty;
+    } else {
+      LOG_WARN("Unregister scanner with unused scanner id");
     }
   }
 
@@ -241,6 +288,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   hci::LeAddressManager* le_address_manager_;
   bool address_manager_registered = false;
   ScanningCallback* scanning_callbacks_ = nullptr;
+  std::vector<Scanner> scanners_;
 
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
@@ -301,6 +349,14 @@ void LeScanningManager::Stop() {
 
 std::string LeScanningManager::ToString() const {
   return "Le Scanning Manager";
+}
+
+void LeScanningManager::RegisterScanner(Uuid app_uuid) {
+  CallOn(pimpl_.get(), &impl::register_scanner, app_uuid);
+}
+
+void LeScanningManager::Unregister(ScannerId scanner_id) {
+  CallOn(pimpl_.get(), &impl::unregister_scanner, scanner_id);
 }
 
 void LeScanningManager::StartScan(LeScanningManagerCallbacks* callbacks) {

@@ -41,10 +41,15 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
   /** Registers a scanner with the stack */
   void RegisterScanner(const bluetooth::Uuid& uuid, RegisterCallback) {
     LOG(INFO) << __func__ << " in shim layer";
+    auto app_uuid = bluetooth::hci::Uuid::From128BitBE(uuid.To128BitBE());
+    bluetooth::shim::GetScanning()->RegisterScanner(app_uuid);
   }
 
   /** Unregister a scanner from the stack */
-  void Unregister(int scanner_id) { LOG(INFO) << __func__ << " in shim layer"; }
+  void Unregister(int scanner_id) {
+    LOG(INFO) << __func__ << " in shim layer, scanner_id:" << scanner_id;
+    bluetooth::shim::GetScanning()->Unregister(scanner_id);
+  }
 
   /** Start or stop LE device scanning */
   void Scan(bool start) { LOG(INFO) << __func__ << " in shim layer"; }
@@ -120,7 +125,15 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
   }
 
   void OnScannerRegistered(const bluetooth::hci::Uuid app_uuid,
-                           uint8_t scanner_id, uint8_t status){};
+                           bluetooth::hci::ScannerId scanner_id,
+                           ScanningStatus status) {
+    auto uuid = bluetooth::Uuid::From128BitBE(app_uuid.To128BitBE());
+    do_in_jni_thread(FROM_HERE,
+                     base::Bind(&ScanningCallbacks::OnScannerRegistered,
+                                base::Unretained(scanning_callbacks_), uuid,
+                                scanner_id, status));
+  };
+
   void OnScanResult(uint16_t event_type, uint8_t addr_type,
                     bluetooth::hci::Address* bda, uint8_t primary_phy,
                     uint8_t secondary_phy, uint8_t advertising_sid,
