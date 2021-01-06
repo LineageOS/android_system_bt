@@ -637,8 +637,18 @@ bool L2CA_ConnectCreditBasedRsp(const RawAddress& bd_addr, uint8_t id,
  */
 bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
                                  tBT_TRANSPORT transport) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    LOG_INFO("UNIMPLEMENTED %s", __func__);
+    return false;
+  }
+  constexpr int GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP = 1;
+  if (timeout == 0 || timeout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP) {
+    bluetooth::shim::L2CA_RemoveFixedChnl(kLeAttributeCid, bd_addr);
+    return true;
+  } else {
+    LOG_INFO("UNIMPLEMENTED %s", __func__);
+    return false;
+  }
 }
 
 bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
@@ -845,8 +855,16 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
 
 bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
                               uint16_t idle_tout) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  if (fixed_cid != kLeAttributeCid) {
+    LOG_INFO("UNIMPLEMENTED %s", __func__);
+    return false;
+  }
+  if (idle_tout == 0xffff) {
+    bluetooth::shim::L2CA_ConnectFixedChnl(kLeAttributeCid, rem_bda);
+  } else {
+    bluetooth::shim::L2CA_RemoveFixedChnl(kLeAttributeCid, rem_bda);
+  }
+  return true;
 }
 
 bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
