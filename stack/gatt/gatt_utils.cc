@@ -40,6 +40,8 @@
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/connection_manager.h"
 
+uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
+
 using base::StringPrintf;
 using bluetooth::Uuid;
 using bluetooth::eatt::EattExtension;
