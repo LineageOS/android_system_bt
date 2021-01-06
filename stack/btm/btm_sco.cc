@@ -252,27 +252,44 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
       /* Check to see if BR/EDR Secure Connections is being used
       ** If so, we cannot use SCO-only packet types (HFP 1.7)
       */
-      if (BTM_BothEndsSupportSecureConnections(bd_addr)) {
-        temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
-        BTM_TRACE_DEBUG("%s: SCO Conn: pkt_types after removing SCO (0x%04x)",
-                        __func__, temp_packet_types);
+      const bool local_supports_sc =
+          controller_get_interface()->supports_secure_connections();
+      const bool remote_supports_sc =
+          BTM_PeerSupportsSecureConnections(bd_addr);
 
-        /* Return error if no packet types left */
+      if (local_supports_sc && remote_supports_sc) {
+        temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
         if (temp_packet_types == 0) {
-          LOG(ERROR) << __func__
-                     << ": SCO Conn (BR/EDR SC): No packet types available for "
-                        "acl_handle "
-                     << unsigned(acl_handle);
-          return (BTM_WRONG_MODE);
+          LOG_ERROR(
+              "SCO connection cannot support any packet types for "
+              "acl_handle:0x%04x",
+              acl_handle);
+          return BTM_WRONG_MODE;
         }
+        LOG_DEBUG(
+            "Both local and remote controllers support SCO secure connections "
+            "handle:0x%04x pkt_types:0x%04x",
+            acl_handle, temp_packet_types);
+
+      } else if (!local_supports_sc && !remote_supports_sc) {
+        LOG_DEBUG(
+            "Both local and remote controllers do not support secure "
+            "connections for handle:0x%04x",
+            acl_handle);
+      } else if (remote_supports_sc) {
+        LOG_DEBUG(
+            "Only remote controller supports secure connections for "
+            "handle:0x%04x",
+            acl_handle);
       } else {
-        LOG(WARNING) << __func__
-                     << ": SCO Conn(BR/EDR SC):local or peer does not support "
-                        "BR/EDR SC for acl_handle "
-                     << unsigned(acl_handle);
+        LOG_DEBUG(
+            "Only local controller supports secure connections for "
+            "handle:0x%04x",
+            acl_handle);
       }
     } else {
-      BTM_TRACE_ERROR("%s Received SCO connect from unknown peer", __func__);
+      LOG_ERROR("Received SCO connect from unknown peer:%s",
+                PRIVATE_ADDRESS(bd_addr));
     }
 
     /* Save the previous types in case command fails */
@@ -282,6 +299,8 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
     /* Use Enhanced Synchronous commands if supported */
     if (controller_get_interface()
             ->supports_enhanced_setup_synchronous_connection()) {
+      LOG_INFO("Sending enhanced SCO connect request over handle:0x%04x",
+               acl_handle);
       /* Use the saved SCO routing */
       p_setup->input_data_path = p_setup->output_data_path =
           btm_cb.sco_cb.sco_route;
@@ -296,6 +315,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
       btsnd_hcic_enhanced_set_up_synchronous_connection(acl_handle, p_setup);
       p_setup->packet_types = saved_packet_types;
     } else { /* Use older command */
+      LOG_INFO("Sending eSCO connect request over handle:0x%04x", acl_handle);
       uint16_t voice_content_format = btm_sco_voice_settings_to_legacy(p_setup);
       LOG(INFO) << __func__ << std::hex << ": legacy parameter list"
                 << " txbw=0x" << unsigned(p_setup->transmit_bandwidth)
@@ -449,8 +469,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
       if (p->state != SCO_ST_PEND_UNPARK &&
           p->state != SCO_ST_PEND_ROLECHANGE) {
         if (is_orig) {
-          BTM_TRACE_API("%s:(e)SCO Link for ACL handle 0x%04x", __func__,
-                        acl_handle);
+          LOG_DEBUG("Initiating (e)SCO link for ACL handle:0x%04x", acl_handle);
 
           if ((btm_send_connect_request(acl_handle, p_setup)) !=
               BTM_CMD_STARTED) {
@@ -461,8 +480,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
 
           p->state = SCO_ST_CONNECTING;
         } else {
-          BTM_TRACE_API("%s:(e)SCO listening for ACL handle 0x%04x", __func__,
-                        acl_handle);
+          LOG_DEBUG("Listening for (e)SCO on ACL handle:0x%04x", acl_handle);
           p->state = SCO_ST_LISTENING;
         }
       }
