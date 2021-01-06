@@ -33,6 +33,10 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_VendorSpecificCommand = BTM_VendorSpecificCommand,
             .ACL_RegisterClient = ACL_RegisterClient,
             .ACL_UnregisterClient = ACL_UnregisterClient,
+            .btm_init = btm_init,
+            .btm_free = btm_free,
+            .btm_ble_init = btm_ble_init,
+            .btm_ble_free = btm_ble_free,
         },
 
     .scn =
@@ -60,6 +64,7 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_ReadRemoteDeviceName = BTM_ReadRemoteDeviceName,
             .BTM_ReadRemoteFeatures = BTM_ReadRemoteFeatures,
             .BTM_SetEncryption = BTM_SetEncryption,
+            .BTM_GetMaxPacketSize = BTM_GetMaxPacketSize,
         },
 
     .link_policy =
