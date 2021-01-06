@@ -42,6 +42,13 @@
 #include "stack/include/acl_api.h"
 #include "stack_config.h"
 
+tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
+                                              uint16_t psm, bool is_originator,
+                                              tBTM_SEC_CALLBACK* p_callback,
+                                              void* p_ref_data);
+
+extern tBTM_CB btm_cb;
+
 using base::StringPrintf;
 
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb);

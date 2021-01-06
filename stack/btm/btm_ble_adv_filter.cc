@@ -36,6 +36,8 @@
 #include <base/bind.h>
 #include <base/bind_helpers.h>
 
+extern tBTM_CB btm_cb;
+
 using base::Bind;
 using bluetooth::Uuid;
 

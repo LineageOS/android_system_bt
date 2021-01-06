@@ -37,6 +37,8 @@
 #include "stack/crypto_toolbox/crypto_toolbox.h"
 #include "stack/include/acl_api.h"
 
+extern tBTM_CB btm_cb;
+
 void btm_ble_set_random_address(const RawAddress& random_bda);
 
 /* This function generates Resolvable Private Address (RPA) from Identity

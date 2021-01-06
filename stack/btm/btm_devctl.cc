@@ -30,6 +30,7 @@
 
 #include "bt_types.h"
 #include "bta/dm/bta_dm_int.h"
+#include "bta/sys/bta_sys.h"
 #include "btcore/include/module.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -37,15 +38,16 @@
 #include "device/include/controller.h"
 #include "hci/include/hci_layer.h"
 #include "hcimsgs.h"
+#include "main/shim/btm_api.h"
+#include "main/shim/controller.h"
+#include "main/shim/shim.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_ble_int.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2cap_controller_interface.h"
 
-#include "bta/sys/bta_sys.h"
-#include "main/shim/btm_api.h"
-#include "main/shim/controller.h"
-#include "main/shim/shim.h"
+extern tBTM_CB btm_cb;
 
 extern void btm_inq_db_reset(void);
 extern void btm_pm_reset(void);

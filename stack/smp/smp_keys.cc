@@ -41,6 +41,8 @@
 
 #include <algorithm>
 
+extern tBTM_CB btm_cb;  // TODO Remove
+
 using base::Bind;
 using crypto_toolbox::aes_128;
 

@@ -48,6 +48,8 @@
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
 
+extern tBTM_CB btm_cb;
+
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
 void btm_inq_stop_on_ssp(void);

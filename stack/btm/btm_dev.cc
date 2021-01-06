@@ -41,6 +41,8 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 
+extern tBTM_CB btm_cb;
+
 /*******************************************************************************
  *
  * Function         BTM_SecAddDevice

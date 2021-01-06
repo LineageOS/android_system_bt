@@ -26,6 +26,9 @@
 #include "btu.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "stack/btm/btm_int_types.h"
+
+extern tBTM_CB btm_cb;
 
 tBTM_BLE_ENERGY_INFO_CB ble_energy_info_cb;
 

@@ -36,6 +36,8 @@
 #include "stack/smp/smp_int.h"
 #include "types/raw_address.h"
 
+extern tBTM_CB btm_cb;
+
 #define SMP_KEY_DIST_TYPE_MAX 4
 
 const tSMP_ACT smp_distribute_act[] = {
