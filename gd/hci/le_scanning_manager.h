@@ -34,10 +34,19 @@ class LeScanningManagerCallbacks {
   virtual os::Handler* Handler() = 0;
 };
 
+using ScannerId = uint8_t;
+
 class ScanningCallback {
  public:
+  enum ScanningStatus {
+    SUCCESS,
+    NO_RESOURCES = 0x80,
+    INTERNAL_ERROR = 0x85,
+  };
+
   virtual ~ScanningCallback() = default;
-  virtual void OnScannerRegistered(const bluetooth::hci::Uuid app_uuid, uint8_t scanner_id, uint8_t status) = 0;
+  virtual void OnScannerRegistered(
+      const bluetooth::hci::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status) = 0;
   virtual void OnScanResult(
       uint16_t event_type,
       uint8_t addr_type,
@@ -56,7 +65,12 @@ class ScanningCallback {
 
 class LeScanningManager : public bluetooth::Module {
  public:
+  static constexpr uint8_t kMaxAppNum = 32;
   LeScanningManager();
+
+  void RegisterScanner(const Uuid app_uuid);
+
+  void Unregister(ScannerId scanner_id);
 
   void StartScan(LeScanningManagerCallbacks* callbacks);
 
