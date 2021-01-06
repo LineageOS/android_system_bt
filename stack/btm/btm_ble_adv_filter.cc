@@ -27,6 +27,8 @@
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_int_types.h"
 #include "utils/include/bt_utils.h"
 
 #include <string.h>

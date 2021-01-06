@@ -35,6 +35,7 @@
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 #include "smp_int.h"
+#include "stack/btm/btm_ble_int.h"
 #include "stack/include/acl_api.h"
 
 #define SMP_PAIRING_REQ_SIZE 7
