@@ -43,6 +43,7 @@
 #include "main/shim/helpers.h"
 #include "main/shim/l2c_api.h"
 #include "main/shim/le_advertising_manager.h"
+#include "main/shim/le_scanning_manager.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
 #include "src/stack.rs.h"
@@ -136,6 +137,9 @@ void Stack::StartEverything() {
 
   if (common::init_flags::gd_advertising_is_enabled()) {
     bluetooth::shim::init_advertising_manager();
+  }
+  if (common::init_flags::gd_scanning_is_enabled()) {
+    bluetooth::shim::init_scanning_manager();
   }
   if (common::init_flags::gd_l2cap_is_enabled() &&
       !common::init_flags::gd_core_is_enabled()) {

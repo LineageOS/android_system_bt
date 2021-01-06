@@ -206,7 +206,8 @@ void bta_cback(tBTA_GATTC_EVT, tBTA_GATTC*) {}
 class BleScannerInterfaceImpl : public BleScannerInterface {
   ~BleScannerInterfaceImpl() override{};
 
-  void RegisterScanner(RegisterCallback cb) override {
+  void RegisterScanner(const bluetooth::Uuid& app_uuid,
+                       RegisterCallback cb) override {
     do_in_main_thread(FROM_HERE,
                       Bind(
                           [](RegisterCallback cb) {
@@ -333,6 +334,10 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
                  SyncLostCb lost_cb) override {}
 
   void StopSync(uint16_t handle) override {}
+
+  void RegisterCallbacks(ScanningCallbacks* callbacks) {
+    // For GD only
+  }
 };
 
 BleScannerInterface* btLeScannerInstance = nullptr;
