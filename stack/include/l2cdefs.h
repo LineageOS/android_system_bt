@@ -103,16 +103,18 @@
 
 /* Define the L2CAP connection result codes
 */
-#define L2CAP_CONN_OK 0
-#define L2CAP_CONN_PENDING 1
-#define L2CAP_CONN_NO_PSM 2
-#define L2CAP_CONN_SECURITY_BLOCK 3
-#define L2CAP_CONN_NO_RESOURCES 4
-#define L2CAP_CONN_OTHER_ERROR 5
-#define L2CAP_CONN_TIMEOUT 0xEEEE
-/* Add a couple of our own for internal use */
-#define L2CAP_CONN_NO_LINK 255
-#define L2CAP_CONN_CANCEL 256 /* L2CAP connection cancelled */
+typedef enum : uint16_t {
+  L2CAP_CONN_OK = 0,
+  L2CAP_CONN_PENDING = 1,
+  L2CAP_CONN_NO_PSM = 2,
+  L2CAP_CONN_SECURITY_BLOCK = 3,
+  L2CAP_CONN_NO_RESOURCES = 4,
+  L2CAP_CONN_OTHER_ERROR = 5,
+  L2CAP_CONN_TIMEOUT = 0xEEEE,
+  /* Add a couple of our own for internal use */
+  L2CAP_CONN_NO_LINK = 255,
+  L2CAP_CONN_CANCEL = 256, /* L2CAP connection cancelled */
+} tL2CAP_CONN;
 
 /* Define the LE L2CAP Connection Response Result codes
  */

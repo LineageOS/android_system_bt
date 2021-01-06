@@ -112,6 +112,23 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
   }
 }
 
+struct sACL_CONN;
+
+namespace bluetooth {
+namespace shim {
+tBTM_STATUS BTM_SetPowerMode(sACL_CONN& p_acl, const tBTM_PM_PWR_MD& new_mode);
+tBTM_STATUS BTM_SetSsrParams(sACL_CONN& p_acl, uint16_t max_lat,
+                             uint16_t min_rmt_to, uint16_t min_loc_to);
+void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
+                           tHCI_MODE hci_mode, uint16_t interval);
+void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
+                               uint16_t maximum_transmit_latency,
+                               uint16_t maximum_receive_latency,
+                               uint16_t minimum_remote_timeout,
+                               uint16_t minimum_local_timeout);
+}  // namespace shim
+}  // namespace bluetooth
+
 typedef struct {
   uint16_t max_xmit_latency;
   uint16_t max_recv_latency;
@@ -162,7 +179,7 @@ typedef struct {
   void Init() { state = BTM_PM_ST_ACTIVE; }
 } tBTM_PM_MCB;
 
-typedef struct {
+struct sACL_CONN {
   BD_FEATURES peer_le_features;
   bool peer_le_features_valid;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
@@ -175,6 +192,7 @@ typedef struct {
 
  public:
   bool InUse() const { return in_use; }
+  const RawAddress RemoteAddress() const { return remote_addr; }
 
   bool link_up_issued;
   tBT_TRANSPORT transport;
@@ -188,6 +206,8 @@ typedef struct {
   uint16_t hci_handle;
   tLINK_POLICY link_policy;
 
+ public:
+  uint16_t Handle() const { return hci_handle; }
   uint16_t link_super_tout;
   uint16_t pkt_types_mask;
   tBLE_ADDR_TYPE active_remote_addr_type;
@@ -280,7 +300,66 @@ typedef struct {
 
  public:
   uint8_t sca; /* Sleep clock accuracy */
-} tACL_CONN;
+
+  void Reset();
+
+  struct sPolicy {
+    tBTM_PM_MODE Mode() const;
+    struct {
+      bool IsPending() const { return pending_ != BTM_PM_MD_UNKNOWN; }
+      tBTM_PM_MODE Pending() const { return pending_; }
+      uint16_t Interval() const { return interval_; }
+
+     private:
+      tBTM_PM_MODE mode_{BTM_PM_MD_ACTIVE};
+      tBTM_PM_MODE pending_{BTM_PM_MD_UNKNOWN};
+      uint16_t interval_{0};
+      friend tBTM_STATUS bluetooth::shim::BTM_SetPowerMode(
+          sACL_CONN& p_acl, const tBTM_PM_PWR_MD& new_mode);
+      friend void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status,
+                                                         uint16_t handle,
+                                                         tHCI_MODE hci_mode,
+                                                         uint16_t interval);
+      friend void sACL_CONN::Reset();
+      friend tBTM_PM_MODE sACL_CONN::sPolicy::Mode() const;
+    } mode;
+
+    hci_role_t Role() const;
+    struct {
+      unsigned RoleSwitchFailedCount() const { return role_switch_failed_cnt_; }
+
+     private:
+      hci_role_t role_{HCI_ROLE_CENTRAL};
+      unsigned role_switch_failed_cnt_{0};
+      friend void sACL_CONN::Reset();
+      friend tBTM_PM_MODE sACL_CONN::sPolicy::Role() const;
+    } role;
+
+    struct {
+      bool IsPending() const { return pending_; }
+
+     private:
+      bool pending_{false};
+      friend tBTM_STATUS bluetooth::shim::BTM_SetSsrParams(sACL_CONN& p_acl,
+                                                           uint16_t max_lat,
+                                                           uint16_t min_rmt_to,
+                                                           uint16_t min_loc_to);
+      friend void bluetooth::shim::btm_pm_on_sniff_subrating(
+          tHCI_STATUS status, uint16_t handle,
+          uint16_t maximum_transmit_latency, uint16_t maximum_receive_latency,
+          uint16_t minimum_remote_timeout, uint16_t minimum_local_timeout);
+      friend void sACL_CONN::Reset();
+    } sniff_subrating;
+
+    tLINK_POLICY Settings() const { return settings_; }
+
+   private:
+    tLINK_POLICY settings_{kAllLinkPoliciesEnabled};
+    friend void btm_set_link_policy(sACL_CONN* conn, tLINK_POLICY policy);
+    friend void sACL_CONN::Reset();
+  } policy;
+};
+typedef sACL_CONN tACL_CONN;
 
 /****************************************************
  **      ACL Management API
@@ -288,8 +367,6 @@ typedef struct {
 typedef struct {
  private:
   friend bool BTM_IsBleConnection(uint16_t hci_handle);
-  friend bool BTM_ReadPowerMode(const RawAddress& remote_bda,
-                                tBTM_PM_MODE* p_mode);
   friend bool acl_is_role_switch_allowed();
   friend bool btm_pm_is_le_link(const RawAddress& remote_bda);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
@@ -304,7 +381,6 @@ typedef struct {
                                       uint16_t min_loc_to);
   friend tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                                tBTM_PM_STATE* pmState);
-  friend uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
   friend uint16_t BTM_GetNumAclLinks(void);
   friend uint16_t acl_get_link_supervision_timeout();
   friend uint16_t acl_get_supported_packet_types();
@@ -321,32 +397,12 @@ typedef struct {
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
   friend void btm_acl_init(void);
-  friend void btm_acl_process_sca_cmpl_pkt(uint8_t evt_len, uint8_t* p);
-  friend void btm_acl_role_changed(tHCI_STATUS hci_status,
-                                   const RawAddress& bd_addr, uint8_t new_role);
   friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
   friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
                                       uint16_t hci_handle, tHCI_MODE mode,
                                       uint16_t interval);
   friend void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
   friend void btm_pm_reset(void);
-  friend void btm_pm_sm_alloc(uint8_t ind);
-  friend void btm_process_clk_off_comp_evt(uint16_t hci_handle,
-                                           uint16_t clock_offset);
-  friend void btm_read_automatic_flush_timeout_complete(uint8_t* p);
-  friend void btm_read_failed_contact_counter_complete(uint8_t* p);
-  friend void btm_read_link_quality_complete(uint8_t* p);
-  friend void btm_read_remote_ext_features_complete(uint16_t handle,
-                                                    uint8_t page_num,
-                                                    uint8_t max_page,
-                                                    uint8_t* features);
-  friend void btm_read_remote_ext_features_failed(uint8_t status,
-                                                  uint16_t handle);
-  friend void btm_read_remote_features_complete(uint16_t handle,
-                                                uint8_t* features);
-  friend void btm_read_remote_version_complete_raw(uint8_t* p);
-  friend void btm_read_rssi_complete(uint8_t* p);
-  friend void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
   friend void DumpsysL2cap(int fd);
   friend void DumpsysAcl(int fd);
 

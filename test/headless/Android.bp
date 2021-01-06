@@ -3,10 +3,12 @@ cc_test {
     test_suites: ["device-tests"],
     defaults: ["fluoride_defaults"],
     srcs: [
+        "connect/connect.cc",
         "get_options.cc",
         "headless.cc",
         "main.cc",
         "pairing/pairing.cc",
+        "dumpsys/dumpsys.cc",
         "sdp/sdp.cc",
         "sdp/sdp_db.cc",
         "nop/nop.cc",
@@ -15,6 +17,7 @@ cc_test {
     ],
     include_dirs: [
         "system/bt",
+        "system/bt/gd",
         "system/bt/stack/include",
     ],
     whole_static_libs: [
@@ -62,4 +65,7 @@ cc_test {
         "libutils",
     ],
     ldflags: ["-rdynamic"],
+    sanitize: {
+      cfi: false,
+    },
 }

@@ -68,3 +68,8 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
                                    uint8_t max_page_number, uint64_t features);
 void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
                            tHCI_MODE current_mode, uint16_t interval);
+void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
+                               uint16_t maximum_transmit_latency,
+                               uint16_t maximum_receive_latency,
+                               uint16_t minimum_remote_timeout,
+                               uint16_t minimum_local_timeout);

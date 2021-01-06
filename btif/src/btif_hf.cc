@@ -45,6 +45,7 @@
 #include "btif_profile_queue.h"
 #include "btif_util.h"
 #include "common/metrics.h"
+#include "main/shim/dumpsys.h"
 
 namespace bluetooth {
 namespace headset {
@@ -1079,13 +1080,13 @@ bt_status_t HeadsetInterface::PhoneStateChange(
     RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
   if (!bd_addr) {
-    BTIF_TRACE_WARNING("%s: bd_addr is null", __func__);
+    LOG_WARN("bd_addr is null");
     return BT_STATUS_FAIL;
   }
+  const RawAddress raw_address(*bd_addr);
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if (idx < 0 || idx > BTA_AG_MAX_NUM_CLIENTS) {
-    BTIF_TRACE_WARNING("%s: invalid index %d for %s", __func__, idx,
-                       bd_addr->ToString().c_str());
+    LOG_WARN("Invalid index %d for %s", idx, PRIVATE_ADDRESS(raw_address));
     return BT_STATUS_FAIL;
   }
   const btif_hf_cb_t& control_block = btif_hf_cb[idx];
@@ -1110,7 +1111,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
             << ", call_state=" << dump_hf_call_state(call_setup_state)
             << ", prev_call_state="
             << dump_hf_call_state(control_block.call_setup_state);
-  tBTA_AG_RES res = 0xFF;
+  tBTA_AG_RES res = BTA_AG_UNKNOWN;
   bt_status_t status = BT_STATUS_SUCCESS;
   bool active_call_updated = false;
 

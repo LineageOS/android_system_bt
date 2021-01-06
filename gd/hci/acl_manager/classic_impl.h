@@ -96,6 +96,9 @@ struct classic_impl : public security::ISecurityManagerListener {
       case EventCode::MODE_CHANGE:
         on_mode_change(event_packet);
         break;
+      case EventCode::SNIFF_SUBRATING:
+        on_sniff_subrating(event_packet);
+        break;
       case EventCode::QOS_SETUP_COMPLETE:
         on_qos_setup_complete(event_packet);
         break;
@@ -415,6 +418,31 @@ struct classic_impl : public security::ISecurityManagerListener {
     Mode current_mode = mode_change_view.GetCurrentMode();
     uint16_t interval = mode_change_view.GetInterval();
     callbacks->OnModeChange(current_mode, interval);
+  }
+
+  void on_sniff_subrating(EventView packet) {
+    SniffSubratingEventView sniff_subrating_view = SniffSubratingEventView::Create(packet);
+    if (!sniff_subrating_view.IsValid()) {
+      LOG_ERROR("Received on_sniff_subrating with invalid packet");
+      return;
+    } else if (sniff_subrating_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = sniff_subrating_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_sniff_subrating with error code %s", error_code.c_str());
+      return;
+    }
+    uint16_t handle = sniff_subrating_view.GetConnectionHandle();
+    auto callbacks = get_callbacks(handle);
+    if (callbacks == nullptr) {
+      LOG_WARN("Unknown connection handle 0x%04hx", handle);
+      ASSERT(!crash_on_unknown_handle_);
+      return;
+    }
+    uint16_t max_tx_lat = sniff_subrating_view.GetMaximumTransmitLatency();
+    uint16_t max_rx_lat = sniff_subrating_view.GetMaximumReceiveLatency();
+    uint16_t min_remote_timeout = sniff_subrating_view.GetMinimumRemoteTimeout();
+    uint16_t min_local_timeout = sniff_subrating_view.GetMinimumLocalTimeout();
+    callbacks->OnSniffSubrating(max_tx_lat, max_rx_lat, min_remote_timeout, min_local_timeout);
   }
 
   void on_qos_setup_complete(EventView packet) {

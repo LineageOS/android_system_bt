@@ -46,6 +46,7 @@
 #include "btif_util.h"
 #include "btu.h"
 #include "common/state_machine.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
@@ -57,6 +58,10 @@ static const std::string kBtifAvSourceServiceName = "Advanced Audio Source";
 static const std::string kBtifAvSinkServiceName = "Advanced Audio Sink";
 static constexpr int kDefaultMaxConnectedAudioDevices = 1;
 static constexpr tBTA_AV_HNDL kBtaHandleUnknown = 0;
+
+namespace {
+constexpr char kBtmLogHistoryTag[] = "A2DP";
+}
 
 /*****************************************************************************
  *  Local type definitions
@@ -2538,6 +2543,7 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
   tBTA_AV_HNDL bta_handle = kBtaHandleUnknown;
   tBTA_AV_EVT event = btif_av_event.Event();
   tBTA_AV* p_data = (tBTA_AV*)btif_av_event.Data();
+  std::string msg;
 
   BTIF_TRACE_DEBUG("%s: peer_sep=%s (%d) event=%s", __func__,
                    (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink", peer_sep,
@@ -2566,22 +2572,26 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       const tBTA_AV_OPEN& open = p_data->open;
       peer_address = open.bd_addr;
       bta_handle = open.hndl;
+      msg = "Stream opened";
       break;
     }
     case BTA_AV_CLOSE_EVT: {
       const tBTA_AV_CLOSE& close = p_data->close;
       bta_handle = close.hndl;
+      msg = "Stream closed";
       break;
     }
     case BTA_AV_START_EVT: {
       const tBTA_AV_START& start = p_data->start;
       bta_handle = start.hndl;
+      msg = "Stream started";
       break;
     }
     case BTA_AV_SUSPEND_EVT:
     case BTA_AV_STOP_EVT: {
       const tBTA_AV_SUSPEND& suspend = p_data->suspend;
       bta_handle = suspend.hndl;
+      msg = "Stream stopped";
       break;
     }
     case BTA_AV_PROTECT_REQ_EVT: {
@@ -2624,8 +2634,10 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       // events are received from the AVRCP module.
       if (peer_sep == AVDT_TSEP_SNK) {
         peer_address = btif_av_source.ActivePeer();
+        msg = "Stream sink offloaded";
       } else if (peer_sep == AVDT_TSEP_SRC) {
         peer_address = btif_av_sink.ActivePeer();
+        msg = "Stream source offloaded";
       }
       break;
     }
@@ -2658,6 +2670,11 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
   }
   BTIF_TRACE_DEBUG("%s: peer_address=%s bta_handle=0x%x", __func__,
                    peer_address.ToString().c_str(), bta_handle);
+
+  if (!msg.empty()) {
+    BTM_LogHistory(kBtmLogHistoryTag, peer_address, msg,
+                   btif_av_event.ToString());
+  }
 
   btif_av_handle_event(peer_sep, peer_address, bta_handle, btif_av_event);
 }
@@ -2829,14 +2846,15 @@ static void set_active_peer_int(uint8_t peer_sep,
 }
 
 static bt_status_t src_connect_sink(const RawAddress& peer_address) {
-  BTIF_TRACE_EVENT("%s: Peer %s", __func__, peer_address.ToString().c_str());
-
   if (!btif_av_source.Enabled()) {
-    BTIF_TRACE_WARNING("%s: BTIF AV Source is not enabled", __func__);
+    LOG_WARN("BTIF AV Source is not enabled");
     return BT_STATUS_NOT_READY;
   }
 
   RawAddress peer_address_copy(peer_address);
+  LOG_DEBUG("Connecting to AV sink peer:%s",
+            PRIVATE_ADDRESS(peer_address_copy));
+
   return btif_queue_connect(UUID_SERVCLASS_AUDIO_SOURCE, &peer_address_copy,
                             connect_int);
 }

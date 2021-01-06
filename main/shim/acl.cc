@@ -245,6 +245,16 @@ class ClassicShimAclConnection
                         ToLegacyHciMode(current_mode), interval);
   }
 
+  void OnSniffSubrating(uint16_t maximum_transmit_latency,
+                        uint16_t maximum_receive_latency,
+                        uint16_t minimum_remote_timeout,
+                        uint16_t minimum_local_timeout) {
+    TRY_POSTING_ON_MAIN(interface_.on_sniff_subrating,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        maximum_transmit_latency, maximum_receive_latency,
+                        minimum_remote_timeout, minimum_local_timeout);
+  }
+
   void OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate,
                           uint32_t peak_bandwidth, uint32_t latency,
                           uint32_t delay_variation) override {
@@ -346,6 +356,24 @@ class ClassicShimAclConnection
     connection_->Disconnect(reason);
   }
 
+  void HoldMode(uint16_t max_interval, uint16_t min_interval) {
+    ASSERT(connection_->HoldMode(max_interval, min_interval));
+  }
+
+  void SniffMode(uint16_t max_interval, uint16_t min_interval, uint16_t attempt,
+                 uint16_t timeout) {
+    ASSERT(
+        connection_->SniffMode(max_interval, min_interval, attempt, timeout));
+  }
+
+  void ExitSniffMode() { ASSERT(connection_->ExitSniffMode()); }
+
+  void SniffSubrating(uint16_t maximum_latency, uint16_t minimum_remote_timeout,
+                      uint16_t minimum_local_timeout) {
+    ASSERT(connection_->SniffSubrating(maximum_latency, minimum_remote_timeout,
+                                       minimum_local_timeout));
+  }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_classic_link_interface_t interface_;
@@ -437,9 +465,42 @@ struct bluetooth::shim::legacy::Acl::impl {
            handle_to_le_connection_map_.end();
   }
 
+  bool ClassicConnectionExists(HciHandle handle) {
+    return handle_to_classic_connection_map_.find(handle) !=
+           handle_to_classic_connection_map_.end();
+  }
+
   void EnqueueLePacket(HciHandle handle,
                        std::unique_ptr<bluetooth::packet::RawBuilder> packet) {
-    handle_to_le_connection_map_[handle]->EnqueuePacket(std::move(packet));
+    if (ClassicConnectionExists(handle))
+      handle_to_le_connection_map_[handle]->EnqueuePacket(std::move(packet));
+  }
+
+  void HoldMode(HciHandle handle, uint16_t max_interval,
+                uint16_t min_interval) {
+    if (ClassicConnectionExists(handle))
+      handle_to_classic_connection_map_[handle]->HoldMode(max_interval,
+                                                          min_interval);
+  }
+
+  void ExitSniffMode(HciHandle handle) {
+    if (ClassicConnectionExists(handle))
+      handle_to_classic_connection_map_[handle]->ExitSniffMode();
+  }
+
+  void SniffMode(HciHandle handle, uint16_t max_interval, uint16_t min_interval,
+                 uint16_t attempt, uint16_t timeout) {
+    if (ClassicConnectionExists(handle))
+      handle_to_classic_connection_map_[handle]->SniffMode(
+          max_interval, min_interval, attempt, timeout);
+  }
+
+  void SniffSubrating(HciHandle handle, uint16_t maximum_latency,
+                      uint16_t minimum_remote_timeout,
+                      uint16_t minimum_local_timeout) {
+    if (ClassicConnectionExists(handle))
+      handle_to_classic_connection_map_[handle]->SniffSubrating(
+          maximum_latency, minimum_remote_timeout, minimum_local_timeout);
   }
 };
 
@@ -829,4 +890,35 @@ void bluetooth::shim::legacy::Acl::DisconnectLe(uint16_t handle,
     LOG_WARN("Unable to disconnect unknown le connection handle:0x%04x",
              handle);
   }
+}
+bool bluetooth::shim::legacy::Acl::HoldMode(uint16_t hci_handle,
+                                            uint16_t max_interval,
+                                            uint16_t min_interval) {
+  handler_->CallOn(pimpl_.get(), &Acl::impl::HoldMode, hci_handle, max_interval,
+                   min_interval);
+  return false;  // TODO void
+}
+
+bool bluetooth::shim::legacy::Acl::SniffMode(uint16_t hci_handle,
+                                             uint16_t max_interval,
+                                             uint16_t min_interval,
+                                             uint16_t attempt,
+                                             uint16_t timeout) {
+  handler_->CallOn(pimpl_.get(), &Acl::impl::SniffMode, hci_handle,
+                   max_interval, min_interval, attempt, timeout);
+  return false;
+}
+
+bool bluetooth::shim::legacy::Acl::ExitSniffMode(uint16_t hci_handle) {
+  handler_->CallOn(pimpl_.get(), &Acl::impl::ExitSniffMode, hci_handle);
+  return false;
+}
+
+bool bluetooth::shim::legacy::Acl::SniffSubrating(
+    uint16_t hci_handle, uint16_t maximum_latency,
+    uint16_t minimum_remote_timeout, uint16_t minimum_local_timeout) {
+  handler_->CallOn(pimpl_.get(), &Acl::impl::SniffSubrating, hci_handle,
+                   maximum_latency, minimum_remote_timeout,
+                   minimum_local_timeout);
+  return false;
 }

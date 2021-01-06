@@ -31,8 +31,10 @@
 #include "btm_api.h"
 #include "device/include/controller.h"
 #include "device/include/esco_parameters.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sco.h"
 #include "stack/include/btu.h"
 #include "utl.h"
 
@@ -159,21 +161,17 @@ static void bta_ag_sco_conn_cback(uint16_t sco_idx) {
 static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
   uint16_t handle = 0;
 
-  APPL_TRACE_DEBUG(
-      "bta_ag_sco_disc_cback(): sco_idx: 0x%x  p_cur_scb: 0x%08x  sco.state: "
-      "%d",
-      sco_idx, bta_ag_cb.sco.p_curr_scb, bta_ag_cb.sco.state);
-
-  APPL_TRACE_DEBUG(
-      "bta_ag_sco_disc_cback(): scb[0] addr: 0x%08x  in_use: %u  sco_idx: 0x%x "
-      " sco state: %u",
-      &bta_ag_cb.scb[0], bta_ag_cb.scb[0].in_use, bta_ag_cb.scb[0].sco_idx,
-      bta_ag_cb.scb[0].state);
-  APPL_TRACE_DEBUG(
-      "bta_ag_sco_disc_cback(): scb[1] addr: 0x%08x  in_use: %u  sco_idx: 0x%x "
-      " sco state: %u",
-      &bta_ag_cb.scb[1], bta_ag_cb.scb[1].in_use, bta_ag_cb.scb[1].sco_idx,
-      bta_ag_cb.scb[1].state);
+  LOG_DEBUG(
+      "sco_idx: 0x%x sco.state:%s", sco_idx,
+      sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.sco.state)).c_str());
+  LOG_DEBUG(
+      "  scb[0] in_use:%s sco_idx: 0x%x sco state:%s",
+      logbool(bta_ag_cb.scb[0].in_use).c_str(), bta_ag_cb.scb[0].sco_idx,
+      sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.scb[0].state)).c_str());
+  LOG_DEBUG(
+      "  scb[1] in_use:%s sco_idx:0x%x sco state:%s",
+      logbool(bta_ag_cb.scb[1].in_use).c_str(), bta_ag_cb.scb[1].sco_idx,
+      sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.scb[1].state)).c_str());
 
   /* match callback to scb */
   if (bta_ag_cb.sco.p_curr_scb != nullptr && bta_ag_cb.sco.p_curr_scb->in_use) {
@@ -345,7 +343,7 @@ static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, uint8_t event) {
   sco.handle = bta_ag_scb_to_idx(p_scb);
   sco.app_id = p_scb->app_id;
   /* call close cback */
-  (*bta_ag_cb.p_cback)(event, (tBTA_AG*)&sco);
+  (*bta_ag_cb.p_cback)(static_cast<tBTA_AG_EVT>(event), (tBTA_AG*)&sco);
 }
 
 /*******************************************************************************
@@ -604,21 +602,11 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_ag_sco_event
- *
- * Description
- *
- *
- * Returns          void
- *
- ******************************************************************************/
 static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
   tBTA_AG_SCO_CB* p_sco = &bta_ag_cb.sco;
   uint8_t previous_state = p_sco->state;
-  LOG_INFO("index=0x%04x, device=%s, state=%s[%d], event=%s[%d]",
-           p_scb->sco_idx, p_scb->peer_addr.ToString().c_str(),
+  LOG_INFO("device:%s index:0x%04x state:%s[%d] event:%s[%d]",
+           PRIVATE_ADDRESS(p_scb->peer_addr), p_scb->sco_idx,
            bta_ag_sco_state_str(p_sco->state), p_sco->state,
            bta_ag_sco_evt_str(event), event);
 

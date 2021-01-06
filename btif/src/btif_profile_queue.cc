@@ -37,6 +37,7 @@
 
 #include "bt_common.h"
 #include "btif_common.h"
+#include "main/shim/dumpsys.h"
 #include "stack_manager.h"
 
 /*******************************************************************************
@@ -52,7 +53,7 @@ class ConnectNode {
 
   std::string ToString() const {
     return base::StringPrintf("address=%s UUID=%04X busy=%s",
-                              address_.ToString().c_str(), uuid_,
+                              PRIVATE_ADDRESS(address_), uuid_,
                               (busy_) ? "true" : "false");
   }
 
@@ -99,14 +100,13 @@ static void queue_int_add(uint16_t uuid, const RawAddress& bda,
   ConnectNode param(bda, uuid, connect_cb);
   for (const auto& node : connect_queue) {
     if (node.uuid() == param.uuid() && node.address() == param.address()) {
-      LOG_ERROR("%s: dropping duplicate connection request: %s", __func__,
+      LOG_ERROR("Dropping duplicate profile connection request:%s",
                 param.ToString().c_str());
       return;
     }
   }
 
-  LOG_INFO("%s: adding connection request: %s", __func__,
-           param.ToString().c_str());
+  LOG_INFO("Queueing profile connection request:%s", param.ToString().c_str());
   connect_queue.push_back(param);
 
   btif_queue_connect_next();
@@ -193,8 +193,7 @@ bt_status_t btif_queue_connect_next(void) {
 
   ConnectNode& head = connect_queue.front();
 
-  LOG_INFO("%s: executing connection request: %s", __func__,
-           head.ToString().c_str());
+  LOG_INFO("Executing profile connection request:%s", head.ToString().c_str());
   bt_status_t b_status = head.connect();
   if (b_status != BT_STATUS_SUCCESS) {
     LOG_INFO("%s: connect %s failed, advance to next scheduled connection.",

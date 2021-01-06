@@ -17,16 +17,43 @@
 #define LOG_TAG "bt_headless"
 
 #include <dlfcn.h>  //  dlopen
+#include <algorithm>
+#include <iostream>
+#include <map>
 
 #include "base/logging.h"  // LOG() stdout and android log
 #include "include/hardware/bluetooth.h"
 #include "osi/include/log.h"  // android log only
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
+#include "test/headless/interface.h"
 
 extern bt_interface_t bluetoothInterface;
 
 using namespace bluetooth::test::headless;
+
+std::map<const std::string, std::list<callback_function_t>>
+    interface_api_callback_map_;
+
+void headless_add_callback(const std::string interface_name,
+                           callback_function_t function) {
+  if (interface_api_callback_map_.find(interface_name) ==
+      interface_api_callback_map_.end()) {
+    interface_api_callback_map_.emplace(interface_name,
+                                        std::list<callback_function_t>());
+  }
+  interface_api_callback_map_[interface_name].push_back(function);
+}
+
+void headless_remove_callback(const std::string interface_name,
+                              callback_function_t function) {
+  if (interface_api_callback_map_.find(interface_name) ==
+      interface_api_callback_map_.end()) {
+    ASSERT_LOG(false, "No callbacks registered for interface:%s",
+               interface_name.c_str());
+  }
+  interface_api_callback_map_[interface_name].remove(function);
+}
 
 namespace {
 std::mutex adapter_state_mutex_;
@@ -77,7 +104,19 @@ void bond_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
 /** Bluetooth ACL connection state changed callback */
 void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
                        bt_acl_state_t state) {
-  LOG_INFO("%s", __func__);
+  auto callback_list = interface_api_callback_map_.at(__func__);
+  for (auto callback : callback_list) {
+    interface_data_t params{
+        .name = __func__,
+        .params.acl_state_changed.status = status,
+        .params.acl_state_changed.remote_bd_addr = remote_bd_addr,
+        .params.acl_state_changed.state = state,
+    };
+    (callback)(params);
+  }
+  LOG_INFO("%s status:%s device:%s state:%s", __func__,
+           bt_status_text(status).c_str(), remote_bd_addr->ToString().c_str(),
+           (state) ? "disconnected" : "connected");
 }
 
 void thread_event(bt_cb_thread_evt evt) { LOG_INFO("%s", __func__); }
@@ -141,7 +180,8 @@ bt_os_callouts_t bt_os_callouts{
 void HeadlessStack::SetUp() {
   LOG(INFO) << __func__ << " Entry";
 
-  int status = bluetoothInterface.init(&bt_callbacks, false, false, 0, nullptr, false);
+  int status = bluetoothInterface.init(&bt_callbacks, false, false, 0,
+                                       StackInitFlags(), false);
   (status == BT_STATUS_SUCCESS)
       ? LOG(INFO) << __func__ << " Initialized bluetooth callbacks"
       : LOG(FATAL) << "Failed to initialize Bluetooth stack";

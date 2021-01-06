@@ -86,6 +86,7 @@ namespace legacy {
 namespace hci {
 struct Interface {
   void (*Disconnect)(uint16_t handle, uint8_t reason);
+  void (*StartRoleSwitch)(const RawAddress& bd_addr, uint8_t role);
 };
 const Interface& GetInterface();
 }  // namespace hci
@@ -329,9 +330,6 @@ extern void btsnd_hcic_qos_setup(uint16_t handle, uint8_t flags,
 #define HCI_QOS_DELAY_VAR_OFF 16
 /* QoS Setup */
 
-/* Switch Role Request */
-extern void btsnd_hcic_switch_role(const RawAddress& bd_addr, uint8_t role);
-
 #define HCIC_PARAM_SIZE_SWITCH_ROLE 7
 
 #define HCI_SWITCH_BD_ADDR_OFF 0
@@ -358,7 +356,6 @@ extern void btsnd_hcic_write_def_policy_set(uint16_t settings);
 /******************************************
  *    Lisbon Features
  ******************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
 /* Sniff Subrating */
 extern void btsnd_hcic_sniff_sub_rate(uint16_t handle, uint16_t max_lat,
                                       uint16_t min_remote_lat,
@@ -371,14 +368,6 @@ extern void btsnd_hcic_sniff_sub_rate(uint16_t handle, uint16_t max_lat,
 #define HCI_SNIFF_SUB_RATE_MIN_REM_LAT_OFF 4
 #define HCI_SNIFF_SUB_RATE_MIN_LOC_LAT_OFF 6
 /* Sniff Subrating */
-
-#else /* BTM_SSR_INCLUDED == FALSE */
-
-#define btsnd_hcic_sniff_sub_rate(handle, max_lat, min_remote_lat, \
-                                  min_local_lat)                   \
-  false
-
-#endif /* BTM_SSR_INCLUDED */
 
 /* Extended Inquiry Response */
 extern void btsnd_hcic_write_ext_inquiry_response(void* buffer,

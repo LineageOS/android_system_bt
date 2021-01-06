@@ -128,8 +128,8 @@ static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
-static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
 static void check_link_policy(tLINK_POLICY* settings);
+void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
 
 namespace {
 void NotifyAclLinkUp(tACL_CONN& p_acl) {
@@ -178,6 +178,13 @@ static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
     GetLegacyHciInterface().Disconnect(p_acl.hci_handle,
                                        static_cast<uint16_t>(reason));
   }
+}
+
+static void hci_start_role_switch_to_central(tACL_CONN& p_acl) {
+  GetLegacyHciInterface().StartRoleSwitch(
+      p_acl.remote_addr, static_cast<uint8_t>(HCI_ROLE_CENTRAL));
+  p_acl.set_switch_role_in_progress();
+  p_acl.rs_disc_pending = BTM_SEC_RS_PENDING;
 }
 
 /* 3 seconds timeout waiting for responses */
@@ -454,10 +461,8 @@ void btm_acl_removed(uint16_t handle) {
     return;
   }
   p_acl->in_use = false;
-
   NotifyAclLinkDown(*p_acl);
-
-  memset(p_acl, 0, sizeof(tACL_CONN));
+  p_acl->Reset();
 }
 
 /*******************************************************************************
@@ -579,9 +584,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
       p_acl->set_encryption_off();
       p_acl->set_switch_role_encryption_off();
     } else {
-      btsnd_hcic_switch_role(remote_bd_addr, HCI_ROLE_CENTRAL);
-      p_acl->set_switch_role_in_progress();
-      p_acl->rs_disc_pending = BTM_SEC_RS_PENDING;
+      hci_start_role_switch_to_central(*p_acl);
     }
   }
 
@@ -620,9 +623,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
       p->set_encryption_switching();
       p->set_switch_role_switching();
     }
-
-    btsnd_hcic_switch_role(p->remote_addr, HCI_ROLE_CENTRAL);
-    p->rs_disc_pending = BTM_SEC_RS_PENDING;
+    hci_start_role_switch_to_central(*p);
   }
   /* Finished enabling Encryption after role switch */
   else if (p->is_switch_role_encryption_on()) {
@@ -667,7 +668,7 @@ static void check_link_policy(tLINK_POLICY* settings) {
   }
 }
 
-static void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
+void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy) {
   conn->link_policy = policy;
   check_link_policy(&conn->link_policy);
   if ((conn->link_policy & HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH) &&
@@ -1412,8 +1413,8 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
   }
 
   tBTM_ROLE_SWITCH_CMPL* p_switch_role = &btm_cb.acl_cb_.switch_role_ref_data;
-  LOG_DEBUG("Role change event peer:%s hci_status:%s new_role:%s",
-            bd_addr.ToString().c_str(), hci_error_code_text(hci_status).c_str(),
+  LOG_DEBUG("Role change event received peer:%s hci_status:%s new_role:%s",
+            PRIVATE_ADDRESS(bd_addr), hci_error_code_text(hci_status).c_str(),
             RoleText(new_role).c_str());
 
   p_switch_role->hci_status = hci_status;
@@ -1497,8 +1498,7 @@ tBTM_STATUS StackAclBtmAcl::btm_set_packet_types(tACL_CONN* p,
   /* Exclude packet types not supported by the peer */
   btm_acl_chk_peer_pkt_type_support(p, &temp_pkt_types);
 
-  LOG_DEBUG("SetPacketType Mask -> 0x%04x", temp_pkt_types);
-
+  LOG_DEBUG("Setting link packet types:0x%04x", pkt_types);
   btsnd_hcic_change_conn_type(p->hci_handle, temp_pkt_types);
   p->pkt_types_mask = temp_pkt_types;
 
@@ -2179,9 +2179,7 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
               and/or change of link key */
     {
       if (p->is_switch_role_mode_change()) {
-        p->set_switch_role_in_progress();
-        p->rs_disc_pending = BTM_SEC_RS_PENDING;
-        btsnd_hcic_switch_role(p->remote_addr, HCI_ROLE_CENTRAL);
+        hci_start_role_switch_to_central(*p);
       }
     }
   }
@@ -2479,11 +2477,8 @@ int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
   uint8_t xx;
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if (p->in_use && p->remote_addr == remote_bda &&
-        p->transport == BT_TRANSPORT_BR_EDR) {
-      LOG_VERBOSE("btm_pm_find_acl_ind ind:%d", xx);
+    if (p->in_use && p->remote_addr == remote_bda && p->is_transport_br_edr())
       break;
-    }
   }
   return xx;
 }
@@ -2492,7 +2487,7 @@ bool btm_pm_is_le_link(const RawAddress& remote_bda) {
   const tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
   for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl++) {
     if (p_acl->in_use && p_acl->remote_addr == remote_bda &&
-        p_acl->transport == BT_TRANSPORT_LE) {
+        p_acl->is_transport_ble()) {
       return true;
     }
   }
@@ -3014,4 +3009,12 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
   if (max_page_number == current_page_number) {
     NotifyAclFeaturesReadComplete(*p_acl, max_page_number);
   }
+}
+
+void ACL_RegisterClient(struct acl_client_callback_s* callbacks) {
+  LOG_DEBUG("UNIMPLEMENTED");
+}
+
+void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
+  LOG_DEBUG("UNIMPLEMENTED");
 }

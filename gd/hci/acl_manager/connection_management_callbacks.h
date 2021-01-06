@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include "hci/hci_packets.h"
 
@@ -38,6 +39,12 @@ class ConnectionManagementCallbacks {
   virtual void OnReadClockOffsetComplete(uint16_t clock_offset) = 0;
   // Invoked when controller sends Mode Change event with Success error code
   virtual void OnModeChange(Mode current_mode, uint16_t interval) = 0;
+  // Invoked when controller sends Sniff Subrating event with Success error code
+  virtual void OnSniffSubrating(
+      uint16_t maximum_transmit_latency,
+      uint16_t maximum_receive_latency,
+      uint16_t minimum_remote_timeout,
+      uint16_t minimum_local_timeout) = 0;
   // Invoked when controller sends QoS Setup Complete event with Success error code
   virtual void OnQosSetupComplete(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
                                   uint32_t latency, uint32_t delay_variation) = 0;
