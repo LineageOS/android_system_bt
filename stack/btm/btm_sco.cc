@@ -697,29 +697,49 @@ void btm_sco_connected(tHCI_STATUS hci_status, const RawAddress& bda,
       if (hci_status != HCI_SUCCESS) {
         /* Report the error if originator, otherwise remain in Listen mode */
         if (p->is_orig) {
-          /* If role switch is pending, we need try again after role switch is
-           * complete */
-          if (hci_status == HCI_ERR_ROLE_SWITCH_PENDING) {
-            BTM_TRACE_API("Role Change pending for HCI handle 0x%04x",
-                          hci_handle);
-            p->state = SCO_ST_PEND_ROLECHANGE;
+          LOG_DEBUG("SCO initiating connection failed handle:0x%04x reason:%s",
+                    hci_handle, hci_error_code_text(hci_status).c_str());
+          switch (hci_status) {
+            case HCI_ERR_ROLE_SWITCH_PENDING:
+              /* If role switch is pending, we need try again after role switch
+               * is complete */
+              p->state = SCO_ST_PEND_ROLECHANGE;
+              break;
+            case HCI_ERR_LMP_ERR_TRANS_COLLISION:
+              /* Avoid calling disconnect callback because of sco creation race
+               */
+              break;
+            default: /* Notify client about SCO failure */
+              p->state = SCO_ST_UNUSED;
+              (*p->p_disc_cb)(xx);
           }
-          /* avoid calling disconnect callback because of sco creation race */
-          else if (hci_status != HCI_ERR_LMP_ERR_TRANS_COLLISION) {
-            p->state = SCO_ST_UNUSED;
-            (*p->p_disc_cb)(xx);
-          }
+          BTM_LogHistory(
+              kBtmLogTag, bda, "Connection failed",
+              base::StringPrintf(
+                  "locally_initiated reason:%s",
+                  hci_reason_code_text(static_cast<tHCI_REASON>(hci_status))
+                      .c_str()));
         } else {
-          /* Notify the upper layer that incoming sco connection has failed. */
+          LOG_DEBUG("SCO terminating connection failed handle:0x%04x reason:%s",
+                    hci_handle, hci_error_code_text(hci_status).c_str());
           if (p->state == SCO_ST_CONNECTING) {
             p->state = SCO_ST_UNUSED;
             (*p->p_disc_cb)(xx);
           } else
             p->state = SCO_ST_LISTENING;
+          BTM_LogHistory(
+              kBtmLogTag, bda, "Connection failed",
+              base::StringPrintf(
+                  "remote_initiated reason:%s",
+                  hci_reason_code_text(static_cast<tHCI_REASON>(hci_status))
+                      .c_str()));
         }
-
         return;
       }
+
+      BTM_LogHistory(
+          kBtmLogTag, bda, "Connection created",
+          base::StringPrintf("sco_idx:%hu handle:0x%04x ", xx, hci_handle));
 
       if (p->state == SCO_ST_LISTENING) spt = true;
 
