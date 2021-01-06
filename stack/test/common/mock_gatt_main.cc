@@ -89,7 +89,7 @@ void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
 void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   mock_function_count_map[__func__]++;
 }
-void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
+void gatt_notify_conn_update(const RawAddress&, uint16_t interval,
                              uint16_t latency, uint16_t timeout,
                              tHCI_STATUS status) {
   mock_function_count_map[__func__]++;

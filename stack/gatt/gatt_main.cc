@@ -522,14 +522,11 @@ void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
   }
 }
 
-void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
+void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
                              uint16_t latency, uint16_t timeout,
                              tHCI_STATUS status) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) return;
+  tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote, BT_TRANSPORT_LE);
 
-  tGATT_TCB* p_tcb =
-      gatt_find_tcb_by_addr(p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
   if (!p_tcb) return;
 
   for (int i = 0; i < GATT_MAX_APPS; i++) {

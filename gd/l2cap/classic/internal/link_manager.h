@@ -87,6 +87,9 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   // LinkManager will handle sending OnLinkConnected() callback and construct a LinkSecurityInterface proxy.
   void RegisterLinkSecurityInterfaceListener(os::Handler* handler, LinkSecurityInterfaceListener* listener);
 
+  // For the link to get LinkSecurityInterfaceListener
+  LinkSecurityInterfaceListener* GetLinkSecurityInterfaceListener();
+
  private:
   // Handles requests from LinkSecurityInterface
   friend class LinkSecurityInterfaceImpl;
