@@ -207,6 +207,10 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
   }
 
+  void register_scanning_callback(ScanningCallback* scanning_callbacks) {
+    scanning_callbacks_ = scanning_callbacks;
+  }
+
   void OnPause() override {
     cached_registered_callback_ = registered_callback_;
     stop_scan(common::Bind(&impl::ack_pause, common::Unretained(this)), true);
@@ -236,6 +240,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   hci::LeScanningInterface* le_scanning_interface_;
   hci::LeAddressManager* le_address_manager_;
   bool address_manager_registered = false;
+  ScanningCallback* scanning_callbacks_ = nullptr;
 
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
@@ -304,6 +309,10 @@ void LeScanningManager::StartScan(LeScanningManagerCallbacks* callbacks) {
 
 void LeScanningManager::StopScan(common::Callback<void()> on_stopped) {
   GetHandler()->Post(common::Bind(&impl::stop_scan, common::Unretained(pimpl_.get()), on_stopped, false));
+}
+
+void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {
+  CallOn(pimpl_.get(), &impl::register_scanning_callback, scanning_callback);
 }
 
 }  // namespace hci

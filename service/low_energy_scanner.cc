@@ -184,9 +184,11 @@ bool LowEnergyScannerFactory::RegisterInstance(
   BleScannerInterface* hal_iface =
       hal::BluetoothGattInterface::Get()->GetScannerHALInterface();
 
+  Uuid uuid_empty = Uuid::kEmpty;
+
   hal_iface->RegisterScanner(
-      base::Bind(&LowEnergyScannerFactory::RegisterScannerCallback,
-                 base::Unretained(this), callback, uuid));
+      uuid_empty, base::Bind(&LowEnergyScannerFactory::RegisterScannerCallback,
+                             base::Unretained(this), callback, uuid));
 
   pending_calls_.insert(uuid);
 
