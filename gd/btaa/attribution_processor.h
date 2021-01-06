@@ -17,17 +17,40 @@
 #pragma once
 
 #include <cstdint>
+#include <unordered_map>
+
+#include "hci_processor.h"
 
 namespace bluetooth {
 namespace activity_attribution {
 
+struct AddressActivityKey {
+  hci::Address address;
+  Activity activity;
+
+  bool operator==(const AddressActivityKey& other) const {
+    return (address == other.address && activity == other.activity);
+  }
+};
+
+struct AddressActivityKeyHasher {
+  std::size_t operator()(const AddressActivityKey& key) const {
+    return (
+        (std::hash<std::string>()(key.address.ToString()) ^
+         (std::hash<unsigned char>()(static_cast<unsigned char>(key.activity)))));
+  }
+};
+
 class AttributionProcessor {
  public:
+  void OnBtaaPackets(std::vector<BtaaHciPacket> btaa_packets);
   void OnWakelockReleased(uint32_t duration_ms);
   void OnWakeup();
 
  private:
   bool wakeup_ = false;
+  std::unordered_map<AddressActivityKey, BtaaAggregationEntry, AddressActivityKeyHasher> btaa_aggregator_;
+  std::unordered_map<AddressActivityKey, BtaaAggregationEntry, AddressActivityKeyHasher> wakelock_duration_aggregator_;
 };
 
 }  // namespace activity_attribution

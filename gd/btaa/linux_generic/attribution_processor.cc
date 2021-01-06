@@ -21,7 +21,50 @@
 namespace bluetooth {
 namespace activity_attribution {
 
-void AttributionProcessor::OnWakelockReleased(uint32_t duration_ms) {}
+void AttributionProcessor::OnBtaaPackets(std::vector<BtaaHciPacket> btaa_packets) {
+  AddressActivityKey key;
+
+  for (auto& btaa_packet : btaa_packets) {
+    key.address = btaa_packet.address;
+    key.activity = btaa_packet.activity;
+
+    if (wakelock_duration_aggregator_.find(key) == wakelock_duration_aggregator_.end()) {
+      wakelock_duration_aggregator_[key] = {};
+    }
+    wakelock_duration_aggregator_[key].byte_count += btaa_packet.byte_count;
+
+    if (wakeup_) {
+      wakelock_duration_aggregator_[key].wakeup_count += 1;
+    }
+  }
+  wakeup_ = false;
+}
+
+void AttributionProcessor::OnWakelockReleased(uint32_t duration_ms) {
+  uint32_t total_byte_count = 0;
+  uint32_t ms_per_byte = 0;
+
+  for (auto& it : wakelock_duration_aggregator_) {
+    total_byte_count += it.second.byte_count;
+  }
+
+  if (total_byte_count == 0) {
+    return;
+  }
+
+  ms_per_byte = duration_ms / total_byte_count;
+  for (auto& it : wakelock_duration_aggregator_) {
+    it.second.wakelock_duration = ms_per_byte * it.second.byte_count;
+    if (btaa_aggregator_.find(it.first) == btaa_aggregator_.end()) {
+      btaa_aggregator_[it.first] = {};
+    }
+
+    btaa_aggregator_[it.first].wakeup_count += it.second.wakeup_count;
+    btaa_aggregator_[it.first].byte_count += it.second.byte_count;
+    btaa_aggregator_[it.first].wakelock_duration += it.second.wakelock_duration;
+  }
+  wakelock_duration_aggregator_.clear();
+}
 
 void AttributionProcessor::OnWakeup() {
   if (wakeup_) {

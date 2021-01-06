@@ -24,6 +24,7 @@
 #include <android/binder_manager.h>
 
 #include "btaa/attribution_processor.h"
+#include "btaa/hci_processor.h"
 #include "btaa/wakelock_processor.h"
 #include "module.h"
 #include "os/log.h"
@@ -100,7 +101,9 @@ struct ActivityAttribution::impl {
     }
   }
 
-  void on_hci_packet(hal::HciPacket packet, hal::SnoopLogger::PacketType type, uint16_t length) {}
+  void on_hci_packet(hal::HciPacket packet, hal::SnoopLogger::PacketType type, uint16_t length) {
+    attribution_processor_.OnBtaaPackets(std::move(hci_processor_.OnHciPacket(std::move(packet), type, length)));
+  }
 
   void on_wakelock_acquired() {
     wakelock_processor_.OnWakelockAcquired();
@@ -125,6 +128,7 @@ struct ActivityAttribution::impl {
 
   ActivityAttributionCallback* callback_;
   AttributionProcessor attribution_processor_;
+  HciProcessor hci_processor_;
   WakelockProcessor wakelock_processor_;
 };
 
