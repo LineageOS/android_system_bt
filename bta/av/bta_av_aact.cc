@@ -48,6 +48,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "utl.h"
 
 /*****************************************************************************
@@ -3170,7 +3171,8 @@ static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
   p_a2dp_offload->max_latency = 0;
   p_a2dp_offload->mtu = mtu;
   p_a2dp_offload->acl_hdl =
-      BTM_GetHCIConnHandle(p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
+      get_btm_client_interface().lifecycle.BTM_GetHCIConnHandle(
+          p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
   btav_a2dp_scmst_info_t scmst_info =
       p_scb->p_cos->get_scmst_info(p_scb->PeerAddress());
   p_a2dp_offload->scms_t_enable[0] = scmst_info.enable_status;
