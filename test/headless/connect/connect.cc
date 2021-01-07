@@ -16,6 +16,10 @@
 
 #define LOG_TAG "bt_headless_mode"
 
+#include <inttypes.h>
+#include <chrono>
+#include <cstdint>
+#include <cstdio>
 #include <future>
 #include <map>
 #include <string>
@@ -71,9 +75,17 @@ int do_connect(unsigned int num_loops, const RawAddress& bd_addr) {
   acl_state_changed_promise = std::promise<acl_state_changed_params_t>();
   future = acl_state_changed_promise.get_future();
 
+  uint64_t connect = std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::system_clock::now().time_since_epoch())
+                         .count();
+  fprintf(stdout, "Waiting for supervision timeout\n");
   result = future.get();
-  fprintf(stdout, "Disconnected from to:%s result:%u\n",
-          bd_addr.ToString().c_str(), result.status);
+  uint64_t disconnect = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch())
+                            .count();
+
+  fprintf(stdout, "Disconnected after:%" PRId64 "ms from:%s result:%u\n",
+          disconnect - connect, bd_addr.ToString().c_str(), result.status);
 
   headless_remove_callback("acl_state_changed", callback_interface);
   return 0;
@@ -81,7 +93,7 @@ int do_connect(unsigned int num_loops, const RawAddress& bd_addr) {
 
 }  // namespace
 
-int bluetooth::test::headless::Mode::Run() {
+int bluetooth::test::headless::Connect::Run() {
   return RunOnHeadlessStack<int>([this]() {
     return do_connect(options_.loop_, options_.device_.front());
   });
