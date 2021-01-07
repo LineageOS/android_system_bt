@@ -35,8 +35,8 @@
 #include "btm_int.h" /* Included for UIPC_* macro definitions */
 #include "stack/include/acl_hci_link_interface.h"
 
-void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
-                        uint8_t response_cnt) {
+static void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
+                               uint8_t response_cnt) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -53,7 +53,7 @@ void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-void btsnd_hcic_inq_cancel(void) {
+static void btsnd_hcic_inq_cancel(void) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -1432,6 +1432,8 @@ void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode, uint8_t len,
 }
 
 bluetooth::legacy::hci::Interface interface_ = {
+    .StartInquiry = btsnd_hcic_inquiry,      // OCF 0x0001
+    .InquiryCancel = btsnd_hcic_inq_cancel,  // OCF 0x0002
     .Disconnect = btsnd_hcic_disconnect,
     .StartRoleSwitch = btsnd_hcic_switch_role,
 };
