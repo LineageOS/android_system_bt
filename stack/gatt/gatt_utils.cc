@@ -1539,7 +1539,7 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
 }
 
 /** This function cleans up the control blocks when L2CAP channel disconnect */
-void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
+void gatt_cleanup_upon_disc(const RawAddress& bda, tGATT_DISCONN_REASON reason,
                             tBT_TRANSPORT transport) {
   VLOG(1) << __func__;
 
