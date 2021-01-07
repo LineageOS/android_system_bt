@@ -150,6 +150,12 @@ void ApplicationRequestCallback(uint16_t conn_id, uint32_t trans_id,
   test_state_.application_request_callback.data_ = *p_data;
 }
 
+bool gatt_sr_is_cl_change_aware(tGATT_TCB& tcb) { return false; }
+void gatt_sr_init_cl_status(tGATT_TCB& p_tcb) {}
+void gatt_sr_update_cl_status(tGATT_TCB& p_tcb, bool chg_aware) {
+  p_tcb.is_robust_cache_change_aware = chg_aware;
+}
+
 /**
  * Test class to test selected functionality in stack/gatt/gatt_sr.cc
  */
@@ -181,6 +187,26 @@ class GattSrTest : public AllocationTestHarness {
 
   tGATT_TCB tcb_;
   tGATT_SRV_LIST_ELEM el_;
+};
+
+/* Server Robust Caching Test */
+class GattSrRobustCachingTest : public AllocationTestHarness {
+ protected:
+  void SetUp() override {
+    AllocationTestHarness::SetUp();
+    memset(&tcb_, 0, sizeof(tcb_));
+
+    default_length_ = 2;
+    memset(default_data_, 0, sizeof(default_data_));
+
+    gatt_cb.handle_of_database_hash = 0x0010;
+  }
+
+  void TearDown() override { AllocationTestHarness::TearDown(); }
+
+  tGATT_TCB tcb_;
+  uint16_t default_length_;
+  uint8_t default_data_[2];
 };
 
 TEST_F(GattSrTest, gatts_process_write_req_request_prepare_write_no_data) {
@@ -333,4 +359,232 @@ TEST_F(GattSrTest, gatts_process_write_req_request_write_typical) {
   CHECK(test_state_.application_request_callback.data_.write_req.is_prep ==
         false);
   CHECK(test_state_.application_request_callback.data_.write_req.len == length);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_by_grp_type) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_READ_BY_GRP_TYPE, default_length_,
+      default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_find_type_value) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_FIND_TYPE_VALUE, default_length_,
+      default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_find_info) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_FIND_INFO, default_length_, default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_by_type_parse_failed) {
+  // INVALID_PDU
+  uint16_t len = 4;
+  uint8_t p_data[4] = {0x00, 0x02, 0x14, 0x02};
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_READ_BY_TYPE, len, p_data);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_by_type_db_hash_uuid) {
+  // ATT_READ_BY_TYPE_REQ(0x0001, 0x0010, 0x2B2A)
+  uint16_t len = 6;
+  uint8_t p_data[6] = {0x01, 0x00, 0x10, 0x00, 0x2A, 0x2B};
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_READ_BY_TYPE, len, p_data);
+
+  ASSERT_FALSE(should_ignore);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_by_type_wrong_range) {
+  // ATT_READ_BY_TYPE_REQ(0x0200, 0x0214, 0x2803)
+  uint16_t len = 6;
+  uint8_t p_data[6] = {0x00, 0x02, 0x14, 0x02, 0x2A, 0x28};
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_READ_BY_TYPE, len, p_data);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_by_type_other_uuid) {
+  // ATT_READ_BY_TYPE_REQ(0x0200, 0x0214, 0x2803)
+  uint16_t len = 6;
+  uint8_t p_data[6] = {0x00, 0x02, 0x14, 0x02, 0x03, 0x28};
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_READ_BY_TYPE, len, p_data);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_parse_failed) {
+  // INVALID_PDU
+  uint8_t p_data[1] = {0x02};
+  uint16_t len = 1;
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(tcb_, L2CAP_ATT_CID,
+                                                    GATT_REQ_READ, len, p_data);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_db_hash_handle) {
+  // ATT_READ_REQ(0x0010)
+  uint8_t p_data[2] = {0x10, 0x00};
+  uint16_t len = 2;
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(tcb_, L2CAP_ATT_CID,
+                                                    GATT_REQ_READ, len, p_data);
+
+  ASSERT_FALSE(should_ignore);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_other_handle) {
+  // ATT_READ_REQ(0x0002)
+  uint8_t p_data[2] = {0x02, 0x00};
+  uint16_t len = 2;
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(tcb_, L2CAP_ATT_CID,
+                                                    GATT_REQ_READ, len, p_data);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_blob) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_READ_BLOB, default_length_, default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_read_multi) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_READ_MULTI, default_length_, default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_write) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_WRITE, default_length_, default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_cmd_write) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_CMD_WRITE, default_length_, default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_FALSE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_sign_cmd_write) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_SIGN_CMD_WRITE, default_length_, default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_FALSE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_prepare_write) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore =
+      gatts_process_db_out_of_sync(tcb_, L2CAP_ATT_CID, GATT_REQ_PREPARE_WRITE,
+                                   default_length_, default_data_);
+
+  ASSERT_TRUE(should_ignore);
+  ASSERT_TRUE(tcb_.is_robust_cache_change_aware);
+}
+
+TEST_F(GattSrRobustCachingTest, gatts_process_db_out_of_sync_for_gatt_req_mtu) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_MTU, default_length_, default_data_);
+
+  ASSERT_FALSE(should_ignore);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_req_exec_write) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore = gatts_process_db_out_of_sync(
+      tcb_, L2CAP_ATT_CID, GATT_REQ_EXEC_WRITE, default_length_, default_data_);
+
+  ASSERT_FALSE(should_ignore);
+}
+
+TEST_F(GattSrRobustCachingTest,
+       gatts_process_db_out_of_sync_for_gatt_handle_value_conf) {
+  tcb_.is_robust_cache_change_aware = false;
+
+  bool should_ignore =
+      gatts_process_db_out_of_sync(tcb_, L2CAP_ATT_CID, GATT_HANDLE_VALUE_CONF,
+                                   default_length_, default_data_);
+
+  ASSERT_FALSE(should_ignore);
 }
