@@ -28,6 +28,7 @@
 #include "bta_ag_int.h"
 #include "bta_api.h"
 #include "bta_sys.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "utl.h"
@@ -509,7 +510,7 @@ void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result,
   if (handle != BTA_AG_HANDLE_ALL) {
     p_scb = bta_ag_scb_by_idx(handle);
     if (p_scb) {
-      APPL_TRACE_DEBUG("bta_ag_api_result: p_scb 0x%08x ", p_scb);
+      LOG_DEBUG("AG event scb:%s", p_scb->ToString().c_str());
       bta_ag_sm_execute(p_scb, static_cast<uint16_t>(BTA_AG_API_RESULT_EVT),
                         event_data);
     }
@@ -518,7 +519,7 @@ void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result,
     for (i = 0, p_scb = &bta_ag_cb.scb[0]; i < BTA_AG_MAX_NUM_CLIENTS;
          i++, p_scb++) {
       if (p_scb->in_use && p_scb->svc_conn) {
-        APPL_TRACE_DEBUG("bta_ag_api_result p_scb 0x%08x ", p_scb);
+        LOG_DEBUG("AG event for all scb:%s", p_scb->ToString().c_str());
         bta_ag_sm_execute(p_scb, static_cast<uint16_t>(BTA_AG_API_RESULT_EVT),
                           event_data);
       }
