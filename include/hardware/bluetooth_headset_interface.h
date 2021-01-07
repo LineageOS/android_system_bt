@@ -72,6 +72,24 @@ class Interface {
    */
   virtual bt_status_t DisconnectAudio(RawAddress* bd_addr) = 0;
 
+  /**
+   * Checks whether the device support echo cancellation and/or noise reduction
+   * via the AT+BRSF bitmask
+   *
+   * @param bd_addr remote device address
+   * @return BT_STATUS_SUCCESS on success
+   */
+  virtual bt_status_t isNoiseReductionSupported(RawAddress* bd_addr) = 0;
+
+  /**
+   * Checks whether the device supports voice recognition via the AT+BRSF
+   * bitmask
+   *
+   * @param bd_addr remote device address
+   * @return BT_STATUS_SUCCESS on success
+   */
+  virtual bt_status_t isVoiceRecognitionSupported(RawAddress* bd_addr) = 0;
+
   /** start voice recognition */
   /**
    * Start voice recognition
