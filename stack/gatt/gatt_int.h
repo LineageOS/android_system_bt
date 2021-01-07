@@ -570,7 +570,8 @@ extern tGATT_STATUS gatt_send_write_msg(tGATT_TCB& p_tcb, tGATT_CLCB* p_clcb,
                                         uint8_t op_code, uint16_t handle,
                                         uint16_t len, uint16_t offset,
                                         uint8_t* p_data);
-extern void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
+extern void gatt_cleanup_upon_disc(const RawAddress& bda,
+                                   tGATT_DISCONN_REASON reason,
                                    tBT_TRANSPORT transport);
 extern void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status,
                                void* p_data);
