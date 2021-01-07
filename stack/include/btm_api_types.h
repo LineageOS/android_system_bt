@@ -622,30 +622,32 @@ typedef uint8_t tBTM_IO_CAP;
 
 #define BTM_MAX_PASSKEY_VAL (999999)
 
-/* MITM Protection Not Required - Single Profile/non-bonding Numeric comparison
- * with automatic accept allowed */
-// NO_BONDING
-#define BTM_AUTH_SP_NO 0
-/* MITM Protection Required - Single Profile/non-bonding. Use IO Capabilities to
- * determine authentication procedure */
-// NO_BONDING_MITM_PROTECTION
-#define BTM_AUTH_SP_YES 1
-/* MITM Protection Not Required - All Profiles/dedicated bonding Numeric
- * comparison with automatic accept allowed */
-// DEDICATED_BONDING
-#define BTM_AUTH_AP_NO 2
-/* MITM Protection Required - All Profiles/dedicated bonding Use IO Capabilities
- * to determine authentication procedure */
-// DEDICATED_BONDING_MITM_PROTECTION
-#define BTM_AUTH_AP_YES 3
-/* MITM Protection Not Required - Single Profiles/general bonding Numeric
- * comparison with automatic accept allowed */
-// GENERAL_BONDING
-#define BTM_AUTH_SPGB_NO 4
-/* MITM Protection Required - Single Profiles/general bonding Use IO
- * Capabilities to determine authentication procedure */
-// GENERAL_BONDING_MITM_PROTECTION
-#define BTM_AUTH_SPGB_YES 5
+typedef enum : uint8_t {
+  /* MITM Protection Not Required - Single Profile/non-bonding Numeric
+   * comparison with automatic accept allowed */
+  // NO_BONDING
+  BTM_AUTH_SP_NO = 0,
+  /* MITM Protection Required - Single Profile/non-bonding. Use IO Capabilities
+   * to determine authentication procedure */
+  // NO_BONDING_MITM_PROTECTION
+  BTM_AUTH_SP_YES = 1,
+  /* MITM Protection Not Required - All Profiles/dedicated bonding Numeric
+   * comparison with automatic accept allowed */
+  // DEDICATED_BONDING
+  BTM_AUTH_AP_NO = 2,
+  /* MITM Protection Required - All Profiles/dedicated bonding Use IO
+   * Capabilities to determine authentication procedure */
+  // DEDICATED_BONDING_MITM_PROTECTION
+  BTM_AUTH_AP_YES = 3,
+  /* MITM Protection Not Required - Single Profiles/general bonding Numeric
+   * comparison with automatic accept allowed */
+  // GENERAL_BONDING
+  BTM_AUTH_SPGB_NO = 4,
+  /* MITM Protection Required - Single Profiles/general bonding Use IO
+   * Capabilities to determine authentication procedure */
+  // GENERAL_BONDING_MITM_PROTECTION
+  BTM_AUTH_SPGB_YES = 5,
+} tBTM_AUTH;
 
 /* this bit is ORed with BTM_AUTH_SP_* when IO exchange for dedicated bonding */
 #define BTM_AUTH_DD_BOND 2
