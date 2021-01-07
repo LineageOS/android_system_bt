@@ -1573,10 +1573,8 @@ void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
     if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
       uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
-      VLOG(1) << StringPrintf("found p_reg tcb_idx=%d gatt_if=%d  conn_id=0x%x",
-                              p_tcb->tcb_idx, p_reg->gatt_if, conn_id);
-      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id, false, reason,
-                                 transport);
+      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id,
+                                 kGattDisconnected, reason, transport);
     }
   }
 

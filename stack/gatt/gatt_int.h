@@ -100,6 +100,9 @@ typedef uint8_t tGATT_SEC_FLAG;
 #define GATT_INFO_TYPE_PAIR_16 0x01
 #define GATT_INFO_TYPE_PAIR_128 0x02
 
+constexpr bool kGattConnected = true;
+constexpr bool kGattDisconnected = !kGattConnected;
+
 /*  GATT client FIND_TYPE_VALUE_Request data */
 typedef struct {
   bluetooth::Uuid uuid; /* type of attribute to be found */
