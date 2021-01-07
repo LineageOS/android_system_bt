@@ -711,6 +711,8 @@ class HeadsetInterface : Interface {
   bt_status_t Disconnect(RawAddress* bd_addr) override;
   bt_status_t ConnectAudio(RawAddress* bd_addr) override;
   bt_status_t DisconnectAudio(RawAddress* bd_addr) override;
+  bt_status_t isNoiseReductionSupported(RawAddress* bd_addr) override;
+  bt_status_t isVoiceRecognitionSupported(RawAddress* bd_addr) override;
   bt_status_t StartVoiceRecognition(RawAddress* bd_addr) override;
   bt_status_t StopVoiceRecognition(RawAddress* bd_addr) override;
   bt_status_t VolumeControl(bthf_volume_type_t type, int volume,
@@ -832,6 +834,32 @@ bt_status_t HeadsetInterface::DisconnectAudio(RawAddress* bd_addr) {
     return BT_STATUS_FAIL;
   }
   BTA_AgAudioClose(btif_hf_cb[idx].handle);
+  return BT_STATUS_SUCCESS;
+}
+
+bt_status_t HeadsetInterface::isNoiseReductionSupported(RawAddress* bd_addr) {
+  CHECK_BTHF_INIT();
+  int idx = btif_hf_idx_by_bdaddr(bd_addr);
+  if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
+    BTIF_TRACE_ERROR("%s: Invalid index %d", __func__, idx);
+    return BT_STATUS_FAIL;
+  }
+  if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_ECNR)) {
+    return BT_STATUS_UNSUPPORTED;
+  }
+  return BT_STATUS_SUCCESS;
+}
+
+bt_status_t HeadsetInterface::isVoiceRecognitionSupported(RawAddress* bd_addr) {
+  CHECK_BTHF_INIT();
+  int idx = btif_hf_idx_by_bdaddr(bd_addr);
+  if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
+    BTIF_TRACE_ERROR("%s: Invalid index %d", __func__, idx);
+    return BT_STATUS_FAIL;
+  }
+  if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)) {
+    return BT_STATUS_UNSUPPORTED;
+  }
   return BT_STATUS_SUCCESS;
 }
 
