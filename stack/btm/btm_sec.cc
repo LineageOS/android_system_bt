@@ -46,6 +46,7 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
+#include "stack/smp/smp_int.h"
 
 extern tBTM_CB btm_cb;
 
