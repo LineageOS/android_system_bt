@@ -419,6 +419,9 @@ typedef struct {
   uint8_t pm_pend_link;
 
  public:
+  bool is_power_mode_pending() const { return pm_pend_link != MAX_L2CAP_LINKS; }
+
+ public:
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
   void set_disconnect_reason(tHCI_STATUS reason) { acl_disc_reason = reason; }
   uint16_t DefaultPacketTypes() const { return btm_acl_pkt_types_supported; }
