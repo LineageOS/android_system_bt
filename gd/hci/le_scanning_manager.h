@@ -20,6 +20,7 @@
 #include "common/callback.h"
 #include "hci/hci_packets.h"
 #include "hci/le_report.h"
+#include "hci/uuid.h"
 #include "module.h"
 
 namespace bluetooth {
@@ -33,13 +34,49 @@ class LeScanningManagerCallbacks {
   virtual os::Handler* Handler() = 0;
 };
 
+using ScannerId = uint8_t;
+
+class ScanningCallback {
+ public:
+  enum ScanningStatus {
+    SUCCESS,
+    NO_RESOURCES = 0x80,
+    INTERNAL_ERROR = 0x85,
+  };
+
+  virtual ~ScanningCallback() = default;
+  virtual void OnScannerRegistered(
+      const bluetooth::hci::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status) = 0;
+  virtual void OnScanResult(
+      uint16_t event_type,
+      uint8_t addr_type,
+      Address* bda,
+      uint8_t primary_phy,
+      uint8_t secondary_phy,
+      uint8_t advertising_sid,
+      int8_t tx_power,
+      int8_t rssi,
+      uint16_t periodic_adv_int,
+      std::vector<uint8_t> adv_data) = 0;
+  virtual void OnTrackAdvFoundLost() = 0;
+  virtual void OnBatchScanReports(
+      int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) = 0;
+};
+
 class LeScanningManager : public bluetooth::Module {
  public:
+  static constexpr uint8_t kMaxAppNum = 32;
   LeScanningManager();
+
+  void RegisterScanner(const Uuid app_uuid);
+
+  void Unregister(ScannerId scanner_id);
 
   void StartScan(LeScanningManagerCallbacks* callbacks);
 
   void StopScan(common::Callback<void()> on_stopped);
+
+  void RegisterScanningCallback(ScanningCallback* scanning_callback);
 
   static const ModuleFactory Factory;
 

@@ -20,22 +20,36 @@
 
 #include <base/bind.h>
 #include <base/threading/thread.h>
-
 #include <hardware/bluetooth.h>
 #include <stdio.h>
 #include <unordered_set>
 
-class BleScannerInterfaceImpl : public BleScannerInterface {
+#include "btif_common.h"
+#include "gd/hci/address.h"
+#include "gd/hci/le_scanning_manager.h"
+#include "main/shim/entry.h"
+
+class BleScannerInterfaceImpl : public BleScannerInterface,
+                                public bluetooth::hci::ScanningCallback {
  public:
   ~BleScannerInterfaceImpl() override{};
 
+  void Init() {
+    bluetooth::shim::GetScanning()->RegisterScanningCallback(this);
+  }
+
   /** Registers a scanner with the stack */
-  void RegisterScanner(RegisterCallback) {
+  void RegisterScanner(const bluetooth::Uuid& uuid, RegisterCallback) {
     LOG(INFO) << __func__ << " in shim layer";
+    auto app_uuid = bluetooth::hci::Uuid::From128BitBE(uuid.To128BitBE());
+    bluetooth::shim::GetScanning()->RegisterScanner(app_uuid);
   }
 
   /** Unregister a scanner from the stack */
-  void Unregister(int scanner_id) { LOG(INFO) << __func__ << " in shim layer"; }
+  void Unregister(int scanner_id) {
+    LOG(INFO) << __func__ << " in shim layer, scanner_id:" << scanner_id;
+    bluetooth::shim::GetScanning()->Unregister(scanner_id);
+  }
 
   /** Start or stop LE device scanning */
   void Scan(bool start) { LOG(INFO) << __func__ << " in shim layer"; }
@@ -104,6 +118,33 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
     LOG(INFO) << __func__ << " in shim layer";
     // This function doesn't implement in the old stack
   }
+
+  void RegisterCallbacks(ScanningCallbacks* callbacks) {
+    LOG(INFO) << __func__ << " in shim layer";
+    scanning_callbacks_ = callbacks;
+  }
+
+  void OnScannerRegistered(const bluetooth::hci::Uuid app_uuid,
+                           bluetooth::hci::ScannerId scanner_id,
+                           ScanningStatus status) {
+    auto uuid = bluetooth::Uuid::From128BitBE(app_uuid.To128BitBE());
+    do_in_jni_thread(FROM_HERE,
+                     base::Bind(&ScanningCallbacks::OnScannerRegistered,
+                                base::Unretained(scanning_callbacks_), uuid,
+                                scanner_id, status));
+  };
+
+  void OnScanResult(uint16_t event_type, uint8_t addr_type,
+                    bluetooth::hci::Address* bda, uint8_t primary_phy,
+                    uint8_t secondary_phy, uint8_t advertising_sid,
+                    int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int,
+                    std::vector<uint8_t> adv_data){};
+  void OnTrackAdvFoundLost(){};
+
+  void OnBatchScanReports(int client_if, int status, int report_format,
+                          int num_records, std::vector<uint8_t> data){};
+
+  ScanningCallbacks* scanning_callbacks_;
 };
 
 BleScannerInterfaceImpl* bt_le_scanner_instance = nullptr;
@@ -113,4 +154,8 @@ BleScannerInterface* bluetooth::shim::get_ble_scanner_instance() {
     bt_le_scanner_instance = new BleScannerInterfaceImpl();
   }
   return bt_le_scanner_instance;
+}
+
+void bluetooth::shim::init_scanning_manager() {
+  bt_le_scanner_instance->Init();
 }
