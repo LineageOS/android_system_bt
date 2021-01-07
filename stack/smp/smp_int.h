@@ -30,21 +30,22 @@
 #include "smp_api.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
 
-/* Legacy mode */
-#define SMP_MODEL_ENCRYPTION_ONLY 0 /* Just Works model */
-#define SMP_MODEL_PASSKEY 1         /* Passkey Entry model, input the key */
-#define SMP_MODEL_OOB 2             /* OOB model */
-#define SMP_MODEL_KEY_NOTIF 3       /* Passkey Entry model, display the key */
-/* Secure connections mode */
-#define SMP_MODEL_SEC_CONN_JUSTWORKS 4    /* Just Works model */
-#define SMP_MODEL_SEC_CONN_NUM_COMP 5     /* Numeric Comparison model */
-#define SMP_MODEL_SEC_CONN_PASSKEY_ENT 6  /* Passkey Entry model, */
-                                          /* this side inputs the key */
-#define SMP_MODEL_SEC_CONN_PASSKEY_DISP 7 /* Passkey Entry model, */
-                                          /* this side displays the key */
-#define SMP_MODEL_SEC_CONN_OOB 8 /* Secure Connections mode, OOB model */
-#define SMP_MODEL_OUT_OF_RANGE 9
-typedef uint8_t tSMP_ASSO_MODEL;
+typedef enum : uint8_t {
+  /* Legacy mode */
+  SMP_MODEL_ENCRYPTION_ONLY = 0, /* Just Works model */
+  SMP_MODEL_PASSKEY = 1,         /* Passkey Entry model, input the key */
+  SMP_MODEL_OOB = 2,             /* OOB model */
+  SMP_MODEL_KEY_NOTIF = 3,       /* Passkey Entry model, display the key */
+  /* Secure connections mode */
+  SMP_MODEL_SEC_CONN_JUSTWORKS = 4,   /* Just Works model */
+  SMP_MODEL_SEC_CONN_NUM_COMP = 5,    /* Numeric Comparison model */
+  SMP_MODEL_SEC_CONN_PASSKEY_ENT = 6, /* Passkey Entry model, */
+  /* this side inputs the key */
+  SMP_MODEL_SEC_CONN_PASSKEY_DISP = 7, /* Passkey Entry model, */
+  /* this side displays the key */
+  SMP_MODEL_SEC_CONN_OOB = 8, /* Secure Connections mode, OOB model */
+  SMP_MODEL_OUT_OF_RANGE = 9,
+} tSMP_ASSO_MODEL;
 
 #ifndef SMP_MAX_CONN
 #define SMP_MAX_CONN 2
