@@ -91,6 +91,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
       case hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
         handle_advertising_report<LeExtendedAdvertisingReportView, LeExtendedAdvertisingReport, ExtendedLeReport>(
             LeExtendedAdvertisingReportView::Create(event));
+        handle_extended_advertising_report(LeExtendedAdvertisingReportView::Create(event));
         break;
       case hci::SubeventCode::SCAN_TIMEOUT:
         if (registered_callback_ != nullptr) {
@@ -101,6 +102,40 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
         break;
       default:
         LOG_ALWAYS_FATAL("Unknown advertising subevent %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
+    }
+  }
+
+  void handle_extended_advertising_report(LeExtendedAdvertisingReportView event_view) {
+    if (scanning_callbacks_ == nullptr) {
+      LOG_INFO("Dropping advertising event (no registered handler)");
+      return;
+    }
+    if (!event_view.IsValid()) {
+      LOG_INFO("Dropping invalid advertising event");
+      return;
+    }
+    std::vector<LeExtendedAdvertisingReport> reports = event_view.GetAdvertisingReports();
+    if (reports.empty()) {
+      LOG_INFO("Zero results in advertising event");
+      return;
+    }
+
+    // TODO: handle AdvertisingCache for scan response
+    for (LeExtendedAdvertisingReport report : reports) {
+      uint16_t event_type = report.connectable_ | (report.scannable_ << 1) | (report.directed_ << 2) |
+                            (report.scan_response_ << 3) | (report.legacy_ << 4) | ((uint16_t)report.data_status_ << 5);
+
+      scanning_callbacks_->OnScanResult(
+          event_type,
+          (uint8_t)report.address_type_,
+          report.address_,
+          (uint8_t)report.primary_phy_,
+          (uint8_t)report.secondary_phy_,
+          report.advertising_sid_,
+          report.tx_power_,
+          report.rssi_,
+          report.periodic_advertising_interval_,
+          report.advertising_data_);
     }
   }
 
@@ -196,7 +231,52 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
   }
 
-  void start_scan(LeScanningManagerCallbacks* le_scanning_manager_callbacks) {
+  void scan(bool start) {
+    if (start) {
+      start_scan();
+    } else {
+      stop_scan();
+    }
+  }
+
+  void start_scan() {
+    switch (api_type_) {
+      case ScanApiType::EXTENDED:
+        le_scanning_interface_->EnqueueCommand(
+            hci::LeSetExtendedScanEnableBuilder::Create(
+                Enable::ENABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
+            module_handler_->BindOnce(impl::check_status));
+        break;
+      case ScanApiType::ANDROID_HCI:
+      case ScanApiType::LEGACY:
+        le_scanning_interface_->EnqueueCommand(
+            hci::LeSetScanEnableBuilder::Create(Enable::ENABLED, Enable::DISABLED /* filter duplicates */),
+            module_handler_->BindOnce(impl::check_status));
+        break;
+    }
+  }
+
+  void stop_scan() {
+    switch (api_type_) {
+      case ScanApiType::EXTENDED:
+        le_scanning_interface_->EnqueueCommand(
+            hci::LeSetExtendedScanEnableBuilder::Create(
+                Enable::DISABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
+            module_handler_->BindOnce(impl::check_status));
+        registered_callback_ = nullptr;
+        break;
+      case ScanApiType::ANDROID_HCI:
+      case ScanApiType::LEGACY:
+        le_scanning_interface_->EnqueueCommand(
+            hci::LeSetScanEnableBuilder::Create(Enable::DISABLED, Enable::DISABLED /* filter duplicates */),
+            module_handler_->BindOnce(impl::check_status));
+        registered_callback_ = nullptr;
+        break;
+    }
+  }
+
+  // TODO remove
+  void start_scan_old(LeScanningManagerCallbacks* le_scanning_manager_callbacks) {
     registered_callback_ = le_scanning_manager_callbacks;
 
     if (!address_manager_registered) {
@@ -226,7 +306,8 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
   }
 
-  void stop_scan(common::Callback<void()> on_stopped, bool from_on_pause) {
+  // TODO remove
+  void stop_scan_old(common::Callback<void()> on_stopped, bool from_on_pause) {
     if (address_manager_registered && !from_on_pause) {
       cached_registered_callback_ = nullptr;
       le_address_manager_->Unregister(this);
@@ -260,7 +341,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
 
   void OnPause() override {
     cached_registered_callback_ = registered_callback_;
-    stop_scan(common::Bind(&impl::ack_pause, common::Unretained(this)), true);
+    stop_scan_old(common::Bind(&impl::ack_pause, common::Unretained(this)), true);
   }
 
   void ack_pause() {
@@ -271,7 +352,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     if (cached_registered_callback_ != nullptr) {
       auto cached_registered_callback = cached_registered_callback_;
       cached_registered_callback_ = nullptr;
-      start_scan(cached_registered_callback);
+      start_scan_old(cached_registered_callback);
     }
     le_address_manager_->AckResume(this);
   }
@@ -359,12 +440,16 @@ void LeScanningManager::Unregister(ScannerId scanner_id) {
   CallOn(pimpl_.get(), &impl::unregister_scanner, scanner_id);
 }
 
+void LeScanningManager::Scan(bool start) {
+  CallOn(pimpl_.get(), &impl::scan, start);
+}
+
 void LeScanningManager::StartScan(LeScanningManagerCallbacks* callbacks) {
-  GetHandler()->Post(common::Bind(&impl::start_scan, common::Unretained(pimpl_.get()), callbacks));
+  GetHandler()->Post(common::Bind(&impl::start_scan_old, common::Unretained(pimpl_.get()), callbacks));
 }
 
 void LeScanningManager::StopScan(common::Callback<void()> on_stopped) {
-  GetHandler()->Post(common::Bind(&impl::stop_scan, common::Unretained(pimpl_.get()), on_stopped, false));
+  GetHandler()->Post(common::Bind(&impl::stop_scan_old, common::Unretained(pimpl_.get()), on_stopped, false));
 }
 
 void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {
