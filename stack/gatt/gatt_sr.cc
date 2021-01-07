@@ -1206,6 +1206,9 @@ static bool gatts_proc_ind_ack(tGATT_TCB& tcb, uint16_t ack_handle) {
     /* there is no need to inform the application since srv chg is handled
      * internally by GATT */
     continue_processing = false;
+
+    // After receiving ack of svc_chg_ind, reset client status
+    gatt_sr_update_cl_status(tcb, /* chg_aware= */ true);
   }
 
   gatts_chk_pending_ind(tcb);
@@ -1248,6 +1251,80 @@ void gatts_process_value_conf(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code) {
   }
 }
 
+static bool gatts_process_db_out_of_sync(tGATT_TCB& tcb, uint16_t cid,
+                                         uint8_t op_code, uint16_t len,
+                                         uint8_t* p_data) {
+  if (gatt_sr_is_cl_change_aware(tcb)) return false;
+
+  // default value
+  bool should_ignore = true;
+  bool should_rsp = true;
+
+  switch (op_code) {
+    case GATT_REQ_READ_BY_TYPE: {
+      // Check if read database hash by UUID
+      Uuid uuid = Uuid::kEmpty;
+      uint16_t s_hdl = 0, e_hdl = 0;
+      uint16_t db_hash_handle = gatt_cb.handle_of_database_hash;
+      tGATT_STATUS reason = gatts_validate_packet_format(op_code, len, p_data,
+                                                         &uuid, s_hdl, e_hdl);
+      if (reason == GATT_SUCCESS &&
+          (s_hdl <= db_hash_handle && db_hash_handle <= e_hdl) &&
+          (uuid == Uuid::From16Bit(GATT_UUID_DATABASE_HASH)))
+        should_ignore = false;
+
+    } break;
+    case GATT_REQ_READ: {
+      // Check if read database hash by handle
+      uint16_t handle = 0;
+      uint8_t* p = p_data;
+      tGATT_STATUS status = GATT_SUCCESS;
+
+      if (len < 2) {
+        status = GATT_INVALID_PDU;
+      } else {
+        STREAM_TO_UINT16(handle, p);
+        len -= 2;
+      }
+
+      if (status == GATT_SUCCESS && handle == gatt_cb.handle_of_database_hash)
+        should_ignore = false;
+
+    } break;
+    case GATT_REQ_READ_BY_GRP_TYPE: /* discover primary services */
+    case GATT_REQ_FIND_TYPE_VALUE:  /* discover service by UUID */
+    case GATT_REQ_FIND_INFO:        /* discover char descrptor */
+    case GATT_REQ_READ_BLOB:        /* read long char */
+    case GATT_REQ_READ_MULTI:       /* read multi char*/
+    case GATT_REQ_WRITE:            /* write char/char descriptor value */
+    case GATT_REQ_PREPARE_WRITE:    /* write long char */
+      // Use default value
+      break;
+    case GATT_CMD_WRITE:      /* cmd */
+    case GATT_SIGN_CMD_WRITE: /* sign cmd */
+      should_rsp = false;
+      break;
+    case GATT_REQ_MTU:           /* configure mtu */
+    case GATT_REQ_EXEC_WRITE:    /* execute write */
+    case GATT_HANDLE_VALUE_CONF: /* confirm for indication */
+    default:
+      should_ignore = false;
+  }
+
+  if (should_ignore) {
+    if (should_rsp) {
+      gatt_send_error_rsp(tcb, cid, GATT_DATABASE_OUT_OF_SYNC, op_code, 0x0000,
+                          false);
+    }
+    LOG(INFO) << __func__ << ": database out of sync, device=" << tcb.peer_bda
+              << ", op_code=" << loghex((uint16_t)op_code)
+              << ", should_rsp=" << should_rsp;
+    gatt_sr_update_cl_status(tcb, /* chg_aware= */ should_rsp);
+  }
+
+  return should_ignore;
+}
+
 /** This function is called to handle the client requests to server */
 void gatt_server_handle_client_req(tGATT_TCB& tcb, uint16_t cid,
                                    uint8_t op_code, uint16_t len,
@@ -1270,6 +1347,9 @@ void gatt_server_handle_client_req(tGATT_TCB& tcb, uint16_t cid,
     }
     /* otherwise, ignore the pkt */
   } else {
+    // handle database out of sync
+    if (gatts_process_db_out_of_sync(tcb, cid, op_code, len, p_data)) return;
+
     switch (op_code) {
       case GATT_REQ_READ_BY_GRP_TYPE: /* discover primary services */
       case GATT_REQ_FIND_TYPE_VALUE:  /* discover service by UUID */
