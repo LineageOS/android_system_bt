@@ -181,8 +181,8 @@ static const tSMP_CMD_ACT smp_cmd_build_act[] = {
     smp_build_pairing_commitment_cmd             /* 0x0F: pairing commitment */
 };
 
-static const uint8_t smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] =
-    {
+static const tSMP_ASSO_MODEL
+    smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] = {
         /* display only */ /* Display Yes/No */ /* keyboard only */
         /* No Input/Output */                   /* keyboard display */
 
@@ -232,7 +232,7 @@ static const uint8_t smp_association_table[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] =
          {SMP_MODEL_PASSKEY, SMP_MODEL_PASSKEY, SMP_MODEL_KEY_NOTIF,
           SMP_MODEL_ENCRYPTION_ONLY, SMP_MODEL_PASSKEY}}};
 
-static const uint8_t
+static const tSMP_ASSO_MODEL
     smp_association_table_sc[2][SMP_IO_CAP_MAX][SMP_IO_CAP_MAX] = {
         /* display only */ /* Display Yes/No */ /* keyboard only */
         /* No InputOutput */                    /* keyboard display */
