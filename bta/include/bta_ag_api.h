@@ -25,7 +25,9 @@
 #ifndef BTA_AG_API_H
 #define BTA_AG_API_H
 
-#include <cstdint>
+#include "bta_api.h"
+#include "bta_hfp_api.h"
+
 #include <string>
 #include <vector>
 
@@ -38,25 +40,6 @@
  ****************************************************************************/
 /* Number of SCBs (AG service instances that can be registered) */
 #define BTA_AG_MAX_NUM_CLIENTS 6
-
-#define HFP_HSP_VERSION_UNKNOWN 0x0000
-#define HFP_VERSION_1_1 0x0101
-#define HFP_VERSION_1_5 0x0105
-#define HFP_VERSION_1_6 0x0106
-#define HFP_VERSION_1_7 0x0107
-
-#define HSP_VERSION_1_0 0x0100
-#define HSP_VERSION_1_2 0x0102
-
-#define HFP_VERSION_CONFIG_KEY "HfpVersion"
-#define HFP_SDP_FEATURES_CONFIG_KEY "HfpSdpFeatures"
-
-/* Note, if you change the default version here, please also change the one in
- * bta_hs_api.h, they are meant to be the same.
- */
-#ifndef BTA_HFP_VERSION
-#define BTA_HFP_VERSION HFP_VERSION_1_7
-#endif
 
 /* AG feature masks */
 #define BTA_AG_FEAT_3WAY 0x00000001   /* Three-way calling */

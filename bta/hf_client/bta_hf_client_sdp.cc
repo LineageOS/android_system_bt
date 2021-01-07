@@ -124,10 +124,7 @@ bool bta_hf_client_add_record(const char* p_service_name, uint8_t scn,
 
   /* add profile descriptor list */
   profile_uuid = UUID_SERVCLASS_HF_HANDSFREE;
-  version = HFP_VERSION_1_6;
-
-  if (osi_property_get_bool("persist.bluetooth.hfpclient.sco_s4_supported", false))
-    version = HFP_VERSION_1_7;
+  version = BTA_HFP_VERSION;
 
   result &= SDP_AddProfileDescriptorList(sdp_handle, profile_uuid, version);
 

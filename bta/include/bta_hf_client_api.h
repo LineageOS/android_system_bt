@@ -27,7 +27,8 @@
 
 #include <cstdint>
 
-#include "bta/include/bta_api.h"
+#include "bta_api.h"
+#include "bta_hfp_api.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
