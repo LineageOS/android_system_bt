@@ -133,7 +133,7 @@ const Service* bta_gattc_find_matching_service(
 /** Start primary service discovery */
 tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
                                             tBTA_GATTC_SERV* p_server_cb,
-                                            uint8_t disc_type) {
+                                            tGATT_DISC_TYPE disc_type) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
   if (!p_clcb) return GATT_ERROR;
 
@@ -446,6 +446,11 @@ void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
     case GATT_DISC_CHAR_DSCPT:
       p_srvc_cb->pending_discovery.AddDescriptor(p_data->handle, p_data->type);
       break;
+
+    case GATT_DISC_MAX:
+    default:
+      LOG_ERROR("Received illegal discovery item");
+      break;
   }
 }
 
@@ -491,6 +496,11 @@ void bta_gattc_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
     case GATT_DISC_CHAR_DSCPT:
       /* start discovering next characteristic for char descriptor */
       bta_gattc_start_disc_char_dscp(conn_id, p_srvc_cb);
+      break;
+
+    case GATT_DISC_MAX:
+    default:
+      LOG_ERROR("Received illegal discovery item");
       break;
   }
 }

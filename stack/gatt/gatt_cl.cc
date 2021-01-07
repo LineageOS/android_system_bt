@@ -402,8 +402,9 @@ void gatt_process_find_type_value_rsp(UNUSED_ATTR tGATT_TCB& tcb,
     len -= 4;
 
     if (p_clcb->p_reg->app_cb.p_disc_res_cb)
-      (*p_clcb->p_reg->app_cb.p_disc_res_cb)(p_clcb->conn_id,
-                                             p_clcb->op_subtype, &result);
+      (*p_clcb->p_reg->app_cb.p_disc_res_cb)(
+          p_clcb->conn_id, static_cast<tGATT_DISC_TYPE>(p_clcb->op_subtype),
+          &result);
   }
 
   /* last handle  + 1 */
@@ -459,8 +460,9 @@ void gatt_process_read_info_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     len -= (uuid_len + 2);
 
     if (p_clcb->p_reg->app_cb.p_disc_res_cb)
-      (*p_clcb->p_reg->app_cb.p_disc_res_cb)(p_clcb->conn_id,
-                                             p_clcb->op_subtype, &result);
+      (*p_clcb->p_reg->app_cb.p_disc_res_cb)(
+          p_clcb->conn_id, static_cast<tGATT_DISC_TYPE>(p_clcb->op_subtype),
+          &result);
   }
 
   p_clcb->s_handle = (result.handle == 0) ? 0 : (result.handle + 1);
@@ -911,8 +913,9 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     /* send callback if is discover procedure */
     if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY &&
         p_clcb->p_reg->app_cb.p_disc_res_cb)
-      (*p_clcb->p_reg->app_cb.p_disc_res_cb)(p_clcb->conn_id,
-                                             p_clcb->op_subtype, &result);
+      (*p_clcb->p_reg->app_cb.p_disc_res_cb)(
+          p_clcb->conn_id, static_cast<tGATT_DISC_TYPE>(p_clcb->op_subtype),
+          &result);
   }
 
   p_clcb->s_handle = (handle == 0) ? 0 : (handle + 1);
@@ -1001,9 +1004,9 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
         p_clcb->read_uuid128.result.value.incl_service.service_type =
             bluetooth::Uuid::From128BitLE(p);
         if (p_clcb->p_reg->app_cb.p_disc_res_cb)
-          (*p_clcb->p_reg->app_cb.p_disc_res_cb)(p_clcb->conn_id,
-                                                 p_clcb->op_subtype,
-                                                 &p_clcb->read_uuid128.result);
+          (*p_clcb->p_reg->app_cb.p_disc_res_cb)(
+              p_clcb->conn_id, static_cast<tGATT_DISC_TYPE>(p_clcb->op_subtype),
+              &p_clcb->read_uuid128.result);
         gatt_act_discovery(p_clcb);
       } else {
         gatt_end_operation(p_clcb, GATT_INVALID_PDU, (void*)p);
