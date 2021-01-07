@@ -2689,7 +2689,7 @@ void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason) {
 }
 
 bool acl_is_role_switch_allowed() {
-  return btm_cb.acl_cb_.btm_def_link_policy &
+  return btm_cb.acl_cb_.DefaultLinkPolicy() &
          HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH;
 }
 
