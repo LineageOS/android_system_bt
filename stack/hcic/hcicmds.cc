@@ -1879,10 +1879,173 @@ void btsnd_hcic_vendor_spec_cmd(void* buffer, uint16_t opcode, uint8_t len,
 }
 
 bluetooth::legacy::hci::Interface interface_ = {
-    .StartInquiry = btsnd_hcic_inquiry,      // OCF 0x0001
-    .InquiryCancel = btsnd_hcic_inq_cancel,  // OCF 0x0002
-    .Disconnect = btsnd_hcic_disconnect,
-    .StartRoleSwitch = btsnd_hcic_switch_role,
+    // LINK_CONTROL
+    .StartInquiry = btsnd_hcic_inquiry,                   // OCF 0x0401
+    .InquiryCancel = btsnd_hcic_inq_cancel,               // OCF 0x0402
+    .StartPeriodicInquiryMode = btsnd_hcic_per_inq_mode,  // OCF 0x0403
+    .ExitPeriodicInquiryMode = btsnd_hcic_exit_per_inq,   // OCF 0x0404
+    .CreateConnection = btsnd_hcic_create_conn,           // OCF 0x0405
+    .Disconnect = btsnd_hcic_disconnect,                  // OCF 0x0406
+    // UNUSED OCF 0x0407 btsnd_hcic_add_SCO_conn
+    .CreateConnectionCancel = btsnd_hcic_create_conn_cancel,  // OCF 0x0408
+    .AcceptConnectionRequest = btsnd_hcic_accept_conn,        // OCF 0x0409
+    .RejectConnectionRequest = btsnd_hcic_reject_conn,        // OCF 0x040A
+    .LinkKeyRequestReply = btsnd_hcic_link_key_req_reply,     // OCF 0x040B
+    .LinkKeyRequestNegativeReply =
+        btsnd_hcic_link_key_neg_reply,                     // OCF 0x040C,
+    .PinCodeRequestReply = btsnd_hcic_pin_code_req_reply,  // OCF 0x040D,
+    .PinCodeRequestNegativeReply =
+        btsnd_hcic_pin_code_neg_reply,                          // OCF 0x040E,
+    .ChangeConnectionPacketType = btsnd_hcic_change_conn_type,  // OCF 0x040F,
+    // UNUSED OCF 0x0410
+    .AuthenticationRequested = btsnd_hcic_auth_request,  // OCF 0x0411,
+    // UNUSED OCF 0x0412
+    .SetConnectionEncryption = btsnd_hcic_set_conn_encrypt,  // OCF 0x0413,
+    // UNUSED OCF 0x0414
+    .ChangeConnectionLinkKey = nullptr,  // OCF 0x0415,
+    // UNUSED OCF 0x0416
+    .CentralLinkKey = nullptr,  // OCF 0x0417,
+    // UNUSED OCF 0x0418
+    .RemoteNameRequest = btsnd_hcic_rmt_name_req,                // OCF 0x0419,
+    .RemoteNameRequestCancel = btsnd_hcic_rmt_name_req_cancel,   // OCF 0x041A,
+    .ReadRemoteSupportedFeatures = btsnd_hcic_rmt_features_req,  // OCF 0x041B,
+    .ReadRemoteExtendedFeatures = btsnd_hcic_rmt_ext_features,   // OCF 0x041C,
+    .ReadRemoteVersionInformation = btsnd_hcic_rmt_ver_req,      // OCF 0x041D,
+    // UNUSED OCF 0x041E
+    .ReadClockOffset = btsnd_hcic_read_rmt_clk_offset,  // OCF 0x041F,
+    .ReadLmpHandle = btsnd_hcic_read_lmp_handle,        // OCF 0x0420,
+    // UNUSED OCF 0x0420 - 0x0427
+    .SetupSynchronousConnection = btsnd_hcic_setup_esco_conn,    // OCF 0x0428,
+    .AcceptSynchronousConnection = btsnd_hcic_accept_esco_conn,  // OCF 0x0429,
+    .RejectSynchronousConnection = btsnd_hcic_reject_esco_conn,  // OCF 0x042A,
+    .IoCapabilityRequestReply = btsnd_hcic_io_cap_req_reply,     // OCF 0x042B,
+    .UserConfirmationRequestReply = btsnd_hcic_user_conf_reply,  // OCF 0x042C,
+    .UserConfirmationRequestNegativeReply =
+        btsnd_hcic_user_conf_reply,                            // OCF 0x042D,
+    .UserPasskeyRequestReply = btsnd_hcic_user_passkey_reply,  // OCF 0x042E,
+    .UserPasskeyRequestNegativeReply =
+        btsnd_hcic_user_passkey_neg_reply,                  // OCF 0x042F,
+    .RemoteOobDataRequestReply = btsnd_hcic_rem_oob_reply,  // OCF 0x0430,
+    // UNUSED OCF 0x0431 - 0x0432
+    .RemoteOobDataRequestNegativeReply =
+        btsnd_hcic_rem_oob_neg_reply,  // OCF 0x0433,
+    .IoCapabilityRequestNegativeReply =
+        btsnd_hcic_io_cap_req_neg_reply,  // OCF 0x0434,
+    // UNUSED OCF 0x0435 - 0x043C
+    .EnhancedSetupSynchronousConnection =
+        btsnd_hcic_enhanced_set_up_synchronous_connection,  // OCF 0x043D,
+    .EnhancedAcceptSynchronousConnection =
+        btsnd_hcic_enhanced_accept_synchronous_connection,  // OCF 0x043E,
+    // UNUSED OCF 0x043F - 0x0444
+    .RemoteOobExtendedDataRequestReply = nullptr,  // OCF 0x0445,
+
+    // LINK_POLICY
+    .HoldMode = btsnd_hcic_hold_mode,  // OCF 0x0801,
+    // UNUSED OCF 0x0802
+    .SniffMode = btsnd_hcic_sniff_mode,           // OCF 0x0803,
+    .ExitSniffMode = btsnd_hcic_exit_sniff_mode,  // OCF 0x0804,
+    // UNUSED OCF 0x0805 - 0x0806
+    .QosSetup = btsnd_hcic_qos_setup,  // OCF 0x0807,
+    // UNUSED OCF 0x0808
+    .RoleDiscovery = nullptr,  // OCF 0x0809,
+    // UNUSED OCF 0x080A
+    .StartRoleSwitch = btsnd_hcic_switch_role,               // OCF 0x080B,
+    .ReadLinkPolicySettings = nullptr,                       // OCF 0x080C,
+    .WriteLinkPolicySettings = btsnd_hcic_write_policy_set,  // OCF 0x080D,
+    .ReadDefaultLinkPolicySettings = nullptr,                // OCF 0x080E,
+    .WriteDefaultLinkPolicySettings =
+        btsnd_hcic_write_def_policy_set,          // OCF 0x080F,
+    .FlowSpecification = nullptr,                 // OCF 0x0810,
+    .SniffSubrating = btsnd_hcic_sniff_sub_rate,  // OCF 0x0811,
+
+    // CONTROLLER_AND_BASEBAND
+    .SetEventMask = nullptr,  // OCF 0x0C01,
+    // UNUSED OCF 0x0C02
+    .Reset = nullptr,  // OCF 0x0C03,
+    // UNUSED OCF 0x0C04
+    .SetEventFilter = btsnd_hcic_set_event_filter,  // OCF 0x0C05,
+    // UNUSED OCF 0x0C06 = 0x0C07
+    .Flush = nullptr,                           // OCF 0x0C08,
+    .ReadPinType = nullptr,                     // OCF 0x0C09,
+    .WritePinType = btsnd_hcic_write_pin_type,  // OCF 0x0C0A,
+    .CreateNewUnitKey = nullptr,                // OCF 0x0C0B,
+    // UNUSED OCF 0x0C0C
+    .ReadStoredLinkKey = nullptr,  // OCF 0x0C0D,
+    // UNUSED OCF 0x0C0E - 0x0C10
+    .WriteStoredLinkKey = nullptr,                               // OCF 0x0C11,
+    .DeleteStoredLinkKey = btsnd_hcic_delete_stored_key,         // OCF 0x0C12,
+    .WriteLocalName = btsnd_hcic_change_name,                    // OCF 0x0C13,
+    .ReadLocalName = btsnd_hcic_read_name,                       // OCF 0x0C14,
+    .ReadConnectionAcceptTimeout = nullptr,                      // OCF 0x0C15,
+    .WriteConnectionAcceptTimeout = btsnd_hcic_write_page_tout,  // OCF 0x0C16,
+    .ReadPageTimeout = nullptr,                                  // OCF 0x0C17,
+    .WritePageTimeout = nullptr,                                 // OCF 0x0C18,
+    .ReadScanEnable = nullptr,                                   // OCF 0x0C19,
+    .WriteScanEnable = btsnd_hcic_write_scan_enable,             // OCF 0x0C1A,
+    .ReadPageScanActivity = nullptr,                             // OCF 0x0C1B,
+    .WritePageScanActivity = btsnd_hcic_write_pagescan_cfg,      // OCF 0x0C1C,
+    .ReadInquiryScanActivity = nullptr,                          // OCF 0x0C1D,
+    .WriteInquiryScanActivity = btsnd_hcic_write_inqscan_cfg,    // OCF 0x0C1E,
+    .ReadAuthenticationEnable = nullptr,                         // OCF 0x0C1F,
+    // UNUSED OCF 0x0C20 - 0x0C22
+    .ReadClassOfDevice = nullptr,                          // OCF 0x0C23,
+    .WriteClassOfDevice = btsnd_hcic_write_dev_class,      // OCF 0x0C24,
+    .ReadVoiceSetting = nullptr,                           // OCF 0x0C25,
+    .WriteVoiceSetting = btsnd_hcic_write_voice_settings,  // OCF 0x0C26,
+    .ReadAutomaticFlushTimeout =
+        btsnd_hcic_read_automatic_flush_timeout,  // OCF 0x0C27,
+    .WriteAutomaticFlushTimeout =
+        btsnd_hcic_write_auto_flush_tout,                // OCF 0x0C28,
+    .ReadNumBroadcastRetransmits = nullptr,              // OCF 0x0C29,
+    .WriteNumBroadcastRetransmits = nullptr,             // OCF 0x0C2A,
+    .ReadHoldModeActivity = nullptr,                     // OCF 0x0C2B,
+    .WriteHoldModeActivity = nullptr,                    // OCF 0x0C2C,
+    .ReadTransmitPowerLevel = btsnd_hcic_read_tx_power,  // OCF 0x0C2D,
+    .ReadSynchronousFlowControlEnable = nullptr,         // OCF 0x0C2E,
+    .WriteSynchronousFlowControlEnable = nullptr,        // OCF 0x0C2F,
+    // UNUSED OCF 0x0C30
+    .SetControllerToHostFlowControl = nullptr,  // OCF 0x0C31,
+    // UNUSED OCF 0x0C32
+    .HostBufferSize = nullptr,  // OCF 0x0C33,
+    // UNUSED OCF 0x0C34
+    .HostNumCompletedPackets = nullptr,  // OCF 0x0C35,
+    .ReadLinkSupervisionTimeout =
+        btsnd_hcic_write_link_super_tout,                   // OCF 0x0C36,
+    .WriteLinkSupervisionTimeout = nullptr,                 // OCF 0x0C37,
+    .ReadNumberOfSupportedIac = nullptr,                    // OCF 0x0C38,
+    .ReadCurrentIacLap = nullptr,                           // OCF 0x0C39,
+    .WriteCurrentIacLap = btsnd_hcic_write_cur_iac_lap,     // OCF 0x0C3A,
+    .SetAfhHostChannelClassification = nullptr,             // OCF 0x0C3F,
+    .ReadInquiryScanType = nullptr,                         // OCF 0x0C42,
+    .WriteInquiryScanType = btsnd_hcic_write_inqscan_type,  // OCF 0x0C43,
+    .ReadInquiryMode = nullptr,                             // OCF 0x0C44,
+    .WriteInquiryMode = btsnd_hcic_write_inquiry_mode,      // OCF 0x0C45,
+    .ReadPageScanType = nullptr,                            // OCF 0x0C46,
+    .WritePageScanType = btsnd_hcic_write_pagescan_type,    // OCF 0x0C47,
+    .ReadAfhChannelAssessmentMode = nullptr,                // OCF 0x0C48,
+    .WriteAfhChannelAssessmentMode = nullptr,               // OCF 0x0C49,
+    .ReadExtendedInquiryResponse = nullptr,                 // OCF 0x0C51,
+    .WriteExtendedInquiryResponse =
+        btsnd_hcic_write_ext_inquiry_response,                   // OCF 0x0C52,
+    .RefreshEncryptionKey = nullptr,                             // OCF 0x0C53,
+    .ReadSimplePairingMode = nullptr,                            // OCF 0x0C55,
+    .WriteSimplePairingMode = nullptr,                           // OCF 0x0C56,
+    .ReadLocalOobData = btsnd_hcic_read_local_oob_data,          // OCF 0x0C57,
+    .ReadInquiryResponseTransmitPowerLevel = nullptr,            // OCF 0x0C58,
+    .WriteInquiryTransmitPowerLevel = nullptr,                   // OCF 0x0C59,
+    .EnhancedFlush = btsnd_hcic_enhanced_flush,                  // OCF 0x0C5F,
+    .SendKeypressNotification = btsnd_hcic_send_keypress_notif,  // OCF 0x0C60,
+
+    // STATUS_PARAMETERS
+    .ReadFailedContactCounter =
+        btsnd_hcic_read_failed_contact_counter,      // OCF 0x1401,
+    .ResetFailedContactCounter = nullptr,            // OCF 0x1402,
+    .ReadLinkQuality = btsnd_hcic_get_link_quality,  // OCF 0x1403,
+    // UNUSED OCF 0x1404
+    .ReadRssi = btsnd_hcic_read_rssi,  // OCF 0x1405,
+    .ReadAfhChannelMap = nullptr,      // OCF 0x1406,
+    .ReadClock = nullptr,              // OCF 0x1407,
+    .ReadEncryptionKeySize = nullptr,  // OCF 0x1408,
 };
 
 const bluetooth::legacy::hci::Interface&

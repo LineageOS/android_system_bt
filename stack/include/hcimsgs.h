@@ -57,12 +57,174 @@ namespace bluetooth {
 namespace legacy {
 namespace hci {
 struct Interface {
+  // LINK_CONTROL 0x04xx
   void (*StartInquiry)(const LAP inq_lap, uint8_t duration,
                        uint8_t response_cnt);
   void (*InquiryCancel)();
+  void (*StartPeriodicInquiryMode)(uint16_t max_period, uint16_t min_period,
+                                   const LAP inq_lap, uint8_t duration,
+                                   uint8_t response_cnt);
+  void (*ExitPeriodicInquiryMode)();
+  void (*CreateConnection)(const RawAddress& dest, uint16_t packet_types,
+                           uint8_t page_scan_rep_mode, uint8_t page_scan_mode,
+                           uint16_t clock_offset, uint8_t allow_switch);
   void (*Disconnect)(uint16_t handle, uint8_t reason);
+  // UNUSED 0x0407 btsnd_hcic_add_SCO_conn
+  void (*CreateConnectionCancel)(const RawAddress& dest);
+  void (*AcceptConnectionRequest)(const RawAddress& dest, uint8_t role);
+  void (*RejectConnectionRequest)(const RawAddress& dest, uint8_t reason);
+  void (*LinkKeyRequestReply)(const RawAddress& bd_addr,
+                              const LinkKey& link_key);
+  void (*LinkKeyRequestNegativeReply)(const RawAddress& bd_addr);
+  void (*PinCodeRequestReply)(const RawAddress& bd_addr, uint8_t pin_code_len,
+                              PIN_CODE pin_code);
+  void (*PinCodeRequestNegativeReply)(const RawAddress& bd_addr);
+  void (*ChangeConnectionPacketType)(uint16_t handle, uint16_t packet_types);
+  void (*AuthenticationRequested)(uint16_t handle);
+  void (*SetConnectionEncryption)(uint16_t handle, bool enable);
+  void (*ChangeConnectionLinkKey)();  // 0x0415,
+  // UNUSED 0x0416
+  void (*CentralLinkKey)();  // 0x0417,
+  void (*RemoteNameRequest)(const RawAddress& bd_addr,
+                            uint8_t page_scan_rep_mode, uint8_t page_scan_mode,
+                            uint16_t clock_offset);
+  void (*RemoteNameRequestCancel)(const RawAddress& bd_addr);
+  void (*ReadRemoteSupportedFeatures)(uint16_t handle);
+  void (*ReadRemoteExtendedFeatures)(uint16_t handle, uint8_t page_num);
+  void (*ReadRemoteVersionInformation)(uint16_t handle);
+  void (*ReadClockOffset)(uint16_t handle);
+  void (*ReadLmpHandle)(uint16_t handle);
+  void (*SetupSynchronousConnection)(uint16_t handle,
+                                     uint32_t transmit_bandwidth,
+                                     uint32_t receive_bandwidth,
+                                     uint16_t max_latency, uint16_t voice,
+                                     uint8_t retrans_effort,
+                                     uint16_t packet_types);
+  void (*AcceptSynchronousConnection)(
+      const RawAddress& bd_addr, uint32_t transmit_bandwidth,
+      uint32_t receive_bandwidth, uint16_t max_latency, uint16_t content_fmt,
+      uint8_t retrans_effort, uint16_t packet_types);
+  void (*RejectSynchronousConnection)(const RawAddress& bd_addr,
+                                      uint8_t reason);
+  void (*IoCapabilityRequestReply)(const RawAddress& bd_addr,
+                                   uint8_t capability, uint8_t oob_present,
+                                   uint8_t auth_req);
+  void (*UserConfirmationRequestReply)(const RawAddress& bd_addr, bool is_yes);
+  void (*UserConfirmationRequestNegativeReply)(const RawAddress& bd_addr,
+                                               bool is_yes);
+  void (*UserPasskeyRequestReply)(const RawAddress& bd_addr, uint32_t value);
+  void (*UserPasskeyRequestNegativeReply)(const RawAddress& bd_addr);
+  void (*RemoteOobDataRequestReply)(const RawAddress& bd_addr, const Octet16& c,
+                                    const Octet16& r);
+  void (*RemoteOobDataRequestNegativeReply)(const RawAddress& bd_addr);
+  void (*IoCapabilityRequestNegativeReply)(const RawAddress& bd_addr,
+                                           uint8_t err_code);
+  void (*EnhancedSetupSynchronousConnection)(uint16_t conn_handle,
+                                             enh_esco_params_t* p_params);
+  void (*EnhancedAcceptSynchronousConnection)(const RawAddress& bd_addr,
+                                              enh_esco_params_t* p_params);
+  void (*RemoteOobExtendedDataRequestReply)();
+
+  // LINK_POLICY 0x08xx
+  void (*HoldMode)(uint16_t handle, uint16_t max_hold_period,
+                   uint16_t min_hold_period);
+  void (*SniffMode)(uint16_t handle, uint16_t max_sniff_period,
+                    uint16_t min_sniff_period, uint16_t sniff_attempt,
+                    uint16_t sniff_timeout);
+  void (*ExitSniffMode)(uint16_t handle);
+  void (*QosSetup)(uint16_t handle, uint8_t flags, uint8_t service_type,
+                   uint32_t token_rate, uint32_t peak, uint32_t latency,
+                   uint32_t delay_var);
+  // UNUSED 0x0808
+  void (*RoleDiscovery)();
   void (*StartRoleSwitch)(const RawAddress& bd_addr, uint8_t role);
+  void (*ReadLinkPolicySettings)();
+  void (*WriteLinkPolicySettings)(uint16_t handle, uint16_t settings);
+  void (*ReadDefaultLinkPolicySettings)();
+  void (*WriteDefaultLinkPolicySettings)(uint16_t settings);
+  void (*FlowSpecification)();
+  void (*SniffSubrating)(uint16_t handle, uint16_t max_lat,
+                         uint16_t min_remote_lat, uint16_t min_local_lat);
+
+  // CONTROLLER_AND_BASEBAND 0x0Cxx
+  void (*SetEventMask)();
+  void (*Reset)();
+  void (*SetEventFilter)(uint8_t filt_type, uint8_t filt_cond_type,
+                         uint8_t* filt_cond, uint8_t filt_cond_len);
+  void (*Flush)();
+  void (*ReadPinType)();
+  void (*WritePinType)(uint8_t type);
+  void (*CreateNewUnitKey)();
+  void (*ReadStoredLinkKey)();
+  void (*WriteStoredLinkKey)();
+  void (*DeleteStoredLinkKey)(const RawAddress& bd_addr, bool delete_all_flag);
+  void (*WriteLocalName)(BD_NAME name);
+  void (*ReadLocalName)();
+  void (*ReadConnectionAcceptTimeout)();
+  void (*WriteConnectionAcceptTimeout)(uint16_t timeout);
+  void (*ReadPageTimeout)();
+  void (*WritePageTimeout)();
+  void (*ReadScanEnable)();
+  void (*WriteScanEnable)(uint8_t flag);
+  void (*ReadPageScanActivity)();
+  void (*WritePageScanActivity)(uint16_t interval, uint16_t window);
+  void (*ReadInquiryScanActivity)();
+  void (*WriteInquiryScanActivity)(uint16_t interval, uint16_t window);
+  void (*ReadAuthenticationEnable)();
+  void (*WriteAuthenticationEnable)(uint8_t flag);
+  void (*ReadClassOfDevice)();
+  void (*WriteClassOfDevice)(DEV_CLASS dev_class);
+  void (*ReadVoiceSetting)();
+  void (*WriteVoiceSetting)(uint16_t flags);
+  void (*ReadAutomaticFlushTimeout)(uint16_t handle);
+  void (*WriteAutomaticFlushTimeout)(uint16_t handle, uint16_t tout);
+  void (*ReadNumBroadcastRetransmits)();
+  void (*WriteNumBroadcastRetransmits)();
+  void (*ReadHoldModeActivity)();
+  void (*WriteHoldModeActivity)();
+  void (*ReadTransmitPowerLevel)(uint16_t handle, uint8_t type);
+  void (*ReadSynchronousFlowControlEnable)();
+  void (*WriteSynchronousFlowControlEnable)();
+  void (*SetControllerToHostFlowControl)();
+  void (*HostBufferSize)();
+  void (*HostNumCompletedPackets)();
+  void (*ReadLinkSupervisionTimeout)(uint8_t local_controller_id,
+                                     uint16_t handle, uint16_t timeout);
+  void (*WriteLinkSupervisionTimeout)();
+  void (*ReadNumberOfSupportedIac)();
+  void (*ReadCurrentIacLap)();
+  void (*WriteCurrentIacLap)(uint8_t num_cur_iac, LAP* const iac_lap);
+  void (*SetAfhHostChannelClassification)();
+  void (*ReadInquiryScanType)();
+  void (*WriteInquiryScanType)(uint8_t type);
+  void (*ReadInquiryMode)();  // 0x0C44,
+  void (*WriteInquiryMode)(uint8_t mode);
+  void (*ReadPageScanType)();  // 0x0C46,
+  void (*WritePageScanType)(uint8_t type);
+  void (*ReadAfhChannelAssessmentMode)();
+  void (*WriteAfhChannelAssessmentMode)();
+  void (*ReadExtendedInquiryResponse)();
+  void (*WriteExtendedInquiryResponse)(void* buffer, uint8_t fec_req);
+  void (*RefreshEncryptionKey)();
+  void (*ReadSimplePairingMode)();
+  void (*WriteSimplePairingMode)();
+  void (*ReadLocalOobData)();
+  void (*ReadInquiryResponseTransmitPowerLevel)();
+  void (*WriteInquiryTransmitPowerLevel)();
+  void (*EnhancedFlush)(uint16_t handle, uint8_t packet_type);
+  void (*SendKeypressNotification)(const RawAddress& bd_addr, uint8_t notif);
+
+  // STATUS_PARAMETER 0x14xxS
+  void (*ReadFailedContactCounter)(uint16_t handle);
+  void (*ResetFailedContactCounter)();
+  void (*ReadLinkQuality)(uint16_t handle);
+  // UNUSED 0x1404
+  void (*ReadRssi)(uint16_t handle);
+  void (*ReadAfhChannelMap)();
+  void (*ReadClock)();
+  void (*ReadEncryptionKeySize)();
 };
+
 const Interface& GetInterface();
 }  // namespace hci
 }  // namespace legacy
