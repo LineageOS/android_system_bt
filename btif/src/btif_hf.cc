@@ -295,22 +295,22 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
   tBTA_AG* p_data = (tBTA_AG*)p_param;
   int idx = p_data->hdr.handle - 1;
 
-  BTIF_TRACE_DEBUG("%s: event=%s", __func__, dump_hf_event(event));
+  LOG_DEBUG("HF Upstream event:%s", dump_hf_event(event));
 
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
-    BTIF_TRACE_ERROR("%s: Invalid index %d", __func__, idx);
+    LOG_ERROR("%s Invalid client index:%d", dump_hf_event(event), idx);
     return;
   }
   if (!bt_hf_callbacks) {
-    BTIF_TRACE_ERROR("%s: Headset callback is NULL", __func__);
+    LOG_ERROR("%s Headset callback is not set", dump_hf_event(event));
     return;
   }
 
   switch (event) {
     case BTA_AG_REGISTER_EVT:
       btif_hf_cb[idx].handle = p_data->reg.hdr.handle;
-      BTIF_TRACE_DEBUG("%s: BTA_AG_REGISTER_EVT, btif_hf_cb.handle = %d",
-                       __func__, btif_hf_cb[idx].handle);
+      LOG_DEBUG("%s idx:%d btif_hf_cb.handle = %d", dump_hf_event(event), idx,
+                btif_hf_cb[idx].handle);
       break;
     // RFCOMM connected or failed to connect
     case BTA_AG_OPEN_EVT:
@@ -387,10 +387,11 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         btif_queue_advance();
       }
       break;
-    // SLC and RFCOMM both disconnected
     case BTA_AG_CLOSE_EVT: {
-      BTIF_TRACE_DEBUG("%s: BTA_AG_CLOSE_EVT, idx = %d, btif_hf_cb.handle = %d",
-                       __func__, idx, btif_hf_cb[idx].handle);
+      LOG_DEBUG(
+          "SLC and RFCOMM both disconnected event:%s idx:%d"
+          " btif_hf_cb.handle:%d",
+          dump_hf_event(event), idx, btif_hf_cb[idx].handle);
       // If AG_OPEN was received but SLC was not connected in time, then
       // AG_CLOSE may be received. We need to advance the queue here.
       bool failed_to_setup_slc =
@@ -406,9 +407,8 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       }
       break;
     }
-    // SLC connected
     case BTA_AG_CONN_EVT:
-      BTIF_TRACE_DEBUG("%s: BTA_AG_CONN_EVT, idx = %d ", __func__, idx);
+      LOG_DEBUG("SLC connected event:%s idx:%d", dump_hf_event(event), idx);
       btif_hf_cb[idx].peer_feat = p_data->conn.peer_feat;
       btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_SLC_CONNECTED;
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
@@ -419,18 +419,21 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_AG_AUDIO_OPEN_EVT:
+      LOG_DEBUG("Audio open event:%s", dump_hf_event(event));
       bt_hf_callbacks->AudioStateCallback(BTHF_AUDIO_STATE_CONNECTED,
                                           &btif_hf_cb[idx].connected_bda);
       break;
 
     case BTA_AG_AUDIO_CLOSE_EVT:
+      LOG_DEBUG("Audio close event:%s", dump_hf_event(event));
       bt_hf_callbacks->AudioStateCallback(BTHF_AUDIO_STATE_DISCONNECTED,
                                           &btif_hf_cb[idx].connected_bda);
       break;
 
-    /* BTA auto-responds, silently discard */
     case BTA_AG_SPK_EVT:
     case BTA_AG_MIC_EVT:
+      LOG_DEBUG("BTA auto-responds, silently discard event:%s",
+                dump_hf_event(event));
       bt_hf_callbacks->VolumeControlCallback(
           (event == BTA_AG_SPK_EVT) ? BTHF_VOLUME_TYPE_SPK
                                     : BTHF_VOLUME_TYPE_MIC,
