@@ -714,20 +714,21 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   uint16_t previous_event = event;
   uint8_t previous_state = p_scb->state;
 
-  APPL_TRACE_EVENT(
-      "%s: handle=0x%04x, bd_addr=%s, state=%s(0x%02x), "
-      "event=%s(0x%04x), result=%s(0x%02x)",
-      __func__, bta_ag_scb_to_idx(p_scb), p_scb->peer_addr.ToString().c_str(),
+  LOG_DEBUG(
+      "Execute AG event handle:0x%04x bd_addr:%s state:%s[0x%02x]"
+      " event:%s[0x%04x] result:%s[0x%02x]",
+      bta_ag_scb_to_idx(p_scb), PRIVATE_ADDRESS(p_scb->peer_addr),
       bta_ag_state_str(p_scb->state), p_scb->state, bta_ag_evt_str(event),
       event, bta_ag_res_str(data.api_result.result), data.api_result.result);
 
   bta_ag_better_state_machine(p_scb, event, data);
 
   if (p_scb->state != previous_state) {
-    APPL_TRACE_EVENT(
-        "%s: handle=0x%04x, bd_addr=%s, state_change[%s(0x%02x)]->[%s(0x%02x)],"
-        " event[%s(0x%04x)], result[%s(0x%02x)]",
-        __func__, bta_ag_scb_to_idx(p_scb), p_scb->peer_addr.ToString().c_str(),
+    LOG_DEBUG(
+        "State changed handle:0x%04x bd_addr:%s "
+        "state_change:%s[0x%02x]->%s[0x%02x]"
+        " event:%s[0x%04x] result:%s[0x%02x]",
+        bta_ag_scb_to_idx(p_scb), PRIVATE_ADDRESS(p_scb->peer_addr),
         bta_ag_state_str(previous_state), previous_state,
         bta_ag_state_str(p_scb->state), p_scb->state,
         bta_ag_evt_str(previous_event), previous_event,
@@ -739,7 +740,8 @@ void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event,
                                  const tBTA_AG_DATA& data) {
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
   if (p_scb) {
-    APPL_TRACE_DEBUG("%s: p_scb 0x%08x ", __func__, p_scb);
+    LOG_DEBUG("AG state machine event:%s[0x%04x] handle:0x%04x",
+              bta_ag_evt_str(event), event, handle);
     bta_ag_sm_execute(p_scb, event, data);
   }
 }
