@@ -38,6 +38,8 @@
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_client_callbacks.h"
+#include "stack/include/btm_client_interface.h"
 #include "utl.h"
 
 void BTIF_dm_on_hw_error();
