@@ -258,7 +258,8 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
       ret = L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_tcb->peer_bda);
     } else {
       L2CA_CancelBleConnectReq(p_tcb->peer_bda);
-      gatt_cleanup_upon_disc(p_tcb->peer_bda, HCI_ERR_CONN_CAUSE_LOCAL_HOST, p_tcb->transport);
+      gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_LOCAL_HOST,
+                             p_tcb->transport);
       return true;
     }
     gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
@@ -421,8 +422,10 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   bool check_srv_chg = false;
   tGATTS_SRV_CHG* p_srv_chg_clt = NULL;
 
-  /* ignore all fixed channel connect/disconnect on BR/EDR link for GATT */
-  if (transport == BT_TRANSPORT_BR_EDR) return;
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    LOG_WARN("Ignoring fixed channel connect/disconnect on br_edr for GATT");
+    return;
+  }
 
   VLOG(1) << "GATT   ATT protocol channel with BDA: " << bd_addr << " is "
           << ((connected) ? "connected" : "disconnected");
@@ -436,8 +439,8 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   }
 
   if (!connected) {
-    gatt_cleanup_upon_disc(bd_addr, reason, transport);
-    VLOG(1) << "ATT disconnected";
+    gatt_cleanup_upon_disc(bd_addr, static_cast<tGATT_DISCONN_REASON>(reason),
+                           transport);
     return;
   }
 
@@ -630,7 +633,9 @@ static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (p_tcb == nullptr) return;
   if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-    gatt_cleanup_upon_disc(p_tcb->peer_bda, result, BT_TRANSPORT_BR_EDR);
+    gatt_cleanup_upon_disc(p_tcb->peer_bda,
+                           static_cast<tGATT_DISCONN_REASON>(result),
+                           BT_TRANSPORT_BR_EDR);
   } else {
     gatt_l2cif_disconnect(lcid);
   }
@@ -708,8 +713,9 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   }
   /* if ACL link is still up, no reason is logged, l2cap is disconnect from
    * peer */
-  uint16_t reason = L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport);
-  if (reason == 0) reason = GATT_CONN_TERMINATE_PEER_USER;
+  tGATT_DISCONN_REASON reason = static_cast<tGATT_DISCONN_REASON>(
+      L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport));
+  if (reason == GATT_CONN_OK) reason = GATT_CONN_TERMINATE_PEER_USER;
 
   /* send disconnect callback */
   gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, BT_TRANSPORT_BR_EDR);
@@ -731,8 +737,9 @@ static void gatt_l2cif_disconnect(uint16_t lcid) {
   /* send disconnect callback */
   /* if ACL link is still up, no reason is logged, l2cap is disconnect from
    * peer */
-  uint16_t reason = L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport);
-  if (reason == 0) reason = GATT_CONN_TERMINATE_LOCAL_HOST;
+  tGATT_DISCONN_REASON reason = static_cast<tGATT_DISCONN_REASON>(
+      L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport));
+  if (reason == GATT_CONN_OK) reason = GATT_CONN_TERMINATE_LOCAL_HOST;
 
   gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, BT_TRANSPORT_BR_EDR);
 }
@@ -776,8 +783,9 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
 
     if (p_reg->app_cb.p_conn_cb) {
       conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
-      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id, true,
-                                 0, p_tcb->transport);
+      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, p_tcb->peer_bda, conn_id,
+                                 kGattConnected, GATT_CONN_OK,
+                                 p_tcb->transport);
     }
   }
 
