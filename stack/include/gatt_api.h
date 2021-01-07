@@ -470,7 +470,7 @@ typedef uint8_t tGATTS_REQ_TYPE;
 /* Client Used Data Structure
 */
 /* definition of different discovery types */
-enum {
+typedef enum : uint8_t {
   GATT_DISC_SRVC_ALL = 1, /* discover all services */
   GATT_DISC_SRVC_BY_UUID, /* discover service of a special type */
   GATT_DISC_INC_SRVC,     /* discover the included service within a service */
@@ -478,8 +478,7 @@ enum {
                      requirement */
   GATT_DISC_CHAR_DSCPT, /* discover characteristic descriptors of a character */
   GATT_DISC_MAX         /* maximnun discover type */
-};
-typedef uint8_t tGATT_DISC_TYPE;
+} tGATT_DISC_TYPE;
 
 /* GATT read type enumeration
 */

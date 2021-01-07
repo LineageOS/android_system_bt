@@ -428,7 +428,7 @@ extern void bta_gattc_disc_cmpl_cback(uint16_t conn_id,
                                       tGATT_STATUS status);
 extern tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
                                                    tBTA_GATTC_SERV* p_server_cb,
-                                                   uint8_t disc_type);
+                                                   tGATT_DISC_TYPE disc_type);
 extern void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb,
                                      bluetooth::Uuid* p_uuid);
 extern const std::list<gatt::Service>* bta_gattc_get_services(uint16_t conn_id);
