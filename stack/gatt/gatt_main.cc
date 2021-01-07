@@ -505,7 +505,7 @@ void gatt_notify_phy_updated(tGATT_STATUS status, uint16_t handle,
                              uint8_t tx_phy, uint8_t rx_phy) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   if (!p_dev_rec) {
-    BTM_TRACE_WARNING("%s: No Device Found!", __func__);
+    LOG_WARN("No Device Found!");
     return;
   }
 
