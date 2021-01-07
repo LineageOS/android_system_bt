@@ -33,6 +33,9 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
+void btm_init();
+void btm_free();
+
 /*****************************************************************************
  *  DEVICE CONTROL and COMMON
  ****************************************************************************/
