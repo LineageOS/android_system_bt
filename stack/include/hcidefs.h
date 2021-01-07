@@ -792,7 +792,11 @@ typedef enum : uint8_t {
 #define HCI_DEF_INQUIRYSCAN_WINDOW 0x12   /* 11.25 ms */
 
 /* Encryption modes */
-#define HCI_ENCRYPT_MODE_DISABLED 0x00
+typedef enum : uint8_t {
+  HCI_ENCRYPT_MODE_DISABLED = 0x00,
+  HCI_ENCRYPT_MODE_ON = 0x01,
+  HCI_ENCRYPT_MODE_ON_BR_EDR_AES_CCM = 0x02,
+} tHCI_ENCRYPT_MODE;
 
 /* Voice settings */
 #define HCI_INP_CODING_LINEAR 0x0000 /* 0000000000 */
