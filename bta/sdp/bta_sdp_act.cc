@@ -28,18 +28,9 @@
 #include "bta_sdp_api.h"
 #include "bta_sdp_int.h"
 #include "bta_sys.h"
+#include "btif_sock_sdp.h"
 #include "osi/include/allocator.h"
 #include "sdp_api.h"
-
-/*****************************************************************************
- *  Constants
- ****************************************************************************/
-
-static const Uuid UUID_OBEX_OBJECT_PUSH = Uuid::From16Bit(0x1105);
-static const Uuid UUID_PBAP_PSE = Uuid::From16Bit(0x112F);
-static const Uuid UUID_MAP_MAS = Uuid::From16Bit(0x1132);
-static const Uuid UUID_MAP_MNS = Uuid::From16Bit(0x1133);
-static const Uuid UUID_SAP = Uuid::From16Bit(0x112D);
 
 static void bta_create_mns_sdp_record(bluetooth_sdp_record* record,
                                       tSDP_DISC_REC* p_rec) {
@@ -294,6 +285,60 @@ static void bta_create_sap_sdp_record(bluetooth_sdp_record* record,
   }
 }
 
+static void bta_create_dip_sdp_record(bluetooth_sdp_record* record,
+                                      tSDP_DISC_REC* p_rec) {
+  tSDP_DISC_ATTR* p_attr;
+
+  APPL_TRACE_DEBUG("%s()", __func__);
+
+  /* hdr is redundancy in dip */
+  record->dip.hdr.type = SDP_TYPE_DIP;
+  record->dip.hdr.service_name_length = 0;
+  record->dip.hdr.service_name = nullptr;
+  record->dip.hdr.rfcomm_channel_number = 0;
+  record->dip.hdr.l2cap_psm = -1;
+  record->dip.hdr.profile_version = 0;
+
+  p_attr =
+      SDP_FindAttributeInRec(p_rec, ATTR_ID_SPECIFICATION_ID);
+  if (p_attr != nullptr)
+    record->dip.spec_id = p_attr->attr_value.v.u16;
+  else
+    APPL_TRACE_ERROR("%s() ATTR_ID_SPECIFICATION_ID not found", __func__);
+
+  p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_VENDOR_ID);
+  if (p_attr != nullptr)
+    record->dip.vendor = p_attr->attr_value.v.u16;
+  else
+    APPL_TRACE_ERROR("%s() ATTR_ID_VENDOR_ID not found", __func__);
+
+  p_attr =
+      SDP_FindAttributeInRec(p_rec, ATTR_ID_VENDOR_ID_SOURCE);
+  if (p_attr != nullptr)
+    record->dip.vendor_id_source = p_attr->attr_value.v.u16;
+  else
+    APPL_TRACE_ERROR("%s() ATTR_ID_VENDOR_ID_SOURCE not found", __func__);
+
+  p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_PRODUCT_ID);
+  if (p_attr != nullptr)
+    record->dip.product = p_attr->attr_value.v.u16;
+  else
+    APPL_TRACE_ERROR("%s() ATTR_ID_PRODUCT_ID not found", __func__);
+
+  p_attr =
+      SDP_FindAttributeInRec(p_rec, ATTR_ID_PRODUCT_VERSION);
+  if (p_attr != nullptr)
+    record->dip.version = p_attr->attr_value.v.u16;
+  else
+    APPL_TRACE_ERROR("%s() ATTR_ID_PRODUCT_VERSION not found", __func__);
+
+  p_attr = SDP_FindAttributeInRec(p_rec, ATTR_ID_PRIMARY_RECORD);
+  if (p_attr != nullptr)
+    record->dip.primary_record = !(!p_attr->attr_value.v.u8);
+  else
+    APPL_TRACE_ERROR("%s() ATTR_ID_PRIMARY_RECORD not found", __func__);
+}
+
 static void bta_create_raw_sdp_record(bluetooth_sdp_record* record,
                                       tSDP_DISC_REC* p_rec) {
   tSDP_DISC_ATTR* p_attr;
@@ -366,6 +411,9 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
       } else if (uuid == UUID_SAP) {
         APPL_TRACE_DEBUG("%s() - found SAP uuid", __func__);
         bta_create_sap_sdp_record(&evt_data.records[count], p_rec);
+      } else if (uuid == UUID_DIP) {
+        APPL_TRACE_DEBUG("%s() - found DIP uuid", __func__);
+        bta_create_dip_sdp_record(&evt_data.records[count], p_rec);
       } else {
         /* we do not have specific structure for this */
         APPL_TRACE_DEBUG("%s() - profile not identified. using raw data",
