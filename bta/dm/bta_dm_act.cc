@@ -2183,7 +2183,7 @@ static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
 }
 
 static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
-                               uint8_t hci_status) {
+                               tHCI_STATUS hci_status) {
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
   if (!p_dev) {
     LOG_WARN(
@@ -2230,7 +2230,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
 }
 
 void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
-                               uint8_t hci_status) {
+                               tHCI_STATUS hci_status) {
   do_in_main_thread(
       FROM_HERE, base::Bind(handle_role_change, bd_addr, new_role, hci_status));
 }
