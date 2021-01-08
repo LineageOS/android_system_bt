@@ -114,6 +114,10 @@ void LinkManager::RegisterLinkSecurityInterfaceListener(os::Handler* handler, Li
   link_security_interface_listener_ = listener;
 }
 
+LinkSecurityInterfaceListener* LinkManager::GetLinkSecurityInterfaceListener() {
+  return link_security_interface_listener_;
+}
+
 Link* LinkManager::GetLink(const hci::Address device) {
   if (links_.find(device) == links_.end()) {
     return nullptr;
