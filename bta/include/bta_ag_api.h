@@ -64,7 +64,7 @@
 
 /* HFP 1.7+ */
 #define BTA_AG_FEAT_HF_IND 0x00000400 /* HF Indicators */
-#define BTA_AG_FEAT_ESCO 0x00000800   /* eSCO S4 (and T2) setting supported */
+#define BTA_AG_FEAT_ESCO_S4 0x00000800 /* eSCO S4 setting supported */
 
 /* Proprietary features: using 31 ~ 16 bits */
 #define BTA_AG_FEAT_BTRH 0x00010000    /* CCAP incoming call hold */
@@ -185,7 +185,7 @@ inline std::string bta_ag_result_text(const tBTA_AG_RES& result) {
 #define BTA_AG_PEER_FEAT_ECC 0x0040    /* Enhanced Call Control */
 #define BTA_AG_PEER_FEAT_CODEC 0x0080  /* Codec Negotiation */
 #define BTA_AG_PEER_FEAT_HF_IND 0x0100 /* HF Indicators */
-#define BTA_AG_PEER_FEAT_ESCO 0x0200   /* eSCO S4 (and T2) setting supported */
+#define BTA_AG_PEER_FEAT_ESCO_S4 0x0200 /* eSCO S4 setting supported */
 
 /* Proprietary features: using bits after 12 */
 
