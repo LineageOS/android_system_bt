@@ -254,6 +254,12 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclC
     pending_dynamic_channels_.erase(device);
     pending_dynamic_channels_callbacks_.erase(device);
   }
+  // Notify link property listener
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnLinkConnected, device, link->GetAclHandle());
+  }
+
   // Notify security manager
   if (link_security_interface_listener_handler_ != nullptr) {
     link_security_interface_listener_handler_->CallOn(
@@ -304,6 +310,10 @@ void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
     link_security_interface_listener_handler_->CallOn(
         link_security_interface_listener_, &LinkSecurityInterfaceListener::OnLinkDisconnected, device);
   }
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(link_property_listener_, &LinkPropertyListener::OnLinkDisconnected, device);
+  }
+
   links_.erase(device);
 }
 
@@ -326,10 +336,10 @@ void LinkManager::OnEncryptionChange(hci::Address device, hci::EncryptionEnabled
 
 void LinkManager::OnReadRemoteVersionInformation(
     hci::Address device, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
-  if (link_security_interface_listener_handler_ != nullptr) {
-    link_security_interface_listener_handler_->CallOn(
-        link_security_interface_listener_,
-        &LinkSecurityInterfaceListener::OnReadRemoteVersionInformation,
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnReadRemoteVersionInformation,
         device,
         lmp_version,
         manufacturer_name,
@@ -339,10 +349,10 @@ void LinkManager::OnReadRemoteVersionInformation(
 
 void LinkManager::OnReadRemoteExtendedFeatures(
     hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features) {
-  if (link_security_interface_listener_handler_ != nullptr) {
-    link_security_interface_listener_handler_->CallOn(
-        link_security_interface_listener_,
-        &LinkSecurityInterfaceListener::OnReadRemoteExtendedFeatures,
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnReadRemoteExtendedFeatures,
         device,
         page_number,
         max_page_number,
