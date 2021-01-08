@@ -173,4 +173,19 @@ inline std::string GetRustTypeForSize(int size) {
   return "u64";
 }
 
+inline std::string ToLowerCase(std::string value) {
+  if (value[0] < 'A' || value[0] > 'Z') {
+    ERROR() << value << " doesn't look like CONSTANT_CASE";
+  }
+
+  std::ostringstream lower_case;
+
+  for (unsigned char c : value) {
+    c = std::tolower(c);
+    lower_case << c;
+  }
+
+  return lower_case.str();
+}
+
 }  // namespace util
