@@ -16,6 +16,7 @@
 
 #define LOG_TAG "bt_shim_l2cap"
 
+#include <future>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -35,6 +36,10 @@
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btu.h"
+
+extern void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
+                                    uint16_t latency, uint16_t timeout,
+                                    tHCI_STATUS status);
 
 namespace bluetooth {
 namespace shim {
@@ -696,7 +701,9 @@ struct LeFixedChannelHelper {
         GetGdShimHandler(), bluetooth::common::BindOnce(
                                 &LeFixedChannelHelper::on_channel_close,
                                 bluetooth::common::Unretained(this), device));
-    channel->Acquire();
+    if (cid_ == kAttCid) {
+      channel->Acquire();
+    }
     channel_enqueue_buffer_[device] = std::make_unique<
         bluetooth::os::EnqueueBuffer<bluetooth::packet::BasePacketBuilder>>(
         channel->GetQueueUpEnd());
@@ -835,6 +842,33 @@ bool L2CA_RemoveFixedChnl(uint16_t cid, const RawAddress& rem_bda) {
   return true;
 }
 
+uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda) {
+  if (cid != kAttCid && cid != kSmpCid) {
+    LOG(ERROR) << "Invalid cid " << cid;
+    return 0;
+  }
+  auto* helper = &le_fixed_channel_helper_.find(cid)->second;
+  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  auto channel = helper->channels_.find(remote);
+  if (channel == helper->channels_.end() || channel->second == nullptr) {
+    LOG(ERROR) << "Channel is not open";
+    return 0;
+  }
+  return channel->second->GetLinkOptions()->GetHandle();
+}
+
+void L2CA_LeConnectionUpdate(const RawAddress& rem_bda) {
+  auto* helper = &le_fixed_channel_helper_.find(4)->second;
+  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  auto channel = helper->channels_.find(remote);
+  if (channel == helper->channels_.end() || channel->second == nullptr) {
+    LOG(ERROR) << "Channel is not open";
+  }
+
+  channel->second->GetLinkOptions()->UpdateConnectionParameter(0x24, 0x24, 0,
+                                                               0x01f4, 0, 0);
+}
+
 /**
  * Channel hygiene APIs
  */
@@ -879,7 +913,11 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
 
 bool L2CA_IsLinkEstablished(const RawAddress& bd_addr,
                             tBT_TRANSPORT transport) {
-  return security_listener_shim_.IsLinkUp(bd_addr);
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    return security_listener_shim_.IsLinkUp(bd_addr);
+  } else {
+    return bluetooth::shim::L2CA_GetLeHandle(kAttCid, bd_addr) != 0;
+  }
 }
 
 void L2CA_ConnectForSecurity(const RawAddress& bd_addr) {
@@ -930,29 +968,36 @@ struct LeDynamicChannelHelper {
   le::SecurityPolicy policy_;
 
   void Register() {
+    std::promise<void> promise;
+    auto future = promise.get_future();
     GetL2capLeModule()->GetDynamicChannelManager()->RegisterService(
         psm_, config_, policy_,
         base::BindOnce(&LeDynamicChannelHelper::on_registration_complete,
-                       base::Unretained(this)),
+                       base::Unretained(this), std::move(promise)),
         base::Bind(&LeDynamicChannelHelper::on_channel_open,
                    base::Unretained(this), 0),
         GetGdShimHandler());
+    future.wait_for(std::chrono::milliseconds(300));
   }
 
   void on_registration_complete(
+      std::promise<void> promise,
       le::DynamicChannelManager::RegistrationResult result,
       std::unique_ptr<le::DynamicChannelService> service) {
     if (result != le::DynamicChannelManager::RegistrationResult::SUCCESS) {
       LOG(ERROR) << "Channel is not registered. psm=" << +psm_ << (int)result;
+      promise.set_value();
       return;
     }
     channel_service_ = std::move(service);
+    promise.set_value();
   }
 
   std::unique_ptr<le::DynamicChannelService> channel_service_ = nullptr;
 
   void Connect(uint16_t cid_token, bluetooth::hci::AddressWithType device) {
     if (channel_service_ == nullptr) {
+      LOG(ERROR) << __func__ << "Not registered";
       return;
     }
     initiated_by_us_[cid_token] = true;
@@ -1161,7 +1206,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
   }
   uint16_t cid_token = add_le_cid_token_entry(psm);
   le_dynamic_channel_helper_map_[psm]->Connect(
-      cid_token, ToAddressWithType(p_bd_addr, BLE_ADDR_PUBLIC));
+      cid_token, ToAddressWithType(p_bd_addr, Btm::GetAddressType(p_bd_addr)));
   return cid_token;
 }
 
