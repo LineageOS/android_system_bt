@@ -32,7 +32,6 @@
 #include "bt_target.h"
 #include "bt_utils.h"
 #include "btm_api.h"
-#include "btm_int.h"
 #include "port_api.h"
 #include "port_int.h"
 #include "rfc_int.h"

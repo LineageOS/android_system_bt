@@ -29,7 +29,6 @@
 #include "bt_utils.h"
 #include "stack_config.h"
 
-#include "btm_int.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"

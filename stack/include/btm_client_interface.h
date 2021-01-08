@@ -38,6 +38,10 @@ struct btm_client_interface_s {
                                       tBTM_VSC_CMPL_CB* p_cb);
     void (*ACL_RegisterClient)(struct acl_client_callback_s* callbacks);
     void (*ACL_UnregisterClient)(struct acl_client_callback_s* callbacks);
+    void (*btm_init)();
+    void (*btm_free)();
+    void (*btm_ble_init)();
+    void (*btm_ble_free)();
   } lifecycle;
 
   struct {
@@ -73,6 +77,7 @@ struct btm_client_interface_s {
     void (*BTM_ReadDevInfo)(const RawAddress& bd_addr,
                             tBT_DEVICE_TYPE* p_dev_type,
                             tBLE_ADDR_TYPE* p_addr_type);
+    uint16_t (*BTM_GetMaxPacketSize)(const RawAddress& bd_addr);
   } peer;
 
   struct {

@@ -46,3 +46,12 @@ void sACL_CONN::Reset() {
   switch_role_state_ = BTM_ACL_SWKEY_STATE_IDLE;
   sca = 0;
 }
+
+void sACL_CB::Init() {
+  btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
+  acl_disc_reason = HCI_ERR_UNDEFINED;
+
+  btm_acl_pkt_types_supported =
+      HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1 + HCI_PKT_TYPES_MASK_DH3 +
+      HCI_PKT_TYPES_MASK_DM3 + HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5;
+}

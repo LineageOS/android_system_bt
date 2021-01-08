@@ -364,7 +364,7 @@ typedef sACL_CONN tACL_CONN;
 /****************************************************
  **      ACL Management API
  ****************************************************/
-typedef struct {
+struct sACL_CB {
  private:
   friend bool BTM_IsBleConnection(uint16_t hci_handle);
   friend bool acl_is_role_switch_allowed();
@@ -446,4 +446,7 @@ typedef struct {
     }
     return cnt;
   }
-} tACL_CB;
+
+  void Init();
+};
+typedef sACL_CB tACL_CB;

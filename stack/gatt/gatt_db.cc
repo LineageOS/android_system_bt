@@ -29,7 +29,6 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "btm_int.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
