@@ -57,83 +57,88 @@ typedef enum : uint8_t {
 #define SMP_OPCODE_INIT 0x04
 
 /* SMP events */
-#define SMP_PAIRING_REQ_EVT SMP_OPCODE_PAIRING_REQ
-#define SMP_PAIRING_RSP_EVT SMP_OPCODE_PAIRING_RSP
-#define SMP_CONFIRM_EVT SMP_OPCODE_CONFIRM
-#define SMP_RAND_EVT SMP_OPCODE_RAND
-#define SMP_PAIRING_FAILED_EVT SMP_OPCODE_PAIRING_FAILED
-#define SMP_ENCRPTION_INFO_EVT SMP_OPCODE_ENCRYPT_INFO
-#define SMP_CENTRAL_ID_EVT SMP_OPCODE_CENTRAL_ID
-#define SMP_ID_INFO_EVT SMP_OPCODE_IDENTITY_INFO
-#define SMP_ID_ADDR_EVT SMP_OPCODE_ID_ADDR
-#define SMP_SIGN_INFO_EVT SMP_OPCODE_SIGN_INFO
-#define SMP_SECURITY_REQ_EVT SMP_OPCODE_SEC_REQ
+typedef enum : uint8_t {
+  SMP_NOP_EVT = 0,
+  SMP_CONFIRM_EVT = SMP_OPCODE_CONFIRM,  // 0x03
+  SMP_RAND_EVT = SMP_OPCODE_RAND,        // 0x04
 
-#define SMP_PAIR_PUBLIC_KEY_EVT SMP_OPCODE_PAIR_PUBLIC_KEY
-#define SMP_PAIR_KEYPRESS_NOTIFICATION_EVT SMP_OPCODE_PAIR_KEYPR_NOTIF
+  SMP_PAIR_COMMITM_EVT = SMP_OPCODE_PAIR_COMMITM,     // 0x0f
+  SMP_SELF_DEF_EVT = (SMP_PAIR_COMMITM_EVT + 1),      // 0x10
+  SMP_KEY_READY_EVT = (SMP_SELF_DEF_EVT),             // 0x04
+  SMP_ENCRYPTED_EVT = (SMP_SELF_DEF_EVT + 1),         // 0x05
+  SMP_L2CAP_CONN_EVT = (SMP_SELF_DEF_EVT + 2),        // 0x06
+  SMP_L2CAP_DISCONN_EVT = (SMP_SELF_DEF_EVT + 3),     // 0x07
+  SMP_IO_RSP_EVT = (SMP_SELF_DEF_EVT + 4),            // 0x08
+  SMP_API_SEC_GRANT_EVT = (SMP_SELF_DEF_EVT + 5),     // 0x09
+  SMP_TK_REQ_EVT = (SMP_SELF_DEF_EVT + 6),            // 0x0a
+  SMP_AUTH_CMPL_EVT = (SMP_SELF_DEF_EVT + 7),         // 0x0b
+  SMP_ENC_REQ_EVT = (SMP_SELF_DEF_EVT + 8),           // 0x0c
+  SMP_BOND_REQ_EVT = (SMP_SELF_DEF_EVT + 9),          // 0x0d
+  SMP_DISCARD_SEC_REQ_EVT = (SMP_SELF_DEF_EVT + 10),  // 0x0e
 
-#define SMP_PAIR_COMMITM_EVT SMP_OPCODE_PAIR_COMMITM
+  SMP_BR_PAIR_KEYPR_NOTIF_EVT = SMP_OPCODE_PAIR_KEYPR_NOTIF,
+  /* not over BR/EDR */                                     // 0x0e
+  SMP_BR_SELF_DEF_EVT = SMP_BR_PAIR_KEYPR_NOTIF_EVT,        // 0x0e
+  SMP_BR_KEY_READY_EVT = (SMP_BR_SELF_DEF_EVT + 1),         // 0x0f
+  SMP_BR_ENCRYPTED_EVT = (SMP_BR_SELF_DEF_EVT + 2),         // 0x10
+  SMP_BR_L2CAP_CONN_EVT = (SMP_BR_SELF_DEF_EVT + 3),        // 0x11
+  SMP_BR_L2CAP_DISCONN_EVT = (SMP_BR_SELF_DEF_EVT + 4),     // 0x12
+  SMP_BR_KEYS_RSP_EVT = (SMP_BR_SELF_DEF_EVT + 5),          // 0x13
+  SMP_BR_API_SEC_GRANT_EVT = (SMP_BR_SELF_DEF_EVT + 6),     // 0x14
+  SMP_BR_TK_REQ_EVT = (SMP_BR_SELF_DEF_EVT + 7),            // 0x15
+  SMP_BR_AUTH_CMPL_EVT = (SMP_BR_SELF_DEF_EVT + 8),         // 0x16
+  SMP_BR_ENC_REQ_EVT = (SMP_BR_SELF_DEF_EVT + 9),           // 0x17
+  SMP_BR_BOND_REQ_EVT = (SMP_BR_SELF_DEF_EVT + 10),         // 0x18
+  SMP_BR_DISCARD_SEC_REQ_EVT = (SMP_BR_SELF_DEF_EVT + 11),  // 0x19
+  SMP_BR_MAX_EVT = (SMP_BR_SELF_DEF_EVT + 12),              // 0x1a
 
-#define SMP_SELF_DEF_EVT (SMP_PAIR_COMMITM_EVT + 1)
-#define SMP_KEY_READY_EVT (SMP_SELF_DEF_EVT)
-#define SMP_ENCRYPTED_EVT (SMP_SELF_DEF_EVT + 1)
-#define SMP_L2CAP_CONN_EVT (SMP_SELF_DEF_EVT + 2)
-#define SMP_L2CAP_DISCONN_EVT (SMP_SELF_DEF_EVT + 3)
-#define SMP_IO_RSP_EVT (SMP_SELF_DEF_EVT + 4)
-#define SMP_API_SEC_GRANT_EVT (SMP_SELF_DEF_EVT + 5)
-#define SMP_TK_REQ_EVT (SMP_SELF_DEF_EVT + 6)
-#define SMP_AUTH_CMPL_EVT (SMP_SELF_DEF_EVT + 7)
-#define SMP_ENC_REQ_EVT (SMP_SELF_DEF_EVT + 8)
-#define SMP_BOND_REQ_EVT (SMP_SELF_DEF_EVT + 9)
-#define SMP_DISCARD_SEC_REQ_EVT (SMP_SELF_DEF_EVT + 10)
+  SMP_PAIR_DHKEY_CHCK_EVT = SMP_OPCODE_PAIR_DHKEY_CHECK,  // 0x0d
 
-#define SMP_PAIR_DHKEY_CHCK_EVT SMP_OPCODE_PAIR_DHKEY_CHECK
+  /* request to start public  key exchange */
+  SMP_PUBL_KEY_EXCH_REQ_EVT = (SMP_SELF_DEF_EVT + 11),  // 0x1b
 
-/* request to start public  key exchange */
-#define SMP_PUBL_KEY_EXCH_REQ_EVT (SMP_SELF_DEF_EVT + 11)
+  /* local public key created */
+  SMP_LOC_PUBL_KEY_CRTD_EVT = (SMP_SELF_DEF_EVT + 12),  // 0x1c
 
-/* local public key created */
-#define SMP_LOC_PUBL_KEY_CRTD_EVT (SMP_SELF_DEF_EVT + 12)
+  /* both local and peer public keys are saved in cb */
+  SMP_BOTH_PUBL_KEYS_RCVD_EVT = (SMP_SELF_DEF_EVT + 13),  // 0x1d
 
-/* both local and peer public keys are saved in cb */
-#define SMP_BOTH_PUBL_KEYS_RCVD_EVT (SMP_SELF_DEF_EVT + 13)
+  /* DHKey computation is completed, time to start SC phase1 */
+  SMP_SC_DHKEY_CMPLT_EVT = (SMP_SELF_DEF_EVT + 14),  // 0x1d
 
-/* DHKey computation is completed, time to start SC phase1 */
-#define SMP_SC_DHKEY_CMPLT_EVT (SMP_SELF_DEF_EVT + 14)
+  /* new local nonce is generated and saved in p_cb->rand */
+  SMP_HAVE_LOC_NONCE_EVT = (SMP_SELF_DEF_EVT + 15),  // 0x1f
 
-/* new local nonce is generated and saved in p_cb->rand */
-#define SMP_HAVE_LOC_NONCE_EVT (SMP_SELF_DEF_EVT + 15)
+  /* time to start SC phase2 */
+  SMP_SC_PHASE1_CMPLT_EVT = (SMP_SELF_DEF_EVT + 16),  // 0x20
 
-/* time to start SC phase2 */
-#define SMP_SC_PHASE1_CMPLT_EVT (SMP_SELF_DEF_EVT + 16)
+  /* request to calculate number for user check. Used only in the numeric
+   * compare protocol */
+  SMP_SC_CALC_NC_EVT = (SMP_SELF_DEF_EVT + 17),  // 0x21
 
-/* request to calculate number for user check. Used only in the numeric compare
- * protocol */
-#define SMP_SC_CALC_NC_EVT (SMP_SELF_DEF_EVT + 17)
+  /* Request to display the number for user check to the user.*/
+  /* Used only in the numeric compare protocol */
+  SMP_SC_DSPL_NC_EVT = (SMP_SELF_DEF_EVT + 18),  // 0x22
 
-/* Request to display the number for user check to the user.*/
-/* Used only in the numeric compare protocol */
-#define SMP_SC_DSPL_NC_EVT (SMP_SELF_DEF_EVT + 18)
+  /* user confirms 'OK' numeric comparison request */
+  SMP_SC_NC_OK_EVT = (SMP_SELF_DEF_EVT + 19),  // 0x23
 
-/* user confirms 'OK' numeric comparison request */
-#define SMP_SC_NC_OK_EVT (SMP_SELF_DEF_EVT + 19)
+  /* both local and peer DHKey Checks are already present - it is used on
+   * peripheral to prevent a race condition */
+  SMP_SC_2_DHCK_CHKS_PRES_EVT = (SMP_SELF_DEF_EVT + 20),  // 0x24
 
-/* both local and peer DHKey Checks are already present - it is used on
- * peripheral to prevent a race condition */
-#define SMP_SC_2_DHCK_CHKS_PRES_EVT (SMP_SELF_DEF_EVT + 20)
+  /* same meaning as SMP_KEY_READY_EVT to separate between SC and legacy actions
+   */
+  SMP_SC_KEY_READY_EVT = (SMP_SELF_DEF_EVT + 21),             // 0x25
+  SMP_KEYPRESS_NOTIFICATION_EVENT = (SMP_SELF_DEF_EVT + 22),  // 0x26
 
-/* same meaning as SMP_KEY_READY_EVT to separate between SC and legacy actions
- */
-#define SMP_SC_KEY_READY_EVT (SMP_SELF_DEF_EVT + 21)
-#define SMP_KEYPRESS_NOTIFICATION_EVENT (SMP_SELF_DEF_EVT + 22)
+  /* SC OOB data from some repository is provided */
+  SMP_SC_OOB_DATA_EVT = (SMP_SELF_DEF_EVT + 23),  // 0x27
 
-/* SC OOB data from some repository is provided */
-#define SMP_SC_OOB_DATA_EVT (SMP_SELF_DEF_EVT + 23)
-
-#define SMP_CR_LOC_SC_OOB_DATA_EVT (SMP_SELF_DEF_EVT + 24)
-#define SMP_MAX_EVT SMP_CR_LOC_SC_OOB_DATA_EVT
-
-typedef uint8_t tSMP_EVENT;
+  SMP_CR_LOC_SC_OOB_DATA_EVT = (SMP_SELF_DEF_EVT + 24),  // 0x28
+  SMP_MAX_EVT = SMP_CR_LOC_SC_OOB_DATA_EVT,              // 0x28
+} tSMP_EVENT;
+typedef tSMP_EVENT tSMP_BR_EVENT;
 
 /* Assumption it's only using the low 8 bits, if bigger than that, need to
  * expand it to 16 bits */
@@ -161,41 +166,6 @@ enum {
   SMP_STATE_MAX
 };
 typedef uint8_t tSMP_STATE;
-
-/* SMP over BR/EDR events */
-#define SMP_BR_PAIRING_REQ_EVT SMP_OPCODE_PAIRING_REQ
-#define SMP_BR_PAIRING_RSP_EVT SMP_OPCODE_PAIRING_RSP
-#define SMP_BR_CONFIRM_EVT SMP_OPCODE_CONFIRM /* not over BR/EDR */
-#define SMP_BR_RAND_EVT SMP_OPCODE_RAND       /* not over BR/EDR */
-#define SMP_BR_PAIRING_FAILED_EVT SMP_OPCODE_PAIRING_FAILED
-#define SMP_BR_ENCRPTION_INFO_EVT                                    \
-  SMP_OPCODE_ENCRYPT_INFO                         /* not over BR/EDR \
-                                                     */
-#define SMP_BR_CENTRAL_ID_EVT SMP_OPCODE_CENTRAL_ID /* not over BR/EDR */
-#define SMP_BR_ID_INFO_EVT SMP_OPCODE_IDENTITY_INFO
-#define SMP_BR_ID_ADDR_EVT SMP_OPCODE_ID_ADDR
-#define SMP_BR_SIGN_INFO_EVT SMP_OPCODE_SIGN_INFO
-#define SMP_BR_SECURITY_REQ_EVT SMP_OPCODE_SEC_REQ /* not over BR/EDR */
-#define SMP_BR_PAIR_PUBLIC_KEY_EVT \
-  SMP_OPCODE_PAIR_PUBLIC_KEY /* not over BR/EDR */
-#define SMP_BR_PAIR_DHKEY_CHCK_EVT \
-  SMP_OPCODE_PAIR_DHKEY_CHECK /* not over BR/EDR */
-#define SMP_BR_PAIR_KEYPR_NOTIF_EVT \
-  SMP_OPCODE_PAIR_KEYPR_NOTIF /* not over BR/EDR */
-#define SMP_BR_SELF_DEF_EVT SMP_BR_PAIR_KEYPR_NOTIF_EVT
-#define SMP_BR_KEY_READY_EVT (SMP_BR_SELF_DEF_EVT + 1)
-#define SMP_BR_ENCRYPTED_EVT (SMP_BR_SELF_DEF_EVT + 2)
-#define SMP_BR_L2CAP_CONN_EVT (SMP_BR_SELF_DEF_EVT + 3)
-#define SMP_BR_L2CAP_DISCONN_EVT (SMP_BR_SELF_DEF_EVT + 4)
-#define SMP_BR_KEYS_RSP_EVT (SMP_BR_SELF_DEF_EVT + 5)
-#define SMP_BR_API_SEC_GRANT_EVT (SMP_BR_SELF_DEF_EVT + 6)
-#define SMP_BR_TK_REQ_EVT (SMP_BR_SELF_DEF_EVT + 7)
-#define SMP_BR_AUTH_CMPL_EVT (SMP_BR_SELF_DEF_EVT + 8)
-#define SMP_BR_ENC_REQ_EVT (SMP_BR_SELF_DEF_EVT + 9)
-#define SMP_BR_BOND_REQ_EVT (SMP_BR_SELF_DEF_EVT + 10)
-#define SMP_BR_DISCARD_SEC_REQ_EVT (SMP_BR_SELF_DEF_EVT + 11)
-#define SMP_BR_MAX_EVT (SMP_BR_SELF_DEF_EVT + 12)
-typedef uint8_t tSMP_BR_EVENT;
 
 /* SMP over BR/EDR pairing states */
 enum {

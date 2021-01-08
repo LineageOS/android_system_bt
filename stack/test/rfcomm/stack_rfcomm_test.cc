@@ -26,7 +26,6 @@
 #include "osi/include/osi.h"
 #include "port_api.h"
 
-#include "btm_int.h"
 #include "rfc_int.h"
 
 #include "mock_btm_layer.h"

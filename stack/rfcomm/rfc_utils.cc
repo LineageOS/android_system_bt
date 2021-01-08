@@ -27,7 +27,6 @@
 
 #include "bt_utils.h"
 #include "btm_api.h"
-#include "btm_int.h"
 #include "btu.h"
 #include "osi/include/osi.h"
 #include "port_api.h"

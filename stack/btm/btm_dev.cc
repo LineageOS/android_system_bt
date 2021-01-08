@@ -30,7 +30,6 @@
 #include "bt_common.h"
 #include "bt_types.h"
 #include "btm_api.h"
-#include "btm_int.h"
 #include "btu.h"
 #include "device/include/controller.h"
 #include "hcidefs.h"
@@ -40,6 +39,8 @@
 #include "main/shim/shim.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
+
+extern tBTM_CB btm_cb;
 
 /*******************************************************************************
  *

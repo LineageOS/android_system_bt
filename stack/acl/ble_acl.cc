@@ -25,6 +25,8 @@
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 
+extern tBTM_CB btm_cb;
+
 void btm_ble_advertiser_notify_terminated_legacy(uint8_t status,
                                                  uint16_t connection_handle);
 void btm_ble_increment_link_topology_mask(uint8_t link_role);

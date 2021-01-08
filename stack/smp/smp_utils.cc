@@ -28,13 +28,13 @@
 #include "bt_types.h"
 #include "bt_utils.h"
 #include "btm_ble_api.h"
-#include "btm_int.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 #include "smp_int.h"
+#include "stack/btm/btm_ble_int.h"
 #include "stack/include/acl_api.h"
 
 #define SMP_PAIRING_REQ_SIZE 7
