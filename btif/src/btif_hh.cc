@@ -469,8 +469,13 @@ void btif_hh_remove_device(RawAddress bd_addr) {
 
   /* need to notify up-layer device is disconnected to avoid state out of sync
    * with up-layer */
-  HAL_CBACK(bt_hh_callbacks, connection_state_cb, &(p_dev->bd_addr),
-            BTHH_CONN_STATE_DISCONNECTED);
+
+  do_in_jni_thread(base::Bind(
+      [](RawAddress bd_addr) {
+        HAL_CBACK(bt_hh_callbacks, connection_state_cb, &bd_addr,
+                  BTHH_CONN_STATE_DISCONNECTED);
+      },
+      p_dev->bd_addr));
 
   p_dev->dev_status = BTHH_CONN_STATE_UNKNOWN;
   p_dev->dev_handle = BTA_HH_INVALID_HANDLE;
