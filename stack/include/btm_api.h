@@ -952,4 +952,6 @@ void BTM_LogHistory(const std::string& tag, const RawAddress& addr,
 void BTM_LogHistory(const std::string& tag, const RawAddress& addr,
                     const std::string& msg, const std::string& extra);
 
+uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
+
 #endif /* BTM_API_H */

@@ -46,9 +46,14 @@
 #include "hcidefs.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
+#include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_ble_api.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/inq_hci_link_interface.h"
+
+extern tBTM_CB btm_cb;
 
 extern void btm_inq_remote_name_timer_timeout(void* data);
 extern tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,

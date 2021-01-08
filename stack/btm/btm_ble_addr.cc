@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "bt_types.h"
-#include "btm_int.h"
 #include "btu.h"
 #include "device/include/controller.h"
 #include "gap_api.h"
@@ -36,6 +35,8 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
 #include "stack/include/acl_api.h"
+
+extern tBTM_CB btm_cb;
 
 void btm_ble_set_random_address(const RawAddress& random_bda);
 

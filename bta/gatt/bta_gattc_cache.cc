@@ -37,7 +37,6 @@
 #include "bta_gattc_int.h"
 #include "btm_api.h"
 #include "btm_ble_api.h"
-#include "btm_int.h"
 #include "database.h"
 #include "database_builder.h"
 #include "osi/include/log.h"
