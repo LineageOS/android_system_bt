@@ -503,6 +503,8 @@ void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_AG_FEAT features,
  ******************************************************************************/
 void bta_ag_api_result(uint16_t handle, tBTA_AG_RES result,
                        const tBTA_AG_RES_DATA& result_data) {
+  LOG_DEBUG("Handle AG API result handle:0x%04x", handle);
+
   tBTA_AG_DATA event_data = {};
   event_data.api_result.result = result;
   event_data.api_result.data = result_data;

@@ -28,7 +28,6 @@
 #include "bt_utils.h"
 #include "btm_ble_api.h"
 #include "btm_ble_int.h"
-#include "btm_int.h"
 #include "device/include/controller.h"
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
@@ -40,6 +39,8 @@
 #include "stack/include/acl_api.h"
 
 #include <algorithm>
+
+extern tBTM_CB btm_cb;  // TODO Remove
 
 using base::Bind;
 using crypto_toolbox::aes_128;

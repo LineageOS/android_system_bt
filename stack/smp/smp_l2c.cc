@@ -191,7 +191,7 @@ static void smp_data_received(uint16_t channel, const RawAddress& bd_addr,
     p_cb->rcvd_cmd_len = (uint8_t)p_buf->len;
     tSMP_INT_DATA smp_int_data;
     smp_int_data.p_data = p;
-    smp_sm_event(p_cb, cmd, &smp_int_data);
+    smp_sm_event(p_cb, static_cast<tSMP_EVENT>(cmd), &smp_int_data);
   }
 
   osi_free(p_buf);
@@ -301,7 +301,8 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
     p_cb->rcvd_cmd_len = (uint8_t)p_buf->len;
     tSMP_INT_DATA smp_int_data;
     smp_int_data.p_data = p;
-    smp_br_state_machine_event(p_cb, cmd, &smp_int_data);
+    smp_br_state_machine_event(p_cb, static_cast<tSMP_EVENT>(cmd),
+                               &smp_int_data);
   }
 
   osi_free(p_buf);

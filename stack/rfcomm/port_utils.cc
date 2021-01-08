@@ -35,6 +35,7 @@
 #include "port_int.h"
 #include "rfc_int.h"
 #include "rfcdefs.h"
+#include "stack/include/btm_client_interface.h"
 
 static const tPORT_STATE default_port_pars = {
     PORT_BAUD_RATE_9600,

@@ -487,9 +487,9 @@ enum : uint16_t {
   BTM_SEC_FORCE_CENTRAL = 0x0100,
   /* Need to switch connection to be central */
   BTM_SEC_ATTEMPT_CENTRAL = 0x0200,
-  /* Need to switch connection to be slave */
+  /* Need to switch connection to be peripheral */
   BTM_SEC_FORCE_PERIPHERAL = 0x0400,
-  /* Try to switch connection to be slave */
+  /* Try to switch connection to be peripheral */
   BTM_SEC_ATTEMPT_PERIPHERAL = 0x0800,
   /* inbound Do man in the middle protection */
   BTM_SEC_IN_MITM = 0x1000,

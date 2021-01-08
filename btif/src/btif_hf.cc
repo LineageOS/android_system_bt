@@ -1149,7 +1149,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
   /* if all indicators are 0, send end call and return */
   if (num_active == 0 && num_held == 0 &&
       call_setup_state == BTHF_CALL_STATE_IDLE) {
-    VLOG(1) << __func__ << ": call ended";
+    BTM_LogHistory("HFP", raw_address, "Call Ended");
     BTA_AgResult(control_block.handle, BTA_AG_END_CALL_RES,
                  tBTA_AG_RES_DATA::kEmpty);
     /* if held call was present, reset that as well */

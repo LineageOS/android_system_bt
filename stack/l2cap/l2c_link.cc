@@ -33,11 +33,14 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_types.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
+
+extern tBTM_CB btm_cb;
 
 void btm_sco_acl_removed(const RawAddress* bda);
 void btm_ble_decrement_link_topology_mask(uint8_t link_role);

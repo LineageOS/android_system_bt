@@ -199,15 +199,7 @@ static void hci_start_role_switch_to_central(tACL_CONN& p_acl) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_init(void) {
-  /* Initialize nonzero defaults */
-  btm_cb.acl_cb_.btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
-  btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_UNDEFINED;
-
-  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
-      HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1 + HCI_PKT_TYPES_MASK_DH3 +
-      HCI_PKT_TYPES_MASK_DM3 + HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5;
-}
+void btm_acl_init(void) { btm_cb.acl_cb_.Init(); }
 
 void BTM_acl_after_controller_started() {
   internal_.btm_set_default_link_policy(

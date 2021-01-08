@@ -47,3 +47,6 @@ extern void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
 extern void btm_ble_add_resolving_list_entry_complete(uint8_t* p,
                                                       uint16_t evt_len);
 extern void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len);
+extern void btm_ble_process_periodic_adv_pkt(uint8_t len, uint8_t* p);
+extern void btm_ble_process_periodic_adv_sync_est_evt(uint8_t len, uint8_t* p);
+extern void btm_ble_process_periodic_adv_sync_lost_evt(uint8_t len, uint8_t* p);
