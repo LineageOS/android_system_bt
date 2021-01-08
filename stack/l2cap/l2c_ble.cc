@@ -34,6 +34,7 @@
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -52,7 +53,9 @@ extern tBTM_CB btm_cb;
 using base::StringPrintf;
 
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
-
+extern void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
+                                    uint16_t latency, uint16_t timeout,
+                                    tHCI_STATUS status);
 /*******************************************************************************
  *
  *  Function        L2CA_CancelBleConnectReq
@@ -101,6 +104,11 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t max_int, uint16_t latency,
                               uint16_t timeout, uint16_t min_ce_len,
                               uint16_t max_ce_len) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda);
+    return true;
+  }
+
   tL2C_LCB* p_lcb;
 
   /* See if we have a link control block for the remote device */
@@ -153,8 +161,8 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
  *
  ******************************************************************************/
 bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    LOG(ERROR) << "NOT IMPLEMENTED";
+  if (bluetooth::shim::is_gd_l2cap_enabled() && enable) {
+    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda);
     return true;
   }
 

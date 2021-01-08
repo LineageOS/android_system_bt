@@ -18,6 +18,7 @@
 
 #include "osi/include/log.h"
 #include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
@@ -155,7 +156,7 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
                                 status);
 }
 
-void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
+void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
                              uint16_t latency, uint16_t timeout,
                              tHCI_STATUS status);
 void acl_ble_update_event_received(tHCI_STATUS status, uint16_t handle,
@@ -163,5 +164,10 @@ void acl_ble_update_event_received(tHCI_STATUS status, uint16_t handle,
                                    uint16_t timeout) {
   l2cble_process_conn_update_evt(handle, status, interval, latency, timeout);
 
-  gatt_notify_conn_update(handle & 0x0FFF, interval, latency, timeout, status);
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
+
+  if (!p_dev_rec) return;
+
+  gatt_notify_conn_update(p_dev_rec->ble.pseudo_addr, interval, latency,
+                          timeout, status);
 }
