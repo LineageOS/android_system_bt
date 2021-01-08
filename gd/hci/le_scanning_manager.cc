@@ -50,7 +50,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   impl(Module* module) : module_(module), le_scanning_interface_(nullptr) {}
 
   ~impl() {
-    if (address_manager_registered) {
+    if (address_manager_registered_) {
       le_address_manager_->Unregister(this);
     }
   }
@@ -81,28 +81,115 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   void handle_scan_results(LeMetaEventView event) {
     switch (event.GetSubeventCode()) {
       case hci::SubeventCode::ADVERTISING_REPORT:
-        handle_advertising_report<LeAdvertisingReportView, LeAdvertisingReport, LeReport>(
-            LeAdvertisingReportView::Create(event));
+        handle_advertising_report(LeAdvertisingReportView::Create(event));
         break;
       case hci::SubeventCode::DIRECTED_ADVERTISING_REPORT:
-        handle_advertising_report<LeDirectedAdvertisingReportView, LeDirectedAdvertisingReport, DirectedLeReport>(
-            LeDirectedAdvertisingReportView::Create(event));
+        handle_directed_advertising_report(LeDirectedAdvertisingReportView::Create(event));
         break;
       case hci::SubeventCode::EXTENDED_ADVERTISING_REPORT:
-        handle_advertising_report<LeExtendedAdvertisingReportView, LeExtendedAdvertisingReport, ExtendedLeReport>(
-            LeExtendedAdvertisingReportView::Create(event));
         handle_extended_advertising_report(LeExtendedAdvertisingReportView::Create(event));
         break;
       case hci::SubeventCode::SCAN_TIMEOUT:
-        if (registered_callback_ != nullptr) {
-          registered_callback_->Handler()->Post(
-              common::BindOnce(&LeScanningManagerCallbacks::on_timeout, common::Unretained(registered_callback_)));
-          registered_callback_ = nullptr;
+        if (scanning_callbacks_ != nullptr) {
+          scanning_callbacks_->OnTimeout();
         }
         break;
       default:
         LOG_ALWAYS_FATAL("Unknown advertising subevent %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
     }
+  }
+
+  struct ExtendedEventTypeOptions {
+    bool connectable{false};
+    bool scannable{false};
+    bool directed{false};
+    bool scan_response{false};
+    bool legacy{false};
+    bool continuing{false};
+    bool truncated{false};
+  };
+
+  void transform_to_extended_event_type(uint16_t* extended_event_type, ExtendedEventTypeOptions o) {
+    ASSERT(extended_event_type != nullptr);
+    *extended_event_type = (o.connectable ? 0x0001 << 0 : 0) | (o.scannable ? 0x0001 << 1 : 0) |
+                           (o.directed ? 0x0001 << 2 : 0) | (o.scan_response ? 0x0001 << 3 : 0) |
+                           (o.legacy ? 0x0001 << 4 : 0) | (o.continuing ? 0x0001 << 5 : 0) |
+                           (o.truncated ? 0x0001 << 6 : 0);
+  }
+
+  void handle_advertising_report(LeAdvertisingReportView event_view) {
+    if (scanning_callbacks_ == nullptr) {
+      LOG_INFO("Dropping advertising event (no registered handler)");
+      return;
+    }
+    if (!event_view.IsValid()) {
+      LOG_INFO("Dropping invalid advertising event");
+      return;
+    }
+    std::vector<LeAdvertisingReport> reports = event_view.GetAdvertisingReports();
+    if (reports.empty()) {
+      LOG_INFO("Zero results in advertising event");
+      return;
+    }
+
+    // TODO: handle AdvertisingCache for scan response
+    for (LeAdvertisingReport report : reports) {
+      uint16_t extended_event_type = 0;
+      switch (report.event_type_) {
+        case hci::AdvertisingEventType::ADV_IND:
+          transform_to_extended_event_type(
+              &extended_event_type, {.connectable = true, .scannable = true, .legacy = true});
+          break;
+        case hci::AdvertisingEventType::ADV_DIRECT_IND:
+          transform_to_extended_event_type(
+              &extended_event_type, {.connectable = true, .directed = true, .legacy = true});
+          break;
+        case hci::AdvertisingEventType::ADV_SCAN_IND:
+          transform_to_extended_event_type(&extended_event_type, {.scannable = true, .legacy = true});
+          break;
+        case hci::AdvertisingEventType::ADV_NONCONN_IND:
+          transform_to_extended_event_type(&extended_event_type, {.legacy = true});
+          break;
+        case hci::AdvertisingEventType::SCAN_RESPONSE:
+          transform_to_extended_event_type(
+              &extended_event_type, {.connectable = true, .scannable = true, .scan_response = true, .legacy = true});
+          break;
+        default:
+          LOG_WARN("Unsupported event type:%d", (uint16_t)report.event_type_);
+          return;
+      }
+
+      scanning_callbacks_->OnScanResult(
+          (uint16_t)report.event_type_,
+          (uint8_t)report.address_type_,
+          report.address_,
+          (uint8_t)PrimaryPhyType::LE_1M,
+          (uint8_t)SecondaryPhyType::NO_PACKETS,
+          kAdvertisingDataInfoNotPresent,
+          kTxPowerInformationNotPresent,
+          report.rssi_,
+          kNotPeriodicAdvertisement,
+          report.advertising_data_);
+    }
+  }
+
+  void handle_directed_advertising_report(LeDirectedAdvertisingReportView event_view) {
+    if (scanning_callbacks_ == nullptr) {
+      LOG_INFO("Dropping advertising event (no registered handler)");
+      return;
+    }
+    if (!event_view.IsValid()) {
+      LOG_INFO("Dropping invalid advertising event");
+      return;
+    }
+    std::vector<LeDirectedAdvertisingReport> reports = event_view.GetAdvertisingReports();
+    if (reports.empty()) {
+      LOG_INFO("Zero results in advertising event");
+      return;
+    }
+    uint16_t extended_event_type = 0;
+    transform_to_extended_event_type(&extended_event_type, {.connectable = true, .directed = true, .legacy = true});
+    // TODO: parse report
   }
 
   void handle_extended_advertising_report(LeExtendedAdvertisingReportView event_view) {
@@ -124,7 +211,6 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     for (LeExtendedAdvertisingReport report : reports) {
       uint16_t event_type = report.connectable_ | (report.scannable_ << 1) | (report.directed_ << 2) |
                             (report.scan_response_ << 3) | (report.legacy_ << 4) | ((uint16_t)report.data_status_ << 5);
-
       scanning_callbacks_->OnScanResult(
           event_type,
           (uint8_t)report.address_type_,
@@ -137,30 +223,6 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
           report.periodic_advertising_interval_,
           report.advertising_data_);
     }
-  }
-
-  template <class EventType, class ReportStructType, class ReportType>
-  void handle_advertising_report(EventType event_view) {
-    if (registered_callback_ == nullptr) {
-      LOG_INFO("Dropping advertising event (no registered handler)");
-      return;
-    }
-    if (!event_view.IsValid()) {
-      LOG_INFO("Dropping invalid advertising event");
-      return;
-    }
-    std::vector<ReportStructType> report_vector = event_view.GetAdvertisingReports();
-    if (report_vector.empty()) {
-      LOG_INFO("Zero results in advertising event");
-      return;
-    }
-    std::vector<std::shared_ptr<LeReport>> param;
-    param.reserve(report_vector.size());
-    for (const ReportStructType& report : report_vector) {
-      param.push_back(std::shared_ptr<LeReport>(static_cast<LeReport*>(new ReportType(report))));
-    }
-    registered_callback_->Handler()->Post(common::BindOnce(&LeScanningManagerCallbacks::on_advertisements,
-                                                           common::Unretained(registered_callback_), param));
   }
 
   void configure_scan() {
@@ -235,11 +297,26 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     if (start) {
       start_scan();
     } else {
+      if (address_manager_registered_) {
+        le_address_manager_->Unregister(this);
+        address_manager_registered_ = false;
+      }
       stop_scan();
     }
   }
 
   void start_scan() {
+    // If we receive start_scan during paused, set scan_on_resume_ to true
+    if (paused_) {
+      scan_on_resume_ = true;
+      return;
+    }
+    is_scanning_ = true;
+    if (!address_manager_registered_) {
+      le_address_manager_->Register(this);
+      address_manager_registered_ = true;
+    }
+
     switch (api_type_) {
       case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
@@ -257,80 +334,20 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   }
 
   void stop_scan() {
+    is_scanning_ = false;
+
     switch (api_type_) {
       case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
             hci::LeSetExtendedScanEnableBuilder::Create(
                 Enable::DISABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
             module_handler_->BindOnce(impl::check_status));
-        registered_callback_ = nullptr;
         break;
       case ScanApiType::ANDROID_HCI:
       case ScanApiType::LEGACY:
         le_scanning_interface_->EnqueueCommand(
             hci::LeSetScanEnableBuilder::Create(Enable::DISABLED, Enable::DISABLED /* filter duplicates */),
             module_handler_->BindOnce(impl::check_status));
-        registered_callback_ = nullptr;
-        break;
-    }
-  }
-
-  // TODO remove
-  void start_scan_old(LeScanningManagerCallbacks* le_scanning_manager_callbacks) {
-    registered_callback_ = le_scanning_manager_callbacks;
-
-    if (!address_manager_registered) {
-      le_address_manager_->Register(this);
-      address_manager_registered = true;
-    }
-
-    // If we receive start_scan during paused, replace the cached_registered_callback_ for OnResume
-    if (cached_registered_callback_ != nullptr) {
-      cached_registered_callback_ = registered_callback_;
-      return;
-    }
-
-    switch (api_type_) {
-      case ScanApiType::EXTENDED:
-        le_scanning_interface_->EnqueueCommand(
-            hci::LeSetExtendedScanEnableBuilder::Create(Enable::ENABLED,
-                                                        FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
-            module_handler_->BindOnce(impl::check_status));
-        break;
-      case ScanApiType::ANDROID_HCI:
-      case ScanApiType::LEGACY:
-        le_scanning_interface_->EnqueueCommand(
-            hci::LeSetScanEnableBuilder::Create(Enable::ENABLED, Enable::DISABLED /* filter duplicates */),
-            module_handler_->BindOnce(impl::check_status));
-        break;
-    }
-  }
-
-  // TODO remove
-  void stop_scan_old(common::Callback<void()> on_stopped, bool from_on_pause) {
-    if (address_manager_registered && !from_on_pause) {
-      cached_registered_callback_ = nullptr;
-      le_address_manager_->Unregister(this);
-      address_manager_registered = false;
-    }
-    if (registered_callback_ == nullptr) {
-      return;
-    }
-    registered_callback_->Handler()->Post(std::move(on_stopped));
-    switch (api_type_) {
-      case ScanApiType::EXTENDED:
-        le_scanning_interface_->EnqueueCommand(
-            hci::LeSetExtendedScanEnableBuilder::Create(Enable::DISABLED,
-                                                        FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
-            module_handler_->BindOnce(impl::check_status));
-        registered_callback_ = nullptr;
-        break;
-      case ScanApiType::ANDROID_HCI:
-      case ScanApiType::LEGACY:
-        le_scanning_interface_->EnqueueCommand(
-            hci::LeSetScanEnableBuilder::Create(Enable::DISABLED, Enable::DISABLED /* filter duplicates */),
-            module_handler_->BindOnce(impl::check_status));
-        registered_callback_ = nullptr;
         break;
     }
   }
@@ -340,8 +357,10 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   }
 
   void OnPause() override {
-    cached_registered_callback_ = registered_callback_;
-    stop_scan_old(common::Bind(&impl::ack_pause, common::Unretained(this)), true);
+    paused_ = true;
+    scan_on_resume_ = is_scanning_;
+    stop_scan();
+    ack_pause();
   }
 
   void ack_pause() {
@@ -349,27 +368,27 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   }
 
   void OnResume() override {
-    if (cached_registered_callback_ != nullptr) {
-      auto cached_registered_callback = cached_registered_callback_;
-      cached_registered_callback_ = nullptr;
-      start_scan_old(cached_registered_callback);
+    paused_ = false;
+    if (scan_on_resume_ == true) {
+      start_scan();
     }
     le_address_manager_->AckResume(this);
   }
 
   ScanApiType api_type_;
 
-  LeScanningManagerCallbacks* registered_callback_ = nullptr;
-  LeScanningManagerCallbacks* cached_registered_callback_ = nullptr;
   Module* module_;
   os::Handler* module_handler_;
   hci::HciLayer* hci_layer_;
   hci::Controller* controller_;
   hci::LeScanningInterface* le_scanning_interface_;
   hci::LeAddressManager* le_address_manager_;
-  bool address_manager_registered = false;
+  bool address_manager_registered_ = false;
   ScanningCallback* scanning_callbacks_ = nullptr;
   std::vector<Scanner> scanners_;
+  bool is_scanning_ = false;
+  bool scan_on_resume_ = false;
+  bool paused_ = false;
 
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
@@ -442,14 +461,6 @@ void LeScanningManager::Unregister(ScannerId scanner_id) {
 
 void LeScanningManager::Scan(bool start) {
   CallOn(pimpl_.get(), &impl::scan, start);
-}
-
-void LeScanningManager::StartScan(LeScanningManagerCallbacks* callbacks) {
-  GetHandler()->Post(common::Bind(&impl::start_scan_old, common::Unretained(pimpl_.get()), callbacks));
-}
-
-void LeScanningManager::StopScan(common::Callback<void()> on_stopped) {
-  GetHandler()->Post(common::Bind(&impl::stop_scan_old, common::Unretained(pimpl_.get()), on_stopped, false));
 }
 
 void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {

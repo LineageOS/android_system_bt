@@ -26,14 +26,6 @@
 namespace bluetooth {
 namespace hci {
 
-class LeScanningManagerCallbacks {
- public:
-  virtual ~LeScanningManagerCallbacks() = default;
-  virtual void on_advertisements(std::vector<std::shared_ptr<LeReport>>) = 0;
-  virtual void on_timeout() = 0;
-  virtual os::Handler* Handler() = 0;
-};
-
 using ScannerId = uint8_t;
 
 class ScanningCallback {
@@ -61,11 +53,15 @@ class ScanningCallback {
   virtual void OnTrackAdvFoundLost() = 0;
   virtual void OnBatchScanReports(
       int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) = 0;
+  virtual void OnTimeout() = 0;
 };
 
 class LeScanningManager : public bluetooth::Module {
  public:
   static constexpr uint8_t kMaxAppNum = 32;
+  static constexpr uint8_t kAdvertisingDataInfoNotPresent = 0xff;
+  static constexpr uint8_t kTxPowerInformationNotPresent = 0x7f;
+  static constexpr uint8_t kNotPeriodicAdvertisement = 0x00;
   LeScanningManager();
 
   void RegisterScanner(const Uuid app_uuid);
@@ -73,10 +69,6 @@ class LeScanningManager : public bluetooth::Module {
   void Unregister(ScannerId scanner_id);
 
   void Scan(bool start);
-
-  void StartScan(LeScanningManagerCallbacks* callbacks);
-
-  void StopScan(common::Callback<void()> on_stopped);
 
   void RegisterScanningCallback(ScanningCallback* scanning_callback);
 

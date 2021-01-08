@@ -135,7 +135,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                      base::Bind(&ScanningCallbacks::OnScannerRegistered,
                                 base::Unretained(scanning_callbacks_), uuid,
                                 scanner_id, status));
-  };
+  }
 
   void OnScanResult(uint16_t event_type, uint8_t address_type,
                     bluetooth::hci::Address address, uint8_t primary_phy,
@@ -163,12 +163,13 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                        address_type, raw_address_ptr.get(), primary_phy,
                        secondary_phy, advertising_sid, tx_power, rssi,
                        periodic_advertising_interval, adv_data));
-  };
+  }
 
-  void OnTrackAdvFoundLost(){};
+  void OnTrackAdvFoundLost() {}
 
   void OnBatchScanReports(int client_if, int status, int report_format,
-                          int num_records, std::vector<uint8_t> data){};
+                          int num_records, std::vector<uint8_t> data) {}
+  void OnTimeout() {}
 
   ScanningCallbacks* scanning_callbacks_;
 };
