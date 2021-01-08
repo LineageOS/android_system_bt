@@ -446,6 +446,8 @@ tGATT_TCB* gatt_allocate_tcb_by_bdaddr(const RawAddress& bda,
     p_tcb->transport = transport;
     p_tcb->peer_bda = bda;
     p_tcb->eatt = 0;
+    gatt_sr_init_cl_status(*p_tcb);
+
     return p_tcb;
   }
 
@@ -1479,7 +1481,8 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
   tGATT_CL_COMPLETE cb_data;
   tGATT_CMPL_CBACK* p_cmpl_cb =
       (p_clcb->p_reg) ? p_clcb->p_reg->app_cb.p_cmpl_cb : NULL;
-  uint8_t op = p_clcb->operation, disc_type = GATT_DISC_MAX;
+  uint8_t op = p_clcb->operation;
+  tGATT_DISC_TYPE disc_type = GATT_DISC_MAX;
   tGATT_DISC_CMPL_CB* p_disc_cmpl_cb =
       (p_clcb->p_reg) ? p_clcb->p_reg->app_cb.p_disc_cmpl_cb : NULL;
   uint16_t conn_id;
@@ -1515,7 +1518,7 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
       cb_data.mtu = p_clcb->p_tcb->payload_size;
 
     if (p_clcb->operation == GATTC_OPTYPE_DISCOVERY) {
-      disc_type = p_clcb->op_subtype;
+      disc_type = static_cast<tGATT_DISC_TYPE>(p_clcb->op_subtype);
     }
   }
 
@@ -1539,7 +1542,7 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
 }
 
 /** This function cleans up the control blocks when L2CAP channel disconnect */
-void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
+void gatt_cleanup_upon_disc(const RawAddress& bda, tGATT_DISCONN_REASON reason,
                             tBT_TRANSPORT transport) {
   VLOG(1) << __func__;
 
@@ -1573,10 +1576,8 @@ void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
     if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
       uint16_t conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if);
-      VLOG(1) << StringPrintf("found p_reg tcb_idx=%d gatt_if=%d  conn_id=0x%x",
-                              p_tcb->tcb_idx, p_reg->gatt_if, conn_id);
-      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id, false, reason,
-                                 transport);
+      (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id,
+                                 kGattDisconnected, reason, transport);
     }
   }
 

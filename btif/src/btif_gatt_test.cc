@@ -143,6 +143,9 @@ static void btif_test_discovery_result_cback(UNUSED_ATTR uint16_t conn_id,
     case GATT_DISC_CHAR_DSCPT:
       LOG_INFO("       Descriptor UUID: %s", p_data->type.ToString().c_str());
       break;
+    case GATT_DISC_MAX:
+      LOG_ERROR("      Unknown discovery item");
+      break;
   }
 
   LOG_INFO("-----------------------------------------------------------");
@@ -220,8 +223,8 @@ bt_status_t btif_gattc_test_command_impl(int command,
       LOG_INFO("%s: DISCOVER (%s), conn_id=%d, uuid=%s, handles=0x%04x-0x%04x",
                __func__, disc_name[params->u1], test_cb.conn_id,
                params->uuid1->ToString().c_str(), params->u2, params->u3);
-      GATTC_Discover(test_cb.conn_id, params->u1, params->u2, params->u3,
-                     *params->uuid1);
+      GATTC_Discover(test_cb.conn_id, static_cast<tGATT_DISC_TYPE>(params->u1),
+                     params->u2, params->u3, *params->uuid1);
       break;
     }
 

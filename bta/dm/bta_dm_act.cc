@@ -44,6 +44,7 @@
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btu.h"
 #include "types/raw_address.h"
 
@@ -310,18 +311,19 @@ void BTA_dm_on_hw_on() {
   btif_dm_get_ble_local_keys(&key_mask, &er, &id_key);
 
   if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ER) {
-    BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ER, (tBTM_BLE_LOCAL_KEYS*)&er);
+    get_btm_client_interface().ble.BTM_BleLoadLocalKeys(
+        BTA_BLE_LOCAL_KEY_TYPE_ER, (tBTM_BLE_LOCAL_KEYS*)&er);
   }
   if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ID) {
-    BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ID,
-                         (tBTM_BLE_LOCAL_KEYS*)&id_key);
+    get_btm_client_interface().ble.BTM_BleLoadLocalKeys(
+        BTA_BLE_LOCAL_KEY_TYPE_ID, (tBTM_BLE_LOCAL_KEYS*)&id_key);
   }
   bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 
   if (bluetooth::shim::is_gd_security_enabled()) {
     bluetooth::shim::BTM_SecRegister(&bta_security);
   } else {
-    BTM_SecRegister(&bta_security);
+    get_btm_client_interface().security.BTM_SecRegister(&bta_security);
   }
 
   BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);

@@ -35,6 +35,9 @@
 #include "stack/btm/neighbor_inquiry.h"
 #include "types/bt_transport.h"
 
+void btm_ble_init();
+void btm_ble_free();
+
 /*****************************************************************************
  *  EXTERNAL FUNCTION DECLARATIONS
  ****************************************************************************/

@@ -32,6 +32,12 @@
 #include "bta/sys/bta_sys.h"
 #include "main/shim/dumpsys.h"
 
+#ifndef CASE_RETURN_TEXT
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+#endif
+
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
@@ -158,10 +164,21 @@ typedef union {
 
 #define BTA_DM_NUM_PEER_DEVICE 7
 
-#define BTA_DM_NOT_CONNECTED 0
-#define BTA_DM_CONNECTED 1
-#define BTA_DM_UNPAIRING 2
-typedef uint8_t tBTA_DM_CONN_STATE;
+typedef enum : uint8_t {
+  BTA_DM_NOT_CONNECTED = 0,
+  BTA_DM_CONNECTED = 1,
+  BTA_DM_UNPAIRING = 2,
+} tBTA_DM_CONN_STATE;
+
+inline std::string bta_conn_state_text(tBTA_DM_CONN_STATE state) {
+  switch (state) {
+    CASE_RETURN_TEXT(BTA_DM_NOT_CONNECTED);
+    CASE_RETURN_TEXT(BTA_DM_CONNECTED);
+    CASE_RETURN_TEXT(BTA_DM_UNPAIRING);
+    default:
+      return std::string("UNKNOWN");
+  }
+}
 
 typedef enum : uint8_t {
   BTA_DM_DI_NONE = 0x00,      /* nothing special */
@@ -528,4 +545,6 @@ void bta_dm_search_set_state(uint8_t state);
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
 void bta_dm_eir_update_cust_uuid(const tBTA_CUSTOM_UUID &curr, bool adding);
+
+#undef CASE_RETURN_TEXT
 #endif /* BTA_DM_INT_H */

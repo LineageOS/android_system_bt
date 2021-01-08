@@ -30,9 +30,6 @@ void bte_main_hci_send(BT_HDR* p_msg, uint16_t event);
 
 /* Message by message.... */
 
-extern void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
-                               uint8_t response_cnt);
-
 #define HCIC_PARAM_SIZE_INQUIRY 5
 
 #define HCIC_INQ_INQ_LAP_OFF 0
@@ -41,7 +38,6 @@ extern void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
 /* Inquiry */
 
 /* Inquiry Cancel */
-extern void btsnd_hcic_inq_cancel(void);
 
 #define HCIC_PARAM_SIZE_INQ_CANCEL 0
 
@@ -85,6 +81,9 @@ namespace bluetooth {
 namespace legacy {
 namespace hci {
 struct Interface {
+  void (*StartInquiry)(const LAP inq_lap, uint8_t duration,
+                       uint8_t response_cnt);
+  void (*InquiryCancel)();
   void (*Disconnect)(uint16_t handle, uint8_t reason);
   void (*StartRoleSwitch)(const RawAddress& bd_addr, uint8_t role);
 };

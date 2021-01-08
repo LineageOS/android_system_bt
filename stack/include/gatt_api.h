@@ -191,20 +191,20 @@ inline std::string gatt_op_code_text(const tGATT_OP_CODE& op_code) {
 
 #define GATT_HANDLE_IS_VALID(x) ((x) != 0)
 
-#define GATT_CONN_UNKNOWN 0
-/* general L2cap failure  */
-#define GATT_CONN_L2C_FAILURE 1
-/* 0x08 connection timeout  */
-#define GATT_CONN_TIMEOUT HCI_ERR_CONNECTION_TOUT
-/* 0x13 connection terminate by peer user  */
-#define GATT_CONN_TERMINATE_PEER_USER HCI_ERR_PEER_USER
-/* 0x16 connectionterminated by local host  */
-#define GATT_CONN_TERMINATE_LOCAL_HOST HCI_ERR_CONN_CAUSE_LOCAL_HOST
-/* 0x22 connection fail for LMP response tout */
-#define GATT_CONN_LMP_TIMEOUT HCI_ERR_LMP_RESPONSE_TIMEOUT
-/* 0x0100 L2CAP connection cancelled  */
-#define GATT_CONN_CANCEL L2CAP_CONN_CANCEL
-typedef uint16_t tGATT_DISCONN_REASON;
+typedef enum : uint16_t {
+  GATT_CONN_OK = 0,
+  GATT_CONN_UNKNOWN = 0,
+  /* general L2cap failure  */
+  GATT_CONN_L2C_FAILURE = 1,
+  /* 0x08 connection timeout  */
+  GATT_CONN_TIMEOUT = HCI_ERR_CONNECTION_TOUT,
+  /* 0x13 connection terminate by peer user  */
+  GATT_CONN_TERMINATE_PEER_USER = HCI_ERR_PEER_USER,
+  /* 0x16 connectionterminated by local host  */
+  GATT_CONN_TERMINATE_LOCAL_HOST = HCI_ERR_CONN_CAUSE_LOCAL_HOST,
+  /* 0x22 connection fail for LMP response tout */
+  GATT_CONN_LMP_TIMEOUT = HCI_ERR_LMP_RESPONSE_TIMEOUT,
+} tGATT_DISCONN_REASON;
 
 /* MAX GATT MTU size
 */
@@ -470,7 +470,7 @@ typedef uint8_t tGATTS_REQ_TYPE;
 /* Client Used Data Structure
 */
 /* definition of different discovery types */
-enum {
+typedef enum : uint8_t {
   GATT_DISC_SRVC_ALL = 1, /* discover all services */
   GATT_DISC_SRVC_BY_UUID, /* discover service of a special type */
   GATT_DISC_INC_SRVC,     /* discover the included service within a service */
@@ -478,8 +478,7 @@ enum {
                      requirement */
   GATT_DISC_CHAR_DSCPT, /* discover characteristic descriptors of a character */
   GATT_DISC_MAX         /* maximnun discover type */
-};
-typedef uint8_t tGATT_DISC_TYPE;
+} tGATT_DISC_TYPE;
 
 /* GATT read type enumeration
 */
