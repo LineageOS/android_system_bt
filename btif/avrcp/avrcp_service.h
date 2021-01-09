@@ -18,6 +18,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 
 #include "hardware/avrcp/avrcp.h"
 #include "osi/include/properties.h"

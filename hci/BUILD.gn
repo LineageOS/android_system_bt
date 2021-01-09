@@ -30,42 +30,48 @@ static_library("hci") {
 
   include_dirs = [
     "include",
-    "//",
-    "//internal_include",
-    "//bta/include",
-    "//btcore/include",
-    "//stack/include",
+    "//bt/",
+    "//bt/internal_include",
+    "//bt/bta/include",
+    "//bt/btcore/include",
+    "//bt/stack/include",
   ]
 
   deps = [
-    "//common",
-    "//third_party/libchrome:base",
+    "//bt/common",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
   ]
 }
 
 executable("net_test_hci") {
   testonly = true
   sources = [
-    "//osi/test/AllocationTestHarness.cc",
-    "//osi/test/AlarmTestHarness.cc",
+    "//bt/osi/test/AllocationTestHarness.cc",
+    "//bt/osi/test/AlarmTestHarness.cc",
     "test/packet_fragmenter_test.cc",
   ]
 
   include_dirs = [
-    "//",
-    "//internal_include",
-    "//btcore/include",
-    "//hci/include",
-    "//osi/test",
-    "//stack/include",
+    "//bt/",
+    "//bt/internal_include",
+    "//bt/btcore/include",
+    "//bt/hci/include",
+    "//bt/osi/test",
+    "//bt/stack/include",
   ]
 
   deps = [
-    "//hci",
-    "//osi",
-    "//btcore",
-    "//third_party/googletest:gtest_main",
-    "//third_party/libchrome:base",
+    "//bt/hci",
+    "//bt/osi",
+    "//bt/btcore",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
+    "//bt:external_gtest_main",
   ]
 
   libs = [

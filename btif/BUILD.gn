@@ -16,13 +16,13 @@
 
 static_library("btif") {
   sources = [
-    "//audio_a2dp_hw/src/audio_a2dp_hw_utils.cc",
-    "//audio_hearing_aid_hw/src/audio_hearing_aid_hw_utils.cc",
+    "//bt/audio_a2dp_hw/src/audio_a2dp_hw_utils.cc",
+    "//bt/audio_hearing_aid_hw/src/audio_hearing_aid_hw_utils.cc",
     "src/btif_a2dp.cc",
     "src/btif_a2dp_audio_interface_linux.cc",
     "src/btif_a2dp_control.cc",
     "src/btif_a2dp_sink.cc",
-    "src/btif_a2dp_source.cc",
+    # "src/btif_a2dp_source.cc",
     "src/btif_av.cc",
     "avrcp/avrcp_service.cc",
 
@@ -31,7 +31,7 @@ static_library("btif") {
     "src/btif_avrcp_audio_track_linux.cc",
     "src/btif_ble_advertiser.cc",
     "src/btif_ble_scanner.cc",
-    "src/btif_config.cc",
+    # "src/btif_config.cc",
     "src/btif_config_transcode.cc",
     "src/btif_core.cc",
     "src/btif_debug.cc",
@@ -77,32 +77,38 @@ static_library("btif") {
 
   include_dirs = [
     "include",
-    "//",
-    "//linux_include",
-    "//audio_a2dp_hw/include",
-    "//audio_hearing_aid_hw/include",
-    "//bta/include",
-    "//bta/sys",
-    "//btcore/include",
-    "//device/include",
-    "//embdrv/sbc/encoder/include",
-    "//embdrv/sbc/decoder/include",
-    "//hci/include",
-    "//stack/a2dp",
-    "//stack/btm",
-    "//stack/l2cap",
-    "//stack/include",
-    "//third_party/tinyxml2",
-    "//internal_include",
-    "//udrv/include",
-    "//utils/include",
-    "//vnd/include",
-    "//profile/avrcp",
+    "//bt/",
+    "//bt/bta/dm",
+    "//bt/linux_include",
+    "//bt/audio_a2dp_hw/include",
+    "//bt/audio_hearing_aid_hw/include",
+    "//bt/bta/include",
+    "//bt/bta/sys",
+    "//bt/btcore/include",
+    "//bt/device/include",
+    "//bt/embdrv/sbc/encoder/include",
+    "//bt/embdrv/sbc/decoder/include",
+    "//bt/hci/include",
+    "//bt/stack/a2dp",
+    "//bt/stack/btm",
+    "//bt/stack/l2cap",
+    "//bt/stack/include",
+    "//bt/internal_include",
+    "//bt/udrv/include",
+    "//bt/utils/include",
+    "//bt/vnd/include",
+    "//bt/profile/avrcp",
   ]
 
   deps = [
-    "//common",
-    "//third_party/libchrome:base",
-    "//profile/avrcp:profile_avrcp"
+    "//bt/common",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/profile/avrcp:profile_avrcp",
+    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
+    "//bt:external_tinyxml2",
   ]
 }
