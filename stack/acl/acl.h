@@ -397,7 +397,6 @@ struct sACL_CB {
   friend void btm_acl_device_down(void);
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
-  friend void btm_acl_init(void);
   friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
   friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
                                       uint16_t hci_handle, tHCI_MODE mode,

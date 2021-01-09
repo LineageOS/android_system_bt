@@ -209,17 +209,6 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
-/*******************************************************************************
- *
- * Function         btm_acl_init
- *
- * Description      This function is called at BTM startup to initialize
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_acl_init(void) { btm_cb.acl_cb_.Init(); }
-
 void BTM_acl_after_controller_started(const controller_t* controller) {
   internal_.btm_set_default_link_policy(
       HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE |
