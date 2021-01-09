@@ -91,6 +91,13 @@ typedef struct {
   uint16_t sco_disc_reason;
   bool esco_supported;        /* true if 1.2 cntlr AND supports eSCO links */
   esco_data_path_t sco_route; /* HCI, PCM, or TEST */
+
+  void Init() {
+    sco_disc_reason = BTM_INVALID_SCO_DISC_REASON;
+    def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD);
+    def_esco_parms.max_latency_ms = 12;
+    sco_route = ESCO_DATA_PATH_PCM;
+  }
 } tSCO_CB;
 
 extern void btm_sco_chk_pend_rolechange(uint16_t hci_handle);
