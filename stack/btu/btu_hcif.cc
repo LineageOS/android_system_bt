@@ -1632,7 +1632,6 @@ static void btu_hcif_read_clock_off_comp_evt(uint8_t* p) {
 
   handle = HCID_GET_HANDLE(handle);
 
-  btm_process_clk_off_comp_evt(handle, clock_offset);
   btm_sec_update_clock_offset(handle, clock_offset);
 }
 
