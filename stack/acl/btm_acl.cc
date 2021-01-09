@@ -223,26 +223,26 @@ void BTM_acl_after_controller_started(const controller_t* controller) {
       HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE);
 
   /* Create ACL supported packet types mask */
-  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
+  uint16_t btm_acl_pkt_types_supported =
       (HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1);
 
   if (controller->supports_3_slot_packets())
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
 
   if (controller->supports_5_slot_packets())
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5);
 
   /* Add in EDR related ACL types */
   if (!controller->supports_classic_2m_phy()) {
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_2_DH1 + HCI_PKT_TYPES_MASK_NO_2_DH3 +
          HCI_PKT_TYPES_MASK_NO_2_DH5);
   }
 
   if (!controller->supports_classic_3m_phy()) {
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_3_DH1 + HCI_PKT_TYPES_MASK_NO_3_DH3 +
          HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
@@ -251,13 +251,14 @@ void BTM_acl_after_controller_started(const controller_t* controller) {
   if (controller->supports_classic_2m_phy() ||
       controller->supports_classic_3m_phy()) {
     if (!controller->supports_3_slot_edr_packets())
-      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+      btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH3 + HCI_PKT_TYPES_MASK_NO_3_DH3);
 
     if (!controller->supports_5_slot_edr_packets())
-      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+      btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
+  btm_cb.acl_cb_.btm_acl_pkt_types_supported = btm_acl_pkt_types_supported;
 }
 
 /*******************************************************************************
