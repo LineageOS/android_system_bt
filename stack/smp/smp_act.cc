@@ -27,7 +27,6 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_int.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2c_api.h"
@@ -35,6 +34,8 @@
 #include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
 #include "types/raw_address.h"
+
+extern tBTM_CB btm_cb;
 
 #define SMP_KEY_DIST_TYPE_MAX 4
 
@@ -1300,7 +1301,7 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *
  ******************************************************************************/
 void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  uint8_t int_evt = 0;
+  tSMP_EVENT int_evt = SMP_NOP_EVT;
   tSMP_INT_DATA smp_int_data;
 
   SMP_TRACE_DEBUG("%s Association Model = %d", __func__,

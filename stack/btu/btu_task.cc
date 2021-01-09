@@ -30,7 +30,6 @@
 #include "btm_iso_api.h"
 #include "common/message_loop_thread.h"
 #include "osi/include/osi.h"
-#include "stack/btm/btm_int.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btu.h"
 

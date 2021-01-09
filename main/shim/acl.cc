@@ -119,7 +119,8 @@ class ShimAclConnection {
 
   virtual ~ShimAclConnection() {
     ASSERT_LOG(queue_.empty(), "Shim ACL queue still has outgoing packets");
-    ASSERT_LOG(is_disconnected_, "Shim Acl was not properly disconnected");
+    ASSERT_LOG(is_disconnected_,
+               "Shim Acl was not properly disconnected handle:0x%04x", handle_);
   }
 
   void EnqueuePacket(std::unique_ptr<bluetooth::packet::RawBuilder> packet) {

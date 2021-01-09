@@ -721,6 +721,21 @@ typedef enum : uint8_t {
   HCI_MODE_PARK = 0x03,
 } tHCI_MODE;
 
+inline std::string hci_mode_text(const tHCI_MODE& mode) {
+  switch (mode) {
+    case HCI_MODE_ACTIVE:
+      return std::string("active");
+    case HCI_MODE_HOLD:
+      return std::string("hold");
+    case HCI_MODE_SNIFF:
+      return std::string("sniff");
+    case HCI_MODE_PARK:
+      return std::string("park");
+    default:
+      return std::string("UNKNOWN");
+  }
+}
+
 /* Page scan period modes */
 #define HCI_PAGE_SCAN_REP_MODE_R1 0x01
 

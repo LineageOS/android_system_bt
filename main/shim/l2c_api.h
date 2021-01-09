@@ -393,6 +393,9 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
  ******************************************************************************/
 bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
 
+uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda);
+void L2CA_LeConnectionUpdate(const RawAddress& rem_bda);
+
 /*******************************************************************************
  *
  * Function         L2CA_SetFixedChannelTout

@@ -33,6 +33,8 @@
 #include "stack/btm/btm_dev.h"
 #include "vendor_hcidefs.h"
 
+extern tBTM_CB btm_cb;
+
 /* RPA offload VSC specifics */
 #define BTM_BLE_META_IRK_ENABLE 0x01
 #define BTM_BLE_META_ADD_IRK_ENTRY 0x02
