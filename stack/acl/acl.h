@@ -388,7 +388,6 @@ struct sACL_CB {
   friend uint16_t acl_get_supported_packet_types();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
   friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
-  friend void BTM_acl_after_controller_started(const controller_t* controller);
   friend void BTM_default_block_role_switch();
   friend void BTM_default_unblock_role_switch();
   friend void acl_initialize_power_mode(const tACL_CONN& p_acl);
