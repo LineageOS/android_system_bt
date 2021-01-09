@@ -828,8 +828,6 @@ void BTM_BleEnableDisableFilterFeature(uint8_t enable,
  ******************************************************************************/
 uint8_t BTM_BleMaxMultiAdvInstanceCount();
 
-void BTM_db_reset(void);
-
 void BTM_reset_complete();
 
 /*******************************************************************************

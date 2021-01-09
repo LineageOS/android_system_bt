@@ -69,6 +69,8 @@ void gatt_find_in_device_record(const RawAddress& bd_addr,
 void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                             const RawAddress& p_bda);
 
+void BTM_db_reset(void);
+
 extern tBTM_CB btm_cb;
 
 struct StackAclBtmAcl {
@@ -485,6 +487,7 @@ void btm_acl_device_down(void) {
       l2c_link_hci_disc_comp(p->hci_handle, HCI_ERR_HW_FAILURE);
     }
   }
+  BTM_db_reset();
 }
 
 void btm_acl_set_paging(bool value) { btm_cb.is_paging = value; }
