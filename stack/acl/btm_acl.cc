@@ -217,12 +217,10 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
  ******************************************************************************/
 void btm_acl_init(void) { btm_cb.acl_cb_.Init(); }
 
-void BTM_acl_after_controller_started() {
+void BTM_acl_after_controller_started(const controller_t* controller) {
   internal_.btm_set_default_link_policy(
       HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE |
       HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE);
-
-  const controller_t* controller = controller_get_interface();
 
   /* Create ACL supported packet types mask */
   btm_cb.acl_cb_.btm_acl_pkt_types_supported =
