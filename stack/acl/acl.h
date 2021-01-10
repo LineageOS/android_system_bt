@@ -368,7 +368,6 @@ struct controller_t;
  ****************************************************/
 struct sACL_CB {
  private:
-  friend bool btm_pm_is_le_link(const RawAddress& remote_bda);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
   friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
   friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
