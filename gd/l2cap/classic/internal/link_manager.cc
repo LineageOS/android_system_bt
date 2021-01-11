@@ -118,6 +118,11 @@ LinkSecurityInterfaceListener* LinkManager::GetLinkSecurityInterfaceListener() {
   return link_security_interface_listener_;
 }
 
+void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
+  link_property_callback_handler_ = handler;
+  link_property_listener_ = listener;
+}
+
 Link* LinkManager::GetLink(const hci::Address device) {
   if (links_.find(device) == links_.end()) {
     return nullptr;
@@ -342,6 +347,44 @@ void LinkManager::OnReadRemoteExtendedFeatures(
         page_number,
         max_page_number,
         features);
+  }
+}
+
+void LinkManager::OnRoleChange(hci::Address remote, hci::Role role) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(link_property_listener_, &LinkPropertyListener::OnRoleChange, remote, role);
+  }
+}
+
+void LinkManager::OnReadClockOffset(hci::Address remote, uint16_t clock_offset) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnReadClockOffset, remote, clock_offset);
+  }
+}
+
+void LinkManager::OnModeChange(hci::Address remote, hci::Mode mode, uint16_t interval) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnModeChange, remote, mode, interval);
+  }
+}
+
+void LinkManager::OnSniffSubrating(
+    hci::Address remote,
+    uint16_t max_tx_lat,
+    uint16_t max_rx_lat,
+    uint16_t min_remote_timeout,
+    uint16_t min_local_timeout) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnSniffSubrating,
+        remote,
+        max_tx_lat,
+        max_rx_lat,
+        min_remote_timeout,
+        min_local_timeout);
   }
 }
 
