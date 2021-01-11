@@ -4596,7 +4596,11 @@ packet LeDirectedAdvertisingReport : LeMetaEvent (subevent_code = DIRECTED_ADVER
 }
 
 packet LePhyUpdateComplete : LeMetaEvent (subevent_code = PHY_UPDATE_COMPLETE) {
-  _payload_, // placeholder (unimplemented)
+    status : ErrorCode,
+    connection_handle : 12,
+    _reserved_ : 4,
+    tx_phy : 8,
+    rx_phy : 8,
 }
 
 enum DataStatus : 2 {

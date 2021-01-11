@@ -279,6 +279,8 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
       LOG_INFO(
           "tx_octets: 0x%hx, tx_time: 0x%hx, rx_octets 0x%hx, rx_time 0x%hx", tx_octets, tx_time, rx_octets, rx_time);
     }
+
+    void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {}
     void OnDisconnection(ErrorCode reason) override {
       std::unique_ptr<BasePacketBuilder> builder =
           DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle_, reason);

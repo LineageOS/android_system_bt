@@ -540,6 +540,12 @@ class LeShimAclConnection
                         lmp_version, manufacturer_name, sub_version);
   }
 
+  void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {
+    TRY_POSTING_ON_MAIN(interface_.on_phy_update,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        tx_phy, rx_phy);
+  }
+
   void OnDisconnection(hci::ErrorCode reason) {
     Disconnect();
     on_disconnect_(handle_, reason);

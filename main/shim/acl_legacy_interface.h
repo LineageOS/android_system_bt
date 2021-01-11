@@ -106,6 +106,8 @@ typedef struct {
   void (*on_read_remote_version_information_complete)(
       tHCI_STATUS status, uint16_t handle, uint8_t lmp_version,
       uint16_t manufacturer_name, uint16_t sub_version);
+  void (*on_phy_update)(tHCI_STATUS status, uint16_t handle, uint8_t tx_phy,
+                        uint8_t rx_phy);
 } acl_le_link_interface_t;
 
 typedef struct {
