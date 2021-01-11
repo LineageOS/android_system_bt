@@ -24,14 +24,14 @@
 
 #define LOG_TAG "bt_bta_gattc"
 
-#include "bt_target.h"
-
 #include <base/logging.h>
 #include <string.h>
 
 #include "bt_common.h"
+#include "bt_target.h"
 #include "bta_gattc_int.h"
 #include "bta_sys.h"
+#include "gd/common/init_flags.h"
 #include "l2c_api.h"
 #include "types/bt_transport.h"
 #include "utl.h"
@@ -655,4 +655,17 @@ tBTA_GATTC_CLCB* bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA* p_msg) {
             << " not used by BTA";
   }
   return p_clcb;
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_gattc_is_robust_caching_enabled
+ *
+ * Description      check if robust caching is enabled
+ *
+ * Returns          true if enabled; otherwise false
+ *
+ ******************************************************************************/
+bool bta_gattc_is_robust_caching_enabled() {
+  return bluetooth::common::init_flags::gatt_robust_caching_is_enabled();
 }
