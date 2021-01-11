@@ -3356,7 +3356,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
   }
 
   if (!p_dev_rec) {
-    /* There is no device record for new connection.  Allocate one */
+    LOG_DEBUG("Allocating new device record for new connection peer:%s",
+              PRIVATE_ADDRESS(bda));
     if (status == HCI_SUCCESS) {
       p_dev_rec = btm_sec_alloc_dev(bda);
     } else {
