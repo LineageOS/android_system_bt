@@ -81,15 +81,15 @@ static tGATT_STATUS gatt_sr_read_cl_supp_feat(uint16_t conn_id,
 static tGATT_STATUS gatt_sr_write_cl_supp_feat(uint16_t conn_id,
                                                tGATT_WRITE_REQ* p_data);
 
-static tGATT_CBACK gatt_profile_cback = {gatt_connect_cback,
-                                         gatt_cl_op_cmpl_cback,
-                                         gatt_disc_res_cback,
-                                         gatt_disc_cmpl_cback,
-                                         gatt_request_cback,
-                                         NULL,
-                                         NULL,
-                                         NULL,
-                                         NULL};
+static tGATT_CBACK gatt_profile_cback = {.p_conn_cb = gatt_connect_cback,
+                                         .p_cmpl_cb = gatt_cl_op_cmpl_cback,
+                                         .p_disc_res_cb = gatt_disc_res_cback,
+                                         .p_disc_cmpl_cb = gatt_disc_cmpl_cback,
+                                         .p_req_cb = gatt_request_cback,
+                                         .p_enc_cmpl_cb = nullptr,
+                                         .p_congestion_cb = nullptr,
+                                         .p_phy_update_cb = nullptr,
+                                         .p_conn_update_cb = nullptr};
 
 /*******************************************************************************
  *
