@@ -20,7 +20,6 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "main/shim/l2c_api.h"
 #include "bta/include/bta_dm_acl.h"
 #include "gd/l2cap/classic/l2cap_classic_module.h"
 #include "gd/l2cap/le/l2cap_le_module.h"
@@ -30,16 +29,21 @@
 #include "main/shim/btm.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "main/shim/l2c_api.h"
 #include "main/shim/stack.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btu.h"
+#include "stack/include/sco_hci_link_interface.h"
 
 extern void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
                                     uint16_t latency, uint16_t timeout,
                                     tHCI_STATUS status);
+
+void process_ssr_event(tHCI_STATUS status, uint16_t handle, uint16_t max_tx_lat,
+                       uint16_t max_rx_lat);
 
 namespace bluetooth {
 namespace shim {
@@ -322,6 +326,68 @@ struct RemoteFeature {
 
 std::unordered_map<RawAddress, RemoteFeature> remote_feature_map_;
 
+struct LinkPropertyListenerShim
+    : public bluetooth::l2cap::classic::LinkPropertyListener {
+  std::unordered_map<hci::Address, uint16_t> address_to_handle_;
+
+  void OnLinkConnected(hci::Address remote, uint16_t handle) override {
+    address_to_handle_[remote] = handle;
+  }
+
+  void OnLinkDisconnected(hci::Address remote) override {
+    address_to_handle_.erase(remote);
+  }
+
+  void OnReadRemoteVersionInformation(hci::Address remote, uint8_t lmp_version,
+                                      uint16_t manufacturer_name,
+                                      uint16_t sub_version) override {
+    auto bda = bluetooth::ToRawAddress(remote);
+    auto& entry = remote_feature_map_[bda];
+    entry.lmp_version = lmp_version;
+    entry.manufacturer_name = manufacturer_name;
+    entry.sub_version = sub_version;
+    entry.version_info_received = true;
+  }
+
+  void OnReadRemoteExtendedFeatures(hci::Address remote, uint8_t page_number,
+                                    uint8_t max_page_number,
+                                    uint64_t features) override {
+    uint16_t handle = address_to_handle_[remote];
+    uint8_t* features_array = (uint8_t*)&features;
+    if (page_number == 0) {
+      btm_read_remote_features_complete(handle, features_array);
+    } else {
+      btm_read_remote_ext_features_complete(handle, page_number,
+                                            max_page_number, features_array);
+    }
+  }
+
+  void OnRoleChange(hci::Address remote, hci::Role role) override {
+    btm_blacklist_role_change_device(ToRawAddress(remote), HCI_SUCCESS);
+    btm_acl_role_changed(HCI_SUCCESS, ToRawAddress(remote),
+                         static_cast<uint8_t>(role));
+  }
+
+  void OnReadClockOffset(hci::Address remote, uint16_t clock_offset) override {
+    btm_sec_update_clock_offset(address_to_handle_[remote], clock_offset);
+  }
+
+  void OnModeChange(hci::Address remote, hci::Mode mode,
+                    uint16_t interval) override {
+    btm_sco_chk_pend_unpark(HCI_SUCCESS, address_to_handle_[remote]);
+    btm_pm_proc_mode_change(HCI_SUCCESS, address_to_handle_[remote],
+                            static_cast<tHCI_MODE>(mode), interval);
+  }
+
+  void OnSniffSubrating(hci::Address remote, uint16_t max_tx_lat,
+                        uint16_t max_rx_lat, uint16_t min_remote_timeout,
+                        uint16_t min_local_timeout) override {
+    process_ssr_event(HCI_SUCCESS, address_to_handle_[remote], max_tx_lat,
+                      max_rx_lat);
+  }
+
+} link_property_listener_shim_;
+
 class SecurityListenerShim
     : public bluetooth::l2cap::classic::LinkSecurityInterfaceListener {
  public:
@@ -357,33 +423,6 @@ class SecurityListenerShim
     auto bda = bluetooth::ToRawAddress(remote);
     uint16_t handle = address_to_handle_[bda];
     btm_sec_encrypt_change(handle, HCI_SUCCESS, encrypted);
-  }
-
-  void OnReadRemoteVersionInformation(bluetooth::hci::Address remote,
-                                      uint8_t lmp_version,
-                                      uint16_t manufacturer_name,
-                                      uint16_t sub_version) override {
-    auto bda = bluetooth::ToRawAddress(remote);
-    auto& entry = remote_feature_map_[bda];
-    entry.lmp_version = lmp_version;
-    entry.manufacturer_name = manufacturer_name;
-    entry.sub_version = sub_version;
-    entry.version_info_received = true;
-  }
-
-  void OnReadRemoteExtendedFeatures(bluetooth::hci::Address remote,
-                                    uint8_t page_number,
-                                    uint8_t max_page_number,
-                                    uint64_t features) override {
-    auto bda = bluetooth::ToRawAddress(remote);
-    uint16_t handle = address_to_handle_[bda];
-    uint8_t* features_array = (uint8_t*)&features;
-    if (page_number == 0) {
-      btm_read_remote_features_complete(handle, features_array);
-    } else {
-      btm_read_remote_ext_features_complete(handle, page_number,
-                                            max_page_number, features_array);
-    }
   }
 
   void UpdateLinkHoldForSecurity(RawAddress remote, bool is_bonding) {
@@ -496,6 +535,9 @@ bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
 
 void L2CA_UseLegacySecurityModule() {
   LOG_INFO("GD L2cap is using legacy security module");
+  GetL2capClassicModule()->SetLinkPropertyListener(
+      GetGdShimHandler(), &link_property_listener_shim_);
+
   GetL2capClassicModule()->InjectSecurityEnforcementInterface(
       &security_enforcement_shim_);
   security_interface_ = GetL2capClassicModule()->GetSecurityInterface(
