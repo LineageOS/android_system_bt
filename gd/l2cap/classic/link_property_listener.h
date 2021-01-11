@@ -35,7 +35,7 @@ class LinkPropertyListener {
   /**
    * Invoked when an ACL link is connected.
    */
-  virtual void OnLinkConnected(hci::Address remote) {}
+  virtual void OnLinkConnected(hci::Address remote, uint16_t handle) {}
 
   /**
    * Invoked when an ACL link is disconnected.
@@ -49,7 +49,7 @@ class LinkPropertyListener {
       hci::Address remote, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {}
 
   /**
-   * Invoked when received remote features and remote exnteded features for a given link
+   * Invoked when received remote features and remote extended features for a given link
    */
   virtual void OnReadRemoteExtendedFeatures(
       hci::Address remote, uint8_t page_number, uint8_t max_page_number, uint64_t features) {}
