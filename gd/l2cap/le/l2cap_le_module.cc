@@ -33,6 +33,20 @@ namespace le {
 
 const ModuleFactory L2capLeModule::Factory = ModuleFactory([]() { return new L2capLeModule(); });
 
+/**
+ * A default implementation which cannot satisfy any security level except
+ * NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK.
+ */
+class SecurityEnforcementRejectAllImpl : public SecurityEnforcementInterface {
+ public:
+  void Enforce(hci::AddressWithType remote, SecurityPolicy policy, ResultCallback result_callback) override {
+    if (policy == SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK) {
+      result_callback.InvokeIfNotEmpty(true);
+    } else {
+      result_callback.InvokeIfNotEmpty(false);
+    }
+  }
+};
 static SecurityEnforcementRejectAllImpl default_security_module_impl_;
 
 struct L2capLeModule::impl {
