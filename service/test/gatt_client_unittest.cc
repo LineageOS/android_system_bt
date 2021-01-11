@@ -33,7 +33,8 @@ class MockGattHandler
   MockGattHandler() = default;
   ~MockGattHandler() override = default;
 
-  MOCK_METHOD1(RegisterClient, bt_status_t(const bluetooth::Uuid&));
+  MOCK_METHOD2(RegisterClient,
+               bt_status_t(const bluetooth::Uuid&, bool eatt_support));
   MOCK_METHOD1(UnregisterClient, bt_status_t(int));
   MOCK_METHOD1(Scan, bt_status_t(bool));
   MOCK_METHOD4(Connect, bt_status_t(int, const RawAddress&, bool, int));
@@ -77,7 +78,7 @@ class GattClientTest : public ::testing::Test {
 };
 
 TEST_F(GattClientTest, RegisterInstance) {
-  EXPECT_CALL(*mock_handler_, RegisterClient(_))
+  EXPECT_CALL(*mock_handler_, RegisterClient(_, _))
       .Times(2)
       .WillOnce(Return(BT_STATUS_FAIL))
       .WillOnce(Return(BT_STATUS_SUCCESS));
@@ -116,7 +117,7 @@ TEST_F(GattClientTest, RegisterInstance) {
 
   // Call with a different Uuid while one is pending.
   Uuid uuid1 = Uuid::GetRandom();
-  EXPECT_CALL(*mock_handler_, RegisterClient(_))
+  EXPECT_CALL(*mock_handler_, RegisterClient(_, _))
       .Times(1)
       .WillOnce(Return(BT_STATUS_SUCCESS));
   EXPECT_TRUE(factory_->RegisterInstance(uuid1, callback));
