@@ -2262,7 +2262,7 @@ void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
 bool btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg) {
   const std::string* recv = stack_config_get_interface()->get_pts_smp_options();
   if (!recv) {
-    BTIF_TRACE_DEBUG("%s: SMP options not found in configuration", __func__);
+    LOG_DEBUG("SMP pairing options not found in stack configuration");
     return false;
   }
 
