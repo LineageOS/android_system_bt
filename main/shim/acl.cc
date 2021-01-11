@@ -17,6 +17,7 @@
 #include "main/shim/acl.h"
 
 #include <base/location.h>
+#include <base/strings/stringprintf.h>
 
 #include <time.h>
 #include <chrono>
@@ -62,6 +63,7 @@ using HciHandle = uint16_t;
 using PageNumber = uint8_t;
 
 constexpr PageNumber kRemoteExtendedFeaturesPageZero = 0;
+constexpr char kBtmLogTag[] = "ACL";
 
 using SendDataUpwards = void (*const)(BT_HDR*);
 using OnDisconnect = std::function<void(HciHandle, hci::ErrorCode reason)>;
@@ -324,9 +326,10 @@ class ClassicShimAclConnection
                         ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS),
                         ToRawAddress(connection_->GetAddress()),
                         ToLegacyRole(new_role));
-    btm_cb.history_->Push("%-32s: %s classic new_role:%s", "Role change",
-                          PRIVATE_ADDRESS(connection_->GetAddress()),
-                          hci::RoleText(new_role).c_str());
+    BTM_LogHistory(kBtmLogTag, ToRawAddress(connection_->GetAddress()),
+                   "Role change",
+                   base::StringPrintf("classic new_role:%s",
+                                      hci::RoleText(new_role).c_str()));
   }
 
   void OnDisconnection(hci::ErrorCode reason) override {
@@ -674,8 +677,8 @@ void bluetooth::shim::legacy::Acl::CreateClassicConnection(
   GetAclManager()->CreateConnection(address);
   LOG_DEBUG("Connection initiated for classic to remote:%s",
             PRIVATE_ADDRESS(address));
-  btm_cb.history_->Push("%-32s: %s classic", "Initiated connection",
-                        PRIVATE_ADDRESS(address));
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Initiated connection",
+                 "classic");
 }
 
 void bluetooth::shim::legacy::Acl::CreateLeConnection(
@@ -683,8 +686,8 @@ void bluetooth::shim::legacy::Acl::CreateLeConnection(
   GetAclManager()->CreateLeConnection(address_with_type);
   LOG_DEBUG("Connection initiated for le connection to remote:%s",
             PRIVATE_ADDRESS(address_with_type));
-  btm_cb.history_->Push("%-32s: %s le", "Initiated connection",
-                        PRIVATE_ADDRESS(address_with_type));
+  BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
+                 "Initiated connection", "le");
 }
 
 void bluetooth::shim::legacy::Acl::CancelLeConnection(
@@ -692,8 +695,8 @@ void bluetooth::shim::legacy::Acl::CancelLeConnection(
   GetAclManager()->CancelLeConnect(address_with_type);
   LOG_DEBUG("Cancelled le connection to remote:%s",
             PRIVATE_ADDRESS(address_with_type));
-  btm_cb.history_->Push("%-32s: %s le", "Cancelled connection",
-                        PRIVATE_ADDRESS(address_with_type));
+  BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
+                 "Cancelled connection", "le");
 }
 
 void bluetooth::shim::legacy::Acl::OnClassicLinkDisconnected(
@@ -707,9 +710,9 @@ void bluetooth::shim::legacy::Acl::OnClassicLinkDisconnected(
   LOG_DEBUG("Disconnected classic link remote:%s handle:%hu reason:%s",
             PRIVATE_ADDRESS(remote_address), handle,
             ErrorCodeText(reason).c_str());
-  btm_cb.history_->Push("%-32s: %s classic reason:%s", "Disconnected",
-                        PRIVATE_ADDRESS(remote_address),
-                        ErrorCodeText(reason).c_str());
+  BTM_LogHistory(
+      kBtmLogTag, ToRawAddress(remote_address), "Disconnected",
+      base::StringPrintf("classic reason:%s", ErrorCodeText(reason).c_str()));
 }
 
 void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
@@ -723,9 +726,10 @@ void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
   LOG_DEBUG("Disconnected le link remote:%s handle:%hu reason:%s",
             PRIVATE_ADDRESS(remote_address_with_type), handle,
             ErrorCodeText(reason).c_str());
-  btm_cb.history_->Push("%-32s: %s le reason:%s", "Disconnected",
-                        PRIVATE_ADDRESS(remote_address_with_type),
-                        ErrorCodeText(reason).c_str());
+  BTM_LogHistory(
+      kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
+      "Disconnected",
+      base::StringPrintf("le reason:%s", ErrorCodeText(reason).c_str()));
 }
 
 void bluetooth::shim::legacy::Acl::OnConnectSuccess(
@@ -752,10 +756,9 @@ void bluetooth::shim::legacy::Acl::OnConnectSuccess(
   LOG_DEBUG("Connection successful classic remote:%s handle:%hu initiator:%s",
             PRIVATE_ADDRESS(remote_address), handle,
             (locally_initiated) ? "local" : "remote");
-  btm_cb.history_->Push(
-      "%-32s: %s %s classic", "Connection successful",
-      PRIVATE_ADDRESS(remote_address),
-      (locally_initiated) ? "Local initiated" : "Remote initiated");
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(remote_address),
+                 "Connection successful",
+                 (locally_initiated) ? "Local initiated" : "Remote initiated");
 }
 
 void bluetooth::shim::legacy::Acl::OnConnectFail(hci::Address address,
@@ -765,9 +768,9 @@ void bluetooth::shim::legacy::Acl::OnConnectFail(hci::Address address,
                       kInvalidHciHandle, ToLegacyHciErrorCode(reason), false);
   LOG_WARN("Connection failed classic remote:%s reason:%s",
            PRIVATE_ADDRESS(address), hci::ErrorCodeText(reason).c_str());
-  btm_cb.history_->Push("%-32s: %s classic reason:%s", "Connection failed",
-                        PRIVATE_ADDRESS(address),
-                        hci::ErrorCodeText(reason).c_str());
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection failed",
+                 base::StringPrintf("classic reason:%s",
+                                    hci::ErrorCodeText(reason).c_str()));
 }
 
 void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
@@ -809,10 +812,8 @@ void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
   LOG_DEBUG("Connection successful le remote:%s handle:%hu initiator:%s",
             PRIVATE_ADDRESS(address_with_type), handle,
             (locally_initiated) ? "local" : "remote");
-  btm_cb.history_->Push(
-      "%-32s: %s %s le", "Connection successful",
-      PRIVATE_ADDRESS(address_with_type),
-      (locally_initiated) ? "Local Initiate" : "Remote initiate");
+  BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
+                 "Connection successful", "le");
 }
 
 void bluetooth::shim::legacy::Acl::OnLeConnectFail(
@@ -828,9 +829,10 @@ void bluetooth::shim::legacy::Acl::OnLeConnectFail(
                       legacy_address_with_type, handle, enhanced, status);
   LOG_WARN("Connection failed le remote:%s",
            PRIVATE_ADDRESS(address_with_type));
-  btm_cb.history_->Push("%-32s: %s le reason:%s", "Connection failed",
-                        PRIVATE_ADDRESS(address_with_type),
-                        hci::ErrorCodeText(reason).c_str());
+  BTM_LogHistory(
+      kBtmLogTag, ToLegacyAddressWithType(address_with_type),
+      "Connection failed",
+      base::StringPrintf("le reason:%s", hci::ErrorCodeText(reason).c_str()));
 }
 
 void bluetooth::shim::legacy::Acl::ConfigureLePrivacy(
@@ -867,8 +869,8 @@ void bluetooth::shim::legacy::Acl::DisconnectClassic(uint16_t handle,
         ToDisconnectReasonFromLegacy(reason));
     LOG_DEBUG("Disconnection initiated classic remote:%s handle:%hu",
               PRIVATE_ADDRESS(remote_address), handle);
-    btm_cb.history_->Push("%-32s: %s classic", "Disconnection initiated",
-                          PRIVATE_ADDRESS(remote_address));
+    BTM_LogHistory(kBtmLogTag, ToRawAddress(remote_address),
+                   "Disconnection initiated", "classic");
   } else {
     LOG_WARN("Unable to disconnect unknown classic connection handle:0x%04x",
              handle);
@@ -885,8 +887,9 @@ void bluetooth::shim::legacy::Acl::DisconnectLe(uint16_t handle,
         ToDisconnectReasonFromLegacy(reason));
     LOG_DEBUG("Disconnection initiated le remote:%s handle:%hu",
               PRIVATE_ADDRESS(remote_address_with_type), handle);
-    btm_cb.history_->Push("%-32s: %s le", "Disconnection initiated",
-                          PRIVATE_ADDRESS(remote_address_with_type));
+    BTM_LogHistory(kBtmLogTag,
+                   ToLegacyAddressWithType(remote_address_with_type),
+                   "Disconnection initiated", "le");
   } else {
     LOG_WARN("Unable to disconnect unknown le connection handle:0x%04x",
              handle);
