@@ -2494,12 +2494,10 @@ static void btif_av_handle_event(uint8_t peer_sep,
                                  const RawAddress& peer_address,
                                  tBTA_AV_HNDL bta_handle,
                                  const BtifAvEvent& btif_av_event) {
+  LOG_DEBUG("Handle event peer_address=%s bta_handle=0x%x",
+            PRIVATE_ADDRESS(peer_address), bta_handle);
+
   BtifAvPeer* peer = nullptr;
-  BTIF_TRACE_EVENT(
-      "%s: peer_sep=%s (%d) peer_address=%s bta_handle=0x%x event=%s", __func__,
-      (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink", peer_sep,
-      peer_address.ToString().c_str(), bta_handle,
-      btif_av_event.ToString().c_str());
 
   // Find the peer
   if (peer_address != RawAddress::kEmpty) {
@@ -2516,10 +2514,10 @@ static void btif_av_handle_event(uint8_t peer_sep,
     }
   }
   if (peer == nullptr) {
-    BTIF_TRACE_ERROR(
-        "%s: Cannot find or create %s peer for peer_address=%s bta_handle=0x%x "
-        ": event dropped: %s",
-        __func__, (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink",
+    LOG_ERROR(
+        "jni_thread: Cannot find or create %s peer for peer_address=%s "
+        " bta_handle=0x%x : event dropped: %s",
+        peer_stream_endpoint_text(peer_sep).c_str(),
         peer_address.ToString().c_str(), bta_handle,
         btif_av_event.ToString().c_str());
     return;
@@ -2545,22 +2543,23 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
   tBTA_AV* p_data = (tBTA_AV*)btif_av_event.Data();
   std::string msg;
 
-  BTIF_TRACE_DEBUG("%s: peer_sep=%s (%d) event=%s", __func__,
-                   (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink", peer_sep,
-                   btif_av_event.ToString().c_str());
+  LOG_DEBUG(
+      "jni_thread: Handle BTA AV or AVRCP event %s: peer_sep=%hhu event=%s",
+      peer_stream_endpoint_text(peer_sep).c_str(), peer_sep,
+      btif_av_event.ToString().c_str());
 
   switch (event) {
     case BTA_AV_ENABLE_EVT: {
       const tBTA_AV_ENABLE& enable = p_data->enable;
-      BTIF_TRACE_DEBUG("%s: features=0x%x", __func__, enable.features);
+      LOG_DEBUG("Enable features=0x%x", enable.features);
       return;  // Nothing to do
     }
     case BTA_AV_REGISTER_EVT: {
       const tBTA_AV_REGISTER& registr = p_data->registr;
       bta_handle = registr.hndl;
       uint8_t peer_id = registr.app_id;  // The PeerId is used as AppId
-      BTIF_TRACE_DEBUG("%s: bta_handle=0x%x app_id=%d", __func__, bta_handle,
-                       registr.app_id);
+      LOG_DEBUG("Register bta_handle=0x%x app_id=%d", bta_handle,
+                registr.app_id);
       if (peer_sep == AVDT_TSEP_SNK) {
         btif_av_source.BtaHandleRegistered(peer_id, bta_handle);
       } else if (peer_sep == AVDT_TSEP_SRC) {
@@ -2668,14 +2667,11 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       break;
     }
   }
-  BTIF_TRACE_DEBUG("%s: peer_address=%s bta_handle=0x%x", __func__,
-                   peer_address.ToString().c_str(), bta_handle);
 
   if (!msg.empty()) {
     BTM_LogHistory(kBtmLogHistoryTag, peer_address, msg,
                    btif_av_event.ToString());
   }
-
   btif_av_handle_event(peer_sep, peer_address, bta_handle, btif_av_event);
 }
 
