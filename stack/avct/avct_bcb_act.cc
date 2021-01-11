@@ -25,6 +25,8 @@
  *
  *****************************************************************************/
 
+#define LOG_TAG "bluetooth"
+
 #include <log/log.h>
 #include <string.h>
 #include "avct_api.h"
