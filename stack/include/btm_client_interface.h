@@ -42,10 +42,14 @@ struct btm_client_interface_s {
     void (*btm_free)();
     void (*btm_ble_init)();
     void (*btm_ble_free)();
+    void (*BTM_db_reset)();
+    void (*BTM_reset_complete)();
   } lifecycle;
 
   struct {
     // Server channel number
+    uint8_t (*BTM_AllocateSCN)(void);
+    bool (*BTM_TryAllocateSCN)(uint8_t scn);
     bool (*BTM_FreeSCN)(uint8_t scn);
   } scn;
 
@@ -56,6 +60,12 @@ struct btm_client_interface_s {
     tBTM_STATUS (*BTM_ClearInqDb)(const RawAddress* p_bda);
     tBTM_STATUS (*BTM_SetDiscoverability)(uint16_t inq_mode);
     tBTM_STATUS (*BTM_SetConnectability)(uint16_t page_mode);
+    tBTM_STATUS (*BTM_StartInquiry)(tBTM_INQ_RESULTS_CB* p_results_cb,
+                                    tBTM_CMPL_CB* p_cmpl_cb);
+    uint16_t (*BTM_IsInquiryActive)(void);
+    tBTM_STATUS (*BTM_SetInquiryMode)(uint8_t mode);
+    void (*BTM_EnableInterlacedInquiryScan)();
+    void (*BTM_EnableInterlacedPageScan)();
   } neighbor;
 
   // Acl peer and lifecycle
@@ -78,6 +88,9 @@ struct btm_client_interface_s {
                             tBT_DEVICE_TYPE* p_dev_type,
                             tBLE_ADDR_TYPE* p_addr_type);
     uint16_t (*BTM_GetMaxPacketSize)(const RawAddress& bd_addr);
+    bool (*BTM_ReadRemoteVersion)(const RawAddress& addr, uint8_t* lmp_version,
+                                  uint16_t* manufacturer,
+                                  uint16_t* lmp_sub_version);
   } peer;
 
   struct {
@@ -181,6 +194,8 @@ struct btm_client_interface_s {
         tBTM_CMPL_CB* p_rln_cmpl_cback);
     tBTM_STATUS (*BTM_SetLocalDeviceName)(char* p_name);
     tBTM_STATUS (*BTM_SetDeviceClass)(DEV_CLASS dev_class);
+    bool (*BTM_IsDeviceUp)();
+    uint8_t* (*BTM_ReadDeviceClass)();
   } local;
 
   struct {
@@ -193,6 +208,13 @@ struct btm_client_interface_s {
                                   uint8_t* p_uuid_list, uint8_t max_num_uuid);
     void (*BTM_RemoveEirService)(uint32_t* p_eir_uuid, uint16_t uuid16);
   } eir;
+
+  struct {
+    tBTM_INQ_INFO* (*BTM_InqDbRead)(const RawAddress& p_bda);
+    tBTM_INQ_INFO* (*BTM_InqDbFirst)();
+    tBTM_INQ_INFO* (*BTM_InqDbNext)(tBTM_INQ_INFO* p_cur);
+    tBTM_STATUS (*BTM_ClearInqDb)(const RawAddress* p_bda);
+  } db;
 };
 
 struct btm_client_interface_s& get_btm_client_interface();
