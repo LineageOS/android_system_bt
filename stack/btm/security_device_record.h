@@ -310,6 +310,9 @@ struct tBTM_SEC_DEV_REC {
   }
 
   bool is_originator;         /* true if device is originating connection */
+ public:
+  bool IsLocallyInitiated() const { return is_originator; }
+
   bool role_central;          /* true if current mode is central     */
   uint16_t security_required; /* Security required for connection   */
   bool link_key_not_sent; /* link key notification has not been sent waiting for
