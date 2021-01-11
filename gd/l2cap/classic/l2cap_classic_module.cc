@@ -130,6 +130,10 @@ SecurityInterface* L2capClassicModule::GetSecurityInterface(
   return &pimpl_->security_interface_impl_;
 }
 
+void L2capClassicModule::SetLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
+  pimpl_->link_manager_.RegisterLinkPropertyListener(handler, listener);
+}
+
 void L2capClassicModule::impl::Dump(
     std::promise<flatbuffers::Offset<L2capClassicModuleData>> promise,
     flatbuffers::FlatBufferBuilder* fb_builder) const {
