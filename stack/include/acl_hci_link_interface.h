@@ -42,7 +42,6 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status);
 void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
                              tHCI_MODE mode, uint16_t interval);
 void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
-void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset);
 void btm_read_automatic_flush_timeout_complete(uint8_t* p);
 void btm_read_failed_contact_counter_complete(uint8_t* p);
 void btm_read_link_quality_complete(uint8_t* p);
