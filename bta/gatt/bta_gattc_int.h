@@ -219,6 +219,8 @@ typedef struct {
   bool read_multiple_not_supported;
 
   uint8_t srvc_hdl_chg; /* service handle change indication pending */
+  bool srvc_hdl_db_hash;   /* read db hash pending */
+  uint8_t srvc_disc_count; /* current discovery retry count */
   uint16_t attr_index;  /* cahce NV saving/loading attribute index */
 
   uint16_t mtu;
@@ -253,6 +255,13 @@ typedef struct {
   tBTA_GATTC_RCB* p_rcb;    /* pointer to the registration CB */
   tBTA_GATTC_SERV* p_srcb;  /* server cache CB */
   tBTA_GATTC_DATA* p_q_cmd; /* command in queue waiting for execution */
+
+// request during discover state
+#define BTA_GATTC_DISCOVER_REQ_NONE 0
+#define BTA_GATTC_DISCOVER_REQ_READ_EXT_PROP_DESC 1
+#define BTA_GATTC_DISCOVER_REQ_READ_DB_HASH 2
+
+  uint8_t request_during_discovery; /* request during discover state */
 
 #define BTA_GATTC_NO_SCHEDULE 0
 #define BTA_GATTC_DISC_WAITING 0x01
@@ -352,6 +361,7 @@ extern void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb,
 
 extern void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb,
                                      tBTA_GATTC_DATA* p_data);
+extern void bta_gattc_start_discover_internal(tBTA_GATTC_CLCB* p_clcb);
 extern void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
                                 tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_read(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
@@ -418,6 +428,7 @@ extern void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
                                                uint16_t start_handle,
                                                uint16_t end_handle);
 extern tBTA_GATTC_SERV* bta_gattc_find_srvr_cache(const RawAddress& bda);
+extern bool bta_gattc_is_robust_caching_enabled();
 
 /* discovery functions */
 extern void bta_gattc_disc_res_cback(uint16_t conn_id,
@@ -458,5 +469,7 @@ extern bool bta_gattc_conn_dealloc(const RawAddress& remote_bda);
 
 extern bool bta_gattc_cache_load(tBTA_GATTC_SERV* p_srcb);
 extern void bta_gattc_cache_reset(const RawAddress& server_bda);
+
+extern bool bta_gattc_read_db_hash(tBTA_GATTC_CLCB* p_clcb);
 
 #endif /* BTA_GATTC_INT_H */
