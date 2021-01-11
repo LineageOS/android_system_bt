@@ -334,7 +334,7 @@ TEST_F(LeScanningManagerTest, start_scan_test) {
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   LeAdvertisingReport report{};
-  report.event_type_ = AdvertisingEventType::ADV_IND;
+  report.event_type_ = AdvertisingEventType::ADV_DIRECT_IND;
   report.address_type_ = AddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<GapData> gap_data{};
@@ -361,7 +361,7 @@ TEST_F(LeAndroidHciScanningManagerTest, start_scan_test) {
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   LeAdvertisingReport report{};
-  report.event_type_ = AdvertisingEventType::ADV_IND;
+  report.event_type_ = AdvertisingEventType::ADV_DIRECT_IND;
   report.address_type_ = AddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<GapData> gap_data{};
@@ -391,7 +391,7 @@ TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
 
   LeExtendedAdvertisingReport report{};
   report.connectable_ = 1;
-  report.scannable_ = 1;
+  report.scannable_ = 0;
   report.address_type_ = DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<GapData> gap_data{};
