@@ -32,18 +32,29 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
-#include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
-#include "stack/btm/btm_sec.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/hcimsgs.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 extern tBTM_CB btm_cb;
 
-void btm_sco_acl_removed(const RawAddress* bda);
+bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
+bool btm_dev_support_role_switch(const RawAddress& bd_addr);
+tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
+                                 uint16_t timeout);
+tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason);
+tHCI_STATUS acl_get_disconnect_reason();
+uint16_t acl_get_link_supervision_timeout();
+void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
+                     uint8_t link_role, tBT_TRANSPORT transport);
+void btm_acl_removed(uint16_t handle);
+void btm_acl_set_paging(bool value);
 void btm_ble_decrement_link_topology_mask(uint8_t link_role);
+void btm_sco_acl_removed(const RawAddress* bda);
 
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf);
 static BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb);
@@ -487,6 +498,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
       uint64_t timeout_ms;
       bool start_timeout = true;
 
+      LOG_WARN("TODO: Remove this callback into bcm_sec_disconnect");
       rc = btm_sec_disconnect(p_lcb->Handle(), HCI_ERR_PEER_USER);
 
       if (rc == BTM_CMD_STORED) {
