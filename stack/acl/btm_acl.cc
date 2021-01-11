@@ -1321,21 +1321,6 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
 
 /*******************************************************************************
  *
- * Function         btm_process_clk_off_comp_evt
- *
- * Description      This function is called when clock offset command completes.
- *
- * Input Parms      hci_handle - connection handle associated with the change
- *                  clock offset
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset) {
-}
-
-/*******************************************************************************
- *
  * Function         btm_blacklist_role_change_device
  *
  * Description      This function is used to blacklist the device if the role
