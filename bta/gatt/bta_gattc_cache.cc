@@ -68,6 +68,15 @@ const Characteristic* bta_gattc_get_characteristic_srcb(tBTA_GATTC_SERV* p_srcb,
 static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
                                             tBTA_GATTC_SERV* p_srvc_cb);
 
+static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                        tBTA_GATTC_OP_CMPL* p_data);
+
+static void bta_gattc_read_ext_prop_desc_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                              tBTA_GATTC_OP_CMPL* p_data);
+
+// define the max retry count for DATABASE_OUT_OF_SYNC
+#define BTA_GATTC_DISCOVER_RETRY_COUNT 2
+
 #define BTA_GATT_SDP_DB_SIZE 4096
 
 #define GATT_CACHE_PREFIX "/data/misc/bluetooth/gatt_cache_"
@@ -170,6 +179,10 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
   const auto& descriptors =
       p_srvc_cb->pending_discovery.DescriptorHandlesToRead();
   if (!descriptors.empty()) {
+    // set request field to READ_EXT_PROP_DESC
+    p_clcb->request_during_discovery =
+        BTA_GATTC_DISCOVER_REQ_READ_EXT_PROP_DESC;
+
     if (p_srvc_cb->read_multiple_not_supported) {
       tGATT_READ_PARAM read_param{
           .by_handle = {.handle = descriptors.front(),
@@ -224,6 +237,14 @@ static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
   if (btm_sec_is_a_bonded_dev(p_srvc_cb->server_bda)) {
     bta_gattc_cache_write(p_clcb->p_srcb->server_bda,
                           p_clcb->p_srcb->gatt_database.Serialize());
+  }
+
+  // After success, reset the count.
+  if (bta_gattc_is_robust_caching_enabled()) {
+    LOG(INFO) << __func__
+              << ": service discovery succeed, reset count to zero, conn_id="
+              << loghex(conn_id);
+    p_srvc_cb->srvc_disc_count = 0;
   }
 
   bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
@@ -353,63 +374,27 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
 }
 
 /** operation completed */
-void bta_gattc_op_cmpl_during_discovery(UNUSED_ATTR tBTA_GATTC_CLCB* p_clcb,
+void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb,
                                         tBTA_GATTC_DATA* p_data) {
-  uint8_t op = (uint8_t)p_data->op_cmpl.op_code;
-
-  if (op != GATTC_OPTYPE_READ) {
-    /* receive op complete when discovery is started, ignore the response,
-       and wait for discovery finish and resent */
-    VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
-    return;
+  // Currently, there are two cases needed to be handled.
+  // 1. Read ext prop descriptor value after service discovery
+  // 2. Read db hash before starting service discovery
+  switch (p_clcb->request_during_discovery) {
+    case BTA_GATTC_DISCOVER_REQ_READ_EXT_PROP_DESC:
+      bta_gattc_read_ext_prop_desc_cmpl(p_clcb, &p_data->op_cmpl);
+      break;
+    case BTA_GATTC_DISCOVER_REQ_READ_DB_HASH:
+      if (bta_gattc_is_robust_caching_enabled()) {
+        bta_gattc_read_db_hash_cmpl(p_clcb, &p_data->op_cmpl);
+      } else {
+        // it is not possible here if flag is off, but just in case
+        p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_NONE;
+      }
+      break;
+    case BTA_GATTC_DISCOVER_REQ_NONE:
+    default:
+      break;
   }
-  // our read operation is finished.
-  // TODO: check if we can get here when any other read operation i.e. initiated
-  // by upper layer apps, can get us there.
-
-  tBTA_GATTC_SERV* p_srvc_cb = p_clcb->p_srcb;
-  const uint8_t status = p_data->op_cmpl.status;
-
-  if (status == GATT_REQ_NOT_SUPPORTED &&
-      !p_srvc_cb->read_multiple_not_supported) {
-    // can't do "read multiple request", fall back to "read request"
-    p_srvc_cb->read_multiple_not_supported = true;
-    bta_gattc_explore_next_service(p_clcb->bta_conn_id, p_srvc_cb);
-    return;
-  }
-
-  if (status != GATT_SUCCESS) {
-    LOG(WARNING) << "Discovery on server failed: " << loghex(status);
-    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
-  }
-
-  const tGATT_VALUE& att_value = p_data->op_cmpl.p_cmpl->att_value;
-  if (!p_srvc_cb->read_multiple_not_supported && att_value.len != 2) {
-    // Just one Characteristic Extended Properties value at a time in Read
-    // Response
-    LOG(WARNING) << __func__ << " Read Response should be just 2 bytes!";
-    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
-  }
-
-  // Parsing is same for "Read Multiple Response", and for "Read Response"
-  const uint8_t* p = att_value.value;
-  std::vector<uint16_t> value_of_descriptors;
-  while (p < att_value.value + att_value.len) {
-    uint16_t extended_properties;
-    STREAM_TO_UINT16(extended_properties, p);
-    value_of_descriptors.push_back(extended_properties);
-  }
-
-  bool ret =
-      p_srvc_cb->pending_discovery.SetValueOfDescriptors(value_of_descriptors);
-  if (!ret) {
-    LOG(WARNING) << __func__
-                 << " Problem setting Extended Properties descriptors values";
-    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
-  }
-
-  // Continue service discovery
-  bta_gattc_explore_next_service(p_clcb->bta_conn_id, p_srvc_cb);
 }
 
 /** callback function to GATT client stack */
@@ -456,14 +441,29 @@ void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
 void bta_gattc_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
                                tGATT_STATUS status) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
+  tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(conn_id);
 
   if (p_clcb && (status != GATT_SUCCESS || p_clcb->status != GATT_SUCCESS)) {
     if (status == GATT_SUCCESS) p_clcb->status = status;
+
+    // if db out of sync is received, try to start service discovery if possible
+    if (bta_gattc_is_robust_caching_enabled() &&
+        status == GATT_DATABASE_OUT_OF_SYNC) {
+      if (p_srvc_cb &&
+          p_srvc_cb->srvc_disc_count < BTA_GATTC_DISCOVER_RETRY_COUNT) {
+        p_srvc_cb->srvc_disc_count++;
+        p_clcb->auto_update = BTA_GATTC_DISC_WAITING;
+      } else {
+        LOG(ERROR) << __func__
+                   << ": retry limit exceeds for db out of sync, conn_id="
+                   << conn_id;
+      }
+    }
+
     bta_gattc_sm_execute(p_clcb, BTA_GATTC_DISCOVER_CMPL_EVT, NULL);
     return;
   }
 
-  tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(conn_id);
   if (!p_srvc_cb) return;
 
   switch (disc_type) {
@@ -629,6 +629,125 @@ const Characteristic* bta_gattc_get_owning_characteristic(uint16_t conn_id,
   if (!p_clcb) return NULL;
 
   return bta_gattc_get_owning_characteristic_srcb(p_clcb->p_srcb, handle);
+}
+
+/* request reading database hash */
+bool bta_gattc_read_db_hash(tBTA_GATTC_CLCB* p_clcb) {
+  tGATT_READ_PARAM read_param;
+  memset(&read_param, 0, sizeof(tGATT_READ_BY_TYPE));
+
+  read_param.char_type.s_handle = 0x0001;
+  read_param.char_type.e_handle = 0xFFFF;
+  read_param.char_type.uuid = Uuid::From16Bit(GATT_UUID_DATABASE_HASH);
+  read_param.char_type.auth_req = GATT_AUTH_REQ_NONE;
+  tGATT_STATUS status =
+      GATTC_Read(p_clcb->bta_conn_id, GATT_READ_BY_TYPE, &read_param);
+
+  if (status != GATT_SUCCESS) return false;
+  p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_READ_DB_HASH;
+
+  return true;
+}
+
+/* handle response of reading database hash */
+static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                        tBTA_GATTC_OP_CMPL* p_data) {
+  uint8_t op = (uint8_t)p_data->op_code;
+  if (op != GATTC_OPTYPE_READ) {
+    VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
+    return;
+  }
+  p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_NONE;
+
+  // run match flow only if the status is success
+  bool matched = false;
+  if (p_data->status == GATT_SUCCESS) {
+    // start to compare local hash and remote hash
+    uint16_t len = p_data->p_cmpl->att_value.len;
+    uint8_t* data = p_data->p_cmpl->att_value.value;
+
+    Octet16 remote_hash;
+    if (len == remote_hash.size()) {
+      uint8_t idx = 0;
+      auto it = remote_hash.begin();
+      for (; idx < len; idx++, data++, it++) *it = *data;
+
+      Octet16 local_hash = p_clcb->p_srcb->gatt_database.Hash();
+      matched = (local_hash == remote_hash);
+    }
+  }
+
+  if (matched) {
+    LOG(INFO) << __func__ << ": hash is the same, skip service discovery";
+    p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_SUCCESS);
+  } else {
+    LOG(INFO) << __func__ << ": hash is not the same, start service discovery";
+    bta_gattc_start_discover_internal(p_clcb);
+  }
+}
+
+/* handle response of reading extended properties descriptor */
+static void bta_gattc_read_ext_prop_desc_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                              tBTA_GATTC_OP_CMPL* p_data) {
+  uint8_t op = (uint8_t)p_data->op_code;
+  if (op != GATTC_OPTYPE_READ) {
+    VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
+    return;
+  }
+
+  if (!p_clcb->disc_active) {
+    VLOG(1) << __func__ << ": not active in discover state";
+    return;
+  }
+  p_clcb->request_during_discovery = BTA_GATTC_DISCOVER_REQ_NONE;
+
+  tBTA_GATTC_SERV* p_srvc_cb = p_clcb->p_srcb;
+  const uint8_t status = p_data->status;
+
+  if (status == GATT_REQ_NOT_SUPPORTED &&
+      !p_srvc_cb->read_multiple_not_supported) {
+    // can't do "read multiple request", fall back to "read request"
+    p_srvc_cb->read_multiple_not_supported = true;
+    bta_gattc_explore_next_service(p_clcb->bta_conn_id, p_srvc_cb);
+    return;
+  }
+
+  if (status != GATT_SUCCESS) {
+    LOG(WARNING) << "Discovery on server failed: " << loghex(status);
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
+    return;
+  }
+
+  const tGATT_VALUE& att_value = p_data->p_cmpl->att_value;
+  if (p_srvc_cb->read_multiple_not_supported && att_value.len != 2) {
+    // Just one Characteristic Extended Properties value at a time in Read
+    // Response
+    LOG(WARNING) << __func__ << " Read Response should be just 2 bytes!";
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
+    return;
+  }
+
+  // Parsing is same for "Read Multiple Response", and for "Read Response"
+  const uint8_t* p = att_value.value;
+  std::vector<uint16_t> value_of_descriptors;
+  while (p < att_value.value + att_value.len) {
+    uint16_t extended_properties;
+    STREAM_TO_UINT16(extended_properties, p);
+    value_of_descriptors.push_back(extended_properties);
+  }
+
+  bool ret =
+      p_srvc_cb->pending_discovery.SetValueOfDescriptors(value_of_descriptors);
+  if (!ret) {
+    LOG(WARNING) << __func__
+                 << " Problem setting Extended Properties descriptors values";
+    bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
+    return;
+  }
+
+  // Continue service discovery
+  bta_gattc_explore_next_service(p_clcb->bta_conn_id, p_srvc_cb);
 }
 
 /*******************************************************************************
