@@ -19,6 +19,7 @@
 
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/fixed_channel_manager.h"
+#include "l2cap/classic/link_property_listener.h"
 #include "l2cap/classic/link_security_interface.h"
 #include "l2cap/classic/security_enforcement_interface.h"
 #include "module.h"
@@ -64,6 +65,12 @@ class L2capClassicModule : public bluetooth::Module {
   virtual SecurityInterface* GetSecurityInterface(os::Handler* handler, LinkSecurityInterfaceListener* listener);
 
   friend security::SecurityModule;
+
+  /**
+   * Set the link property listener.
+   * This is not synchronized.
+   */
+  virtual void SetLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener);
 
  protected:
   void ListDependencies(ModuleList* list) override;
