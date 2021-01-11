@@ -38,10 +38,14 @@ struct btm_client_interface_s btm_client_interface = {
             .btm_free = btm_free,
             .btm_ble_init = btm_ble_init,
             .btm_ble_free = btm_ble_free,
+            .BTM_db_reset = BTM_db_reset,
+            .BTM_reset_complete = BTM_reset_complete,
         },
 
     .scn =
         {
+            .BTM_AllocateSCN = BTM_AllocateSCN,
+            .BTM_TryAllocateSCN = BTM_TryAllocateSCN,
             .BTM_FreeSCN = BTM_FreeSCN,
         },
 
@@ -52,6 +56,11 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_InqDbNext = BTM_InqDbNext,
             .BTM_SetConnectability = BTM_SetConnectability,
             .BTM_SetDiscoverability = BTM_SetDiscoverability,
+            .BTM_StartInquiry = BTM_StartInquiry,
+            .BTM_IsInquiryActive = BTM_IsInquiryActive,
+            .BTM_SetInquiryMode = BTM_SetInquiryMode,
+            .BTM_EnableInterlacedInquiryScan = BTM_EnableInterlacedInquiryScan,
+            .BTM_EnableInterlacedPageScan = BTM_EnableInterlacedPageScan,
         },
 
     // Acl peer and lifecycle
@@ -66,6 +75,7 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_ReadRemoteFeatures = BTM_ReadRemoteFeatures,
             .BTM_SetEncryption = BTM_SetEncryption,
             .BTM_GetMaxPacketSize = BTM_GetMaxPacketSize,
+            .BTM_ReadRemoteVersion = BTM_ReadRemoteVersion,
         },
 
     .link_policy =
@@ -139,6 +149,8 @@ struct btm_client_interface_s btm_client_interface = {
                 BTM_ReadLocalDeviceNameFromController,
             .BTM_SetDeviceClass = BTM_SetDeviceClass,
             .BTM_SetLocalDeviceName = BTM_SetLocalDeviceName,
+            .BTM_IsDeviceUp = BTM_IsDeviceUp,
+            .BTM_ReadDeviceClass = BTM_ReadDeviceClass,
         },
 
     .eir =
@@ -147,6 +159,13 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_GetEirUuidList = BTM_GetEirUuidList,
             .BTM_RemoveEirService = BTM_RemoveEirService,
             .BTM_WriteEIR = BTM_WriteEIR,
+        },
+    .db =
+        {
+            .BTM_InqDbRead = BTM_InqDbRead,
+            .BTM_InqDbFirst = BTM_InqDbFirst,
+            .BTM_InqDbNext = BTM_InqDbNext,
+            .BTM_ClearInqDb = BTM_ClearInqDb,
         },
 };
 
