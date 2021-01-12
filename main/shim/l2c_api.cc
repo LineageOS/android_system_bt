@@ -227,7 +227,8 @@ struct ClassicDynamicChannelHelper {
 
   void on_outgoing_connection_fail(
       classic::DynamicChannelManager::ConnectionResult result) {
-    LOG(ERROR) << "Outgoing connection failed";
+    LOG(ERROR) << "Outgoing connection failed: "
+               << static_cast<int>(result.connection_result_code);
   }
 
   bool send(uint16_t cid,
@@ -326,6 +327,8 @@ struct RemoteFeature {
   bool role_switch_supported = false;
   bool ssp_supported = false;
   bool sc_supported = false;
+  bool received_page_0 = false;
+  bool received_page_1 = false;
 };
 
 std::unordered_map<RawAddress, RemoteFeature> remote_feature_map_;
@@ -356,13 +359,19 @@ struct LinkPropertyListenerShim
   void OnReadRemoteExtendedFeatures(hci::Address remote, uint8_t page_number,
                                     uint8_t max_page_number,
                                     uint64_t features) override {
-    uint16_t handle = address_to_handle_[remote];
-    uint8_t* features_array = (uint8_t*)&features;
+    auto bda = bluetooth::ToRawAddress(remote);
+    auto& entry = remote_feature_map_[bda];
     if (page_number == 0) {
-      btm_read_remote_features_complete(handle, features_array);
-    } else {
-      btm_read_remote_ext_features_complete(handle, page_number,
-                                            max_page_number, features_array);
+      entry.received_page_0 = true;
+      if (features & 0x20) entry.role_switch_supported = true;
+    }
+    if (page_number == 1) {
+      entry.received_page_1 = true;
+      if (features & 0x01) entry.ssp_supported = true;
+    }
+    if (entry.received_page_0 && entry.received_page_1) {
+      btm_sec_set_peer_sec_caps(address_to_handle_[remote], entry.ssp_supported,
+                                false, entry.role_switch_supported);
     }
   }
 
