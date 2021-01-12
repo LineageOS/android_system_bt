@@ -4618,8 +4618,7 @@ struct LeExtendedAdvertisingReport {
   address : Address,
   primary_phy : PrimaryPhyType,
   secondary_phy : SecondaryPhyType,
-  advertising_sid : 4, // SID subfield in the ADI field
-  _reserved_ : 4,
+  advertising_sid : 8, // SID subfield in the ADI field
   tx_power : 8,
   rssi : 8, // -127 to +20 (0x7F means not available)
   periodic_advertising_interval : 16, // 0x006 to 0xFFFF (7.5 ms to 82s)
