@@ -245,6 +245,10 @@ uint16_t AclManager::HACK_GetLeHandle(Address address) {
   return pimpl_->le_impl_->HACK_get_handle(address);
 }
 
+void AclManager::HACK_SetScoDisconnectCallback(std::function<void(uint16_t, uint8_t)> callback) {
+  pimpl_->classic_impl_->HACK_SetScoDisconnectCallback(callback);
+}
+
 void AclManager::ListDependencies(ModuleList* list) {
   list->add<HciLayer>();
   list->add<Controller>();
