@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <functional>
 #include <memory>
 
 #include "common/bidi_queue.h"
@@ -37,95 +38,101 @@ class SecurityModule;
 }
 namespace shim {
 class Btm;
+void L2CA_UseLegacySecurityModule();
 }
 
 namespace hci {
 
 class AclManager : public Module {
  friend class bluetooth::shim::Btm;
- public:
-  AclManager();
-  // NOTE: It is necessary to forward declare a default destructor that overrides the base class one, because
-  // "struct impl" is forwarded declared in .cc and compiler needs a concrete definition of "struct impl" when
-  // compiling AclManager's destructor. Hence we need to forward declare the destructor for AclManager to delay
-  // compiling AclManager's destructor until it starts linking the .cc file.
-  ~AclManager();
+ friend void bluetooth::shim::L2CA_UseLegacySecurityModule();
 
-  // Should register only once when user module starts.
-  // Generates OnConnectSuccess when an incoming connection is established.
-  virtual void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks, os::Handler* handler);
+public:
+ AclManager();
+ // NOTE: It is necessary to forward declare a default destructor that overrides the base class one, because
+ // "struct impl" is forwarded declared in .cc and compiler needs a concrete definition of "struct impl" when
+ // compiling AclManager's destructor. Hence we need to forward declare the destructor for AclManager to delay
+ // compiling AclManager's destructor until it starts linking the .cc file.
+ ~AclManager();
 
-  // Should register only once when user module starts.
-  virtual void RegisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks, os::Handler* handler);
+ // Should register only once when user module starts.
+ // Generates OnConnectSuccess when an incoming connection is established.
+ virtual void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks, os::Handler* handler);
 
-  // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
-  virtual void CreateConnection(Address address);
+ // Should register only once when user module starts.
+ virtual void RegisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks, os::Handler* handler);
 
-  // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
-  virtual void CreateLeConnection(AddressWithType address_with_type);
+ // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
+ virtual void CreateConnection(Address address);
 
-  // Ask the controller for specific data parameters
-  virtual void SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t time);
+ // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
+ virtual void CreateLeConnection(AddressWithType address_with_type);
 
-  virtual void SetPrivacyPolicyForInitiatorAddress(
-      LeAddressManager::AddressPolicy address_policy,
-      AddressWithType fixed_address,
-      crypto_toolbox::Octet16 rotation_irk,
-      std::chrono::milliseconds minimum_rotation_time,
-      std::chrono::milliseconds maximum_rotation_time);
+ // Ask the controller for specific data parameters
+ virtual void SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t time);
 
-  // TODO(jpawlowski): remove once we have config file abstraction in cert tests
-  virtual void SetPrivacyPolicyForInitiatorAddressForTest(
-      LeAddressManager::AddressPolicy address_policy,
-      AddressWithType fixed_address,
-      crypto_toolbox::Octet16 rotation_irk,
-      std::chrono::milliseconds minimum_rotation_time,
-      std::chrono::milliseconds maximum_rotation_time);
+ virtual void SetPrivacyPolicyForInitiatorAddress(
+     LeAddressManager::AddressPolicy address_policy,
+     AddressWithType fixed_address,
+     crypto_toolbox::Octet16 rotation_irk,
+     std::chrono::milliseconds minimum_rotation_time,
+     std::chrono::milliseconds maximum_rotation_time);
 
-  // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
-  // successfully cancelled and already connected
-  virtual void CancelConnect(Address address);
+ // TODO(jpawlowski): remove once we have config file abstraction in cert tests
+ virtual void SetPrivacyPolicyForInitiatorAddressForTest(
+     LeAddressManager::AddressPolicy address_policy,
+     AddressWithType fixed_address,
+     crypto_toolbox::Octet16 rotation_irk,
+     std::chrono::milliseconds minimum_rotation_time,
+     std::chrono::milliseconds maximum_rotation_time);
 
-  virtual void CancelLeConnect(AddressWithType address_with_type);
-  virtual void AddDeviceToConnectList(AddressWithType address_with_type);
-  virtual void AddDeviceToResolvingList(
-      AddressWithType address_with_type,
-      const std::array<uint8_t, 16>& peer_irk,
-      const std::array<uint8_t, 16>& local_irk);
-  virtual void RemoveDeviceFromConnectList(AddressWithType address_with_type);
-  virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type);
+ // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
+ // successfully cancelled and already connected
+ virtual void CancelConnect(Address address);
 
-  virtual void CentralLinkKey(KeyFlag key_flag);
-  virtual void SwitchRole(Address address, Role role);
-  virtual uint16_t ReadDefaultLinkPolicySettings();
-  virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings);
+ virtual void CancelLeConnect(AddressWithType address_with_type);
+ virtual void AddDeviceToConnectList(AddressWithType address_with_type);
+ virtual void AddDeviceToResolvingList(
+     AddressWithType address_with_type,
+     const std::array<uint8_t, 16>& peer_irk,
+     const std::array<uint8_t, 16>& local_irk);
+ virtual void RemoveDeviceFromConnectList(AddressWithType address_with_type);
+ virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type);
 
-  // In order to avoid circular dependency use setter rather than module dependency.
-  virtual void SetSecurityModule(security::SecurityModule* security_module);
+ virtual void CentralLinkKey(KeyFlag key_flag);
+ virtual void SwitchRole(Address address, Role role);
+ virtual uint16_t ReadDefaultLinkPolicySettings();
+ virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings);
 
-  virtual LeAddressManager* GetLeAddressManager();
+ // In order to avoid circular dependency use setter rather than module dependency.
+ virtual void SetSecurityModule(security::SecurityModule* security_module);
 
-  static const ModuleFactory Factory;
+ virtual LeAddressManager* GetLeAddressManager();
 
- protected:
-  void ListDependencies(ModuleList* list) override;
+ static const ModuleFactory Factory;
 
-  void Start() override;
+protected:
+ void ListDependencies(ModuleList* list) override;
 
-  void Stop() override;
+ void Start() override;
 
-  std::string ToString() const override;
+ void Stop() override;
 
-  DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const override;  // Module
+ std::string ToString() const override;
 
- private:
-  virtual uint16_t HACK_GetHandle(const Address address);
-  virtual uint16_t HACK_GetLeHandle(const Address address);
+ DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const override;  // Module
 
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
+private:
+ virtual uint16_t HACK_GetHandle(const Address address);
+ virtual uint16_t HACK_GetLeHandle(const Address address);
 
-  DISALLOW_COPY_AND_ASSIGN(AclManager);
+ // Hack for the shim to get SCO disconnect callback.  Shim needs to post to their handler!
+ virtual void HACK_SetScoDisconnectCallback(std::function<void(uint16_t /* handle */, uint8_t /* reason */)>);
+
+ struct impl;
+ std::unique_ptr<impl> pimpl_;
+
+ DISALLOW_COPY_AND_ASSIGN(AclManager);
 };
 
 }  // namespace hci
