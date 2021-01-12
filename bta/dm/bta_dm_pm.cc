@@ -109,7 +109,7 @@ void bta_dm_init_pm(void) {
  *
  ******************************************************************************/
 void bta_dm_disable_pm(void) {
-  BTM_PmRegister(BTM_PM_DEREG, &bta_dm_cb.pm_id, NULL);
+  BTM_PmRegister(BTM_PM_DEREG, &bta_dm_cb.pm_id, bta_dm_pm_btm_cback);
 
   /*
    * Deregister the PM callback from the system handling to prevent

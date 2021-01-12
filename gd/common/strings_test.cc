@@ -29,6 +29,7 @@ using bluetooth::common::FromHexString;
 using bluetooth::common::Int64FromString;
 using bluetooth::common::StringFormat;
 using bluetooth::common::StringFormatTime;
+using bluetooth::common::StringFormatTimeWithMilliseconds;
 using bluetooth::common::StringJoin;
 using bluetooth::common::StringSplit;
 using bluetooth::common::StringTrim;
@@ -179,8 +180,29 @@ TEST(StringsTest, string_format_time_test) {
   std::string format("%Y-%m-%d %H:%M:%S");
   time_t then = 123456789;
   struct std::tm tm;
-  localtime_r(&then, &tm);
-  ASSERT_THAT(StringFormatTime(format, tm), StrEq("1973-11-29 13:33:09"));
+  gmtime_r(&then, &tm);
+  ASSERT_THAT(StringFormatTime(format, tm), StrEq("1973-11-29 21:33:09"));
+}
+
+TEST(StringsTest, string_format_time_with_ms_in_the_beginning_test) {
+  std::string format("%Y-%m-%d %H:%M:%S");
+  std::time_t from_time = 0;
+  std::chrono::time_point<std::chrono::system_clock> time_point = std::chrono::system_clock::from_time_t(from_time);
+
+  ASSERT_THAT(StringFormatTimeWithMilliseconds(format, time_point, gmtime), StrEq("1970-01-01 00:00:00.000"));
+}
+
+TEST(StringsTest, string_format_time_with_ms_test) {
+  std::string format("%Y-%m-%d %H:%M:%S");
+  std::time_t from_time1 = 1234567890;
+  std::chrono::time_point<std::chrono::system_clock> time_point1 = std::chrono::system_clock::from_time_t(from_time1);
+  std::time_t from_time2 = 1234567890;
+  std::chrono::time_point<std::chrono::system_clock> time_point2 = std::chrono::system_clock::from_time_t(from_time2);
+
+  time_point2 += std::chrono::milliseconds(1);
+
+  ASSERT_THAT(StringFormatTimeWithMilliseconds(format, time_point1, gmtime), StrEq("2009-02-13 23:31:30.000"));
+  ASSERT_THAT(StringFormatTimeWithMilliseconds(format, time_point2, gmtime), StrEq("2009-02-13 23:31:30.001"));
 }
 
 }  // namespace testing
