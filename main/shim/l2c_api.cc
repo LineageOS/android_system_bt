@@ -585,6 +585,11 @@ bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
   return true;
 }
 
+static void on_sco_disconnect(uint16_t handle, uint8_t reason) {
+  GetGdShimHandler()->Post(
+      base::BindOnce(base::IgnoreResult(&btm_sco_removed), handle, reason));
+}
+
 void L2CA_UseLegacySecurityModule() {
   LOG_INFO("GD L2cap is using legacy security module");
   GetL2capClassicModule()->SetLinkPropertyListener(
@@ -616,6 +621,8 @@ void L2CA_UseLegacySecurityModule() {
   GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
       address_policy, empty_address_with_type, rotation_irk,
       minimum_rotation_time, maximum_rotation_time);
+
+  GetAclManager()->HACK_SetScoDisconnectCallback(on_sco_disconnect);
 }
 
 /**
