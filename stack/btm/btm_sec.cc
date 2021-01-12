@@ -1820,6 +1820,13 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
     }
   }
 
+  if (security_required & BTM_SEC_OUT_AUTHENTICATE) {
+    security_required |= BTM_SEC_OUT_MITM;
+  }
+  if (security_required & BTM_SEC_IN_AUTHENTICATE) {
+    security_required |= BTM_SEC_IN_MITM;
+  }
+
   p_dev_rec->required_security_flags_for_pairing = security_required;
   p_dev_rec->security_required = security_required;
 
