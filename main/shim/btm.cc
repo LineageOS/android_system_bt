@@ -47,10 +47,6 @@ extern tBTM_CB btm_cb;
 
 static constexpr size_t kRemoteDeviceNameLength = 248;
 
-static constexpr uint8_t kAdvDataInfoNotPresent = 0xff;
-static constexpr uint8_t kTxPowerInformationNotPresent = 0x7f;
-static constexpr uint8_t kNotPeriodicAdvertisement = 0x00;
-
 static constexpr bool kActiveScanning = true;
 static constexpr bool kPassiveScanning = false;
 
@@ -88,40 +84,6 @@ namespace shim {
 
 constexpr int kAdvertisingReportBufferSize = 1024;
 
-struct ExtendedEventTypeOptions {
-  bool connectable{false};
-  bool scannable{false};
-  bool directed{false};
-  bool scan_response{false};
-  bool legacy{false};
-  bool continuing{false};
-  bool truncated{false};
-};
-
-constexpr uint16_t kBleEventConnectableBit =
-    (0x0001 << 0);  // BLE_EVT_CONNECTABLE_BIT
-constexpr uint16_t kBleEventScannableBit =
-    (0x0001 << 1);  // BLE_EVT_SCANNABLE_BIT
-constexpr uint16_t kBleEventDirectedBit =
-    (0x0001 << 2);  // BLE_EVT_DIRECTED_BIT
-constexpr uint16_t kBleEventScanResponseBit =
-    (0x0001 << 3);  // BLE_EVT_SCAN_RESPONSE_BIT
-constexpr uint16_t kBleEventLegacyBit = (0x0001 << 4);  // BLE_EVT_LEGACY_BIT
-constexpr uint16_t kBleEventIncompleteContinuing = (0x0001 << 5);
-constexpr uint16_t kBleEventIncompleteTruncated = (0x0001 << 6);
-
-static void TransformToExtendedEventType(uint16_t* extended_event_type,
-                                         ExtendedEventTypeOptions o) {
-  ASSERT(extended_event_type != nullptr);
-  *extended_event_type = (o.connectable ? kBleEventConnectableBit : 0) |
-                         (o.scannable ? kBleEventScannableBit : 0) |
-                         (o.directed ? kBleEventDirectedBit : 0) |
-                         (o.scan_response ? kBleEventScanResponseBit : 0) |
-                         (o.legacy ? kBleEventLegacyBit : 0) |
-                         (o.continuing ? kBleEventIncompleteContinuing : 0) |
-                         (o.truncated ? kBleEventIncompleteTruncated : 0);
-}
-
 bool Btm::ReadRemoteName::Start(RawAddress raw_address) {
   std::unique_lock<std::mutex> lock(mutex_);
   if (in_progress_) {
@@ -151,117 +113,57 @@ static void store_le_address_type(RawAddress address, tBLE_ADDR_TYPE type) {
   }
 }
 
-void Btm::ScanningCallbacks::on_advertisements(
-    std::vector<std::shared_ptr<hci::LeReport>> reports) {
-  for (auto le_report : reports) {
-    tBLE_ADDR_TYPE address_type =
-        static_cast<tBLE_ADDR_TYPE>(le_report->address_type_);
-    uint16_t extended_event_type = 0;
-    uint8_t* report_data = nullptr;
-    size_t report_len = 0;
+void Btm::ScanningCallbacks::OnScannerRegistered(
+    const bluetooth::hci::Uuid app_uuid, bluetooth::hci::ScannerId scanner_id,
+    ScanningStatus status){};
 
-    uint8_t advertising_data_buffer[kAdvertisingReportBufferSize];
-    // Copy gap data, if any, into temporary buffer as payload for legacy
-    // stack.
-    if (!le_report->gap_data_.empty()) {
-      bzero(advertising_data_buffer, kAdvertisingReportBufferSize);
-      uint8_t* p = advertising_data_buffer;
-      for (auto gap_data : le_report->gap_data_) {
-        *p++ = gap_data.data_.size() + sizeof(gap_data.data_type_);
-        *p++ = static_cast<uint8_t>(gap_data.data_type_);
-        p = (uint8_t*)memcpy(p, &gap_data.data_[0], gap_data.data_.size()) +
-            gap_data.data_.size();
-      }
-      report_data = advertising_data_buffer;
-      report_len = p - report_data;
+void Btm::ScanningCallbacks::OnScanResult(
+    uint16_t event_type, uint8_t address_type, bluetooth::hci::Address address,
+    uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
+    int8_t tx_power, int8_t rssi, uint16_t periodic_advertising_interval,
+    std::vector<bluetooth::hci::GapData> advertising_data) {
+  tBLE_ADDR_TYPE ble_address_type = static_cast<tBLE_ADDR_TYPE>(address_type);
+  uint16_t extended_event_type = 0;
+  uint8_t* report_data = nullptr;
+  size_t report_len = 0;
+
+  uint8_t advertising_data_buffer[kAdvertisingReportBufferSize];
+  // Copy gap data, if any, into temporary buffer as payload for legacy
+  // stack.
+  if (!advertising_data.empty()) {
+    bzero(advertising_data_buffer, kAdvertisingReportBufferSize);
+    uint8_t* p = advertising_data_buffer;
+    for (auto gap_data : advertising_data) {
+      *p++ = gap_data.data_.size() + sizeof(gap_data.data_type_);
+      *p++ = static_cast<uint8_t>(gap_data.data_type_);
+      p = (uint8_t*)memcpy(p, &gap_data.data_[0], gap_data.data_.size()) +
+          gap_data.data_.size();
     }
-
-    switch (le_report->GetReportType()) {
-      case hci::LeReport::ReportType::ADVERTISING_EVENT: {
-        switch (le_report->advertising_event_type_) {
-          case hci::AdvertisingEventType::ADV_IND:
-            TransformToExtendedEventType(
-                &extended_event_type,
-                {.connectable = true, .scannable = true, .legacy = true});
-            break;
-          case hci::AdvertisingEventType::ADV_DIRECT_IND:
-            TransformToExtendedEventType(
-                &extended_event_type,
-                {.connectable = true, .directed = true, .legacy = true});
-            break;
-          case hci::AdvertisingEventType::ADV_SCAN_IND:
-            TransformToExtendedEventType(&extended_event_type,
-                                         {.scannable = true, .legacy = true});
-            break;
-          case hci::AdvertisingEventType::ADV_NONCONN_IND:
-            TransformToExtendedEventType(&extended_event_type,
-                                         {.legacy = true});
-            break;
-          case hci::AdvertisingEventType::SCAN_RESPONSE:
-            TransformToExtendedEventType(&extended_event_type,
-                                         {.connectable = true,
-                                          .scannable = true,
-                                          .scan_response = true,
-                                          .legacy = true});
-            break;
-          default:
-            LOG_WARN(
-                "%s Unsupported event type:%s", __func__,
-                AdvertisingEventTypeText(le_report->advertising_event_type_)
-                    .c_str());
-            return;
-        }
-
-        RawAddress raw_address = ToRawAddress(le_report->address_);
-
-        btm_ble_process_adv_addr(raw_address, &address_type);
-        btm_ble_process_adv_pkt_cont(
-            extended_event_type, address_type, raw_address, kPhyConnectionLe1M,
-            kPhyConnectionNone, kAdvDataInfoNotPresent,
-            kTxPowerInformationNotPresent, le_report->rssi_,
-            kNotPeriodicAdvertisement, report_len, report_data);
-        store_le_address_type(raw_address, address_type);
-      } break;
-
-      case hci::LeReport::ReportType::DIRECTED_ADVERTISING_EVENT:
-        LOG_WARN("%s Directed advertising is unsupported from device:%s",
-                 __func__, le_report->address_.ToString().c_str());
-        break;
-
-      case hci::LeReport::ReportType::EXTENDED_ADVERTISING_EVENT: {
-        std::shared_ptr<hci::ExtendedLeReport> extended_le_report =
-            std::static_pointer_cast<hci::ExtendedLeReport>(le_report);
-        TransformToExtendedEventType(
-            &extended_event_type,
-            {.connectable = extended_le_report->connectable_,
-             .scannable = extended_le_report->scannable_,
-             .directed = extended_le_report->directed_,
-             .scan_response = extended_le_report->scan_response_,
-             .legacy = extended_le_report->legacy_,
-             .continuing = !extended_le_report->complete_,
-             .truncated = extended_le_report->truncated_});
-        RawAddress raw_address = ToRawAddress(le_report->address_);
-        if (address_type != BLE_ADDR_ANONYMOUS) {
-          btm_ble_process_adv_addr(raw_address, &address_type);
-        }
-        btm_ble_process_adv_pkt_cont(
-            extended_event_type, address_type, raw_address,
-            extended_le_report->primary_phy_,
-            extended_le_report->secondary_phy_, kAdvDataInfoNotPresent,
-            extended_le_report->tx_power_, extended_le_report->rssi_,
-            kNotPeriodicAdvertisement, report_len, report_data);
-        store_le_address_type(raw_address, address_type);
-      } break;
-    }
+    report_data = advertising_data_buffer;
+    report_len = p - report_data;
   }
+
+  RawAddress raw_address;
+  RawAddress::FromString(address.ToString(), raw_address);
+
+  if (ble_address_type != BLE_ADDR_ANONYMOUS) {
+    btm_ble_process_adv_addr(raw_address, &ble_address_type);
+  }
+
+  btm_ble_process_adv_addr(raw_address, &ble_address_type);
+  btm_ble_process_adv_pkt_cont(
+      extended_event_type, ble_address_type, raw_address, primary_phy,
+      secondary_phy, advertising_sid, tx_power, rssi,
+      periodic_advertising_interval, report_len, report_data);
+  store_le_address_type(raw_address, ble_address_type);
 }
 
-void Btm::ScanningCallbacks::on_timeout() {
-  LOG_WARN("%s Scanning timeout", __func__);
-}
-os::Handler* Btm::ScanningCallbacks::Handler() {
-  return shim::GetGdShimHandler();
-}
+void Btm::ScanningCallbacks::OnTrackAdvFoundLost(){};
+void Btm::ScanningCallbacks::OnBatchScanReports(int client_if, int status,
+                                                int report_format,
+                                                int num_records,
+                                                std::vector<uint8_t> data){};
+void Btm::ScanningCallbacks::OnTimeout(){};
 
 Btm::Btm(os::Handler* handler, neighbor::InquiryModule* inquiry)
     : scanning_timer_(handler), observing_timer_(handler) {
@@ -696,9 +598,7 @@ void Btm::StopConnectability() { StopAdvertising(); }
 
 void Btm::StartActiveScanning() { StartScanning(kActiveScanning); }
 
-void Btm::StopActiveScanning() {
-  GetScanning()->StopScan(base::Bind([]() {}));
-}
+void Btm::StopActiveScanning() { GetScanning()->Scan(false); }
 
 void Btm::SetScanningTimer(uint64_t duration_ms,
                            common::OnceCallback<void()> callback) {
@@ -721,7 +621,8 @@ void Btm::SetObservingTimer(uint64_t duration_ms,
 void Btm::CancelObservingTimer() { observing_timer_.Cancel(); }
 
 void Btm::StartScanning(bool use_active_scanning) {
-  GetScanning()->StartScan(&scanning_callbacks_);
+  GetScanning()->RegisterScanningCallback(&scanning_callbacks_);
+  GetScanning()->Scan(true);
 }
 
 size_t Btm::GetNumberOfAdvertisingInstances() const {
