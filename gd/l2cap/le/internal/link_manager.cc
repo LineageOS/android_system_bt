@@ -164,6 +164,11 @@ void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type
   links_.erase(address_with_type);
 }
 
+void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
+  link_property_callback_handler_ = handler;
+  link_property_listener_ = listener;
+}
+
 }  // namespace internal
 }  // namespace le
 }  // namespace l2cap

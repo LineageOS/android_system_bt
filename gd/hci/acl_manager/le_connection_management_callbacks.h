@@ -32,6 +32,7 @@ class LeConnectionManagementCallbacks {
   virtual void OnDisconnection(ErrorCode reason) = 0;
   virtual void OnReadRemoteVersionInformationComplete(
       uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) = 0;
+  virtual void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) = 0;
 };
 
 }  // namespace acl_manager

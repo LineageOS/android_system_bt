@@ -32,6 +32,7 @@
 #include "l2cap/le/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/le/internal/link.h"
+#include "l2cap/le/link_property_listener.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -88,6 +89,10 @@ class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
 
   void OnDisconnect(hci::AddressWithType address_with_type);
 
+  // Link methods
+
+  void RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener);
+
  private:
   // Dependencies
   os::Handler* l2cap_handler_;
@@ -102,6 +107,9 @@ class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
   std::unordered_map<hci::AddressWithType, Link> links_;
   std::unordered_map<hci::AddressWithType, std::list<std::pair<Psm, Link::PendingDynamicChannelConnection>>>
       pending_dynamic_channels_;
+  os::Handler* link_property_callback_handler_ = nullptr;
+  LinkPropertyListener* link_property_listener_ = nullptr;
+
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
 
