@@ -26,6 +26,7 @@
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/link.h"
+#include "l2cap/classic/link_property_listener.h"
 #include "l2cap/classic/link_security_interface.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
@@ -71,6 +72,15 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
       hci::Address device, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
   void OnReadRemoteExtendedFeatures(
       hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features);
+  void OnRoleChange(hci::Address remote, hci::Role role);
+  void OnReadClockOffset(hci::Address remote, uint16_t clock_offset);
+  void OnModeChange(hci::Address remote, hci::Mode mode, uint16_t interval);
+  void OnSniffSubrating(
+      hci::Address remote,
+      uint16_t max_tx_lat,
+      uint16_t max_rx_lat,
+      uint16_t min_remote_timeout,
+      uint16_t min_local_timeout);
 
   // FixedChannelManager methods
 
@@ -89,6 +99,9 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
 
   // For the link to get LinkSecurityInterfaceListener
   LinkSecurityInterfaceListener* GetLinkSecurityInterfaceListener();
+
+  // Registerlink callbacks
+  void RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener);
 
  private:
   // Handles requests from LinkSecurityInterface
@@ -115,6 +128,9 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
       pending_dynamic_channels_callbacks_;
   os::Handler* link_security_interface_listener_handler_ = nullptr;
   LinkSecurityInterfaceListener* link_security_interface_listener_ = nullptr;
+  LinkPropertyListener* link_property_listener_ = nullptr;
+  os::Handler* link_property_callback_handler_ = nullptr;
+
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
 

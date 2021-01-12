@@ -46,6 +46,7 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/l2cap_security_interface.h"
+#include "stack/smp/smp_int.h"
 
 extern tBTM_CB btm_cb;
 
@@ -124,6 +125,12 @@ static void NotifyBondingChange(tBTM_SEC_DEV_REC& p_dev_rec,
     (*btm_cb.api.p_auth_complete_callback)(
         p_dev_rec.bd_addr, static_cast<uint8_t*>(p_dev_rec.dev_class),
         p_dev_rec.sec_bd_name, status);
+  }
+}
+
+void NotifyBondingCanceled(tBTM_STATUS btm_status) {
+  if (btm_cb.api.p_bond_cancel_cmpl_callback) {
+    btm_cb.api.p_bond_cancel_cmpl_callback(BTM_SUCCESS);
   }
 }
 

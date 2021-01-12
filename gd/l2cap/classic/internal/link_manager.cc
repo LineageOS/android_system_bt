@@ -118,6 +118,11 @@ LinkSecurityInterfaceListener* LinkManager::GetLinkSecurityInterfaceListener() {
   return link_security_interface_listener_;
 }
 
+void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
+  link_property_callback_handler_ = handler;
+  link_property_listener_ = listener;
+}
+
 Link* LinkManager::GetLink(const hci::Address device) {
   if (links_.find(device) == links_.end()) {
     return nullptr;
@@ -249,6 +254,12 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclC
     pending_dynamic_channels_.erase(device);
     pending_dynamic_channels_callbacks_.erase(device);
   }
+  // Notify link property listener
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnLinkConnected, device, link->GetAclHandle());
+  }
+
   // Notify security manager
   if (link_security_interface_listener_handler_ != nullptr) {
     link_security_interface_listener_handler_->CallOn(
@@ -299,6 +310,10 @@ void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
     link_security_interface_listener_handler_->CallOn(
         link_security_interface_listener_, &LinkSecurityInterfaceListener::OnLinkDisconnected, device);
   }
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(link_property_listener_, &LinkPropertyListener::OnLinkDisconnected, device);
+  }
+
   links_.erase(device);
 }
 
@@ -321,10 +336,10 @@ void LinkManager::OnEncryptionChange(hci::Address device, hci::EncryptionEnabled
 
 void LinkManager::OnReadRemoteVersionInformation(
     hci::Address device, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
-  if (link_security_interface_listener_handler_ != nullptr) {
-    link_security_interface_listener_handler_->CallOn(
-        link_security_interface_listener_,
-        &LinkSecurityInterfaceListener::OnReadRemoteVersionInformation,
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnReadRemoteVersionInformation,
         device,
         lmp_version,
         manufacturer_name,
@@ -334,14 +349,52 @@ void LinkManager::OnReadRemoteVersionInformation(
 
 void LinkManager::OnReadRemoteExtendedFeatures(
     hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features) {
-  if (link_security_interface_listener_handler_ != nullptr) {
-    link_security_interface_listener_handler_->CallOn(
-        link_security_interface_listener_,
-        &LinkSecurityInterfaceListener::OnReadRemoteExtendedFeatures,
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnReadRemoteExtendedFeatures,
         device,
         page_number,
         max_page_number,
         features);
+  }
+}
+
+void LinkManager::OnRoleChange(hci::Address remote, hci::Role role) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(link_property_listener_, &LinkPropertyListener::OnRoleChange, remote, role);
+  }
+}
+
+void LinkManager::OnReadClockOffset(hci::Address remote, uint16_t clock_offset) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnReadClockOffset, remote, clock_offset);
+  }
+}
+
+void LinkManager::OnModeChange(hci::Address remote, hci::Mode mode, uint16_t interval) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnModeChange, remote, mode, interval);
+  }
+}
+
+void LinkManager::OnSniffSubrating(
+    hci::Address remote,
+    uint16_t max_tx_lat,
+    uint16_t max_rx_lat,
+    uint16_t min_remote_timeout,
+    uint16_t min_local_timeout) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnSniffSubrating,
+        remote,
+        max_tx_lat,
+        max_rx_lat,
+        min_remote_timeout,
+        min_local_timeout);
   }
 }
 
