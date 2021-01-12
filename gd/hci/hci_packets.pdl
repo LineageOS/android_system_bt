@@ -4629,7 +4629,7 @@ struct LeExtendedAdvertisingReport {
   direct_address_type : DirectAdvertisingAddressType,
   direct_address : Address,
   _size_(advertising_data) : 8,
-  advertising_data : GapData[],
+  advertising_data : 8[],
 }
 
 packet LeExtendedAdvertisingReport : LeMetaEvent (subevent_code = EXTENDED_ADVERTISING_REPORT) {

@@ -283,7 +283,7 @@ class LeScanningManagerTest : public ::testing::Test {
          int8_t tx_power,
          int8_t rssi,
          uint16_t periodic_advertising_interval,
-         std::vector<GapData> advertising_data),
+         std::vector<uint8_t> advertising_data),
         (override));
     MOCK_METHOD(void, OnTrackAdvFoundLost, (), (override));
     MOCK_METHOD(
@@ -402,7 +402,14 @@ TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
   data_item.data_type_ = GapDataType::COMPLETE_LOCAL_NAME;
   data_item.data_ = {'r', 'a', 'n', 'd', 'o', 'm', ' ', 'd', 'e', 'v', 'i', 'c', 'e'};
   gap_data.push_back(data_item);
-  report.advertising_data_ = gap_data;
+  std::vector<uint8_t> advertising_data = {};
+  for (auto data : gap_data) {
+    advertising_data.push_back((uint8_t)data.size() - 1);
+    advertising_data.push_back((uint8_t)data.data_type_);
+    advertising_data.insert(advertising_data.end(), data.data_.begin(), data.data_.end());
+  }
+
+  report.advertising_data_ = advertising_data;
 
   EXPECT_CALL(mock_callbacks_, OnScanResult);
 

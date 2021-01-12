@@ -54,7 +54,7 @@ struct Scanner {
 
 class AdvertisingCache {
  public:
-  const std::vector<GapData>& Set(const AddressWithType& address_with_type, std::vector<GapData> data) {
+  const std::vector<uint8_t>& Set(const AddressWithType& address_with_type, std::vector<uint8_t> data) {
     auto it = Find(address_with_type);
     if (it != items.end()) {
       it->data = std::move(data);
@@ -76,7 +76,7 @@ class AdvertisingCache {
     return true;
   }
 
-  const std::vector<GapData>& Append(const AddressWithType& address_with_type, std::vector<GapData> data) {
+  const std::vector<uint8_t>& Append(const AddressWithType& address_with_type, std::vector<uint8_t> data) {
     auto it = Find(address_with_type);
     if (it != items.end()) {
       it->data.insert(it->data.end(), data.begin(), data.end());
@@ -105,9 +105,9 @@ class AdvertisingCache {
 
   struct Item {
     AddressWithType address_with_type;
-    std::vector<GapData> data;
+    std::vector<uint8_t> data;
 
-    Item(const AddressWithType& address_with_type, std::vector<GapData> data)
+    Item(const AddressWithType& address_with_type, std::vector<uint8_t> data)
         : address_with_type(address_with_type), data(data) {}
   };
 
@@ -237,6 +237,13 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
           return;
       }
 
+      std::vector<uint8_t> advertising_data = {};
+      for (auto gap_data : report.advertising_data_) {
+        advertising_data.push_back((uint8_t)gap_data.size() - 1);
+        advertising_data.push_back((uint8_t)gap_data.data_type_);
+        advertising_data.insert(advertising_data.end(), gap_data.data_.begin(), gap_data.data_.end());
+      }
+
       process_advertising_package_content(
           extended_event_type,
           (uint8_t)report.address_type_,
@@ -247,7 +254,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
           kTxPowerInformationNotPresent,
           report.rssi_,
           kNotPeriodicAdvertisement,
-          report.advertising_data_);
+          advertising_data);
     }
   }
 
@@ -313,7 +320,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
       int8_t tx_power,
       int8_t rssi,
       uint16_t periodic_advertising_interval,
-      std::vector<GapData> advertising_data) {
+      std::vector<uint8_t> advertising_data) {
     bool is_scannable = event_type & (1 << kScannableBit);
     bool is_scan_response = event_type & (1 << kScanResponseBit);
     bool is_legacy = event_type & (1 << kLegacyBit);
@@ -326,10 +333,14 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
 
     bool is_start = is_legacy && is_scannable && !is_scan_response;
 
-    std::vector<GapData> const& adv_data = is_start ? advertising_cache_.Set(address_with_type, advertising_data)
+    std::vector<uint8_t> const& adv_data = is_start ? advertising_cache_.Set(address_with_type, advertising_data)
                                                     : advertising_cache_.Append(address_with_type, advertising_data);
 
-    // TODO: handle data status
+    uint8_t data_status = event_type >> kDataStatusBits;
+    if (data_status == (uint8_t)DataStatus::CONTINUING) {
+      // Waiting for whole data
+      return;
+    }
 
     if (is_scannable && !is_scan_response) {
       // Waiting for scan response
