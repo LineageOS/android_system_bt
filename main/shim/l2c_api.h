@@ -514,5 +514,7 @@ void L2CA_DisconnectLink(const RawAddress& remote);
 
 uint16_t L2CA_GetNumLinks();
 
+bool L2CA_IsLeLink(uint16_t acl_handle);
+
 }  // namespace shim
 }  // namespace bluetooth
