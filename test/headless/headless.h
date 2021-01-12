@@ -21,7 +21,10 @@
 #include <unistd.h>
 
 #include "base/logging.h"  // LOG() stdout and android log
+#include "include/hardware/bluetooth.h"
 #include "test/headless/get_options.h"
+
+extern bt_interface_t bluetoothInterface;
 
 namespace bluetooth {
 namespace test {

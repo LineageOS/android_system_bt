@@ -1149,10 +1149,18 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
 
     /* Only send if current role is Central; 2.0 spec requires this */
     if (p->link_role == HCI_ROLE_CENTRAL) {
+      LOG_DEBUG("Setting supervison timeout:%.2fms bd_addr:%s",
+                supervision_timeout_to_seconds(timeout),
+                PRIVATE_ADDRESS(remote_bda));
+
       btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID,
                                        p->hci_handle, timeout);
       return (BTM_CMD_STARTED);
     } else {
+      LOG_WARN(
+          "Role is peripheral so unable to set supervison timeout:%.2fms "
+          "bd_addr:%s",
+          supervision_timeout_to_seconds(timeout), PRIVATE_ADDRESS(remote_bda));
       return (BTM_SUCCESS);
     }
   }
