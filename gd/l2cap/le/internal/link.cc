@@ -92,6 +92,8 @@ void Link::OnReadRemoteVersionInformationComplete(
   LOG_INFO("lmp_version:%hhu manufacturer_name:%hu sub_version:%hu", lmp_version, manufacturer_name, sub_version);
 }
 
+void Link::OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) {}
+
 void Link::Disconnect() {
   acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
 }

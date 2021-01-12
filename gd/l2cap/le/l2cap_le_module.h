@@ -19,6 +19,7 @@
 
 #include "l2cap/le/dynamic_channel_manager.h"
 #include "l2cap/le/fixed_channel_manager.h"
+#include "l2cap/le/link_property_listener.h"
 #include "l2cap/le/security_enforcement_interface.h"
 #include "module.h"
 
@@ -74,6 +75,13 @@ class L2capLeModule : public bluetooth::Module {
    * not synchronized.
    */
   virtual void InjectSecurityEnforcementInterface(SecurityEnforcementInterface* security_enforcement_interface);
+
+  /**
+   * Set the link property listener.
+   * This is not synchronized.
+   */
+  virtual void SetLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener);
+
   DISALLOW_COPY_AND_ASSIGN(L2capLeModule);
 };
 

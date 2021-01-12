@@ -107,6 +107,10 @@ void L2capLeModule::InjectSecurityEnforcementInterface(SecurityEnforcementInterf
   }
 }
 
+void L2capLeModule::SetLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
+  pimpl_->link_manager_.RegisterLinkPropertyListener(handler, listener);
+}
+
 }  // namespace le
 }  // namespace l2cap
 }  // namespace bluetooth

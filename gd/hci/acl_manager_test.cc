@@ -657,6 +657,7 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     MOCK_METHOD3(
         OnReadRemoteVersionInformationComplete,
         void(uint8_t version, uint16_t manufacturer_name, uint16_t sub_version));
+    MOCK_METHOD2(OnPhyUpdate, void(uint8_t tx_phy, uint8_t rx_phy));
   } mock_le_connection_management_callbacks_;
 };
 
