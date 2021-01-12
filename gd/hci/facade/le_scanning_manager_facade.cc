@@ -40,106 +40,58 @@ using ::grpc::ServerContext;
 using ::grpc::ServerWriter;
 using ::grpc::Status;
 
-class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, public LeScanningManagerCallbacks {
+class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, ScanningCallback {
  public:
   LeScanningManagerFacadeService(LeScanningManager* le_scanning_manager, os::Handler* facade_handler)
       : le_scanning_manager_(le_scanning_manager), facade_handler_(facade_handler) {
     ASSERT(le_scanning_manager_ != nullptr);
     ASSERT(facade_handler_ != nullptr);
+    le_scanning_manager_->RegisterScanningCallback(this);
   }
 
   ::grpc::Status StartScan(::grpc::ServerContext* context, const ::google::protobuf::Empty*,
                            ::grpc::ServerWriter<LeReportMsg>* writer) override {
-    le_scanning_manager_->StartScan(this);
+    le_scanning_manager_->Scan(true);
     return pending_events_.RunLoop(context, writer);
   }
 
   ::grpc::Status StopScan(::grpc::ServerContext* context, const ::google::protobuf::Empty*,
                           ScanStoppedMsg* response) override {
-    std::shared_ptr<std::promise<void>> on_stopped = std::make_shared<std::promise<void>>();
-    auto future = on_stopped->get_future();
-    le_scanning_manager_->StopScan(
-        common::Bind([](std::shared_ptr<std::promise<void>> p) { p->set_value(); }, on_stopped));
-    auto result = future.wait_for(std::chrono::milliseconds(1000));
-    ASSERT(result == std::future_status::ready);
+    le_scanning_manager_->Scan(false);
     return ::grpc::Status::OK;
   }
 
-  void on_advertisements(std::vector<std::shared_ptr<LeReport>> reports) override {
-    for (const auto report : reports) {
-      switch (report->report_type_) {
-        case hci::LeReport::ReportType::ADVERTISING_EVENT: {
-          LeReportMsg le_report_msg;
-          std::vector<LeAdvertisingReport> advertisements;
-          LeAdvertisingReport le_advertising_report;
-          le_advertising_report.address_type_ = static_cast<AddressType>(report->address_type_);
-          le_advertising_report.address_ = report->address_;
-          le_advertising_report.advertising_data_ = report->gap_data_;
-          le_advertising_report.event_type_ = report->advertising_event_type_;
-          le_advertising_report.rssi_ = report->rssi_;
-          advertisements.push_back(le_advertising_report);
-
-          auto builder = LeAdvertisingReportBuilder::Create(advertisements);
-          std::vector<uint8_t> bytes;
-          BitInserter bit_inserter(bytes);
-          builder->Serialize(bit_inserter);
-          le_report_msg.set_event(std::string(bytes.begin(), bytes.end()));
-          pending_events_.OnIncomingEvent(std::move(le_report_msg));
-        } break;
-        case hci::LeReport::ReportType::EXTENDED_ADVERTISING_EVENT: {
-          LeReportMsg le_report_msg;
-          std::vector<LeExtendedAdvertisingReport> advertisements;
-          LeExtendedAdvertisingReport le_extended_advertising_report;
-          le_extended_advertising_report.address_type_ = report->address_type_;
-          le_extended_advertising_report.address_ = report->address_;
-          le_extended_advertising_report.advertising_data_ = report->gap_data_;
-          le_extended_advertising_report.rssi_ = report->rssi_;
-          advertisements.push_back(le_extended_advertising_report);
-
-          auto builder = LeExtendedAdvertisingReportBuilder::Create(advertisements);
-          std::vector<uint8_t> bytes;
-          BitInserter bit_inserter(bytes);
-          builder->Serialize(bit_inserter);
-          le_report_msg.set_event(std::string(bytes.begin(), bytes.end()));
-          pending_events_.OnIncomingEvent(std::move(le_report_msg));
-        } break;
-        case hci::LeReport::ReportType::DIRECTED_ADVERTISING_EVENT: {
-          LeReportMsg le_report_msg;
-          std::vector<LeDirectedAdvertisingReport> advertisements;
-          LeDirectedAdvertisingReport le_directed_advertising_report;
-          le_directed_advertising_report.address_ = report->address_;
-          le_directed_advertising_report.direct_address_ = ((DirectedLeReport*)report.get())->direct_address_;
-          le_directed_advertising_report.direct_address_type_ = DirectAddressType::RANDOM_DEVICE_ADDRESS;
-          le_directed_advertising_report.event_type_ = DirectAdvertisingEventType::ADV_DIRECT_IND;
-          le_directed_advertising_report.rssi_ = report->rssi_;
-          advertisements.push_back(le_directed_advertising_report);
-
-          auto builder = LeDirectedAdvertisingReportBuilder::Create(advertisements);
-          std::vector<uint8_t> bytes;
-          BitInserter bit_inserter(bytes);
-          builder->Serialize(bit_inserter);
-          le_report_msg.set_event(std::string(bytes.begin(), bytes.end()));
-          pending_events_.OnIncomingEvent(std::move(le_report_msg));
-        } break;
-        default:
-          LOG_INFO("Skipping unknown report type %d", static_cast<int>(report->report_type_));
-      }
-    }
-  }
-
-  void on_timeout() override {
+  void OnScannerRegistered(const bluetooth::hci::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status){};
+  void OnScanResult(
+      uint16_t event_type,
+      uint8_t address_type,
+      Address address,
+      uint8_t primary_phy,
+      uint8_t secondary_phy,
+      uint8_t advertising_sid,
+      int8_t tx_power,
+      int8_t rssi,
+      uint16_t periodic_advertising_interval,
+      std::vector<GapData> advertising_data) {
     LeReportMsg le_report_msg;
-    auto builder = LeScanTimeoutBuilder::Create();
+    std::vector<LeExtendedAdvertisingReport> advertisements;
+    LeExtendedAdvertisingReport le_extended_advertising_report;
+    le_extended_advertising_report.address_type_ = (DirectAdvertisingAddressType)address_type;
+    le_extended_advertising_report.address_ = address;
+    le_extended_advertising_report.advertising_data_ = advertising_data;
+    le_extended_advertising_report.rssi_ = rssi;
+    advertisements.push_back(le_extended_advertising_report);
+
+    auto builder = LeExtendedAdvertisingReportBuilder::Create(advertisements);
     std::vector<uint8_t> bytes;
     BitInserter bit_inserter(bytes);
     builder->Serialize(bit_inserter);
     le_report_msg.set_event(std::string(bytes.begin(), bytes.end()));
     pending_events_.OnIncomingEvent(std::move(le_report_msg));
-  }
-
-  os::Handler* Handler() override {
-    return facade_handler_;
-  }
+  };
+  void OnTrackAdvFoundLost(){};
+  void OnBatchScanReports(int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data){};
+  void OnTimeout(){};
 
   LeScanningManager* le_scanning_manager_;
   os::Handler* facade_handler_;
