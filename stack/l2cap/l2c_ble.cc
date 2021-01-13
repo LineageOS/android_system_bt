@@ -162,6 +162,10 @@ bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
 }
 
 hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_GetBleConnRole(bd_addr);
+  }
+
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
   if (p_lcb == nullptr) {
     return HCI_ROLE_UNKNOWN;

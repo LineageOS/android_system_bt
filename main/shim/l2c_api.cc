@@ -484,9 +484,12 @@ bluetooth::l2cap::classic::SecurityInterface* security_interface_ = nullptr;
 struct LeLinkPropertyListenerShim
     : public bluetooth::l2cap::le::LinkPropertyListener {
   std::unordered_map<hci::AddressWithType, uint16_t> address_to_handle_;
+  std::unordered_map<hci::AddressWithType, hci::Role> address_to_role_;
 
-  void OnLinkConnected(hci::AddressWithType remote, uint16_t handle) override {
+  void OnLinkConnected(hci::AddressWithType remote, uint16_t handle,
+                       hci::Role role) override {
     address_to_handle_[remote] = handle;
+    address_to_role_[remote] = role;
   }
 
   void OnLinkDisconnected(hci::AddressWithType remote) override {
@@ -1040,6 +1043,15 @@ bool L2CA_IsLeLink(uint16_t acl_handle) {
     if (entry.second == acl_handle) return true;
   }
   return false;
+}
+
+hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
+  auto remote = ToAddressWithType(bd_addr, Btm::GetAddressType(bd_addr));
+  if (le_link_property_listener_shim_.address_to_role_.count(remote) == 0) {
+    return HCI_ROLE_UNKNOWN;
+  }
+  return static_cast<hci_role_t>(
+      le_link_property_listener_shim_.address_to_role_[remote]);
 }
 
 void L2CA_ConnectForSecurity(const RawAddress& bd_addr) {
