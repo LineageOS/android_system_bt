@@ -1037,12 +1037,6 @@ bool bluetooth::shim::BTM_UseLeLink(const RawAddress& raw_address) {
   return Stack::GetInstance()->GetBtm()->UseLeLink(raw_address);
 }
 
-tBTM_STATUS bluetooth::shim::BTM_SetBleDataLength(const RawAddress& bd_addr,
-                                                  uint16_t tx_pdu_length) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return BTM_NO_RESOURCES;
-}
-
 void bluetooth::shim::BTM_BleReadPhy(
     const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
