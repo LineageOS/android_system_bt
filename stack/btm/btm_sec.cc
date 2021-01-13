@@ -4805,11 +4805,11 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
 
   if (!(p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
       p_dev_rec->is_originator) {
-    uint8_t status = btm_sec_execute_procedure(p_dev_rec);
-    if (status != BTM_CMD_STARTED) {
+    tBTM_STATUS btm_status = btm_sec_execute_procedure(p_dev_rec);
+    if (btm_status != BTM_CMD_STARTED) {
       LOG_WARN("Security procedure not started! status:%s",
-               hci_error_code_text(status).c_str());
-      btm_sec_dev_rec_cback_event(p_dev_rec, status, false);
+               btm_status_text(btm_status).c_str());
+      btm_sec_dev_rec_cback_event(p_dev_rec, btm_status, false);
     }
   }
 

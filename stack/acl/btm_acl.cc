@@ -320,7 +320,7 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
 
   if (status != HCI_SUCCESS) {
     LOG_WARN("Peer SCA Command complete failed:%s",
-             hci_error_code_text(status).c_str());
+             hci_error_code_text(static_cast<tHCI_STATUS>(status)).c_str());
     return;
   }
 
@@ -920,7 +920,7 @@ void btm_read_remote_features_complete_raw(uint8_t* p) {
 
   if (status != HCI_SUCCESS) {
     LOG_WARN("Uanble to read remote features status:%s",
-             hci_error_code_text(status).c_str());
+             hci_error_code_text(static_cast<tHCI_STATUS>(status)).c_str());
     return;
   }
 
@@ -1841,7 +1841,8 @@ void btm_read_tx_power_complete(uint8_t* p, bool is_ble) {
       }
       LOG_DEBUG("Transmit power complete: tx_power:%d hci status:%s",
                 result.tx_power,
-                hci_error_code_text(result.hci_status).c_str());
+                hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status))
+                    .c_str());
     } else {
       result.status = BTM_ERR_PROCESSING;
     }
@@ -1895,7 +1896,8 @@ void btm_read_rssi_complete(uint8_t* p) {
 
       STREAM_TO_UINT8(result.rssi, p);
       LOG_DEBUG("Read rrsi complete rssi:%hhd hci status:%s", result.rssi,
-                hci_error_code_text(result.hci_status).c_str());
+                hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status))
+                    .c_str());
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
@@ -2018,7 +2020,8 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
       LOG_DEBUG(
           "Read automatic flush timeout complete timeout:%hu hci_status:%s",
           result.automatic_flush_timeout,
-          hci_error_code_text(result.hci_status).c_str());
+          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status))
+              .c_str());
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
@@ -2074,7 +2077,8 @@ void btm_read_link_quality_complete(uint8_t* p) {
       STREAM_TO_UINT8(result.link_quality, p);
       LOG_DEBUG("BTM Link Quality Complete: Link Quality %d, hci status:%s",
                 result.link_quality,
-                hci_error_code_text(result.hci_status).c_str());
+                hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status))
+                    .c_str());
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
@@ -2721,7 +2725,7 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
 }
 
 void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
-                          tHCI_STATUS reason) {
+                          tHCI_REASON reason) {
   if (status != HCI_SUCCESS) {
     LOG_WARN("Received disconnect with error:%s",
              hci_error_code_text(status).c_str());
