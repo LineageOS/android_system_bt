@@ -3569,10 +3569,12 @@ void bta_dm_ble_observe(bool start, uint8_t duration,
 }
 
 /** This function set the maximum transmission packet size */
-void bta_dm_ble_set_data_length(const RawAddress& bd_addr,
-                                uint16_t tx_data_length) {
-  if (BTM_SetBleDataLength(bd_addr, tx_data_length) != BTM_SUCCESS) {
-    LOG_INFO("Unable to set ble data length:%hu", tx_data_length);
+void bta_dm_ble_set_data_length(const RawAddress& bd_addr) {
+  const controller_t* controller = controller_get_interface();
+  uint16_t max_len = controller->get_ble_maximum_tx_data_length();
+
+  if (BTM_SetBleDataLength(bd_addr, max_len) != BTM_SUCCESS) {
+    LOG_INFO("Unable to set ble data length:%hu", max_len);
   }
 }
 

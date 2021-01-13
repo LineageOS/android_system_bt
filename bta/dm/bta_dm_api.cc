@@ -536,10 +536,9 @@ void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback) {
 }
 
 /** This function is to set maximum LE data packet size */
-void BTA_DmBleSetDataLength(const RawAddress& remote_device,
-                            uint16_t tx_data_length) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ble_set_data_length,
-                                          remote_device, tx_data_length));
+void BTA_DmBleRequestMaxTxDataLength(const RawAddress& remote_device) {
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(bta_dm_ble_set_data_length, remote_device));
 }
 
 /*******************************************************************************
