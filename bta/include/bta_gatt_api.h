@@ -463,8 +463,7 @@ extern void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  *
  ******************************************************************************/
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                           bool is_direct, tBT_TRANSPORT transport,
-                           bool opportunistic);
+                           bool is_direct, bool opportunistic);
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                            bool is_direct, tBT_TRANSPORT transport,
                            bool opportunistic, uint8_t initiating_phys);
