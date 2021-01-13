@@ -90,9 +90,7 @@ static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len);
 static void btu_ble_proc_ltk_req(uint8_t* p);
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p);
 static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len);
-#if (BLE_LLT_INCLUDED == TRUE)
 static void btu_ble_rc_param_req_evt(uint8_t* p);
-#endif
 
 /**
  * Log HCI event metrics that are not handled in special functions
@@ -400,11 +398,9 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
         case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:
           btm_ble_conn_complete(p, hci_evt_len, true);
           break;
-#if (BLE_LLT_INCLUDED == TRUE)
         case HCI_BLE_RC_PARAM_REQ_EVT:
           btu_ble_rc_param_req_evt(p);
           break;
-#endif
         case HCI_BLE_DATA_LENGTH_CHANGE_EVT:
           btu_ble_data_length_change_evt(p, hci_evt_len);
           break;
@@ -1761,7 +1757,6 @@ static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
 /**********************************************
  * End of BLE Events Handler
  **********************************************/
-#if (BLE_LLT_INCLUDED == TRUE)
 static void btu_ble_rc_param_req_evt(uint8_t* p) {
   uint16_t handle;
   uint16_t int_min, int_max, latency, timeout;
@@ -1775,4 +1770,3 @@ static void btu_ble_rc_param_req_evt(uint8_t* p) {
   l2cble_process_rc_param_request_evt(handle, int_min, int_max, latency,
                                       timeout);
 }
-#endif /* BLE_LLT_INCLUDED */

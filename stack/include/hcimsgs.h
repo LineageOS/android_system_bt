@@ -615,8 +615,6 @@ extern void btsnd_hcic_ble_transmitter_test(uint8_t tx_freq,
                                             uint8_t payload);
 extern void btsnd_hcic_ble_test_end(void);
 
-#if (BLE_LLT_INCLUDED == TRUE)
-
 extern void btsnd_hcic_ble_rc_param_req_reply(
     uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
     uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
@@ -624,8 +622,6 @@ extern void btsnd_hcic_ble_rc_param_req_reply(
 
 extern void btsnd_hcic_ble_rc_param_req_neg_reply(uint16_t handle,
                                                   uint8_t reason);
-
-#endif /* BLE_LLT_INCLUDED */
 
 extern void btsnd_hcic_ble_set_data_length(uint16_t conn_handle,
                                            uint16_t tx_octets,

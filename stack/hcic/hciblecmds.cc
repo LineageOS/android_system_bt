@@ -570,8 +570,6 @@ void btsnd_hcic_ble_read_host_supported(void) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-#if (BLE_LLT_INCLUDED == TRUE)
-
 void btsnd_hcic_ble_rc_param_req_reply(uint16_t handle, uint16_t conn_int_min,
                                        uint16_t conn_int_max,
                                        uint16_t conn_latency,
@@ -613,7 +611,6 @@ void btsnd_hcic_ble_rc_param_req_neg_reply(uint16_t handle, uint8_t reason) {
 
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
-#endif
 
 void btsnd_hcic_ble_add_device_resolving_list(uint8_t addr_type_peer,
                                               const RawAddress& bda_peer,
