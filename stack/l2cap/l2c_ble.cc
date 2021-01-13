@@ -124,8 +124,7 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
  ******************************************************************************/
 bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    // TODO(hsz): Implement me
-    return true;
+    return bluetooth::shim::L2CA_EnableUpdateBleConnParams(rem_bda, enable);
   }
 
   if (stack_config_get_interface()->get_pts_conn_updates_disabled())
