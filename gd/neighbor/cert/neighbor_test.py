@@ -34,8 +34,7 @@ class NeighborTest(GdBaseTestClass):
     def setup_test(self):
         super().setup_test()
         self.cert_hci = PyHci(self.cert, acl_streaming=True)
-        self.cert_hci.send_command_with_complete(
-            hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hci.send_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
         self.cert_name = b'Im_A_Cert'
         self.cert_address = self.cert_hci.read_own_address()
         self.cert_name += b'@' + self.cert_address.encode('utf8')
@@ -49,7 +48,7 @@ class NeighborTest(GdBaseTestClass):
         padded_name = self.cert_name
         while len(padded_name) < 248:
             padded_name = padded_name + b'\0'
-        self.cert_hci.send_command_with_complete(hci_packets.WriteLocalNameBuilder(padded_name))
+        self.cert_hci.send_command(hci_packets.WriteLocalNameBuilder(padded_name))
 
         assertThat(self.cert_hci.get_event_stream()).emits(HciMatchers.CommandComplete(OpCode.WRITE_LOCAL_NAME))
 
@@ -60,8 +59,7 @@ class NeighborTest(GdBaseTestClass):
             length_1_28s=3,
             max_results=0)
         session = self.dut_neighbor.set_inquiry_mode(inquiry_msg)
-        self.cert_hci.send_command_with_complete(
-            hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hci.send_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
         assertThat(session).emits(NeighborMatchers.InquiryResult(self.cert_address), timeout=timedelta(seconds=10))
 
     def test_inquiry_rssi_from_dut(self):
@@ -71,8 +69,7 @@ class NeighborTest(GdBaseTestClass):
             length_1_28s=6,
             max_results=0)
         session = self.dut_neighbor.set_inquiry_mode(inquiry_msg)
-        self.cert_hci.send_command_with_complete(
-            hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hci.send_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
         assertThat(session).emits(
             NeighborMatchers.InquiryResultwithRssi(self.cert_address), timeout=timedelta(seconds=10))
 
@@ -83,7 +80,7 @@ class NeighborTest(GdBaseTestClass):
         gap_name.data = list(bytes(self.cert_name))
         gap_data = list([gap_name])
 
-        self.cert_hci.send_command_with_complete(
+        self.cert_hci.send_command(
             hci_packets.WriteExtendedInquiryResponseBuilder(hci_packets.FecRequired.NOT_REQUIRED, gap_data))
         inquiry_msg = neighbor_facade.InquiryMsg(
             inquiry_mode=neighbor_facade.DiscoverabilityMode.GENERAL,
@@ -91,8 +88,7 @@ class NeighborTest(GdBaseTestClass):
             length_1_28s=8,
             max_results=0)
         session = self.dut_neighbor.set_inquiry_mode(inquiry_msg)
-        self.cert_hci.send_command_with_complete(
-            hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_hci.send_command(hci_packets.WriteScanEnableBuilder(hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
         assertThat(session).emits(
             NeighborMatchers.ExtendedInquiryResult(self.cert_address), timeout=timedelta(seconds=10))
 

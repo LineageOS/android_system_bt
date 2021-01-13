@@ -78,9 +78,9 @@ class CertSecurity(PySecurity):
 
     def _enqueue_hci_command(self, command, expect_complete):
         if (expect_complete):
-            self._hci.send_command_with_complete(command)
+            self._hci.send_command(command)
         else:
-            self._hci.send_command_with_status(command)
+            self._hci.send_command(command)
 
     def __init__(self, device):
         """

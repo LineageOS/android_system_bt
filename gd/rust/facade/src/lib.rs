@@ -3,7 +3,7 @@
 use bt_facade_proto::rootservice::*;
 use bt_facade_proto::rootservice_grpc::{create_root_facade, RootFacade};
 use bt_hal::facade::HciHalFacadeService;
-use bt_hci::facade::HciLayerFacadeService;
+use bt_hci::facade::HciFacadeService;
 use bt_main::Stack;
 use futures::executor::block_on;
 use grpcio::*;
@@ -80,7 +80,7 @@ impl FacadeServer {
                 services.push(stack.get_grpc::<HciHalFacadeService>().await);
             }
             BluetoothModule::HCI => {
-                services.push(stack.get_grpc::<HciLayerFacadeService>().await);
+                services.push(stack.get_grpc::<HciFacadeService>().await);
             }
             _ => unimplemented!(),
         }
