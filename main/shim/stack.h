@@ -56,6 +56,8 @@ class Stack {
   Btm* GetBtm();
   os::Handler* GetHandler();
 
+  ::rust::Box<rust::Hci>* GetRustHci() { return rust_hci_; }
+
   DISALLOW_COPY_AND_ASSIGN(Stack);
 
  private:
@@ -66,7 +68,8 @@ class Stack {
   os::Handler* stack_handler_ = nullptr;
   legacy::Acl* acl_ = nullptr;
   Btm* btm_ = nullptr;
-  ::rust::Box<rust::stack::Stack>* rust_stack_ = nullptr;
+  ::rust::Box<rust::Stack>* rust_stack_ = nullptr;
+  ::rust::Box<rust::Hci>* rust_hci_ = nullptr;
 
   void Start(ModuleList* modules);
 };

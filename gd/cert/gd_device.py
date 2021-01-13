@@ -231,7 +231,7 @@ class GdDeviceBase(ABC):
         self.rootservice = facade_rootservice_pb2_grpc.RootFacadeStub(self.grpc_root_server_channel)
         self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
         self.controller_read_only_property = facade_rootservice_pb2_grpc.ReadOnlyPropertyStub(self.grpc_channel)
-        self.hci = hci_facade_pb2_grpc.HciLayerFacadeStub(self.grpc_channel)
+        self.hci = hci_facade_pb2_grpc.HciFacadeStub(self.grpc_channel)
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(self.grpc_channel)
         self.l2cap_le = l2cap_le_facade_pb2_grpc.L2capLeModuleFacadeStub(self.grpc_channel)
         self.hci_acl_manager = acl_manager_facade_pb2_grpc.AclManagerFacadeStub(self.grpc_channel)

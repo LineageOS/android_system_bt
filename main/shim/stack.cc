@@ -46,7 +46,6 @@
 #include "main/shim/le_scanning_manager.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
-#include "src/stack.rs.h"
 
 namespace bluetooth {
 namespace shim {
@@ -71,9 +70,13 @@ void Stack::StartIdleMode() {
 void Stack::StartEverything() {
   if (common::init_flags::gd_rust_is_enabled()) {
     if (rust_stack_ == nullptr) {
-      rust_stack_ = new ::rust::Box<rust::stack::Stack>(rust::stack::create());
+      rust_stack_ = new ::rust::Box<rust::Stack>(rust::stack_create());
     }
-    rust::stack::start(**rust_stack_);
+    rust::stack_start(**rust_stack_);
+
+    if (common::init_flags::gd_hci_is_enabled()) {
+      rust_hci_ = new ::rust::Box<rust::Hci>(rust::get_hci(**rust_stack_));
+    }
     return;
   }
 
@@ -163,7 +166,7 @@ void Stack::Start(ModuleList* modules) {
 void Stack::Stop() {
   if (common::init_flags::gd_rust_is_enabled()) {
     if (rust_stack_ != nullptr) {
-      rust::stack::stop(**rust_stack_);
+      rust::stack_stop(**rust_stack_);
     }
     return;
   }

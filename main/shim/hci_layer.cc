@@ -30,6 +30,7 @@
 #include "hci/le_acl_connection_interface.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/shim.h"
+#include "main/shim/stack.h"
 #include "osi/include/allocator.h"
 #include "osi/include/future.h"
 #include "packet/raw_builder.h"
@@ -53,58 +54,6 @@ static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 static const packet_fragmenter_t* packet_fragmenter;
 
 namespace {
-bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
-  switch (op_code) {
-    case bluetooth::hci::OpCode::INQUIRY:
-    case bluetooth::hci::OpCode::CREATE_CONNECTION:
-    case bluetooth::hci::OpCode::DISCONNECT:
-    case bluetooth::hci::OpCode::ACCEPT_CONNECTION_REQUEST:
-    case bluetooth::hci::OpCode::REJECT_CONNECTION_REQUEST:
-    case bluetooth::hci::OpCode::CHANGE_CONNECTION_PACKET_TYPE:
-    case bluetooth::hci::OpCode::AUTHENTICATION_REQUESTED:
-    case bluetooth::hci::OpCode::SET_CONNECTION_ENCRYPTION:
-    case bluetooth::hci::OpCode::CHANGE_CONNECTION_LINK_KEY:
-    case bluetooth::hci::OpCode::CENTRAL_LINK_KEY:
-    case bluetooth::hci::OpCode::REMOTE_NAME_REQUEST:
-    case bluetooth::hci::OpCode::READ_REMOTE_SUPPORTED_FEATURES:
-    case bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES:
-    case bluetooth::hci::OpCode::READ_REMOTE_VERSION_INFORMATION:
-    case bluetooth::hci::OpCode::READ_CLOCK_OFFSET:
-    case bluetooth::hci::OpCode::SETUP_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::ACCEPT_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::REJECT_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION:
-    case bluetooth::hci::OpCode::HOLD_MODE:
-    case bluetooth::hci::OpCode::SNIFF_MODE:
-    case bluetooth::hci::OpCode::EXIT_SNIFF_MODE:
-    case bluetooth::hci::OpCode::QOS_SETUP:
-    case bluetooth::hci::OpCode::SWITCH_ROLE:
-    case bluetooth::hci::OpCode::FLOW_SPECIFICATION:
-    case bluetooth::hci::OpCode::REFRESH_ENCRYPTION_KEY:
-    case bluetooth::hci::OpCode::ENHANCED_FLUSH:
-    case bluetooth::hci::OpCode::LE_CREATE_CONNECTION:
-    case bluetooth::hci::OpCode::LE_CONNECTION_UPDATE:
-    case bluetooth::hci::OpCode::LE_READ_REMOTE_FEATURES:
-    case bluetooth::hci::OpCode::LE_START_ENCRYPTION:
-    case bluetooth::hci::OpCode::LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND:
-    case bluetooth::hci::OpCode::LE_GENERATE_DHKEY_COMMAND:
-    case bluetooth::hci::OpCode::LE_SET_PHY:
-    case bluetooth::hci::OpCode::LE_EXTENDED_CREATE_CONNECTION:
-    case bluetooth::hci::OpCode::LE_PERIODIC_ADVERTISING_CREATE_SYNC:
-    case bluetooth::hci::OpCode::LE_ACCEPT_CIS_REQUEST:
-    case bluetooth::hci::OpCode::LE_CREATE_BIG:
-    case bluetooth::hci::OpCode::LE_TERMINATE_BIG:
-    case bluetooth::hci::OpCode::LE_BIG_CREATE_SYNC:
-    case bluetooth::hci::OpCode::LE_REQUEST_PEER_SCA:
-    case bluetooth::hci::OpCode::LE_READ_REMOTE_TRANSMIT_POWER_LEVEL:
-
-      return true;
-    default:
-      return false;
-  }
-}
-
 bool is_valid_event_code(uint8_t event_code_raw) {
   auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
   switch (event_code) {
@@ -435,7 +384,7 @@ static void transmit_command(BT_HDR* command,
 
   LOG_DEBUG("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
 
-  if (IsCommandStatusOpcode(op_code)) {
+  if (bluetooth::hci::Checker::IsCommandStatusOpcode(op_code)) {
     auto command_unique = std::make_unique<OsiObject>(command);
     bluetooth::shim::GetHciLayer()->EnqueueCommand(
         std::move(packet), bluetooth::shim::GetGdShimHandler()->BindOnce(
@@ -588,23 +537,35 @@ static void transmit_command(BT_HDR* command,
 }
 
 static void transmit_fragment(uint8_t* stream, size_t length) {
-  bluetooth::shim::rust::hci_send_acl(::rust::Slice(stream, length));
+  bluetooth::shim::rust::hci_send_acl(
+      **bluetooth::shim::Stack::Stack::GetInstance()->GetRustHci(),
+      ::rust::Slice(stream, length));
 }
 
 static void register_event(bluetooth::hci::EventCode event_code) {
   bluetooth::shim::rust::hci_register_event(
-      static_cast<uint8_t>(event_code),
-      std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
+      static_cast<uint8_t>(event_code));
 }
 
 static void register_le_event(bluetooth::hci::SubeventCode subevent_code) {
   bluetooth::shim::rust::hci_register_le_event(
-      static_cast<uint8_t>(subevent_code),
+      **bluetooth::shim::Stack::Stack::GetInstance()->GetRustHci(),
+      static_cast<uint8_t>(subevent_code));
+}
+
+static void hci_on_reset_complete() {
+  bluetooth::shim::rust::hci_set_evt_callback(
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
+      std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
+  bluetooth::shim::rust::hci_set_le_evt_callback(
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
       std::make_unique<u8SliceCallback>(Bind(rust::on_event)));
 }
 
 static void register_for_acl() {
   bluetooth::shim::rust::hci_set_acl_callback(
+      **bluetooth::shim::Stack::GetInstance()->GetRustHci(),
       std::make_unique<u8SliceCallback>(Bind(rust::on_acl)));
 }
 
@@ -708,6 +669,10 @@ const hci_t* bluetooth::shim::hci_layer_get_interface() {
 
 void bluetooth::shim::hci_on_reset_complete() {
   ASSERT(send_data_upwards);
+  if (bluetooth::common::init_flags::gd_rust_is_enabled()) {
+    ::rust::hci_on_reset_complete();
+  }
+
   for (uint8_t event_code_raw = 0; event_code_raw < 0xFF; event_code_raw++) {
     if (!is_valid_event_code(event_code_raw)) {
       continue;
