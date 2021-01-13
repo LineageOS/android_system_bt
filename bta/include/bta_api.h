@@ -1096,8 +1096,7 @@ extern void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmBleSetDataLength(const RawAddress& remote_device,
-                                   uint16_t tx_data_length);
+extern void BTA_DmBleRequestMaxTxDataLength(const RawAddress& remote_device);
 
 /*******************************************************************************
  *
