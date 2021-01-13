@@ -759,19 +759,6 @@ extern bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
 extern bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
                                      uint16_t fixed_cid, uint16_t idle_tout);
 
-/*******************************************************************************
- *
- *  Function        L2CA_CancelBleConnectReq
- *
- *  Description     Cancel a pending connection attempt to a BLE device.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if connection was cancelled
- *
- ******************************************************************************/
-extern bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda);
-
 extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda,
                                      uint16_t min_int, uint16_t max_int,
                                      uint16_t latency, uint16_t timeout,
