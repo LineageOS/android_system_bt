@@ -75,6 +75,11 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 tGATT_STATUS attp_send_sr_msg(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_msg) {
   return GATT_SUCCESS;
 }
+
+tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr, uint16_t length) {
+  return BTM_SUCCESS;
+}
+
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr) { return 0; }
 bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
                                      uint8_t* p_sec_flags,
