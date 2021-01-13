@@ -1359,7 +1359,7 @@ void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
   BTM_BleSetPrefConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
                            timeout);
   L2CA_UpdateBleConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
-                           timeout);
+                           timeout, 0, 0);
 }
 
 /*******************************************************************************

@@ -968,16 +968,19 @@ uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda) {
   return channel->second->GetLinkOptions()->GetHandle();
 }
 
-void L2CA_LeConnectionUpdate(const RawAddress& rem_bda) {
-  auto* helper = &le_fixed_channel_helper_.find(4)->second;
+void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
+                             uint16_t max_int, uint16_t latency,
+                             uint16_t timeout, uint16_t min_ce_len,
+                             uint16_t max_ce_len) {
+  auto* helper = &le_fixed_channel_helper_.find(kAttCid)->second;
   auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
   auto channel = helper->channels_.find(remote);
   if (channel == helper->channels_.end() || channel->second == nullptr) {
     LOG(ERROR) << "Channel is not open";
   }
 
-  channel->second->GetLinkOptions()->UpdateConnectionParameter(0x24, 0x24, 0,
-                                                               0x01f4, 0, 0);
+  channel->second->GetLinkOptions()->UpdateConnectionParameter(
+      min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
 }
 
 /**
