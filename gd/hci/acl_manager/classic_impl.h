@@ -407,13 +407,14 @@ struct classic_impl : public security::ISecurityManagerListener {
     if (!mode_change_view.IsValid()) {
       LOG_ERROR("Received on_mode_change with invalid packet");
       return;
-    } else if (mode_change_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = mode_change_view.GetStatus();
+    }
+    auto status = mode_change_view.GetStatus();
+    uint16_t handle = mode_change_view.GetConnectionHandle();
+    if (status != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_mode_change with error code %s", error_code.c_str());
+      LOG_ERROR("Received on_mode_change on handle 0x0%04hx with error code %s", handle, error_code.c_str());
       return;
     }
-    uint16_t handle = mode_change_view.GetConnectionHandle();
     auto callbacks = get_callbacks(handle);
     if (callbacks == nullptr) {
       LOG_WARN("Unknown connection handle 0x%04hx", handle);
