@@ -130,6 +130,9 @@ cc_test {
     ],
 
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     target: {
         // This includes Binder related tests that can only be run
         // on target.
