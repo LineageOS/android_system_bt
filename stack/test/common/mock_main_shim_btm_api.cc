@@ -179,11 +179,6 @@ tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
   return 0;
 }
-tBTM_STATUS bluetooth::shim::BTM_SetBleDataLength(const RawAddress& bd_addr,
-                                                  uint16_t tx_pdu_length) {
-  mock_function_count_map[__func__]++;
-  return 0;
-}
 tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
                                                    uint16_t window,
                                                    uint16_t interval) {

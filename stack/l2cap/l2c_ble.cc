@@ -1353,41 +1353,6 @@ void l2cble_process_data_length_change_event(uint16_t handle,
 
 /*******************************************************************************
  *
- * Function         l2cble_set_fixed_channel_tx_data_length
- *
- * Description      This function update max fixed channel tx data length if
- *                  applicable
- *
- * Returns          void
- *
- ******************************************************************************/
-void l2cble_set_fixed_channel_tx_data_length(const RawAddress& remote_bda,
-                                             uint16_t fix_cid,
-                                             uint16_t tx_mtu) {
-  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(remote_bda, BT_TRANSPORT_LE);
-  uint16_t cid = fix_cid - L2CAP_FIRST_FIXED_CHNL;
-
-  L2CAP_TRACE_DEBUG("%s TX MTU = %d", __func__, tx_mtu);
-
-  if (!controller_get_interface()->supports_ble_packet_extension()) {
-    L2CAP_TRACE_WARNING("%s, request not supported", __func__);
-    return;
-  }
-
-  /* See if we have a link control block for the connection */
-  if (p_lcb == NULL) return;
-
-  if (p_lcb->p_fixed_ccbs[cid] != NULL) {
-    if (tx_mtu > BTM_BLE_DATA_SIZE_MAX) tx_mtu = BTM_BLE_DATA_SIZE_MAX;
-
-    p_lcb->p_fixed_ccbs[cid]->tx_data_len = tx_mtu;
-  }
-
-  l2cble_update_data_length(p_lcb);
-}
-
-/*******************************************************************************
- *
  * Function         l2cble_credit_based_conn_req
  *
  * Description      This function sends LE Credit Based Connection Request for
@@ -1635,11 +1600,6 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
                       __func__, *max_interval, phone_min_interval);
     *max_interval = phone_min_interval;
   }
-}
-
-void L2CA_SetLeFixedChannelTxDataLength(const RawAddress& remote_bda,
-                                        uint16_t fix_cid, uint16_t tx_mtu) {
-  l2cble_set_fixed_channel_tx_data_length(remote_bda, fix_cid, tx_mtu);
 }
 
 void l2cble_use_preferred_conn_params(const RawAddress& bda) {
