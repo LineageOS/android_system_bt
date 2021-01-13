@@ -250,28 +250,25 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
     return true;
   }
 
-  bool ret = true;
   if (p_tcb->att_lcid == L2CAP_ATT_CID) {
     if (ch_state == GATT_CH_OPEN) {
-      /* only LCB exist between remote device and local */
-      ret = L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_tcb->peer_bda);
+      L2CA_RemoveFixedChnl(L2CAP_ATT_CID, p_tcb->peer_bda);
+      gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
     } else {
-      L2CA_CancelBleConnectReq(p_tcb->peer_bda);
+      connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP,
+                                                p_tcb->peer_bda);
       gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_LOCAL_HOST,
                              p_tcb->transport);
-      return true;
     }
-    gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
   } else {
     if ((ch_state == GATT_CH_OPEN) || (ch_state == GATT_CH_CFG)) {
       gatt_l2cif_disconnect(p_tcb->att_lcid);
-      return true;
     } else {
       VLOG(1) << __func__ << " gatt_disconnect channel not opened";
     }
   }
 
-  return ret;
+  return true;
 }
 
 /*******************************************************************************
