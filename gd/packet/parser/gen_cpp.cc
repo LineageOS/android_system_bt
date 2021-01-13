@@ -206,6 +206,22 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
     out_file << "\n\n";
   }
 
+  if (input_filename == "hci_packets") {
+    out_file << "class Checker { public: static bool IsCommandStatusOpcode(OpCode op_code) {";
+    out_file << "switch (op_code) {";
+    for (const auto& packet_def : decls.packet_defs_queue_) {
+      auto packet = packet_def.second;
+      auto constraint = packet->parent_constraints_.find("command_op_code");
+      if (constraint == packet->parent_constraints_.end()) {
+        continue;
+      }
+      if (packet->HasAncestorNamed("CommandStatus")) {
+        out_file << "case " << std::get<std::string>(constraint->second) << ":";
+      }
+    }
+    out_file << "return true; default: return false; }}};";
+  }
+
   generate_namespace_close(namespace_list, out_file);
 
   out_file.close();

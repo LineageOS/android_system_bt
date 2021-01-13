@@ -79,4 +79,9 @@ impl Stack {
         let rt = self.rt.clone();
         rt.block_on(self.stop());
     }
+
+    /// Get a clone of the underlying runtime for this stack
+    pub fn get_runtime(&self) -> Arc<Runtime> {
+        self.rt.clone()
+    }
 }

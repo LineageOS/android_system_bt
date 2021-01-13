@@ -29,6 +29,9 @@ rust_ffi_static {
         "libcxx",
         "libtokio",
         "libbt_main",
+        "libbt_packets",
+        "libfutures",
+        "libnum_traits",
     ],
     static_libs: [
         "libbt_callbacks_cxx",
