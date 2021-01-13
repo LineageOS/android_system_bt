@@ -41,7 +41,8 @@ class Main : public HeadlessTest<int> {
         "dumpsys",
         std::make_unique<bluetooth::test::headless::Dumpsys>(options));
     test_nodes_.emplace(
-        "mode", std::make_unique<bluetooth::test::headless::Mode>(options));
+        "connect",
+        std::make_unique<bluetooth::test::headless::Connect>(options));
     test_nodes_.emplace(
         "nop", std::make_unique<bluetooth::test::headless::Nop>(options));
     test_nodes_.emplace(

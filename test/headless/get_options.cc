@@ -43,6 +43,8 @@ constexpr struct option long_options[] = {
     {"flags", required_argument, 0, 0},   // kOptionFlags
     {0, 0, 0, 0}};
 
+const char* kShortArgs = "d:l:u:";
+
 }  // namespace
 
 void bluetooth::test::headless::GetOpt::Usage() const {
@@ -75,6 +77,17 @@ void bluetooth::test::headless::GetOpt::ParseValue(
     p++;
   }
   if (pp != p) string_list.push_back(std::string(pp));
+}
+
+std::vector<std::string> bluetooth::test::headless::GetOpt::Split(
+    std::string s) {
+  std::stringstream ss(s);
+  std::vector<std::string> values;
+  std::string item;
+  while (std::getline(ss, item, '=')) {
+    values.push_back(item);
+  }
+  return values;
 }
 
 void bluetooth::test::headless::GetOpt::ProcessOption(int option_index,
@@ -147,7 +160,8 @@ bluetooth::test::headless::GetOpt::GetOpt(int argc, char** argv)
     : name_(argv[0]) {
   while (1) {
     int option_index = 0;
-    int c = getopt_long_only(argc, argv, "d:l:u:", long_options, &option_index);
+    int c =
+        getopt_long_only(argc, argv, kShortArgs, long_options, &option_index);
     if (c == -1) break;
 
     switch (c) {

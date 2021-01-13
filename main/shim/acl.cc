@@ -42,10 +42,12 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "main/shim/stack.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_acl_interface.h"
+#include "stack/include/btm_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/l2cap/l2c_int.h"
@@ -62,11 +64,103 @@ namespace {
 using HciHandle = uint16_t;
 using PageNumber = uint8_t;
 
+using CreationTime = std::chrono::time_point<std::chrono::system_clock>;
+using TeardownTime = std::chrono::time_point<std::chrono::system_clock>;
+
 constexpr PageNumber kRemoteExtendedFeaturesPageZero = 0;
 constexpr char kBtmLogTag[] = "ACL";
 
 using SendDataUpwards = void (*const)(BT_HDR*);
 using OnDisconnect = std::function<void(HciHandle, hci::ErrorCode reason)>;
+
+constexpr char kConnectionDescriptorTimeFormat[] = "%Y-%m-%d %H:%M:%S";
+
+struct ConnectionDescriptor {
+  CreationTime creation_time_;
+  TeardownTime teardown_time_;
+  uint16_t handle_;
+  bool is_locally_initiated_;
+  hci::ErrorCode disconnect_reason_;
+  ConnectionDescriptor(CreationTime creation_time, TeardownTime teardown_time,
+                       uint16_t handle, bool is_locally_initiated,
+                       hci::ErrorCode disconnect_reason)
+      : creation_time_(creation_time),
+        teardown_time_(teardown_time),
+        handle_(handle),
+        is_locally_initiated_(is_locally_initiated),
+        disconnect_reason_(disconnect_reason) {}
+  virtual std::string GetPrivateRemoteAddress() const = 0;
+  virtual ~ConnectionDescriptor() {}
+  std::string ToString() const {
+    return base::StringPrintf(
+        "peer:%s handle:0x%04x is_locally_initiated:%s"
+        " creation_time:%s teardown_time:%s disconnect_reason:%s",
+        GetPrivateRemoteAddress().c_str(), handle_,
+        logbool(is_locally_initiated_).c_str(),
+        bluetooth::common::StringFormatTimeWithMilliseconds(
+            kConnectionDescriptorTimeFormat, creation_time_)
+            .c_str(),
+        bluetooth::common::StringFormatTimeWithMilliseconds(
+            kConnectionDescriptorTimeFormat, teardown_time_)
+            .c_str(),
+        hci::ErrorCodeText(disconnect_reason_).c_str());
+  }
+};
+
+struct ClassicConnectionDescriptor : public ConnectionDescriptor {
+  const hci::Address remote_address_;
+  ClassicConnectionDescriptor(const hci::Address& remote_address,
+                              CreationTime creation_time,
+                              TeardownTime teardown_time, uint16_t handle,
+                              bool is_locally_initiated,
+                              hci::ErrorCode disconnect_reason)
+      : ConnectionDescriptor(creation_time, teardown_time, handle,
+                             is_locally_initiated, disconnect_reason),
+        remote_address_(remote_address) {}
+  virtual std::string GetPrivateRemoteAddress() const {
+    return PRIVATE_ADDRESS(remote_address_);
+  }
+};
+
+struct LeConnectionDescriptor : public ConnectionDescriptor {
+  const hci::AddressWithType remote_address_with_type_;
+  LeConnectionDescriptor(hci::AddressWithType& remote_address_with_type,
+                         CreationTime creation_time, TeardownTime teardown_time,
+                         uint16_t handle, bool is_locally_initiated,
+                         hci::ErrorCode disconnect_reason)
+      : ConnectionDescriptor(creation_time, teardown_time, handle,
+                             is_locally_initiated, disconnect_reason),
+        remote_address_with_type_(remote_address_with_type) {}
+  std::string GetPrivateRemoteAddress() const {
+    return PRIVATE_ADDRESS(remote_address_with_type_);
+  }
+};
+
+template <typename T>
+class FixedQueue {
+ public:
+  explicit FixedQueue(size_t max_size) : max_size_(max_size) {}
+  void Push(T element) {
+    if (queue_.size() == max_size_) {
+      queue_.pop_front();
+    }
+    queue_.push_back(std::move(element));
+  }
+
+  std::vector<std::string> ReadElementsAsString() const {
+    std::vector<std::string> vector;
+    for (auto& entry : queue_) {
+      vector.push_back(entry->ToString());
+    }
+    return vector;
+  }
+
+ private:
+  size_t max_size_{1};
+  std::deque<T> queue_;
+};
+
+constexpr size_t kConnectionHistorySize = 40;
 
 inline uint8_t LowByte(uint16_t val) { return val & 0xff; }
 inline uint8_t HighByte(uint16_t val) { return val >> 8; }
@@ -109,11 +203,13 @@ class ShimAclConnection {
  public:
   ShimAclConnection(const HciHandle handle, SendDataUpwards send_data_upwards,
                     os::Handler* handler,
-                    hci::acl_manager::AclConnection::QueueUpEnd* queue_up_end)
+                    hci::acl_manager::AclConnection::QueueUpEnd* queue_up_end,
+                    CreationTime creation_time)
       : handle_(handle),
         handler_(handler),
         send_data_upwards_(send_data_upwards),
-        queue_up_end_(queue_up_end) {
+        queue_up_end_(queue_up_end),
+        creation_time_(creation_time) {
     queue_up_end_->RegisterDequeue(
         handler_, common::Bind(&ShimAclConnection::data_ready_callback,
                                common::Unretained(this)));
@@ -154,6 +250,10 @@ class ShimAclConnection {
   }
 
   virtual void InitiateDisconnect(hci::DisconnectReason reason) = 0;
+  virtual bool IsLocallyInitiated() const = 0;
+
+  CreationTime GetCreationTime() const { return creation_time_; }
+  uint16_t Handle() const { return handle_; }
 
  protected:
   const uint16_t handle_{kInvalidHciHandle};
@@ -181,6 +281,7 @@ class ShimAclConnection {
   std::queue<std::unique_ptr<bluetooth::packet::RawBuilder>> queue_;
   bool is_enqueue_registered_{false};
   bool is_disconnected_{false};
+  CreationTime creation_time_;
 
   void RegisterEnqueue() {
     ASSERT_LOG(!is_disconnected_,
@@ -203,9 +304,10 @@ class ClassicShimAclConnection
       SendDataUpwards send_data_upwards, OnDisconnect on_disconnect,
       const shim::legacy::acl_classic_link_interface_t& interface,
       os::Handler* handler,
-      std::unique_ptr<hci::acl_manager::ClassicAclConnection> connection)
+      std::unique_ptr<hci::acl_manager::ClassicAclConnection> connection,
+      CreationTime creation_time)
       : ShimAclConnection(connection->GetHandle(), send_data_upwards, handler,
-                          connection->GetAclQueueEnd()),
+                          connection->GetAclQueueEnd(), creation_time),
         on_disconnect_(on_disconnect),
         interface_(interface),
         connection_(std::move(connection)) {}
@@ -378,6 +480,14 @@ class ClassicShimAclConnection
                                        minimum_local_timeout));
   }
 
+  void SetConnectionEncryption(hci::Enable is_encryption_enabled) {
+    ASSERT(connection_->SetConnectionEncryption(is_encryption_enabled));
+  }
+
+  bool IsLocallyInitiated() const override {
+    return connection_->locally_initiated_;
+  }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_classic_link_interface_t interface_;
@@ -392,9 +502,10 @@ class LeShimAclConnection
       SendDataUpwards send_data_upwards, OnDisconnect on_disconnect,
       const shim::legacy::acl_le_link_interface_t& interface,
       os::Handler* handler,
-      std::unique_ptr<hci::acl_manager::LeAclConnection> connection)
+      std::unique_ptr<hci::acl_manager::LeAclConnection> connection,
+      std::chrono::time_point<std::chrono::system_clock> creation_time)
       : ShimAclConnection(connection->GetHandle(), send_data_upwards, handler,
-                          connection->GetAclQueueEnd()),
+                          connection->GetAclQueueEnd(), creation_time),
         on_disconnect_(on_disconnect),
         interface_(interface),
         connection_(std::move(connection)) {}
@@ -429,6 +540,12 @@ class LeShimAclConnection
                         lmp_version, manufacturer_name, sub_version);
   }
 
+  void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {
+    TRY_POSTING_ON_MAIN(interface_.on_phy_update,
+                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        tx_phy, rx_phy);
+  }
+
   void OnDisconnection(hci::ErrorCode reason) {
     Disconnect();
     on_disconnect_(handle_, reason);
@@ -442,6 +559,10 @@ class LeShimAclConnection
     connection_->Disconnect(reason);
   }
 
+  bool IsLocallyInitiated() const override {
+    return connection_->locally_initiated_;
+  }
+
  private:
   OnDisconnect on_disconnect_;
   const shim::legacy::acl_le_link_interface_t interface_;
@@ -453,6 +574,9 @@ struct bluetooth::shim::legacy::Acl::impl {
       handle_to_classic_connection_map_;
   std::map<HciHandle, std::unique_ptr<LeShimAclConnection>>
       handle_to_le_connection_map_;
+
+  FixedQueue<std::unique_ptr<ConnectionDescriptor>> connection_history_ =
+      FixedQueue<std::unique_ptr<ConnectionDescriptor>>(kConnectionHistorySize);
 
   bool IsClassicAcl(HciHandle handle) {
     return handle_to_classic_connection_map_.find(handle) !=
@@ -506,6 +630,30 @@ struct bluetooth::shim::legacy::Acl::impl {
       handle_to_classic_connection_map_[handle]->SniffSubrating(
           maximum_latency, minimum_remote_timeout, minimum_local_timeout);
   }
+
+  void SetConnectionEncryption(HciHandle handle, hci::Enable enable) {
+    if (ClassicConnectionExists(handle))
+      handle_to_classic_connection_map_[handle]->SetConnectionEncryption(
+          enable);
+  }
+
+  void DumpConnectionHistory() const {
+    std::vector<std::string> history =
+        connection_history_.ReadElementsAsString();
+    for (auto& entry : history) {
+      LOG_DEBUG("%s", entry.c_str());
+    }
+  }
+
+#define DUMPSYS_TAG "shim::acl"
+  void DumpConnectionHistory(int fd) const {
+    std::vector<std::string> history =
+        connection_history_.ReadElementsAsString();
+    for (auto& entry : history) {
+      LOG_DUMPSYS(fd, "%s", entry.c_str());
+    }
+  }
+#undef DUMPSYS_TAG
 };
 
 #define DUMPSYS_TAG "shim::legacy::l2cap"
@@ -535,6 +683,8 @@ void DumpsysAcl(int fd) {
   const tACL_CB& acl_cb = btm_cb.acl_cb_;
 
   LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
+
+  bluetooth::shim::Stack::GetInstance()->GetAcl()->DumpConnectionHistory(fd);
 
   for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
     const tACL_CONN& acl_conn = acl_cb.acl_db[i];
@@ -647,6 +797,39 @@ bluetooth::shim::legacy::Acl::Acl(os::Handler* handler,
 bluetooth::shim::legacy::Acl::~Acl() {
   bluetooth::shim::UnregisterDumpsysFunction(static_cast<void*>(this));
   GetController()->UnregisterCompletedMonitorAclPacketsCallback();
+
+  bool dump_connection_history = false;
+
+  if (!pimpl_->handle_to_classic_connection_map_.empty()) {
+    LOG_ERROR("About to destroy classic active ACL");
+    for (auto& connection : pimpl_->handle_to_classic_connection_map_) {
+      LOG_ERROR("  Orphaned classic ACL handle:0x%04x bd_addr:%s created:%s",
+                connection.second->Handle(),
+                PRIVATE_ADDRESS(connection.second->GetRemoteAddress()),
+                bluetooth::common::StringFormatTimeWithMilliseconds(
+                    kConnectionDescriptorTimeFormat,
+                    connection.second->GetCreationTime())
+                    .c_str());
+    }
+    dump_connection_history = true;
+  }
+
+  if (!pimpl_->handle_to_le_connection_map_.empty()) {
+    LOG_ERROR("About to destroy le active ACL");
+    for (auto& connection : pimpl_->handle_to_le_connection_map_) {
+      LOG_ERROR("  Orphaned le ACL handle:0x%04x bd_addr:%s created:%s",
+                connection.second->Handle(),
+                PRIVATE_ADDRESS(connection.second->GetRemoteAddressWithType()),
+                bluetooth::common::StringFormatTimeWithMilliseconds(
+                    kConnectionDescriptorTimeFormat,
+                    connection.second->GetCreationTime())
+                    .c_str());
+    }
+    dump_connection_history = true;
+  }
+  if (dump_connection_history) {
+    pimpl_->DumpConnectionHistory();
+  }
 }
 
 void bluetooth::shim::legacy::Acl::on_incoming_acl_credits(uint16_t handle,
@@ -703,6 +886,13 @@ void bluetooth::shim::legacy::Acl::OnClassicLinkDisconnected(
     HciHandle handle, hci::ErrorCode reason) {
   bluetooth::hci::Address remote_address =
       pimpl_->handle_to_classic_connection_map_[handle]->GetRemoteAddress();
+  CreationTime creation_time =
+      pimpl_->handle_to_classic_connection_map_[handle]->GetCreationTime();
+  bool is_locally_initiated =
+      pimpl_->handle_to_classic_connection_map_[handle]->IsLocallyInitiated();
+
+  TeardownTime teardown_time = std::chrono::system_clock::now();
+
   pimpl_->handle_to_classic_connection_map_.erase(handle);
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_disconnected,
                       ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle,
@@ -713,12 +903,23 @@ void bluetooth::shim::legacy::Acl::OnClassicLinkDisconnected(
   BTM_LogHistory(
       kBtmLogTag, ToRawAddress(remote_address), "Disconnected",
       base::StringPrintf("classic reason:%s", ErrorCodeText(reason).c_str()));
+  pimpl_->connection_history_.Push(
+      std::move(std::make_unique<ClassicConnectionDescriptor>(
+          remote_address, creation_time, teardown_time, handle,
+          is_locally_initiated, reason)));
 }
 
 void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
                                                         hci::ErrorCode reason) {
   hci::AddressWithType remote_address_with_type =
       pimpl_->handle_to_le_connection_map_[handle]->GetRemoteAddressWithType();
+  CreationTime creation_time =
+      pimpl_->handle_to_classic_connection_map_[handle]->GetCreationTime();
+  bool is_locally_initiated =
+      pimpl_->handle_to_classic_connection_map_[handle]->IsLocallyInitiated();
+
+  TeardownTime teardown_time = std::chrono::system_clock::now();
+
   pimpl_->handle_to_le_connection_map_.erase(handle);
   TRY_POSTING_ON_MAIN(acl_interface_.connection.le.on_disconnected,
                       ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle,
@@ -730,6 +931,10 @@ void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
       kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
       "Disconnected",
       base::StringPrintf("le reason:%s", ErrorCodeText(reason).c_str()));
+  pimpl_->connection_history_.Push(
+      std::move(std::make_unique<LeConnectionDescriptor>(
+          remote_address_with_type, creation_time, teardown_time, handle,
+          is_locally_initiated, reason)));
 }
 
 void bluetooth::shim::legacy::Acl::OnConnectSuccess(
@@ -741,12 +946,12 @@ void bluetooth::shim::legacy::Acl::OnConnectSuccess(
   const RawAddress bd_addr = ToRawAddress(remote_address);
 
   pimpl_->handle_to_classic_connection_map_.emplace(
-      handle,
-      std::make_unique<ClassicShimAclConnection>(
-          acl_interface_.on_send_data_upwards,
-          std::bind(&shim::legacy::Acl::OnClassicLinkDisconnected, this,
-                    std::placeholders::_1, std::placeholders::_2),
-          acl_interface_.link.classic, handler_, std::move(connection)));
+      handle, std::make_unique<ClassicShimAclConnection>(
+                  acl_interface_.on_send_data_upwards,
+                  std::bind(&shim::legacy::Acl::OnClassicLinkDisconnected, this,
+                            std::placeholders::_1, std::placeholders::_2),
+                  acl_interface_.link.classic, handler_, std::move(connection),
+                  std::chrono::system_clock::now()));
   pimpl_->handle_to_classic_connection_map_[handle]->RegisterCallbacks();
   pimpl_->handle_to_classic_connection_map_[handle]
       ->ReadRemoteControllerInformation();
@@ -787,7 +992,8 @@ void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
                   acl_interface_.on_send_data_upwards,
                   std::bind(&shim::legacy::Acl::OnLeLinkDisconnected, this,
                             std::placeholders::_1, std::placeholders::_2),
-                  acl_interface_.link.le, handler_, std::move(connection)));
+                  acl_interface_.link.le, handler_, std::move(connection),
+                  std::chrono::system_clock::now()));
   pimpl_->handle_to_le_connection_map_[handle]->RegisterCallbacks();
 
   pimpl_->handle_to_le_connection_map_[handle]
@@ -925,4 +1131,8 @@ bool bluetooth::shim::legacy::Acl::SniffSubrating(
                    maximum_latency, minimum_remote_timeout,
                    minimum_local_timeout);
   return false;
+}
+
+void bluetooth::shim::legacy::Acl::DumpConnectionHistory(int fd) const {
+  pimpl_->DumpConnectionHistory(fd);
 }

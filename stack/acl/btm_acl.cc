@@ -1149,10 +1149,18 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
 
     /* Only send if current role is Central; 2.0 spec requires this */
     if (p->link_role == HCI_ROLE_CENTRAL) {
+      LOG_DEBUG("Setting supervison timeout:%.2fms bd_addr:%s",
+                supervision_timeout_to_seconds(timeout),
+                PRIVATE_ADDRESS(remote_bda));
+
       btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID,
                                        p->hci_handle, timeout);
       return (BTM_CMD_STARTED);
     } else {
+      LOG_WARN(
+          "Role is peripheral so unable to set supervison timeout:%.2fms "
+          "bd_addr:%s",
+          supervision_timeout_to_seconds(timeout), PRIVATE_ADDRESS(remote_bda));
       return (BTM_SUCCESS);
     }
   }
@@ -1317,21 +1325,6 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
 
   /* If here, no BD Addr found */
   return (0xFF);
-}
-
-/*******************************************************************************
- *
- * Function         btm_process_clk_off_comp_evt
- *
- * Description      This function is called when clock offset command completes.
- *
- * Input Parms      hci_handle - connection handle associated with the change
- *                  clock offset
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset) {
 }
 
 /*******************************************************************************
@@ -2431,6 +2424,10 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
 bool BTM_IsBleConnection(uint16_t hci_handle) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     ASSERT_LOG(false, "This should not be invoked from code path");
+  }
+
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_IsLeLink(hci_handle);
   }
 
   const tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);

@@ -52,6 +52,8 @@ class GetOpt {
 
   mutable std::list<std::string> non_options_;
 
+  static std::vector<std::string> Split(std::string);
+
  private:
   void ParseValue(char* optarg, std::list<std::string>& my_list);
   void ProcessOption(int option_index, char* optarg);
