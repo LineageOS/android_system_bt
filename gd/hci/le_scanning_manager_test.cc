@@ -283,7 +283,7 @@ class LeScanningManagerTest : public ::testing::Test {
          int8_t tx_power,
          int8_t rssi,
          uint16_t periodic_advertising_interval,
-         std::vector<GapData> advertising_data),
+         std::vector<uint8_t> advertising_data),
         (override));
     MOCK_METHOD(void, OnTrackAdvFoundLost, (), (override));
     MOCK_METHOD(
@@ -334,7 +334,7 @@ TEST_F(LeScanningManagerTest, start_scan_test) {
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   LeAdvertisingReport report{};
-  report.event_type_ = AdvertisingEventType::ADV_IND;
+  report.event_type_ = AdvertisingEventType::ADV_DIRECT_IND;
   report.address_type_ = AddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<GapData> gap_data{};
@@ -361,7 +361,7 @@ TEST_F(LeAndroidHciScanningManagerTest, start_scan_test) {
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   LeAdvertisingReport report{};
-  report.event_type_ = AdvertisingEventType::ADV_IND;
+  report.event_type_ = AdvertisingEventType::ADV_DIRECT_IND;
   report.address_type_ = AddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<GapData> gap_data{};
@@ -391,7 +391,7 @@ TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
 
   LeExtendedAdvertisingReport report{};
   report.connectable_ = 1;
-  report.scannable_ = 1;
+  report.scannable_ = 0;
   report.address_type_ = DirectAdvertisingAddressType::PUBLIC_DEVICE_ADDRESS;
   Address::FromString("12:34:56:78:9a:bc", report.address_);
   std::vector<GapData> gap_data{};
@@ -402,7 +402,14 @@ TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
   data_item.data_type_ = GapDataType::COMPLETE_LOCAL_NAME;
   data_item.data_ = {'r', 'a', 'n', 'd', 'o', 'm', ' ', 'd', 'e', 'v', 'i', 'c', 'e'};
   gap_data.push_back(data_item);
-  report.advertising_data_ = gap_data;
+  std::vector<uint8_t> advertising_data = {};
+  for (auto data : gap_data) {
+    advertising_data.push_back((uint8_t)data.size() - 1);
+    advertising_data.push_back((uint8_t)data.data_type_);
+    advertising_data.insert(advertising_data.end(), data.data_.begin(), data.data_.end());
+  }
+
+  report.advertising_data_ = advertising_data;
 
   EXPECT_CALL(mock_callbacks_, OnScanResult);
 
