@@ -1053,8 +1053,8 @@ void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t len,
       tcb.payload_size = mtu;
   }
 
-  L2CA_SetLeFixedChannelTxDataLength(tcb.peer_bda, L2CAP_ATT_CID,
-                                     tcb.payload_size);
+  BTM_SetBleDataLength(tcb.peer_bda, tcb.payload_size);
+
   gatt_end_operation(p_clcb, status, NULL);
 }
 /*******************************************************************************
