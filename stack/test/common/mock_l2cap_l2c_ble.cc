@@ -43,10 +43,6 @@ extern std::map<std::string, int> mock_function_count_map;
 #define UNUSED_ATTR
 #endif
 
-bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
-  mock_function_count_map[__func__]++;
-  return false;
-}
 bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
   mock_function_count_map[__func__]++;
   return false;
