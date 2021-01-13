@@ -33,6 +33,12 @@ namespace hci {
 constexpr uint16_t kDefaultLeScanWindow = 4800;
 constexpr uint16_t kDefaultLeScanInterval = 4800;
 
+constexpr uint8_t kScannableBit = 1;
+constexpr uint8_t kDirectedBit = 2;
+constexpr uint8_t kScanResponseBit = 3;
+constexpr uint8_t kLegacyBit = 4;
+constexpr uint8_t kDataStatusBits = 5;
+
 const ModuleFactory LeScanningManager::Factory = ModuleFactory([]() { return new LeScanningManager(); });
 
 enum class ScanApiType {
@@ -44,6 +50,79 @@ enum class ScanApiType {
 struct Scanner {
   Uuid app_uuid;
   bool in_use;
+};
+
+class AdvertisingCache {
+ public:
+  const std::vector<uint8_t>& Set(const AddressWithType& address_with_type, std::vector<uint8_t> data) {
+    auto it = Find(address_with_type);
+    if (it != items.end()) {
+      it->data = std::move(data);
+    }
+
+    if (items.size() > cache_max) {
+      items.pop_back();
+    }
+
+    items.emplace_front(address_with_type, std::move(data));
+    return items.front().data;
+  }
+
+  bool Exist(const AddressWithType& address_with_type) {
+    auto it = Find(address_with_type);
+    if (it == items.end()) {
+      return false;
+    }
+    return true;
+  }
+
+  const std::vector<uint8_t>& Append(const AddressWithType& address_with_type, std::vector<uint8_t> data) {
+    auto it = Find(address_with_type);
+    if (it != items.end()) {
+      it->data.insert(it->data.end(), data.begin(), data.end());
+      return it->data;
+    }
+
+    if (items.size() > cache_max) {
+      items.pop_back();
+    }
+
+    items.emplace_front(address_with_type, std::move(data));
+    return items.front().data;
+  }
+
+  /* Clear data for device |addr_type, addr| */
+  void Clear(AddressWithType address_with_type) {
+    auto it = Find(address_with_type);
+    if (it != items.end()) {
+      items.erase(it);
+    }
+  }
+
+  void ClearAll() {
+    items.clear();
+  }
+
+  struct Item {
+    AddressWithType address_with_type;
+    std::vector<uint8_t> data;
+
+    Item(const AddressWithType& address_with_type, std::vector<uint8_t> data)
+        : address_with_type(address_with_type), data(data) {}
+  };
+
+  std::list<Item>::iterator Find(const AddressWithType& address_with_type) {
+    for (auto it = items.begin(); it != items.end(); it++) {
+      if (it->address_with_type == address_with_type) {
+        return it;
+      }
+    }
+    return items.end();
+  }
+
+  /* we keep maximum 7 devices in the cache */
+  const size_t cache_max = 1000;
+  std::list<Item> items;
 };
 
 struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {
@@ -132,7 +211,6 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
       return;
     }
 
-    // TODO: handle AdvertisingCache for scan response
     for (LeAdvertisingReport report : reports) {
       uint16_t extended_event_type = 0;
       switch (report.event_type_) {
@@ -159,8 +237,15 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
           return;
       }
 
-      scanning_callbacks_->OnScanResult(
-          (uint16_t)report.event_type_,
+      std::vector<uint8_t> advertising_data = {};
+      for (auto gap_data : report.advertising_data_) {
+        advertising_data.push_back((uint8_t)gap_data.size() - 1);
+        advertising_data.push_back((uint8_t)gap_data.data_type_);
+        advertising_data.insert(advertising_data.end(), gap_data.data_.begin(), gap_data.data_.end());
+      }
+
+      process_advertising_package_content(
+          extended_event_type,
           (uint8_t)report.address_type_,
           report.address_,
           (uint8_t)PrimaryPhyType::LE_1M,
@@ -169,7 +254,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
           kTxPowerInformationNotPresent,
           report.rssi_,
           kNotPeriodicAdvertisement,
-          report.advertising_data_);
+          advertising_data);
     }
   }
 
@@ -207,11 +292,11 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
       return;
     }
 
-    // TODO: handle AdvertisingCache for scan response
     for (LeExtendedAdvertisingReport report : reports) {
-      uint16_t event_type = report.connectable_ | (report.scannable_ << 1) | (report.directed_ << 2) |
-                            (report.scan_response_ << 3) | (report.legacy_ << 4) | ((uint16_t)report.data_status_ << 5);
-      scanning_callbacks_->OnScanResult(
+      uint16_t event_type = report.connectable_ | (report.scannable_ << kScannableBit) |
+                            (report.directed_ << kDirectedBit) | (report.scan_response_ << kScanResponseBit) |
+                            (report.legacy_ << kLegacyBit) | ((uint16_t)report.data_status_ << kDataStatusBits);
+      process_advertising_package_content(
           event_type,
           (uint8_t)report.address_type_,
           report.address_,
@@ -223,6 +308,58 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
           report.periodic_advertising_interval_,
           report.advertising_data_);
     }
+  }
+
+  void process_advertising_package_content(
+      uint16_t event_type,
+      uint8_t address_type,
+      Address address,
+      uint8_t primary_phy,
+      uint8_t secondary_phy,
+      uint8_t advertising_sid,
+      int8_t tx_power,
+      int8_t rssi,
+      uint16_t periodic_advertising_interval,
+      std::vector<uint8_t> advertising_data) {
+    bool is_scannable = event_type & (1 << kScannableBit);
+    bool is_scan_response = event_type & (1 << kScanResponseBit);
+    bool is_legacy = event_type & (1 << kLegacyBit);
+    // TODO handle anonymous advertisement (0xFF)
+    AddressWithType address_with_type(address, (AddressType)address_type);
+
+    if (is_legacy && is_scan_response && !advertising_cache_.Exist(address_with_type)) {
+      return;
+    }
+
+    bool is_start = is_legacy && is_scannable && !is_scan_response;
+
+    std::vector<uint8_t> const& adv_data = is_start ? advertising_cache_.Set(address_with_type, advertising_data)
+                                                    : advertising_cache_.Append(address_with_type, advertising_data);
+
+    uint8_t data_status = event_type >> kDataStatusBits;
+    if (data_status == (uint8_t)DataStatus::CONTINUING) {
+      // Waiting for whole data
+      return;
+    }
+
+    if (is_scannable && !is_scan_response) {
+      // Waiting for scan response
+      return;
+    }
+
+    scanning_callbacks_->OnScanResult(
+        event_type,
+        address_type,
+        address,
+        primary_phy,
+        secondary_phy,
+        advertising_sid,
+        tx_power,
+        rssi,
+        periodic_advertising_interval,
+        adv_data);
+
+    advertising_cache_.Clear(address_with_type);
   }
 
   void configure_scan() {
@@ -389,6 +526,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   bool is_scanning_ = false;
   bool scan_on_resume_ = false;
   bool paused_ = false;
+  AdvertisingCache advertising_cache_;
 
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};

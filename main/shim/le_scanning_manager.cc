@@ -142,19 +142,10 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                     uint8_t secondary_phy, uint8_t advertising_sid,
                     int8_t tx_power, int8_t rssi,
                     uint16_t periodic_advertising_interval,
-                    std::vector<bluetooth::hci::GapData> advertising_data) {
+                    std::vector<uint8_t> advertising_data) {
     RawAddress raw_address;
     RawAddress::FromString(address.ToString(), raw_address);
     std::unique_ptr<RawAddress> raw_address_ptr(new RawAddress(raw_address));
-
-    std::vector<uint8_t> adv_data = {};
-    for (auto gap_data : advertising_data) {
-      gap_data.size();
-      adv_data.push_back((uint8_t)gap_data.size() - 1);
-      adv_data.push_back((uint8_t)gap_data.data_type_);
-      adv_data.insert(adv_data.end(), gap_data.data_.begin(),
-                      gap_data.data_.end());
-    }
 
     do_in_jni_thread(
         FROM_HERE,
@@ -162,7 +153,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                        base::Unretained(scanning_callbacks_), event_type,
                        address_type, raw_address_ptr.get(), primary_phy,
                        secondary_phy, advertising_sid, tx_power, rssi,
-                       periodic_advertising_interval, adv_data));
+                       periodic_advertising_interval, advertising_data));
   }
 
   void OnTrackAdvFoundLost() {}
