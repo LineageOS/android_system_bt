@@ -19,11 +19,12 @@
 #include <cstdint>
 
 #include "stack/include/bt_types.h"
+#include "stack/include/hci_error_code.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport);
 void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport);
 void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
-                               uint8_t hci_status);
+                               tHCI_STATUS hci_status);
 void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr);

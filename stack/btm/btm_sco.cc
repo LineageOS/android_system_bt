@@ -799,7 +799,7 @@ void BTM_RemoveSco(const RawAddress& bda) {
  * Returns          true if the link is known about, else false
  *
  ******************************************************************************/
-bool btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
+bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
 
@@ -816,7 +816,7 @@ bool btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
       btm_cb.sco_cb.sco_disc_reason = reason;
       (*p->p_disc_cb)(xx);
       LOG_DEBUG("Disconnected SCO link handle:%hu reason:%s", hci_handle,
-                hci_error_code_text(reason).c_str());
+                hci_reason_code_text(reason).c_str());
       return true;
     }
   }
