@@ -119,11 +119,10 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    bool is_direct, tBT_TRANSPORT transport,
-                    bool opportunistic) {
+                    bool is_direct, bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
-  BTA_GATTC_Open(client_if, remote_bda, is_direct, transport, opportunistic,
-                 phy);
+  BTA_GATTC_Open(client_if, remote_bda, is_direct, BT_TRANSPORT_LE,
+                 opportunistic, phy);
 }
 
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
