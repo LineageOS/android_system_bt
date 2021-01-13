@@ -7,6 +7,8 @@ pub mod error;
 /// HCI layer facade service
 pub mod facade;
 
+pub use bt_hci_custom_types::*;
+
 use bt_common::time::Alarm;
 use bt_hal::HalExports;
 use bt_packets::hci::EventChild::{

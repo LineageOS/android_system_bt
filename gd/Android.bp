@@ -507,6 +507,7 @@ rust_library {
         "libbytes",
         "libnum_traits",
         "libthiserror",
+        "libbt_hci_custom_types",
     ],
 }
 

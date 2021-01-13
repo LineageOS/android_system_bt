@@ -1,6 +1,6 @@
 //! Loads info from the controller at startup
 
-use crate::HciExports;
+use crate::{Address, HciExports};
 use bt_packets::hci::{
     Enable, ErrorCode, LeMaximumDataLength, LeReadBufferSizeV1Builder, LeReadBufferSizeV2Builder,
     LeReadConnectListSizeBuilder, LeReadLocalSupportedFeaturesBuilder,
@@ -8,9 +8,9 @@ use bt_packets::hci::{
     LeReadNumberOfSupportedAdvertisingSetsBuilder, LeReadPeriodicAdvertiserListSizeBuilder,
     LeReadResolvingListSizeBuilder, LeReadSuggestedDefaultDataLengthBuilder,
     LeReadSupportedStatesBuilder, LeSetEventMaskBuilder, LocalVersionInformation, OpCode,
-    OpCodeIndex, ReadBufferSizeBuilder, ReadLocalExtendedFeaturesBuilder, ReadLocalNameBuilder,
-    ReadLocalSupportedCommandsBuilder, ReadLocalVersionInformationBuilder, SetEventMaskBuilder,
-    WriteLeHostSupportBuilder, WriteSimplePairingModeBuilder,
+    OpCodeIndex, ReadBdAddrBuilder, ReadBufferSizeBuilder, ReadLocalExtendedFeaturesBuilder,
+    ReadLocalNameBuilder, ReadLocalSupportedCommandsBuilder, ReadLocalVersionInformationBuilder,
+    SetEventMaskBuilder, WriteLeHostSupportBuilder, WriteSimplePairingModeBuilder,
 };
 use gddi::{module, provides, Stoppable};
 use num_traits::ToPrimitive;
@@ -34,18 +34,12 @@ macro_rules! assert_success {
 
 #[provides]
 async fn provide_controller(mut hci: HciExports) -> ControllerExports {
-    assert_success!(hci.send(LeSetEventMaskBuilder {
-        le_event_mask: 0x0000000000021e7f
-    }));
-    assert_success!(hci.send(SetEventMaskBuilder {
-        event_mask: 0x3dbfffffffffffff
-    }));
-    assert_success!(hci.send(WriteSimplePairingModeBuilder {
-        simple_pairing_mode: Enable::Enabled
-    }));
-    assert_success!(hci.send(WriteLeHostSupportBuilder {
-        le_supported_host: Enable::Enabled
-    }));
+    assert_success!(hci.send(LeSetEventMaskBuilder { le_event_mask: 0x0000000000021e7f }));
+    assert_success!(hci.send(SetEventMaskBuilder { event_mask: 0x3dbfffffffffffff }));
+    assert_success!(
+        hci.send(WriteSimplePairingModeBuilder { simple_pairing_mode: Enable::Enabled })
+    );
+    assert_success!(hci.send(WriteLeHostSupportBuilder { le_supported_host: Enable::Enabled }));
 
     let name = null_terminated_to_string(
         assert_success!(hci.send(ReadLocalNameBuilder {})).get_local_name(),
@@ -143,8 +137,11 @@ async fn provide_controller(mut hci: HciExports) -> ControllerExports {
             0
         };
 
+    let address = assert_success!(hci.send(ReadBdAddrBuilder {})).get_bd_addr();
+
     ControllerExports {
         name,
+        address,
         version_info,
         commands,
         lmp_features,
@@ -186,6 +183,7 @@ async fn read_lmp_features(hci: &mut HciExports) -> Vec<u64> {
 #[derive(Clone, Stoppable)]
 pub struct ControllerExports {
     name: String,
+    address: Address,
     version_info: LocalVersionInformation,
     commands: SupportedCommands,
     lmp_features: Vec<u64>,
