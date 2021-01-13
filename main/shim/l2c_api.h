@@ -394,6 +394,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
 bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
 
 uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda);
+hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
 
 void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
                              uint16_t max_int, uint16_t latency,
