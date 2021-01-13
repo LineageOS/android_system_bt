@@ -56,38 +56,6 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 extern void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
                                     uint16_t latency, uint16_t timeout,
                                     tHCI_STATUS status);
-/*******************************************************************************
- *
- *  Function        L2CA_CancelBleConnectReq
- *
- *  Description     Cancel a pending connection attempt to a BLE device.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if connection was cancelled
- *
- ******************************************************************************/
-bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
-  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
-
-  if (BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
-    if (p_lcb != NULL && p_lcb->link_state == LST_CONNECTING) {
-      L2CAP_TRACE_WARNING("%s - disconnecting the LE link", __func__);
-      L2CA_RemoveFixedChnl(L2CAP_ATT_CID, rem_bda);
-      return (true);
-    }
-  }
-
-  acl_cancel_le_connection(rem_bda);
-
-  /* Do not remove lcb if an LE link is already up as a peripheral */
-  if (p_lcb != NULL && !(p_lcb->IsLinkRolePeripheral() &&
-                         BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE))) {
-    p_lcb->SetDisconnectReason(L2CAP_CONN_CANCEL);
-    l2cu_release_lcb(p_lcb);
-  }
-  return (true);
-}
 
 /*******************************************************************************
  *
