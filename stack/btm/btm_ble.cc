@@ -649,26 +649,8 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
 
 tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
                                  uint16_t tx_pdu_length) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetBleDataLength(bd_addr, tx_pdu_length);
-  }
-  uint16_t tx_time = BTM_BLE_DATA_TX_TIME_MAX_LEGACY;
-
-  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-    LOG_INFO(
-        "Unable to set data length because no le acl link connected to device");
-    return BTM_WRONG_MODE;
-  }
-
   if (!controller_get_interface()->supports_ble_packet_extension()) {
     LOG_INFO("Local controller unable to support le packet extension");
-    return BTM_ILLEGAL_VALUE;
-  }
-
-  uint16_t hci_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
-
-  if (!acl_peer_supports_ble_packet_extension(hci_handle)) {
-    LOG_INFO("Remote device unable to support le packet extension");
     return BTM_ILLEGAL_VALUE;
   }
 
@@ -677,8 +659,28 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
   else if (tx_pdu_length < BTM_BLE_DATA_SIZE_MIN)
     tx_pdu_length = BTM_BLE_DATA_SIZE_MIN;
 
-  if (controller_get_interface()->get_bt_version()->hci_version >= HCI_PROTO_VERSION_5_0)
+  uint16_t tx_time = BTM_BLE_DATA_TX_TIME_MAX_LEGACY;
+
+  if (controller_get_interface()->get_bt_version()->hci_version >=
+      HCI_PROTO_VERSION_5_0)
     tx_time = BTM_BLE_DATA_TX_TIME_MAX;
+
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_SetBleDataLength(bd_addr, tx_pdu_length);
+  }
+
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+    LOG_INFO(
+        "Unable to set data length because no le acl link connected to device");
+    return BTM_WRONG_MODE;
+  }
+
+  uint16_t hci_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+
+  if (!acl_peer_supports_ble_packet_extension(hci_handle)) {
+    LOG_INFO("Remote device unable to support le packet extension");
+    return BTM_ILLEGAL_VALUE;
+  }
 
   btsnd_hcic_ble_set_data_length(hci_handle, tx_pdu_length, tx_time);
 
