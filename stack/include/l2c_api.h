@@ -772,20 +772,6 @@ extern bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
  ******************************************************************************/
 extern bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda);
 
-/*******************************************************************************
- *
- *  Function        L2CA_UpdateBleConnParams
- *
- *  Description     Update BLE connection parameters.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if update started
- *
- ******************************************************************************/
-extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bdRa,
-                                     uint16_t min_int, uint16_t max_int,
-                                     uint16_t latency, uint16_t timeout);
 extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda,
                                      uint16_t min_int, uint16_t max_int,
                                      uint16_t latency, uint16_t timeout,
