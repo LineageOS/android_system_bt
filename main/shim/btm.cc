@@ -82,8 +82,6 @@ namespace bluetooth {
 
 namespace shim {
 
-constexpr int kAdvertisingReportBufferSize = 1024;
-
 bool Btm::ReadRemoteName::Start(RawAddress raw_address) {
   std::unique_lock<std::mutex> lock(mutex_);
   if (in_progress_) {
@@ -121,27 +119,9 @@ void Btm::ScanningCallbacks::OnScanResult(
     uint16_t event_type, uint8_t address_type, bluetooth::hci::Address address,
     uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
     int8_t tx_power, int8_t rssi, uint16_t periodic_advertising_interval,
-    std::vector<bluetooth::hci::GapData> advertising_data) {
+    std::vector<uint8_t> advertising_data) {
   tBLE_ADDR_TYPE ble_address_type = static_cast<tBLE_ADDR_TYPE>(address_type);
   uint16_t extended_event_type = 0;
-  uint8_t* report_data = nullptr;
-  size_t report_len = 0;
-
-  uint8_t advertising_data_buffer[kAdvertisingReportBufferSize];
-  // Copy gap data, if any, into temporary buffer as payload for legacy
-  // stack.
-  if (!advertising_data.empty()) {
-    bzero(advertising_data_buffer, kAdvertisingReportBufferSize);
-    uint8_t* p = advertising_data_buffer;
-    for (auto gap_data : advertising_data) {
-      *p++ = gap_data.data_.size() + sizeof(gap_data.data_type_);
-      *p++ = static_cast<uint8_t>(gap_data.data_type_);
-      p = (uint8_t*)memcpy(p, &gap_data.data_[0], gap_data.data_.size()) +
-          gap_data.data_.size();
-    }
-    report_data = advertising_data_buffer;
-    report_len = p - report_data;
-  }
 
   RawAddress raw_address;
   RawAddress::FromString(address.ToString(), raw_address);
@@ -151,10 +131,11 @@ void Btm::ScanningCallbacks::OnScanResult(
   }
 
   btm_ble_process_adv_addr(raw_address, &ble_address_type);
-  btm_ble_process_adv_pkt_cont(
-      extended_event_type, ble_address_type, raw_address, primary_phy,
-      secondary_phy, advertising_sid, tx_power, rssi,
-      periodic_advertising_interval, report_len, report_data);
+  btm_ble_process_adv_pkt_cont(extended_event_type, ble_address_type,
+                               raw_address, primary_phy, secondary_phy,
+                               advertising_sid, tx_power, rssi,
+                               periodic_advertising_interval,
+                               advertising_data.size(), &advertising_data[0]);
   store_le_address_type(raw_address, ble_address_type);
 }
 
