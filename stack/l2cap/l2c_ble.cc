@@ -105,7 +105,8 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t timeout, uint16_t min_ce_len,
                               uint16_t max_ce_len) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda);
+    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda, min_int, max_int, latency,
+                                             timeout, min_ce_len, max_ce_len);
     return true;
   }
 
@@ -142,13 +143,6 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
   return (true);
 }
 
-bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
-                              uint16_t max_int, uint16_t latency,
-                              uint16_t timeout) {
-  return L2CA_UpdateBleConnParams(rem_bda, min_int, max_int, latency, timeout,
-                                  0, 0);
-}
-
 /*******************************************************************************
  *
  *  Function        L2CA_EnableUpdateBleConnParams
@@ -161,8 +155,8 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
  *
  ******************************************************************************/
 bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
-  if (bluetooth::shim::is_gd_l2cap_enabled() && enable) {
-    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda);
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    // TODO(hsz): Implement me
     return true;
   }
 
