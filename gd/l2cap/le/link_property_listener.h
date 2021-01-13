@@ -35,7 +35,7 @@ class LinkPropertyListener {
   /**
    * Invoked when an ACL link is connected.
    */
-  virtual void OnLinkConnected(hci::AddressWithType remote, uint16_t handle) {}
+  virtual void OnLinkConnected(hci::AddressWithType remote, uint16_t handle, hci::Role my_role) {}
 
   /**
    * Invoked when an ACL link is disconnected.
