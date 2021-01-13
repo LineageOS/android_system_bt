@@ -637,18 +637,6 @@ bool BTM_UseLeLink(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         BTM_SetBleDataLength
- *
- * Description      Set the maximum BLE transmission packet size
- *
- * Returns          BTM_SUCCESS if success; otherwise failed.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
-                                 uint16_t tx_pdu_length);
-
-/*******************************************************************************
- *
  * Function         BTM_BleReadPhy
  *
  * Description      To read the current PHYs for specified LE connection

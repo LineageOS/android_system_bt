@@ -29,6 +29,7 @@
 
 #include "device/include/controller.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
@@ -665,14 +666,16 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
       HCI_PROTO_VERSION_5_0)
     tx_time = BTM_BLE_DATA_TX_TIME_MAX;
 
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetBleDataLength(bd_addr, tx_pdu_length);
-  }
-
   if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
     LOG_INFO(
         "Unable to set data length because no le acl link connected to device");
     return BTM_WRONG_MODE;
+  }
+
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    uint16_t handle = bluetooth::shim::L2CA_GetLeHandle(L2CAP_ATT_CID, bd_addr);
+    btsnd_hcic_ble_set_data_length(handle, tx_pdu_length, tx_time);
+    return BTM_SUCCESS;
   }
 
   uint16_t hci_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
