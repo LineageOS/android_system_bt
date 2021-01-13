@@ -1613,13 +1613,10 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   conn_dat.bda = p_cb->addr;
   conn_dat.le_hid = true;
   conn_dat.scps_supported = p_cb->scps_supported;
-
-  if (p_cb->status == BTA_HH_OK)
-    conn_dat.status = (p_data->le_close.reason == GATT_CONN_UNKNOWN)
-                          ? p_cb->status
-                          : BTA_HH_ERR;
-  else
-    conn_dat.status = p_cb->status;
+  conn_dat.status = p_cb->status;
+  if (p_data->le_close.reason != GATT_CONN_OK) {
+    conn_dat.status = BTA_HH_ERR;
+  }
 
   /* Report OPEN fail event */
   (*bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH*)&conn_dat);
@@ -1655,7 +1652,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     bta_hh_disc_cmpl();
   } else {
 #if (BTA_HH_LE_RECONN == TRUE)
-    if (p_data->le_close.reason == GATT_CONN_TIMEOUT) {
+    if (p_data->le_close.reason == HCI_ERR_CONNECTION_TOUT) {
       bta_hh_le_add_dev_bg_conn(p_cb, false);
     }
 #endif
