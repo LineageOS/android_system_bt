@@ -375,12 +375,10 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 
       /* if both side 4.1, or we are central device, send HCI command */
       if (p_lcb->IsLinkRoleCentral()
-#if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
               acl_peer_supports_ble_connection_parameters_request(
                   p_lcb->remote_bd_addr))
-#endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->Handle(), min_conn_int,
                                           max_conn_int, peripheral_latency,
@@ -398,12 +396,10 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
       /* if both side 4.1, or we are central device, send HCI command */
       if (p_lcb->IsLinkRoleCentral()
-#if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
               acl_peer_supports_ble_connection_parameters_request(
                   p_lcb->remote_bd_addr))
-#endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->Handle(), p_lcb->min_interval,
                                           p_lcb->max_interval, p_lcb->latency,
@@ -1264,7 +1260,6 @@ void l2c_ble_link_adjust_allocation(void) {
   }
 }
 
-#if (BLE_LLT_INCLUDED == TRUE)
 /*******************************************************************************
  *
  * Function         l2cble_process_rc_param_request_evt
@@ -1300,7 +1295,6 @@ void l2cble_process_rc_param_request_evt(uint16_t handle, uint16_t int_min,
     L2CAP_TRACE_WARNING("No link to update connection parameter")
   }
 }
-#endif
 
 /*******************************************************************************
  *
