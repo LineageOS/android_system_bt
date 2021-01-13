@@ -629,8 +629,7 @@ static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (p_tcb == nullptr) return;
   if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
-    gatt_cleanup_upon_disc(p_tcb->peer_bda,
-                           static_cast<tGATT_DISCONN_REASON>(result),
+    gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_L2C_FAILURE,
                            BT_TRANSPORT_BR_EDR);
   } else {
     gatt_l2cif_disconnect(lcid);
@@ -707,14 +706,9 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
     if (btm_sec_is_a_bonded_dev(p_tcb->peer_bda))
       gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
-  /* if ACL link is still up, no reason is logged, l2cap is disconnect from
-   * peer */
-  tGATT_DISCONN_REASON reason = static_cast<tGATT_DISCONN_REASON>(
-      L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport));
-  if (reason == GATT_CONN_OK) reason = GATT_CONN_TERMINATE_PEER_USER;
-
   /* send disconnect callback */
-  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, BT_TRANSPORT_BR_EDR);
+  gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_PEER_USER,
+                         BT_TRANSPORT_BR_EDR);
 }
 
 static void gatt_l2cif_disconnect(uint16_t lcid) {
@@ -730,14 +724,8 @@ static void gatt_l2cif_disconnect(uint16_t lcid) {
       gatt_add_a_bonded_dev_for_srv_chg(p_tcb->peer_bda);
   }
 
-  /* send disconnect callback */
-  /* if ACL link is still up, no reason is logged, l2cap is disconnect from
-   * peer */
-  tGATT_DISCONN_REASON reason = static_cast<tGATT_DISCONN_REASON>(
-      L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport));
-  if (reason == GATT_CONN_OK) reason = GATT_CONN_TERMINATE_LOCAL_HOST;
-
-  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, BT_TRANSPORT_BR_EDR);
+  gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_LOCAL_HOST,
+                         BT_TRANSPORT_BR_EDR);
 }
 
 /** This is the L2CAP data indication callback function */

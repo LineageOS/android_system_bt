@@ -203,28 +203,6 @@ hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         L2CA_GetDisconnectReason
- *
- * Description      This function returns the disconnect reason code.
- *
- * Returns          disconnect reason
- *
- ******************************************************************************/
-uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
-                                  tBT_TRANSPORT transport) {
-  tL2C_LCB* p_lcb;
-  uint16_t reason = 0;
-
-  p_lcb = l2cu_find_lcb_by_bd_addr(remote_bda, transport);
-  if (p_lcb != NULL) reason = p_lcb->DisconnectReason();
-
-  L2CAP_TRACE_DEBUG("L2CA_GetDisconnectReason=%d ", reason);
-
-  return reason;
-}
-
-/*******************************************************************************
- *
  * Function l2cble_notify_le_connection
  *
  * Description This function notifiy the l2cap connection to the app layer
