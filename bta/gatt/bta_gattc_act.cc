@@ -535,7 +535,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 
   cb_data.close.client_if = p_clcb->p_rcb->client_if;
   cb_data.close.conn_id = p_clcb->bta_conn_id;
-  cb_data.close.reason = p_clcb->reason;
+  cb_data.close.reason = 0;
   cb_data.close.remote_bda = p_clcb->bda;
   cb_data.close.status = GATT_SUCCESS;
 
