@@ -92,6 +92,9 @@ cc_test {
     test_suites: ["device-tests"],
     defaults: ["fluoride_defaults"],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     local_include_dirs: [
         "include",
     ],
@@ -126,6 +129,9 @@ cc_test {
     test_suites: ["device-tests"],
     defaults: ["fluoride_defaults"],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     local_include_dirs: [
         "include",
     ],
