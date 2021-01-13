@@ -18,6 +18,9 @@
 #ifndef GATT_API_H
 #define GATT_API_H
 
+#include <base/strings/stringprintf.h>
+#include <string>
+
 #include "bt_target.h"
 #include "btm_ble_api.h"
 #include "gattdefs.h"
@@ -205,6 +208,26 @@ typedef enum : uint16_t {
   /* 0x22 connection fail for LMP response tout */
   GATT_CONN_LMP_TIMEOUT = HCI_ERR_LMP_RESPONSE_TIMEOUT,
 } tGATT_DISCONN_REASON;
+
+inline std::string gatt_disconnection_reason_text(
+    const tGATT_DISCONN_REASON& reason) {
+  switch (reason) {
+    case GATT_CONN_OK:
+      return std::string("ok/unknown");
+    case GATT_CONN_L2C_FAILURE:
+      return std::string("l2cap_failure");
+    case GATT_CONN_TIMEOUT:
+      return std::string("timeout");
+    case GATT_CONN_TERMINATE_PEER_USER:
+      return std::string("remote_terminated");
+    case GATT_CONN_TERMINATE_LOCAL_HOST:
+      return std::string("local_terminated");
+    case GATT_CONN_LMP_TIMEOUT:
+      return std::string("lmp_response_timeout");
+    default:
+      return base::StringPrintf("UNKNOWN:[0x%04hx]", reason);
+  }
+}
 
 /* MAX GATT MTU size
 */

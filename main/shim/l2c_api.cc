@@ -598,8 +598,9 @@ bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
 }
 
 static void on_sco_disconnect(uint16_t handle, uint8_t reason) {
-  GetGdShimHandler()->Post(
-      base::BindOnce(base::IgnoreResult(&btm_sco_removed), handle, reason));
+  GetGdShimHandler()->Post(base::BindOnce(base::IgnoreResult(&btm_sco_removed),
+                                          handle,
+                                          static_cast<tHCI_REASON>(reason)));
 }
 
 void L2CA_UseLegacySecurityModule() {
