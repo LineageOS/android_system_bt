@@ -26,7 +26,6 @@
 #include "hci/facade/le_scanning_manager_facade.grpc.pb.h"
 #include "hci/facade/le_scanning_manager_facade.h"
 #include "hci/facade/le_scanning_manager_facade.pb.h"
-#include "hci/le_report.h"
 #include "os/log.h"
 #include "packet/raw_builder.h"
 
@@ -72,7 +71,7 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
       int8_t tx_power,
       int8_t rssi,
       uint16_t periodic_advertising_interval,
-      std::vector<GapData> advertising_data) {
+      std::vector<uint8_t> advertising_data) {
     LeReportMsg le_report_msg;
     std::vector<LeExtendedAdvertisingReport> advertisements;
     LeExtendedAdvertisingReport le_extended_advertising_report;

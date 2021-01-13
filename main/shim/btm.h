@@ -244,7 +244,7 @@ class Btm {
                       uint8_t secondary_phy, uint8_t advertising_sid,
                       int8_t tx_power, int8_t rssi,
                       uint16_t periodic_advertising_interval,
-                      std::vector<bluetooth::hci::GapData> advertising_data);
+                      std::vector<uint8_t> advertising_data);
     void OnTrackAdvFoundLost();
     void OnBatchScanReports(int client_if, int status, int report_format,
                             int num_records, std::vector<uint8_t> data);
