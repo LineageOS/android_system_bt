@@ -563,10 +563,6 @@
  * ATT/GATT Protocol/Profile Settings
  *
  *****************************************************************************/
-#ifndef BLE_LLT_INCLUDED
-#define BLE_LLT_INCLUDED TRUE
-#endif
-
 #ifndef BLE_DELAY_REQUEST_ENC
 /* This flag is to work around IPHONE problem, We need to wait for iPhone ready
    before send encryption request to iPhone */
