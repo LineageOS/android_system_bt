@@ -506,7 +506,7 @@ extern void bta_dm_ble_update_conn_params(const RawAddress&, uint16_t, uint16_t,
                                           uint16_t);
 extern void bta_dm_ble_config_local_privacy(bool);
 
-extern void bta_dm_ble_set_data_length(const RawAddress&, uint16_t);
+extern void bta_dm_ble_set_data_length(const RawAddress& bd_addr);
 
 extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 
