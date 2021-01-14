@@ -92,7 +92,7 @@ bt_status_t do_in_jni_thread(const base::Location& from_here,
                              base::OnceClosure task) {
   return BT_STATUS_SUCCESS;
 }
-base::MessageLoop* get_main_message_loop() { return nullptr; }
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 bool interop_match_addr(const interop_feature_t feature,
                         const RawAddress* addr) {
   return false;

@@ -22,6 +22,9 @@
 
 #include <base/strings/stringprintf.h>
 
+#include "gd/common/init_flags.h"
+#include "osi/include/log.h"
+
 namespace bluetooth {
 
 namespace common {
@@ -29,6 +32,10 @@ namespace common {
 static constexpr int kRealTimeFifoSchedulingPriority = 1;
 
 MessageLoopThread::MessageLoopThread(const std::string& thread_name)
+    : MessageLoopThread(thread_name, false) {}
+
+MessageLoopThread::MessageLoopThread(const std::string& thread_name,
+                                     bool is_main)
     : thread_name_(thread_name),
       message_loop_(nullptr),
       run_loop_(nullptr),
@@ -36,11 +43,23 @@ MessageLoopThread::MessageLoopThread(const std::string& thread_name)
       thread_id_(-1),
       linux_tid_(-1),
       weak_ptr_factory_(this),
-      shutting_down_(false) {}
+      shutting_down_(false),
+      is_main_(is_main),
+      rust_thread_(nullptr) {}
 
 MessageLoopThread::~MessageLoopThread() { ShutDown(); }
 
 void MessageLoopThread::StartUp() {
+  if (is_main_ && init_flags::gd_rust_is_enabled()) {
+    rust_thread_ = new ::rust::Box<shim::rust::MessageLoopThread>(
+        shim::rust::main_message_loop_thread_create());
+    auto rust_id =
+        bluetooth::shim::rust::main_message_loop_thread_start(**rust_thread_);
+    thread_id_ = rust_id;
+    linux_tid_ = rust_id;
+    return;
+  }
+
   std::promise<void> start_up_promise;
   std::future<void> start_up_future = start_up_promise.get_future();
   {
@@ -65,6 +84,20 @@ bool MessageLoopThread::DoInThreadDelayed(const base::Location& from_here,
                                           base::OnceClosure task,
                                           const base::TimeDelta& delay) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+  if (is_main_ && init_flags::gd_rust_is_enabled()) {
+    if (rust_thread_ == nullptr) {
+      LOG(ERROR) << __func__ << ": rust thread is null for thread " << *this
+                 << ", from " << from_here.ToString();
+      return false;
+    }
+
+    shim::rust::main_message_loop_thread_do_delayed(
+        **rust_thread_,
+        std::make_unique<shim::rust::OnceClosure>(std::move(task)),
+        delay.InMilliseconds());
+    return true;
+  }
+
   if (message_loop_ == nullptr) {
     LOG(ERROR) << __func__ << ": message loop is null for thread " << *this
                << ", from " << from_here.ToString();
@@ -82,6 +115,13 @@ bool MessageLoopThread::DoInThreadDelayed(const base::Location& from_here,
 
 void MessageLoopThread::ShutDown() {
   {
+    if (is_main_ && init_flags::gd_rust_is_enabled()) {
+      delete rust_thread_;
+      thread_id_ = -1;
+      linux_tid_ = -1;
+      return;
+    }
+
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
     if (thread_ == nullptr) {
       LOG(INFO) << __func__ << ": thread " << *this << " is already stopped";
@@ -131,7 +171,7 @@ std::string MessageLoopThread::ToString() const {
 
 bool MessageLoopThread::IsRunning() const {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
-  return message_loop_ != nullptr;
+  return thread_id_ != -1;
 }
 
 // Non API method, should not be protected by API mutex
@@ -141,16 +181,21 @@ void MessageLoopThread::RunThread(MessageLoopThread* thread,
 }
 
 base::MessageLoop* MessageLoopThread::message_loop() const {
+  ASSERT_LOG(!is_main_,
+             "you are not allowed to get the main thread's message loop");
+
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
   return message_loop_;
 }
 
 bool MessageLoopThread::EnableRealTimeScheduling() {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+
   if (!IsRunning()) {
     LOG(ERROR) << __func__ << ": thread " << *this << " is not running";
     return false;
   }
+
   struct sched_param rt_params = {.sched_priority =
                                       kRealTimeFifoSchedulingPriority};
   int rc = sched_setscheduler(linux_tid_, SCHED_FIFO, &rt_params);
@@ -172,6 +217,10 @@ base::WeakPtr<MessageLoopThread> MessageLoopThread::GetWeakPtr() {
 void MessageLoopThread::Run(std::promise<void> start_up_promise) {
   {
     std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
+    if (is_main_ && init_flags::gd_rust_is_enabled()) {
+      return;
+    }
+
     LOG(INFO) << __func__ << ": message loop starting for thread "
               << thread_name_;
     base::PlatformThread::SetName(thread_name_);

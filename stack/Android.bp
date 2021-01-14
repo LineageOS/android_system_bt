@@ -55,6 +55,7 @@ cc_library_static {
         "system/bt/bta/include",
         "system/bt/bta/sys",
         "system/bt/utils/include",
+        "system/bt/gd/rust/shim",
     ],
     srcs: crypto_toolbox_srcs + [
         "a2dp/a2dp_aac.cc",

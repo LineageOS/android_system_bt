@@ -26,7 +26,7 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
 }
 
 /** stack/btu/btu_task.cc, indirect reference, gatt_utils.cc -> libosi */
-base::MessageLoop* get_main_message_loop() { return nullptr; }
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 
 /** stack/gatt/connection_manager.cc */
 namespace connection_manager {

@@ -77,6 +77,10 @@ void Stack::StartEverything() {
     if (common::init_flags::gd_hci_is_enabled()) {
       rust_hci_ = new ::rust::Box<rust::Hci>(rust::get_hci(**rust_stack_));
     }
+    if (common::init_flags::gd_controller_is_enabled()) {
+      rust_controller_ = new ::rust::Box<rust::Controller>(
+          rust::get_controller(**rust_stack_));
+    }
     return;
   }
 
