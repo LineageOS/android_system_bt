@@ -78,6 +78,9 @@ class SecurityManager {
   uint16_t GetAuthenticationHandle();
   Address GetAuthenticationAddress();
 
+  void SetPinRequested(const Address& addr);
+  bool GetPinRequested(const Address& addr);
+
   void SetPeerIoCapability(const Address& addr, uint8_t io_capability, uint8_t oob_present_flag,
                            uint8_t authentication_requirements);
   void SetLocalIoCapability(const Address& peer, uint8_t io_capability, uint8_t oob_present_flag,
@@ -96,6 +99,7 @@ class SecurityManager {
   uint8_t peer_oob_present_flag_{0};
   AuthenticationType peer_authentication_requirements_{
       AuthenticationType::NO_BONDING};
+  bool peer_pin_requested_{false};
 
   bool host_capabilities_valid_{false};
   IoCapabilityType host_io_capability_{IoCapabilityType::DISPLAY_ONLY};
