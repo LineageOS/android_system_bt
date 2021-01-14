@@ -37,6 +37,7 @@ cc_library_static {
         "system/bt/bta/include",
         "system/bt/btif/include",
         "system/libhwbinder/include",
+        "system/bt/gd/rust/shim",
     ],
     product_variables: {
         debuggable: {
@@ -64,6 +65,7 @@ cc_test {
         "system/bt/stack/include",
         "system/bt/utils/include",
         "system/libhwbinder/include",
+        "system/bt/gd/rust/shim",
     ],
     srcs: [
         "test/packet_fragmenter_test.cc",

@@ -41,7 +41,7 @@ unsafe impl Send for ffi::u8SliceOnceCallback {}
 
 pub struct Hci {
     rt: Arc<Runtime>,
-    internal: bt_hci::HciExports,
+    internal: bt_hci::Hci,
     acl_callback_set: bool,
     evt_callback_set: bool,
     le_evt_callback_set: bool,
@@ -52,7 +52,7 @@ pub struct Hci {
 }
 
 impl Hci {
-    pub fn new(rt: Arc<Runtime>, internal: bt_hci::HciExports) -> Self {
+    pub fn new(rt: Arc<Runtime>, internal: bt_hci::Hci) -> Self {
         let (evt_tx, evt_rx) = channel::<EventPacket>(10);
         let (le_evt_tx, le_evt_rx) = channel::<LeMetaEventPacket>(10);
         Self {
