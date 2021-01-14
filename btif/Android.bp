@@ -200,6 +200,9 @@ cc_test {
     defaults: ["fluoride_defaults"],
     test_suites: ["device-tests"],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     include_dirs: btifCommonIncludes,
     srcs: [
         "test/btif_rc_test.cc",
@@ -233,6 +236,9 @@ cc_test {
     defaults: ["fluoride_defaults"],
     test_suites: ["device-tests"],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     include_dirs: btifCommonIncludes,
     srcs: [
         "src/btif_config_cache.cc",
