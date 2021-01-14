@@ -3630,11 +3630,8 @@ tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason) {
 }
 
 void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   uint8_t old_pairing_flags = btm_cb.pairing_flags;
   tHCI_STATUS result = HCI_ERR_AUTH_FAILURE;
-  tBTM_SEC_CALLBACK* p_callback = NULL;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
   if ((reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) &&
       (reason != HCI_ERR_PEER_USER)) {
@@ -3645,9 +3642,13 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
 
   btm_acl_resubmit_page();
 
-  if (!p_dev_rec) return;
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
+  if (!p_dev_rec) {
+    LOG_WARN("Unable to find device record");
+    return;
+  }
 
-  transport =
+  tBT_TRANSPORT transport =
       (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
 
   /* clear unused flags */
@@ -3739,7 +3740,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
   p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
   p_dev_rec->security_required = BTM_SEC_NONE;
 
-  p_callback = p_dev_rec->p_callback;
+  tBTM_SEC_CALLBACK* p_callback = p_dev_rec->p_callback;
 
   /* if security is pending, send callback to clean up the security state */
   if (p_callback) {
