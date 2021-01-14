@@ -1,6 +1,6 @@
 //! HCI layer facade
 
-use crate::HciExports;
+use crate::Hci;
 use bt_common::GrpcFacade;
 use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
@@ -26,11 +26,11 @@ module! {
 }
 
 #[provides]
-async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciFacadeService {
+async fn provide_facade(hci: Hci, rt: Arc<Runtime>) -> HciFacadeService {
     let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<EventPacket>(10);
     let (from_hci_le_evt_tx, to_grpc_le_evt_rx) = channel::<LeMetaEventPacket>(10);
     HciFacadeService {
-        hci_exports,
+        hci,
         rt,
         from_hci_evt_tx,
         to_grpc_evt_rx: Arc::new(Mutex::new(to_grpc_evt_rx)),
@@ -42,7 +42,7 @@ async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciFacadeS
 /// HCI layer facade service
 #[derive(Clone, Stoppable)]
 pub struct HciFacadeService {
-    hci_exports: HciExports,
+    hci: Hci,
     rt: Arc<Runtime>,
     from_hci_evt_tx: Sender<EventPacket>,
     to_grpc_evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
@@ -59,15 +59,13 @@ impl GrpcFacade for HciFacadeService {
 impl HciFacade for HciFacadeService {
     fn send_command(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         self.rt
-            .block_on(
-                self.hci_exports.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()),
-            )
+            .block_on(self.hci.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()))
             .unwrap();
         sink.success(Empty::default());
     }
 
     fn request_event(&mut self, _ctx: RpcContext<'_>, req: EventRequest, sink: UnarySink<Empty>) {
-        self.rt.block_on(self.hci_exports.register_event_handler(
+        self.rt.block_on(self.hci.register_event_handler(
             EventCode::from_u32(req.get_code()).unwrap(),
             self.from_hci_evt_tx.clone(),
         ));
@@ -80,7 +78,7 @@ impl HciFacade for HciFacadeService {
         req: EventRequest,
         sink: UnarySink<Empty>,
     ) {
-        self.rt.block_on(self.hci_exports.register_le_event_handler(
+        self.rt.block_on(self.hci.register_le_event_handler(
             SubeventCode::from_u32(req.get_code()).unwrap(),
             self.from_hci_le_evt_tx.clone(),
         ));
@@ -88,7 +86,7 @@ impl HciFacade for HciFacadeService {
     }
 
     fn send_acl(&mut self, _ctx: RpcContext<'_>, mut packet: Data, sink: UnarySink<Empty>) {
-        let acl_tx = self.hci_exports.acl_tx.clone();
+        let acl_tx = self.hci.acl_tx.clone();
         self.rt.block_on(async move {
             acl_tx.send(AclPacket::parse(&packet.take_payload()).unwrap()).await.unwrap();
         });
@@ -135,7 +133,7 @@ impl HciFacade for HciFacadeService {
         _req: Empty,
         mut resp: ServerStreamingSink<Data>,
     ) {
-        let acl_rx = self.hci_exports.acl_rx.clone();
+        let acl_rx = self.hci.acl_rx.clone();
 
         self.rt.spawn(async move {
             while let Some(data) = acl_rx.lock().await.recv().await {

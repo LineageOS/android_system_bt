@@ -2,7 +2,7 @@
 //! This connects to "rootcanal" which provides a simulated
 //! Bluetooth chip as well as a simulated environment.
 
-use crate::internal::{Hal, RawHalExports};
+use crate::internal::{InnerHal, RawHal};
 use crate::{Result, H4_HEADER_SIZE};
 use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
 use bytes::{BufMut, Bytes, BytesMut};
@@ -35,22 +35,22 @@ enum HciPacketHeaderSize {
 module! {
     rootcanal_hal_module,
     providers {
-        RawHalExports => provide_rootcanal_hal,
+        RawHal => provide_rootcanal_hal,
     }
 }
 
 #[provides]
-async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> RawHalExports {
-    let (hal_exports, hal) = Hal::new();
+async fn provide_rootcanal_hal(config: RootcanalConfig, rt: Arc<Runtime>) -> RawHal {
+    let (raw_hal, inner_hal) = InnerHal::new();
     let (reader, writer) = TcpStream::connect(&config.to_socket_addr().unwrap())
         .await
         .expect("unable to create stream to rootcanal")
         .into_split();
 
-    rt.spawn(dispatch_incoming(hal.evt_tx, hal.acl_tx, reader));
-    rt.spawn(dispatch_outgoing(hal.cmd_rx, hal.acl_rx, writer));
+    rt.spawn(dispatch_incoming(inner_hal.evt_tx, inner_hal.acl_tx, reader));
+    rt.spawn(dispatch_outgoing(inner_hal.cmd_rx, inner_hal.acl_rx, writer));
 
-    hal_exports
+    raw_hal
 }
 
 /// Rootcanal configuration
@@ -63,10 +63,7 @@ pub struct RootcanalConfig {
 impl RootcanalConfig {
     /// Create a rootcanal config
     pub fn new(address: &str, port: u16) -> Self {
-        Self {
-            address: String::from(address),
-            port,
-        }
+        Self { address: String::from(address), port }
     }
 
     fn to_socket_addr(&self) -> Result<SocketAddr> {
@@ -96,9 +93,7 @@ where
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            evt_tx
-                .send(EventPacket::parse(&buffer.freeze()).unwrap())
-                .unwrap();
+            evt_tx.send(EventPacket::parse(&buffer.freeze()).unwrap()).unwrap();
         } else if buffer[0] == HciPacketType::Acl as u8 {
             buffer.resize(HciPacketHeaderSize::Acl as usize, 0);
             reader.read_exact(&mut buffer).await?;
@@ -107,9 +102,7 @@ where
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            acl_tx
-                .send(AclPacket::parse(&buffer.freeze()).unwrap())
-                .unwrap();
+            acl_tx.send(AclPacket::parse(&buffer.freeze()).unwrap()).unwrap();
         }
     }
 }

@@ -35,11 +35,31 @@ class TrampolineOnceCallback {
   void Run(TArg value) const {
     std::move(*callback_).Run(value);
     delete callback_;
-    callback_ == nullptr;
+    ((TrampolineOnceCallback<TArg>*)this)->callback_ = nullptr;
   }
 
  private:
   base::OnceCallback<void(TArg)>* callback_;
+};
+
+class OnceClosure {
+ public:
+  OnceClosure(base::OnceClosure closure) : closure_(new base::OnceClosure(std::move(closure))) {}
+  ~OnceClosure() {
+    if (closure_ != nullptr) {
+      delete closure_;
+      closure_ = nullptr;
+    }
+  }
+
+  void Run() const {
+    std::move(*closure_).Run();
+    delete closure_;
+    ((OnceClosure*)this)->closure_ = nullptr;
+  }
+
+ private:
+  base::OnceClosure* closure_;
 };
 
 using u8SliceCallback = TrampolineCallback<::rust::Slice<uint8_t>>;
