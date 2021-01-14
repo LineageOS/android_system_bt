@@ -56,38 +56,6 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 extern void gatt_notify_conn_update(const RawAddress& remote, uint16_t interval,
                                     uint16_t latency, uint16_t timeout,
                                     tHCI_STATUS status);
-/*******************************************************************************
- *
- *  Function        L2CA_CancelBleConnectReq
- *
- *  Description     Cancel a pending connection attempt to a BLE device.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if connection was cancelled
- *
- ******************************************************************************/
-bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
-  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
-
-  if (BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
-    if (p_lcb != NULL && p_lcb->link_state == LST_CONNECTING) {
-      L2CAP_TRACE_WARNING("%s - disconnecting the LE link", __func__);
-      L2CA_RemoveFixedChnl(L2CAP_ATT_CID, rem_bda);
-      return (true);
-    }
-  }
-
-  acl_cancel_le_connection(rem_bda);
-
-  /* Do not remove lcb if an LE link is already up as a peripheral */
-  if (p_lcb != NULL && !(p_lcb->IsLinkRolePeripheral() &&
-                         BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE))) {
-    p_lcb->SetDisconnectReason(L2CAP_CONN_CANCEL);
-    l2cu_release_lcb(p_lcb);
-  }
-  return (true);
-}
 
 /*******************************************************************************
  *
@@ -105,7 +73,8 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t timeout, uint16_t min_ce_len,
                               uint16_t max_ce_len) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda);
+    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda, min_int, max_int, latency,
+                                             timeout, min_ce_len, max_ce_len);
     return true;
   }
 
@@ -142,13 +111,6 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
   return (true);
 }
 
-bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
-                              uint16_t max_int, uint16_t latency,
-                              uint16_t timeout) {
-  return L2CA_UpdateBleConnParams(rem_bda, min_int, max_int, latency, timeout,
-                                  0, 0);
-}
-
 /*******************************************************************************
  *
  *  Function        L2CA_EnableUpdateBleConnParams
@@ -161,8 +123,8 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
  *
  ******************************************************************************/
 bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
-  if (bluetooth::shim::is_gd_l2cap_enabled() && enable) {
-    bluetooth::shim::L2CA_LeConnectionUpdate(rem_bda);
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    // TODO(hsz): Implement me
     return true;
   }
 
@@ -200,33 +162,15 @@ bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
 }
 
 hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_GetBleConnRole(bd_addr);
+  }
+
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
   if (p_lcb == nullptr) {
     return HCI_ROLE_UNKNOWN;
   }
   return p_lcb->LinkRole();
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_GetDisconnectReason
- *
- * Description      This function returns the disconnect reason code.
- *
- * Returns          disconnect reason
- *
- ******************************************************************************/
-uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
-                                  tBT_TRANSPORT transport) {
-  tL2C_LCB* p_lcb;
-  uint16_t reason = 0;
-
-  p_lcb = l2cu_find_lcb_by_bd_addr(remote_bda, transport);
-  if (p_lcb != NULL) reason = p_lcb->DisconnectReason();
-
-  L2CAP_TRACE_DEBUG("L2CA_GetDisconnectReason=%d ", reason);
-
-  return reason;
 }
 
 /*******************************************************************************
@@ -381,12 +325,10 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 
       /* if both side 4.1, or we are central device, send HCI command */
       if (p_lcb->IsLinkRoleCentral()
-#if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
               acl_peer_supports_ble_connection_parameters_request(
                   p_lcb->remote_bd_addr))
-#endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->Handle(), min_conn_int,
                                           max_conn_int, peripheral_latency,
@@ -404,12 +346,10 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
     if (p_lcb->conn_update_mask & L2C_BLE_NEW_CONN_PARAM) {
       /* if both side 4.1, or we are central device, send HCI command */
       if (p_lcb->IsLinkRoleCentral()
-#if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
               acl_peer_supports_ble_connection_parameters_request(
                   p_lcb->remote_bd_addr))
-#endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->Handle(), p_lcb->min_interval,
                                           p_lcb->max_interval, p_lcb->latency,
@@ -1270,7 +1210,6 @@ void l2c_ble_link_adjust_allocation(void) {
   }
 }
 
-#if (BLE_LLT_INCLUDED == TRUE)
 /*******************************************************************************
  *
  * Function         l2cble_process_rc_param_request_evt
@@ -1306,7 +1245,6 @@ void l2cble_process_rc_param_request_evt(uint16_t handle, uint16_t int_min,
     L2CAP_TRACE_WARNING("No link to update connection parameter")
   }
 }
-#endif
 
 /*******************************************************************************
  *
@@ -1361,41 +1299,6 @@ void l2cble_process_data_length_change_event(uint16_t handle,
   if (tx_data_len > 0) p_lcb->tx_data_len = tx_data_len;
 
   /* ignore rx_data len for now */
-}
-
-/*******************************************************************************
- *
- * Function         l2cble_set_fixed_channel_tx_data_length
- *
- * Description      This function update max fixed channel tx data length if
- *                  applicable
- *
- * Returns          void
- *
- ******************************************************************************/
-void l2cble_set_fixed_channel_tx_data_length(const RawAddress& remote_bda,
-                                             uint16_t fix_cid,
-                                             uint16_t tx_mtu) {
-  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(remote_bda, BT_TRANSPORT_LE);
-  uint16_t cid = fix_cid - L2CAP_FIRST_FIXED_CHNL;
-
-  L2CAP_TRACE_DEBUG("%s TX MTU = %d", __func__, tx_mtu);
-
-  if (!controller_get_interface()->supports_ble_packet_extension()) {
-    L2CAP_TRACE_WARNING("%s, request not supported", __func__);
-    return;
-  }
-
-  /* See if we have a link control block for the connection */
-  if (p_lcb == NULL) return;
-
-  if (p_lcb->p_fixed_ccbs[cid] != NULL) {
-    if (tx_mtu > BTM_BLE_DATA_SIZE_MAX) tx_mtu = BTM_BLE_DATA_SIZE_MAX;
-
-    p_lcb->p_fixed_ccbs[cid]->tx_data_len = tx_mtu;
-  }
-
-  l2cble_update_data_length(p_lcb);
 }
 
 /*******************************************************************************
@@ -1647,11 +1550,6 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
                       __func__, *max_interval, phone_min_interval);
     *max_interval = phone_min_interval;
   }
-}
-
-void L2CA_SetLeFixedChannelTxDataLength(const RawAddress& remote_bda,
-                                        uint16_t fix_cid, uint16_t tx_mtu) {
-  l2cble_set_fixed_channel_tx_data_length(remote_bda, fix_cid, tx_mtu);
 }
 
 void l2cble_use_preferred_conn_params(const RawAddress& bda) {

@@ -5,7 +5,7 @@ use bt_common::GrpcFacade;
 use bt_facade_proto::common::Data;
 use bt_facade_proto::empty::Empty;
 use bt_facade_proto::hci_facade::EventRequest;
-use bt_facade_proto::hci_facade_grpc::{create_hci_layer_facade, HciLayerFacade};
+use bt_facade_proto::hci_facade_grpc::{create_hci_facade, HciFacade};
 use bt_packets::hci::{
     AclPacket, CommandPacket, EventCode, EventPacket, LeMetaEventPacket, SubeventCode,
 };
@@ -21,15 +21,15 @@ use tokio::sync::Mutex;
 module! {
     facade_module,
     providers {
-        HciLayerFacadeService => provide_facade,
+        HciFacadeService => provide_facade,
     }
 }
 
 #[provides]
-async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciLayerFacadeService {
+async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciFacadeService {
     let (from_hci_evt_tx, to_grpc_evt_rx) = channel::<EventPacket>(10);
     let (from_hci_le_evt_tx, to_grpc_le_evt_rx) = channel::<LeMetaEventPacket>(10);
-    HciLayerFacadeService {
+    HciFacadeService {
         hci_exports,
         rt,
         from_hci_evt_tx,
@@ -41,7 +41,7 @@ async fn provide_facade(hci_exports: HciExports, rt: Arc<Runtime>) -> HciLayerFa
 
 /// HCI layer facade service
 #[derive(Clone, Stoppable)]
-pub struct HciLayerFacadeService {
+pub struct HciFacadeService {
     hci_exports: HciExports,
     rt: Arc<Runtime>,
     from_hci_evt_tx: Sender<EventPacket>,
@@ -50,33 +50,14 @@ pub struct HciLayerFacadeService {
     to_grpc_le_evt_rx: Arc<Mutex<Receiver<LeMetaEventPacket>>>,
 }
 
-impl GrpcFacade for HciLayerFacadeService {
+impl GrpcFacade for HciFacadeService {
     fn into_grpc(self) -> grpcio::Service {
-        create_hci_layer_facade(self)
+        create_hci_facade(self)
     }
 }
 
-impl HciLayerFacade for HciLayerFacadeService {
-    fn send_command_with_complete(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        mut data: Data,
-        sink: UnarySink<Empty>,
-    ) {
-        self.rt
-            .block_on(
-                self.hci_exports.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()),
-            )
-            .unwrap();
-        sink.success(Empty::default());
-    }
-
-    fn send_command_with_status(
-        &mut self,
-        _ctx: RpcContext<'_>,
-        mut data: Data,
-        sink: UnarySink<Empty>,
-    ) {
+impl HciFacade for HciFacadeService {
+    fn send_command(&mut self, _ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         self.rt
             .block_on(
                 self.hci_exports.send_raw(CommandPacket::parse(&data.take_payload()).unwrap()),

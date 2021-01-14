@@ -19,7 +19,6 @@
 
 #include "common/callback.h"
 #include "hci/hci_packets.h"
-#include "hci/le_report.h"
 #include "hci/uuid.h"
 #include "module.h"
 
@@ -49,7 +48,7 @@ class ScanningCallback {
       int8_t tx_power,
       int8_t rssi,
       uint16_t periodic_advertising_interval,
-      std::vector<GapData> advertising_data) = 0;
+      std::vector<uint8_t> advertising_data) = 0;
   virtual void OnTrackAdvFoundLost() = 0;
   virtual void OnBatchScanReports(
       int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) = 0;

@@ -2189,7 +2189,7 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
   if (status != HCI_SUCCESS) {
     if (status != HCI_ERR_UNSUPPORTED_REM_FEATURE) {
       LOG_ERROR("Failed to read remote features status:%s",
-                hci_error_code_text(status).c_str());
+                hci_error_code_text(static_cast<tHCI_STATUS>(status)).c_str());
       return;
     }
     LOG_WARN("Remote does not support reading remote feature");

@@ -251,12 +251,7 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
 }
 
 static void btsock_request_max_tx_data_length(const RawAddress& remote_device) {
-  const controller_t* controller = controller_get_interface();
-  uint16_t max_len = controller->get_ble_maximum_tx_data_length();
-
-  DVLOG(2) << __func__ << ": max_len=" << max_len;
-
-  BTA_DmBleSetDataLength(remote_device, max_len);
+  BTA_DmBleRequestMaxTxDataLength(remote_device);
 }
 
 static void btsock_signaled(int fd, int type, int flags, uint32_t user_id) {

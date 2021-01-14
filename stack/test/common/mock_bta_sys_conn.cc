@@ -64,7 +64,7 @@ void bta_sys_notify_collision(const RawAddress& peer_addr) {
   mock_function_count_map[__func__]++;
 }
 void bta_sys_notify_role_chg(const RawAddress& peer_addr, uint8_t new_role,
-                             uint8_t hci_status) {
+                             tHCI_STATUS hci_status) {
   mock_function_count_map[__func__]++;
 }
 void bta_sys_pm_register(tBTA_SYS_CONN_CBACK* p_cback) {

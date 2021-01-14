@@ -759,33 +759,6 @@ extern bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
 extern bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
                                      uint16_t fixed_cid, uint16_t idle_tout);
 
-/*******************************************************************************
- *
- *  Function        L2CA_CancelBleConnectReq
- *
- *  Description     Cancel a pending connection attempt to a BLE device.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if connection was cancelled
- *
- ******************************************************************************/
-extern bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda);
-
-/*******************************************************************************
- *
- *  Function        L2CA_UpdateBleConnParams
- *
- *  Description     Update BLE connection parameters.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if update started
- *
- ******************************************************************************/
-extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bdRa,
-                                     uint16_t min_int, uint16_t max_int,
-                                     uint16_t latency, uint16_t timeout);
 extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda,
                                      uint16_t min_int, uint16_t max_int,
                                      uint16_t latency, uint16_t timeout,
@@ -817,31 +790,9 @@ extern bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda,
  ******************************************************************************/
 extern uint8_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
 
-/*******************************************************************************
- *
- * Function         L2CA_GetDisconnectReason
- *
- * Description      This function returns the disconnect reason code.
- *
- *  Parameters:     BD Address of remote
- *                  Physical transport for the L2CAP connection (BR/EDR or LE)
- *
- * Returns          disconnect reason
- *
- ******************************************************************************/
-extern uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
-                                         tBT_TRANSPORT transport);
-
 extern void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
                                            uint16_t* max_interval,
                                            uint16_t floor_interval);
-
-/**
- * Update max fixed channel tx data length if applicable
- */
-extern void L2CA_SetLeFixedChannelTxDataLength(const RawAddress& remote_bda,
-                                               uint16_t fix_cid,
-                                               uint16_t tx_mtu);
 
 /**
  * Check whether an ACL or LE link to the remote device is established

@@ -221,7 +221,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     switch (advertising_api_type_) {
       case (AdvertisingApiType::LEGACY): {
         set_parameters(id, config);
-        if (!config.scan_response.empty()) {
+        if (config.advertising_type == AdvertisingType::ADV_IND ||
+            config.advertising_type == AdvertisingType::ADV_NONCONN_IND) {
           set_data(id, true, config.scan_response);
         }
         set_data(id, false, config.advertisement);
@@ -233,7 +234,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       } break;
       case (AdvertisingApiType::ANDROID_HCI): {
         set_parameters(id, config);
-        if (!config.scan_response.empty()) {
+        if (config.advertising_type == AdvertisingType::ADV_IND ||
+            config.advertising_type == AdvertisingType::ADV_NONCONN_IND) {
           set_data(id, true, config.scan_response);
         }
         set_data(id, false, config.advertisement);
@@ -291,8 +293,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       advertising_sets_[id].current_address =
           AddressWithType(controller_->GetMacAddress(), AddressType::PUBLIC_DEVICE_ADDRESS);
     }
-
-    if (!config.scan_response.empty()) {
+    if (config.advertising_type == AdvertisingType::ADV_IND ||
+        config.advertising_type == AdvertisingType::ADV_NONCONN_IND) {
       set_data(id, true, config.scan_response);
     }
     set_data(id, false, config.advertisement);
