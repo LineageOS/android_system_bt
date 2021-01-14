@@ -471,6 +471,10 @@ typedef struct {
   LinkKey link_key;        /* Device link key                    */
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
 
+ public:
+  RawAddress RemoteAddress() const { return bd_addr; }
+  uint16_t get_br_edr_hci_handle() const { return hci_handle; }
+
 #define BTM_SEC_AUTHORIZED BTM_SEC_FLAG_AUTHORIZED       /* 0x01 */
 #define BTM_SEC_AUTHENTICATED BTM_SEC_FLAG_AUTHENTICATED /* 0x02 */
 #define BTM_SEC_ENCRYPTED BTM_SEC_FLAG_ENCRYPTED         /* 0x04 */
