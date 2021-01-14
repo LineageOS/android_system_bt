@@ -40,6 +40,9 @@ cc_test {
     test_suites: ["device-tests"],
     defaults: ["fluoride_defaults"],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     srcs: [
         "test/class_of_device_unittest.cc",
         "test/raw_address_unittest.cc",
