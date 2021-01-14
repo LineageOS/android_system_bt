@@ -401,6 +401,10 @@ void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
                              uint16_t timeout, uint16_t min_ce_len,
                              uint16_t max_ce_len);
 
+// When GATT discovery is in progress, use the minimal connection interval, and
+// reject remote connection updates, until done.
+bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable);
+
 /*******************************************************************************
  *
  * Function         L2CA_SetFixedChannelTout
@@ -492,10 +496,6 @@ uint8_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
  ******************************************************************************/
 uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
                                   tBT_TRANSPORT transport);
-
-void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
-                                    uint16_t* max_interval,
-                                    uint16_t floor_interval);
 
 /**
  * Check whether an ACL or LE link to the remote device is established

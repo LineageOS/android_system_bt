@@ -807,6 +807,7 @@ struct LeFixedChannelHelper {
     channel_enqueue_buffer_[device] = nullptr;
     channels_[device]->GetQueueUpEnd()->UnregisterDequeue();
     channels_[device] = nullptr;
+    conn_parameters_.erase(device);
     uint8_t error = static_cast<uint8_t>(error_code);
     (freg_.pL2CA_FixedConn_Cb)(cid_, address, false, error, BT_TRANSPORT_LE);
   }
@@ -828,6 +829,7 @@ struct LeFixedChannelHelper {
         bluetooth::common::Bind(&LeFixedChannelHelper::on_incoming_data,
                                 bluetooth::common::Unretained(this), device));
     channels_[device] = std::move(channel);
+    conn_parameters_[device] = {};
 
     auto address = bluetooth::ToRawAddress(device.GetAddress());
 
@@ -875,6 +877,18 @@ struct LeFixedChannelHelper {
                      std::unique_ptr<bluetooth::os::EnqueueBuffer<
                          bluetooth::packet::BasePacketBuilder>>>
       channel_enqueue_buffer_;
+
+  struct ConnectionParameter {
+    // Default values are from GD HCI_ACL le_impl.
+    uint16_t min_int = 0x0018;
+    uint16_t max_int = 0x0028;
+    uint16_t latency = 0x0000;
+    uint16_t timeout = 0x001f4;
+    uint16_t min_ce_len = 0x0000;
+    uint16_t max_ce_len = 0x0000;
+    bool update_allowed = true;
+  };
+  std::unordered_map<AddressWithType, ConnectionParameter> conn_parameters_;
   tL2CAP_FIXED_CHNL_REG freg_;
 };
 
@@ -982,10 +996,64 @@ void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
   auto channel = helper->channels_.find(remote);
   if (channel == helper->channels_.end() || channel->second == nullptr) {
     LOG(ERROR) << "Channel is not open";
+    return;
   }
 
-  channel->second->GetLinkOptions()->UpdateConnectionParameter(
-      min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  auto& parameter = helper->conn_parameters_[remote];
+
+  parameter.min_int = min_int;
+  parameter.max_int = max_int;
+  parameter.latency = latency;
+  parameter.timeout = timeout;
+  parameter.min_ce_len = min_ce_len;
+  parameter.max_ce_len = max_ce_len;
+
+  if (parameter.update_allowed) {
+    channel->second->GetLinkOptions()->UpdateConnectionParameter(
+        min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  }
+  // If update not allowed, don't update; instead cache the value, and update
+  // when update is allowed.
+}
+
+bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
+  // When enable is false, we disallow remote connection update request, and
+  // we use default parameters temporarily.
+  auto* helper = &le_fixed_channel_helper_.find(kAttCid)->second;
+  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  auto channel = helper->channels_.find(remote);
+  if (channel == helper->channels_.end() || channel->second == nullptr) {
+    LOG(ERROR) << "Channel is not open";
+    return false;
+  }
+
+  auto& parameter = helper->conn_parameters_[remote];
+  parameter.update_allowed = enable;
+  // TODO(hsz): Notify HCI_ACL LE to allow/disallow remote request.
+
+  if (parameter.update_allowed) {
+    // Use cached values
+    uint16_t min_int = parameter.min_int;
+    uint16_t max_int = parameter.max_int;
+    uint16_t latency = parameter.latency;
+    uint16_t timeout = parameter.timeout;
+    uint16_t min_ce_len = parameter.min_ce_len;
+    uint16_t max_ce_len = parameter.max_ce_len;
+    channel->second->GetLinkOptions()->UpdateConnectionParameter(
+        min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  } else {
+    // Use the value from legacy l2cble_start_conn_update
+    uint16_t min_int = BTM_BLE_CONN_INT_MIN;
+    uint16_t max_int = BTM_BLE_CONN_INT_MIN;
+    L2CA_AdjustConnectionIntervals(&min_int, &max_int, BTM_BLE_CONN_INT_MIN);
+    uint16_t latency = BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF;
+    uint16_t timeout = BTM_BLE_CONN_TIMEOUT_DEF;
+    uint16_t min_ce_len = 0x0000;
+    uint16_t max_ce_len = 0x0000;
+    channel->second->GetLinkOptions()->UpdateConnectionParameter(
+        min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  }
+  return true;
 }
 
 /**
