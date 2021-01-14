@@ -364,11 +364,8 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
         static_cast<bluetooth::hci::Enable>(
             params.scan_request_notification_enable);
 
-    if (bluetooth::shim::BTM_BleLocalPrivacyEnabled()) {
-      config.own_address_type = OwnAddressType::RANDOM_DEVICE_ADDRESS;
-    } else {
-      config.own_address_type = OwnAddressType::PUBLIC_DEVICE_ADDRESS;
-    }
+    // TODO set own_address_type based on address policy
+    config.own_address_type = OwnAddressType::RANDOM_DEVICE_ADDRESS;
   }
 };
 
