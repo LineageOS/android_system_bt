@@ -37,13 +37,6 @@ pub enum Error {
   InvalidPacketError
 }
 
-pub struct Address {
-  pub addr: [u8; 6],
-}
-
-pub struct ClassOfDevice {
-  pub cod: [u8; 3],
-}
 )";
 }
 

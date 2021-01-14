@@ -31,6 +31,10 @@ std::string CustomFieldFixedSize::GetDataType() const {
   return type_name_;
 }
 
+std::string CustomFieldFixedSize::GetRustDataType() const {
+  return type_name_;
+}
+
 int CustomFieldFixedSize::GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size size) const {
   if (!start_offset.empty()) {
     // Default to start if available.
@@ -67,4 +71,37 @@ void CustomFieldFixedSize::GenValidator(std::ostream&) const {
 void CustomFieldFixedSize::GenStringRepresentation(std::ostream& s, std::string accessor) const {
   // We assume that custom fields will have a ToString() method
   s << accessor << ".ToString()";
+}
+
+std::string CustomFieldFixedSize::GetRustParseDataType() const {
+  return "[u8; " + std::to_string(GetSize().bytes()) + "]";
+}
+
+void CustomFieldFixedSize::GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const {
+  Size size = GetSize();
+  int num_leading_bits = GetRustBitOffset(s, start_offset, end_offset, GetSize());
+  if (num_leading_bits != 0) {
+    ERROR(this) << "must be byte aligned";
+  }
+  if (size.bits() % 8 != 0) {
+    ERROR(this) << "size must be in full bytes";
+  }
+
+  s << "let " << GetName() << " = bytes[" << start_offset.bytes() << "..";
+  s << start_offset.bytes() + size.bytes() << "].try_into().unwrap();";
+}
+
+void CustomFieldFixedSize::GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const {
+  Size size = GetSize();
+  int num_leading_bits = GetRustBitOffset(s, start_offset, end_offset, GetSize());
+  if (num_leading_bits != 0) {
+    ERROR(this) << "must be byte aligned";
+  }
+  if (size.bits() % 8 != 0) {
+    ERROR(this) << "size must be in full bytes";
+  }
+
+  s << "let " << GetName() << ": " << GetRustParseDataType() << " = self." << GetName() << ".into();";
+  s << "buffer[" << start_offset.bytes() << ".." << start_offset.bytes() + GetSize().bytes() << "].copy_from_slice(&"
+    << GetName() << ");";
 }
