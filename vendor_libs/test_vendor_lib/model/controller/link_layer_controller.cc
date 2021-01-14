@@ -728,6 +728,7 @@ void LinkLayerController::IncomingIoCapabilityRequestPacket(
                 ErrorCode::UNSUPPORTED_REMOTE_OR_LMP_FEATURE)));
     security_manager_.AuthenticationRequest(incoming.GetSourceAddress(),
                                             handle);
+    security_manager_.SetPinRequested(peer);
     send_event_(bluetooth::hci::PinCodeRequestBuilder::Create(
         incoming.GetSourceAddress()));
     return;
@@ -816,6 +817,7 @@ void LinkLayerController::IncomingIoCapabilityNegativeResponsePacket(
   security_manager_.InvalidateIoCapabilities();
   LOG_INFO("%s doesn't support SSP, try PIN",
            incoming.GetSourceAddress().ToString().c_str());
+  security_manager_.SetPinRequested(peer);
   send_event_(bluetooth::hci::PinCodeRequestBuilder::Create(
       incoming.GetSourceAddress()));
 }
@@ -1564,6 +1566,7 @@ ErrorCode LinkLayerController::LinkKeyRequestNegativeReply(
   } else {
     LOG_INFO("PIN pairing %s", properties_.GetAddress().ToString().c_str());
     ScheduleTask(milliseconds(5), [this, address]() {
+      security_manager_.SetPinRequested(address);
       send_event_(bluetooth::hci::PinCodeRequestBuilder::Create(address));
     });
   }
@@ -1670,6 +1673,10 @@ ErrorCode LinkLayerController::PinCodeRequestReply(const Address& peer,
     });
     return ErrorCode::UNKNOWN_CONNECTION;
   }
+  if (!security_manager_.GetPinRequested(peer)) {
+    LOG_INFO("No Pin Requested for %s", peer.ToString().c_str());
+    return ErrorCode::COMMAND_DISALLOWED;
+  }
   LOG_INFO("Authenticating %s", peer.ToString().c_str());
   SaveKeyAndAuthenticate('L', peer);  // Legacy
   return ErrorCode::SUCCESS;
@@ -1685,6 +1692,10 @@ ErrorCode LinkLayerController::PinCodeRequestNegativeReply(
   });
   if (peer != current_peer) {
     return ErrorCode::UNKNOWN_CONNECTION;
+  }
+  if (!security_manager_.GetPinRequested(peer)) {
+    LOG_INFO("No Pin Requested for %s", peer.ToString().c_str());
+    return ErrorCode::COMMAND_DISALLOWED;
   }
   return ErrorCode::SUCCESS;
 }
