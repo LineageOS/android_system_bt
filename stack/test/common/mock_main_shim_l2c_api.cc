@@ -106,9 +106,8 @@ bool bluetooth::shim::L2CA_SetChnlFlushability(uint16_t cid,
   mock_function_count_map[__func__]++;
   return false;
 }
-bool bluetooth::shim::L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
-                                               uint16_t fixed_cid,
-                                               uint16_t idle_tout) {
+bool bluetooth::shim::L2CA_SetLeGattTimeout(const RawAddress& rem_bda,
+                                            uint16_t idle_tout) {
   mock_function_count_map[__func__]++;
   return false;
 }

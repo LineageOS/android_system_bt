@@ -741,7 +741,7 @@ extern bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
 
 /*******************************************************************************
  *
- * Function         L2CA_SetFixedChannelTout
+ * Function         L2CA_SetLeGattTimeout
  *
  * Description      Higher layers call this function to set the idle timeout for
  *                  a fixed channel. The "idle timeout" is the amount of time
@@ -756,8 +756,8 @@ extern bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
  * Returns          true if command succeeded, false if failed
  *
  ******************************************************************************/
-extern bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
-                                     uint16_t fixed_cid, uint16_t idle_tout);
+extern bool L2CA_SetLeGattTimeout(const RawAddress& rem_bda,
+                                  uint16_t idle_tout);
 
 extern bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda,
                                      uint16_t min_int, uint16_t max_int,
