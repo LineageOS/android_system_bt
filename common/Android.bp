@@ -8,6 +8,7 @@ cc_library_static {
     include_dirs: [
         "system/bt",
         "system/bt/stack/include",
+        "system/bt/gd/rust/shim",
     ],
     srcs: [
         "address_obfuscator.cc",
@@ -40,6 +41,7 @@ cc_test {
     include_dirs: [
         "system/bt",
         "system/bt/stack/include",
+        "system/bt/gd/rust/shim",
     ],
     srcs: [
         "address_obfuscator_unittest.cc",

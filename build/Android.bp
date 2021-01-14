@@ -70,10 +70,20 @@ fluoride_defaults {
         },
     },
     defaults: ["fluoride_types_defaults_fuzzable"],
-    header_libs: ["libbluetooth_headers"],
+    header_libs: ["libbluetooth_headers", "libbt_callbacks_cxx_headers"],
+    generated_headers: [
+        "libbt_hci_bridge_header",
+        "libbt_message_loop_thread_bridge_header",
+        "cxx-bridge-header"
+    ],
+    include_dirs: ["system/bt/gd/rust/shim"],
     static_libs: [
         "libbluetooth-types",
         "libbt-platform-protos-lite",
+        "libbluetooth_rust_interop",
+        "liblog",
+        "libcutils",
+        "libbt_shim_ffi",
     ],
     cpp_std: "c++17",
     sanitize: {
