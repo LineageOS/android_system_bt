@@ -1077,12 +1077,7 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
   return false;
 }
 
-bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
-                              uint16_t idle_tout) {
-  if (fixed_cid != kLeAttributeCid) {
-    LOG_INFO("UNIMPLEMENTED %s", __func__);
-    return false;
-  }
+bool L2CA_SetLeGattTimeout(const RawAddress& rem_bda, uint16_t idle_tout) {
   if (idle_tout == 0xffff) {
     bluetooth::shim::L2CA_ConnectFixedChnl(kLeAttributeCid, rem_bda);
   } else {
