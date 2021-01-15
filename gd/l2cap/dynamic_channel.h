@@ -72,6 +72,12 @@ class DynamicChannel {
 
   Cid HACK_GetRemoteCid();
 
+  /**
+   * Used by A2dp software encoding to prioritize Tx of this channel
+   * @param high_priority
+   */
+  void HACK_SetChannelTxPriority(bool high_priority);
+
  private:
   std::shared_ptr<l2cap::internal::DynamicChannelImpl> impl_;
   os::Handler* l2cap_handler_;

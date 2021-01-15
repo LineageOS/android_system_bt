@@ -66,6 +66,7 @@ class DataPipelineManager {
   virtual DataController* GetDataController(Cid cid);
   virtual void OnPacketSent(Cid cid);
   virtual void UpdateClassicConfiguration(Cid cid, classic::internal::ChannelConfigurationState config);
+  virtual void SetChannelTxPriority(Cid cid, bool high_priority);
   virtual ~DataPipelineManager() = default;
 
  private:

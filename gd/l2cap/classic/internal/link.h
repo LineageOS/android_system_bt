@@ -106,6 +106,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   virtual void SendConnectionRequest(Psm psm, Cid local_cid);
   virtual void SendConnectionRequest(Psm psm, Cid local_cid,
                                      PendingDynamicChannelConnection pending_dynamic_channel_connection);
+  void SetChannelTxPriority(Cid local_cid, bool high_priority) override;
 
   // When a Link is established, LinkManager notifies pending dynamic channels to connect
   virtual void SetPendingDynamicChannels(std::list<Psm> psm_list,
