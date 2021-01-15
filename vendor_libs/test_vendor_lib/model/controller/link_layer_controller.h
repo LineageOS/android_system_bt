@@ -369,6 +369,8 @@ class LinkLayerController {
   void IncomingPageResponsePacket(model::packets::LinkLayerPacketView packet);
   void IncomingPasskeyPacket(model::packets::LinkLayerPacketView packet);
   void IncomingPasskeyFailedPacket(model::packets::LinkLayerPacketView packet);
+  void IncomingPinRequestPacket(model::packets::LinkLayerPacketView packet);
+  void IncomingPinResponsePacket(model::packets::LinkLayerPacketView packet);
   void IncomingReadRemoteLmpFeatures(
       model::packets::LinkLayerPacketView packet);
   void IncomingReadRemoteLmpFeaturesResponse(
