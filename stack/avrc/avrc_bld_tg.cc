@@ -1322,7 +1322,7 @@ static BT_HDR* avrc_bld_init_rsp_buffer(tAVRC_RESPONSE* p_rsp) {
   }
 
   /* allocate and initialize the buffer */
-  BT_HDR* p_pkt = (BT_HDR*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
+  BT_HDR* p_pkt = (BT_HDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
   uint8_t *p_data, *p_start;
 
   p_pkt->layer_specific = chnl;
