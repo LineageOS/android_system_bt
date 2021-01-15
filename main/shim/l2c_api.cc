@@ -252,6 +252,16 @@ struct ClassicDynamicChannelHelper {
     return channel->second->HACK_GetRemoteCid();
   }
 
+  bool SetChannelTxPriority(uint16_t cid, bool high_priority) {
+    auto channel = channels_.find(cid);
+    if (channel == channels_.end()) {
+      LOG_ERROR("Channel is not open");
+      return false;
+    }
+    channel->second->HACK_SetChannelTxPriority(high_priority);
+    return true;
+  }
+
   std::unordered_map<uint16_t, std::unique_ptr<classic::DynamicChannel>>
       channels_;
   std::unordered_map<uint16_t, std::unique_ptr<bluetooth::os::EnqueueBuffer<
@@ -1073,8 +1083,14 @@ bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid) {
 }
 
 bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  auto psm = classic_cid_token_to_channel_map_[cid];
+  if (classic_dynamic_channel_helper_map_.count(psm) == 0) {
+    LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    return false;
+  }
+  bool high_priority = priority == L2CAP_CHNL_PRIORITY_HIGH;
+  return classic_dynamic_channel_helper_map_[psm]->SetChannelTxPriority(
+      cid, high_priority);
 }
 
 bool L2CA_SetLeGattTimeout(const RawAddress& rem_bda, uint16_t idle_tout) {
