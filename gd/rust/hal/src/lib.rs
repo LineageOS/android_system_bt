@@ -12,12 +12,8 @@ pub mod snoop;
 #[cfg(target_os = "android")]
 mod hidl_hal;
 
-use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
-use gddi::{module, Stoppable};
-use std::sync::Arc;
+use gddi::module;
 use thiserror::Error;
-use tokio::sync::mpsc::{Receiver, Sender};
-use tokio::sync::Mutex;
 
 #[cfg(target_os = "android")]
 module! {
@@ -41,20 +37,8 @@ module! {
 /// H4 packet header size
 const H4_HEADER_SIZE: usize = 1;
 
-/// HAL interface
-/// This is used by the HCI module to send commands to the
-/// HAL and receive events from the HAL
-#[derive(Clone, Stoppable)]
-pub struct Hal {
-    /// Transmit end of a channel used to send HCI commands
-    pub cmd_tx: Sender<CommandPacket>,
-    /// Receive end of a channel used to receive HCI events
-    pub evt_rx: Arc<Mutex<Receiver<EventPacket>>>,
-    /// Transmit end of a channel used to send ACL data
-    pub acl_tx: Sender<AclPacket>,
-    /// Receive end of a channel used to receive ACL data
-    pub acl_rx: Arc<Mutex<Receiver<AclPacket>>>,
-}
+pub use snoop::AclHal;
+pub use snoop::ControlHal;
 
 mod internal {
     use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
