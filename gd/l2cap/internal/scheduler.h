@@ -54,6 +54,12 @@ class Scheduler {
    */
   virtual void OnPacketsReady(Cid cid, int number_packets) {}
 
+  /**
+   * Let the scheduler send the specified cid first.
+   * Used by A2dp software encoding.
+   */
+  virtual void SetChannelTxPriority(Cid cid, bool high_priority) {}
+
   virtual ~Scheduler() = default;
 };
 
