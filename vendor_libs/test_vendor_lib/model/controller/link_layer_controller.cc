@@ -285,6 +285,12 @@ void LinkLayerController::IncomingPacket(
     case (model::packets::PacketType::PASSKEY_FAILED):
       IncomingPasskeyFailedPacket(incoming);
       break;
+    case (model::packets::PacketType::PIN_REQUEST):
+      IncomingPinRequestPacket(incoming);
+      break;
+    case (model::packets::PacketType::PIN_RESPONSE):
+      IncomingPinResponsePacket(incoming);
+      break;
     case (model::packets::PacketType::REMOTE_NAME_REQUEST):
       IncomingRemoteNameRequest(incoming);
       break;
@@ -1339,6 +1345,111 @@ void LinkLayerController::IncomingPasskeyFailedPacket(
   });
 }
 
+void LinkLayerController::IncomingPinRequestPacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto request = model::packets::PinRequestView::Create(incoming);
+  ASSERT(request.IsValid());
+  auto peer = incoming.GetSourceAddress();
+  auto handle = connections_.GetHandle(AddressWithType(
+      peer, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  if (handle == kReservedHandle) {
+    LOG_INFO("Dropping %s request (no connection)", peer.ToString().c_str());
+    auto wrong_pin = request.GetPinCode();
+    wrong_pin[0] = wrong_pin[0]++;
+    SendLinkLayerPacket(model::packets::PinResponseBuilder::Create(
+        properties_.GetAddress(), peer, wrong_pin));
+    return;
+  }
+  if (security_manager_.AuthenticationInProgress()) {
+    auto current_peer = security_manager_.GetAuthenticationAddress();
+    if (current_peer != peer) {
+      LOG_INFO("Dropping %s request (%s in progress)", peer.ToString().c_str(),
+               current_peer.ToString().c_str());
+      auto wrong_pin = request.GetPinCode();
+      wrong_pin[0] = wrong_pin[0]++;
+      SendLinkLayerPacket(model::packets::PinResponseBuilder::Create(
+          properties_.GetAddress(), peer, wrong_pin));
+      return;
+    }
+  } else {
+    LOG_INFO("Incoming authentication request %s", peer.ToString().c_str());
+    security_manager_.AuthenticationRequest(peer, handle);
+  }
+  auto current_peer = security_manager_.GetAuthenticationAddress();
+  security_manager_.SetRemotePin(peer, request.GetPinCode());
+  if (security_manager_.GetPinRequested(peer)) {
+    if (security_manager_.GetLocalPinResponseReceived(peer)) {
+      SendLinkLayerPacket(model::packets::PinResponseBuilder::Create(
+          properties_.GetAddress(), peer, request.GetPinCode()));
+      if (security_manager_.PinCompare()) {
+        LOG_INFO("Authenticating %s", peer.ToString().c_str());
+        SaveKeyAndAuthenticate('L', peer);  // Legacy
+      } else {
+        security_manager_.AuthenticationRequestFinished();
+        ScheduleTask(milliseconds(5), [this, peer]() {
+          send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
+              ErrorCode::AUTHENTICATION_FAILURE, peer));
+        });
+      }
+    }
+  } else {
+    LOG_INFO("PIN pairing %s", properties_.GetAddress().ToString().c_str());
+    ScheduleTask(milliseconds(5), [this, peer]() {
+      security_manager_.SetPinRequested(peer);
+      send_event_(bluetooth::hci::PinCodeRequestBuilder::Create(peer));
+    });
+  }
+}
+
+void LinkLayerController::IncomingPinResponsePacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto request = model::packets::PinResponseView::Create(incoming);
+  ASSERT(request.IsValid());
+  auto peer = incoming.GetSourceAddress();
+  auto handle = connections_.GetHandle(AddressWithType(
+      peer, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  if (handle == kReservedHandle) {
+    LOG_INFO("Dropping %s request (no connection)", peer.ToString().c_str());
+    return;
+  }
+  if (security_manager_.AuthenticationInProgress()) {
+    auto current_peer = security_manager_.GetAuthenticationAddress();
+    if (current_peer != peer) {
+      LOG_INFO("Dropping %s request (%s in progress)", peer.ToString().c_str(),
+               current_peer.ToString().c_str());
+      return;
+    }
+  } else {
+    LOG_INFO("Dropping response without authentication request %s",
+             peer.ToString().c_str());
+    return;
+  }
+  auto current_peer = security_manager_.GetAuthenticationAddress();
+  security_manager_.SetRemotePin(peer, request.GetPinCode());
+  if (security_manager_.GetPinRequested(peer)) {
+    if (security_manager_.GetLocalPinResponseReceived(peer)) {
+      SendLinkLayerPacket(model::packets::PinResponseBuilder::Create(
+          properties_.GetAddress(), peer, request.GetPinCode()));
+      if (security_manager_.PinCompare()) {
+        LOG_INFO("Authenticating %s", peer.ToString().c_str());
+        SaveKeyAndAuthenticate('L', peer);  // Legacy
+      } else {
+        security_manager_.AuthenticationRequestFinished();
+        ScheduleTask(milliseconds(5), [this, peer]() {
+          send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
+              ErrorCode::AUTHENTICATION_FAILURE, peer));
+        });
+      }
+    }
+  } else {
+    LOG_INFO("PIN pairing %s", properties_.GetAddress().ToString().c_str());
+    ScheduleTask(milliseconds(5), [this, peer]() {
+      security_manager_.SetPinRequested(peer);
+      send_event_(bluetooth::hci::PinCodeRequestBuilder::Create(peer));
+    });
+  }
+}
+
 void LinkLayerController::IncomingPagePacket(
     model::packets::LinkLayerPacketView incoming) {
   auto page = model::packets::PageView::Create(incoming);
@@ -1677,8 +1788,22 @@ ErrorCode LinkLayerController::PinCodeRequestReply(const Address& peer,
     LOG_INFO("No Pin Requested for %s", peer.ToString().c_str());
     return ErrorCode::COMMAND_DISALLOWED;
   }
-  LOG_INFO("Authenticating %s", peer.ToString().c_str());
-  SaveKeyAndAuthenticate('L', peer);  // Legacy
+  security_manager_.SetLocalPin(peer, pin);
+  if (security_manager_.GetRemotePinResponseReceived(peer)) {
+    if (security_manager_.PinCompare()) {
+      LOG_INFO("Authenticating %s", peer.ToString().c_str());
+      SaveKeyAndAuthenticate('L', peer);  // Legacy
+    } else {
+      security_manager_.AuthenticationRequestFinished();
+      ScheduleTask(milliseconds(5), [this, peer]() {
+        send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
+            ErrorCode::AUTHENTICATION_FAILURE, peer));
+      });
+    }
+  } else {
+    SendLinkLayerPacket(model::packets::PinRequestBuilder::Create(
+        properties_.GetAddress(), peer, pin));
+  }
   return ErrorCode::SUCCESS;
 }
 
