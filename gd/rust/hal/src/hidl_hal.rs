@@ -1,6 +1,6 @@
 //! Implementation of the HAl that talks to BT controller over Android's HIDL
 use crate::internal::{InnerHal, RawHal};
-use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
+use bt_packets::hci::{AclPacket, CommandPacket, EventPacket, Packet};
 use gddi::{module, provides};
 use std::sync::Arc;
 use std::sync::Mutex;

@@ -37,6 +37,11 @@ pub enum Error {
   InvalidPacketError
 }
 
+pub trait Packet {
+  fn to_bytes(self) -> Bytes;
+  fn to_vec(self) -> Vec<u8>;
+}
+
 )";
 }
 
