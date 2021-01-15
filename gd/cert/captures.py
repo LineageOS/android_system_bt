@@ -165,6 +165,14 @@ class L2capCaptures(object):
         frame = L2capMatchers.le_control_frame_with_code(packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_RESPONSE)
         return l2cap_packets.LeCreditBasedConnectionResponseView(frame)
 
+    @staticmethod
+    def LinkSecurityInterfaceCallbackEvent(type):
+        return Capture(L2capMatchers.LinkSecurityInterfaceCallbackEvent(type), L2capCaptures._extract_address)
+
+    @staticmethod
+    def _extract_address(packet):
+        return packet.address
+
 
 class SecurityCaptures(object):
 

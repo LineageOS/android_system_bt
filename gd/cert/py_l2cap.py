@@ -17,14 +17,18 @@
 from google.protobuf import empty_pb2 as empty_proto
 
 from l2cap.classic import facade_pb2 as l2cap_facade_pb2
+from l2cap.classic.facade_pb2 import LinkSecurityInterfaceCallbackEventType
 from l2cap.le import facade_pb2 as l2cap_le_facade_pb2
 from l2cap.le.facade_pb2 import SecurityLevel
+from bluetooth_packets_python3 import hci_packets
 from bluetooth_packets_python3 import l2cap_packets
 from cert.event_stream import FilteringEventStream
 from cert.event_stream import EventStream, IEventStream
 from cert.closable import Closable, safeClose
-from cert.truth import assertThat
+from cert.py_hci import PyHci
+from cert.matchers import HciMatchers
 from cert.matchers import L2capMatchers
+from cert.truth import assertThat
 from facade import common_pb2 as common
 
 
@@ -69,13 +73,20 @@ class _ClassicConnectionResponseFutureWrapper(object):
 
 class PyL2cap(Closable):
 
-    def __init__(self, device, cert_address):
+    def __init__(self, device, cert_address, has_security=False):
         self._device = device
         self._cert_address = cert_address
+        self._hci = PyHci(device)
         self._l2cap_stream = EventStream(self._device.l2cap.FetchL2capData(empty_proto.Empty()))
+        self._security_connection_event_stream = EventStream(
+            self._device.l2cap.FetchSecurityConnectionEvents(empty_proto.Empty()))
+        if has_security == False:
+            self._hci.register_for_events(hci_packets.EventCode.LINK_KEY_REQUEST)
 
     def close(self):
         safeClose(self._l2cap_stream)
+        safeClose(self._security_connection_event_stream)
+        safeClose(self._hci)
 
     def register_dynamic_channel(self, psm=0x33, mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
         self._device.l2cap.SetDynamicChannel(
@@ -95,6 +106,52 @@ class PyL2cap(Closable):
 
     def get_channel_queue_buffer_size(self):
         return self._device.l2cap.GetChannelQueueDepth(empty_proto.Empty()).size
+
+    def initiate_connection_for_security(self):
+        """
+        Establish an ACL for the specific purpose of pairing devices
+        """
+        self._device.l2cap.InitiateConnectionForSecurity(self._cert_address)
+
+    def get_security_connection_event_stream(self):
+        """
+        Stream of Link related events.  Events are returned with an address.
+        Events map to the LinkSecurityInterfaceListener callbacks
+        """
+        return self._security_connection_event_stream
+
+    def security_link_hold(self):
+        """
+        Holds open the ACL indefinitely allowing for the security handshake
+        to take place
+        """
+        self._device.l2cap.SecurityLinkHold(self._cert_address)
+
+    def security_link_ensure_authenticated(self):
+        """
+        Triggers authentication process by sending HCI event AUTHENTICATION_REQUESTED
+        """
+        self._device.l2cap.SecurityLinkEnsureAuthenticated(self._cert_address)
+
+    def security_link_release(self):
+        """
+        Releases a Held open ACL allowing for the ACL to time out after the default time
+        """
+        self._device.l2cap.SecurityLinkRelease(self._cert_address)
+
+    def security_link_disconnect(self):
+        """
+        Immediately release and disconnect ACL
+        """
+        self._device.l2cap.SecurityLinkDisconnect(self._cert_address)
+
+    def verify_security_connection(self):
+        """
+        Verify that we get a connection and a link key request
+        """
+        assertThat(self.get_security_connection_event_stream()).emits(
+            lambda event: event.event_type == LinkSecurityInterfaceCallbackEventType.ON_CONNECTED)
+        assertThat(self._hci.get_event_stream()).emits(HciMatchers.LinkKeyRequest())
 
 
 class PyLeL2capFixedChannel(IEventStream):

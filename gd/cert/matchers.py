@@ -144,7 +144,7 @@ class HciMatchers(object):
 
     @staticmethod
     def LogEventCode():
-        return lambda event: logging.info("Received event: %x" % hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(event.event))).GetEventCode())
+        return lambda event: logging.info("Received event: %x" % hci_packets.EventView(bt_packets.PacketViewLittleEndian(list(event.payload))).GetEventCode())
 
     @staticmethod
     def LinkKeyRequest():
@@ -697,6 +697,10 @@ class L2capMatchers(object):
         response = l2cap_packets.LeCreditBasedConnectionResponseView(frame)
         return response.GetResult() == result and (result != LeCreditBasedConnectionResponseResult.SUCCESS or
                                                    response.GetDestinationCid() != 0)
+
+    @staticmethod
+    def LinkSecurityInterfaceCallbackEvent(type):
+        return lambda event: True if event.event_type == type else False
 
 
 class SecurityMatchers(object):
