@@ -54,6 +54,12 @@ class MultiPriorityQueue {
     next_to_dequeue_.push(priority);
   }
 
+  // Push the item with specified priority
+  void push(T&& t, int priority = 0) {
+    queues_[priority].push(std::forward<T>(t));
+    next_to_dequeue_.push(priority);
+  }
+
   // Pop the item in the front
   void pop() {
     queues_[next_to_dequeue_.top()].pop();
