@@ -81,6 +81,16 @@ class Device {
   bool Disconnect();
 
   /**
+   * Set the status of the BIP obex client
+   */
+  void SetBipClientStatus(bool connected);
+
+  /**
+   * Returns true if the current device has a BIP OBEX client.
+   */
+  bool HasBipClient() const;
+
+  /**
    * Returns true if the current device is silenced.
    */
   bool IsInSilenceMode() const;
@@ -295,6 +305,7 @@ class Device {
       send_message_cb_;
   uint16_t ctrl_mtu_;
   uint16_t browse_mtu_;
+  bool has_bip_client_;
 
   int curr_browsed_player_id_ = -1;
 

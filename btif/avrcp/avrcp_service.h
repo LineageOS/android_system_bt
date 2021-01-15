@@ -56,8 +56,13 @@ class AvrcpService : public MediaCallbacks {
   void Init(MediaInterface* media_interface, VolumeInterface* volume_interface);
   void Cleanup();
 
+  void RegisterBipServer(int psm);
+  void UnregisterBipServer();
+
   void ConnectDevice(const RawAddress& bdaddr);
   void DisconnectDevice(const RawAddress& bdaddr);
+
+  void SetBipClientStatus(const RawAddress& bdaddr, bool connected);
 
   // Functions inherited from MediaCallbacks in order to receive updates
   void SendMediaUpdate(bool track_changed, bool play_state,
@@ -70,8 +75,11 @@ class AvrcpService : public MediaCallbacks {
    public:
     void Init(MediaInterface* media_interface,
               VolumeInterface* volume_interface) override;
+    void RegisterBipServer(int psm) override;
+    void UnregisterBipServer() override;
     bool ConnectDevice(const RawAddress& bdaddr) override;
     bool DisconnectDevice(const RawAddress& bdaddr) override;
+    void SetBipClientStatus(const RawAddress& bdaddr, bool connected) override;
     bool Cleanup() override;
 
    private:
@@ -82,10 +90,14 @@ class AvrcpService : public MediaCallbacks {
 
  protected:
   void DeviceCallback(std::shared_ptr<Device> device);
+  uint16_t GetSupportedFeatures(uint16_t profile_version);
 
  private:
   static AvrcpService* instance_;
   static ServiceInterfaceImpl* service_interface_;
+
+  uint32_t sdp_record_handle = -1;
+  uint16_t profile_version = -1;
 
   MediaInterface* media_interface_ = nullptr;
   VolumeInterface* volume_interface_ = nullptr;
