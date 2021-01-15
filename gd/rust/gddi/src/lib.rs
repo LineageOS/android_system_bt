@@ -7,7 +7,7 @@ use std::pin::Pin;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
-pub use gddi_macros::{module, provides, Stoppable};
+pub use gddi_macros::{module, part_out, provides, Stoppable};
 
 type InstanceBox = Box<dyn Any + Send + Sync>;
 /// A box around a future for a provider that is safe to send between threads
@@ -46,9 +46,7 @@ impl Default for RegistryBuilder {
 impl RegistryBuilder {
     /// Creates a new RegistryBuilder
     pub fn new() -> Self {
-        RegistryBuilder {
-            providers: HashMap::new(),
-        }
+        RegistryBuilder { providers: HashMap::new() }
     }
 
     /// Registers a module with this registry
@@ -61,8 +59,7 @@ impl RegistryBuilder {
 
     /// Registers a provider function with this registry
     pub fn register_provider<T: 'static>(mut self, f: ProviderFnBox) -> Self {
-        self.providers
-            .insert(TypeId::of::<T>(), Provider { f: Arc::new(f) });
+        self.providers.insert(TypeId::of::<T>(), Provider { f: Arc::new(f) });
 
         self
     }
@@ -84,10 +81,7 @@ impl Registry {
         {
             let instances = self.instances.lock().await;
             if let Some(value) = instances.get(&typeid) {
-                return value
-                    .downcast_ref::<T>()
-                    .expect("was not correct type")
-                    .clone();
+                return value.downcast_ref::<T>().expect("was not correct type").clone();
             }
         }
 

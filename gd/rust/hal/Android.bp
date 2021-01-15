@@ -20,6 +20,7 @@ rust_library {
         "liblog_rust",
         "libbt_common",
         "libnum_traits",
+        "libbt_facade_helpers",
     ],
     proc_macros: [
         "libnum_derive",

@@ -1,6 +1,6 @@
 //! Loads info from the controller at startup
 
-use crate::{Address, Hci};
+use crate::{Address, CommandSender};
 use bt_packets::hci::{
     Enable, ErrorCode, LeMaximumDataLength, LeReadBufferSizeV1Builder, LeReadBufferSizeV2Builder,
     LeReadConnectListSizeBuilder, LeReadLocalSupportedFeaturesBuilder,
@@ -34,7 +34,7 @@ macro_rules! assert_success {
 }
 
 #[provides]
-async fn provide_controller(mut hci: Hci) -> Arc<ControllerExports> {
+async fn provide_controller(mut hci: CommandSender) -> Arc<ControllerExports> {
     assert_success!(hci.send(LeSetEventMaskBuilder { le_event_mask: 0x0000000000021e7f }));
     assert_success!(hci.send(SetEventMaskBuilder { event_mask: 0x3dbfffffffffffff }));
     assert_success!(
@@ -167,7 +167,7 @@ async fn provide_controller(mut hci: Hci) -> Arc<ControllerExports> {
     })
 }
 
-async fn read_features(hci: &mut Hci) -> SupportedFeatures {
+async fn read_features(hci: &mut CommandSender) -> SupportedFeatures {
     let mut features = Vec::new();
     let mut page_number: u8 = 0;
     let mut max_page_number: u8 = 1;

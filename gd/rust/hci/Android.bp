@@ -19,6 +19,7 @@ rust_library {
         "liblog_rust",
         "libbt_common",
         "libbt_hci_custom_types",
+        "libbt_facade_helpers",
     ],
     proc_macros: [
         "libnum_derive",
