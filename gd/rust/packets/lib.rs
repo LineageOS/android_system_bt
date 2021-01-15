@@ -5,5 +5,7 @@
 #![allow(missing_docs)]
 
 pub mod hci {
+    use bt_hci_custom_types::*;
+
     include!(concat!(env!("OUT_DIR"), "/hci_packets.rs"));
 }

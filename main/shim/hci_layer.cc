@@ -273,15 +273,6 @@ static bool event_already_registered_in_le_scanning_manager(
   return false;
 }
 
-}  // namespace
-
-namespace cpp {
-bluetooth::common::BidiQueueEnd<bluetooth::hci::AclBuilder,
-                                bluetooth::hci::AclView>* hci_queue_end =
-    nullptr;
-static bluetooth::os::EnqueueBuffer<bluetooth::hci::AclBuilder>* pending_data =
-    nullptr;
-
 class OsiObject {
  public:
   OsiObject(void* ptr) : ptr_(ptr) {}
@@ -299,6 +290,15 @@ class OsiObject {
  private:
   void* ptr_;
 };
+
+}  // namespace
+
+namespace cpp {
+bluetooth::common::BidiQueueEnd<bluetooth::hci::AclBuilder,
+                                bluetooth::hci::AclView>* hci_queue_end =
+    nullptr;
+static bluetooth::os::EnqueueBuffer<bluetooth::hci::AclBuilder>* pending_data =
+    nullptr;
 
 static std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
     const uint8_t* data, size_t len) {
@@ -502,6 +502,7 @@ using bluetooth::common::Unretained;
 namespace rust {
 
 using bluetooth::shim::rust::u8SliceCallback;
+using bluetooth::shim::rust::u8SliceOnceCallback;
 
 static BT_HDR* WrapRustPacketAndCopy(uint16_t event,
                                      ::rust::Slice<uint8_t>* data) {
@@ -531,9 +532,57 @@ static void on_event(::rust::Slice<uint8_t> data) {
                         WrapRustPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &data));
 }
 
+void OnRustTransmitPacketCommandComplete(command_complete_cb complete_callback,
+                                         void* context,
+                                         ::rust::Slice<uint8_t> data) {
+  BT_HDR* response = WrapRustPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &data);
+  complete_callback(response, context);
+}
+
+void OnRustTransmitPacketStatus(command_status_cb status_callback,
+                                void* context,
+                                std::unique_ptr<OsiObject> command,
+                                ::rust::Slice<uint8_t> data) {
+  ASSERT(data.length() >= 3);
+  uint8_t status = data.data()[2];
+  status_callback(status, static_cast<BT_HDR*>(command->Release()), context);
+}
+
 static void transmit_command(BT_HDR* command,
                              command_complete_cb complete_callback,
                              command_status_cb status_callback, void* context) {
+  CHECK(command != nullptr);
+  uint8_t* data = command->data + command->offset;
+  size_t len = command->len;
+  CHECK(len >= (kCommandOpcodeSize + kCommandLengthSize));
+
+  // little endian command opcode
+  uint16_t command_op_code = (data[1] << 8 | data[0]);
+  // Gd stack API requires opcode specification and calculates length, so
+  // no need to provide opcode or length here.
+  data += (kCommandOpcodeSize + kCommandLengthSize);
+  len -= (kCommandOpcodeSize + kCommandLengthSize);
+
+  auto op_code = static_cast<const bluetooth::hci::OpCode>(command_op_code);
+
+  LOG_DEBUG("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
+
+  if (bluetooth::hci::Checker::IsCommandStatusOpcode(op_code)) {
+    auto command_unique = std::make_unique<OsiObject>(command);
+    bluetooth::shim::rust::hci_send_command(
+        **bluetooth::shim::Stack::Stack::GetInstance()->GetRustHci(),
+        ::rust::Slice(data, len),
+        std::make_unique<u8SliceOnceCallback>(
+            BindOnce(OnRustTransmitPacketStatus, status_callback, context,
+                     std::move(command_unique))));
+  } else {
+    bluetooth::shim::rust::hci_send_command(
+        **bluetooth::shim::Stack::Stack::GetInstance()->GetRustHci(),
+        ::rust::Slice(data, len),
+        std::make_unique<u8SliceOnceCallback>(BindOnce(
+            OnRustTransmitPacketCommandComplete, complete_callback, context)));
+    osi_free(command);
+  }
 }
 
 static void transmit_fragment(uint8_t* stream, size_t length) {

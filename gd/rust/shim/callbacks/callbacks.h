@@ -7,17 +7,63 @@ namespace bluetooth {
 namespace shim {
 namespace rust {
 
-class u8SliceCallback {
+template <class TArg>
+class TrampolineCallback {
  public:
-  u8SliceCallback(base::Callback<void(::rust::Slice<uint8_t>)> callback) : callback_(callback) {}
+  TrampolineCallback(base::Callback<void(TArg)> callback) : callback_(callback) {}
 
-  void Run(::rust::Slice<uint8_t> value) const {
+  void Run(TArg value) const {
     callback_.Run(value);
   }
 
  private:
-  base::Callback<void(::rust::Slice<uint8_t>)> callback_;
+  base::Callback<void(TArg)> callback_;
 };
+
+template <class TArg>
+class TrampolineOnceCallback {
+ public:
+  TrampolineOnceCallback(base::OnceCallback<void(TArg)> callback)
+      : callback_(new base::OnceCallback<void(TArg)>(std::move(callback))) {}
+  ~TrampolineOnceCallback() {
+    if (callback_ != nullptr) {
+      delete callback_;
+      callback_ = nullptr;
+    }
+  }
+
+  void Run(TArg value) const {
+    std::move(*callback_).Run(value);
+    delete callback_;
+    ((TrampolineOnceCallback<TArg>*)this)->callback_ = nullptr;
+  }
+
+ private:
+  base::OnceCallback<void(TArg)>* callback_;
+};
+
+class OnceClosure {
+ public:
+  OnceClosure(base::OnceClosure closure) : closure_(new base::OnceClosure(std::move(closure))) {}
+  ~OnceClosure() {
+    if (closure_ != nullptr) {
+      delete closure_;
+      closure_ = nullptr;
+    }
+  }
+
+  void Run() const {
+    std::move(*closure_).Run();
+    delete closure_;
+    ((OnceClosure*)this)->closure_ = nullptr;
+  }
+
+ private:
+  base::OnceClosure* closure_;
+};
+
+using u8SliceCallback = TrampolineCallback<::rust::Slice<uint8_t>>;
+using u8SliceOnceCallback = TrampolineOnceCallback<::rust::Slice<uint8_t>>;
 
 }  // namespace rust
 }  // namespace shim

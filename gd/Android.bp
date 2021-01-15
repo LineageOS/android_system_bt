@@ -498,6 +498,7 @@ genrule {
 
 rust_library {
     name: "libbt_packets",
+    defaults: ["gd_rust_defaults"],
     crate_name: "bt_packets",
     srcs: ["rust/packets/lib.rs", ":BluetoothGeneratedPackets_rust"],
     edition: "2018",
@@ -507,6 +508,7 @@ rust_library {
         "libbytes",
         "libnum_traits",
         "libthiserror",
+        "libbt_hci_custom_types",
     ],
 }
 

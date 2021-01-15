@@ -125,7 +125,7 @@ tGATT_STATUS gatts_write_attr_perm_check(tGATT_SVC_DB* p_db, uint8_t op_code,
 }
 void gatt_update_app_use_link_flag(tGATT_IF gatt_if, tGATT_TCB* p_tcb,
                                    bool is_add, bool check_acl_link) {}
-base::MessageLoop* get_main_message_loop() { return nullptr; }
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 void l2cble_set_fixed_channel_tx_data_length(const RawAddress& remote_bda,
                                              uint16_t fix_cid,
                                              uint16_t tx_mtu) {}

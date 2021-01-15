@@ -7,8 +7,11 @@ pub mod error;
 /// HCI layer facade service
 pub mod facade;
 
+pub use bt_hci_custom_types::*;
+pub use controller::ControllerExports;
+
 use bt_common::time::Alarm;
-use bt_hal::HalExports;
+use bt_hal::Hal;
 use bt_packets::hci::EventChild::{
     CommandComplete, CommandStatus, LeMetaEvent, MaxSlotsChange, PageScanRepetitionModeChange,
     VendorSpecificEvent,
@@ -34,12 +37,12 @@ module! {
         controller::controller_module,
     },
     providers {
-        HciExports => provide_hci,
+        Hci => provide_hci,
     },
 }
 
 #[provides]
-async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
+async fn provide_hci(hal: Hal, rt: Arc<Runtime>) -> Hci {
     let (cmd_tx, cmd_rx) = channel::<QueuedCommand>(10);
     let evt_handlers = Arc::new(Mutex::new(HashMap::new()));
     let le_evt_handlers = Arc::new(Mutex::new(HashMap::new()));
@@ -47,25 +50,20 @@ async fn provide_hci(hal_exports: HalExports, rt: Arc<Runtime>) -> HciExports {
     rt.spawn(dispatch(
         evt_handlers.clone(),
         le_evt_handlers.clone(),
-        hal_exports.evt_rx,
-        hal_exports.cmd_tx,
+        hal.evt_rx,
+        hal.cmd_tx,
         cmd_rx,
     ));
 
-    let mut exports = HciExports {
-        cmd_tx,
-        evt_handlers,
-        le_evt_handlers,
-        acl_tx: hal_exports.acl_tx,
-        acl_rx: hal_exports.acl_rx,
-    };
+    let mut hci =
+        Hci { cmd_tx, evt_handlers, le_evt_handlers, acl_tx: hal.acl_tx, acl_rx: hal.acl_rx };
 
     assert!(
-        exports.send(ResetBuilder {}).await.get_status() == ErrorCode::Success,
+        hci.send(ResetBuilder {}).await.get_status() == ErrorCode::Success,
         "reset did not complete successfully"
     );
 
-    exports
+    hci
 }
 
 #[derive(Debug)]
@@ -76,7 +74,7 @@ struct QueuedCommand {
 
 /// HCI interface
 #[derive(Clone, Stoppable)]
-pub struct HciExports {
+pub struct Hci {
     cmd_tx: Sender<QueuedCommand>,
     evt_handlers: Arc<Mutex<HashMap<EventCode, Sender<EventPacket>>>>,
     le_evt_handlers: Arc<Mutex<HashMap<SubeventCode, Sender<LeMetaEventPacket>>>>,
@@ -86,7 +84,7 @@ pub struct HciExports {
     pub acl_rx: Arc<Mutex<Receiver<AclPacket>>>,
 }
 
-impl HciExports {
+impl Hci {
     /// Send a command, but does not automagically associate the expected returning event type.
     ///
     /// Only really useful for facades & shims.

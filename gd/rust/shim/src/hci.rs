@@ -15,8 +15,10 @@ mod ffi {
         include!("callbacks/callbacks.h");
 
         type u8SliceCallback;
+        fn Run(self: &u8SliceCallback, data: &[u8]);
 
-        fn Run(&self, data: &[u8]);
+        type u8SliceOnceCallback;
+        fn Run(self: &u8SliceOnceCallback, data: &[u8]);
     }
 
     extern "Rust" {
@@ -26,7 +28,7 @@ mod ffi {
         fn hci_set_evt_callback(hci: &mut Hci, callback: UniquePtr<u8SliceCallback>);
         fn hci_set_le_evt_callback(hci: &mut Hci, callback: UniquePtr<u8SliceCallback>);
 
-        fn hci_send_command(hci: &mut Hci, data: &[u8], callback: UniquePtr<u8SliceCallback>);
+        fn hci_send_command(hci: &mut Hci, data: &[u8], callback: UniquePtr<u8SliceOnceCallback>);
         fn hci_send_acl(hci: &mut Hci, data: &[u8]);
         fn hci_register_event(hci: &mut Hci, event: u8);
         fn hci_register_le_event(hci: &mut Hci, subevent: u8);
@@ -35,10 +37,11 @@ mod ffi {
 
 // we take ownership when we get the callbacks
 unsafe impl Send for ffi::u8SliceCallback {}
+unsafe impl Send for ffi::u8SliceOnceCallback {}
 
 pub struct Hci {
     rt: Arc<Runtime>,
-    internal: bt_hci::HciExports,
+    internal: bt_hci::Hci,
     acl_callback_set: bool,
     evt_callback_set: bool,
     le_evt_callback_set: bool,
@@ -49,7 +52,7 @@ pub struct Hci {
 }
 
 impl Hci {
-    pub fn new(rt: Arc<Runtime>, internal: bt_hci::HciExports) -> Self {
+    pub fn new(rt: Arc<Runtime>, internal: bt_hci::Hci) -> Self {
         let (evt_tx, evt_rx) = channel::<EventPacket>(10);
         let (le_evt_tx, le_evt_rx) = channel::<LeMetaEventPacket>(10);
         Self {
@@ -69,7 +72,7 @@ impl Hci {
 pub fn hci_send_command(
     hci: &mut Hci,
     data: &[u8],
-    callback: cxx::UniquePtr<ffi::u8SliceCallback>,
+    callback: cxx::UniquePtr<ffi::u8SliceOnceCallback>,
 ) {
     let packet = CommandPacket::parse(data).unwrap();
     let mut clone_internal = hci.internal.clone();

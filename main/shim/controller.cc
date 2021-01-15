@@ -18,16 +18,18 @@
 
 #include "main/shim/controller.h"
 #include "btcore/include/module.h"
+#include "gd/common/init_flags.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
+#include "main/shim/stack.h"
 #include "osi/include/future.h"
 #include "osi/include/log.h"
 
 #include "hci/controller.h"
+#include "src/controller.rs.h"
 
+using ::bluetooth::common::init_flags::gd_rust_is_enabled;
 using ::bluetooth::shim::GetController;
-
-constexpr uint8_t kMaxFeaturePage = 3;
 
 constexpr int kMaxSupportedCodecs = 8;  // MAX_LOCAL_SUPPORTED_CODECS_SIZE
 
@@ -57,8 +59,6 @@ EXPORT_SYMBOL extern const module_t gd_controller_module = {
 
 struct {
   bool ready;
-  uint64_t feature[kMaxFeaturePage];
-  uint64_t le_feature[kMaxFeaturePage];
   RawAddress raw_address;
   bt_version_t bt_version;
   uint8_t local_supported_codecs[kMaxSupportedCodecs];
@@ -71,13 +71,28 @@ static future_t* start_up(void) {
   LOG_INFO("%s Starting up", __func__);
   data_.ready = true;
 
-  std::string string_address = GetController()->GetMacAddress().ToString();
-  RawAddress::FromString(string_address, data_.raw_address);
+  if (gd_rust_is_enabled()) {
+    auto controller =
+        bluetooth::shim::Stack::GetInstance()->GetRustController();
+    auto rust_string_address =
+        bluetooth::shim::rust::controller_get_address(**controller);
+    auto string_address =
+        std::string(rust_string_address.data(), rust_string_address.length());
+    RawAddress::FromString(string_address, data_.raw_address);
 
-  data_.le_supported_states =
-      bluetooth::shim::GetController()->GetLeSupportedStates();
+    data_.le_supported_states =
+        bluetooth::shim::rust::controller_get_le_supported_states(**controller);
 
-  LOG_INFO("Mac address:%s", string_address.c_str());
+    LOG_INFO("Mac address:%s", string_address.c_str());
+  } else {
+    std::string string_address = GetController()->GetMacAddress().ToString();
+    RawAddress::FromString(string_address, data_.raw_address);
+
+    data_.le_supported_states =
+        bluetooth::shim::GetController()->GetLeSupportedStates();
+
+    LOG_INFO("Mac address:%s", string_address.c_str());
+  }
 
   data_.phy = kPhyLe1M;
 
@@ -112,8 +127,15 @@ static const uint8_t* get_ble_supported_states(void) {
   return (const uint8_t*)&data_.le_supported_states;
 }
 
-#define MAP_TO_GD(legacy, gd) \
-  static bool legacy(void) { return GetController()->gd(); }
+#define MAP_TO_GD(legacy, gd)                                            \
+  static bool legacy(void) {                                             \
+    if (gd_rust_is_enabled()) {                                          \
+      return bluetooth::shim::rust::controller_##legacy(                 \
+          **bluetooth::shim::Stack::GetInstance()->GetRustController()); \
+    } else {                                                             \
+      return GetController()->gd();                                      \
+    }                                                                    \
+  }
 
 MAP_TO_GD(supports_simple_pairing, SupportsSimplePairing)
 MAP_TO_GD(supports_secure_connections, SupportsSecureConnections)
@@ -121,13 +143,12 @@ MAP_TO_GD(supports_simultaneous_le_bredr, SupportsSimultaneousLeBrEdr)
 MAP_TO_GD(supports_interlaced_inquiry_scan, SupportsInterlacedInquiryScan)
 MAP_TO_GD(supports_rssi_with_inquiry_results, SupportsRssiWithInquiryResults)
 MAP_TO_GD(supports_extended_inquiry_response, SupportsExtendedInquiryResponse)
-MAP_TO_GD(supports_central_peripheral_role_switch, SupportsRoleSwitch)
-MAP_TO_GD(supports_3_slot_packets, Supports3SlotPackets)
-MAP_TO_GD(supports_5_slot_packets, Supports5SlotPackets)
+MAP_TO_GD(supports_three_slot_packets, Supports3SlotPackets)
+MAP_TO_GD(supports_five_slot_packets, Supports5SlotPackets)
 MAP_TO_GD(supports_classic_2m_phy, SupportsClassic2mPhy)
 MAP_TO_GD(supports_classic_3m_phy, SupportsClassic3mPhy)
-MAP_TO_GD(supports_3_slot_edr_packets, Supports3SlotEdrPackets)
-MAP_TO_GD(supports_5_slot_edr_packets, Supports5SlotEdrPackets)
+MAP_TO_GD(supports_three_slot_edr_packets, Supports3SlotEdrPackets)
+MAP_TO_GD(supports_five_slot_edr_packets, Supports5SlotEdrPackets)
 MAP_TO_GD(supports_sco, SupportsSco)
 MAP_TO_GD(supports_hv2_packets, SupportsHv2Packets)
 MAP_TO_GD(supports_hv3_packets, SupportsHv3Packets)
@@ -136,7 +157,7 @@ MAP_TO_GD(supports_ev4_packets, SupportsEv4Packets)
 MAP_TO_GD(supports_ev5_packets, SupportsEv5Packets)
 MAP_TO_GD(supports_esco_2m_phy, SupportsEsco2mPhy)
 MAP_TO_GD(supports_esco_3m_phy, SupportsEsco3mPhy)
-MAP_TO_GD(supports_3_slot_esco_edr_packets, Supports3SlotEscoEdrPackets)
+MAP_TO_GD(supports_three_slot_esco_edr_packets, Supports3SlotEscoEdrPackets)
 MAP_TO_GD(supports_role_switch, SupportsRoleSwitch)
 MAP_TO_GD(supports_hold_mode, SupportsHoldMode)
 MAP_TO_GD(supports_sniff_mode, SupportsSniffMode)
@@ -146,116 +167,116 @@ MAP_TO_GD(supports_sniff_subrating, SupportsSniffSubrating)
 MAP_TO_GD(supports_encryption_pause, SupportsEncryptionPause)
 
 MAP_TO_GD(supports_ble, SupportsBle)
-MAP_TO_GD(supports_ble_privacy, SupportsBlePrivacy)
-MAP_TO_GD(supports_ble_packet_extension, SupportsBlePacketExtension)
-MAP_TO_GD(supports_ble_connection_parameters_request,
+MAP_TO_GD(supports_privacy, SupportsBlePrivacy)
+MAP_TO_GD(supports_packet_extension, SupportsBlePacketExtension)
+MAP_TO_GD(supports_connection_parameters_request,
           SupportsBleConnectionParametersRequest)
 MAP_TO_GD(supports_ble_2m_phy, SupportsBle2mPhy)
 MAP_TO_GD(supports_ble_coded_phy, SupportsBleCodedPhy)
-MAP_TO_GD(supports_ble_extended_advertising, SupportsBleExtendedAdvertising)
-MAP_TO_GD(supports_ble_periodic_advertising, SupportsBlePeriodicAdvertising)
-MAP_TO_GD(supports_ble_peripheral_initiated_feature_exchange,
+MAP_TO_GD(supports_extended_advertising, SupportsBleExtendedAdvertising)
+MAP_TO_GD(supports_periodic_advertising, SupportsBlePeriodicAdvertising)
+MAP_TO_GD(supports_peripheral_initiated_feature_exchange,
           SupportsBlePeripheralInitiatedFeatureExchange)
-MAP_TO_GD(supports_ble_connection_parameter_request,
+MAP_TO_GD(supports_connection_parameter_request,
           SupportsBleConnectionParameterRequest)
 
-MAP_TO_GD(supports_ble_periodic_advertising_sync_transfer_sender,
+MAP_TO_GD(supports_periodic_advertising_sync_transfer_sender,
           SupportsBlePeriodicAdvertisingSyncTransferSender)
-MAP_TO_GD(supports_ble_periodic_advertising_sync_transfer_recipient,
+MAP_TO_GD(supports_periodic_advertising_sync_transfer_recipient,
           SupportsBlePeriodicAdvertisingSyncTransferRecipient)
-MAP_TO_GD(supports_ble_connected_isochronous_stream_central,
+MAP_TO_GD(supports_connected_iso_stream_central,
           SupportsBleConnectedIsochronousStreamCentral)
-MAP_TO_GD(supports_ble_connected_isochronous_stream_peripheral,
+MAP_TO_GD(supports_connected_iso_stream_peripheral,
           SupportsBleConnectedIsochronousStreamPeripheral)
-MAP_TO_GD(supports_ble_isochronous_broadcaster,
-          SupportsBleIsochronousBroadcaster)
-MAP_TO_GD(supports_ble_synchronized_receiver, SupportsBleSynchronizedReceiver)
+MAP_TO_GD(supports_iso_broadcaster, SupportsBleIsochronousBroadcaster)
+MAP_TO_GD(supports_synchronized_receiver, SupportsBleSynchronizedReceiver)
 
-static bool supports_reading_remote_extended_features(void) {
-  return GetController()->IsSupported(
-      (bluetooth::hci::OpCode)kReadRemoteExtendedFeatures);
-}
+#define FORWARD_IF_RUST(legacy, gd)                                      \
+  static bool legacy(void) {                                             \
+    if (gd_rust_is_enabled()) {                                          \
+      return bluetooth::shim::rust::controller_##legacy(                 \
+          **bluetooth::shim::Stack::GetInstance()->GetRustController()); \
+    } else {                                                             \
+      return gd;                                                         \
+    }                                                                    \
+  }
 
-static bool supports_enhanced_setup_synchronous_connection(void) {
-  return GetController()->IsSupported(
-      (bluetooth::hci::OpCode)kEnhancedSetupSynchronousConnection);
-}
+FORWARD_IF_RUST(supports_reading_remote_extended_features,
+                GetController()->IsSupported((bluetooth::hci::OpCode)
+                                                 kReadRemoteExtendedFeatures))
+FORWARD_IF_RUST(supports_enhanced_setup_synchronous_connection,
+                GetController()->IsSupported((
+                    bluetooth::hci::OpCode)kEnhancedSetupSynchronousConnection))
+FORWARD_IF_RUST(
+    supports_enhanced_accept_synchronous_connection,
+    GetController()->IsSupported((bluetooth::hci::OpCode)
+                                     kEnhancedAcceptSynchronousConnection))
+FORWARD_IF_RUST(
+    supports_ble_set_privacy_mode,
+    GetController()->IsSupported((bluetooth::hci::OpCode)kLeSetPrivacyMode))
 
-static bool supports_enhanced_accept_synchronous_connection(void) {
-  return GetController()->IsSupported(
-      (bluetooth::hci::OpCode)kEnhancedAcceptSynchronousConnection);
-}
+#define FORWARD_GETTER_IF_RUST(type, legacy, gd)                         \
+  static type legacy(void) {                                             \
+    if (gd_rust_is_enabled()) {                                          \
+      return bluetooth::shim::rust::controller_##legacy(                 \
+          **bluetooth::shim::Stack::GetInstance()->GetRustController()); \
+    } else {                                                             \
+      return gd;                                                         \
+    }                                                                    \
+  }
 
-static bool supports_ble_set_privacy_mode() {
-  return GetController()->IsSupported(
-      (bluetooth::hci::OpCode)kLeSetPrivacyMode);
-}
-
-static uint16_t get_acl_data_size_classic(void) {
-  return GetController()->GetAclPacketLength();
-}
-
-static uint16_t get_acl_data_size_ble(void) {
-  return GetController()->GetLeBufferSize().le_data_packet_length_;
-}
-
-static uint16_t get_iso_data_size(void) {
-  return GetController()->GetControllerIsoBufferSize().le_data_packet_length_;
-}
+FORWARD_GETTER_IF_RUST(uint16_t, get_acl_buffer_length,
+                       GetController()->GetAclPacketLength())
+FORWARD_GETTER_IF_RUST(
+    uint16_t, get_le_buffer_length,
+    GetController()->GetLeBufferSize().le_data_packet_length_)
+FORWARD_GETTER_IF_RUST(
+    uint16_t, get_iso_buffer_length,
+    GetController()->GetControllerIsoBufferSize().le_data_packet_length_)
 
 static uint16_t get_acl_packet_size_classic(void) {
-  return get_acl_data_size_classic() + kHciDataPreambleSize;
+  return get_acl_buffer_length() + kHciDataPreambleSize;
 }
 
 static uint16_t get_acl_packet_size_ble(void) {
-  return get_acl_data_size_ble() + kHciDataPreambleSize;
+  return get_le_buffer_length() + kHciDataPreambleSize;
 }
 
 static uint16_t get_iso_packet_size(void) {
-  return get_iso_data_size() + kHciDataPreambleSize;
+  return get_iso_buffer_length() + kHciDataPreambleSize;
 }
 
-static uint16_t get_ble_suggested_default_data_length(void) {
-  return GetController()->GetLeSuggestedDefaultDataLength();
+FORWARD_GETTER_IF_RUST(uint16_t, get_le_suggested_default_data_length,
+                       GetController()->GetLeSuggestedDefaultDataLength())
+
+static uint16_t get_le_maximum_tx_data_length(void) {
+  if (gd_rust_is_enabled()) {
+    return bluetooth::shim::rust::controller_get_le_maximum_tx_data_length(
+        **bluetooth::shim::Stack::GetInstance()->GetRustController());
+  } else {
+    ::bluetooth::hci::LeMaximumDataLength le_maximum_data_length =
+        GetController()->GetLeMaximumDataLength();
+    return le_maximum_data_length.supported_max_tx_octets_;
+  }
 }
 
-static uint16_t get_ble_maximum_tx_data_length(void) {
-  ::bluetooth::hci::LeMaximumDataLength le_maximum_data_length =
-      GetController()->GetLeMaximumDataLength();
-  return le_maximum_data_length.supported_max_tx_octets_;
-}
-
-static uint16_t get_ble_maxium_advertising_data_length(void) {
-  return GetController()->GetLeMaximumAdvertisingDataLength();
-}
-
-static uint8_t get_ble_number_of_supported_advertising_sets(void) {
-  return GetController()->GetLeNumberOfSupportedAdverisingSets();
-}
-
-static uint8_t get_ble_periodic_advertiser_list_size(void) {
-  return GetController()->GetLePeriodicAdvertiserListSize();
-}
-
-static uint16_t get_acl_buffer_count_classic(void) {
-  return GetController()->GetNumAclPacketBuffers();
-}
-
-static uint8_t get_acl_buffer_count_ble(void) {
-  return GetController()->GetLeBufferSize().total_num_le_packets_;
-}
-
-static uint8_t get_iso_buffer_count(void) {
-  return GetController()->GetControllerIsoBufferSize().total_num_le_packets_;
-}
-
-static uint8_t get_ble_connect_list_size(void) {
-  return GetController()->GetLeConnectListSize();
-}
-
-static uint8_t get_ble_resolving_list_max_size(void) {
-  return GetController()->GetLeResolvingListSize();
-}
+FORWARD_GETTER_IF_RUST(uint16_t, get_le_max_advertising_data_length,
+                       GetController()->GetLeMaximumAdvertisingDataLength())
+FORWARD_GETTER_IF_RUST(uint8_t, get_le_supported_advertising_sets,
+                       GetController()->GetLeNumberOfSupportedAdverisingSets())
+FORWARD_GETTER_IF_RUST(uint8_t, get_le_periodic_advertiser_list_size,
+                       GetController()->GetLePeriodicAdvertiserListSize())
+FORWARD_GETTER_IF_RUST(uint16_t, get_acl_buffers,
+                       GetController()->GetNumAclPacketBuffers())
+FORWARD_GETTER_IF_RUST(uint8_t, get_le_buffers,
+                       GetController()->GetLeBufferSize().total_num_le_packets_)
+FORWARD_GETTER_IF_RUST(
+    uint8_t, get_iso_buffers,
+    GetController()->GetControllerIsoBufferSize().total_num_le_packets_)
+FORWARD_GETTER_IF_RUST(uint8_t, get_le_connect_list_size,
+                       GetController()->GetLeConnectListSize())
+FORWARD_GETTER_IF_RUST(uint8_t, get_le_resolving_list_size,
+                       GetController()->GetLeResolvingListSize())
 
 static void set_ble_resolving_list_max_size(int resolving_list_max_size) {
   LOG_WARN("%s TODO Unimplemented", __func__);
@@ -278,15 +299,15 @@ static const controller_t interface = {
     supports_interlaced_inquiry_scan,
     supports_rssi_with_inquiry_results,
     supports_extended_inquiry_response,
-    supports_central_peripheral_role_switch,
+    supports_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
-    supports_3_slot_packets,
-    supports_5_slot_packets,
+    supports_three_slot_packets,
+    supports_five_slot_packets,
     supports_classic_2m_phy,
     supports_classic_3m_phy,
-    supports_3_slot_edr_packets,
-    supports_5_slot_edr_packets,
+    supports_three_slot_edr_packets,
+    supports_five_slot_edr_packets,
     supports_sco,
     supports_hv2_packets,
     supports_hv3_packets,
@@ -295,7 +316,7 @@ static const controller_t interface = {
     supports_ev5_packets,
     supports_esco_2m_phy,
     supports_esco_3m_phy,
-    supports_3_slot_esco_edr_packets,
+    supports_three_slot_esco_edr_packets,
     supports_role_switch,
     supports_hold_mode,
     supports_sniff_mode,
@@ -305,43 +326,43 @@ static const controller_t interface = {
     supports_encryption_pause,
 
     supports_ble,
-    supports_ble_packet_extension,
-    supports_ble_connection_parameters_request,
-    supports_ble_privacy,
+    supports_packet_extension,
+    supports_connection_parameters_request,
+    supports_privacy,
     supports_ble_set_privacy_mode,
     supports_ble_2m_phy,
     supports_ble_coded_phy,
-    supports_ble_extended_advertising,
-    supports_ble_periodic_advertising,
-    supports_ble_peripheral_initiated_feature_exchange,
-    supports_ble_connection_parameter_request,
-    supports_ble_periodic_advertising_sync_transfer_sender,
-    supports_ble_periodic_advertising_sync_transfer_recipient,
-    supports_ble_connected_isochronous_stream_central,
-    supports_ble_connected_isochronous_stream_peripheral,
-    supports_ble_isochronous_broadcaster,
-    supports_ble_synchronized_receiver,
+    supports_extended_advertising,
+    supports_periodic_advertising,
+    supports_peripheral_initiated_feature_exchange,
+    supports_connection_parameter_request,
+    supports_periodic_advertising_sync_transfer_sender,
+    supports_periodic_advertising_sync_transfer_recipient,
+    supports_connected_iso_stream_central,
+    supports_connected_iso_stream_peripheral,
+    supports_iso_broadcaster,
+    supports_synchronized_receiver,
 
-    get_acl_data_size_classic,
-    get_acl_data_size_ble,
-    get_iso_data_size,
+    get_acl_buffer_length,
+    get_le_buffer_length,
+    get_iso_buffer_length,
 
     get_acl_packet_size_classic,
     get_acl_packet_size_ble,
     get_iso_packet_size,
-    get_ble_suggested_default_data_length,
-    get_ble_maximum_tx_data_length,
-    get_ble_maxium_advertising_data_length,
-    get_ble_number_of_supported_advertising_sets,
-    get_ble_periodic_advertiser_list_size,
+    get_le_suggested_default_data_length,
+    get_le_maximum_tx_data_length,
+    get_le_max_advertising_data_length,
+    get_le_supported_advertising_sets,
+    get_le_periodic_advertiser_list_size,
 
-    get_acl_buffer_count_classic,
-    get_acl_buffer_count_ble,
-    get_iso_buffer_count,
+    get_acl_buffers,
+    get_le_buffers,
+    get_iso_buffers,
 
-    get_ble_connect_list_size,
+    get_le_connect_list_size,
 
-    get_ble_resolving_list_max_size,
+    get_le_resolving_list_size,
     set_ble_resolving_list_max_size,
     get_local_supported_codecs,
     get_le_all_initiating_phys};
