@@ -959,7 +959,7 @@ void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
   if (p_tcb != NULL) {
-    status = L2CA_SetFixedChannelTout(bd_addr, L2CAP_ATT_CID, idle_tout);
+    status = L2CA_SetLeGattTimeout(bd_addr, idle_tout);
 
     if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP)
       L2CA_SetIdleTimeoutByBdAddr(
