@@ -33,6 +33,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 
+#include "avrcp_service.h"
 #include "bta_av_co.h"
 #include "bta_av_int.h"
 #include "btif/include/btif_av_co.h"
@@ -478,25 +479,32 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
         /* For the Audio Sink role we support additional TG to support
          * absolute volume.
          */
-        uint16_t profile_version = AVRC_REV_1_0;
-
-        if (!strncmp(AVRCP_1_6_STRING, avrcp_version,
-                     sizeof(AVRCP_1_6_STRING))) {
-          profile_version = AVRC_REV_1_6;
-        } else if (!strncmp(AVRCP_1_5_STRING, avrcp_version,
-                            sizeof(AVRCP_1_5_STRING))) {
-          profile_version = AVRC_REV_1_5;
-        } else if (!strncmp(AVRCP_1_3_STRING, avrcp_version,
-                            sizeof(AVRCP_1_3_STRING))) {
-          profile_version = AVRC_REV_1_3;
+        if (is_new_avrcp_enabled()) {
+          APPL_TRACE_DEBUG("%s: newavrcp is the owner of the AVRCP Target SDP "
+              "record. Don't create the SDP record", __func__);
         } else {
-          profile_version = AVRC_REV_1_4;
-        }
+          APPL_TRACE_DEBUG("%s: newavrcp is not enabled. Create SDP record",
+              __func__);
 
-        bta_ar_reg_avrc(
-            UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
-            p_bta_av_cfg->avrc_tg_cat,
-            (bta_av_cb.features & BTA_AV_FEAT_BROWSE), profile_version);
+          uint16_t profile_version = AVRC_REV_1_0;
+          if (!strncmp(AVRCP_1_6_STRING, avrcp_version,
+                      sizeof(AVRCP_1_6_STRING))) {
+            profile_version = AVRC_REV_1_6;
+          } else if (!strncmp(AVRCP_1_5_STRING, avrcp_version,
+                              sizeof(AVRCP_1_5_STRING))) {
+            profile_version = AVRC_REV_1_5;
+          } else if (!strncmp(AVRCP_1_3_STRING, avrcp_version,
+                              sizeof(AVRCP_1_3_STRING))) {
+            profile_version = AVRC_REV_1_3;
+          } else {
+            profile_version = AVRC_REV_1_4;
+          }
+
+          bta_ar_reg_avrc(
+              UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
+              p_bta_av_cfg->avrc_tg_cat,
+              (bta_av_cb.features & BTA_AV_FEAT_BROWSE), profile_version);
+        }
       }
 
       /* Set the Capturing service class bit */

@@ -301,6 +301,40 @@ void BTA_GetEirService(uint8_t* p_eir, size_t eir_len,
 
 /*******************************************************************************
  *
+ * Function         BTA_AddEirUuid
+ *
+ * Description      Request to add a service class UID to the local
+ *                  device's EIR data.
+ *
+ * Parameters       uuid16 - The service class UUID you wish to add
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTA_AddEirUuid(uint16_t uuid16) {
+  APPL_TRACE_API("%s: %d", __func__, uuid16);
+  bta_sys_add_uuid(uuid16);
+}
+
+/*******************************************************************************
+ *
+ * Function         BTA_RemoveEirUuid
+ *
+ * Description      Request to remove a service class UID from the local
+ *                  device's EIR data.
+ *
+ * Parameters       uuid16 - The service class UUID you wish to remove
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTA_RemoveEirUuid(uint16_t uuid16) {
+  APPL_TRACE_API("%s: %d", __func__, uuid16);
+  bta_sys_remove_uuid(uuid16);
+}
+
+/*******************************************************************************
+ *
  * Function         BTA_DmGetConnectionState
  *
  * Description      Returns whether the remote device is currently connected.
