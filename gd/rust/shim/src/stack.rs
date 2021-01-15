@@ -41,12 +41,8 @@ pub fn stack_create() -> Box<Stack> {
     })
 }
 
-pub fn stack_start(stack: &mut Stack) {
+pub fn stack_start(_stack: &mut Stack) {
     assert!(init_flags::gd_rust_is_enabled());
-
-    if init_flags::gd_hci_is_enabled() {
-        stack.get_blocking::<bt_hci::Hci>();
-    }
 }
 
 pub fn stack_stop(stack: &mut Stack) {
@@ -59,7 +55,10 @@ pub fn get_hci(stack: &mut Stack) -> Box<Hci> {
     assert!(init_flags::gd_rust_is_enabled());
     assert!(init_flags::gd_hci_is_enabled());
 
-    Box::new(Hci::new(stack.get_runtime(), stack.get_blocking::<bt_hci::Hci>()))
+    Box::new(Hci::new(
+        stack.get_runtime(),
+        stack.get_blocking::<bt_hci::facade::HciFacadeService>(),
+    ))
 }
 
 pub fn get_controller(stack: &mut Stack) -> Box<Controller> {

@@ -34,6 +34,7 @@ rust_ffi_static {
         "libnum_traits",
         "libnix",
         "liblog_rust",
+        "libbt_facade_helpers",
     ],
     proc_macros: [
         "libpaste",
