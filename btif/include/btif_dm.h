@@ -67,6 +67,10 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
 /*callout for reading SMP properties from Text file*/
 bool btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg);
 
+/* EIR functions */
+void btif_dm_add_uuid_to_eir(uint16_t uuid16);
+void btif_dm_remove_uuid_from_eir(uint16_t uuid16);
+
 typedef struct {
   bool is_penc_key_rcvd;
   tBTM_LE_PENC_KEYS penc_key; /* received peer encryption key */

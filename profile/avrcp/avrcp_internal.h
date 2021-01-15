@@ -18,6 +18,7 @@
 
 #include "stack/include/avrc_api.h"
 #include "stack/include/sdp_api.h"
+#include "avrcp_config.h"
 
 /**
  * Wrapper classes for the API functions currently defined in "system/bt/stack".
@@ -30,10 +31,15 @@
 // required
 class AvrcpInterface {
  public:
+  virtual uint16_t GetAvrcpVersion() = 0;
+
   virtual uint16_t AddRecord(uint16_t service_uuid, const char* p_service_name,
                              const char* p_provider_name, uint16_t categories,
                              uint32_t sdp_handle, bool browse_supported,
-                             uint16_t profile_version) = 0;
+                             uint16_t profile_version,
+                             uint16_t cover_art_psm) = 0;
+
+  virtual uint16_t RemoveRecord(uint32_t sdp_handle) = 0;
 
   virtual uint16_t FindService(uint16_t service_uuid, const RawAddress& bd_addr,
                                tAVRC_SDP_DB_PARAMS* p_db,
