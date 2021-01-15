@@ -63,6 +63,7 @@ void SecurityManager::AuthenticationRequest(const Address& addr, uint16_t handle
   authenticating_ = true;
   current_handle_ = handle;
   peer_address_ = addr;
+  peer_pin_requested_ = false;
 }
 
 void SecurityManager::AuthenticationRequestFinished() {
@@ -186,6 +187,15 @@ PairingType SecurityManager::GetSimplePairingType() {
     case IoCapabilityType::INVALID:
       return PairingType::INVALID;
   }
+}
+
+void SecurityManager::SetPinRequested(const Address& addr) {
+  ASSERT(addr == peer_address_);
+  peer_pin_requested_ = true;
+}
+
+bool SecurityManager::GetPinRequested(const Address& addr) {
+  return peer_pin_requested_;
 }
 
 }  // namespace test_vendor_lib

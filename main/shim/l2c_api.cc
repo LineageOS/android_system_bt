@@ -32,6 +32,7 @@
 #include "main/shim/l2c_api.h"
 #include "main/shim/stack.h"
 #include "osi/include/allocator.h"
+#include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_acl_interface.h"
@@ -483,17 +484,21 @@ bluetooth::l2cap::classic::SecurityInterface* security_interface_ = nullptr;
 
 struct LeLinkPropertyListenerShim
     : public bluetooth::l2cap::le::LinkPropertyListener {
-  std::unordered_map<hci::AddressWithType, uint16_t> address_to_handle_;
-  std::unordered_map<hci::AddressWithType, hci::Role> address_to_role_;
+  std::unordered_map<hci::Address, uint16_t> address_to_handle_;
+  std::unordered_map<hci::Address, hci::Role> address_to_role_;
 
   void OnLinkConnected(hci::AddressWithType remote, uint16_t handle,
                        hci::Role role) override {
-    address_to_handle_[remote] = handle;
-    address_to_role_[remote] = role;
+    address_to_handle_[remote.GetAddress()] = handle;
+    address_to_role_[remote.GetAddress()] = role;
+    btm_ble_connected(ToRawAddress(remote.GetAddress()), handle,
+                      HCI_ENCRYPT_MODE_DISABLED, static_cast<uint8_t>(role),
+                      static_cast<tBLE_ADDR_TYPE>(remote.GetAddressType()),
+                      false);
   }
 
   void OnLinkDisconnected(hci::AddressWithType remote) override {
-    address_to_handle_.erase(remote);
+    address_to_handle_.erase(remote.GetAddress());
   }
 
   void OnReadRemoteVersionInformation(hci::AddressWithType remote,
@@ -512,15 +517,15 @@ struct LeLinkPropertyListenerShim
                           uint16_t connection_interval,
                           uint16_t connection_latency,
                           uint16_t supervision_timeout) override {
-    acl_ble_update_event_received(HCI_SUCCESS, address_to_handle_[remote],
-                                  connection_interval, connection_latency,
-                                  supervision_timeout);
+    acl_ble_update_event_received(
+        HCI_SUCCESS, address_to_handle_[remote.GetAddress()],
+        connection_interval, connection_latency, supervision_timeout);
   }
 
   void OnPhyUpdate(hci::AddressWithType remote, uint8_t tx_phy,
                    uint8_t rx_phy) override {
-    gatt_notify_phy_updated(GATT_SUCCESS, address_to_handle_[remote], tx_phy,
-                            rx_phy);
+    gatt_notify_phy_updated(
+        GATT_SUCCESS, address_to_handle_[remote.GetAddress()], tx_phy, rx_phy);
   }
 
   void OnDataLengthChange(hci::AddressWithType remote, uint16_t tx_octets,
@@ -801,18 +806,20 @@ struct LeFixedChannelHelper {
 
   std::unique_ptr<le::FixedChannelService> channel_service_ = nullptr;
 
-  void on_channel_close(bluetooth::hci::AddressWithType device,
+  void on_channel_close(bluetooth::hci::Address device,
                         bluetooth::hci::ErrorCode error_code) {
-    auto address = bluetooth::ToRawAddress(device.GetAddress());
+    auto address = bluetooth::ToRawAddress(device);
     channel_enqueue_buffer_[device] = nullptr;
     channels_[device]->GetQueueUpEnd()->UnregisterDequeue();
     channels_[device] = nullptr;
+    conn_parameters_.erase(device);
     uint8_t error = static_cast<uint8_t>(error_code);
     (freg_.pL2CA_FixedConn_Cb)(cid_, address, false, error, BT_TRANSPORT_LE);
   }
 
   void on_channel_open(std::unique_ptr<le::FixedChannel> channel) {
-    auto device = channel->GetDevice();
+    auto remote = channel->GetDevice();
+    auto device = remote.GetAddress();
     channel->RegisterOnCloseCallback(
         GetGdShimHandler(), bluetooth::common::BindOnce(
                                 &LeFixedChannelHelper::on_channel_close,
@@ -828,16 +835,20 @@ struct LeFixedChannelHelper {
         bluetooth::common::Bind(&LeFixedChannelHelper::on_incoming_data,
                                 bluetooth::common::Unretained(this), device));
     channels_[device] = std::move(channel);
+    conn_parameters_[device] = {};
 
-    auto address = bluetooth::ToRawAddress(device.GetAddress());
+    auto address = bluetooth::ToRawAddress(device);
+
+    LOG(ERROR) << __func__ << "!!!!!!!!!!!!!!!!!!" << +cid_
+               << device.ToString();
 
     (freg_.pL2CA_FixedConn_Cb)(cid_, address, true, 0, BT_TRANSPORT_LE);
     Btm::StoreAddressType(address,
-                          static_cast<tBLE_ADDR_TYPE>(device.GetAddressType()));
+                          static_cast<tBLE_ADDR_TYPE>(remote.GetAddressType()));
   }
 
-  void on_incoming_data(bluetooth::hci::AddressWithType remote) {
-    auto channel = channels_.find(remote);
+  void on_incoming_data(bluetooth::hci::Address device) {
+    auto channel = channels_.find(device);
     if (channel == channels_.end()) {
       LOG_ERROR("Channel is not open");
       return;
@@ -848,7 +859,7 @@ struct LeFixedChannelHelper {
         static_cast<BT_HDR*>(osi_calloc(packet_vector.size() + sizeof(BT_HDR)));
     std::copy(packet_vector.begin(), packet_vector.end(), buffer->data);
     buffer->len = packet_vector.size();
-    auto address = bluetooth::ToRawAddress(remote.GetAddress());
+    auto address = bluetooth::ToRawAddress(device);
     freg_.pL2CA_FixedData_Cb(cid_, address, buffer);
   }
 
@@ -858,23 +869,33 @@ struct LeFixedChannelHelper {
     freg_.pL2CA_FixedConn_Cb(cid_, remote, true, 0, BT_TRANSPORT_LE);
   }
 
-  bool send(AddressWithType remote,
+  bool send(hci::Address remote,
             std::unique_ptr<bluetooth::packet::BasePacketBuilder> packet) {
     auto buffer = channel_enqueue_buffer_.find(remote);
     if (buffer == channel_enqueue_buffer_.end() || buffer->second == nullptr) {
-      LOG(ERROR) << "Channel is not open";
+      LOG(ERROR) << "Channel is not open for cid " << cid_;
       return false;
     }
     buffer->second->Enqueue(std::move(packet), GetGdShimHandler());
     return true;
   }
 
-  std::unordered_map<AddressWithType, std::unique_ptr<le::FixedChannel>>
-      channels_;
-  std::unordered_map<AddressWithType,
-                     std::unique_ptr<bluetooth::os::EnqueueBuffer<
-                         bluetooth::packet::BasePacketBuilder>>>
+  std::unordered_map<hci::Address, std::unique_ptr<le::FixedChannel>> channels_;
+  std::unordered_map<hci::Address, std::unique_ptr<bluetooth::os::EnqueueBuffer<
+                                       bluetooth::packet::BasePacketBuilder>>>
       channel_enqueue_buffer_;
+
+  struct ConnectionParameter {
+    // Default values are from GD HCI_ACL le_impl.
+    uint16_t min_int = 0x0018;
+    uint16_t max_int = 0x0028;
+    uint16_t latency = 0x0000;
+    uint16_t timeout = 0x001f4;
+    uint16_t min_ce_len = 0x0000;
+    uint16_t max_ce_len = 0x0000;
+    bool update_allowed = true;
+  };
+  std::unordered_map<hci::Address, ConnectionParameter> conn_parameters_;
   tL2CAP_FIXED_CHNL_REG freg_;
 };
 
@@ -919,6 +940,7 @@ bool L2CA_ConnectFixedChnl(uint16_t cid, const RawAddress& rem_bda) {
 
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
   auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  LOG(ERROR) << __func__ << remote.ToString();
   auto manager = GetL2capLeModule()->GetFixedChannelManager();
   manager->ConnectServices(
       remote,
@@ -935,10 +957,9 @@ uint16_t L2CA_SendFixedChnlData(uint16_t cid, const RawAddress& rem_bda,
     return L2CAP_DW_FAILED;
   }
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
-  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
   auto len = p_buf->len;
   auto* data = p_buf->data + p_buf->offset;
-  bool sent = helper->send(remote, MakeUniquePacket(data, len));
+  bool sent = helper->send(ToGdAddress(rem_bda), MakeUniquePacket(data, len));
   return sent ? L2CAP_DW_SUCCESS : L2CAP_DW_FAILED;
 }
 
@@ -948,8 +969,7 @@ bool L2CA_RemoveFixedChnl(uint16_t cid, const RawAddress& rem_bda) {
     return false;
   }
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
-  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
-  auto channel = helper->channels_.find(remote);
+  auto channel = helper->channels_.find(ToGdAddress(rem_bda));
   if (channel == helper->channels_.end() || channel->second == nullptr) {
     LOG(ERROR) << "Channel is not open";
     return false;
@@ -964,8 +984,7 @@ uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda) {
     return 0;
   }
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
-  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
-  auto channel = helper->channels_.find(remote);
+  auto channel = helper->channels_.find(ToGdAddress(rem_bda));
   if (channel == helper->channels_.end() || channel->second == nullptr) {
     LOG(ERROR) << "Channel is not open";
     return 0;
@@ -978,14 +997,66 @@ void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
                              uint16_t timeout, uint16_t min_ce_len,
                              uint16_t max_ce_len) {
   auto* helper = &le_fixed_channel_helper_.find(kAttCid)->second;
-  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
-  auto channel = helper->channels_.find(remote);
+  auto channel = helper->channels_.find(ToGdAddress(rem_bda));
   if (channel == helper->channels_.end() || channel->second == nullptr) {
     LOG(ERROR) << "Channel is not open";
+    return;
   }
 
-  channel->second->GetLinkOptions()->UpdateConnectionParameter(
-      min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  auto& parameter = helper->conn_parameters_[ToGdAddress(rem_bda)];
+
+  parameter.min_int = min_int;
+  parameter.max_int = max_int;
+  parameter.latency = latency;
+  parameter.timeout = timeout;
+  parameter.min_ce_len = min_ce_len;
+  parameter.max_ce_len = max_ce_len;
+
+  if (parameter.update_allowed) {
+    channel->second->GetLinkOptions()->UpdateConnectionParameter(
+        min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  }
+  // If update not allowed, don't update; instead cache the value, and update
+  // when update is allowed.
+}
+
+bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
+  // When enable is false, we disallow remote connection update request, and
+  // we use default parameters temporarily.
+  auto* helper = &le_fixed_channel_helper_.find(kAttCid)->second;
+  auto channel = helper->channels_.find(ToGdAddress(rem_bda));
+  if (channel == helper->channels_.end() || channel->second == nullptr) {
+    LOG(ERROR) << "Channel is not open";
+    return false;
+  }
+
+  auto& parameter = helper->conn_parameters_[ToGdAddress(rem_bda)];
+  parameter.update_allowed = enable;
+  // TODO(hsz): Notify HCI_ACL LE to allow/disallow remote request.
+
+  if (parameter.update_allowed) {
+    // Use cached values
+    uint16_t min_int = parameter.min_int;
+    uint16_t max_int = parameter.max_int;
+    uint16_t latency = parameter.latency;
+    uint16_t timeout = parameter.timeout;
+    uint16_t min_ce_len = parameter.min_ce_len;
+    uint16_t max_ce_len = parameter.max_ce_len;
+    channel->second->GetLinkOptions()->UpdateConnectionParameter(
+        min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  } else {
+    // Use the value from legacy l2cble_start_conn_update
+    uint16_t min_int = BTM_BLE_CONN_INT_MIN;
+    uint16_t max_int = BTM_BLE_CONN_INT_MIN;
+    L2CA_AdjustConnectionIntervals(&min_int, &max_int, BTM_BLE_CONN_INT_MIN);
+    uint16_t latency = BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF;
+    uint16_t timeout = BTM_BLE_CONN_TIMEOUT_DEF;
+    uint16_t min_ce_len = 0x0000;
+    uint16_t max_ce_len = 0x0000;
+    channel->second->GetLinkOptions()->UpdateConnectionParameter(
+        min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
+  }
+  return true;
 }
 
 /**
@@ -1047,7 +1118,7 @@ bool L2CA_IsLeLink(uint16_t acl_handle) {
 }
 
 hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
-  auto remote = ToAddressWithType(bd_addr, Btm::GetAddressType(bd_addr));
+  auto remote = ToGdAddress(bd_addr);
   if (le_link_property_listener_shim_.address_to_role_.count(remote) == 0) {
     return HCI_ROLE_UNKNOWN;
   }

@@ -10,6 +10,7 @@ cc_library_static {
         "system/bt/btcore/include",
         "system/bt/internal_include",
         "system/bt/stack/include",
+        "system/bt/gd/rust/shim",
     ],
     export_include_dirs: ["./"],
     srcs: [
@@ -38,6 +39,9 @@ cc_test {
         "clang_coverage_bin",
     ],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     include_dirs: [
         "system/bt",
         "system/bt/btcore/include",

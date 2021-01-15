@@ -21,6 +21,9 @@ cc_test {
     defaults: ["fluoride_defaults"],
     test_suites: ["device-tests"],
     host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
     local_include_dirs: ["tests"],
     include_dirs: [
         "system/bt/",
