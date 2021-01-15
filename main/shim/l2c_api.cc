@@ -786,9 +786,14 @@ bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
   }
 }
 
+bool L2CA_SetAclPriority(uint16_t handle, bool high_priority) {
+  GetAclManager()->HACK_SetAclTxPriority(handle, high_priority);
+  return true;
+}
+
 bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  uint16_t handle = security_listener_shim_.address_to_handle_[bd_addr];
+  return L2CA_SetAclPriority(handle, priority == L2CAP_PRIORITY_HIGH);
 }
 
 bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,

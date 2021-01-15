@@ -39,6 +39,7 @@ class SecurityModule;
 namespace shim {
 class Btm;
 void L2CA_UseLegacySecurityModule();
+bool L2CA_SetAclPriority(uint16_t, bool);
 }
 
 namespace hci {
@@ -46,6 +47,7 @@ namespace hci {
 class AclManager : public Module {
  friend class bluetooth::shim::Btm;
  friend void bluetooth::shim::L2CA_UseLegacySecurityModule();
+ friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
 
 public:
  AclManager();
@@ -128,6 +130,8 @@ private:
 
  // Hack for the shim to get SCO disconnect callback.  Shim needs to post to their handler!
  virtual void HACK_SetScoDisconnectCallback(std::function<void(uint16_t /* handle */, uint8_t /* reason */)>);
+
+ virtual void HACK_SetAclTxPriority(uint8_t handle, bool high_priority);
 
  struct impl;
  std::unique_ptr<impl> pimpl_;
