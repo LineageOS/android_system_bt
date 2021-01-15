@@ -23,5 +23,5 @@ import android.bluetooth.BluetoothDevice;
  */
 oneway interface IBluetoothConnectionCallback {
     void onDeviceConnected(in BluetoothDevice device);
-    void onDeviceDisconnected(in BluetoothDevice device);
+    void onDeviceDisconnected(in BluetoothDevice device, in int hciReason);
 }
