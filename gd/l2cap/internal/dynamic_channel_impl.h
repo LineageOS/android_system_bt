@@ -66,6 +66,10 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
     return psm_;
   }
 
+  virtual void SetChannelTxPriority(bool high_priority) {
+    link_->SetChannelTxPriority(cid_, high_priority);
+  }
+
   // TODO(cmanton) Do something a little bit better than this
   bool local_initiated_{false};
 

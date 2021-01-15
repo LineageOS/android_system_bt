@@ -171,6 +171,10 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid,
   }
 }
 
+void Link::SetChannelTxPriority(Cid local_cid, bool high_priority) {
+  data_pipeline_manager_.SetChannelTxPriority(local_cid, high_priority);
+}
+
 void Link::SetPendingDynamicChannels(std::list<Psm> psm_list,
                                      std::list<Link::PendingDynamicChannelConnection> callback_list) {
   ASSERT(psm_list.size() == callback_list.size());
