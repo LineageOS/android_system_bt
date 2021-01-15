@@ -46,6 +46,8 @@ enum PacketType : 8 {
     PASSKEY = 0x27,
     PASSKEY_FAILED = 0x28,
     KEYPRESS_NOTIFICATION = 0x29,
+    PIN_REQUEST = 0x2A,
+    PIN_RESPONSE = 0x2B,
 }
 
 packet LinkLayerPacket {
@@ -335,4 +337,16 @@ packet PasskeyFailed : LinkLayerPacket (type = PASSKEY_FAILED){
 
 packet KeypressNotification : LinkLayerPacket (type = KEYPRESS_NOTIFICATION){
   notification_type : PasskeyNotificationType,
+}
+
+packet PinRequest : LinkLayerPacket (type = PIN_REQUEST) {
+  _size_(pin_code) : 5, // 0x01 - 0x10
+  _reserved_ : 3,
+  pin_code : 8[], // string parameter, first octet first
+}
+
+packet PinResponse : LinkLayerPacket (type = PIN_RESPONSE) {
+  _size_(pin_code) : 5, // 0x01 - 0x10
+  _reserved_ : 3,
+  pin_code : 8[], // string parameter, first octet first
 }
