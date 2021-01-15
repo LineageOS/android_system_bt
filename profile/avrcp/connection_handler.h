@@ -110,6 +110,14 @@ class ConnectionHandler {
    */
   virtual bool DisconnectDevice(const RawAddress& bdaddr);
 
+  /**
+   * Indicates the connection status of a device on the BIP OBEX server.
+   *
+   * This status is used to determine whether we should include image handles
+   * when building responses for media item metadata queries.
+   */
+  virtual void SetBipClientStatus(const RawAddress& bdaddr, bool connected);
+
   virtual std::vector<std::shared_ptr<Device>> GetListOfDevices() const;
 
   /**
