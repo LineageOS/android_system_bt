@@ -43,8 +43,18 @@ void Fifo::OnPacketsReady(Cid cid, int number_packets) {
   if (number_packets == 0) {
     return;
   }
-  next_to_dequeue_and_num_packets.push(std::make_pair(cid, number_packets));
+  int priority = high_priority_cids_.count(cid) != 0;
+  next_to_dequeue_and_num_packets.push(std::make_pair(cid, number_packets), priority);
   try_register_link_queue_enqueue();
+}
+
+// Invoked within L2CAP Handler context
+void Fifo::SetChannelTxPriority(Cid cid, bool high_priority) {
+  if (high_priority) {
+    high_priority_cids_.emplace(cid);
+  } else {
+    high_priority_cids_.erase(cid);
+  }
 }
 
 // Invoked from some external Queue Reactable context
