@@ -852,6 +852,35 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
   return false;
 }
 
+void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
+  tSCO_CONN* p_sco = btm_cb.sco_cb.get_sco_connection_from_handle(hci_handle);
+  if (p_sco == nullptr) {
+    LOG_ERROR("Unable to find sco connection");
+    return;
+  }
+
+  if (!p_sco->is_active()) {
+    LOG_ERROR("Connection is not active handle:0x%04x reason:%s", hci_handle,
+              hci_reason_code_text(reason).c_str());
+    return;
+  }
+
+  if (p_sco->state == SCO_ST_LISTENING) {
+    LOG_ERROR("Connection is in listening state handle:0x%04x reason:%s",
+              hci_handle, hci_reason_code_text(reason).c_str());
+    return;
+  }
+
+  p_sco->state = SCO_ST_UNUSED;
+  p_sco->hci_handle = HCI_INVALID_HANDLE;
+  p_sco->rem_bd_known = false;
+  p_sco->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
+  btm_cb.sco_cb.sco_disc_reason = reason;
+  (*p_sco->p_disc_cb)(btm_cb.sco_cb.get_index(p_sco));
+  LOG_DEBUG("Disconnected SCO link handle:%hu reason:%s", hci_handle,
+            hci_reason_code_text(reason).c_str());
+}
+
 /*******************************************************************************
  *
  * Function         btm_sco_acl_removed
