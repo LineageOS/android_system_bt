@@ -37,6 +37,8 @@ const acl_interface_t GetAclInterface() {
       .connection.le.on_failed = acl_ble_connection_fail,
       .connection.le.on_disconnected = btm_acl_disconnected,
 
+      .connection.sco.on_disconnected = nullptr,
+
       .link.classic.on_authentication_complete = btm_sec_auth_complete,
       .link.classic.on_central_link_key_complete = nullptr,
       .link.classic.on_change_connection_link_key_complete = nullptr,
