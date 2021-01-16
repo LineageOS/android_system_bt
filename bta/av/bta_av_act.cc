@@ -2262,7 +2262,17 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
 
     /* remove the A2DP SDP record, if no more audio stream is left */
     if (!p_cb->reg_audio) {
-      bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL);
+
+      /* Only remove the SDP record if we're the ones that created it */
+      if (is_new_avrcp_enabled()) {
+        APPL_TRACE_DEBUG("%s: newavrcp is the owner of the AVRCP Target SDP "
+            "record. Don't dereg the SDP record", __func__);
+      } else {
+        APPL_TRACE_DEBUG("%s: newavrcp is not enabled. Remove SDP record",
+            __func__);
+        bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL);
+      }
+
       if (p_cb->sdp_a2dp_handle) {
         bta_av_del_sdp_rec(&p_cb->sdp_a2dp_handle);
         p_cb->sdp_a2dp_handle = 0;

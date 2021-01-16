@@ -33,7 +33,10 @@ class ILink {
   virtual hci::AddressWithType GetDevice() const = 0;
 
   // To be used by LE credit based channel data controller over LE link
-  virtual void SendLeCredit(Cid local_cid, uint16_t credit) = 0;
+  virtual void SendLeCredit(Cid local_cid, uint16_t credit) {}
+
+  // Used by A2dp software encoding
+  virtual void SetChannelTxPriority(Cid local_cid, bool high_priority) {}
 };
 }  // namespace internal
 }  // namespace l2cap

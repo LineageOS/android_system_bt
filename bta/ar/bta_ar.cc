@@ -167,7 +167,7 @@ void bta_ar_reg_avrc(uint16_t service_uuid, const char* service_name,
       bta_ar_cb.sdp_tg_handle = SDP_CreateRecord();
       AVRC_AddRecord(service_uuid, service_name, provider_name, categories,
                      bta_ar_cb.sdp_tg_handle, browse_supported,
-                     profile_version);
+                     profile_version, 0);
       bta_sys_add_uuid(service_uuid);
     }
     /* only one TG is allowed (first-come, first-served).
@@ -180,7 +180,7 @@ void bta_ar_reg_avrc(uint16_t service_uuid, const char* service_name,
       bta_ar_cb.sdp_ct_handle = SDP_CreateRecord();
       AVRC_AddRecord(service_uuid, service_name, provider_name, categories,
                      bta_ar_cb.sdp_ct_handle, browse_supported,
-                     profile_version);
+                     profile_version, 0);
       bta_sys_add_uuid(service_uuid);
     } else {
       /* multiple CTs are allowed.

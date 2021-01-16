@@ -249,6 +249,10 @@ void AclManager::HACK_SetScoDisconnectCallback(std::function<void(uint16_t, uint
   pimpl_->classic_impl_->HACK_SetScoDisconnectCallback(callback);
 }
 
+void AclManager::HACK_SetAclTxPriority(uint8_t handle, bool high_priority) {
+  CallOn(pimpl_->round_robin_scheduler_, &RoundRobinScheduler::SetLinkPriority, handle, high_priority);
+}
+
 void AclManager::ListDependencies(ModuleList* list) {
   list->add<HciLayer>();
   list->add<Controller>();

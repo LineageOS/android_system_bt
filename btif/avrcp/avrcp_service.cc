@@ -24,6 +24,7 @@
 #include <sstream>
 
 #include "btif_av.h"
+#include "btif_dm.h"
 #include "btif_common.h"
 #include "device.h"
 #include "stack/include/btu.h"
@@ -60,13 +61,22 @@ class A2dpInterfaceImpl : public A2dpInterface {
 
 class AvrcpInterfaceImpl : public AvrcpInterface {
  public:
+  uint16_t GetAvrcpVersion() {
+    return AVRC_GetProfileVersion();
+  }
+
   uint16_t AddRecord(uint16_t service_uuid, const char* p_service_name,
                      const char* p_provider_name, uint16_t categories,
                      uint32_t sdp_handle, bool browse_supported,
-                     uint16_t profile_version) override {
+                     uint16_t profile_version,
+                     uint16_t cover_art_psm) override {
     return AVRC_AddRecord(service_uuid, p_service_name, p_provider_name,
                           categories, sdp_handle, browse_supported,
-                          profile_version);
+                          profile_version, cover_art_psm);
+  }
+
+  uint16_t RemoveRecord(uint32_t sdp_handle) {
+    return AVRC_RemoveRecord(sdp_handle);
   }
 
   uint16_t FindService(uint16_t service_uuid, const RawAddress& bd_addr,
@@ -287,8 +297,16 @@ void AvrcpService::Init(MediaInterface* media_interface,
                         VolumeInterface* volume_interface) {
   LOG(INFO) << "AVRCP Target Service started";
 
-  // TODO (apanicke): Add a function that sets up the SDP records once we
-  // remove the AVRCP SDP setup in AVDTP (bta_av_main.cc)
+  profile_version = avrcp_interface_.GetAvrcpVersion();
+
+  uint16_t supported_features = GetSupportedFeatures(profile_version);
+  sdp_record_handle = SDP_CreateRecord();
+
+  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET,
+                             "AV Remote Control Target", NULL,
+                             supported_features, sdp_record_handle, true,
+                             profile_version, 0);
+  btif_dm_add_uuid_to_eir(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
 
   media_interface_ = new MediaInterfaceWrapper(media_interface);
   media_interface->RegisterUpdateCallback(instance_);
@@ -306,8 +324,26 @@ void AvrcpService::Init(MediaInterface* media_interface,
   connection_handler_ = ConnectionHandler::Get();
 }
 
+uint16_t AvrcpService::GetSupportedFeatures(uint16_t profile_version) {
+  switch (profile_version) {
+    case AVRC_REV_1_6:
+      return AVRCP_SUPF_TG_1_6;
+    case AVRC_REV_1_5:
+      return AVRCP_SUPF_TG_1_5;
+    case AVRC_REV_1_4:
+      return AVRCP_SUPF_TG_1_4;
+    case AVRC_REV_1_3:
+      return AVRCP_SUPF_TG_1_3;
+  }
+  return AVRCP_SUPF_TG_DEFAULT;
+}
+
 void AvrcpService::Cleanup() {
   LOG(INFO) << "AVRCP Target Service stopped";
+
+  avrcp_interface_.RemoveRecord(sdp_record_handle);
+  btif_dm_remove_uuid_from_eir(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+  sdp_record_handle = -1;
 
   connection_handler_->CleanUp();
   connection_handler_ = nullptr;
@@ -315,6 +351,30 @@ void AvrcpService::Cleanup() {
     delete volume_interface_;
   }
   delete media_interface_;
+}
+
+void AvrcpService::RegisterBipServer(int psm) {
+  LOG(INFO) << "AVRCP Target Service has registered a BIP OBEX server, psm="
+            << psm;
+  avrcp_interface_.RemoveRecord(sdp_record_handle);
+  uint16_t supported_features
+      = GetSupportedFeatures(profile_version) | AVRC_SUPF_TG_PLAYER_COVER_ART;
+  sdp_record_handle = SDP_CreateRecord();
+  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET,
+                             "AV Remote Control Target", NULL,
+                             supported_features, sdp_record_handle, true,
+                             profile_version, psm);
+}
+
+void AvrcpService::UnregisterBipServer() {
+  LOG(INFO) << "AVRCP Target Service has unregistered a BIP OBEX server";
+  avrcp_interface_.RemoveRecord(sdp_record_handle);
+  uint16_t supported_features = GetSupportedFeatures(profile_version);
+  sdp_record_handle = SDP_CreateRecord();
+  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET,
+                             "AV Remote Control Target", NULL,
+                             supported_features, sdp_record_handle, true,
+                             profile_version, 0);
 }
 
 AvrcpService* AvrcpService::Get() {
@@ -339,6 +399,13 @@ void AvrcpService::ConnectDevice(const RawAddress& bdaddr) {
 void AvrcpService::DisconnectDevice(const RawAddress& bdaddr) {
   LOG(INFO) << __PRETTY_FUNCTION__ << ": address=" << bdaddr.ToString();
   connection_handler_->DisconnectDevice(bdaddr);
+}
+
+void AvrcpService::SetBipClientStatus(const RawAddress& bdaddr,
+                                      bool connected) {
+  LOG(INFO) << __PRETTY_FUNCTION__ << ": address=" << bdaddr.ToString()
+            << ", connected=" << connected;
+  connection_handler_->SetBipClientStatus(bdaddr, connected);
 }
 
 void AvrcpService::SendMediaUpdate(bool track_changed, bool play_state,
@@ -408,6 +475,20 @@ void AvrcpService::ServiceInterfaceImpl::Init(
                                media_interface, volume_interface));
 }
 
+void AvrcpService::ServiceInterfaceImpl::RegisterBipServer(int psm) {
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
+  CHECK(instance_ != nullptr);
+  do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::RegisterBipServer,
+                                          base::Unretained(instance_), psm));
+}
+
+void AvrcpService::ServiceInterfaceImpl::UnregisterBipServer() {
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
+  CHECK(instance_ != nullptr);
+  do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::UnregisterBipServer,
+                                          base::Unretained(instance_)));
+}
+
 bool AvrcpService::ServiceInterfaceImpl::ConnectDevice(
     const RawAddress& bdaddr) {
   std::lock_guard<std::mutex> lock(service_interface_lock_);
@@ -424,6 +505,15 @@ bool AvrcpService::ServiceInterfaceImpl::DisconnectDevice(
   do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::DisconnectDevice,
                                           base::Unretained(instance_), bdaddr));
   return true;
+}
+
+void AvrcpService::ServiceInterfaceImpl::SetBipClientStatus(
+    const RawAddress& bdaddr, bool connected) {
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
+  CHECK(instance_ != nullptr);
+  do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::SetBipClientStatus,
+                                          base::Unretained(instance_), bdaddr,
+                                          connected));
 }
 
 bool AvrcpService::ServiceInterfaceImpl::Cleanup() {

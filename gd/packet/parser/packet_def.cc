@@ -1041,22 +1041,25 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
     s << "}";
   }
 
+  s << "impl Packet for " << name_ << "Packet {";
+  auto root = GetRootDef();
+  auto root_accessor = util::CamelCaseToUnderScore(root->name_);
+
+  s << "fn to_bytes(self) -> Bytes {";
+  s << " let mut buffer = BytesMut::new();";
+  s << " self." << root_accessor << ".write_to(&mut buffer);";
+  s << " buffer.freeze()";
+  s << "}\n";
+
+  s << "fn to_vec(self) -> Vec<u8> { self.to_bytes().to_vec() }\n";
+  s << "}";
+
   s << "impl " << name_ << "Packet {";
   if (parent_ == nullptr) {
     s << "pub fn parse(bytes: &[u8]) -> Result<Self> { ";
     s << "Ok(Self::new(Arc::new(" << name_ << "Data::parse(bytes)?)))";
     s << "}";
   }
-  auto root = GetRootDef();
-  auto root_accessor = util::CamelCaseToUnderScore(root->name_);
-
-  s << "pub fn to_bytes(self) -> Bytes {";
-  s << " let mut buffer = BytesMut::new();";
-  s << " self." << root_accessor << ".write_to(&mut buffer);";
-  s << " buffer.freeze()";
-  s << "}\n";
-
-  s << "pub fn to_vec(self) -> Vec<u8> { self.to_bytes().to_vec() }\n";
 
   if (!children_.empty()) {
     s << " pub fn specialize(&self) -> " << name_ << "Child {";
