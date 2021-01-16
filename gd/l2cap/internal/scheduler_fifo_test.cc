@@ -98,10 +98,10 @@ TEST_F(L2capSchedulerFifoTest, send_packet) {
   auto&& packet = enqueue_.enqueued.front();
   auto packet_view = GetPacketView(std::move(packet));
   auto basic_frame_view = BasicFrameView::Create(packet_view);
-  EXPECT_TRUE(basic_frame_view.IsValid());
-  EXPECT_EQ(basic_frame_view.GetChannelId(), 1);
+  ASSERT_TRUE(basic_frame_view.IsValid());
+  ASSERT_EQ(basic_frame_view.GetChannelId(), 1);
   auto payload = basic_frame_view.GetPayload();
-  EXPECT_EQ(std::string(payload.begin(), payload.end()), "abc");
+  ASSERT_EQ(std::string(payload.begin(), payload.end()), "abc");
   enqueue_.enqueued.pop();
 }
 
@@ -122,19 +122,19 @@ TEST_F(L2capSchedulerFifoTest, prioritize_channel) {
   auto packet1 = std::move(enqueue_.enqueued.front());
   auto packet_view = GetPacketView(std::move(packet1));
   auto basic_frame_view = BasicFrameView::Create(packet_view);
-  EXPECT_TRUE(basic_frame_view.IsValid());
-  EXPECT_EQ(basic_frame_view.GetChannelId(), 1);
+  ASSERT_TRUE(basic_frame_view.IsValid());
+  ASSERT_EQ(basic_frame_view.GetChannelId(), 1);
   auto payload = basic_frame_view.GetPayload();
-  EXPECT_EQ(std::string(payload.begin(), payload.end()), "abc");
+  ASSERT_EQ(std::string(payload.begin(), payload.end()), "abc");
   enqueue_.enqueued.pop();
 
   auto packet2 = std::move(enqueue_.enqueued.front());
   packet_view = GetPacketView(std::move(packet2));
   basic_frame_view = BasicFrameView::Create(packet_view);
-  EXPECT_TRUE(basic_frame_view.IsValid());
-  EXPECT_EQ(basic_frame_view.GetChannelId(), 2);
+  ASSERT_TRUE(basic_frame_view.IsValid());
+  ASSERT_EQ(basic_frame_view.GetChannelId(), 2);
   payload = basic_frame_view.GetPayload();
-  EXPECT_EQ(std::string(payload.begin(), payload.end()), "def");
+  ASSERT_EQ(std::string(payload.begin(), payload.end()), "def");
   enqueue_.enqueued.pop();
 }
 
