@@ -25,16 +25,16 @@ namespace common {
 
 TEST(MultiPriorityQueueTest, without_high_priority_item) {
   common::MultiPriorityQueue<int, 2> q;
-  EXPECT_TRUE(q.empty());
+  ASSERT_TRUE(q.empty());
   q.push(0);
   q.push(1, 0);
   q.push(2);
-  EXPECT_EQ(q.size(), 3);
+  ASSERT_EQ(q.size(), 3);
   for (int i = 0; i < 3; i++) {
-    EXPECT_EQ(q.front(), i);
+    ASSERT_EQ(q.front(), i);
     q.pop();
   }
-  EXPECT_TRUE(q.empty());
+  ASSERT_TRUE(q.empty());
 }
 
 TEST(MultiPriorityQueueTest, with_high_priority_item) {
@@ -43,7 +43,7 @@ TEST(MultiPriorityQueueTest, with_high_priority_item) {
   q.push(2);
   q.push(0, 1);
   for (int i = 0; i < 3; i++) {
-    EXPECT_EQ(q.front(), i);
+    ASSERT_EQ(q.front(), i);
     q.pop();
   }
 }
@@ -54,7 +54,7 @@ TEST(MultiPriorityQueueTest, with_multiple_priority_item) {
   q.push(0, 2);
   q.push(2, 0);
   for (int i = 0; i < 3; i++) {
-    EXPECT_EQ(q.front(), i);
+    ASSERT_EQ(q.front(), i);
     q.pop();
   }
 }
