@@ -125,13 +125,13 @@ class EattTest : public testing::Test {
       return;
     });
 
-    ON_CALL(btm_api_interface_, acl_link_role(_, BT_TRANSPORT_LE))
+    hci_role_ = HCI_ROLE_CENTRAL;
+
+    ON_CALL(l2cap_interface_, GetBleConnRole(_))
         .WillByDefault(DoAll(Return(hci_role_)));
 
     ON_CALL(controller_interface, GetAclDataSizeBle())
         .WillByDefault(Return(128));
-
-    hci_role_ = HCI_ROLE_CENTRAL;
 
     eatt_instance_ = EattExtension::GetInstance();
     eatt_instance_->Start();
@@ -165,7 +165,7 @@ class EattTest : public testing::Test {
   tL2CAP_APPL_INFO l2cap_app_info_;
   EattExtension* eatt_instance_;
   std::vector<uint16_t> connected_cids_;
-  uint8_t hci_role_;
+  uint8_t hci_role_ = HCI_ROLE_CENTRAL;
 };
 
 TEST_F(EattTest, ConnectSucceed) {

@@ -595,7 +595,7 @@ struct eatt_impl {
   void connect(const RawAddress& bd_addr) {
     eatt_device* eatt_dev = find_device_by_address(bd_addr);
 
-    uint8_t role = acl_link_role(bd_addr, BT_TRANSPORT_LE);
+    uint8_t role = L2CA_GetBleConnRole(bd_addr);
     if (role == HCI_ROLE_UNKNOWN) {
       LOG(ERROR) << __func__ << "Could not get device role" << bd_addr;
       return;
