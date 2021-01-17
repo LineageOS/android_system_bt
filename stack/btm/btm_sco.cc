@@ -23,7 +23,9 @@
  *
  ******************************************************************************/
 
+#include <base/strings/stringprintf.h>
 #include <cstdint>
+#include <string>
 
 #include "device/include/controller.h"
 #include "device/include/esco_parameters.h"
@@ -34,11 +36,18 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
+#include "stack/include/hci_error_code.h"
+#include "stack/include/hcimsgs.h"
 
 extern tBTM_CB btm_cb;
 
 namespace {
 constexpr char kBtmLogTag[] = "SCO";
+
+const bluetooth::legacy::hci::Interface& GetLegacyHciInterface() {
+  return bluetooth::legacy::hci::GetInterface();
+}
+
 };  // namespace
 
 /******************************************************************************/
@@ -768,7 +777,6 @@ void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
  ******************************************************************************/
 tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[sco_inx];
-  uint16_t tempstate;
   tBTM_PM_STATE state = BTM_PM_ST_INVALID;
 
   BTM_TRACE_DEBUG("%s", __func__);
@@ -797,13 +805,17 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
     return (BTM_CMD_STARTED);
   }
 
-  tempstate = p->state;
+  tSCO_STATE old_state = p->state;
   p->state = SCO_ST_DISCONNECTING;
 
-  acl_disconnect_from_handle(p->hci_handle, HCI_ERR_PEER_USER);
-  BTM_LogHistory(kBtmLogTag, p->esco.data.bd_addr, "Disconnecting",
-                 "local initiated");
+  GetLegacyHciInterface().Disconnect(p->Handle(), HCI_ERR_PEER_USER);
 
+  LOG_DEBUG("Disconnecting link sco_handle:0x%04x peer:%s", p->Handle(),
+            PRIVATE_ADDRESS(p->esco.data.bd_addr));
+  BTM_LogHistory(
+      kBtmLogTag, p->esco.data.bd_addr, "Disconnecting",
+      base::StringPrintf("local initiated handle:0x%04x previous_state:%s",
+                         p->Handle(), sco_state_text(old_state).c_str()));
   return (BTM_CMD_STARTED);
 }
 
