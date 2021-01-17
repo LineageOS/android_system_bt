@@ -251,7 +251,19 @@ struct sACL_CONN {
 #define BTM_SEC_RS_NOT_PENDING 0 /* Role Switch not in progress */
 #define BTM_SEC_RS_PENDING 1     /* Role Switch in progress */
 #define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
+ private:
   uint8_t rs_disc_pending = BTM_SEC_RS_NOT_PENDING;
+  friend struct StackAclBtmAcl;
+  friend tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr,
+                                    tBT_TRANSPORT transport);
+  friend void acl_disconnect_after_role_switch(uint16_t conn_handle,
+                                               tHCI_STATUS reason);
+  friend void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status,
+                                                     uint16_t handle,
+                                                     tHCI_MODE hci_mode,
+                                                     uint16_t interval);
+  friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
+                                     uint8_t encr_enable);
 
  public:
   bool is_disconnect_pending() const {
