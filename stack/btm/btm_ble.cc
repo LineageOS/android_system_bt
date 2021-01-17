@@ -678,7 +678,7 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
     return BTM_SUCCESS;
   }
 
-  uint16_t hci_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+  uint16_t hci_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
   if (!acl_peer_supports_ble_packet_extension(hci_handle)) {
     LOG_INFO("Remote device unable to support le packet extension");
@@ -745,7 +745,7 @@ void BTM_BleReadPhy(
     return;
   }
 
-  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+  uint16_t handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
   const uint8_t len = HCIC_PARAM_SIZE_BLE_READ_PHY;
   uint8_t data[len];
@@ -775,7 +775,7 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
   if (tx_phys == 0) all_phys &= 0x01;
   if (rx_phys == 0) all_phys &= 0x02;
 
-  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+  uint16_t handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
   // checking if local controller supports it!
   if (!controller_get_interface()->supports_ble_2m_phy() &&

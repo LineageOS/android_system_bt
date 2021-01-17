@@ -20,6 +20,7 @@
 #include <base/bind.h>
 
 #include "acl_api.h"
+#include "btm_api.h"
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
@@ -143,7 +144,7 @@ class BleScannerImplBase : public BleScannerHciInterface {
       const RawAddress& bd_addr, uint16_t service_data, uint16_t sync_handle,
       BleScannerHciInterface::handle_cb command_complete) override {
     VLOG(1) << __func__;
-    uint16_t acl_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+    uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__
@@ -160,7 +161,7 @@ class BleScannerImplBase : public BleScannerHciInterface {
                                   uint16_t service_data, uint8_t adv_handle,
                                   handle_cb command_complete) override {
     VLOG(1) << __func__;
-    uint16_t acl_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+    uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__
@@ -178,7 +179,7 @@ class BleScannerImplBase : public BleScannerHciInterface {
                                         uint8_t cte_type, bool set_defaults,
                                         status_cb command_complete) override {
     VLOG(1) << __func__;
-    uint16_t acl_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+    uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__
@@ -259,7 +260,7 @@ class BleScannerSyncTransferImpl : public virtual BleScannerImplBase {
   void PeriodicAdvSyncTransfer(
       const RawAddress& bd_addr, uint16_t service_data, uint16_t sync_handle,
       BleScannerHciInterface::handle_cb command_complete) override {
-    uint16_t acl_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+    uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__
@@ -275,7 +276,7 @@ class BleScannerSyncTransferImpl : public virtual BleScannerImplBase {
   void PeriodicAdvSetInfoTransfer(const RawAddress& bd_addr,
                                   uint16_t service_data, uint8_t adv_handle,
                                   handle_cb command_complete) override {
-    uint16_t acl_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+    uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__
@@ -292,7 +293,7 @@ class BleScannerSyncTransferImpl : public virtual BleScannerImplBase {
                                         uint16_t skip, uint16_t sync_timeout,
                                         uint8_t cte_type, bool set_defaults,
                                         status_cb command_complete) override {
-    uint16_t acl_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+    uint16_t acl_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_LE);
 
     if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__
