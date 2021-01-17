@@ -56,26 +56,10 @@ void btm_init(void) {
   btm_cb.Init(stack_config_get_interface()->get_pts_secure_only_mode()
                   ? BTM_SEC_MODE_SC
                   : BTM_SEC_MODE_SP);
-
-  /* Initialize BTM component structures */
-  btm_inq_db_init(); /* Inquiry Database and Structures */
-  btm_cb.acl_cb_.Init(); /* ACL Database and Structures */
-  btm_sco_init(); /* SCO Database and Structures (If included) */
-
-  btm_cb.devcb.Init();
-
-  btm_cb.history_ = std::make_shared<TimestampedStringCircularBuffer>(40);
-  CHECK(btm_cb.history_ != nullptr);
-  btm_cb.history_->Push(std::string("<--- Initialized btm history --->"));
 }
 
 /** This function is called to free dynamic memory and system resource allocated by btm_init */
 void btm_free(void) {
-  btm_cb.history_.reset();
-
-  btm_cb.devcb.Free();
-  btm_inq_db_free();
-
   btm_cb.Free();
 }
 
