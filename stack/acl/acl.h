@@ -253,6 +253,14 @@ struct sACL_CONN {
 #define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
   uint8_t rs_disc_pending = BTM_SEC_RS_NOT_PENDING;
 
+ public:
+  bool is_disconnect_pending() const {
+    return rs_disc_pending == BTM_SEC_DISC_PENDING;
+  }
+  bool is_role_switch_pending() const {
+    return rs_disc_pending == BTM_SEC_RS_PENDING;
+  }
+
  private:
   uint8_t switch_role_state_;
 
