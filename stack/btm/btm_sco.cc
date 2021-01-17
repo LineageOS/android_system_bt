@@ -342,7 +342,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
   enh_esco_params_t* p_setup;
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
-  uint16_t acl_handle = 0;
+  uint16_t acl_handle = HCI_INVALID_HANDLE;
   *p_sco_inx = BTM_INVALID_SCO_INDEX;
 
   if (BTM_MAX_SCO_LINKS == 0) {
@@ -470,7 +470,11 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
 
       *p_sco_inx = xx;
       LOG_DEBUG("SCO connection successfully requested");
-      BTM_LogHistory(kBtmLogTag, *remote_bda, "Connecting", "local initiated");
+      if (p->state == SCO_ST_CONNECTING) {
+        BTM_LogHistory(
+            kBtmLogTag, *remote_bda, "Connecting",
+            base::StringPrintf("local initiated acl:0x%04x", acl_handle));
+      }
       return BTM_CMD_STARTED;
     }
   }
