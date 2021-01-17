@@ -2769,16 +2769,6 @@ void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
   btsnd_hcic_reject_conn(bd_addr, reason);
 }
 
-void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                    tHCI_STATUS reason) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return;
-  }
-  hci_btsnd_hcic_disconnect(*p_acl, reason);
-}
-
 void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason) {
   acl_disconnect_after_role_switch(handle, reason);
 }

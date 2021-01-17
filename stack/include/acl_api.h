@@ -313,8 +313,6 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
 
 void btm_acl_removed(uint16_t handle);
 
-void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                    tHCI_STATUS reason);
 void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason);
 void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason);
 
