@@ -3206,8 +3206,9 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
   BTM_TRACE_DEBUG("after update p_dev_rec->sec_flags=0x%x",
                   p_dev_rec->sec_flags);
 
-  btm_sec_check_pending_enc_req(
-      p_dev_rec, acl_get_transport_from_handle(handle), encr_enable);
+  auto transport =
+      BTM_IsBleConnection(handle) ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
+  btm_sec_check_pending_enc_req(p_dev_rec, transport, encr_enable);
 
   if (BTM_IsBleConnection(handle)) {
     if (status == HCI_ERR_KEY_MISSING || status == HCI_ERR_AUTH_FAILURE ||
