@@ -37,11 +37,6 @@
 #define BTA_DM_PAGE_TIMEOUT 8192
 #endif
 
-/* link supervision timeout in 625uS (5 secs) */
-#ifndef BTA_DM_LINK_TIMEOUT
-#define BTA_DM_LINK_TIMEOUT 8000
-#endif
-
 /* TRUE to avoid scatternet when av is streaming (be the central) */
 #ifndef BTA_DM_AVOID_SCATTER_A2DP
 #define BTA_DM_AVOID_SCATTER_A2DP TRUE
@@ -60,8 +55,6 @@ const tBTA_DM_CFG bta_dm_cfg = {
     BTA_DM_COD,
     /* page timeout in 625uS */
     BTA_DM_PAGE_TIMEOUT,
-    /* link supervision timeout in 625uS*/
-    BTA_DM_LINK_TIMEOUT,
     /* true to avoid scatternet when av is streaming (be the central) */
     BTA_DM_AVOID_SCATTER_A2DP};
 
