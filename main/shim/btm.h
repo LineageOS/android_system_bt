@@ -249,6 +249,13 @@ class Btm {
     void OnBatchScanReports(int client_if, int status, int report_format,
                             int num_records, std::vector<uint8_t> data);
     void OnTimeout();
+    void OnFilterEnable(bluetooth::hci::Enable enable, uint8_t status);
+    void OnFilterParamSetup(uint8_t available_spaces,
+                            bluetooth::hci::ApcfAction action, uint8_t status);
+    void OnFilterConfigCallback(bluetooth::hci::ApcfFilterType filter_type,
+                                uint8_t available_spaces,
+                                bluetooth::hci::ApcfAction action,
+                                uint8_t status);
   };
   ScanningCallbacks scanning_callbacks_;
 

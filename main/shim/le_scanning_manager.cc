@@ -59,26 +59,77 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
 
   /** Setup scan filter params */
   void ScanFilterParamSetup(
-      uint8_t client_if, uint8_t action, uint8_t filt_index,
+      uint8_t client_if, uint8_t action, uint8_t filter_index,
       std::unique_ptr<btgatt_filt_param_setup_t> filt_param,
       FilterParamSetupCallback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+
+    auto apcf_action = static_cast<bluetooth::hci::ApcfAction>(action);
+    bluetooth::hci::AdvertisingFilterParameter advertising_filter_parameter;
+
+    if (filt_param != nullptr) {
+      if (filt_param && filt_param->dely_mode == 1) {
+        // TODO refactor BTM_BleTrackAdvertiser
+      }
+      advertising_filter_parameter.feature_selection = filt_param->feat_seln;
+      advertising_filter_parameter.list_logic_type =
+          filt_param->list_logic_type;
+      advertising_filter_parameter.filter_logic_type =
+          filt_param->filt_logic_type;
+      advertising_filter_parameter.rssi_high_thresh =
+          filt_param->rssi_high_thres;
+      advertising_filter_parameter.delivery_mode =
+          static_cast<bluetooth::hci::DeliveryMode>(filt_param->dely_mode);
+      if (filt_param && filt_param->dely_mode == 1) {
+        advertising_filter_parameter.onfound_timeout =
+            filt_param->found_timeout;
+        advertising_filter_parameter.onfound_timeout_cnt =
+            filt_param->found_timeout_cnt;
+        advertising_filter_parameter.rssi_low_thres =
+            filt_param->rssi_low_thres;
+        advertising_filter_parameter.onlost_timeout = filt_param->lost_timeout;
+        advertising_filter_parameter.num_of_tracking_entries =
+            filt_param->num_of_tracking_entries;
+      }
+    }
+
+    bluetooth::shim::GetScanning()->ScanFilterParameterSetup(
+        apcf_action, filter_index, advertising_filter_parameter);
+    // TODO refactor callback mechanism
+    do_in_jni_thread(FROM_HERE, base::Bind(cb, 0, 0, 0));
   }
 
   /** Configure a scan filter condition  */
   void ScanFilterAdd(int filter_index, std::vector<ApcfCommand> filters,
                      FilterConfigCallback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+    std::vector<bluetooth::hci::AdvertisingPacketContentFilterCommand>
+        new_filters = {};
+    for (size_t i = 0; i < filters.size(); i++) {
+      bluetooth::hci::AdvertisingPacketContentFilterCommand command{};
+      if (!parse_filter_command(command, filters[i])) {
+        LOG_ERROR("invalid apcf command");
+        return;
+      }
+      new_filters.push_back(command);
+    }
+    bluetooth::shim::GetScanning()->ScanFilterAdd(filter_index, new_filters);
+    do_in_jni_thread(FROM_HERE, base::Bind(cb, 0, 0, 0, 0));
   }
 
   /** Clear all scan filter conditions for specific filter index*/
-  void ScanFilterClear(int filt_index, FilterConfigCallback cb) {
+  void ScanFilterClear(int filter_index, FilterConfigCallback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+    // This function doesn't used in java layer
   }
 
   /** Enable / disable scan filter feature*/
   void ScanFilterEnable(bool enable, EnableCallback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+    bluetooth::shim::GetScanning()->ScanFilterEnable(enable);
+
+    uint8_t action = enable ? 1 : 0;
+    do_in_jni_thread(FROM_HERE, base::Bind(cb, action, 0));
   }
 
   /** Sets the LE scan interval and window in units of N*0.625 msec */
@@ -88,6 +139,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
     auto scan_type = static_cast<bluetooth::hci::LeScanType>(0x01);
     bluetooth::shim::GetScanning()->SetScanParameters(scan_type, scan_interval,
                                                       scan_window);
+    do_in_jni_thread(FROM_HERE, base::Bind(cb, 0));
   }
 
   /* Configure the batchscan storage */
@@ -166,7 +218,88 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                           int num_records, std::vector<uint8_t> data) {}
   void OnTimeout() {}
 
+  void OnFilterEnable(bluetooth::hci::Enable enable, uint8_t status){};
+
+  void OnFilterParamSetup(uint8_t available_spaces,
+                          bluetooth::hci::ApcfAction action, uint8_t status){};
+
+  void OnFilterConfigCallback(bluetooth::hci::ApcfFilterType filter_type,
+                              uint8_t available_spaces,
+                              bluetooth::hci::ApcfAction action,
+                              uint8_t status){};
+
   ScanningCallbacks* scanning_callbacks_;
+
+ private:
+  bool parse_filter_command(
+      bluetooth::hci::AdvertisingPacketContentFilterCommand&
+          advertising_packet_content_filter_command,
+      ApcfCommand apcf_command) {
+    advertising_packet_content_filter_command.filter_type =
+        static_cast<bluetooth::hci::ApcfFilterType>(apcf_command.type);
+    bluetooth::hci::Address address;
+    bluetooth::hci::Address::FromString(apcf_command.address.ToString(),
+                                        address);
+    advertising_packet_content_filter_command.address = address;
+    advertising_packet_content_filter_command.application_address_type =
+        static_cast<bluetooth::hci::ApcfApplicationAddressType>(
+            apcf_command.addr_type);
+
+    if (!apcf_command.uuid.IsEmpty()) {
+      uint8_t uuid_len = apcf_command.uuid.GetShortestRepresentationSize();
+      switch (uuid_len) {
+        case bluetooth::Uuid::kNumBytes16: {
+          advertising_packet_content_filter_command.uuid =
+              bluetooth::hci::Uuid::From16Bit(apcf_command.uuid.As16Bit());
+        } break;
+        case bluetooth::Uuid::kNumBytes32: {
+          advertising_packet_content_filter_command.uuid =
+              bluetooth::hci::Uuid::From32Bit(apcf_command.uuid.As32Bit());
+        } break;
+        case bluetooth::Uuid::kNumBytes128: {
+          advertising_packet_content_filter_command.uuid =
+              bluetooth::hci::Uuid::From128BitBE(
+                  apcf_command.uuid.To128BitBE());
+        } break;
+        default:
+          LOG_WARN("illegal UUID length %d", (uint16_t)uuid_len);
+          return false;
+      }
+    }
+
+    if (!apcf_command.uuid_mask.IsEmpty()) {
+      uint8_t uuid_len = apcf_command.uuid.GetShortestRepresentationSize();
+      switch (uuid_len) {
+        case bluetooth::Uuid::kNumBytes16: {
+          advertising_packet_content_filter_command.uuid_mask =
+              bluetooth::hci::Uuid::From16Bit(apcf_command.uuid_mask.As16Bit());
+        } break;
+        case bluetooth::Uuid::kNumBytes32: {
+          advertising_packet_content_filter_command.uuid_mask =
+              bluetooth::hci::Uuid::From32Bit(apcf_command.uuid_mask.As32Bit());
+        } break;
+        case bluetooth::Uuid::kNumBytes128: {
+          advertising_packet_content_filter_command.uuid_mask =
+              bluetooth::hci::Uuid::From128BitBE(
+                  apcf_command.uuid_mask.To128BitBE());
+        } break;
+        default:
+          LOG_WARN("illegal UUID length %d", (uint16_t)uuid_len);
+          return false;
+      }
+    }
+
+    advertising_packet_content_filter_command.name.assign(
+        apcf_command.name.begin(), apcf_command.name.end());
+    advertising_packet_content_filter_command.company = apcf_command.company;
+    advertising_packet_content_filter_command.company_mask =
+        apcf_command.company_mask;
+    advertising_packet_content_filter_command.data.assign(
+        apcf_command.data.begin(), apcf_command.data.end());
+    advertising_packet_content_filter_command.data_mask.assign(
+        apcf_command.data_mask.begin(), apcf_command.data_mask.end());
+    return true;
+  }
 };
 
 BleScannerInterfaceImpl* bt_le_scanner_instance = nullptr;
