@@ -17,6 +17,8 @@
  ******************************************************************************/
 
 #include "mock_btm_layer.h"
+#include "stack/include/btm_client_interface.h"
+#include "stack/include/rfcdefs.h"
 
 static bluetooth::manager::MockBtmSecurityInternalInterface*
     btm_security_internal_interface = nullptr;
@@ -47,4 +49,15 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 
 uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return RFCOMM_DEFAULT_MTU;
+}
+
+struct btm_client_interface_s btm_client_interface = {
+    .peer =
+        {
+            .BTM_GetMaxPacketSize = BTM_GetMaxPacketSize,
+        },
+};
+
+struct btm_client_interface_s& get_btm_client_interface() {
+  return btm_client_interface;
 }
