@@ -33,9 +33,11 @@ import zlib
 TYPE_IN_EVT = 0x10
 TYPE_IN_ACL = 0x11
 TYPE_IN_SCO = 0x12
+TYPE_IN_ISO = 0x17
 TYPE_OUT_CMD = 0x20
 TYPE_OUT_ACL = 0x21
 TYPE_OUT_SCO = 0x22
+TYPE_OUT_ISO = 0x2d
 
 
 def type_to_direction(type):
@@ -44,7 +46,7 @@ def type_to_direction(type):
   0 = sent packet
   1 = received packet
   """
-    if type in [TYPE_IN_EVT, TYPE_IN_ACL, TYPE_IN_SCO]:
+    if type in [TYPE_IN_EVT, TYPE_IN_ACL, TYPE_IN_SCO, TYPE_IN_ISO]:
         return 1
     return 0
 
@@ -61,6 +63,8 @@ def type_to_hci(type):
         return '\x03'
     if type == TYPE_IN_EVT:
         return '\x04'
+    if type == TYPE_IN_ISO or type == TYPE_OUT_ISO:
+        return '\x05'
     raise RuntimeError("type_to_hci: unknown type (0x{:02x})".format(type))
 
 
