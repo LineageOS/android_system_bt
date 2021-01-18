@@ -132,6 +132,9 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
       LOG_ALWAYS_FATAL("invalid parameters");
   }
 }
+LeAddressManager::AddressPolicy LeAddressManager::GetAddressPolicy() {
+  return address_policy_;
+}
 
 LeAddressManager::AddressPolicy LeAddressManager::Register(LeAddressManagerCallback* callback) {
   handler_->BindOnceOn(this, &LeAddressManager::register_client, callback).Invoke();
@@ -246,7 +249,7 @@ void LeAddressManager::prepare_to_rotate() {
 void LeAddressManager::schedule_rotate_random_address() {
   address_rotation_alarm_->Schedule(
       common::BindOnce(&LeAddressManager::prepare_to_rotate, common::Unretained(this)),
-      get_next_private_address_interval_ms());
+      GetNextPrivateAddressIntervalMs());
 }
 
 void LeAddressManager::set_random_address() {
@@ -331,7 +334,7 @@ hci::Address LeAddressManager::generate_nrpa() {
   return address;
 }
 
-std::chrono::milliseconds LeAddressManager::get_next_private_address_interval_ms() {
+std::chrono::milliseconds LeAddressManager::GetNextPrivateAddressIntervalMs() {
   auto interval_random_part_max_ms = maximum_rotation_time_ - minimum_rotation_time_;
   auto random_ms = std::chrono::milliseconds(os::GenerateRandom()) % (interval_random_part_max_ms);
   return minimum_rotation_time_ + random_ms;
