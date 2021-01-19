@@ -832,6 +832,42 @@ void ClassicSignallingManager::handle_one_command(ControlView control_packet_vie
       OnInformationResponse(information_response_view.GetIdentifier(), information_response_view);
       return;
     }
+    case CommandCode::CREDIT_BASED_CONNECTION_REQUEST: {
+      CreditBasedConnectionRequestView request_view = CreditBasedConnectionRequestView::Create(control_packet_view);
+      if (!request_view.IsValid()) {
+        return;
+      }
+      return;
+    }
+    case CommandCode::CREDIT_BASED_CONNECTION_RESPONSE: {
+      CreditBasedConnectionResponseView response_view = CreditBasedConnectionResponseView::Create(control_packet_view);
+      if (!response_view.IsValid()) {
+        return;
+      }
+      return;
+    }
+    case CommandCode::CREDIT_BASED_RECONFIGURE_REQUEST: {
+      CreditBasedReconfigureRequestView request_view = CreditBasedReconfigureRequestView::Create(control_packet_view);
+      if (!request_view.IsValid()) {
+        return;
+      }
+      return;
+    }
+    case CommandCode::CREDIT_BASED_RECONFIGURE_RESPONSE: {
+      CreditBasedReconfigureResponseView response_view =
+          CreditBasedReconfigureResponseView::Create(control_packet_view);
+      if (!response_view.IsValid()) {
+        return;
+      }
+      return;
+    }
+    case CommandCode::FLOW_CONTROL_CREDIT: {
+      FlowControlCreditView credit_view = FlowControlCreditView::Create(control_packet_view);
+      if (!credit_view.IsValid()) {
+        return;
+      }
+      return;
+    }
     default:
       LOG_WARN("Unhandled event 0x%x", static_cast<int>(code));
       auto builder = CommandRejectNotUnderstoodBuilder::Create(control_packet_view.GetIdentifier());
