@@ -1144,8 +1144,6 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda);
   }
-  uint8_t initiating_phys =
-      controller_get_interface()->get_le_all_initiating_phys();
 
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1230,7 +1228,7 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    bool ret = l2cu_create_conn_le(p_lcb, initiating_phys);
+    bool ret = l2cu_create_conn_le(p_lcb);
     if (!ret) {
       LOG_WARN("Unable to create fixed channel le connection fixed_cid:0x%04x",
                fixed_cid);
