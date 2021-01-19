@@ -2846,6 +2846,9 @@ packet LeReadRemoteFeatures : LeConnectionManagementCommand (op_code = LE_READ_R
   _reserved_ : 4,
 }
 
+packet LeReadRemoteFeaturesStatus : CommandStatus (command_op_code = LE_READ_REMOTE_FEATURES) {
+}
+
 packet LeEncrypt : LeSecurityCommand (op_code = LE_ENCRYPT) {
   key : 8[16],
   plaintext_data : 8[16],
