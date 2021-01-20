@@ -3699,7 +3699,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
 
     // This is for chips that don't support being in connected and advertising
     // state at same time.
-    if (!p_dev_rec->is_originator) {
+    if (!p_dev_rec->IsLocallyInitiated()) {
       btm_ble_advertiser_notify_terminated_legacy(HCI_SUCCESS, handle);
     }
   } else {
@@ -4098,7 +4098,7 @@ void btm_sec_pin_code_request(uint8_t* p_event) {
            /*  the only thing we can do here is to shut it up.  Normally we will
               be originator */
            /*  for keyboard bonding */
-           || (!p_dev_rec->is_originator &&
+           || (!p_dev_rec->IsLocallyInitiated() &&
                ((p_dev_rec->dev_class[1] & BTM_COD_MAJOR_CLASS_MASK) ==
                 BTM_COD_MAJOR_PERIPHERAL) &&
                (p_dev_rec->dev_class[2] & BTM_COD_MINOR_KEYBOARD))) {
@@ -4214,12 +4214,12 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* If connection is not authenticated and authentication is required */
   /* start authentication and return PENDING to the caller */
   if ((((!(p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED)) &&
-        ((p_dev_rec->is_originator &&
+        ((p_dev_rec->IsLocallyInitiated() &&
           (p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)) ||
-         (!p_dev_rec->is_originator &&
+         (!p_dev_rec->IsLocallyInitiated() &&
           (p_dev_rec->security_required & BTM_SEC_IN_AUTHENTICATE)))) ||
        (!(p_dev_rec->sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED) &&
-        (!p_dev_rec->is_originator &&
+        (!p_dev_rec->IsLocallyInitiated() &&
          (p_dev_rec->security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN)))) &&
       (p_dev_rec->hci_handle != HCI_INVALID_HANDLE)) {
     /*
@@ -4244,7 +4244,7 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
      */
     if ((p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN) &&
         (!(p_dev_rec->sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED) &&
-         (!p_dev_rec->is_originator &&
+         (!p_dev_rec->IsLocallyInitiated() &&
           (p_dev_rec->security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN)))) {
       p_dev_rec->sec_flags &=
           ~(BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED |
@@ -4258,9 +4258,9 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* If connection is not encrypted and encryption is required */
   /* start encryption and return PENDING to the caller */
   if (!(p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) &&
-      ((p_dev_rec->is_originator &&
+      ((p_dev_rec->IsLocallyInitiated() &&
         (p_dev_rec->security_required & BTM_SEC_OUT_ENCRYPT)) ||
-       (!p_dev_rec->is_originator &&
+       (!p_dev_rec->IsLocallyInitiated() &&
         (p_dev_rec->security_required & BTM_SEC_IN_ENCRYPT))) &&
       (p_dev_rec->hci_handle != HCI_INVALID_HANDLE)) {
     BTM_TRACE_EVENT("Security Manager: Start encryption");
