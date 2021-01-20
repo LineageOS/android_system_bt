@@ -188,6 +188,21 @@ void StackAclBtmAcl::hci_start_role_switch_to_central(tACL_CONN& p_acl) {
   p_acl.rs_disc_pending = BTM_SEC_RS_PENDING;
 }
 
+void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
+  if (link.link_role != HCI_ROLE_CENTRAL) {
+    /* Only send if current role is Central; 2.0 spec requires this */
+    LOG_WARN("Can only set link supervision timeout if central role:%s",
+             RoleText(link.link_role).c_str());
+    return;
+  }
+
+  LOG_DEBUG("Setting link supervision timeout:%.2fs peer:%s",
+            double(timeout) * 0.01, PRIVATE_ADDRESS(link.RemoteAddress()));
+  link.link_super_tout = timeout;
+  btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID, link.Handle(),
+                                   timeout);
+}
+
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
