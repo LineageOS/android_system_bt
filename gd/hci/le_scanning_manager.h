@@ -69,6 +69,8 @@ class LeScanningManager : public bluetooth::Module {
 
   void Scan(bool start);
 
+  void SetScanParameters(LeScanType scan_type, uint16_t scan_interval, uint16_t scan_window);
+
   void RegisterScanningCallback(ScanningCallback* scanning_callback);
 
   static const ModuleFactory Factory;

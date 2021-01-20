@@ -84,6 +84,10 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
   /** Sets the LE scan interval and window in units of N*0.625 msec */
   void SetScanParameters(int scan_interval, int scan_window, Callback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+    // use active scan
+    auto scan_type = static_cast<bluetooth::hci::LeScanType>(0x01);
+    bluetooth::shim::GetScanning()->SetScanParameters(scan_type, scan_interval,
+                                                      scan_window);
   }
 
   /* Configure the batchscan storage */
