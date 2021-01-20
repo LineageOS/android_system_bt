@@ -1429,7 +1429,11 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
     if (new_role == HCI_ROLE_CENTRAL) {
-      BTM_SetLinkSuperTout(p_acl->remote_addr, p_acl->link_super_tout);
+      uint16_t supervisor_timeout =
+          (p_acl->link_super_tout == 0)  // uninitialized
+              ? (btm_cb.acl_cb_.DefaultSupervisorTimeout())
+              : (p_acl->link_super_tout);
+      hci_btm_set_link_supervision_timeout(*p_acl, supervisor_timeout);
     }
   } else {
     new_role = p_acl->link_role;
