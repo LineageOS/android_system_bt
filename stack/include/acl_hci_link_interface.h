@@ -28,6 +28,9 @@
 void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc);
 void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode);
+void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
+                             uint8_t enc_mode);
+void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status);
 void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
                           tHCI_STATUS reason);
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status,

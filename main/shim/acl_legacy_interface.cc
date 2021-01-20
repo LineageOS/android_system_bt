@@ -28,8 +28,8 @@ const acl_interface_t GetAclInterface() {
       .on_send_data_upwards = acl_rcv_acl_data,
       .on_packets_completed = acl_packets_completed,
 
-      .connection.classic.on_connected = btm_acl_connected,
-      .connection.classic.on_failed = btm_acl_connected,
+      .connection.classic.on_connected = on_acl_br_edr_connected,
+      .connection.classic.on_failed = on_acl_br_edr_failed,
       .connection.classic.on_disconnected = btm_acl_disconnected,
 
       .connection.le.on_connected =
