@@ -103,6 +103,16 @@ typedef struct {
     return (index < kMaxScoLinks) ? (&sco_db[index]) : nullptr;
   }
 
+  tSCO_CONN* get_sco_connection_from_handle(uint16_t handle) {
+    tSCO_CONN* p_sco = sco_db;
+    for (uint16_t xx = 0; xx < kMaxScoLinks; xx++, p_sco++) {
+      if (p_sco->hci_handle == handle) {
+        return p_sco;
+      }
+    }
+    return nullptr;
+  }
+
   void Init() {
     sco_disc_reason = BTM_INVALID_SCO_DISC_REASON;
     def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD);
