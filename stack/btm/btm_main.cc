@@ -35,7 +35,6 @@
 */
 tBTM_CB btm_cb;
 
-extern void btm_acl_init(void);
 extern void btm_dev_init(void);
 extern void btm_dev_free(void);
 extern void btm_inq_db_init(void);
@@ -62,7 +61,7 @@ void btm_init(void) {
 
   /* Initialize BTM component structures */
   btm_inq_db_init(); /* Inquiry Database and Structures */
-  btm_acl_init();    /* ACL Database and Structures */
+  btm_cb.acl_cb_.Init(); /* ACL Database and Structures */
   btm_sco_init(); /* SCO Database and Structures (If included) */
 
   btm_dev_init(); /* Device Manager Structures & HCI_Reset */
