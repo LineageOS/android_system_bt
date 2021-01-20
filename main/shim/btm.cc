@@ -678,6 +678,11 @@ void Btm::StoreAddressType(const RawAddress& bd_addr, tBLE_ADDR_TYPE type) {
   store_le_address_type(bd_addr, type);
 }
 
+void Btm::Register_HACK_SetScoDisconnectCallback(
+    HACK_ScoDisconnectCallback callback) {
+  GetAclManager()->HACK_SetScoDisconnectCallback(callback);
+}
+
 }  // namespace shim
 
 }  // namespace bluetooth
