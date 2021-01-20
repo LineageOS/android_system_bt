@@ -39,7 +39,7 @@ void BTM_block_role_switch_for(const RawAddress& peer_addr);
 void BTM_default_unblock_role_switch();
 void BTM_default_block_role_switch();
 
-void BTM_acl_after_controller_started();
+void BTM_acl_after_controller_started(const controller_t* controller);
 
 /*******************************************************************************
  *
