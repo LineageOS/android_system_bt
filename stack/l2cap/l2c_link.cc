@@ -44,8 +44,6 @@ extern tBTM_CB btm_cb;
 
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 bool btm_dev_support_role_switch(const RawAddress& bd_addr);
-tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
-                                 uint16_t timeout);
 tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason);
 tHCI_STATUS acl_get_disconnect_reason();
 uint16_t acl_get_link_supervision_timeout();
@@ -187,8 +185,6 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
 
     /* Get the peer information if the l2cap flow-control/rtrans is supported */
     l2cu_send_peer_info_req(p_lcb, L2CAP_EXTENDED_FEATURES_INFO_TYPE);
-
-    BTM_SetLinkSuperTout(ci.bd_addr, acl_get_link_supervision_timeout());
 
     /* If dedicated bonding do not process any further */
     if (p_lcb->IsBonding()) {
