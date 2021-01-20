@@ -343,9 +343,24 @@ typedef struct {
     security_mode = initial_security_mode;
     pairing_bda = RawAddress::kAny;
     sec_dev_rec = list_new(osi_free);
+
+    /* Initialize BTM component structures */
+    btm_inq_vars.Init(); /* Inquiry Database and Structures */
+    acl_cb_.Init();      /* ACL Database and Structures */
+    sco_cb.Init();       /* SCO Database and Structures (If included) */
+    devcb.Init();
+
+    history_ = std::make_shared<TimestampedStringCircularBuffer>(40);
+    CHECK(history_ != nullptr);
+    history_->Push(std::string("Initialized btm history"));
   }
 
   void Free() {
+    history_.reset();
+
+    devcb.Free();
+    btm_inq_vars.Free();
+
     fixed_queue_free(page_queue, nullptr);
     page_queue = nullptr;
 
