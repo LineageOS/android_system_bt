@@ -79,6 +79,7 @@ struct StackAclBtmAcl {
   void btm_set_default_link_policy(tLINK_POLICY settings);
   void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                             uint8_t new_role);
+  void hci_start_role_switch_to_central(tACL_CONN& p_acl);
 };
 
 namespace {
@@ -180,7 +181,7 @@ static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
   }
 }
 
-static void hci_start_role_switch_to_central(tACL_CONN& p_acl) {
+void StackAclBtmAcl::hci_start_role_switch_to_central(tACL_CONN& p_acl) {
   GetLegacyHciInterface().StartRoleSwitch(
       p_acl.remote_addr, static_cast<uint8_t>(HCI_ROLE_CENTRAL));
   p_acl.set_switch_role_in_progress();
@@ -576,7 +577,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
       p_acl->set_encryption_off();
       p_acl->set_switch_role_encryption_off();
     } else {
-      hci_start_role_switch_to_central(*p_acl);
+      internal_.hci_start_role_switch_to_central(*p_acl);
     }
   }
 
@@ -615,7 +616,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
       p->set_encryption_switching();
       p->set_switch_role_switching();
     }
-    hci_start_role_switch_to_central(*p);
+    internal_.hci_start_role_switch_to_central(*p);
   }
   /* Finished enabling Encryption after role switch */
   else if (p->is_switch_role_encryption_on()) {
@@ -2168,7 +2169,7 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
               and/or change of link key */
     {
       if (p->is_switch_role_mode_change()) {
-        hci_start_role_switch_to_central(*p);
+        internal_.hci_start_role_switch_to_central(*p);
       }
     }
   }
