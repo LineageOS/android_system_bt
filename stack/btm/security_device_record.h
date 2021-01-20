@@ -170,7 +170,7 @@ typedef enum : uint8_t {
  * Define structure for Security Device Record.
  * A record exists for each device authenticated with this device
  */
-typedef struct {
+struct tBTM_SEC_DEV_REC {
   /* Peering bond type */
   typedef enum : uint8_t {
     BOND_TYPE_UNKNOWN = 0,
@@ -375,5 +375,4 @@ typedef struct {
         DeviceTypeText(device_type).c_str(), sec_bd_name,
         logbool(remote_supports_secure_connections).c_str());
   }
-
-} tBTM_SEC_DEV_REC;
+};
