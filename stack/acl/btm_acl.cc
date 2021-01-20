@@ -2729,23 +2729,11 @@ void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status) {
 
 void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode) {
-  btm_sec_connected(bda, handle, status, enc_mode);
-  btm_acl_set_paging(false);
-  l2c_link_hci_conn_comp(status, handle, bda);
-
-  /*
-   * The legacy code path informs the upper layer via the BTA
-   * layer after all relevant read_remote_ commands are complete.
-   * The GD code path has ownership of the read_remote_ commands
-   * and thus may inform the upper layers about the connection.
-   */
-  if (bluetooth::shim::is_gd_acl_enabled()) {
-    tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
-    if (p_acl != nullptr) {
-      NotifyAclLinkUp(*p_acl);
-    } else {
-      LOG_WARN("Unable to find active acl");
-    }
+  switch (status) {
+    case HCI_SUCCESS:
+      return on_acl_br_edr_connected(bda, handle, enc_mode);
+    default:
+      return on_acl_br_edr_failed(bda, status);
   }
 }
 
