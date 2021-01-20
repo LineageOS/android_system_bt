@@ -17,7 +17,10 @@
 #include "main/shim/acl_legacy_interface.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_acl_interface.h"
+#include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sec_hci_link_interface.h"
+
+struct tBTM_ESCO_DATA;
 
 namespace bluetooth {
 namespace shim {
@@ -37,7 +40,7 @@ const acl_interface_t GetAclInterface() {
       .connection.le.on_failed = acl_ble_connection_fail,
       .connection.le.on_disconnected = btm_acl_disconnected,
 
-      .connection.sco.on_disconnected = nullptr,
+      .connection.sco.on_disconnected = btm_sco_on_disconnected,
 
       .link.classic.on_authentication_complete = btm_sec_auth_complete,
       .link.classic.on_central_link_key_complete = nullptr,
