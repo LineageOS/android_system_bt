@@ -30,8 +30,14 @@
 namespace bluetooth {
 namespace hci {
 
-constexpr uint16_t kDefaultLeScanWindow = 4800;
-constexpr uint16_t kDefaultLeScanInterval = 4800;
+constexpr uint16_t kLeScanWindowMin = 0x0004;
+constexpr uint16_t kLeScanWindowMax = 0x4000;
+constexpr uint16_t kDefaultLeExtendedScanWindow = 4800;
+constexpr uint16_t kLeExtendedScanWindowMax = 0xFFFF;
+constexpr uint16_t kLeScanIntervalMin = 0x0004;
+constexpr uint16_t kLeScanIntervalMax = 0x4000;
+constexpr uint16_t kDefaultLeExtendedScanInterval = 4800;
+constexpr uint16_t kLeExtendedScanIntervalMax = 0xFFFF;
 
 constexpr uint8_t kScannableBit = 1;
 constexpr uint8_t kDirectedBit = 2;
@@ -145,6 +151,8 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
         module_handler_->BindOn(this, &LeScanningManager::impl::handle_scan_results));
     if (controller_->IsSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS)) {
       api_type_ = ScanApiType::EXTENDED;
+      interval_ms_ = kDefaultLeExtendedScanInterval;
+      window_ms_ = kDefaultLeExtendedScanWindow;
     } else if (controller_->IsSupported(OpCode::LE_EXTENDED_SCAN_PARAMS)) {
       api_type_ = ScanApiType::ANDROID_HCI;
     } else {
@@ -366,11 +374,15 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   void configure_scan() {
     std::vector<PhyScanParameters> parameter_vector;
     PhyScanParameters phy_scan_parameters;
-    phy_scan_parameters.le_scan_window_ = kDefaultLeScanWindow;
-    phy_scan_parameters.le_scan_interval_ = kDefaultLeScanInterval;
-    phy_scan_parameters.le_scan_type_ = LeScanType::ACTIVE;
+    phy_scan_parameters.le_scan_window_ = window_ms_;
+    phy_scan_parameters.le_scan_interval_ = interval_ms_;
+    phy_scan_parameters.le_scan_type_ = le_scan_type_;
     parameter_vector.push_back(phy_scan_parameters);
     uint8_t phys_in_use = 1;
+
+    if (le_address_manager_->GetAddressPolicy() != LeAddressManager::USE_PUBLIC_ADDRESS) {
+      own_address_type_ = OwnAddressType::RANDOM_DEVICE_ADDRESS;
+    }
 
     switch (api_type_) {
       case ScanApiType::EXTENDED:
@@ -433,6 +445,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
 
   void scan(bool start) {
     if (start) {
+      configure_scan();
       start_scan();
     } else {
       if (address_manager_registered_) {
@@ -490,6 +503,31 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
   }
 
+  void set_scan_parameters(LeScanType scan_type, uint16_t scan_interval, uint16_t scan_window) {
+    uint32_t max_scan_interval = kLeScanIntervalMax;
+    uint32_t max_scan_window = kLeScanWindowMax;
+    if (api_type_ == ScanApiType::EXTENDED) {
+      max_scan_interval = kLeExtendedScanIntervalMax;
+      max_scan_window = kLeExtendedScanWindowMax;
+    }
+
+    if (scan_type != LeScanType::ACTIVE && scan_type != LeScanType::PASSIVE) {
+      LOG_ERROR("Invalid scan type");
+      return;
+    }
+    if (scan_interval > max_scan_interval || scan_interval < kLeScanIntervalMin) {
+      LOG_ERROR("Invalid scan_interval %d", scan_interval);
+      return;
+    }
+    if (scan_window > max_scan_window || scan_window < kLeScanWindowMin) {
+      LOG_ERROR("Invalid scan_window %d", scan_window);
+      return;
+    }
+    le_scan_type_ = scan_type;
+    interval_ms_ = scan_interval;
+    window_ms_ = scan_window;
+  }
+
   void register_scanning_callback(ScanningCallback* scanning_callbacks) {
     scanning_callbacks_ = scanning_callbacks;
   }
@@ -529,6 +567,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   bool paused_ = false;
   AdvertisingCache advertising_cache_;
 
+  LeScanType le_scan_type_ = LeScanType::ACTIVE;
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
   OwnAddressType own_address_type_{OwnAddressType::PUBLIC_DEVICE_ADDRESS};
@@ -600,6 +639,10 @@ void LeScanningManager::Unregister(ScannerId scanner_id) {
 
 void LeScanningManager::Scan(bool start) {
   CallOn(pimpl_.get(), &impl::scan, start);
+}
+
+void LeScanningManager::SetScanParameters(LeScanType scan_type, uint16_t scan_interval, uint16_t scan_window) {
+  CallOn(pimpl_.get(), &impl::set_scan_parameters, scan_type, scan_interval, scan_window);
 }
 
 void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {

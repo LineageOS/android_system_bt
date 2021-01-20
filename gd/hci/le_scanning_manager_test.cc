@@ -385,7 +385,12 @@ TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
 
   auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
-  auto packet = test_hci_layer_->GetCommand(OpCode::LE_SET_EXTENDED_SCAN_ENABLE);
+  test_hci_layer_->GetCommand(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS);
+  test_hci_layer_->IncomingEvent(LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
+  test_hci_layer_->GetCommand(OpCode::LE_SET_EXTENDED_SCAN_ENABLE);
 
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
