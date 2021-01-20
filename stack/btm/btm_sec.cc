@@ -3107,7 +3107,9 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
         BTM_TRACE_DEBUG(
             "link encrypted afer dedic bonding can use SMP_BR_CHNL");
 
-        if (acl_br_edr_is_role_central(p_dev_rec->bd_addr)) {
+        uint8_t role = HCI_ROLE_UNKNOWN;
+        BTM_GetRole(p_dev_rec->bd_addr, &role);
+        if (role == HCI_ROLE_CENTRAL) {
           // Encryption is required to start SM over BR/EDR
           // indicate that this is encryption after authentication
           BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL,
@@ -3233,9 +3235,10 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
       BTM_TRACE_DEBUG("%s: BR key is temporary, skip derivation of LE LTK",
                       __func__);
     }
+    uint8_t role = HCI_ROLE_UNKNOWN;
+    BTM_GetRole(p_dev_rec->bd_addr, &role);
     if (p_dev_rec->new_encryption_key_is_p256) {
-      if (btm_sec_use_smp_br_chnl(p_dev_rec) &&
-          acl_br_edr_is_role_central(p_dev_rec->bd_addr) &&
+      if (btm_sec_use_smp_br_chnl(p_dev_rec) && role == HCI_ROLE_CENTRAL &&
           /* if LE key is not known, do deriving */
           (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) ||
            /* or BR key is higher security than existing LE keys */
