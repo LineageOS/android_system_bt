@@ -190,6 +190,26 @@ typedef struct {
 
   tBTM_IO_CAP loc_io_caps;    /* IO capability of the local device */
   tBTM_AUTH_REQ loc_auth_req; /* the auth_req flag  */
+
+  void Init() {
+    read_local_name_timer = alarm_new("btm.read_local_name_timer");
+    read_rssi_timer = alarm_new("btm.read_rssi_timer");
+    read_failed_contact_counter_timer =
+        alarm_new("btm.read_failed_contact_counter_timer");
+    read_automatic_flush_timeout_timer =
+        alarm_new("btm.read_automatic_flush_timeout_timer");
+    read_link_quality_timer = alarm_new("btm.read_link_quality_timer");
+    read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
+  }
+
+  void Free() {
+    alarm_free(read_local_name_timer);
+    alarm_free(read_rssi_timer);
+    alarm_free(read_failed_contact_counter_timer);
+    alarm_free(read_automatic_flush_timeout_timer);
+    alarm_free(read_link_quality_timer);
+    alarm_free(read_tx_power_timer);
+  }
 } tBTM_DEVCB;
 
 typedef struct {

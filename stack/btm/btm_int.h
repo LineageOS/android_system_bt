@@ -71,7 +71,6 @@ extern bool btm_inq_find_bdaddr(const RawAddress& p_bda);
 /* Internal functions provided by btm_acl.cc
  *******************************************
 */
-extern void btm_acl_init(void);
 extern void btm_acl_device_down(void);
 extern void btm_acl_set_paging(bool value);
 extern void btm_acl_update_inquiry_status(uint8_t state);
