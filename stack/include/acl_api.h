@@ -214,9 +214,6 @@ void btm_set_packet_types_from_address(const RawAddress& bda,
                                        tBT_TRANSPORT transport,
                                        uint16_t pkt_types);
 
-bool acl_br_edr_is_role_central(const RawAddress& bda);
-bool acl_ble_is_role_central(const RawAddress& bda);
-
 #define BLE_RESOLVE_ADDR_MASK 0xc0
 #define BLE_RESOLVE_ADDR_MSB 0x40
 
@@ -279,7 +276,6 @@ void btm_ble_refresh_local_resolvable_private_addr(
 
 void btm_cont_rswitch_from_handle(uint16_t hci_handle);
 
-uint8_t acl_link_role(const RawAddress& remote_bda, tBT_TRANSPORT transport);
 uint8_t acl_link_role_from_handle(uint16_t handle);
 
 tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle);
