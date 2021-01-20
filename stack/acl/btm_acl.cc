@@ -2695,6 +2695,38 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
   return true;
 }
 
+void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
+                             uint8_t enc_mode) {
+  btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
+  btm_acl_set_paging(false);
+  l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
+
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+
+  /*
+   * The legacy code path informs the upper layer via the BTA
+   * layer after all relevant read_remote_ commands are complete.
+   * The GD code path has ownership of the read_remote_ commands
+   * and thus may inform the upper layers about the connection.
+   */
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    NotifyAclLinkUp(*p_acl);
+  }
+}
+
+void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status) {
+  ASSERT_LOG(status != HCI_SUCCESS,
+             "Successful connection entering failing code path");
+
+  btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false);
+  btm_acl_set_paging(false);
+  l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bda);
+}
+
 void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode) {
   btm_sec_connected(bda, handle, status, enc_mode);
