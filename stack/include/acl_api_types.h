@@ -95,17 +95,6 @@ typedef struct {
   uint8_t link_quality;
 } tBTM_LINK_QUALITY_RESULT;
 
-/* Structure returned with read inq tx power quality event (in tBTM_CMPL_CB
- * callback function) in response to BTM_ReadInquiryRspTxPower call.
- */
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  int8_t tx_power;
-} tBTM_INQ_TXPWR_RESULT;
-
-typedef uint8_t tBTM_BL_EVENT;
-
 #define BTM_INQUIRY_STARTED 1
 #define BTM_INQUIRY_CANCELLED 2
 #define BTM_INQUIRY_COMPLETE 3
