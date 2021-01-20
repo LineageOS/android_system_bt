@@ -19,6 +19,7 @@
 #ifndef BTM_API_TYPES_H
 #define BTM_API_TYPES_H
 
+#include <base/strings/stringprintf.h>
 #include <cstdint>
 #include <string>
 
@@ -619,6 +620,23 @@ enum : uint8_t {
   BTM_IO_CAP_UNKNOWN = 0xFF /* Unknown value */
 };
 typedef uint8_t tBTM_IO_CAP;
+
+inline std::string io_capabilities_text(const tBTM_IO_CAP& io_caps) {
+  switch (io_caps) {
+    case BTM_IO_CAP_OUT:
+      return std::string("Display only");
+    case BTM_IO_CAP_IO:
+      return std::string("Display yes-no");
+    case BTM_IO_CAP_IN:
+      return std::string("Keyboard Only");
+    case BTM_IO_CAP_NONE:
+      return std::string("No input or output");
+    case BTM_IO_CAP_KBDISP:
+      return std::string("Keyboard-Display");
+    default:
+      return base::StringPrintf("UNKNOWN[%hhu]", io_caps);
+  }
+}
 
 #define BTM_MAX_PASSKEY_VAL (999999)
 
