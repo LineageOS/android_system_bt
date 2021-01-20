@@ -2678,6 +2678,7 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
   btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
+  BTM_SetLinkSuperTout(bda, acl_get_link_supervision_timeout());
 
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
   if (p_acl == nullptr) {
