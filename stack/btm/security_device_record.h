@@ -188,6 +188,10 @@ struct tBTM_SEC_DEV_REC {
   DEV_CLASS dev_class;     /* DEV_CLASS of the device            */
   LinkKey link_key;        /* Device link key                    */
 
+ public:
+  RawAddress RemoteAddress() const { return bd_addr; }
+  uint16_t get_br_edr_hci_handle() const { return hci_handle; }
+
  private:
   friend bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                                BD_NAME bd_name, uint8_t* features,
