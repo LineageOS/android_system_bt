@@ -368,12 +368,8 @@ struct controller_t;
  ****************************************************/
 struct sACL_CB {
  private:
-  friend bool BTM_IsBleConnection(uint16_t hci_handle);
-  friend bool acl_is_role_switch_allowed();
   friend bool btm_pm_is_le_link(const RawAddress& remote_bda);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
-  friend tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
-                                   tBT_TRANSPORT transport);
   friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
   friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
                                       const RawAddress& remote_bda,
@@ -381,15 +377,11 @@ struct sACL_CB {
   friend tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda,
                                       uint16_t max_lat, uint16_t min_rmt_to,
                                       uint16_t min_loc_to);
-  friend tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
-                                               tBTM_PM_STATE* pmState);
   friend uint16_t BTM_GetNumAclLinks(void);
   friend uint16_t acl_get_link_supervision_timeout();
   friend uint16_t acl_get_supported_packet_types();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
   friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
-  friend void BTM_default_block_role_switch();
-  friend void BTM_default_unblock_role_switch();
   friend void acl_initialize_power_mode(const tACL_CONN& p_acl);
   friend void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
   friend void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
