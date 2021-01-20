@@ -50,19 +50,17 @@ class SecurityEnforcementRejectAllImpl : public SecurityEnforcementInterface {
 static SecurityEnforcementRejectAllImpl default_security_module_impl_;
 
 struct L2capLeModule::impl {
-  impl(os::Handler* l2cap_handler, hci::AclManager* acl_manager, hci::LeAdvertisingManager* le_advertising_manager)
-      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager), le_advertising_manager_(le_advertising_manager) {
+  impl(os::Handler* l2cap_handler, hci::AclManager* acl_manager)
+      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager) {
     dynamic_channel_service_manager_impl_.SetSecurityEnforcementInterface(&default_security_module_impl_);
   }
   os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
-  hci::LeAdvertisingManager* le_advertising_manager_;
   l2cap::internal::ParameterProvider parameter_provider_;
   internal::FixedChannelServiceManagerImpl fixed_channel_service_manager_impl_{l2cap_handler_};
   internal::DynamicChannelServiceManagerImpl dynamic_channel_service_manager_impl_{l2cap_handler_};
   internal::LinkManager link_manager_{l2cap_handler_,
                                       acl_manager_,
-                                      le_advertising_manager_,
                                       &fixed_channel_service_manager_impl_,
                                       &dynamic_channel_service_manager_impl_,
                                       &parameter_provider_};
@@ -73,12 +71,10 @@ L2capLeModule::~L2capLeModule() {}
 
 void L2capLeModule::ListDependencies(ModuleList* list) {
   list->add<hci::AclManager>();
-  list->add<hci::LeAdvertisingManager>();
 }
 
 void L2capLeModule::Start() {
-  pimpl_ = std::make_unique<impl>(
-      GetHandler(), GetDependency<hci::AclManager>(), GetDependency<hci::LeAdvertisingManager>());
+  pimpl_ = std::make_unique<impl>(GetHandler(), GetDependency<hci::AclManager>());
 }
 
 void L2capLeModule::Stop() {

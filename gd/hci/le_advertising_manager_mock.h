@@ -44,10 +44,6 @@ class MockLeAdvertisingManager : public LeAdvertisingManager {
        uint8_t,
        os::Handler*));
   MOCK_METHOD(void, RemoveAdvertiser, (AdvertiserId));
-  MOCK_METHOD(
-      void,
-      RegisterSetTerminatedCallback,
-      (common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)>), (override));
 
 };
 

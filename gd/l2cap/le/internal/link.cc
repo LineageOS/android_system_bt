@@ -95,6 +95,10 @@ void Link::OnReadRemoteVersionInformationComplete(
 
 void Link::OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) {}
 
+void Link::OnLocalAddressUpdate(hci::AddressWithType address_with_type) {
+  acl_connection_->UpdateLocalAddress(address_with_type);
+}
+
 void Link::Disconnect() {
   acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
 }
