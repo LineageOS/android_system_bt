@@ -79,7 +79,12 @@ typedef struct {
   tBTM_SCO_CB* p_conn_cb; /* Callback for when connected  */
   tBTM_SCO_CB* p_disc_cb; /* Callback for when disconnect */
   tSCO_STATE state;       /* The state of the SCO link    */
+
   uint16_t hci_handle;    /* HCI Handle                   */
+ public:
+  bool is_active() const { return state != SCO_ST_UNUSED; }
+  uint16_t Handle() const { return hci_handle; }
+
   bool is_orig;           /* true if the originator       */
   bool rem_bd_known;      /* true if remote BD addr known */
 
