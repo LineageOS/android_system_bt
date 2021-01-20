@@ -35,8 +35,6 @@
 */
 tBTM_CB btm_cb;
 
-extern void btm_dev_init(void);
-extern void btm_dev_free(void);
 extern void btm_inq_db_init(void);
 extern void btm_inq_db_free(void);
 extern void btm_sco_init(void);
@@ -64,7 +62,7 @@ void btm_init(void) {
   btm_cb.acl_cb_.Init(); /* ACL Database and Structures */
   btm_sco_init(); /* SCO Database and Structures (If included) */
 
-  btm_dev_init(); /* Device Manager Structures & HCI_Reset */
+  btm_cb.devcb.Init();
 
   btm_cb.history_ = std::make_shared<TimestampedStringCircularBuffer>(40);
   CHECK(btm_cb.history_ != nullptr);
@@ -75,7 +73,7 @@ void btm_init(void) {
 void btm_free(void) {
   btm_cb.history_.reset();
 
-  btm_dev_free();
+  btm_cb.devcb.Free();
   btm_inq_db_free();
 
   btm_cb.Free();
