@@ -47,6 +47,10 @@
 #include "common/metrics.h"
 #include "main/shim/dumpsys.h"
 
+namespace {
+constexpr char kBtmLogTag[] = "HFP";
+}
+
 namespace bluetooth {
 namespace headset {
 
@@ -1149,7 +1153,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
   /* if all indicators are 0, send end call and return */
   if (num_active == 0 && num_held == 0 &&
       call_setup_state == BTHF_CALL_STATE_IDLE) {
-    BTM_LogHistory("HFP", raw_address, "Call Ended");
+    BTM_LogHistory(kBtmLogTag, raw_address, "Call Ended");
     BTA_AgResult(control_block.handle, BTA_AG_END_CALL_RES,
                  tBTA_AG_RES_DATA::kEmpty);
     /* if held call was present, reset that as well */
@@ -1287,6 +1291,9 @@ bt_status_t HeadsetInterface::PhoneStateChange(
           }
           snprintf(ag_res.str, sizeof(ag_res.str), "%s",
                    call_number_stream.str().c_str());
+          std::string number(call_number_stream.str());
+          BTM_LogHistory(kBtmLogTag, raw_address, "Call Incoming",
+                         base::StringPrintf("number:%s", PRIVATE_CELL(number)));
         }
         break;
       case BTHF_CALL_STATE_DIALING:
