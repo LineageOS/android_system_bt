@@ -58,6 +58,7 @@ class AdvertisingCache {
     auto it = Find(address_with_type);
     if (it != items.end()) {
       it->data = std::move(data);
+      return it->data;
     }
 
     if (items.size() > cache_max) {
