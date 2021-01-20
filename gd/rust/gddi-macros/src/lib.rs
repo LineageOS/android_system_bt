@@ -200,7 +200,7 @@ pub fn part_out(_attr: TokenStream, item: TokenStream) -> TokenStream {
                     Box::pin(async move {
                         Box::new(async move {
                             registry.get::<#struct_ident>().await.#field_names
-                        }) as Box<dyn std::any::Any>
+                        }.await) as Box<dyn std::any::Any>
                     })
                 })))*
         }
