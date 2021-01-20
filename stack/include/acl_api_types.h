@@ -34,15 +34,6 @@
  *  ACL Types
  ***************/
 
-/* Structure returned with QoS information (in tBTM_CMPL_CB callback function)
- * in response to BTM_SetQoS call.
- */
-typedef struct {
-  FLOW_SPEC flow;
-  uint16_t handle;
-  uint8_t status;
-} tBTM_QOS_SETUP_CMPL;
-
 /* Structure returned with read RSSI event (in tBTM_CMPL_CB callback function)
  * in response to BTM_ReadRSSI call.
  */
