@@ -133,6 +133,7 @@ class LeAddressManager {
 
   AddressPolicy address_policy_ = AddressPolicy::POLICY_NOT_SET;
   AddressWithType le_address_;
+  AddressWithType cached_address_;
   Address public_address_;
   std::unique_ptr<os::Alarm> address_rotation_alarm_;
   crypto_toolbox::Octet16 rotation_irk_;
