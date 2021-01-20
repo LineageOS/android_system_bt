@@ -265,7 +265,6 @@ static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
 static void btif_a2dp_source_update_metrics(void);
 static void btm_read_rssi_cb(void* data);
 static void btm_read_failed_contact_counter_cb(void* data);
-static void btm_read_automatic_flush_timeout_cb(void* data);
 static void btm_read_tx_power_cb(void* data);
 
 void btif_a2dp_source_accumulate_scheduling_stats(SchedulingStats* src,
@@ -992,12 +991,6 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
       LOG_WARN("%s: Cannot read Failed Contact Counter: status %d", __func__,
                status);
     }
-    status = BTM_ReadAutomaticFlushTimeout(peer_bda,
-                                           btm_read_automatic_flush_timeout_cb);
-    if (status != BTM_CMD_STARTED) {
-      LOG_WARN("%s: Cannot read Automatic Flush Timeout: status %d", __func__,
-               status);
-    }
     status =
         BTM_ReadTxPower(peer_bda, BT_TRANSPORT_BR_EDR, btm_read_tx_power_cb);
     if (status != BTM_CMD_STARTED) {
@@ -1359,24 +1352,6 @@ static void btm_read_failed_contact_counter_cb(void* data) {
 
   LOG_WARN("%s: device: %s, Failed Contact Counter: %u", __func__,
            result->rem_bda.ToString().c_str(), result->failed_contact_counter);
-}
-
-static void btm_read_automatic_flush_timeout_cb(void* data) {
-  if (data == nullptr) {
-    LOG_ERROR("%s: Read Automatic Flush Timeout request timed out", __func__);
-    return;
-  }
-
-  tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT* result =
-      (tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT*)data;
-  if (result->status != BTM_SUCCESS) {
-    LOG_ERROR("%s: unable to read Automatic Flush Timeout (status %d)",
-              __func__, result->status);
-    return;
-  }
-
-  LOG_WARN("%s: device: %s, Automatic Flush Timeout: %u", __func__,
-           result->rem_bda.ToString().c_str(), result->automatic_flush_timeout);
 }
 
 static void btm_read_tx_power_cb(void* data) {
