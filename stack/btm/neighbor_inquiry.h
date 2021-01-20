@@ -226,6 +226,14 @@ typedef struct {
   uint8_t state;      /* Current state that the inquiry process is in */
   uint8_t inq_active; /* Bit Mask indicating type of inquiry is active */
   bool no_inc_ssp;    /* true, to stop inquiry on incoming SSP */
+
+  void Init() {
+    alarm_free(remote_name_timer);
+    remote_name_timer = alarm_new("btm_inq.remote_name_timer");
+    no_inc_ssp = BTM_NO_SSP_ON_INQUIRY;
+  }
+  void Free() { alarm_free(remote_name_timer); }
+
 } tBTM_INQUIRY_VAR_ST;
 
 /* Structure returned with remote name  request */
