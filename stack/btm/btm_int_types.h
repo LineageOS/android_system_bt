@@ -66,15 +66,13 @@ class TimestampedStringCircularBuffer
 };
 
 /*
- * Define device configuration structure
-*/
+ * Local device configuration
+ */
 typedef struct {
   tBTM_LOC_BD_NAME bd_name;  /* local Bluetooth device name */
   bool pin_type;             /* true if PIN type is fixed */
   uint8_t pin_code_len;      /* Bonding information */
   PIN_CODE pin_code;         /* PIN CODE if pin type is fixed */
-  bool connectable;          /* If true page scan should be enabled */
-  uint8_t def_inq_scan_mode; /* ??? limited/general/none */
 } tBTM_CFG;
 
 /* Pairing State */
