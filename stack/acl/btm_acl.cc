@@ -412,7 +412,10 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   p_acl->reset_switch_role();
   acl_initialize_power_mode(*p_acl);
 
-  LOG_DEBUG("Created new ACL connection");
+  LOG_DEBUG(
+      "Created new ACL connection peer:%s role:%s handle:0x%04x transport:%s",
+      PRIVATE_ADDRESS(bda), RoleText(p_acl->link_role).c_str(), hci_handle,
+      BtTransportText(transport).c_str());
   btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
 
   if (transport == BT_TRANSPORT_LE) {
