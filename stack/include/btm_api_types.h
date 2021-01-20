@@ -420,7 +420,7 @@ typedef struct {
 } tBTM_CHG_ESCO_PARAMS;
 
 /* Returned by BTM_ReadEScoLinkParms() */
-typedef struct {
+struct tBTM_ESCO_DATA {
   uint16_t rx_pkt_len;
   uint16_t tx_pkt_len;
   RawAddress bd_addr;
@@ -428,7 +428,7 @@ typedef struct {
   uint8_t tx_interval;
   uint8_t retrans_window;
   uint8_t air_mode;
-} tBTM_ESCO_DATA;
+};
 
 typedef struct {
   uint16_t sco_inx;
