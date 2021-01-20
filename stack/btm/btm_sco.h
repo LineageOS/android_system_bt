@@ -119,6 +119,18 @@ typedef struct {
     def_esco_parms.max_latency_ms = 12;
     sco_route = ESCO_DATA_PATH_PCM;
   }
+
+  uint16_t get_index(const tSCO_CONN* p_sco) const {
+    CHECK(p_sco != nullptr);
+    const tSCO_CONN* p = sco_db;
+    for (uint16_t xx = 0; xx < kMaxScoLinks; xx++, p++) {
+      if (p_sco == p) {
+        return xx;
+      }
+    }
+    return 0xffff;
+  }
+
 } tSCO_CB;
 
 extern void btm_sco_chk_pend_rolechange(uint16_t hci_handle);
