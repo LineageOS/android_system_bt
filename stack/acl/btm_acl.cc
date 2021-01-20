@@ -69,6 +69,8 @@ void gatt_find_in_device_record(const RawAddress& bd_addr,
 void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                             const RawAddress& p_bda);
 
+extern tBTM_CB btm_cb;
+
 struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
@@ -80,6 +82,9 @@ struct StackAclBtmAcl {
   void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                             uint8_t new_role);
   void hci_start_role_switch_to_central(tACL_CONN& p_acl);
+  void set_default_packet_types_supported(uint16_t packet_types_supported) {
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported = packet_types_supported;
+  }
 };
 
 namespace {
@@ -116,8 +121,6 @@ inline bool IsEprAvailable(const tACL_CONN& p_acl) {
   return HCI_ATOMIC_ENCRYPT_SUPPORTED(p_acl.peer_lmp_feature_pages[0]) &&
          controller_get_interface()->supports_encryption_pause();
 }
-
-extern tBTM_CB btm_cb;
 
 static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
@@ -206,17 +209,6 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
-/*******************************************************************************
- *
- * Function         btm_acl_init
- *
- * Description      This function is called at BTM startup to initialize
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_acl_init(void) { btm_cb.acl_cb_.Init(); }
-
 void BTM_acl_after_controller_started(const controller_t* controller) {
   internal_.btm_set_default_link_policy(
       HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE |
@@ -258,7 +250,7 @@ void BTM_acl_after_controller_started(const controller_t* controller) {
       btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
-  btm_cb.acl_cb_.btm_acl_pkt_types_supported = btm_acl_pkt_types_supported;
+  internal_.set_default_packet_types_supported(btm_acl_pkt_types_supported);
 }
 
 /*******************************************************************************
