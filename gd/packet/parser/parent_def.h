@@ -85,4 +85,6 @@ class ParentDef : public TypeDef {
 
   std::map<std::string, std::variant<int64_t, std::string>> parent_constraints_;
   bool is_little_endian_;
+
+  bool HasChildEnums() const;
 };

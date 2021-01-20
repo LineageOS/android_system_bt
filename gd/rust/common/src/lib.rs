@@ -22,9 +22,7 @@ pub mod sys_prop;
 #[cfg(target_os = "android")]
 pub fn init_logging() {
     android_logger::init_once(
-        android_logger::Config::default()
-            .with_tag("bt")
-            .with_min_level(log::Level::Debug),
+        android_logger::Config::default().with_tag("bt").with_min_level(log::Level::Debug),
     );
 }
 
@@ -42,4 +40,13 @@ pub fn init_logging() {
 pub trait GrpcFacade {
     /// Convert the object into the service
     fn into_grpc(self) -> grpcio::Service;
+}
+
+/// Useful for distinguishing between BT classic & LE in functions that support both
+#[derive(Debug, Clone, Copy)]
+pub enum Bluetooth {
+    /// Classic BT we all know and love, started in the 90s.
+    Classic,
+    /// Bluetooth low energy from the 2010s. Also known as BLE, BTLE, etc.
+    Le,
 }
