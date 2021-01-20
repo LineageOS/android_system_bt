@@ -235,7 +235,6 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
 
   bta_set_forward_hw_failures(true);
   btm_acl_device_down();
-  BTM_db_reset();
   if (bluetooth::shim::is_gd_controller_enabled()) {
     CHECK(module_start_up(get_module(GD_CONTROLLER_MODULE)));
   } else {
