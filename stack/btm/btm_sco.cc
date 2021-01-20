@@ -99,6 +99,11 @@ void btm_sco_init(void) {
   btm_cb.sco_cb.def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD);
   btm_cb.sco_cb.def_esco_parms.max_latency_ms = 12;
   btm_cb.sco_cb.sco_route = ESCO_DATA_PATH_PCM;
+
+  btm_cb.btm_sco_pkt_types_supported =
+      ESCO_PKT_TYPES_MASK_HV1 + ESCO_PKT_TYPES_MASK_HV2 +
+      ESCO_PKT_TYPES_MASK_HV3 + ESCO_PKT_TYPES_MASK_EV3 +
+      ESCO_PKT_TYPES_MASK_EV4 + ESCO_PKT_TYPES_MASK_EV5;
 }
 
 /*******************************************************************************
