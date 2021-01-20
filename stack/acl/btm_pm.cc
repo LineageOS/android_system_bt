@@ -205,10 +205,6 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) {
-    if (btm_pm_is_le_link(remote_bda)) {
-      LOG_ERROR("Setting power mode on le link is unsupported");
-      return BTM_MODE_UNSUPPORTED;
-    }
     LOG_ERROR("br_edr acl addr:%s is unknown", PRIVATE_ADDRESS(remote_bda));
     return BTM_UNKNOWN_ADDR;
   }
