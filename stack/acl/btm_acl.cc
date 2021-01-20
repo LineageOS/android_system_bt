@@ -128,7 +128,6 @@ static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
-static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
@@ -1702,45 +1701,6 @@ tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_ReadAutomaticFlushTimeout
- *
- * Description      This function is called to read the automatic flush timeout.
- *                  The result is returned in the callback.
- *                  (tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT)
- *
- * Returns          BTM_CMD_STARTED if successfully initiated or error code
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadAutomaticFlushTimeout(const RawAddress& remote_bda,
-                                          tBTM_CMPL_CB* p_cb) {
-  tACL_CONN* p;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
-
-  /* If someone already waiting on the result, do not allow another */
-  if (btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb) return (BTM_BUSY);
-
-  BTM_ReadDevInfo(remote_bda, &dev_type, &addr_type);
-  if (dev_type == BT_DEVICE_TYPE_BLE) transport = BT_TRANSPORT_LE;
-
-  p = internal_.btm_bda_to_acl(remote_bda, transport);
-  if (!p) {
-    LOG_WARN("Unable to find active acl");
-    return BTM_UNKNOWN_ADDR;
-  }
-
-  btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = p_cb;
-  alarm_set_on_mloop(btm_cb.devcb.read_automatic_flush_timeout_timer,
-                     BTM_DEV_REPLY_TIMEOUT_MS,
-                     btm_read_automatic_flush_timeout_timeout, nullptr);
-
-  btsnd_hcic_read_automatic_flush_timeout(p->hci_handle);
-  return BTM_CMD_STARTED;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_ReadTxPower
  *
  * Description      This function is called to read the current
@@ -1967,23 +1927,6 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
 
     (*p_cb)(&result);
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_read_automatic_flush_timeout_timeout
- *
- * Description      Callback when reading the automatic flush timeout times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_automatic_flush_timeout_timeout(UNUSED_ATTR void* data) {
-  tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT result;
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
-  btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = nullptr;
-  result.status = BTM_DEVICE_TIMEOUT;
-  if (p_cb) (*p_cb)(&result);
 }
 
 /*******************************************************************************
