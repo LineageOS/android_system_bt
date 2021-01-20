@@ -22,6 +22,8 @@
 #include "device/include/esco_parameters.h"
 #include "stack/include/btm_api_types.h"
 
+constexpr uint16_t kMaxScoLinks = static_cast<uint16_t>(BTM_MAX_SCO_LINKS);
+
 /* Define the structures needed by sco
  */
 
@@ -91,6 +93,10 @@ typedef struct {
   uint16_t sco_disc_reason;
   bool esco_supported;        /* true if 1.2 cntlr AND supports eSCO links */
   esco_data_path_t sco_route; /* HCI, PCM, or TEST */
+
+  tSCO_CONN* get_sco_connection_from_index(uint16_t index) {
+    return (index < kMaxScoLinks) ? (&sco_db[index]) : nullptr;
+  }
 
   void Init() {
     sco_disc_reason = BTM_INVALID_SCO_DISC_REASON;
