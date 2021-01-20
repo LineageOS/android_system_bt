@@ -2493,17 +2493,6 @@ int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
   return xx;
 }
 
-bool btm_pm_is_le_link(const RawAddress& remote_bda) {
-  const tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
-  for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl++) {
-    if (p_acl->in_use && p_acl->remote_addr == remote_bda &&
-        p_acl->is_transport_ble()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /*******************************************************************************
  *
  * Function         btm_ble_refresh_local_resolvable_private_addr
