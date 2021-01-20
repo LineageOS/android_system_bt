@@ -201,14 +201,13 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                     std::vector<uint8_t> advertising_data) {
     RawAddress raw_address;
     RawAddress::FromString(address.ToString(), raw_address);
-    std::unique_ptr<RawAddress> raw_address_ptr(new RawAddress(raw_address));
 
     do_in_jni_thread(
         FROM_HERE,
         base::BindOnce(&ScanningCallbacks::OnScanResult,
                        base::Unretained(scanning_callbacks_), event_type,
-                       address_type, raw_address_ptr.get(), primary_phy,
-                       secondary_phy, advertising_sid, tx_power, rssi,
+                       address_type, raw_address, primary_phy, secondary_phy,
+                       advertising_sid, tx_power, rssi,
                        periodic_advertising_interval, advertising_data));
   }
 
