@@ -606,9 +606,9 @@ bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
   if (!entry.version_info_received) {
     return false;
   }
-  *lmp_version = entry.lmp_version;
-  *manufacturer = entry.manufacturer_name;
-  *lmp_sub_version = entry.sub_version;
+  if (lmp_version != nullptr) *lmp_version = entry.lmp_version;
+  if (manufacturer != nullptr) *manufacturer = entry.manufacturer_name;
+  if (lmp_sub_version != nullptr) *lmp_sub_version = entry.sub_version;
   return true;
 }
 
