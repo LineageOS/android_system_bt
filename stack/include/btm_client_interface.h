@@ -111,7 +111,6 @@ struct btm_client_interface_s {
   struct {
     tBTM_STATUS (*BTM_GetLinkSuperTout)(const RawAddress& bd_addr,
                                         uint16_t* p_timeout);
-    void (*BTM_SetDefaultLinkSuperTout)(uint16_t timeout);
     tBTM_STATUS (*BTM_ReadRSSI)(const RawAddress& bd_addr, tBTM_CMPL_CB* p_cb);
   } link_controller;
 
