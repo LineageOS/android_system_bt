@@ -31,6 +31,7 @@
 #include "bt_utils.h"
 #include "bta/include/bta_api.h"
 #include "btm_api.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 
@@ -360,20 +361,17 @@ void avct_lcb_bind_conn(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
  *                  close channel.  Otherwise just deallocate and call
  *                  callback.
  *
- *
  * Returns          Nothing.
  *
  ******************************************************************************/
 void avct_lcb_chk_disc(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
-  AVCT_TRACE_WARNING("%s", __func__);
-
   avct_close_bcb(p_lcb, p_data);
   if (avct_lcb_last_ccb(p_lcb, p_data->p_ccb)) {
-    AVCT_TRACE_WARNING("%s: closing", __func__);
+    LOG_INFO("Closing last avct channel to device");
     p_data->p_ccb->ch_close = true;
     avct_lcb_event(p_lcb, AVCT_LCB_INT_CLOSE_EVT, p_data);
   } else {
-    AVCT_TRACE_WARNING("%s: dealloc ccb", __func__);
+    LOG_INFO("Closing avct channel with active remaining channels");
     avct_lcb_unbind_disc(p_lcb, p_data);
   }
 }
