@@ -124,7 +124,6 @@ inline bool IsEprAvailable(const tACL_CONN& p_acl) {
          controller_get_interface()->supports_encryption_pause();
 }
 
-static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
@@ -2324,23 +2323,6 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
   }
 }
 
-bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
-  if (p == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return false;
-  }
-  return (p->link_role == HCI_ROLE_CENTRAL);
-}
-
-bool acl_br_edr_is_role_central(const RawAddress& bda) {
-  return acl_is_role_central(bda, BT_TRANSPORT_BR_EDR);
-}
-
-bool acl_ble_is_role_central(const RawAddress& bda) {
-  return acl_is_role_central(bda, BT_TRANSPORT_LE);
-}
-
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
 }
@@ -2590,15 +2572,6 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
   conn_addr = p_acl->active_remote_addr;
   *p_addr_type = p_acl->active_remote_addr_type;
   return st;
-}
-
-uint8_t acl_link_role(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return HCI_ROLE_UNKNOWN;
-  }
-  return p_acl->link_role;
 }
 
 uint8_t acl_link_role_from_handle(uint16_t handle) {
