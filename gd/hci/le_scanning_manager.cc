@@ -158,6 +158,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     } else {
       api_type_ = ScanApiType::LEGACY;
     }
+    is_filter_support_ = controller_->IsSupported(OpCode::LE_ADV_FILTER);
     scanners_ = std::vector<Scanner>(kMaxAppNum + 1);
     for (size_t i = 0; i < scanners_.size(); i++) {
       scanners_[i].app_uuid = Uuid::kEmpty;
@@ -528,8 +529,313 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     window_ms_ = scan_window;
   }
 
+  void scan_filter_enable(bool enable) {
+    if (!is_filter_support_) {
+      LOG_WARN("Advertising filter is not supported");
+      return;
+    }
+
+    Enable apcf_enable = enable ? Enable::ENABLED : Enable::DISABLED;
+    le_scanning_interface_->EnqueueCommand(
+        LeAdvFilterEnableBuilder::Create(apcf_enable),
+        module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+  }
+
+  void scan_filter_parameter_setup(
+      ApcfAction action, uint8_t filter_index, AdvertisingFilterParameter advertising_filter_parameter) {
+    if (!is_filter_support_) {
+      LOG_WARN("Advertising filter is not supported");
+      return;
+    }
+
+    switch (action) {
+      case ApcfAction::ADD:
+        le_scanning_interface_->EnqueueCommand(
+            LeAdvFilterAddFilteringParametersBuilder::Create(
+                filter_index,
+                advertising_filter_parameter.feature_selection,
+                advertising_filter_parameter.list_logic_type,
+                advertising_filter_parameter.filter_logic_type,
+                advertising_filter_parameter.rssi_high_thresh,
+                advertising_filter_parameter.delivery_mode,
+                advertising_filter_parameter.onfound_timeout,
+                advertising_filter_parameter.onfound_timeout_cnt,
+                advertising_filter_parameter.rssi_low_thres,
+                advertising_filter_parameter.onlost_timeout,
+                advertising_filter_parameter.num_of_tracking_entries),
+            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+        break;
+      case ApcfAction::DELETE:
+        le_scanning_interface_->EnqueueCommand(
+            LeAdvFilterDeleteFilteringParametersBuilder::Create(filter_index),
+            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+        break;
+      case ApcfAction::CLEAR:
+        le_scanning_interface_->EnqueueCommand(
+            LeAdvFilterClearFilteringParametersBuilder::Create(),
+            module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+        break;
+      default:
+        LOG_ERROR("Unknown action type: %d", (uint16_t)action);
+        break;
+    }
+  }
+
+  void scan_filter_add(uint8_t filter_index, std::vector<AdvertisingPacketContentFilterCommand> filters) {
+    if (!is_filter_support_) {
+      LOG_WARN("Advertising filter is not supported");
+      return;
+    }
+
+    ApcfAction apcf_action = ApcfAction::ADD;
+    for (auto filter : filters) {
+      /* If data is passed, both mask and data have to be the same length */
+      if (filter.data.size() != filter.data_mask.size() && filter.data.size() != 0 && filter.data_mask.size() != 0) {
+        LOG_ERROR("data and data_mask are of different size");
+        continue;
+      }
+
+      switch (filter.filter_type) {
+        case ApcfFilterType::BROADCASTER_ADDRESS: {
+          update_address_filter(apcf_action, filter_index, filter.address, filter.application_address_type);
+          break;
+        }
+        case ApcfFilterType::SERVICE_UUID:
+        case ApcfFilterType::SERVICE_SOLICITATION_UUID: {
+          update_uuid_filter(apcf_action, filter_index, filter.filter_type, filter.uuid, filter.uuid_mask);
+          break;
+        }
+        case ApcfFilterType::LOCAL_NAME: {
+          update_local_name_filter(apcf_action, filter_index, filter.name);
+          break;
+        }
+        case ApcfFilterType::MANUFACTURER_DATA: {
+          update_manufacturer_data_filter(
+              apcf_action, filter_index, filter.company, filter.company_mask, filter.data, filter.data_mask);
+          break;
+        }
+        case ApcfFilterType::SERVICE_DATA: {
+          update_service_data_filter(apcf_action, filter_index, filter.data, filter.data_mask);
+          break;
+        }
+        default:
+          LOG_ERROR("Unknown filter type: %d", (uint16_t)filter.filter_type);
+          break;
+      }
+    }
+  }
+
+  void update_address_filter(
+      ApcfAction action, uint8_t filter_index, Address address, ApcfApplicationAddressType address_type) {
+    if (action != ApcfAction::CLEAR) {
+      le_scanning_interface_->EnqueueCommand(
+          LeAdvFilterBroadcasterAddressBuilder::Create(action, filter_index, address, address_type),
+          module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+    } else {
+      le_scanning_interface_->EnqueueCommand(
+          LeAdvFilterClearBroadcasterAddressBuilder::Create(filter_index),
+          module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+    }
+  }
+
+  void update_uuid_filter(
+      ApcfAction action, uint8_t filter_index, ApcfFilterType filter_type, Uuid uuid, Uuid uuid_mask) {
+    std::vector<uint8_t> combined_data = {};
+    if (action != ApcfAction::CLEAR) {
+      uint8_t uuid_len = uuid.GetShortestRepresentationSize();
+      if (uuid_len == Uuid::kNumBytes16) {
+        uint16_t data = uuid.As16Bit();
+        combined_data.push_back((uint8_t)data);
+        combined_data.push_back((uint8_t)(data >> 8));
+      } else if (uuid_len == Uuid::kNumBytes32) {
+        uint16_t data = uuid.As32Bit();
+        combined_data.push_back((uint8_t)data);
+        combined_data.push_back((uint8_t)(data >> 8));
+        combined_data.push_back((uint8_t)(data >> 16));
+        combined_data.push_back((uint8_t)(data >> 24));
+      } else if (uuid_len == Uuid::kNumBytes128) {
+        auto data = uuid.To128BitLE();
+        combined_data.insert(combined_data.end(), data.begin(), data.end());
+      } else {
+        LOG_ERROR("illegal UUID length: %d", (uint16_t)uuid_len);
+        return;
+      }
+
+      if (!uuid_mask.IsEmpty()) {
+        if (uuid_len == Uuid::kNumBytes16) {
+          uint16_t data = uuid_mask.As16Bit();
+          combined_data.push_back((uint8_t)data);
+          combined_data.push_back((uint8_t)(data >> 8));
+        } else if (uuid_len == Uuid::kNumBytes32) {
+          uint16_t data = uuid_mask.As32Bit();
+          combined_data.push_back((uint8_t)data);
+          combined_data.push_back((uint8_t)(data >> 8));
+          combined_data.push_back((uint8_t)(data >> 16));
+          combined_data.push_back((uint8_t)(data >> 24));
+        } else if (uuid_len == Uuid::kNumBytes128) {
+          auto data = uuid_mask.To128BitLE();
+          combined_data.insert(combined_data.end(), data.begin(), data.end());
+        }
+      } else {
+        std::vector<uint8_t> data(uuid_len, 0xFF);
+        combined_data.insert(combined_data.end(), data.begin(), data.end());
+      }
+    }
+
+    if (filter_type == ApcfFilterType::SERVICE_UUID) {
+      le_scanning_interface_->EnqueueCommand(
+          LeAdvFilterServiceUuidBuilder::Create(action, filter_index, combined_data),
+          module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+    } else {
+      le_scanning_interface_->EnqueueCommand(
+          LeAdvFilterSolicitationUuidBuilder::Create(action, filter_index, combined_data),
+          module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+    }
+  }
+
+  void update_local_name_filter(ApcfAction action, uint8_t filter_index, std::vector<uint8_t> name) {
+    le_scanning_interface_->EnqueueCommand(
+        LeAdvFilterLocalNameBuilder::Create(action, filter_index, name),
+        module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+  }
+
+  void update_manufacturer_data_filter(
+      ApcfAction action,
+      uint8_t filter_index,
+      uint16_t company_id,
+      uint16_t company_id_mask,
+      std::vector<uint8_t> data,
+      std::vector<uint8_t> data_mask) {
+    if (data.size() != data_mask.size()) {
+      LOG_ERROR("manufacturer data mask should have the same length as manufacturer data");
+      return;
+    }
+    std::vector<uint8_t> combined_data = {};
+    if (action != ApcfAction::CLEAR) {
+      combined_data.push_back((uint8_t)company_id);
+      combined_data.push_back((uint8_t)(company_id >> 8));
+      if (data.size() != 0) {
+        combined_data.insert(combined_data.end(), data.begin(), data.end());
+      }
+      if (company_id_mask != 0) {
+        combined_data.push_back((uint8_t)company_id_mask);
+        combined_data.push_back((uint8_t)(company_id_mask >> 8));
+      } else {
+        combined_data.push_back(0xFF);
+        combined_data.push_back(0xFF);
+      }
+      if (data_mask.size() != 0) {
+        combined_data.insert(combined_data.end(), data_mask.begin(), data_mask.end());
+      }
+    }
+
+    le_scanning_interface_->EnqueueCommand(
+        LeAdvFilterManufacturerDataBuilder::Create(action, filter_index, combined_data),
+        module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+  }
+
+  void update_service_data_filter(
+      ApcfAction action, uint8_t filter_index, std::vector<uint8_t> data, std::vector<uint8_t> data_mask) {
+    if (data.size() != data_mask.size()) {
+      LOG_ERROR("service data mask should have the same length as service data");
+      return;
+    }
+    std::vector<uint8_t> combined_data = {};
+    if (action != ApcfAction::CLEAR && data.size() != 0) {
+      combined_data.insert(combined_data.end(), data.begin(), data.end());
+      combined_data.insert(combined_data.end(), data_mask.begin(), data_mask.end());
+    }
+
+    le_scanning_interface_->EnqueueCommand(
+        LeAdvFilterServiceDataBuilder::Create(action, filter_index, combined_data),
+        module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
+  }
+
   void register_scanning_callback(ScanningCallback* scanning_callbacks) {
     scanning_callbacks_ = scanning_callbacks;
+  }
+
+  void on_advertising_filter_complete(CommandCompleteView view) {
+    ASSERT(view.IsValid());
+    auto status_view = LeAdvFilterCompleteView::Create(view);
+    ASSERT(status_view.IsValid());
+    if (status_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_INFO(
+          "Got a Command complete %s, status %s",
+          OpCodeText(view.GetCommandOpCode()).c_str(),
+          ErrorCodeText(status_view.GetStatus()).c_str());
+    }
+
+    ApcfOpcode apcf_opcode = status_view.GetApcfOpcode();
+    switch (apcf_opcode) {
+      case ApcfOpcode::ENABLE: {
+        auto complete_view = LeAdvFilterEnableCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterEnable(complete_view.GetApcfEnable(), (uint8_t)complete_view.GetStatus());
+      } break;
+      case ApcfOpcode::SET_FILTERING_PARAMETERS: {
+        auto complete_view = LeAdvFilterSetFilteringParametersCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterParamSetup(
+            complete_view.GetApcfAvailableSpaces(), complete_view.GetApcfAction(), (uint8_t)complete_view.GetStatus());
+      } break;
+      case ApcfOpcode::BROADCASTER_ADDRESS: {
+        auto complete_view = LeAdvFilterBroadcasterAddressCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterConfigCallback(
+            ApcfFilterType::BROADCASTER_ADDRESS,
+            complete_view.GetApcfAvailableSpaces(),
+            complete_view.GetApcfAction(),
+            (uint8_t)complete_view.GetStatus());
+      } break;
+      case ApcfOpcode::SERVICE_UUID: {
+        auto complete_view = LeAdvFilterServiceUuidCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterConfigCallback(
+            ApcfFilterType::SERVICE_UUID,
+            complete_view.GetApcfAvailableSpaces(),
+            complete_view.GetApcfAction(),
+            (uint8_t)complete_view.GetStatus());
+      } break;
+      case ApcfOpcode::SERVICE_SOLICITATION_UUID: {
+        auto complete_view = LeAdvFilterSolicitationUuidCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterConfigCallback(
+            ApcfFilterType::SERVICE_SOLICITATION_UUID,
+            complete_view.GetApcfAvailableSpaces(),
+            complete_view.GetApcfAction(),
+            (uint8_t)complete_view.GetStatus());
+      } break;
+      case ApcfOpcode::LOCAL_NAME: {
+        auto complete_view = LeAdvFilterLocalNameCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterConfigCallback(
+            ApcfFilterType::LOCAL_NAME,
+            complete_view.GetApcfAvailableSpaces(),
+            complete_view.GetApcfAction(),
+            (uint8_t)complete_view.GetStatus());
+      } break;
+      case ApcfOpcode::MANUFACTURER_DATA: {
+        auto complete_view = LeAdvFilterManufacturerDataCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterConfigCallback(
+            ApcfFilterType::MANUFACTURER_DATA,
+            complete_view.GetApcfAvailableSpaces(),
+            complete_view.GetApcfAction(),
+            (uint8_t)complete_view.GetStatus());
+      } break;
+      case ApcfOpcode::SERVICE_DATA: {
+        auto complete_view = LeAdvFilterServiceDataCompleteView::Create(status_view);
+        ASSERT(complete_view.IsValid());
+        scanning_callbacks_->OnFilterConfigCallback(
+            ApcfFilterType::SERVICE_DATA,
+            complete_view.GetApcfAvailableSpaces(),
+            complete_view.GetApcfAction(),
+            (uint8_t)complete_view.GetStatus());
+      } break;
+      default:
+        LOG_WARN("Unexpected event type %s", OpCodeText(view.GetCommandOpCode()).c_str());
+    }
   }
 
   void OnPause() override {
@@ -566,6 +872,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   bool scan_on_resume_ = false;
   bool paused_ = false;
   AdvertisingCache advertising_cache_;
+  bool is_filter_support_ = false;
 
   LeScanType le_scan_type_ = LeScanType::ACTIVE;
   uint32_t interval_ms_{1000};
@@ -643,6 +950,20 @@ void LeScanningManager::Scan(bool start) {
 
 void LeScanningManager::SetScanParameters(LeScanType scan_type, uint16_t scan_interval, uint16_t scan_window) {
   CallOn(pimpl_.get(), &impl::set_scan_parameters, scan_type, scan_interval, scan_window);
+}
+
+void LeScanningManager::ScanFilterEnable(bool enable) {
+  CallOn(pimpl_.get(), &impl::scan_filter_enable, enable);
+}
+
+void LeScanningManager::ScanFilterParameterSetup(
+    ApcfAction action, uint8_t filter_index, AdvertisingFilterParameter advertising_filter_parameter) {
+  CallOn(pimpl_.get(), &impl::scan_filter_parameter_setup, action, filter_index, advertising_filter_parameter);
+}
+
+void LeScanningManager::ScanFilterAdd(
+    uint8_t filter_index, std::vector<AdvertisingPacketContentFilterCommand> filters) {
+  CallOn(pimpl_.get(), &impl::scan_filter_add, filter_index, filters);
 }
 
 void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {

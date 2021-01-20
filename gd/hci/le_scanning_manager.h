@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "common/callback.h"
+#include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "hci/uuid.h"
 #include "module.h"
@@ -53,6 +54,38 @@ class ScanningCallback {
   virtual void OnBatchScanReports(
       int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) = 0;
   virtual void OnTimeout() = 0;
+  virtual void OnFilterEnable(Enable enable, uint8_t status) = 0;
+  virtual void OnFilterParamSetup(uint8_t available_spaces, ApcfAction action, uint8_t status) = 0;
+  virtual void OnFilterConfigCallback(
+      ApcfFilterType filter_type, uint8_t available_spaces, ApcfAction action, uint8_t status) = 0;
+};
+
+class AdvertisingPacketContentFilterCommand {
+ public:
+  ApcfFilterType filter_type;
+  Address address;
+  ApcfApplicationAddressType application_address_type;
+  Uuid uuid;
+  Uuid uuid_mask;
+  std::vector<uint8_t> name;
+  uint16_t company;
+  uint16_t company_mask;
+  std::vector<uint8_t> data;
+  std::vector<uint8_t> data_mask;
+};
+
+class AdvertisingFilterParameter {
+ public:
+  uint16_t feature_selection;
+  uint16_t list_logic_type;
+  uint8_t filter_logic_type;
+  uint8_t rssi_high_thresh;
+  DeliveryMode delivery_mode;
+  uint16_t onfound_timeout;
+  uint8_t onfound_timeout_cnt;
+  uint8_t rssi_low_thres;
+  uint16_t onlost_timeout;
+  uint16_t num_of_tracking_entries;
 };
 
 class LeScanningManager : public bluetooth::Module {
@@ -70,6 +103,14 @@ class LeScanningManager : public bluetooth::Module {
   void Scan(bool start);
 
   void SetScanParameters(LeScanType scan_type, uint16_t scan_interval, uint16_t scan_window);
+
+  /* Scan filter */
+  void ScanFilterEnable(bool enable);
+
+  void ScanFilterParameterSetup(
+      ApcfAction action, uint8_t filter_index, AdvertisingFilterParameter advertising_filter_parameter);
+
+  void ScanFilterAdd(uint8_t filter_index, std::vector<AdvertisingPacketContentFilterCommand> filters);
 
   void RegisterScanningCallback(ScanningCallback* scanning_callback);
 
