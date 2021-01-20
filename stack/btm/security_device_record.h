@@ -309,7 +309,25 @@ struct tBTM_SEC_DEV_REC {
     return sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH;
   }
 
+ private:
   bool is_originator;         /* true if device is originating connection */
+  friend tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
+                                       tBT_TRANSPORT transport,
+                                       tBTM_SEC_CALLBACK* p_callback,
+                                       void* p_ref_data,
+                                       tBTM_BLE_SEC_ACT sec_act);
+  friend tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
+      const RawAddress& bd_addr, uint16_t security_required, bool is_originator,
+      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
+  friend tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
+                                               bool is_originator,
+                                               uint16_t security_required,
+                                               tBTM_SEC_CALLBACK* p_callback,
+                                               void* p_ref_data);
+
+ public:
+  bool IsLocallyInitiated() const { return is_originator; }
+
   bool role_central;          /* true if current mode is central     */
   uint16_t security_required; /* Security required for connection   */
   bool link_key_not_sent; /* link key notification has not been sent waiting for

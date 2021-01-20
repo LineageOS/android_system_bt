@@ -129,4 +129,28 @@ TEST_F(StackBtmTest, NoInformClientOnConnectionFail) {
   get_btm_client_interface().lifecycle.btm_free();
 }
 
+TEST_F(StackBtmTest, SetSupervisiorTimeoutOnConnectionSuccess) {
+  MOCK_bluetooth_shim_is_gd_acl_enabled_ = true;
+
+  get_btm_client_interface().lifecycle.btm_init();
+
+  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+
+  get_btm_client_interface().link_controller.BTM_SetDefaultLinkSuperTout(
+      0x1234);
+
+  btm_acl_connected(bda, 2, HCI_SUCCESS, false);
+  btm_acl_role_changed(HCI_SUCCESS, bda, HCI_ROLE_CENTRAL);
+
+  ASSERT_EQ(static_cast<size_t>(1),
+            mock_function_count_map.count("btsnd_hcic_write_link_super_tout"));
+  uint16_t timeout;
+  ASSERT_EQ(BTM_SUCCESS,
+            get_btm_client_interface().link_controller.BTM_GetLinkSuperTout(
+                bda, &timeout));
+  ASSERT_EQ(0x1234, timeout);
+
+  get_btm_client_interface().lifecycle.btm_free();
+}
+
 }  // namespace
