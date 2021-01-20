@@ -128,6 +128,17 @@ inline uint8_t ToLegacyRole(hci::Role role) {
   return static_cast<uint8_t>(role);
 }
 
+inline hci::Role ToHciRole(hci_role_t role) {
+  switch (role) {
+    case HCI_ROLE_CENTRAL:
+      return hci::Role::CENTRAL;
+    case HCI_ROLE_PERIPHERAL:
+      return hci::Role::PERIPHERAL;
+    default:
+      ASSERT_LOG(false, "Unable to determine legacy role:%u", role);
+  }
+}
+
 inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
   switch (reason) {
     case hci::ErrorCode::SUCCESS:

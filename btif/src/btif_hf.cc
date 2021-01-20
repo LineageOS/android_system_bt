@@ -1114,10 +1114,11 @@ bt_status_t HeadsetInterface::PhoneStateChange(
     const char* number, bthf_call_addrtype_t type, const char* name,
     RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
-  if (!bd_addr) {
+  if (bd_addr == nullptr) {
     LOG_WARN("bd_addr is null");
     return BT_STATUS_FAIL;
   }
+
   const RawAddress raw_address(*bd_addr);
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if (idx < 0 || idx > BTA_AG_MAX_NUM_CLIENTS) {
@@ -1138,14 +1139,13 @@ bt_status_t HeadsetInterface::PhoneStateChange(
               << ", num_held=" << num_held;
     return BT_STATUS_SUCCESS;
   }
-  LOG(INFO) << __func__ << ": idx=" << idx << ", addr=" << *bd_addr
-            << ", active_bda=" << active_bda << ", num_active=" << num_active
-            << ", prev_num_active" << control_block.num_active
-            << ", num_held=" << num_held
-            << ", prev_num_held=" << control_block.num_held
-            << ", call_state=" << dump_hf_call_state(call_setup_state)
-            << ", prev_call_state="
-            << dump_hf_call_state(control_block.call_setup_state);
+  LOG_DEBUG(
+      "bd_addr:%s active_bda:%s num_active:%u prev_num_active:%u num_held:%u "
+      "prev_num_held:%u call_state:%s prev_call_state:%s",
+      PRIVATE_ADDRESS((*bd_addr)), PRIVATE_ADDRESS(active_bda), num_active,
+      control_block.num_active, num_held, control_block.num_held,
+      dump_hf_call_state(call_setup_state),
+      dump_hf_call_state(control_block.call_setup_state));
   tBTA_AG_RES res = BTA_AG_UNKNOWN;
   bt_status_t status = BT_STATUS_SUCCESS;
   bool active_call_updated = false;
@@ -1153,7 +1153,9 @@ bt_status_t HeadsetInterface::PhoneStateChange(
   /* if all indicators are 0, send end call and return */
   if (num_active == 0 && num_held == 0 &&
       call_setup_state == BTHF_CALL_STATE_IDLE) {
-    BTM_LogHistory(kBtmLogTag, raw_address, "Call Ended");
+    if (control_block.num_active > 0) {
+      BTM_LogHistory(kBtmLogTag, raw_address, "Call Ended");
+    }
     BTA_AgResult(control_block.handle, BTA_AG_END_CALL_RES,
                  tBTA_AG_RES_DATA::kEmpty);
     /* if held call was present, reset that as well */
@@ -1291,10 +1293,14 @@ bt_status_t HeadsetInterface::PhoneStateChange(
           }
           snprintf(ag_res.str, sizeof(ag_res.str), "%s",
                    call_number_stream.str().c_str());
-          std::string number(call_number_stream.str());
-          BTM_LogHistory(kBtmLogTag, raw_address, "Call Incoming",
-                         base::StringPrintf("number:%s", PRIVATE_CELL(number)));
         }
+        {
+          std::string cell_number(number);
+          BTM_LogHistory(
+              kBtmLogTag, raw_address, "Call Incoming",
+              base::StringPrintf("number:%s", PRIVATE_CELL(cell_number)));
+        }
+        // base::StringPrintf("number:%s", PRIVATE_CELL(number)));
         break;
       case BTHF_CALL_STATE_DIALING:
         if (!(num_active + num_held) && is_active_device(*bd_addr)) {
