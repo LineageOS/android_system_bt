@@ -115,6 +115,10 @@ class LeSignallingManager {
 
   void SendCredit(Cid local_cid, uint16_t credits);
 
+  void SendEnhancedConnectionRequest(Psm psm, std::vector<Cid> local_cid, Mtu mtu);
+
+  void SendEnhancedReconfigureRequest(std::vector<Cid> local_cid, Mtu mtu);
+
   void CancelAlarm();
 
   void OnCommandReject(LeCommandRejectView command_reject_view);
