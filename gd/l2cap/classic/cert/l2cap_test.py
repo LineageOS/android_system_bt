@@ -25,6 +25,7 @@ from bluetooth_packets_python3.l2cap_packets import Poll
 from bluetooth_packets_python3.l2cap_packets import SegmentationAndReassembly
 from bluetooth_packets_python3.l2cap_packets import SupervisoryFunction
 from cert.behavior import when, anything, wait_until
+from cert.event_stream import EventStream
 from cert.gd_base_test import GdBaseTestClass
 from cert.matchers import L2capMatchers
 from cert.metadata import metadata
@@ -1274,3 +1275,14 @@ class L2capTest(L2capTestBase):
         (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(mode=RetransmissionFlowControlMode.ERTM)
         cert_channel.send_configure_request(CertL2cap.config_option_basic_explicit())
         cert_channel.verify_disconnect_request()
+
+    def test_initiate_connection_for_security(self):
+        """
+        This will test the PyL2cap API for initiating a connection for security
+        via the security api
+        """
+        self.dut.neighbor.EnablePageScan(neighbor_facade.EnableMsg(enabled=True))
+        self.cert.neighbor.EnablePageScan(neighbor_facade.EnableMsg(enabled=True))
+        self.dut_l2cap.initiate_connection_for_security()
+        self.cert_l2cap.accept_incoming_connection()
+        self.dut_l2cap.verify_security_connection()

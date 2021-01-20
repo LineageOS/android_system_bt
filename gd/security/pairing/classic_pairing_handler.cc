@@ -128,7 +128,9 @@ void ClassicPairingHandler::Initiate(
     }
   }
 
-  GetChannel()->Connect(GetRecord()->GetPseudoAddress()->GetAddress());
+  if (locally_initiated_) {
+    GetChannel()->Connect(GetRecord()->GetPseudoAddress()->GetAddress());
+  }
 }
 
 void ClassicPairingHandler::OnNameRequestComplete(hci::Address address, bool success) {
