@@ -957,7 +957,7 @@ void bluetooth::shim::legacy::Acl::OnConnectSuccess(
       ->ReadRemoteControllerInformation();
 
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_connected, bd_addr,
-                      handle, HCI_SUCCESS, false);
+                      handle, false);
   LOG_DEBUG("Connection successful classic remote:%s handle:%hu initiator:%s",
             PRIVATE_ADDRESS(remote_address), handle,
             (locally_initiated) ? "local" : "remote");
@@ -970,7 +970,7 @@ void bluetooth::shim::legacy::Acl::OnConnectFail(hci::Address address,
                                                  hci::ErrorCode reason) {
   const RawAddress bd_addr = ToRawAddress(address);
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_failed, bd_addr,
-                      kInvalidHciHandle, ToLegacyHciErrorCode(reason), false);
+                      ToLegacyHciErrorCode(reason));
   LOG_WARN("Connection failed classic remote:%s reason:%s",
            PRIVATE_ADDRESS(address), hci::ErrorCodeText(reason).c_str());
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection failed",
