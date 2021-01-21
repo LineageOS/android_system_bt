@@ -397,7 +397,6 @@ struct sACL_CB {
                                       uint16_t max_lat, uint16_t min_rmt_to,
                                       uint16_t min_loc_to);
   friend uint16_t BTM_GetNumAclLinks(void);
-  friend uint16_t acl_get_link_supervision_timeout();
   friend uint16_t acl_get_supported_packet_types();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
   friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
@@ -425,7 +424,6 @@ struct sACL_CB {
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
   uint16_t btm_acl_pkt_types_supported;
   uint16_t btm_def_link_policy;
-  uint16_t btm_def_link_super_tout;
   tHCI_STATUS acl_disc_reason;
   uint8_t pm_pend_link;
 
@@ -437,10 +435,6 @@ struct sACL_CB {
   void set_disconnect_reason(tHCI_STATUS reason) { acl_disc_reason = reason; }
   uint16_t DefaultPacketTypes() const { return btm_acl_pkt_types_supported; }
   uint16_t DefaultLinkPolicy() const { return btm_def_link_policy; }
-  uint16_t DefaultSupervisorTimeout() const { return btm_def_link_super_tout; }
-  void SetDefaultSupervisorTimeout(uint16_t timeout) {
-    btm_def_link_super_tout = timeout;
-  }
 
   tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
 

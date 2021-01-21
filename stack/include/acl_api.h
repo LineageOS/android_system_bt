@@ -43,18 +43,6 @@ void BTM_acl_after_controller_started(const controller_t* controller);
 
 /*******************************************************************************
  *
- * Function         BTM_SetDefaultLinkSuperTout
- *
- * Description      Set the default value for HCI "Write Link Supervision
- *                  Timeout" command to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
-
-/*******************************************************************************
- *
  * Function         BTM_SetLinkSuperTout
  *
  * Description      Create and send HCI "Write Link Supervision Timeout" command
@@ -283,7 +271,6 @@ tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle);
 uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
                                      tBT_TRANSPORT transport);
 
-uint16_t acl_get_link_supervision_timeout();
 tHCI_STATUS acl_get_disconnect_reason();
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
 

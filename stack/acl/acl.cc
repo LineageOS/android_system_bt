@@ -48,7 +48,6 @@ void sACL_CONN::Reset() {
 }
 
 void sACL_CB::Init() {
-  btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
   acl_disc_reason = HCI_ERR_UNDEFINED;
 
   btm_acl_pkt_types_supported =
