@@ -472,6 +472,8 @@ void L2CA_SwitchRoleToCentral(const RawAddress& addr);
 bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
                             uint16_t* manufacturer, uint16_t* lmp_sub_version);
 
+uint8_t* L2CA_ReadRemoteFeatures(const RawAddress& addr);
+
 void L2CA_DisconnectLink(const RawAddress& remote);
 
 uint16_t L2CA_GetNumLinks();
