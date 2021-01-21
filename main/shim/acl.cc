@@ -922,9 +922,9 @@ void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
   hci::AddressWithType remote_address_with_type =
       pimpl_->handle_to_le_connection_map_[handle]->GetRemoteAddressWithType();
   CreationTime creation_time =
-      pimpl_->handle_to_classic_connection_map_[handle]->GetCreationTime();
+      pimpl_->handle_to_le_connection_map_[handle]->GetCreationTime();
   bool is_locally_initiated =
-      pimpl_->handle_to_classic_connection_map_[handle]->IsLocallyInitiated();
+      pimpl_->handle_to_le_connection_map_[handle]->IsLocallyInitiated();
 
   TeardownTime teardown_time = std::chrono::system_clock::now();
 
