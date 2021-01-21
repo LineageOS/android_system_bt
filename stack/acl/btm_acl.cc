@@ -1110,21 +1110,6 @@ void btm_establish_continue_from_address(const RawAddress& bda,
 
 /*******************************************************************************
  *
- * Function         BTM_SetDefaultLinkSuperTout
- *
- * Description      Set the default value for HCI "Write Link Supervision
- *                                                 Timeout"
- *                  command to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkSuperTout(uint16_t timeout) {
-  btm_cb.acl_cb_.btm_def_link_super_tout = timeout;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_GetLinkSuperTout
  *
  * Description      Read the link supervision timeout value of the connection
@@ -1425,11 +1410,8 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
     if (new_role == HCI_ROLE_CENTRAL) {
-      uint16_t supervisor_timeout =
-          (p_acl->link_super_tout == 0)  // uninitialized
-              ? (btm_cb.acl_cb_.DefaultSupervisorTimeout())
-              : (p_acl->link_super_tout);
-      hci_btm_set_link_supervision_timeout(*p_acl, supervisor_timeout);
+      constexpr uint16_t link_supervision_timeout = 8000;
+      BTM_SetLinkSuperTout(bd_addr, link_supervision_timeout);
     }
   } else {
     new_role = p_acl->link_role;
@@ -2640,10 +2622,6 @@ bool acl_peer_supports_ble_coded_phy(uint16_t hci_handle) {
   return HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features);
 }
 
-uint16_t acl_get_link_supervision_timeout() {
-  return btm_cb.acl_cb_.btm_def_link_super_tout;
-}
-
 tHCI_STATUS acl_get_disconnect_reason() {
   return btm_cb.acl_cb_.get_disconnect_reason();
 }
@@ -2678,7 +2656,8 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
   btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
-  BTM_SetLinkSuperTout(bda, acl_get_link_supervision_timeout());
+  constexpr uint16_t link_supervision_timeout = 8000;
+  BTM_SetLinkSuperTout(bda, link_supervision_timeout);
 
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
   if (p_acl == nullptr) {

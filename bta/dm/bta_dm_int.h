@@ -395,7 +395,6 @@ enum {
 typedef struct {
   DEV_CLASS dev_class; /* local device class */
   uint16_t page_timeout; /* timeout for page in slots */
-  uint16_t link_timeout; /* link supervision timeout in slots */
   bool avoid_scatter; /* true to avoid scatternet when av is streaming (be the
                          central) */
 
