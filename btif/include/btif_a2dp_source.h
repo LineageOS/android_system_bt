@@ -126,4 +126,8 @@ BT_HDR* btif_a2dp_source_audio_readbuf(void);
 // information.
 void btif_a2dp_source_debug_dump(int fd);
 
+// Set the dynamic audio buffer size
+void btif_a2dp_source_set_dynamic_audio_buffer_size(
+    uint8_t dynamic_audio_buffer_size);
+
 #endif /* BTIF_A2DP_SOURCE_H */
