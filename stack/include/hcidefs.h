@@ -453,6 +453,11 @@
 /* Bluetooth Quality Report opcode */
 #define HCI_CONTROLLER_BQR (0x015E | HCI_GRP_VENDOR_SPECIFIC)
 
+/* Bluetooth Dynamic Audio Buffer opcode */
+#define HCI_CONTROLLER_DAB (0x015F | HCI_GRP_VENDOR_SPECIFIC)
+#define HCI_CONTROLLER_DAB_GET_BUFFER_TIME 0x01
+#define HCI_CONTROLLER_DAB_SET_BUFFER_TIME 0x02
+
 /* subcode for multi adv feature */
 #define BTM_BLE_MULTI_ADV_SET_PARAM 0x01
 #define BTM_BLE_MULTI_ADV_WRITE_ADV_DATA 0x02

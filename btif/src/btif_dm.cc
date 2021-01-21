@@ -1706,6 +1706,9 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       local_le_features.le_maximum_advertising_data_length =
           controller->get_ble_maxium_advertising_data_length();
 
+      local_le_features.dynamic_audio_buffer_supported =
+          cmn_vsc_cb.dynamic_audio_buffer_support;
+
       invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &prop);
       break;
     }

@@ -95,6 +95,21 @@ extern void BTM_BleSetScanParams(uint32_t scan_interval, uint32_t scan_window,
  *
  ******************************************************************************/
 extern void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB* p_cmn_vsc_cb);
+
+/*******************************************************************************
+ *
+ * Function         BTM_BleGetDynamicAudioBuffer
+ *
+ * Description      This function reads dynamic audio buffer
+ *
+ * Parameters       p_dynamic_audio_buffer_cb : Dynamic Audio Buffer structure
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void BTM_BleGetDynamicAudioBuffer(
+    tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB* p_dynamic_audio_buffer_cb);
+
 /*******************************************************************************
  *
  * Function         BTM_BleSetStorageConfig
