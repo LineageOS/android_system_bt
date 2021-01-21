@@ -130,9 +130,6 @@ class LeAdvertisingManager : public bluetooth::Module {
 
   void RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback);
 
-  virtual void RegisterSetTerminatedCallback(
-      common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)> set_terminated_callback);
-
   static const ModuleFactory Factory;
 
  protected:

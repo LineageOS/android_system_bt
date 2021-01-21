@@ -61,6 +61,9 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
   void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {
     SAVE_OR_CALL(OnPhyUpdate, tx_phy, rx_phy);
   }
+  void OnLocalAddressUpdate(AddressWithType address_with_type) override {
+    SAVE_OR_CALL(OnLocalAddressUpdate, address_with_type);
+  }
 
   void OnDisconnection(ErrorCode reason) override {
     SAVE_OR_CALL(OnDisconnection, reason);

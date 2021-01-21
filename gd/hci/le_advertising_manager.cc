@@ -100,6 +100,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     hci_layer_ = hci_layer;
     controller_ = controller;
     le_maximum_advertising_data_length_ = controller_->GetLeMaximumAdvertisingDataLength();
+    acl_manager_ = acl_manager;
     le_address_manager_ = acl_manager->GetLeAddressManager();
     le_advertising_interface_ =
         hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
@@ -131,11 +132,6 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void register_advertising_callback(AdvertisingCallback* advertising_callback) {
     advertising_callbacks_ = advertising_callback;
-  }
-
-  void register_set_terminated_callback(
-      common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)> set_terminated_callback) {
-    set_terminated_callback_ = std::move(set_terminated_callback);
   }
 
   void handle_event(LeMetaEventView event) {
@@ -176,7 +172,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
     AddressWithType advertiser_address = advertising_sets_[event_view.GetAdvertisingHandle()].current_address;
 
-    set_terminated_callback_.InvokeIfNotEmpty(
+    acl_manager_->OnAdvertisingSetTerminated(
         event_view.GetStatus(), event_view.GetConnectionHandle(), advertiser_address);
   }
 
@@ -908,6 +904,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   hci::LeAdvertisingInterface* le_advertising_interface_;
   std::map<AdvertiserId, Advertiser> advertising_sets_;
   hci::LeAddressManager* le_address_manager_;
+  hci::AclManager* acl_manager_;
   bool address_manager_registered = false;
   bool paused = false;
 
@@ -1264,11 +1261,6 @@ void LeAdvertisingManager::RemoveAdvertiser(AdvertiserId advertiser_id) {
 
 void LeAdvertisingManager::RegisterAdvertisingCallback(AdvertisingCallback* advertising_callback) {
   CallOn(pimpl_.get(), &impl::register_advertising_callback, advertising_callback);
-}
-
-void LeAdvertisingManager::RegisterSetTerminatedCallback(
-    common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)> set_terminated_callback) {
-  GetHandler()->CallOn(pimpl_.get(), &impl::register_set_terminated_callback, set_terminated_callback);
 }
 
 }  // namespace hci

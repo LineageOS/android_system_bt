@@ -33,12 +33,11 @@ namespace acl_manager {
 using common::BindOnce;
 
 struct le_acl_connection {
-  le_acl_connection(
-      AddressWithType address_with_type, AclConnection::QueueDownEnd* queue_down_end, os::Handler* handler)
-      : assembler_(address_with_type, queue_down_end, handler), address_with_type_(address_with_type) {}
+  le_acl_connection(AddressWithType remote_address, AclConnection::QueueDownEnd* queue_down_end, os::Handler* handler)
+      : assembler_(remote_address, queue_down_end, handler), remote_address_(remote_address) {}
   ~le_acl_connection() = default;
   struct acl_manager::assembler assembler_;
-  AddressWithType address_with_type_;
+  AddressWithType remote_address_;
   LeConnectionManagementCallbacks* le_connection_management_callbacks_ = nullptr;
 };
 
@@ -618,11 +617,21 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   uint16_t HACK_get_handle(Address address) {
     for (auto it = le_acl_connections_.begin(); it != le_acl_connections_.end(); it++) {
-      if (it->second.address_with_type_.GetAddress() == address) {
+      if (it->second.remote_address_.GetAddress() == address) {
         return it->first;
       }
     }
     return 0xFFFF;
+  }
+
+  void UpdateLocalAddress(uint16_t handle, hci::AddressWithType address_with_type) {
+    auto callbacks = get_callbacks(handle);
+    if (callbacks == nullptr) {
+      LOG_WARN("Can't find connection 0x%hx", handle);
+      ASSERT(!crash_on_unknown_handle_);
+      return;
+    }
+    callbacks->OnLocalAddressUpdate(address_with_type);
   }
 
   static constexpr uint16_t kMinimumCeLength = 0x0002;
