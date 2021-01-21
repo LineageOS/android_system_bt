@@ -160,16 +160,6 @@ void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::E
   pending_links_.erase(pending_link);
 }
 
-void LinkManager::OnAdvertisingSetTerminated(
-    bluetooth::hci::ErrorCode status, uint16_t connection_handle, hci::AddressWithType advertiser_address) {
-  for (auto& [address, link] : links_) {
-    if (link.GetAclConnection()->GetHandle() == connection_handle) {
-      link.GetAclConnection()->SetLocalAddress(advertiser_address);
-      return;
-    }
-  }
-}
-
 void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type) {
   auto* link = GetLink(address_with_type);
   ASSERT_LOG(link != nullptr, "Device %s is disconnected but not in local database",

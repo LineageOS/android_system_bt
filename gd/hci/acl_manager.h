@@ -106,6 +106,9 @@ public:
  virtual uint16_t ReadDefaultLinkPolicySettings();
  virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings);
 
+ // Callback from Advertising Manager to notify the advitiser (local) address
+ virtual void OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle, hci::AddressWithType adv_address);
+
  // In order to avoid circular dependency use setter rather than module dependency.
  virtual void SetSecurityModule(security::SecurityModule* security_module);
 

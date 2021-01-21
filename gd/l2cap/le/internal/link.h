@@ -83,6 +83,9 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
   void OnReadRemoteVersionInformationComplete(
       uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override;
   void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override;
+
+  void OnLocalAddressUpdate(hci::AddressWithType address_with_type) override;
+
   virtual void Disconnect();
 
   // Handles connection parameter update request from remote
