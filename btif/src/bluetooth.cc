@@ -542,6 +542,10 @@ static int get_metric_id(const RawAddress& address) {
       address);
 }
 
+static int set_dynamic_audio_buffer_size(int codec, int size) {
+  return btif_set_dynamic_audio_buffer_size(codec, size);
+}
+
 EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     sizeof(bluetoothInterface),
     init,
@@ -579,6 +583,7 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     get_avrcp_service,
     obfuscate_address,
     get_metric_id,
+    set_dynamic_audio_buffer_size,
 };
 
 // callback reporting helpers

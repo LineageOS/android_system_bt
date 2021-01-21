@@ -314,7 +314,20 @@ typedef struct {
   uint16_t total_trackable_advertisers;
   uint8_t extended_scan_support;
   uint8_t debug_logging_supported;
+  uint8_t le_address_generation_offloading_support;
+  uint32_t a2dp_source_offload_capability_mask;
+  uint8_t quality_report_support;
+  uint32_t dynamic_audio_buffer_support;
 } tBTM_BLE_VSC_CB;
+
+/* Stored the default/maximum/minimum buffer time for dynamic audio buffer.
+ * For A2DP offload usage, the unit is millisecond.
+ * For A2DP legacy usage, the unit is buffer queue size*/
+typedef struct {
+  uint16_t default_buffer_time;
+  uint16_t maximum_buffer_time;
+  uint16_t minimum_buffer_time;
+} tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB;
 
 typedef void(tBTM_BLE_ADV_DATA_CMPL_CBACK)(tBTM_STATUS status);
 
