@@ -2507,16 +2507,6 @@ uint8_t acl_link_role_from_handle(uint16_t handle) {
   return p_acl->link_role;
 }
 
-uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
-                                     tBT_TRANSPORT transport) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return HCI_INVALID_HANDLE;
-  }
-  return p_acl->hci_handle;
-}
-
 bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
   if (p_acl == nullptr) {
