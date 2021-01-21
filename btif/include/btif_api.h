@@ -230,8 +230,10 @@ void btif_dm_create_bond(const RawAddress bd_addr, int transport);
  * Description      Initiate bonding with the specified device using OOB data.
  *
  ******************************************************************************/
-void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, int transport,
-                                     const bt_out_of_band_data_t oob_data);
+void btif_dm_create_bond_out_of_band(const RawAddress bd_addr,
+                                     tBT_TRANSPORT transport,
+                                     const bt_oob_data_t p192_data,
+                                     const bt_oob_data_t p256_data);
 
 /*******************************************************************************
  *
