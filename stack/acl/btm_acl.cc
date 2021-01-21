@@ -2622,10 +2622,6 @@ bool acl_peer_supports_ble_coded_phy(uint16_t hci_handle) {
   return HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features);
 }
 
-tHCI_STATUS acl_get_disconnect_reason() {
-  return btm_cb.acl_cb_.get_disconnect_reason();
-}
-
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason) {
   btm_cb.acl_cb_.set_disconnect_reason(acl_disc_reason);
 }
@@ -2700,6 +2696,12 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
   if (status != HCI_SUCCESS) {
     LOG_WARN("Received disconnect with error:%s",
              hci_error_code_text(status).c_str());
+  }
+
+  /* There can be a case when we rejected PIN code authentication */
+  /* otherwise save a new reason */
+  if (btm_get_acl_disc_reason_code() != HCI_ERR_HOST_REJECT_SECURITY) {
+    acl_set_disconnect_reason(static_cast<tHCI_STATUS>(reason));
   }
 
   /* If L2CAP or SCO doesn't know about it, send it to ISO */
