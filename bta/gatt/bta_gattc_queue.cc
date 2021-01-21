@@ -26,6 +26,7 @@ constexpr uint8_t GATT_READ_CHAR = 1;
 constexpr uint8_t GATT_READ_DESC = 2;
 constexpr uint8_t GATT_WRITE_CHAR = 3;
 constexpr uint8_t GATT_WRITE_DESC = 4;
+constexpr uint8_t GATT_CONFIG_MTU = 5;
 
 struct gatt_read_op_data {
   GATT_READ_OP_CB cb;
@@ -76,6 +77,29 @@ void BtaGattQueue::gatt_write_op_finished(uint16_t conn_id, tGATT_STATUS status,
 
   if (tmp_cb) {
     tmp_cb(conn_id, status, handle, tmp_cb_data);
+    return;
+  }
+}
+
+struct gatt_configure_mtu_op_data {
+  GATT_CONFIGURE_MTU_OP_CB cb;
+  void* cb_data;
+};
+
+void BtaGattQueue::gatt_configure_mtu_op_finished(uint16_t conn_id,
+                                                  tGATT_STATUS status,
+                                                  void* data) {
+  gatt_configure_mtu_op_data* tmp = (gatt_configure_mtu_op_data*)data;
+  GATT_CONFIGURE_MTU_OP_CB tmp_cb = tmp->cb;
+  void* tmp_cb_data = tmp->cb_data;
+
+  osi_free(data);
+
+  mark_as_not_executing(conn_id);
+  gatt_execute_next_op(conn_id);
+
+  if (tmp_cb) {
+    tmp_cb(conn_id, status, tmp_cb_data);
     return;
   }
 }
@@ -137,6 +161,14 @@ void BtaGattQueue::gatt_execute_next_op(uint16_t conn_id) {
     data->cb_data = op.write_cb_data;
     BTA_GATTC_WriteCharDescr(conn_id, op.handle, std::move(op.value),
                              GATT_AUTH_REQ_NONE, gatt_write_op_finished, data);
+  } else if (op.type == GATT_CONFIG_MTU) {
+    gatt_configure_mtu_op_data* data =
+      (gatt_configure_mtu_op_data*)osi_malloc(sizeof(gatt_configure_mtu_op_data));
+    data->cb = op.mtu_cb;
+    data->cb_data = op.mtu_cb_data;
+    BTA_GATTC_ConfigureMTU(conn_id, static_cast<uint16_t>(op.value[0] |
+                                                          (op.value[1] << 8)),
+                           gatt_configure_mtu_op_finished, data);
   }
 
   gatt_ops.pop_front();
@@ -187,6 +219,15 @@ void BtaGattQueue::WriteDescriptor(uint16_t conn_id, uint16_t handle,
                                     .write_cb = cb,
                                     .write_cb_data = cb_data,
                                     .write_type = write_type,
+                                    .value = std::move(value)});
+  gatt_execute_next_op(conn_id);
+}
+
+void BtaGattQueue::ConfigureMtu(uint16_t conn_id, uint16_t mtu) {
+  LOG(INFO) << __func__ << ", mtu: " << static_cast<int>(mtu);
+  std::vector<uint8_t> value = {static_cast<uint8_t>(mtu & 0xff),
+                                static_cast<uint8_t>(mtu >> 8)};
+  gatt_op_queue[conn_id].push_back({.type = GATT_CONFIG_MTU,
                                     .value = std::move(value)});
   gatt_execute_next_op(conn_id);
 }
