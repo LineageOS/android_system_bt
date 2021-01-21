@@ -547,6 +547,8 @@ class LeShimAclConnection
                         tx_phy, rx_phy);
   }
 
+  void OnLocalAddressUpdate(hci::AddressWithType address_with_type) override {}
+
   void OnDisconnection(hci::ErrorCode reason) {
     Disconnect();
     on_disconnect_(handle_, reason);

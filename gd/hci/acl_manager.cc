@@ -229,6 +229,12 @@ void AclManager::WriteDefaultLinkPolicySettings(uint16_t default_link_policy_set
   CallOn(pimpl_->classic_impl_, &classic_impl::write_default_link_policy_settings, default_link_policy_settings);
 }
 
+void AclManager::OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle, hci::AddressWithType adv_address) {
+  if (status == ErrorCode::SUCCESS) {
+    CallOn(pimpl_->le_impl_, &le_impl::UpdateLocalAddress, conn_handle, adv_address);
+  }
+}
+
 void AclManager::SetSecurityModule(security::SecurityModule* security_module) {
   CallOn(pimpl_->classic_impl_, &classic_impl::set_security_module, security_module);
 }
