@@ -69,6 +69,10 @@ void gatt_find_in_device_record(const RawAddress& bd_addr,
 void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                             const RawAddress& p_bda);
 
+void BTM_db_reset(void);
+
+extern tBTM_CB btm_cb;
+
 struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
@@ -79,6 +83,10 @@ struct StackAclBtmAcl {
   void btm_set_default_link_policy(tLINK_POLICY settings);
   void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                             uint8_t new_role);
+  void hci_start_role_switch_to_central(tACL_CONN& p_acl);
+  void set_default_packet_types_supported(uint16_t packet_types_supported) {
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported = packet_types_supported;
+  }
 };
 
 namespace {
@@ -116,9 +124,6 @@ inline bool IsEprAvailable(const tACL_CONN& p_acl) {
          controller_get_interface()->supports_encryption_pause();
 }
 
-extern tBTM_CB btm_cb;
-
-static bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport);
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
@@ -180,55 +185,57 @@ static void hci_btsnd_hcic_disconnect(tACL_CONN& p_acl, tHCI_STATUS reason) {
   }
 }
 
-static void hci_start_role_switch_to_central(tACL_CONN& p_acl) {
+void StackAclBtmAcl::hci_start_role_switch_to_central(tACL_CONN& p_acl) {
   GetLegacyHciInterface().StartRoleSwitch(
       p_acl.remote_addr, static_cast<uint8_t>(HCI_ROLE_CENTRAL));
   p_acl.set_switch_role_in_progress();
   p_acl.rs_disc_pending = BTM_SEC_RS_PENDING;
 }
 
+void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
+  if (link.link_role != HCI_ROLE_CENTRAL) {
+    /* Only send if current role is Central; 2.0 spec requires this */
+    LOG_WARN("Can only set link supervision timeout if central role:%s",
+             RoleText(link.link_role).c_str());
+    return;
+  }
+
+  LOG_DEBUG("Setting link supervision timeout:%.2fs peer:%s",
+            double(timeout) * 0.01, PRIVATE_ADDRESS(link.RemoteAddress()));
+  link.link_super_tout = timeout;
+  btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID, link.Handle(),
+                                   timeout);
+}
+
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
-/*******************************************************************************
- *
- * Function         btm_acl_init
- *
- * Description      This function is called at BTM startup to initialize
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_acl_init(void) { btm_cb.acl_cb_.Init(); }
-
-void BTM_acl_after_controller_started() {
+void BTM_acl_after_controller_started(const controller_t* controller) {
   internal_.btm_set_default_link_policy(
       HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH | HCI_ENABLE_HOLD_MODE |
       HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE);
 
-  const controller_t* controller = controller_get_interface();
-
   /* Create ACL supported packet types mask */
-  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
+  uint16_t btm_acl_pkt_types_supported =
       (HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1);
 
   if (controller->supports_3_slot_packets())
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
 
   if (controller->supports_5_slot_packets())
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5);
 
   /* Add in EDR related ACL types */
   if (!controller->supports_classic_2m_phy()) {
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_2_DH1 + HCI_PKT_TYPES_MASK_NO_2_DH3 +
          HCI_PKT_TYPES_MASK_NO_2_DH5);
   }
 
   if (!controller->supports_classic_3m_phy()) {
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+    btm_acl_pkt_types_supported |=
         (HCI_PKT_TYPES_MASK_NO_3_DH1 + HCI_PKT_TYPES_MASK_NO_3_DH3 +
          HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
@@ -237,13 +244,14 @@ void BTM_acl_after_controller_started() {
   if (controller->supports_classic_2m_phy() ||
       controller->supports_classic_3m_phy()) {
     if (!controller->supports_3_slot_edr_packets())
-      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+      btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH3 + HCI_PKT_TYPES_MASK_NO_3_DH3);
 
     if (!controller->supports_5_slot_edr_packets())
-      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+      btm_acl_pkt_types_supported |=
           (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
+  internal_.set_default_packet_types_supported(btm_acl_pkt_types_supported);
 }
 
 /*******************************************************************************
@@ -396,7 +404,10 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   p_acl->reset_switch_role();
   acl_initialize_power_mode(*p_acl);
 
-  LOG_DEBUG("Created new ACL connection");
+  LOG_DEBUG(
+      "Created new ACL connection peer:%s role:%s handle:0x%04x transport:%s",
+      PRIVATE_ADDRESS(bda), RoleText(p_acl->link_role).c_str(), hci_handle,
+      BtTransportText(transport).c_str());
   btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
 
   if (transport == BT_TRANSPORT_LE) {
@@ -475,6 +486,7 @@ void btm_acl_device_down(void) {
       l2c_link_hci_disc_comp(p->hci_handle, HCI_ERR_HW_FAILURE);
     }
   }
+  BTM_db_reset();
 }
 
 void btm_acl_set_paging(bool value) { btm_cb.is_paging = value; }
@@ -576,7 +588,7 @@ tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
       p_acl->set_encryption_off();
       p_acl->set_switch_role_encryption_off();
     } else {
-      hci_start_role_switch_to_central(*p_acl);
+      internal_.hci_start_role_switch_to_central(*p_acl);
     }
   }
 
@@ -615,7 +627,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
       p->set_encryption_switching();
       p->set_switch_role_switching();
     }
-    hci_start_role_switch_to_central(*p);
+    internal_.hci_start_role_switch_to_central(*p);
   }
   /* Finished enabling Encryption after role switch */
   else if (p->is_switch_role_encryption_on()) {
@@ -1413,7 +1425,11 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
     if (new_role == HCI_ROLE_CENTRAL) {
-      BTM_SetLinkSuperTout(p_acl->remote_addr, p_acl->link_super_tout);
+      uint16_t supervisor_timeout =
+          (p_acl->link_super_tout == 0)  // uninitialized
+              ? (btm_cb.acl_cb_.DefaultSupervisorTimeout())
+              : (p_acl->link_super_tout);
+      hci_btm_set_link_supervision_timeout(*p_acl, supervisor_timeout);
     }
   } else {
     new_role = p_acl->link_role;
@@ -2168,7 +2184,7 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
               and/or change of link key */
     {
       if (p->is_switch_role_mode_change()) {
-        hci_start_role_switch_to_central(*p);
+        internal_.hci_start_role_switch_to_central(*p);
       }
     }
   }
@@ -2305,23 +2321,6 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
       *p_pkt_type |=
           (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
-}
-
-bool acl_is_role_central(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
-  if (p == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return false;
-  }
-  return (p->link_role == HCI_ROLE_CENTRAL);
-}
-
-bool acl_br_edr_is_role_central(const RawAddress& bda) {
-  return acl_is_role_central(bda, BT_TRANSPORT_BR_EDR);
-}
-
-bool acl_ble_is_role_central(const RawAddress& bda) {
-  return acl_is_role_central(bda, BT_TRANSPORT_LE);
 }
 
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
@@ -2476,17 +2475,6 @@ int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
   return xx;
 }
 
-bool btm_pm_is_le_link(const RawAddress& remote_bda) {
-  const tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
-  for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl++) {
-    if (p_acl->in_use && p_acl->remote_addr == remote_bda &&
-        p_acl->is_transport_ble()) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /*******************************************************************************
  *
  * Function         btm_ble_refresh_local_resolvable_private_addr
@@ -2584,15 +2572,6 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
   conn_addr = p_acl->active_remote_addr;
   *p_addr_type = p_acl->active_remote_addr_type;
   return st;
-}
-
-uint8_t acl_link_role(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return HCI_ROLE_UNKNOWN;
-  }
-  return p_acl->link_role;
 }
 
 uint8_t acl_link_role_from_handle(uint16_t handle) {
@@ -2694,11 +2673,18 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
   return true;
 }
 
-void btm_acl_connected(const RawAddress& bda, uint16_t handle,
-                       tHCI_STATUS status, uint8_t enc_mode) {
-  btm_sec_connected(bda, handle, status, enc_mode);
+void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
+                             uint8_t enc_mode) {
+  btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
   btm_acl_set_paging(false);
-  l2c_link_hci_conn_comp(status, handle, bda);
+  l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
+  BTM_SetLinkSuperTout(bda, acl_get_link_supervision_timeout());
+
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
 
   /*
    * The legacy code path informs the upper layer via the BTA
@@ -2707,12 +2693,26 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
    * and thus may inform the upper layers about the connection.
    */
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
-    if (p_acl != nullptr) {
-      NotifyAclLinkUp(*p_acl);
-    } else {
-      LOG_WARN("Unable to find active acl");
-    }
+    NotifyAclLinkUp(*p_acl);
+  }
+}
+
+void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status) {
+  ASSERT_LOG(status != HCI_SUCCESS,
+             "Successful connection entering failing code path");
+
+  btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false);
+  btm_acl_set_paging(false);
+  l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bda);
+}
+
+void btm_acl_connected(const RawAddress& bda, uint16_t handle,
+                       tHCI_STATUS status, uint8_t enc_mode) {
+  switch (status) {
+    case HCI_SUCCESS:
+      return on_acl_br_edr_connected(bda, handle, enc_mode);
+    default:
+      return on_acl_br_edr_failed(bda, status);
   }
 }
 
@@ -2808,10 +2808,6 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle,
   if (p_acl == nullptr) {
     LOG_ERROR("Sending disconnect for unknown acl:%hu PLEASE FIX", conn_handle);
     GetLegacyHciInterface().Disconnect(conn_handle, reason);
-    if (bluetooth::shim::is_gd_acl_enabled() &&
-        btm_sco_removed(conn_handle, HCI_ERR_CONN_CAUSE_LOCAL_HOST))
-      LOG_ERROR(
-          "Assuming this was a SCO connection and short circuiting disconnect");
     return;
   }
 

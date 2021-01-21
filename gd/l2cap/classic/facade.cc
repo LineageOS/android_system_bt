@@ -20,6 +20,7 @@
 
 #include "common/bidi_queue.h"
 #include "common/bind.h"
+#include "common/callback.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/address.h"
 #include "l2cap/classic/facade.grpc.pb.h"
@@ -38,10 +39,10 @@ namespace bluetooth {
 namespace l2cap {
 namespace classic {
 
-class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service {
+class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service, public LinkSecurityInterfaceListener {
  public:
   L2capClassicModuleFacadeService(L2capClassicModule* l2cap_layer, os::Handler* facade_handler)
-      : l2cap_layer_(l2cap_layer), facade_handler_(facade_handler) {
+      : l2cap_layer_(l2cap_layer), facade_handler_(facade_handler), security_interface_(nullptr) {
     ASSERT(l2cap_layer_ != nullptr);
     ASSERT(facade_handler_ != nullptr);
   }
@@ -127,6 +128,129 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     // Use the value kChannelQueueSize (5) in internal/dynamic_channel_impl.h
     response->set_size(5);
     return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status InitiateConnectionForSecurity(
+      ::grpc::ServerContext* context,
+      const facade::BluetoothAddress* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address(), peer));
+    outgoing_pairing_remote_devices_.insert(peer);
+    security_interface_->InitiateConnectionForSecurity(peer);
+    return ::grpc::Status::OK;
+  }
+
+  void SecurityConnectionEventOccurred(hci::Address remote, LinkSecurityInterfaceCallbackEventType event_type) {
+    LinkSecurityInterfaceCallbackEvent msg;
+    msg.mutable_address()->set_address(remote.ToString());
+    msg.set_event_type(event_type);
+    security_connection_events_.OnIncomingEvent(msg);
+  }
+
+  ::grpc::Status FetchSecurityConnectionEvents(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::grpc::ServerWriter<LinkSecurityInterfaceCallbackEvent>* writer) override {
+    security_interface_ = l2cap_layer_->GetSecurityInterface(facade_handler_, this);
+    return security_connection_events_.RunLoop(context, writer);
+  }
+
+  ::grpc::Status SecurityLinkHold(
+      ::grpc::ServerContext* context,
+      const facade::BluetoothAddress* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address(), peer));
+    auto entry = security_link_map_.find(peer);
+    if (entry == security_link_map_.end()) {
+      LOG_WARN("Unknown address '%s'", peer.ToString().c_str());
+    } else {
+      entry->second->Hold();
+    }
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SecurityLinkEnsureAuthenticated(
+      ::grpc::ServerContext* context,
+      const facade::BluetoothAddress* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address(), peer));
+    auto entry = security_link_map_.find(peer);
+    if (entry == security_link_map_.end()) {
+      LOG_WARN("Unknown address '%s'", peer.ToString().c_str());
+    } else {
+      entry->second->EnsureAuthenticated();
+    }
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SecurityLinkRelease(
+      ::grpc::ServerContext* context,
+      const facade::BluetoothAddress* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address(), peer));
+    outgoing_pairing_remote_devices_.erase(peer);
+    auto entry = security_link_map_.find(peer);
+    if (entry == security_link_map_.end()) {
+      LOG_WARN("Unknown address '%s'", peer.ToString().c_str());
+    } else {
+      entry->second->Release();
+    }
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SecurityLinkDisconnect(
+      ::grpc::ServerContext* context,
+      const facade::BluetoothAddress* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address(), peer));
+    outgoing_pairing_remote_devices_.erase(peer);
+    auto entry = security_link_map_.find(peer);
+    if (entry == security_link_map_.end()) {
+      LOG_WARN("Unknown address '%s'", peer.ToString().c_str());
+    } else {
+      entry->second->Disconnect();
+    }
+    return ::grpc::Status::OK;
+  }
+
+  void OnLinkConnected(std::unique_ptr<LinkSecurityInterface> link) override {
+    auto remote = link->GetRemoteAddress();
+    if (outgoing_pairing_remote_devices_.count(remote) == 1) {
+      link->Hold();
+      link->EnsureAuthenticated();
+      outgoing_pairing_remote_devices_.erase(remote);
+    }
+    security_link_map_.emplace(remote, std::move(link));
+    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_CONNECTED);
+  }
+
+  void OnLinkDisconnected(hci::Address remote) override {
+    auto entry = security_link_map_.find(remote);
+    if (entry == security_link_map_.end()) {
+      LOG_WARN("Unknown address '%s'", remote.ToString().c_str());
+      return;
+    }
+    entry->second.reset();
+    security_link_map_.erase(entry);
+    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_DISCONNECTED);
+  }
+
+  void OnAuthenticationComplete(hci::Address remote) override {
+    auto entry = security_link_map_.find(remote);
+    if (entry != security_link_map_.end()) {
+      entry->second->EnsureEncrypted();
+      return;
+    }
+    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_AUTHENTICATION_COMPLETE);
+  }
+
+  void OnEncryptionChange(hci::Address remote, bool encrypted) override {
+    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_ENCRYPTION_CHANGE);
   }
 
   class L2capDynamicChannelHelper {
@@ -277,6 +401,11 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       "FetchConnectionComplete"};
   ::bluetooth::grpc::GrpcEventQueue<classic::ConnectionCloseEvent> pending_connection_close_{"FetchConnectionClose"};
   ::bluetooth::grpc::GrpcEventQueue<L2capPacket> pending_l2cap_data_{"FetchL2capData"};
+  ::bluetooth::grpc::GrpcEventQueue<LinkSecurityInterfaceCallbackEvent> security_connection_events_{
+      "Security Connection Events"};
+  SecurityInterface* security_interface_;
+  std::unordered_map<hci::Address, std::unique_ptr<l2cap::classic::LinkSecurityInterface>> security_link_map_;
+  std::set<hci::Address> outgoing_pairing_remote_devices_;
 };
 
 void L2capClassicModuleFacadeModule::ListDependencies(ModuleList* list) {

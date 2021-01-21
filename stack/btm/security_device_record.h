@@ -170,7 +170,7 @@ typedef enum : uint8_t {
  * Define structure for Security Device Record.
  * A record exists for each device authenticated with this device
  */
-typedef struct {
+struct tBTM_SEC_DEV_REC {
   /* Peering bond type */
   typedef enum : uint8_t {
     BOND_TYPE_UNKNOWN = 0,
@@ -187,6 +187,10 @@ typedef struct {
   RawAddress bd_addr;      /* BD_ADDR of the device              */
   DEV_CLASS dev_class;     /* DEV_CLASS of the device            */
   LinkKey link_key;        /* Device link key                    */
+
+ public:
+  RawAddress RemoteAddress() const { return bd_addr; }
+  uint16_t get_br_edr_hci_handle() const { return hci_handle; }
 
  private:
   friend bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
@@ -309,7 +313,25 @@ typedef struct {
     return sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH;
   }
 
+ private:
   bool is_originator;         /* true if device is originating connection */
+  friend tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
+                                       tBT_TRANSPORT transport,
+                                       tBTM_SEC_CALLBACK* p_callback,
+                                       void* p_ref_data,
+                                       tBTM_BLE_SEC_ACT sec_act);
+  friend tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
+      const RawAddress& bd_addr, uint16_t security_required, bool is_originator,
+      tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
+  friend tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
+                                               bool is_originator,
+                                               uint16_t security_required,
+                                               tBTM_SEC_CALLBACK* p_callback,
+                                               void* p_ref_data);
+
+ public:
+  bool IsLocallyInitiated() const { return is_originator; }
+
   bool role_central;          /* true if current mode is central     */
   uint16_t security_required; /* Security required for connection   */
   bool link_key_not_sent; /* link key notification has not been sent waiting for
@@ -375,5 +397,4 @@ typedef struct {
         DeviceTypeText(device_type).c_str(), sec_bd_name,
         logbool(remote_supports_secure_connections).c_str());
   }
-
-} tBTM_SEC_DEV_REC;
+};

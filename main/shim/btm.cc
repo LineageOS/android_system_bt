@@ -145,6 +145,14 @@ void Btm::ScanningCallbacks::OnBatchScanReports(int client_if, int status,
                                                 int num_records,
                                                 std::vector<uint8_t> data){};
 void Btm::ScanningCallbacks::OnTimeout(){};
+void Btm::ScanningCallbacks::OnFilterEnable(bluetooth::hci::Enable enable,
+                                            uint8_t status){};
+void Btm::ScanningCallbacks::OnFilterParamSetup(
+    uint8_t available_spaces, bluetooth::hci::ApcfAction action,
+    uint8_t status){};
+void Btm::ScanningCallbacks::OnFilterConfigCallback(
+    bluetooth::hci::ApcfFilterType filter_type, uint8_t available_spaces,
+    bluetooth::hci::ApcfAction action, uint8_t status){};
 
 Btm::Btm(os::Handler* handler, neighbor::InquiryModule* inquiry)
     : scanning_timer_(handler), observing_timer_(handler) {
@@ -676,6 +684,11 @@ tBLE_ADDR_TYPE Btm::GetAddressType(const RawAddress& bd_addr) {
 
 void Btm::StoreAddressType(const RawAddress& bd_addr, tBLE_ADDR_TYPE type) {
   store_le_address_type(bd_addr, type);
+}
+
+void Btm::Register_HACK_SetScoDisconnectCallback(
+    HACK_ScoDisconnectCallback callback) {
+  GetAclManager()->HACK_SetScoDisconnectCallback(callback);
 }
 
 }  // namespace shim

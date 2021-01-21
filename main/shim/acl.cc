@@ -39,6 +39,7 @@
 #include "gd/hci/controller.h"
 #include "gd/os/handler.h"
 #include "gd/os/queue.h"
+#include "main/shim/btm.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
@@ -792,6 +793,11 @@ bluetooth::shim::legacy::Acl::Acl(os::Handler* handler,
       handler->BindOn(this, &Acl::on_incoming_acl_credits));
   bluetooth::shim::RegisterDumpsysFunction(static_cast<void*>(this),
                                            [this](int fd) { Dump(fd); });
+  Stack::GetInstance()->GetBtm()->Register_HACK_SetScoDisconnectCallback(
+      [this](uint16_t handle, uint8_t reason) {
+        TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_disconnected,
+                            handle, static_cast<tHCI_REASON>(reason));
+      });
 }
 
 bluetooth::shim::legacy::Acl::~Acl() {
@@ -957,7 +963,7 @@ void bluetooth::shim::legacy::Acl::OnConnectSuccess(
       ->ReadRemoteControllerInformation();
 
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_connected, bd_addr,
-                      handle, HCI_SUCCESS, false);
+                      handle, false);
   LOG_DEBUG("Connection successful classic remote:%s handle:%hu initiator:%s",
             PRIVATE_ADDRESS(remote_address), handle,
             (locally_initiated) ? "local" : "remote");
@@ -970,7 +976,7 @@ void bluetooth::shim::legacy::Acl::OnConnectFail(hci::Address address,
                                                  hci::ErrorCode reason) {
   const RawAddress bd_addr = ToRawAddress(address);
   TRY_POSTING_ON_MAIN(acl_interface_.connection.classic.on_failed, bd_addr,
-                      kInvalidHciHandle, ToLegacyHciErrorCode(reason), false);
+                      ToLegacyHciErrorCode(reason));
   LOG_WARN("Connection failed classic remote:%s reason:%s",
            PRIVATE_ADDRESS(address), hci::ErrorCodeText(reason).c_str());
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection failed",
@@ -1131,6 +1137,12 @@ bool bluetooth::shim::legacy::Acl::SniffSubrating(
                    maximum_latency, minimum_remote_timeout,
                    minimum_local_timeout);
   return false;
+}
+
+void bluetooth::shim::legacy::Acl::HACK_OnScoDisconnected(uint16_t handle,
+                                                          uint8_t reason) {
+  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_disconnected, handle,
+                      static_cast<tHCI_REASON>(reason));
 }
 
 void bluetooth::shim::legacy::Acl::DumpConnectionHistory(int fd) const {

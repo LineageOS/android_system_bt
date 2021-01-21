@@ -95,11 +95,6 @@ void btm_dev_init() {
   btm_cb.devcb.read_link_quality_timer =
       alarm_new("btm.read_link_quality_timer");
   btm_cb.devcb.read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
-
-  btm_cb.btm_sco_pkt_types_supported =
-      ESCO_PKT_TYPES_MASK_HV1 + ESCO_PKT_TYPES_MASK_HV2 +
-      ESCO_PKT_TYPES_MASK_HV3 + ESCO_PKT_TYPES_MASK_EV3 +
-      ESCO_PKT_TYPES_MASK_EV4 + ESCO_PKT_TYPES_MASK_EV5;
 }
 
 void btm_dev_free() {
@@ -294,7 +289,7 @@ static void decode_controller_support() {
   BTM_TRACE_DEBUG("Local supported SCO packet types: 0x%04x",
                   btm_cb.btm_sco_pkt_types_supported);
 
-  BTM_acl_after_controller_started();
+  BTM_acl_after_controller_started(controller_get_interface());
   btm_sec_dev_reset();
 
   if (controller->supports_rssi_with_inquiry_results()) {

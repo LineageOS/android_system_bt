@@ -70,6 +70,7 @@ class MockL2capInterface : public L2capInterface {
   MOCK_METHOD3(RegisterLECoc,
                uint16_t(uint16_t psm, const tL2CAP_APPL_INFO &cb_info, uint16_t sec_level));
   MOCK_METHOD1(DeregisterLECoc, void(uint16_t psm));
+  MOCK_METHOD1(GetBleConnRole, uint8_t(const RawAddress& bd_addr));
   MOCK_METHOD5(ConnectCreditBasedRsp,
                bool(const RawAddress& p_bd_addr, uint8_t id,
                     std::vector<uint16_t> &lcids,

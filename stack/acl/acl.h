@@ -251,7 +251,27 @@ struct sACL_CONN {
 #define BTM_SEC_RS_NOT_PENDING 0 /* Role Switch not in progress */
 #define BTM_SEC_RS_PENDING 1     /* Role Switch in progress */
 #define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
+ private:
   uint8_t rs_disc_pending = BTM_SEC_RS_NOT_PENDING;
+  friend struct StackAclBtmAcl;
+  friend tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr,
+                                    tBT_TRANSPORT transport);
+  friend void acl_disconnect_after_role_switch(uint16_t conn_handle,
+                                               tHCI_STATUS reason);
+  friend void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status,
+                                                     uint16_t handle,
+                                                     tHCI_MODE hci_mode,
+                                                     uint16_t interval);
+  friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
+                                     uint8_t encr_enable);
+
+ public:
+  bool is_disconnect_pending() const {
+    return rs_disc_pending == BTM_SEC_DISC_PENDING;
+  }
+  bool is_role_switch_pending() const {
+    return rs_disc_pending == BTM_SEC_RS_PENDING;
+  }
 
  private:
   uint8_t switch_role_state_;
@@ -361,17 +381,14 @@ struct sACL_CONN {
 };
 typedef sACL_CONN tACL_CONN;
 
+struct controller_t;
+
 /****************************************************
  **      ACL Management API
  ****************************************************/
 struct sACL_CB {
  private:
-  friend bool BTM_IsBleConnection(uint16_t hci_handle);
-  friend bool acl_is_role_switch_allowed();
-  friend bool btm_pm_is_le_link(const RawAddress& remote_bda);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
-  friend tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
-                                   tBT_TRANSPORT transport);
   friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
   friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
                                       const RawAddress& remote_bda,
@@ -379,16 +396,11 @@ struct sACL_CB {
   friend tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda,
                                       uint16_t max_lat, uint16_t min_rmt_to,
                                       uint16_t min_loc_to);
-  friend tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
-                                               tBTM_PM_STATE* pmState);
   friend uint16_t BTM_GetNumAclLinks(void);
   friend uint16_t acl_get_link_supervision_timeout();
   friend uint16_t acl_get_supported_packet_types();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
   friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
-  friend void BTM_acl_after_controller_started();
-  friend void BTM_default_block_role_switch();
-  friend void BTM_default_unblock_role_switch();
   friend void acl_initialize_power_mode(const tACL_CONN& p_acl);
   friend void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
   friend void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
@@ -396,7 +408,6 @@ struct sACL_CB {
   friend void btm_acl_device_down(void);
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
-  friend void btm_acl_init(void);
   friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
   friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
                                       uint16_t hci_handle, tHCI_MODE mode,

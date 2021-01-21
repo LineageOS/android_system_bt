@@ -66,15 +66,13 @@ class TimestampedStringCircularBuffer
 };
 
 /*
- * Define device configuration structure
-*/
+ * Local device configuration
+ */
 typedef struct {
   tBTM_LOC_BD_NAME bd_name;  /* local Bluetooth device name */
   bool pin_type;             /* true if PIN type is fixed */
   uint8_t pin_code_len;      /* Bonding information */
   PIN_CODE pin_code;         /* PIN CODE if pin type is fixed */
-  bool connectable;          /* If true page scan should be enabled */
-  uint8_t def_inq_scan_mode; /* ??? limited/general/none */
 } tBTM_CFG;
 
 /* Pairing State */
@@ -190,6 +188,26 @@ typedef struct {
 
   tBTM_IO_CAP loc_io_caps;    /* IO capability of the local device */
   tBTM_AUTH_REQ loc_auth_req; /* the auth_req flag  */
+
+  void Init() {
+    read_local_name_timer = alarm_new("btm.read_local_name_timer");
+    read_rssi_timer = alarm_new("btm.read_rssi_timer");
+    read_failed_contact_counter_timer =
+        alarm_new("btm.read_failed_contact_counter_timer");
+    read_automatic_flush_timeout_timer =
+        alarm_new("btm.read_automatic_flush_timeout_timer");
+    read_link_quality_timer = alarm_new("btm.read_link_quality_timer");
+    read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
+  }
+
+  void Free() {
+    alarm_free(read_local_name_timer);
+    alarm_free(read_rssi_timer);
+    alarm_free(read_failed_contact_counter_timer);
+    alarm_free(read_automatic_flush_timeout_timer);
+    alarm_free(read_link_quality_timer);
+    alarm_free(read_tx_power_timer);
+  }
 } tBTM_DEVCB;
 
 typedef struct {
@@ -325,9 +343,24 @@ typedef struct {
     security_mode = initial_security_mode;
     pairing_bda = RawAddress::kAny;
     sec_dev_rec = list_new(osi_free);
+
+    /* Initialize BTM component structures */
+    btm_inq_vars.Init(); /* Inquiry Database and Structures */
+    acl_cb_.Init();      /* ACL Database and Structures */
+    sco_cb.Init();       /* SCO Database and Structures (If included) */
+    devcb.Init();
+
+    history_ = std::make_shared<TimestampedStringCircularBuffer>(40);
+    CHECK(history_ != nullptr);
+    history_->Push(std::string("Initialized btm history"));
   }
 
   void Free() {
+    history_.reset();
+
+    devcb.Free();
+    btm_inq_vars.Free();
+
     fixed_queue_free(page_queue, nullptr);
     page_queue = nullptr;
 

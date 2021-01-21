@@ -565,3 +565,7 @@ std::vector<const ParentDef*> ParentDef::FindPathToDescendant(std::string descen
   }
   return res;
 }
+
+bool ParentDef::HasChildEnums() const {
+  return !children_.empty() || fields_.HasPayload();
+}

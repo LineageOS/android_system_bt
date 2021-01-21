@@ -38,7 +38,6 @@ struct btm_client_interface_s btm_client_interface = {
             .btm_free = btm_free,
             .btm_ble_init = btm_ble_init,
             .btm_ble_free = btm_ble_free,
-            .BTM_db_reset = BTM_db_reset,
             .BTM_reset_complete = BTM_reset_complete,
         },
 

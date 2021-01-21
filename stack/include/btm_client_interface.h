@@ -42,7 +42,6 @@ struct btm_client_interface_s {
     void (*btm_free)();
     void (*btm_ble_init)();
     void (*btm_ble_free)();
-    void (*BTM_db_reset)();
     void (*BTM_reset_complete)();
   } lifecycle;
 

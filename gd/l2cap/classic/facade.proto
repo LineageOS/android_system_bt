@@ -22,6 +22,26 @@ service L2capClassicModuleFacade {
     // Get the buffer size of channel queue end for L2CAP user (how many packets we can buffer
     // before L2CAP user dequeues.
   }
+  rpc InitiateConnectionForSecurity(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
+  rpc FetchSecurityConnectionEvents(google.protobuf.Empty) returns (stream LinkSecurityInterfaceCallbackEvent) {}
+  rpc SecurityLinkEnsureAuthenticated(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
+  rpc SecurityLinkHold(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
+  rpc SecurityLinkDisconnect(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
+  rpc SecurityLinkRelease(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
+}
+
+enum LinkSecurityInterfaceCallbackEventType {
+  ON_CONNECTED = 0;
+  ON_DISCONNECTED = 1;
+  ON_AUTHENTICATION_COMPLETE = 2;
+  ON_ENCRYPTION_CHANGE = 3;
+  ON_READ_REMOTE_VERSION_INFO = 4;
+  ON_READ_REMOTE_EXTENDED_FEATURES = 5;
+}
+
+message LinkSecurityInterfaceCallbackEvent {
+  facade.BluetoothAddress address = 1;
+  LinkSecurityInterfaceCallbackEventType event_type = 2;
 }
 
 message RegisterChannelRequest {

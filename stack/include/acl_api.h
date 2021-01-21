@@ -39,7 +39,7 @@ void BTM_block_role_switch_for(const RawAddress& peer_addr);
 void BTM_default_unblock_role_switch();
 void BTM_default_block_role_switch();
 
-void BTM_acl_after_controller_started();
+void BTM_acl_after_controller_started(const controller_t* controller);
 
 /*******************************************************************************
  *
@@ -214,9 +214,6 @@ void btm_set_packet_types_from_address(const RawAddress& bda,
                                        tBT_TRANSPORT transport,
                                        uint16_t pkt_types);
 
-bool acl_br_edr_is_role_central(const RawAddress& bda);
-bool acl_ble_is_role_central(const RawAddress& bda);
-
 #define BLE_RESOLVE_ADDR_MASK 0xc0
 #define BLE_RESOLVE_ADDR_MSB 0x40
 
@@ -273,14 +270,12 @@ bool BTM_IsBleConnection(uint16_t hci_handle);
 const RawAddress acl_address_from_handle(uint16_t hci_handle);
 tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
 int btm_pm_find_acl_ind(const RawAddress& remote_bda);
-bool btm_pm_is_le_link(const RawAddress& remote_bda);
 
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
 
 void btm_cont_rswitch_from_handle(uint16_t hci_handle);
 
-uint8_t acl_link_role(const RawAddress& remote_bda, tBT_TRANSPORT transport);
 uint8_t acl_link_role_from_handle(uint16_t handle);
 
 tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle);
