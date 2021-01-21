@@ -140,6 +140,8 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
     return &link_options_;
   }
 
+  void ReadRemoteVersionInformation();
+
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};

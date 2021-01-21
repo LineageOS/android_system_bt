@@ -138,6 +138,8 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
 
   // Remove device from pending links list, if any
   pending_links_.erase(connecting_address_with_type);
+
+  link->ReadRemoteVersionInformation();
 }
 
 void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) {
@@ -183,6 +185,19 @@ void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type
 void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
   link_property_callback_handler_ = handler;
   link_property_listener_ = listener;
+}
+
+void LinkManager::OnReadRemoteVersionInformationComplete(
+    hci::AddressWithType address_with_type, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnReadRemoteVersionInformation,
+        address_with_type,
+        lmp_version,
+        manufacturer_name,
+        sub_version);
+  }
 }
 
 }  // namespace internal
