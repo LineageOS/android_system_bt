@@ -271,7 +271,6 @@ tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle);
 uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
                                      tBT_TRANSPORT transport);
 
-tHCI_STATUS acl_get_disconnect_reason();
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
 
 bool acl_is_role_switch_allowed();
