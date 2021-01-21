@@ -32,7 +32,7 @@ extern void btm_sco_chk_pend_unpark(tHCI_STATUS hci_status,
                                     uint16_t hci_handle);
 extern void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
                              uint8_t link_type);
-extern void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
+extern void btm_sco_connected(uint8_t hci_status, const RawAddress& bda,
                               uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data);
 extern bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason);
 

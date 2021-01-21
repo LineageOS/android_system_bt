@@ -962,7 +962,7 @@ static void btu_hcif_connection_comp_evt(uint8_t* p, uint8_t evt_len) {
     memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
     /* esco_data.link_type = HCI_LINK_TYPE_SCO; already zero */
     esco_data.bd_addr = bda;
-    btm_sco_connected(status, &bda, handle, &esco_data);
+    btm_sco_connected(status, bda, handle, &esco_data);
   }
 }
 
@@ -1178,7 +1178,7 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
   handle = HCID_GET_HANDLE(handle);
 
   data.bd_addr = bda;
-  btm_sco_connected(status, &bda, handle, &data);
+  btm_sco_connected(status, bda, handle, &data);
 }
 
 /*******************************************************************************
@@ -1437,8 +1437,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
         // Determine if initial connection failed or is a change of setup
         if (btm_is_sco_active(handle)) {
           btm_esco_proc_conn_chg(status, handle, 0, 0, 0, 0);
-        } else {
-          btm_sco_connected(status, nullptr, handle, nullptr);
         }
       }
       break;
