@@ -683,7 +683,7 @@ void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_connected(uint8_t hci_status, const RawAddress& bda,
+void btm_sco_connected(tHCI_STATUS hci_status, const RawAddress& bda,
                        uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
