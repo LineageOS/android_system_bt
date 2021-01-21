@@ -207,6 +207,10 @@ bool bluetooth::shim::L2CA_ReadRemoteVersion(const RawAddress& addr,
   mock_function_count_map[__func__]++;
   return false;
 }
+uint8_t* bluetooth::shim::L2CA_ReadRemoteFeatures(const RawAddress& remote) {
+  mock_function_count_map[__func__]++;
+  return 0;
+}
 void bluetooth::shim::L2CA_DisconnectLink(const RawAddress& remote) {
   mock_function_count_map[__func__]++;
 }
