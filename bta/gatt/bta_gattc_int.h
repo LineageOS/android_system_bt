@@ -161,6 +161,8 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;
   uint16_t mtu;
+  GATT_CONFIGURE_MTU_OP_CB mtu_cb;
+  void* mtu_cb_data;
 } tBTA_GATTC_API_CFG_MTU;
 
 typedef struct {

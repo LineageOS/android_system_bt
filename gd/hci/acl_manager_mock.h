@@ -59,6 +59,7 @@ class MockLeAclConnection : public LeAclConnection {
   MOCK_METHOD(AddressWithType, GetRemoteAddress, (), (const, override));
   MOCK_METHOD(void, Disconnect, (DisconnectReason reason), (override));
   MOCK_METHOD(void, RegisterCallbacks, (LeConnectionManagementCallbacks * callbacks, os::Handler* handler), (override));
+  MOCK_METHOD(bool, ReadRemoteVersionInformation, (), (override));
 
   QueueUpEnd* GetAclQueueEnd() const override {
     return acl_queue_.GetUpEnd();

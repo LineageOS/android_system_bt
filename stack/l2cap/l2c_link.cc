@@ -45,8 +45,6 @@ extern tBTM_CB btm_cb;
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 bool btm_dev_support_role_switch(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason);
-tHCI_STATUS acl_get_disconnect_reason();
-uint16_t acl_get_link_supervision_timeout();
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                      uint8_t link_role, tBT_TRANSPORT transport);
 void btm_acl_removed(uint16_t handle);
@@ -341,13 +339,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
   if (!p_lcb) {
     status = false;
   } else {
-    /* There can be a case when we rejected PIN code authentication */
-    /* otherwise save a new reason */
-    if (acl_get_disconnect_reason() != HCI_ERR_HOST_REJECT_SECURITY) {
-      acl_set_disconnect_reason(static_cast<tHCI_STATUS>(reason));
-    }
-
-    p_lcb->SetDisconnectReason(acl_get_disconnect_reason());
+    p_lcb->SetDisconnectReason(reason);
 
     /* Just in case app decides to try again in the callback context */
     p_lcb->link_state = LST_DISCONNECTING;
@@ -514,8 +506,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
         /* BTM is still executing security process. Let lcb stay as connected */
         start_timeout = false;
       } else if (p_lcb->IsBonding()) {
-        acl_disconnect(p_lcb->remote_bd_addr, p_lcb->transport,
-                       HCI_ERR_PEER_USER);
+        acl_disconnect_from_handle(p_lcb->Handle(), HCI_ERR_PEER_USER);
         l2cu_process_fixed_disc_cback(p_lcb);
         p_lcb->link_state = LST_DISCONNECTING;
         timeout_ms = L2CAP_LINK_DISCONNECT_TIMEOUT_MS;

@@ -108,7 +108,6 @@ static void btm_sco_flush_sco_data(UNUSED_ATTR uint16_t sco_inx) {}
  ******************************************************************************/
 void btm_sco_init(void) {
   /* Initialize nonzero defaults */
-  btm_cb.sco_cb.sco_disc_reason = BTM_INVALID_SCO_DISC_REASON;
   btm_cb.sco_cb.def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD);
   btm_cb.sco_cb.def_esco_parms.max_latency_ms = 12;
   btm_cb.sco_cb.sco_route = ESCO_DATA_PATH_PCM;
@@ -691,13 +690,6 @@ void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
   bool spt = false;
   tBTM_CHG_ESCO_PARAMS parms = {};
 
-  btm_cb.sco_cb.sco_disc_reason = hci_status;
-
-  if (bda == nullptr) {
-    LOG_ERROR("Received null pointer for remote address");
-    return;
-  }
-
   for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if (((p->state == SCO_ST_CONNECTING) || (p->state == SCO_ST_LISTENING) ||
          (p->state == SCO_ST_W4_CONN_RSP)) &&
@@ -858,7 +850,6 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
       p->hci_handle = HCI_INVALID_HANDLE;
       p->rem_bd_known = false;
       p->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
-      btm_cb.sco_cb.sco_disc_reason = reason;
       (*p->p_disc_cb)(xx);
       LOG_DEBUG("Disconnected SCO link handle:%hu reason:%s", hci_handle,
                 hci_reason_code_text(reason).c_str());
@@ -891,7 +882,6 @@ void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
   p_sco->hci_handle = HCI_INVALID_HANDLE;
   p_sco->rem_bd_known = false;
   p_sco->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
-  btm_cb.sco_cb.sco_disc_reason = reason;
   (*p_sco->p_disc_cb)(btm_cb.sco_cb.get_index(p_sco));
   LOG_DEBUG("Disconnected SCO link handle:%hu reason:%s", hci_handle,
             hci_reason_code_text(reason).c_str());

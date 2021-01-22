@@ -95,7 +95,6 @@ struct btm_client_interface_s btm_client_interface = {
         {
             .BTM_GetLinkSuperTout = BTM_GetLinkSuperTout,
             .BTM_ReadRSSI = BTM_ReadRSSI,
-            .BTM_SetDefaultLinkSuperTout = BTM_SetDefaultLinkSuperTout,
         },
 
     .security =

@@ -90,9 +90,14 @@ void Link::OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_
 void Link::OnReadRemoteVersionInformationComplete(
     uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
   LOG_INFO("lmp_version:%hhu manufacturer_name:%hu sub_version:%hu", lmp_version, manufacturer_name, sub_version);
+  link_manager_->OnReadRemoteVersionInformationComplete(GetDevice(), lmp_version, manufacturer_name, sub_version);
 }
 
 void Link::OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) {}
+
+void Link::OnLocalAddressUpdate(hci::AddressWithType address_with_type) {
+  acl_connection_->UpdateLocalAddress(address_with_type);
+}
 
 void Link::Disconnect() {
   acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
@@ -267,6 +272,10 @@ uint16_t Link::GetInitialCredit() const {
 
 void Link::SendLeCredit(Cid local_cid, uint16_t credit) {
   signalling_manager_.SendCredit(local_cid, credit);
+}
+
+void Link::ReadRemoteVersionInformation() {
+  acl_connection_->ReadRemoteVersionInformation();
 }
 
 void Link::on_connection_update_complete(SignalId signal_id, hci::ErrorCode error_code) {

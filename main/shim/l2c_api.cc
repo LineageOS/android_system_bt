@@ -334,6 +334,7 @@ struct RemoteFeature {
   uint8_t lmp_version = 0;
   uint16_t manufacturer_name = 0;
   uint16_t sub_version = 0;
+  uint8_t raw_remote_features[8];
   bool version_info_received = false;
   bool role_switch_supported = false;
   bool ssp_supported = false;
@@ -375,6 +376,7 @@ struct LinkPropertyListenerShim
     if (page_number == 0) {
       entry.received_page_0 = true;
       if (features & 0x20) entry.role_switch_supported = true;
+      std::memcpy(entry.raw_remote_features, &features, 8);
     }
     if (page_number == 1) {
       entry.received_page_1 = true;
@@ -606,10 +608,18 @@ bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
   if (!entry.version_info_received) {
     return false;
   }
-  *lmp_version = entry.lmp_version;
-  *manufacturer = entry.manufacturer_name;
-  *lmp_sub_version = entry.sub_version;
+  if (lmp_version != nullptr) *lmp_version = entry.lmp_version;
+  if (manufacturer != nullptr) *manufacturer = entry.manufacturer_name;
+  if (lmp_sub_version != nullptr) *lmp_sub_version = entry.sub_version;
   return true;
+}
+
+uint8_t* L2CA_ReadRemoteFeatures(const RawAddress& addr) {
+  auto& entry = remote_feature_map_[addr];
+  if (!entry.received_page_0) {
+    return nullptr;
+  }
+  return entry.raw_remote_features;
 }
 
 static void on_sco_disconnect(uint16_t handle, uint8_t reason) {

@@ -128,7 +128,6 @@ static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
-static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
@@ -1110,21 +1109,6 @@ void btm_establish_continue_from_address(const RawAddress& bda,
 
 /*******************************************************************************
  *
- * Function         BTM_SetDefaultLinkSuperTout
- *
- * Description      Set the default value for HCI "Write Link Supervision
- *                                                 Timeout"
- *                  command to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkSuperTout(uint16_t timeout) {
-  btm_cb.acl_cb_.btm_def_link_super_tout = timeout;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_GetLinkSuperTout
  *
  * Description      Read the link supervision timeout value of the connection
@@ -1425,11 +1409,8 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
     if (new_role == HCI_ROLE_CENTRAL) {
-      uint16_t supervisor_timeout =
-          (p_acl->link_super_tout == 0)  // uninitialized
-              ? (btm_cb.acl_cb_.DefaultSupervisorTimeout())
-              : (p_acl->link_super_tout);
-      hci_btm_set_link_supervision_timeout(*p_acl, supervisor_timeout);
+      constexpr uint16_t link_supervision_timeout = 8000;
+      BTM_SetLinkSuperTout(bd_addr, link_supervision_timeout);
     }
   } else {
     new_role = p_acl->link_role;
@@ -1625,6 +1606,9 @@ bool BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
  *
  ******************************************************************************/
 uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_ReadRemoteFeatures(addr);
+  }
   tACL_CONN* p = internal_.btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
   if (p == NULL) {
     LOG_WARN("Unable to find active acl");
@@ -1716,45 +1700,6 @@ tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda,
 
   /* If here, no BD Addr found */
   return (BTM_UNKNOWN_ADDR);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_ReadAutomaticFlushTimeout
- *
- * Description      This function is called to read the automatic flush timeout.
- *                  The result is returned in the callback.
- *                  (tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT)
- *
- * Returns          BTM_CMD_STARTED if successfully initiated or error code
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadAutomaticFlushTimeout(const RawAddress& remote_bda,
-                                          tBTM_CMPL_CB* p_cb) {
-  tACL_CONN* p;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
-
-  /* If someone already waiting on the result, do not allow another */
-  if (btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb) return (BTM_BUSY);
-
-  BTM_ReadDevInfo(remote_bda, &dev_type, &addr_type);
-  if (dev_type == BT_DEVICE_TYPE_BLE) transport = BT_TRANSPORT_LE;
-
-  p = internal_.btm_bda_to_acl(remote_bda, transport);
-  if (!p) {
-    LOG_WARN("Unable to find active acl");
-    return BTM_UNKNOWN_ADDR;
-  }
-
-  btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = p_cb;
-  alarm_set_on_mloop(btm_cb.devcb.read_automatic_flush_timeout_timer,
-                     BTM_DEV_REPLY_TIMEOUT_MS,
-                     btm_read_automatic_flush_timeout_timeout, nullptr);
-
-  btsnd_hcic_read_automatic_flush_timeout(p->hci_handle);
-  return BTM_CMD_STARTED;
 }
 
 /*******************************************************************************
@@ -1985,23 +1930,6 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
 
     (*p_cb)(&result);
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_read_automatic_flush_timeout_timeout
- *
- * Description      Callback when reading the automatic flush timeout times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_automatic_flush_timeout_timeout(UNUSED_ATTR void* data) {
-  tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT result;
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb;
-  btm_cb.devcb.p_automatic_flush_timeout_cmpl_cb = nullptr;
-  result.status = BTM_DEVICE_TIMEOUT;
-  if (p_cb) (*p_cb)(&result);
 }
 
 /*******************************************************************************
@@ -2582,24 +2510,6 @@ uint8_t acl_link_role_from_handle(uint16_t handle) {
   return p_acl->link_role;
 }
 
-tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle) {
-  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
-  if (p_acl == nullptr) {
-    return BT_TRANSPORT_INVALID;
-  }
-  return p_acl->transport;
-}
-
-uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
-                                     tBT_TRANSPORT transport) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return HCI_INVALID_HANDLE;
-  }
-  return p_acl->hci_handle;
-}
-
 bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
   if (p_acl == nullptr) {
@@ -2640,14 +2550,6 @@ bool acl_peer_supports_ble_coded_phy(uint16_t hci_handle) {
   return HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features);
 }
 
-uint16_t acl_get_link_supervision_timeout() {
-  return btm_cb.acl_cb_.btm_def_link_super_tout;
-}
-
-tHCI_STATUS acl_get_disconnect_reason() {
-  return btm_cb.acl_cb_.get_disconnect_reason();
-}
-
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason) {
   btm_cb.acl_cb_.set_disconnect_reason(acl_disc_reason);
 }
@@ -2678,7 +2580,8 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
   btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
-  BTM_SetLinkSuperTout(bda, acl_get_link_supervision_timeout());
+  constexpr uint16_t link_supervision_timeout = 8000;
+  BTM_SetLinkSuperTout(bda, link_supervision_timeout);
 
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
   if (p_acl == nullptr) {
@@ -2721,6 +2624,12 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
   if (status != HCI_SUCCESS) {
     LOG_WARN("Received disconnect with error:%s",
              hci_error_code_text(status).c_str());
+  }
+
+  /* There can be a case when we rejected PIN code authentication */
+  /* otherwise save a new reason */
+  if (btm_get_acl_disc_reason_code() != HCI_ERR_HOST_REJECT_SECURITY) {
+    acl_set_disconnect_reason(static_cast<tHCI_STATUS>(reason));
   }
 
   /* If L2CAP or SCO doesn't know about it, send it to ISO */
@@ -2786,16 +2695,6 @@ void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role) {
 
 void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
   btsnd_hcic_reject_conn(bd_addr, reason);
-}
-
-void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                    tHCI_STATUS reason) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find active acl");
-    return;
-  }
-  hci_btsnd_hcic_disconnect(*p_acl, reason);
 }
 
 void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason) {

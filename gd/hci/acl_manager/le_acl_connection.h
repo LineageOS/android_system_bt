@@ -42,8 +42,8 @@ class LeAclConnection : public AclConnection {
     return local_address_;
   }
 
-  virtual void SetLocalAddress(AddressWithType local_address) {
-    local_address_ = local_address;
+  virtual void UpdateLocalAddress(AddressWithType address) {
+    local_address_ = address;
   }
 
   virtual AddressWithType GetRemoteAddress() const {

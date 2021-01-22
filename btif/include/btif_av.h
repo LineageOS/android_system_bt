@@ -216,4 +216,11 @@ bool btif_av_is_a2dp_offload_running(void);
  */
 bool btif_av_is_peer_silenced(const RawAddress& peer_address);
 
+/**
+ * Set the dynamic audio buffer size
+ *
+ * @param dynamic_audio_buffer_size to set
+ */
+void btif_av_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size);
+
 #endif /* BTIF_AV_H */

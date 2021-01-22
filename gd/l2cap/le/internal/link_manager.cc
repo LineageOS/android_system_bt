@@ -138,6 +138,8 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
 
   // Remove device from pending links list, if any
   pending_links_.erase(connecting_address_with_type);
+
+  link->ReadRemoteVersionInformation();
 }
 
 void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) {
@@ -158,16 +160,6 @@ void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::E
   pending_links_.erase(pending_link);
 }
 
-void LinkManager::OnAdvertisingSetTerminated(
-    bluetooth::hci::ErrorCode status, uint16_t connection_handle, hci::AddressWithType advertiser_address) {
-  for (auto& [address, link] : links_) {
-    if (link.GetAclConnection()->GetHandle() == connection_handle) {
-      link.GetAclConnection()->SetLocalAddress(advertiser_address);
-      return;
-    }
-  }
-}
-
 void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type) {
   auto* link = GetLink(address_with_type);
   ASSERT_LOG(link != nullptr, "Device %s is disconnected but not in local database",
@@ -183,6 +175,19 @@ void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type
 void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
   link_property_callback_handler_ = handler;
   link_property_listener_ = listener;
+}
+
+void LinkManager::OnReadRemoteVersionInformationComplete(
+    hci::AddressWithType address_with_type, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnReadRemoteVersionInformation,
+        address_with_type,
+        lmp_version,
+        manufacturer_name,
+        sub_version);
+  }
 }
 
 }  // namespace internal
