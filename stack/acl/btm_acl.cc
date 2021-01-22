@@ -342,23 +342,6 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   p_acl->sca = sca;
 }
 
-/*******************************************************************************
- *
- * Function         btm_acl_created
- *
- * Description      This function is called by L2CAP when an ACL connection
- *                  is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void acl_initialize_power_mode(const tACL_CONN& p_acl) {
-  tBTM_PM_MCB* p_db =
-      &btm_cb.acl_cb_.pm_mode_db[btm_handle_to_acl_index(p_acl.hci_handle)];
-  memset(p_db, 0, sizeof(tBTM_PM_MCB));
-  p_db->Init();
-}
-
 tACL_CONN* StackAclBtmAcl::acl_allocate_connection() {
   tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[0];
   for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_acl++) {
@@ -401,7 +384,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   p_acl->transport = transport;
   p_acl->switch_role_failed_attempts = 0;
   p_acl->reset_switch_role();
-  acl_initialize_power_mode(*p_acl);
+  BTM_PM_OnConnected(hci_handle, bda);
 
   LOG_DEBUG(
       "Created new ACL connection peer:%s role:%s handle:0x%04x transport:%s",
@@ -465,6 +448,7 @@ void btm_acl_removed(uint16_t handle) {
   p_acl->in_use = false;
   NotifyAclLinkDown(*p_acl);
   p_acl->Reset();
+  BTM_PM_OnDisconnected(handle);
 }
 
 /*******************************************************************************
@@ -2379,35 +2363,6 @@ const RawAddress acl_address_from_handle(uint16_t handle) {
     return RawAddress::kEmpty;
   }
   return p_acl->remote_addr;
-}
-
-tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {
-  uint8_t index = btm_handle_to_acl_index(hci_handle);
-  if (index >= MAX_L2CAP_LINKS) {
-    return nullptr;
-  }
-  return &btm_cb.acl_cb_.pm_mode_db[index];
-}
-
-/*******************************************************************************
- *
- * Function         btm_pm_find_acl_ind
- *
- * Description      This function initializes the control block of an ACL link.
- *                  It is called when an ACL connection is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
-  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
-  uint8_t xx;
-
-  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if (p->in_use && p->remote_addr == remote_bda && p->is_transport_br_edr())
-      break;
-  }
-  return xx;
 }
 
 /*******************************************************************************
