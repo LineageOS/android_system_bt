@@ -399,7 +399,6 @@ struct sACL_CB {
   friend uint16_t BTM_GetNumAclLinks(void);
   friend uint16_t acl_get_supported_packet_types();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
-  friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
   friend void acl_initialize_power_mode(const tACL_CONN& p_acl);
   friend void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
   friend void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
