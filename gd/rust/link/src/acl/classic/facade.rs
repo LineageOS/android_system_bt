@@ -1,6 +1,6 @@
 //! Classic ACL facade
 
-use crate::classic::AclManager;
+use crate::acl::classic::AclManager;
 
 module! {
     facade_module,
@@ -19,11 +19,21 @@ pub struct ClassicAclFacadeService {
 }
 
 impl AclManagerFacade for ClassicAclFacadeService {
-    fn create_connection(&mut self, _ctx: RpcContext<'_>, mut _data: ConnectionMsg, _sink: ServerStreamingSink<ConnectionEvent>) {
+    fn create_connection(
+        &mut self,
+        _ctx: RpcContext<'_>,
+        mut _data: ConnectionMsg,
+        _sink: ServerStreamingSink<ConnectionEvent>,
+    ) {
         unimplemented!();
     }
 
-    fn cancel_connection(&mut self, _ctx: RpcContext<'_>, mut _data: ConnectionMsg, _sink: UnarySink<Empty>) {
+    fn cancel_connection(
+        &mut self,
+        _ctx: RpcContext<'_>,
+        mut _data: ConnectionMsg,
+        _sink: UnarySink<Empty>,
+    ) {
         unimplemented!();
     }
 
@@ -35,11 +45,21 @@ impl AclManagerFacade for ClassicAclFacadeService {
         unimplemented!();
     }
 
-    fn authentication_requested(&mut self, _ctx: RpcContext<'_>, mut _data: HandleMsg, _sink: UnarySink<Empty>) {
+    fn authentication_requested(
+        &mut self,
+        _ctx: RpcContext<'_>,
+        mut _data: HandleMsg,
+        _sink: UnarySink<Empty>,
+    ) {
         unimplemented!();
     }
 
-    fn connection_command(&mut self, _ctx: RpcContext<'_>, mut _data: ConnectionCommandMsg, _sink: UnarySink<Empty>) {
+    fn connection_command(
+        &mut self,
+        _ctx: RpcContext<'_>,
+        mut _data: ConnectionCommandMsg,
+        _sink: UnarySink<Empty>,
+    ) {
         unimplemented!();
     }
 
@@ -51,12 +71,21 @@ impl AclManagerFacade for ClassicAclFacadeService {
         unimplemented!();
     }
 
-    fn fetch_acl_data(&mut self, _ctx: RpcContext<'_>, mut _data: HandleMsg, _sink: ServerStreamingSink<AclData>) {
+    fn fetch_acl_data(
+        &mut self,
+        _ctx: RpcContext<'_>,
+        mut _data: HandleMsg,
+        _sink: ServerStreamingSink<AclData>,
+    ) {
         unimplemented!();
     }
 
-    fn fetch_incoming_connection(&mut self, _ctx: RpcContext<'_>, mut _data: Empty, _sink: ServerStreamingSink<ConnectionEvent>) {
+    fn fetch_incoming_connection(
+        &mut self,
+        _ctx: RpcContext<'_>,
+        mut _data: Empty,
+        _sink: ServerStreamingSink<ConnectionEvent>,
+    ) {
         unimplemented!();
     }
 }
-
