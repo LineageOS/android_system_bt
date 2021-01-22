@@ -103,6 +103,7 @@ void Stack::StartEverything() {
   if (common::init_flags::gd_l2cap_is_enabled()) {
     modules.add<l2cap::classic::L2capClassicModule>();
     modules.add<l2cap::le::L2capLeModule>();
+    modules.add<hci::LeAdvertisingManager>();
   }
   if (common::init_flags::gd_security_is_enabled()) {
     modules.add<security::SecurityModule>();

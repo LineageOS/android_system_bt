@@ -663,23 +663,6 @@ void L2CA_UseLegacySecurityModule() {
   GetL2capLeModule()->InjectSecurityEnforcementInterface(
       &le_security_enforcement_shim_);
 
-  // TODO(b/161543441): read the privacy policy from device-specific
-  // configuration, and IRK from config file.
-  hci::LeAddressManager::AddressPolicy address_policy =
-      hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
-  hci::AddressWithType empty_address_with_type(
-      hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-  crypto_toolbox::Octet16 rotation_irk = {0x44, 0xfb, 0x4b, 0x8d, 0x6c, 0x58,
-                                          0x21, 0x0c, 0xf9, 0x3d, 0xda, 0xf1,
-                                          0x64, 0xa3, 0xbb, 0x7f};
-  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
-  auto minimum_rotation_time = std::chrono::minutes(7);
-  auto maximum_rotation_time = std::chrono::minutes(15);
-
-  GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
-      address_policy, empty_address_with_type, rotation_irk,
-      minimum_rotation_time, maximum_rotation_time);
-
   GetAclManager()->HACK_SetScoDisconnectCallback(on_sco_disconnect);
 }
 
