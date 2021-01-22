@@ -94,7 +94,11 @@ fluoride_defaults {
 fluoride_defaults {
     name: "fluoride_defaults",
     defaults: ["fluoride_defaults_fuzzable", "fluoride_types_defaults"],
-    shared_libs: ["libstatslog"],
+    shared_libs: [
+        "libgrpc++",
+        "libgrpc_wrap",
+        "libstatslog"
+    ],
     sanitize: {
         misc_undefined: ["bounds"],
     },
