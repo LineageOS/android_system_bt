@@ -17,20 +17,14 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
+#include <cstdio>
 
-#include "bt_utils.h"
-#include "bta_api.h"
-#include "bta_hf_client_api.h"
-#include "bta_hf_client_int.h"
-#include "bta_sys.h"
-#include "osi/include/osi.h"
-#include "osi/include/properties.h"
+#include "bta/hf_client/bta_hf_client_int.h"
+#include "bta/include/utl.h"
+#include "osi/include/allocator.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/btm_api.h"
-#include "utl.h"
 
 static const char* bta_hf_client_evt_str(uint16_t event);
 static const char* bta_hf_client_state_str(uint8_t state);

@@ -24,23 +24,21 @@
 
 #define LOG_TAG "bluetooth"
 
-#include "bt_target.h"
+#include <cstdint>
 
+// PAN_INCLUDED
+#include "bt_target.h"  // Must be first to define build configuration
 #if (PAN_INCLUDED == TRUE)
 
-#include <string.h>
-
-#include <log/log.h>
-
-#include "bt_common.h"
-#include "bta_api.h"
-#include "bta_pan_api.h"
-#include "bta_pan_co.h"
-#include "bta_pan_int.h"
-#include "bta_sys.h"
-#include "osi/include/osi.h"
-#include "pan_api.h"
-#include "utl.h"
+#include "bta/include/bta_pan_co.h"
+#include "bta/pan/bta_pan_int.h"
+#include "log/log.h"  // android_errorWriteLog
+#include "osi/include/allocator.h"
+#include "osi/include/fixed_queue.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "stack/include/bt_types.h"
+#include "stack/include/pan_api.h"
+#include "types/raw_address.h"
 
 /* RX and TX data flow mask */
 #define BTA_PAN_RX_MASK 0x0F

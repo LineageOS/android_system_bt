@@ -16,13 +16,19 @@
  *
  ******************************************************************************/
 
-#include "database_builder.h"
-
-#include "bt_trace.h"
-#include "stack/include/gattdefs.h"
-
-#include <base/logging.h>
 #include <algorithm>
+#include <cstdint>
+#include <list>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/gatt/database.h"
+#include "bta/gatt/database_builder.h"
+#include "stack/include/gattdefs.h"
+#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 

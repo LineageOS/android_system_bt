@@ -21,21 +21,14 @@
  *  This file contains the PAN main functions and state machine.
  *
  ******************************************************************************/
+#include <cstdint>
 
-#include "bt_target.h"
+#include "bt_target.h"  // Must be first to define build configuration
 
 #if (BTA_PAN_INCLUDED == TRUE)
 
-#include <string.h>
-
-#include "bt_common.h"
-#include "bta_api.h"
-#include "bta_pan_api.h"
-#include "bta_pan_int.h"
-#include "bta_sys.h"
-#include "osi/include/osi.h"
-#include "pan_api.h"
-#include "utl.h"
+#include "bta/pan/bta_pan_int.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 
 /*****************************************************************************
  * Constants and types

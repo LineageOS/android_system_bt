@@ -25,22 +25,18 @@
 #define LOG_TAG "bt_bta_sys_main"
 
 #include <base/bind.h>
-#include <base/logging.h>
-#include <string.h>
+#include <cstring>
 
-#include "bt_common.h"
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "bta_sys_int.h"
-#include "btm_api.h"
-#include "btu.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/sys/bta_sys.h"
+#include "bta/sys/bta_sys_int.h"
+#include "include/hardware/bluetooth.h"
 #include "osi/include/alarm.h"
-#include "osi/include/fixed_queue.h"
+#include "osi/include/allocator.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "stack/include/acl_client_callbacks.h"
-#include "stack/include/btm_client_interface.h"
-#include "utl.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btu.h"  // do_in_main_thread
 
 void BTIF_dm_on_hw_error();
 

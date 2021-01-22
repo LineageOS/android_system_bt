@@ -24,21 +24,17 @@
 
 #define LOG_TAG "bt_bta_hh"
 
-#include "bta_hh_api.h"
+#include <cstdint>
 
-#include "bt_target.h"
-
+// BTA_HH_INCLUDED
+#include "bt_target.h"  // Must be first to define build configuration
 #if (BTA_HH_INCLUDED == TRUE)
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "bta_hh_int.h"
-#include "l2c_api.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "utl.h"
+#include "bta/hh/bta_hh_int.h"
+#include "bta/sys/bta_sys.h"
+#include "osi/include/allocator.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

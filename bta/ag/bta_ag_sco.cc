@@ -22,21 +22,22 @@
  *
  ******************************************************************************/
 
-#include <cstddef>
+#include <base/bind.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bta_ag_api.h"
-#include "bta_ag_int.h"
-#include "bta_api.h"
-#include "btm_api.h"
+#include "bt_target.h"  // Must be first to define build configuration
+#include "bt_trace.h"   // Legacy trace logging
+
+#include "bta/ag/bta_ag_int.h"
 #include "device/include/controller.h"
 #include "device/include/esco_parameters.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/btm/btm_sco.h"
-#include "stack/include/btu.h"
-#include "utl.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btu.h"  // do_in_main_thread
+#include "types/raw_address.h"
 
 /* Codec negotiation timeout */
 #ifndef BTA_AG_CODEC_NEGOTIATION_TIMEOUT_MS

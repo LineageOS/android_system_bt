@@ -22,20 +22,15 @@
  *  Broadcom's Bluetooth application layer for mobile phones.
  *
  ******************************************************************************/
-#include <string.h>
 
-#include "bt_target.h"
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bt_utils.h"
-#include "bta_api.h"
-#include "bta_pan_api.h"
-#include "bta_pan_int.h"
-#include "bta_sys.h"
-#include "osi/include/osi.h"
-#include "pan_api.h"
-
+#include "bt_target.h"  // Must be first to define build configuration
 #if (BTA_PAN_INCLUDED == TRUE)
+
+#include "bta/pan/bta_pan_int.h"
+#include "osi/include/allocator.h"
+#include "types/raw_address.h"
 
 static const tBTA_SYS_REG bta_pan_reg = {bta_pan_hdl_event, BTA_PanDisable};
 

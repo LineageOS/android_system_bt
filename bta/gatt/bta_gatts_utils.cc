@@ -22,14 +22,11 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include <cstdint>
 
-#include <string.h>
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "bt_common.h"
-#include "bta_gatts_int.h"
-#include "bta_sys.h"
-#include "utl.h"
+#include "bta/gatt/bta_gatts_int.h"
 
 /*******************************************************************************
  *
