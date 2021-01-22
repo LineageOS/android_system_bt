@@ -29,6 +29,14 @@
 #include "gd/hci/le_scanning_manager.h"
 #include "main/shim/entry.h"
 
+#include "stack/btm/btm_int_types.h"
+
+extern void btm_ble_process_adv_pkt_cont_for_inquiry(
+    uint16_t event_type, uint8_t address_type, const RawAddress& raw_address,
+    uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
+    int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int,
+    std::vector<uint8_t> advertising_data);
+
 class BleScannerInterfaceImpl : public BleScannerInterface,
                                 public bluetooth::hci::ScanningCallback {
  public:
@@ -209,6 +217,12 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                        address_type, raw_address, primary_phy, secondary_phy,
                        advertising_sid, tx_power, rssi,
                        periodic_advertising_interval, advertising_data));
+
+    // TODO: Remove when StartInquiry in GD part implemented
+    btm_ble_process_adv_pkt_cont_for_inquiry(
+        event_type, address_type, raw_address, primary_phy, secondary_phy,
+        advertising_sid, tx_power, rssi, periodic_advertising_interval,
+        advertising_data);
   }
 
   void OnTrackAdvFoundLost() {}
