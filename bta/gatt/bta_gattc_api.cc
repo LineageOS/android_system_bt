@@ -203,16 +203,11 @@ void BTA_GATTC_Close(uint16_t conn_id) {
  * Returns          void
  *
  ******************************************************************************/
+
 void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
-  tBTA_GATTC_API_CFG_MTU* p_buf =
-      (tBTA_GATTC_API_CFG_MTU*)osi_malloc(sizeof(tBTA_GATTC_API_CFG_MTU));
-
-  p_buf->hdr.event = BTA_GATTC_API_CFG_MTU_EVT;
-  p_buf->hdr.layer_specific = conn_id;
-  p_buf->mtu = mtu;
-
-  bta_sys_sendmsg(p_buf);
+  BTA_GATTC_ConfigureMTU(conn_id, mtu, NULL, NULL);
 }
+
 void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu,
                             GATT_CONFIGURE_MTU_OP_CB callback, void* cb_data) {
   tBTA_GATTC_API_CFG_MTU* p_buf =
