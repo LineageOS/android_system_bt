@@ -1,7 +1,7 @@
 rust_library {
-    name: "libbt_acl",
+    name: "libbt_link",
     defaults: ["gd_rust_defaults"],
-    crate_name: "bt_acl",
+    crate_name: "bt_link",
     srcs: ["src/lib.rs"],
     edition: "2018",
     rustlibs: [
