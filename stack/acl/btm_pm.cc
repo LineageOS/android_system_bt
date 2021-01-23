@@ -66,7 +66,7 @@ tBTM_PM_MCB* btm_pm_get_power_manager_from_address(const RawAddress& bda) {
   return nullptr;
 }
 
-tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
+tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS]; /* per application/module */
 
 uint8_t pm_pend_id = 0; /* the id pf the module, which has a pending PM cmd */
 
@@ -480,7 +480,6 @@ static tBTM_PM_PWR_MD* btm_pm_compare_modes(const tBTM_PM_PWR_MD* p_md1,
 static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
                                         const tBTM_PM_PWR_MD* p_mode,
                                         tBTM_PM_PWR_MD* p_res) {
-  int xx, loop_max;
   tBTM_PM_PWR_MD* p_md = NULL;
 
   if (p_mode != NULL && p_mode->mode & BTM_PM_MD_FORCE) {
@@ -489,12 +488,7 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
     return p_res->mode;
   }
 
-  if (!p_mode)
-    loop_max = BTM_MAX_PM_RECORDS + 1;
-  else
-    loop_max = BTM_MAX_PM_RECORDS;
-
-  for (xx = 0; xx < loop_max; xx++) {
+  for (int xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
     /* g through all the registered "set" parties */
     if (pm_reg_db[xx].mask & BTM_PM_REG_SET) {
       if (p_cb->req_mode[xx].mode == BTM_PM_MD_ACTIVE) {
