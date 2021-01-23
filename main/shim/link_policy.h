@@ -35,11 +35,11 @@ bool SetSniffSubrating(uint16_t handle, uint16_t maximum_latency,
                        uint16_t minimum_remote_timeout,
                        uint16_t minimum_local_timeout);
 
-tBTM_STATUS BTM_SetPowerMode(tACL_CONN& acl_conn, const tBTM_PM_PWR_MD& mode);
+tBTM_STATUS BTM_SetPowerMode(uint16_t handle, const tBTM_PM_PWR_MD& mode);
 void btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
                            tHCI_MODE current_mode, uint16_t interval);
 
-tBTM_STATUS BTM_SetSsrParams(tACL_CONN& acl_conn, uint16_t max_lat,
+tBTM_STATUS BTM_SetSsrParams(uint16_t handle, uint16_t max_lat,
                              uint16_t min_rmt_to, uint16_t min_loc_to);
 void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
                                uint16_t maximum_transmit_latency,
