@@ -26,32 +26,30 @@
 
 #define LOG_TAG "bt_bta_av"
 
-#include "bt_target.h"
-
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
-#include <string.h>
+#include <cstdint>
+#include <cstring>
 #include <vector>
 
-#include "a2dp_sbc.h"
-#include "avdt_api.h"
-#include "avrcp_service.h"
-#include "bta_ar_api.h"
-#include "bta_av_int.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_ar_api.h"
+#include "bta/include/bta_av_co.h"
+#include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_av_co.h"
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_storage.h"
 #include "device/include/interop.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/include/a2dp_sbc.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_client_interface.h"
-#include "utl.h"
+#include "stack/include/l2c_api.h"
 
 namespace {
 
