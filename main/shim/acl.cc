@@ -18,8 +18,8 @@
 
 #include <base/location.h>
 #include <base/strings/stringprintf.h>
-
 #include <time.h>
+
 #include <chrono>
 #include <cstdint>
 #include <functional>
@@ -588,6 +588,8 @@ struct bluetooth::shim::legacy::Acl::impl {
 
   void EnqueueClassicPacket(
       HciHandle handle, std::unique_ptr<bluetooth::packet::RawBuilder> packet) {
+    ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
+               handle);
     handle_to_classic_connection_map_[handle]->EnqueuePacket(std::move(packet));
   }
 
@@ -596,48 +598,47 @@ struct bluetooth::shim::legacy::Acl::impl {
            handle_to_le_connection_map_.end();
   }
 
-  bool ClassicConnectionExists(HciHandle handle) {
-    return handle_to_classic_connection_map_.find(handle) !=
-           handle_to_classic_connection_map_.end();
-  }
-
   void EnqueueLePacket(HciHandle handle,
                        std::unique_ptr<bluetooth::packet::RawBuilder> packet) {
-    if (ClassicConnectionExists(handle))
-      handle_to_le_connection_map_[handle]->EnqueuePacket(std::move(packet));
+    ASSERT_LOG(IsLeAcl(handle), "handle %d is not a LE connection", handle);
+    handle_to_le_connection_map_[handle]->EnqueuePacket(std::move(packet));
   }
 
   void HoldMode(HciHandle handle, uint16_t max_interval,
                 uint16_t min_interval) {
-    if (ClassicConnectionExists(handle))
-      handle_to_classic_connection_map_[handle]->HoldMode(max_interval,
-                                                          min_interval);
+    ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
+               handle);
+    handle_to_classic_connection_map_[handle]->HoldMode(max_interval,
+                                                        min_interval);
   }
 
   void ExitSniffMode(HciHandle handle) {
-    if (ClassicConnectionExists(handle))
-      handle_to_classic_connection_map_[handle]->ExitSniffMode();
+    ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
+               handle);
+    handle_to_classic_connection_map_[handle]->ExitSniffMode();
   }
 
   void SniffMode(HciHandle handle, uint16_t max_interval, uint16_t min_interval,
                  uint16_t attempt, uint16_t timeout) {
-    if (ClassicConnectionExists(handle))
-      handle_to_classic_connection_map_[handle]->SniffMode(
-          max_interval, min_interval, attempt, timeout);
+    ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
+               handle);
+    handle_to_classic_connection_map_[handle]->SniffMode(
+        max_interval, min_interval, attempt, timeout);
   }
 
   void SniffSubrating(HciHandle handle, uint16_t maximum_latency,
                       uint16_t minimum_remote_timeout,
                       uint16_t minimum_local_timeout) {
-    if (ClassicConnectionExists(handle))
-      handle_to_classic_connection_map_[handle]->SniffSubrating(
-          maximum_latency, minimum_remote_timeout, minimum_local_timeout);
+    ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
+               handle);
+    handle_to_classic_connection_map_[handle]->SniffSubrating(
+        maximum_latency, minimum_remote_timeout, minimum_local_timeout);
   }
 
   void SetConnectionEncryption(HciHandle handle, hci::Enable enable) {
-    if (ClassicConnectionExists(handle))
-      handle_to_classic_connection_map_[handle]->SetConnectionEncryption(
-          enable);
+    ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
+               handle);
+    handle_to_classic_connection_map_[handle]->SetConnectionEncryption(enable);
   }
 
   void DumpConnectionHistory() const {
@@ -922,9 +923,9 @@ void bluetooth::shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
   hci::AddressWithType remote_address_with_type =
       pimpl_->handle_to_le_connection_map_[handle]->GetRemoteAddressWithType();
   CreationTime creation_time =
-      pimpl_->handle_to_classic_connection_map_[handle]->GetCreationTime();
+      pimpl_->handle_to_le_connection_map_[handle]->GetCreationTime();
   bool is_locally_initiated =
-      pimpl_->handle_to_classic_connection_map_[handle]->IsLocallyInitiated();
+      pimpl_->handle_to_le_connection_map_[handle]->IsLocallyInitiated();
 
   TeardownTime teardown_time = std::chrono::system_clock::now();
 
@@ -1014,9 +1015,9 @@ void bluetooth::shim::legacy::Acl::OnLeConnectSuccess(
   uint16_t conn_latency = 0;   /* TODO Default to zero events */
   uint16_t conn_timeout = 500; /* TODO Default to 5s */
 
-  RawAddress local_rpa = RawAddress::kEmpty;           /* TODO enhanced */
-  RawAddress peer_rpa = RawAddress::kEmpty;            /* TODO enhanced */
-  uint8_t peer_addr_type = 0;                          /* TODO public */
+  RawAddress local_rpa = RawAddress::kEmpty; /* TODO enhanced */
+  RawAddress peer_rpa = RawAddress::kEmpty;  /* TODO enhanced */
+  uint8_t peer_addr_type = 0;                /* TODO public */
 
   TRY_POSTING_ON_MAIN(
       acl_interface_.connection.le.on_connected, legacy_address_with_type,

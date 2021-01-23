@@ -683,7 +683,7 @@ void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
+void btm_sco_connected(uint8_t hci_status, const RawAddress& bda,
                        uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
@@ -693,7 +693,7 @@ void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
   for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if (((p->state == SCO_ST_CONNECTING) || (p->state == SCO_ST_LISTENING) ||
          (p->state == SCO_ST_W4_CONN_RSP)) &&
-        (p->rem_bd_known) && (!bda || p->esco.data.bd_addr == *bda)) {
+        (p->rem_bd_known) && (p->esco.data.bd_addr == bda)) {
       if (hci_status != HCI_SUCCESS) {
         /* Report the error if originator, otherwise remain in Listen mode */
         if (p->is_orig) {
@@ -726,15 +726,13 @@ void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
       p->state = SCO_ST_CONNECTED;
       p->hci_handle = hci_handle;
 
-      RawAddress bd_addr(*bda);
-
       if (hci_status == HCI_SUCCESS) {
-        BTM_LogHistory(kBtmLogTag, bd_addr, "Connection success",
+        BTM_LogHistory(kBtmLogTag, bda, "Connection success",
                        base::StringPrintf("handle:0x%04x %s", hci_handle,
                                           (spt) ? "listener" : "initiator"));
       } else {
         BTM_LogHistory(
-            kBtmLogTag, bd_addr, "Connection failed",
+            kBtmLogTag, bda, "Connection failed",
             base::StringPrintf(
                 "reason:%s",
                 hci_reason_code_text(static_cast<tHCI_REASON>(hci_status))
