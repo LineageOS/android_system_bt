@@ -23,22 +23,14 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-
-#include "bt_types.h"
-
-#include "l2c_api.h"
-#include "l2cdefs.h"
-
-#include "hiddefs.h"
-
-#include "hidd_api.h"
-#include "hidd_int.h"
+#include <cstdint>
 
 #include "bta/include/bta_api.h"
+#include "btif/include/btif_hd.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
-#include "stack/btm/btm_sec.h"
+#include "stack/hid/hidd_int.h"
+#include "stack/include/bt_types.h"
+#include "types/raw_address.h"
 
 static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
                                    uint16_t psm, uint8_t id);
