@@ -189,4 +189,6 @@ interface IBluetooth
 
     int getDeviceType(in BluetoothDevice device);
 
+    boolean isBroadcastActive();
+
 }
