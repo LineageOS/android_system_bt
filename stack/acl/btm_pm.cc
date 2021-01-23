@@ -66,7 +66,7 @@ tBTM_PM_MCB* btm_pm_get_power_manager_from_address(const RawAddress& bda) {
   return nullptr;
 }
 
-tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS]; /* per application/module */
+tBTM_PM_RCB pm_reg_db; /* per application/module */
 
 uint8_t pm_pend_id = 0; /* the id pf the module, which has a pending PM cmd */
 
@@ -139,20 +139,17 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
   /* de-register */
   if (mask & BTM_PM_DEREG) {
     if (*p_pm_id >= BTM_MAX_PM_RECORDS) return BTM_ILLEGAL_VALUE;
-    pm_reg_db[*p_pm_id].mask = BTM_PM_REC_NOT_USED;
+    pm_reg_db.mask = BTM_PM_REC_NOT_USED;
     return BTM_SUCCESS;
   }
 
-  for (int xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
-    /* find an unused entry */
-    if (pm_reg_db[xx].mask == BTM_PM_REC_NOT_USED) {
-      /* if register for notification, should provide callback routine */
-      if (p_cb == NULL) return BTM_ILLEGAL_VALUE;
-      pm_reg_db[xx].cback = p_cb;
-      pm_reg_db[xx].mask = mask;
-      *p_pm_id = xx;
-      return BTM_SUCCESS;
-    }
+  if (pm_reg_db.mask == BTM_PM_REC_NOT_USED) {
+    /* if register for notification, should provide callback routine */
+    if (p_cb == NULL) return BTM_ILLEGAL_VALUE;
+    pm_reg_db.cback = p_cb;
+    pm_reg_db.mask = mask;
+    *p_pm_id = 0;
+    return BTM_SUCCESS;
   }
 
   return BTM_NO_RESOURCES;
@@ -249,12 +246,11 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   }
 
   /* update mode database */
-  if (((pm_id != BTM_PM_SET_ONLY_ID) &&
-       (pm_reg_db[pm_id].mask & BTM_PM_REG_SET)) ||
+  if (((pm_id != BTM_PM_SET_ONLY_ID) && (pm_reg_db.mask & BTM_PM_REG_SET)) ||
       ((pm_id == BTM_PM_SET_ONLY_ID) && (pm_pend_link != 0))) {
     /* Make sure mask is set to BTM_PM_REG_SET */
-    pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
-    *(&p_cb->req_mode[temp_pm_id]) = *p_mode;
+    pm_reg_db.mask |= BTM_PM_REG_SET;
+    *(&p_cb->req_mode) = *p_mode;
     p_cb->chg_ind = true;
   }
 
@@ -370,19 +366,14 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
  *
  ******************************************************************************/
 void btm_pm_reset(void) {
-  int xx;
   tBTM_PM_STATUS_CBACK* cb = NULL;
 
   /* clear the pending request for application */
-  if ((pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_SET)) {
-    cb = pm_reg_db[pm_pend_id].cback;
+  if ((pm_pend_id != BTM_PM_SET_ONLY_ID) && (pm_reg_db.mask & BTM_PM_REG_SET)) {
+    cb = pm_reg_db.cback;
   }
 
-  /* clear the register record */
-  for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
-    pm_reg_db[xx].mask = BTM_PM_REC_NOT_USED;
-  }
+  pm_reg_db.mask = BTM_PM_REC_NOT_USED;
 
   if (cb != NULL && pm_pend_link != 0) {
     const RawAddress raw_address = pm_mode_db[pm_pend_link].bda_;
@@ -486,18 +477,16 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
     return p_res->mode;
   }
 
-  for (int xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
-    /* g through all the registered "set" parties */
-    if (pm_reg_db[xx].mask & BTM_PM_REG_SET) {
-      if (p_cb->req_mode[xx].mode == BTM_PM_MD_ACTIVE) {
-        /* if at least one registered (SET) party says ACTIVE, stay active */
+  /* g through all the registered "set" parties */
+  if (pm_reg_db.mask & BTM_PM_REG_SET) {
+    if (p_cb->req_mode.mode == BTM_PM_MD_ACTIVE) {
+      /* if at least one registered (SET) party says ACTIVE, stay active */
+      return BTM_PM_MD_ACTIVE;
+    } else {
+      /* if registered parties give conflicting information, stay active */
+      if ((btm_pm_compare_modes(p_md, &p_cb->req_mode, p_res)) == NULL)
         return BTM_PM_MD_ACTIVE;
-      } else {
-        /* if registered parties give conflicting information, stay active */
-        if ((btm_pm_compare_modes(p_md, &p_cb->req_mode[xx], p_res)) == NULL)
-          return BTM_PM_MD_ACTIVE;
-        p_md = p_res;
-      }
+      p_md = p_res;
     }
   }
 
@@ -656,18 +645,18 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status) {
 
   // if the command was not successful. Stay in the same state
   tBTM_PM_STATUS pm_status = BTM_PM_STS_ERROR;
+
   if (status == HCI_SUCCESS) {
     p_cb->state = BTM_PM_ST_PENDING;
     pm_status = BTM_PM_STS_PENDING;
   }
 
   /* notify the caller is appropriate */
-  if ((pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_SET)) {
+  if ((pm_pend_id != BTM_PM_SET_ONLY_ID) && (pm_reg_db.mask & BTM_PM_REG_SET)) {
     const RawAddress bd_addr = pm_mode_db[pm_pend_link].bda_;
     LOG_DEBUG("Notifying callback that link power mode is complete peer:%s",
               PRIVATE_ADDRESS(bd_addr));
-    (*pm_reg_db[pm_pend_id].cback)(bd_addr, pm_status, 0, status);
+    (*pm_reg_db.cback)(bd_addr, pm_status, 0, status);
   }
 
   LOG_INFO("Clearing pending power mode link state:%s",
@@ -727,13 +716,9 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
     l2c_OnHciModeChangeSendPendingPackets(p_cb->bda_);
   }
 
-  /* notify registered parties */
-  for (int yy = 0; yy <= BTM_MAX_PM_RECORDS; yy++) {
-    /* set req_mode  HOLD mode->ACTIVE */
-    if ((mode == BTM_PM_MD_ACTIVE) &&
-        (p_cb->req_mode[yy].mode == BTM_PM_MD_HOLD))
-      p_cb->req_mode[yy].mode = BTM_PM_MD_ACTIVE;
-  }
+  /* set req_mode  HOLD mode->ACTIVE */
+  if ((mode == BTM_PM_MD_ACTIVE) && (p_cb->req_mode.mode == BTM_PM_MD_HOLD))
+    p_cb->req_mode.mode = BTM_PM_MD_ACTIVE;
 
   /* new request has been made. - post a message to BTU task */
   if (old_state & BTM_PM_STORED_MASK) {
@@ -749,10 +734,8 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
   }
 
   /* notify registered parties */
-  for (int yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (pm_reg_db[yy].mask & BTM_PM_REG_SET) {
-      (*pm_reg_db[yy].cback)(p_cb->bda_, mode, interval, hci_status);
-    }
+  if (pm_reg_db.mask & BTM_PM_REG_SET) {
+    (*pm_reg_db.cback)(p_cb->bda_, mode, interval, hci_status);
   }
   /*check if sco disconnect  is waiting for the mode change */
   btm_sco_disc_chk_pend_for_modechange(hci_handle);
@@ -789,12 +772,9 @@ void process_ssr_event(tHCI_STATUS status, uint16_t handle,
   }
 
   int cnt = 0;
-  for (int yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (pm_reg_db[yy].mask & BTM_PM_REG_SET) {
-      (*pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR, (use_ssr) ? 1 : 0,
-                             status);
-      cnt++;
-    }
+  if (pm_reg_db.mask & BTM_PM_REG_SET) {
+    (*pm_reg_db.cback)(bd_addr, BTM_PM_STS_SSR, (use_ssr) ? 1 : 0, status);
+    cnt++;
   }
   LOG_DEBUG(
       "Notified sniff subrating registered clients cnt:%d peer:%s use_ssr:%s "
