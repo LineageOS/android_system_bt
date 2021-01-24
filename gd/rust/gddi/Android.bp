@@ -7,3 +7,15 @@ rust_library {
     proc_macros: ["libgddi_macros"],
     rustlibs: ["libtokio"],
 }
+
+rust_proc_macro {
+    name: "libgddi_macros",
+    crate_name: "gddi_macros",
+    srcs: ["macros/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libproc_macro2",
+        "libquote",
+        "libsyn",
+    ],
+}

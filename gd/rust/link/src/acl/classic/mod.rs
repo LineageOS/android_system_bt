@@ -1,6 +1,6 @@
 //! Classic ACL manager
 
-use crate::core;
+use crate::acl::core;
 use bt_common::Bluetooth;
 use bt_hci::{Address, CommandSender, EventRegistry};
 use bt_packets::hci::EventChild::{
