@@ -756,6 +756,24 @@ void PacketDef::GenRustChildEnums(std::ostream& s) const {
     }
     s << "None,";
     s << "}\n";
+
+    s << "impl " << name_ << "DataChild {";
+    s << "fn get_total_size(&self) -> usize {";
+    s << "match self {";
+    for (const auto& child : children_) {
+      if (child->name_.rfind("LeGetVendorCapabilitiesComplete", 0) == 0) {
+        continue;
+      }
+      s << name_ << "DataChild::" << child->name_ << "(value) => value.get_total_size(),";
+    }
+    if (payload) {
+      s << name_ << "DataChild::Payload(p) => p.len(),";
+    }
+    s << name_ << "DataChild::None => 0,";
+    s << "}\n";
+    s << "}\n";
+    s << "}\n";
+
     s << "#[derive(Debug)] ";
     s << "pub enum " << name_ << "Child {";
     for (const auto& child : children_) {
@@ -858,9 +876,7 @@ void PacketDef::GenRustStructSizeField(std::ostream& s) const {
   for (int i = 0; i < fields.size(); i++) {
     size += fields[i]->GetSize().bytes();
   }
-  if (fields.size() > 0) {
-    s << size;
-  }
+  s << size;
 }
 
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
@@ -1023,11 +1039,17 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 
   s << "}\n";
 
-  if (fields.size() > 0) {
-    s << "pub fn get_size(&self) -> usize {";
-    GenRustStructSizeField(s);
-    s << "}";
+  s << "fn get_total_size(&self) -> usize {";
+  if (HasChildEnums()) {
+    s << "self.get_size() + self.child.get_total_size()";
+  } else {
+    s << "self.get_size()";
   }
+  s << "}\n";
+
+  s << "pub fn get_size(&self) -> usize {";
+  GenRustStructSizeField(s);
+  s << "}\n";
   s << "}\n";
 }
 
