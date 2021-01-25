@@ -65,6 +65,12 @@ struct btm_client_interface_s btm_client_interface = {
     // Acl peer and lifecycle
     .peer =
         {
+            .features =
+                {
+                    .SupportTransparentSynchronousData =
+                        ACL_SupportTransparentSynchronousData,
+                },
+
             .BTM_CancelRemoteDeviceName = BTM_CancelRemoteDeviceName,
             .BTM_IsAclConnectionUp = BTM_IsAclConnectionUp,
             .BTM_ReadConnectedTransportAddress =
