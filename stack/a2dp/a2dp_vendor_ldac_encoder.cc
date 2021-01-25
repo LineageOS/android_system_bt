@@ -124,7 +124,7 @@ typedef struct {
 } tA2DP_LDAC_ENCODER_PARAMS;
 
 typedef struct {
-  uint32_t counter;
+  float counter;
   uint32_t bytes_per_tick; /* pcm bytes read each media task tick */
   uint64_t last_frame_us;
 } tA2DP_LDAC_FEEDING_STATE;
@@ -528,7 +528,7 @@ void a2dp_vendor_ldac_feeding_reset(void) {
 }
 
 void a2dp_vendor_ldac_feeding_flush(void) {
-  a2dp_ldac_encoder_cb.ldac_feeding_state.counter = 0;
+  a2dp_ldac_encoder_cb.ldac_feeding_state.counter = 0.0f;
 }
 
 uint64_t a2dp_vendor_ldac_get_encoder_interval_ms(void) {
@@ -587,8 +587,8 @@ static void a2dp_ldac_get_num_frame_iteration(uint8_t* num_of_iterations,
   a2dp_ldac_encoder_cb.ldac_feeding_state.last_frame_us = now_us;
 
   a2dp_ldac_encoder_cb.ldac_feeding_state.counter +=
-      a2dp_ldac_encoder_cb.ldac_feeding_state.bytes_per_tick * (us_this_tick /
-      (float) (A2DP_LDAC_ENCODER_INTERVAL_MS * 1000));
+      (float)a2dp_ldac_encoder_cb.ldac_feeding_state.bytes_per_tick * us_this_tick /
+      (A2DP_LDAC_ENCODER_INTERVAL_MS * 1000);
 
   result =
       a2dp_ldac_encoder_cb.ldac_feeding_state.counter / pcm_bytes_per_frame;
