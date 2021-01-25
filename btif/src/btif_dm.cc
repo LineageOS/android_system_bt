@@ -1706,6 +1706,9 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       local_le_features.le_maximum_advertising_data_length =
           controller->get_ble_maxium_advertising_data_length();
 
+      local_le_features.dynamic_audio_buffer_supported =
+          cmn_vsc_cb.dynamic_audio_buffer_support;
+
       invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &prop);
       break;
     }
@@ -2262,7 +2265,7 @@ void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
 bool btif_dm_get_smp_config(tBTE_APPL_CFG* p_cfg) {
   const std::string* recv = stack_config_get_interface()->get_pts_smp_options();
   if (!recv) {
-    BTIF_TRACE_DEBUG("%s: SMP options not found in configuration", __func__);
+    LOG_DEBUG("SMP pairing options not found in stack configuration");
     return false;
   }
 
@@ -2762,6 +2765,34 @@ void btif_dm_on_disable() {
  *
  ******************************************************************************/
 void btif_dm_read_energy_info() { BTA_DmBleGetEnergyInfo(bta_energy_info_cb); }
+
+/*******************************************************************************
+ *
+ * Function        btif_dm_add_uuid_to_eir
+ *
+ * Description     Add a service class uuid to the local device's EIR data
+ *
+ * Returns         void
+ *
+ ******************************************************************************/
+void btif_dm_add_uuid_to_eir(uint16_t uuid16) {
+  BTIF_TRACE_DEBUG("%s: %d", __func__, uuid16);
+  BTA_AddEirUuid(uuid16);
+}
+
+/*******************************************************************************
+ *
+ * Function        btif_dm_remove_uuid_from_eir
+ *
+ * Description     Remove a service class uuid from the local device's EIR data
+ *
+ * Returns         void
+ *
+ ******************************************************************************/
+void btif_dm_remove_uuid_from_eir(uint16_t uuid16) {
+  BTIF_TRACE_DEBUG("%s: %d", __func__, uuid16);
+  BTA_RemoveEirUuid(uuid16);
+}
 
 static char* btif_get_default_local_name() {
   if (btif_default_local_name[0] == '\0') {

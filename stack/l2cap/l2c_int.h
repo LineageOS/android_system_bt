@@ -721,7 +721,6 @@ extern bool l2cu_lcb_disconnecting(void);
 
 extern void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
-extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
 extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
 
@@ -802,8 +801,6 @@ extern tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
                                                   void* p_ref_data);
 
 extern void l2cble_update_data_length(tL2C_LCB* p_lcb);
-extern void l2cble_set_fixed_channel_tx_data_length(
-    const RawAddress& remote_bda, uint16_t fix_cid, uint16_t tx_mtu);
 
 extern void l2cu_process_fixed_disc_cback(tL2C_LCB* p_lcb);
 

@@ -22,7 +22,7 @@
 void generate_rust_packet_preamble(std::ostream& s) {
   s <<
       R"(
-use bytes::{Bytes, BytesMut};
+use bytes::{Bytes, BytesMut, BufMut};
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::{FromPrimitive, ToPrimitive};
 use std::convert::TryInto;
@@ -37,13 +37,11 @@ pub enum Error {
   InvalidPacketError
 }
 
-pub struct Address {
-  pub addr: [u8; 6],
+pub trait Packet {
+  fn to_bytes(self) -> Bytes;
+  fn to_vec(self) -> Vec<u8>;
 }
 
-pub struct ClassOfDevice {
-  pub cod: [u8; 3],
-}
 )";
 }
 

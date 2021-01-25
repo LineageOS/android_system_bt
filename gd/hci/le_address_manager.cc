@@ -132,6 +132,9 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
       LOG_ALWAYS_FATAL("invalid parameters");
   }
 }
+LeAddressManager::AddressPolicy LeAddressManager::GetAddressPolicy() {
+  return address_policy_;
+}
 
 LeAddressManager::AddressPolicy LeAddressManager::Register(LeAddressManagerCallback* callback) {
   handler_->BindOnceOn(this, &LeAddressManager::register_client, callback).Invoke();
@@ -246,7 +249,7 @@ void LeAddressManager::prepare_to_rotate() {
 void LeAddressManager::schedule_rotate_random_address() {
   address_rotation_alarm_->Schedule(
       common::BindOnce(&LeAddressManager::prepare_to_rotate, common::Unretained(this)),
-      get_next_private_address_interval_ms());
+      GetNextPrivateAddressIntervalMs());
 }
 
 void LeAddressManager::set_random_address() {
@@ -264,7 +267,7 @@ void LeAddressManager::set_random_address() {
   }
   auto packet = hci::LeSetRandomAddressBuilder::Create(address);
   enqueue_command_.Run(std::move(packet));
-  le_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
+  cached_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
 }
 
 void LeAddressManager::rotate_random_address() {
@@ -331,7 +334,7 @@ hci::Address LeAddressManager::generate_nrpa() {
   return address;
 }
 
-std::chrono::milliseconds LeAddressManager::get_next_private_address_interval_ms() {
+std::chrono::milliseconds LeAddressManager::GetNextPrivateAddressIntervalMs() {
   auto interval_random_part_max_ms = maximum_rotation_time_ - minimum_rotation_time_;
   auto random_ms = std::chrono::milliseconds(os::GenerateRandom()) % (interval_random_part_max_ms);
   return minimum_rotation_time_ + random_ms;
@@ -419,10 +422,21 @@ void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView vie
   LOG_INFO("Received command complete with op_code %s", op_code.c_str());
 
   // The command was sent before any client registered, we can make sure all the clients paused when command complete.
-  if (view.GetCommandOpCode() == OpCode::LE_SET_RANDOM_ADDRESS &&
-      address_policy_ == AddressPolicy::USE_STATIC_ADDRESS) {
-    LOG_INFO("Received LE_SET_RANDOM_ADDRESS complete and Address policy is USE_STATIC_ADDRESS, return");
-    return;
+  if (view.GetCommandOpCode() == OpCode::LE_SET_RANDOM_ADDRESS) {
+    if (address_policy_ == AddressPolicy::USE_STATIC_ADDRESS) {
+      LOG_INFO("Received LE_SET_RANDOM_ADDRESS complete and Address policy is USE_STATIC_ADDRESS, return");
+      return;
+    }
+    auto complete_view = LeSetRandomAddressCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received LE_SET_RANDOM_ADDRESS complete with invalid packet");
+    } else if (complete_view.IsValid() && complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_ERROR(
+          "Received LE_SET_RANDOM_ADDRESS complete with status %s", ErrorCodeText(complete_view.GetStatus()).c_str());
+    } else {
+      LOG_INFO("update random address : %s", cached_address_.GetAddress().ToString().c_str());
+      le_address_ = cached_address_;
+    }
   }
 
   if (cached_commands_.empty()) {

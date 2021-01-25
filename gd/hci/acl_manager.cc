@@ -229,6 +229,12 @@ void AclManager::WriteDefaultLinkPolicySettings(uint16_t default_link_policy_set
   CallOn(pimpl_->classic_impl_, &classic_impl::write_default_link_policy_settings, default_link_policy_settings);
 }
 
+void AclManager::OnAdvertisingSetTerminated(ErrorCode status, uint16_t conn_handle, hci::AddressWithType adv_address) {
+  if (status == ErrorCode::SUCCESS) {
+    CallOn(pimpl_->le_impl_, &le_impl::UpdateLocalAddress, conn_handle, adv_address);
+  }
+}
+
 void AclManager::SetSecurityModule(security::SecurityModule* security_module) {
   CallOn(pimpl_->classic_impl_, &classic_impl::set_security_module, security_module);
 }
@@ -243,6 +249,14 @@ uint16_t AclManager::HACK_GetHandle(Address address) {
 
 uint16_t AclManager::HACK_GetLeHandle(Address address) {
   return pimpl_->le_impl_->HACK_get_handle(address);
+}
+
+void AclManager::HACK_SetScoDisconnectCallback(std::function<void(uint16_t, uint8_t)> callback) {
+  pimpl_->classic_impl_->HACK_SetScoDisconnectCallback(callback);
+}
+
+void AclManager::HACK_SetAclTxPriority(uint8_t handle, bool high_priority) {
+  CallOn(pimpl_->round_robin_scheduler_, &RoundRobinScheduler::SetLinkPriority, handle, high_priority);
 }
 
 void AclManager::ListDependencies(ModuleList* list) {

@@ -1,6 +1,6 @@
 //! Loads info from the controller at startup
 
-use crate::HciExports;
+use crate::{Address, CommandSender};
 use bt_packets::hci::{
     Enable, ErrorCode, LeMaximumDataLength, LeReadBufferSizeV1Builder, LeReadBufferSizeV2Builder,
     LeReadConnectListSizeBuilder, LeReadLocalSupportedFeaturesBuilder,
@@ -8,18 +8,19 @@ use bt_packets::hci::{
     LeReadNumberOfSupportedAdvertisingSetsBuilder, LeReadPeriodicAdvertiserListSizeBuilder,
     LeReadResolvingListSizeBuilder, LeReadSuggestedDefaultDataLengthBuilder,
     LeReadSupportedStatesBuilder, LeSetEventMaskBuilder, LocalVersionInformation, OpCode,
-    OpCodeIndex, ReadBufferSizeBuilder, ReadLocalExtendedFeaturesBuilder, ReadLocalNameBuilder,
-    ReadLocalSupportedCommandsBuilder, ReadLocalVersionInformationBuilder, SetEventMaskBuilder,
-    WriteLeHostSupportBuilder, WriteSimplePairingModeBuilder,
+    OpCodeIndex, ReadBdAddrBuilder, ReadBufferSizeBuilder, ReadLocalExtendedFeaturesBuilder,
+    ReadLocalNameBuilder, ReadLocalSupportedCommandsBuilder, ReadLocalVersionInformationBuilder,
+    SetEventMaskBuilder, WriteLeHostSupportBuilder, WriteSimplePairingModeBuilder,
 };
 use gddi::{module, provides, Stoppable};
 use num_traits::ToPrimitive;
 use std::convert::TryFrom;
+use std::sync::Arc;
 
 module! {
     controller_module,
     providers {
-        ControllerExports => provide_controller,
+        Arc<ControllerExports> => provide_controller,
     },
 }
 
@@ -33,19 +34,13 @@ macro_rules! assert_success {
 }
 
 #[provides]
-async fn provide_controller(mut hci: HciExports) -> ControllerExports {
-    assert_success!(hci.send(LeSetEventMaskBuilder {
-        le_event_mask: 0x0000000000021e7f
-    }));
-    assert_success!(hci.send(SetEventMaskBuilder {
-        event_mask: 0x3dbfffffffffffff
-    }));
-    assert_success!(hci.send(WriteSimplePairingModeBuilder {
-        simple_pairing_mode: Enable::Enabled
-    }));
-    assert_success!(hci.send(WriteLeHostSupportBuilder {
-        le_supported_host: Enable::Enabled
-    }));
+async fn provide_controller(mut hci: CommandSender) -> Arc<ControllerExports> {
+    assert_success!(hci.send(LeSetEventMaskBuilder { le_event_mask: 0x0000000000021e7f }));
+    assert_success!(hci.send(SetEventMaskBuilder { event_mask: 0x3dbfffffffffffff }));
+    assert_success!(
+        hci.send(WriteSimplePairingModeBuilder { simple_pairing_mode: Enable::Enabled })
+    );
+    assert_success!(hci.send(WriteLeHostSupportBuilder { le_supported_host: Enable::Enabled }));
 
     let name = null_terminated_to_string(
         assert_success!(hci.send(ReadLocalNameBuilder {})).get_local_name(),
@@ -60,7 +55,7 @@ async fn provide_controller(mut hci: HciExports) -> ControllerExports {
             .get_supported_commands(),
     };
 
-    let lmp_features = read_lmp_features(&mut hci).await;
+    let features = read_features(&mut hci).await;
 
     let buffer_size = assert_success!(hci.send(ReadBufferSizeBuilder {}));
     let acl_buffer_length = buffer_size.get_acl_data_packet_length();
@@ -92,8 +87,9 @@ async fn provide_controller(mut hci: HciExports) -> ControllerExports {
         le_buffer_length = acl_buffer_length;
     }
 
-    let le_features =
-        assert_success!(hci.send(LeReadLocalSupportedFeaturesBuilder {})).get_le_features();
+    let le_features = SupportedLeFeatures::new(
+        assert_success!(hci.send(LeReadLocalSupportedFeaturesBuilder {})).get_le_features(),
+    );
     let le_supported_states =
         assert_success!(hci.send(LeReadSupportedStatesBuilder {})).get_le_states();
     let le_connect_list_size =
@@ -143,11 +139,14 @@ async fn provide_controller(mut hci: HciExports) -> ControllerExports {
             0
         };
 
-    ControllerExports {
+    let address = assert_success!(hci.send(ReadBdAddrBuilder {})).get_bd_addr();
+
+    Arc::new(ControllerExports {
         name,
+        address,
         version_info,
         commands,
-        lmp_features,
+        features,
         acl_buffer_length,
         acl_buffers,
         sco_buffer_length: buffer_size.get_synchronous_data_packet_length(),
@@ -165,10 +164,10 @@ async fn provide_controller(mut hci: HciExports) -> ControllerExports {
         le_max_advertising_data_length,
         le_supported_advertising_sets,
         le_periodic_advertiser_list_size,
-    }
+    })
 }
 
-async fn read_lmp_features(hci: &mut HciExports) -> Vec<u64> {
+async fn read_features(hci: &mut CommandSender) -> SupportedFeatures {
     let mut features = Vec::new();
     let mut page_number: u8 = 0;
     let mut max_page_number: u8 = 1;
@@ -179,33 +178,35 @@ async fn read_lmp_features(hci: &mut HciExports) -> Vec<u64> {
         page_number += 1;
     }
 
-    features
+    SupportedFeatures::new(features)
 }
 
 /// Controller interface
 #[derive(Clone, Stoppable)]
+#[allow(missing_docs)]
 pub struct ControllerExports {
-    name: String,
-    version_info: LocalVersionInformation,
-    commands: SupportedCommands,
-    lmp_features: Vec<u64>,
-    acl_buffer_length: u16,
-    acl_buffers: u16,
-    sco_buffer_length: u8,
-    sco_buffers: u16,
-    le_buffer_length: u16,
-    le_buffers: u8,
-    iso_buffer_length: u16,
-    iso_buffers: u8,
-    le_features: u64,
-    le_supported_states: u64,
-    le_connect_list_size: u8,
-    le_resolving_list_size: u8,
-    le_max_data_length: LeMaximumDataLength,
-    le_suggested_default_data_length: u16,
-    le_max_advertising_data_length: u16,
-    le_supported_advertising_sets: u8,
-    le_periodic_advertiser_list_size: u8,
+    pub name: String,
+    pub address: Address,
+    pub version_info: LocalVersionInformation,
+    pub commands: SupportedCommands,
+    pub features: SupportedFeatures,
+    pub acl_buffer_length: u16,
+    pub acl_buffers: u16,
+    pub sco_buffer_length: u8,
+    pub sco_buffers: u16,
+    pub le_buffer_length: u16,
+    pub le_buffers: u8,
+    pub iso_buffer_length: u16,
+    pub iso_buffers: u8,
+    pub le_features: SupportedLeFeatures,
+    pub le_supported_states: u64,
+    pub le_connect_list_size: u8,
+    pub le_resolving_list_size: u8,
+    pub le_max_data_length: LeMaximumDataLength,
+    pub le_suggested_default_data_length: u16,
+    pub le_max_advertising_data_length: u16,
+    pub le_supported_advertising_sets: u8,
+    pub le_periodic_advertiser_list_size: u8,
 }
 
 /// Convenience struct for checking what commands are supported
@@ -233,6 +234,94 @@ impl SupportedCommands {
             }
         }
     }
+}
+
+macro_rules! supported_features {
+    ($($id:ident => $page:literal : $bit:literal),*) => {
+        /// Convenience struct for checking what features are supported
+        #[derive(Clone)]
+        #[allow(missing_docs)]
+        pub struct SupportedFeatures {
+            $(pub $id: bool,)*
+        }
+
+        impl SupportedFeatures {
+            fn new(supported: Vec<u64>) -> Self {
+                Self {
+                    $($id: *supported.get($page).unwrap_or(&0) & (1 << $bit) != 0,)*
+                }
+            }
+        }
+    }
+}
+
+supported_features! {
+    three_slot_packets => 0:0,
+    five_slot_packets => 0:1,
+    role_switch => 0:5,
+    hold_mode => 0:6,
+    sniff_mode => 0:7,
+    park_mode => 0:8,
+    sco => 0:11,
+    hv2_packets => 0:12,
+    hv3_packets => 0:13,
+    classic_2m_phy => 0:25,
+    classic_3m_phy => 0:26,
+    interlaced_inquiry_scan => 0:28,
+    rssi_with_inquiry_results => 0:30,
+    ev3_packets => 0:31,
+    ev4_packets => 0:32,
+    ev5_packets => 0:33,
+    ble => 0:38,
+    three_slot_edr_packets => 0:39,
+    five_slot_edr_packets => 0:40,
+    sniff_subrating => 0:41,
+    encryption_pause => 0:42,
+    esco_2m_phy => 0:45,
+    esco_3m_phy => 0:46,
+    three_slot_esco_edr_packets => 0:47,
+    extended_inquiry_response => 0:48,
+    simultaneous_le_bredr => 0:49,
+    simple_pairing => 0:51,
+    non_flushable_pb => 0:54,
+    secure_connections => 2:8
+}
+
+macro_rules! supported_le_features {
+    ($($id:ident => $bit:literal),*) => {
+        /// Convenience struct for checking what features are supported
+        #[derive(Clone)]
+        #[allow(missing_docs)]
+        pub struct SupportedLeFeatures {
+            $(pub $id: bool,)*
+        }
+
+        impl SupportedLeFeatures {
+            fn new(supported: u64) -> Self {
+                Self {
+                    $($id: supported & (1 << $bit) != 0,)*
+                }
+            }
+        }
+    }
+}
+
+supported_le_features! {
+    connection_parameter_request => 1,
+    connection_parameters_request => 2,
+    peripheral_initiated_feature_exchange => 3,
+    packet_extension => 5,
+    privacy => 6,
+    ble_2m_phy => 8,
+    ble_coded_phy => 11,
+    extended_advertising => 12,
+    periodic_advertising => 13,
+    periodic_advertising_sync_transfer_sender => 24,
+    periodic_advertising_sync_transfer_recipient => 25,
+    connected_iso_stream_central => 28,
+    connected_iso_stream_peripheral => 29,
+    iso_broadcaster => 30,
+    synchronized_receiver => 31
 }
 
 fn null_terminated_to_string(slice: &[u8]) -> String {

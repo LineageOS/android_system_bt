@@ -394,11 +394,20 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
 bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
 
 uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda);
-void L2CA_LeConnectionUpdate(const RawAddress& rem_bda);
+hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
+
+void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
+                             uint16_t max_int, uint16_t latency,
+                             uint16_t timeout, uint16_t min_ce_len,
+                             uint16_t max_ce_len);
+
+// When GATT discovery is in progress, use the minimal connection interval, and
+// reject remote connection updates, until done.
+bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable);
 
 /*******************************************************************************
  *
- * Function         L2CA_SetFixedChannelTout
+ * Function         L2CA_SetLeGattTimeout
  *
  * Description      Higher layers call this function to set the idle timeout for
  *                  a fixed channel. The "idle timeout" is the amount of time
@@ -413,36 +422,8 @@ void L2CA_LeConnectionUpdate(const RawAddress& rem_bda);
  * Returns          true if command succeeded, false if failed
  *
  ******************************************************************************/
-bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
-                              uint16_t idle_tout);
+bool L2CA_SetLeGattTimeout(const RawAddress& rem_bda, uint16_t idle_tout);
 
-/*******************************************************************************
- *
- *  Function        L2CA_CancelBleConnectReq
- *
- *  Description     Cancel a pending connection attempt to a BLE device.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if connection was cancelled
- *
- ******************************************************************************/
-bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda);
-
-/*******************************************************************************
- *
- *  Function        L2CA_UpdateBleConnParams
- *
- *  Description     Update BLE connection parameters.
- *
- *  Parameters:     BD Address of remote
- *
- *  Return value:   true if update started
- *
- ******************************************************************************/
-bool L2CA_UpdateBleConnParams(const RawAddress& rem_bdRa, uint16_t min_int,
-                              uint16_t max_int, uint16_t latency,
-                              uint16_t timeout);
 bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t max_int, uint16_t latency,
                               uint16_t timeout, uint16_t min_ce_len,
@@ -473,25 +454,6 @@ bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable);
  ******************************************************************************/
 uint8_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
 
-/*******************************************************************************
- *
- * Function         L2CA_GetDisconnectReason
- *
- * Description      This function returns the disconnect reason code.
- *
- *  Parameters:     BD Address of remote
- *                  Physical transport for the L2CAP connection (BR/EDR or LE)
- *
- * Returns          disconnect reason
- *
- ******************************************************************************/
-uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
-                                  tBT_TRANSPORT transport);
-
-void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
-                                    uint16_t* max_interval,
-                                    uint16_t floor_interval);
-
 /**
  * Check whether an ACL or LE link to the remote device is established
  */
@@ -510,9 +472,13 @@ void L2CA_SwitchRoleToCentral(const RawAddress& addr);
 bool L2CA_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
                             uint16_t* manufacturer, uint16_t* lmp_sub_version);
 
+uint8_t* L2CA_ReadRemoteFeatures(const RawAddress& addr);
+
 void L2CA_DisconnectLink(const RawAddress& remote);
 
 uint16_t L2CA_GetNumLinks();
+
+bool L2CA_IsLeLink(uint16_t acl_handle);
 
 }  // namespace shim
 }  // namespace bluetooth

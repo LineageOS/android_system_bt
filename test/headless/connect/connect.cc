@@ -16,6 +16,10 @@
 
 #define LOG_TAG "bt_headless_mode"
 
+#include <inttypes.h>
+#include <chrono>
+#include <cstdint>
+#include <cstdio>
 #include <future>
 #include <map>
 #include <string>
@@ -31,6 +35,8 @@
 #include "test/headless/headless.h"
 #include "test/headless/interface.h"
 #include "types/raw_address.h"
+
+extern bt_interface_t bluetoothInterface;
 
 void power_mode_callback(const RawAddress& p_bda, tBTM_PM_STATUS status,
                          uint16_t value, tHCI_STATUS hci_status) {
@@ -55,7 +61,20 @@ void callback_interface(interface_data_t data) {
 
 namespace {
 
-int do_connect(unsigned int num_loops, const RawAddress& bd_addr) {
+int do_connect(unsigned int num_loops, const RawAddress& bd_addr,
+               std::list<std::string> options) {
+  int disconnect_wait_time{0};
+
+  if (options.size() != 0) {
+    std::string opt = options.front();
+    options.pop_front();
+    auto v = bluetooth::test::headless::GetOpt::Split(opt);
+    if (v.size() == 2) {
+      if (v[0] == "wait") disconnect_wait_time = std::stoi(v[1]);
+    }
+  }
+  ASSERT_LOG(disconnect_wait_time >= 0, "Time cannot go backwards");
+
   headless_add_callback("acl_state_changed", callback_interface);
 
   acl_state_changed_promise = std::promise<acl_state_changed_params_t>();
@@ -71,18 +90,39 @@ int do_connect(unsigned int num_loops, const RawAddress& bd_addr) {
   acl_state_changed_promise = std::promise<acl_state_changed_params_t>();
   future = acl_state_changed_promise.get_future();
 
+  uint64_t connect = std::chrono::duration_cast<std::chrono::milliseconds>(
+                         std::chrono::system_clock::now().time_since_epoch())
+                         .count();
+  fprintf(stdout, "Waiting for supervision timeout\n");
   result = future.get();
-  fprintf(stdout, "Disconnected from to:%s result:%u\n",
-          bd_addr.ToString().c_str(), result.status);
 
-  headless_remove_callback("acl_state_changed", callback_interface);
+  if (disconnect_wait_time == 0) {
+    fprintf(stdout, "Waiting to disconnect from supervision timeout\n");
+    result = future.get();
+    uint64_t disconnect =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch())
+            .count();
+
+    fprintf(stdout, "Disconnected after:%" PRId64 "ms from:%s result:%u\n",
+            disconnect - connect, bd_addr.ToString().c_str(), result.status);
+
+    headless_remove_callback("acl_state_changed", callback_interface);
+  } else {
+    fprintf(stdout, "Waiting %d seconds to just shutdown\n",
+            disconnect_wait_time);
+    sleep(disconnect_wait_time);
+    bluetoothInterface.dump(1, nullptr);
+    bluetoothInterface.cleanup();
+  }
   return 0;
 }
 
 }  // namespace
 
-int bluetooth::test::headless::Mode::Run() {
+int bluetooth::test::headless::Connect::Run() {
   return RunOnHeadlessStack<int>([this]() {
-    return do_connect(options_.loop_, options_.device_.front());
+    return do_connect(options_.loop_, options_.device_.front(),
+                      options_.non_options_);
   });
 }

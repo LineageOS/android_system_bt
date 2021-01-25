@@ -42,5 +42,10 @@ DynamicChannel::GetQueueUpEnd() const {
 Cid DynamicChannel::HACK_GetRemoteCid() {
   return impl_->GetRemoteCid();
 }
+
+void DynamicChannel::HACK_SetChannelTxPriority(bool high_priority) {
+  return impl_->SetChannelTxPriority(high_priority);
+}
+
 }  // namespace l2cap
 }  // namespace bluetooth

@@ -1,11 +1,10 @@
 //! BT snoop logger
 
-use crate::internal::RawHalExports;
-use crate::HalExports;
+use crate::internal::RawHal;
 use bt_common::sys_prop;
-use bt_packets::hci::{AclPacket, CommandPacket, EventPacket};
+use bt_packets::hci::{AclPacket, CommandPacket, EventPacket, Packet};
 use bytes::{BufMut, Bytes, BytesMut};
-use gddi::{module, provides, Stoppable};
+use gddi::{module, part_out, provides, Stoppable};
 use log::error;
 use std::convert::TryFrom;
 use std::sync::Arc;
@@ -14,8 +13,33 @@ use tokio::fs::{remove_file, rename, File};
 use tokio::io::AsyncWriteExt;
 use tokio::runtime::Runtime;
 use tokio::select;
-use tokio::sync::mpsc::{channel, UnboundedReceiver};
+use tokio::sync::mpsc::{channel, Receiver, Sender, UnboundedReceiver};
 use tokio::sync::Mutex;
+
+#[part_out]
+#[derive(Clone, Stoppable)]
+struct Hal {
+    control: ControlHal,
+    acl: AclHal,
+}
+
+/// Command & event tx/rx
+#[derive(Clone, Stoppable)]
+pub struct ControlHal {
+    /// Transmit end
+    pub tx: Sender<CommandPacket>,
+    /// Receive end
+    pub rx: Arc<Mutex<Receiver<EventPacket>>>,
+}
+
+/// Acl tx/rx
+#[derive(Clone, Stoppable)]
+pub struct AclHal {
+    /// Transmit end
+    pub tx: Sender<AclPacket>,
+    /// Receive end
+    pub rx: Arc<Mutex<Receiver<AclPacket>>>,
+}
 
 /// The different modes snoop logging can be in
 #[derive(Clone)]
@@ -91,16 +115,12 @@ fn get_configured_snoop_mode() -> String {
 module! {
     snoop_module,
     providers {
-        HalExports => provide_snooped_hal,
+        parts Hal => provide_snooped_hal,
     },
 }
 
 #[provides]
-async fn provide_snooped_hal(
-    config: SnoopConfig,
-    hal_exports: RawHalExports,
-    rt: Arc<Runtime>,
-) -> HalExports {
+async fn provide_snooped_hal(config: SnoopConfig, raw_hal: RawHal, rt: Arc<Runtime>) -> Hal {
     let (cmd_down_tx, mut cmd_down_rx) = channel::<CommandPacket>(10);
     let (evt_up_tx, evt_up_rx) = channel::<EventPacket>(10);
     let (acl_down_tx, mut acl_down_rx) = channel::<AclPacket>(10);
@@ -110,19 +130,19 @@ async fn provide_snooped_hal(
         let mut logger = SnoopLogger::new(config).await;
         loop {
             select! {
-                Some(evt) = consume(&hal_exports.evt_rx) => {
+                Some(evt) = consume(&raw_hal.evt_rx) => {
                     evt_up_tx.send(evt.clone()).await.unwrap();
                     logger.log(Type::Evt, Direction::Up, evt.to_bytes()).await;
                 },
                 Some(cmd) = cmd_down_rx.recv() => {
-                    hal_exports.cmd_tx.send(cmd.clone()).unwrap();
+                    raw_hal.cmd_tx.send(cmd.clone()).unwrap();
                     logger.log(Type::Cmd, Direction::Down, cmd.to_bytes()).await;
                 },
                 Some(acl) = acl_down_rx.recv() => {
-                    hal_exports.acl_tx.send(acl.clone()).unwrap();
+                    raw_hal.acl_tx.send(acl.clone()).unwrap();
                     logger.log(Type::Acl, Direction::Down, acl.to_bytes()).await;
                 },
-                Some(acl) = consume(&hal_exports.acl_rx) => {
+                Some(acl) = consume(&raw_hal.acl_rx) => {
                     acl_up_tx.send(acl.clone()).await.unwrap();
                     logger.log(Type::Acl, Direction::Up, acl.to_bytes()).await;
                 }
@@ -130,11 +150,9 @@ async fn provide_snooped_hal(
         }
     });
 
-    HalExports {
-        cmd_tx: cmd_down_tx,
-        evt_rx: Arc::new(Mutex::new(evt_up_rx)),
-        acl_tx: acl_down_tx,
-        acl_rx: Arc::new(Mutex::new(acl_up_rx)),
+    Hal {
+        control: ControlHal { tx: cmd_down_tx, rx: Arc::new(Mutex::new(evt_up_rx)) },
+        acl: AclHal { tx: acl_down_tx, rx: Arc::new(Mutex::new(acl_up_rx)) },
     }
 }
 

@@ -1144,8 +1144,6 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda);
   }
-  uint8_t initiating_phys =
-      controller_get_interface()->get_le_all_initiating_phys();
 
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1230,7 +1228,7 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    bool ret = l2cu_create_conn_le(p_lcb, initiating_phys);
+    bool ret = l2cu_create_conn_le(p_lcb);
     if (!ret) {
       LOG_WARN("Unable to create fixed channel le connection fixed_cid:0x%04x",
                fixed_cid);
@@ -1421,7 +1419,7 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
 
 /*******************************************************************************
  *
- * Function         L2CA_SetFixedChannelTout
+ * Function         L2CA_SetLeGattTimeout
  *
  * Description      Higher layers call this function to set the idle timeout for
  *                  a fixed channel. The "idle timeout" is the amount of time
@@ -1434,30 +1432,24 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
  * Returns          true if command succeeded, false if failed
  *
  ******************************************************************************/
-bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
-                              uint16_t idle_tout) {
+bool L2CA_SetLeGattTimeout(const RawAddress& rem_bda, uint16_t idle_tout) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    return bluetooth::shim::L2CA_SetFixedChannelTout(rem_bda, fixed_cid,
-                                                     idle_tout);
+    return bluetooth::shim::L2CA_SetLeGattTimeout(rem_bda, idle_tout);
   }
 
-  tL2C_LCB* p_lcb;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-
-  if (fixed_cid >= L2CAP_ATT_CID && fixed_cid <= L2CAP_SMP_CID)
-    transport = BT_TRANSPORT_LE;
+  constexpr uint16_t kAttCid = 4;
 
   /* Is a fixed channel connected to the remote BDA ?*/
-  p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, transport);
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
   if (((p_lcb) == NULL) ||
-      (!p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL])) {
+      (!p_lcb->p_fixed_ccbs[kAttCid - L2CAP_FIRST_FIXED_CHNL])) {
     LOG(WARNING) << __func__ << " BDA: " << rem_bda
-                 << StringPrintf(" CID: 0x%04x not connected", fixed_cid);
+                 << StringPrintf(" CID: 0x%04x not connected", kAttCid);
     return (false);
   }
 
-  p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL]
-      ->fixed_chnl_idle_tout = idle_tout;
+  p_lcb->p_fixed_ccbs[kAttCid - L2CAP_FIRST_FIXED_CHNL]->fixed_chnl_idle_tout =
+      idle_tout;
 
   if (p_lcb->in_use && p_lcb->link_state == LST_CONNECTED &&
       !p_lcb->ccb_queue.p_first_ccb) {

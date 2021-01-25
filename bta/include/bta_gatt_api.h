@@ -463,8 +463,7 @@ extern void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  *
  ******************************************************************************/
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                           bool is_direct, tBT_TRANSPORT transport,
-                           bool opportunistic);
+                           bool is_direct, bool opportunistic);
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
                            bool is_direct, tBT_TRANSPORT transport,
                            bool opportunistic, uint8_t initiating_phys);
@@ -602,6 +601,8 @@ typedef void (*GATT_READ_OP_CB)(uint16_t conn_id, tGATT_STATUS status,
                                 void* data);
 typedef void (*GATT_WRITE_OP_CB)(uint16_t conn_id, tGATT_STATUS status,
                                  uint16_t handle, void* data);
+typedef void (*GATT_CONFIGURE_MTU_OP_CB)(uint16_t conn_id, tGATT_STATUS status,
+                                         void* data);
 
 /*******************************************************************************
  *
@@ -809,6 +810,9 @@ extern void BTA_GATTC_Refresh(const RawAddress& remote_bda);
  *
  ******************************************************************************/
 extern void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu);
+extern void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu,
+                                   GATT_CONFIGURE_MTU_OP_CB callback,
+                                   void* cb_data);
 
 /*******************************************************************************
  *  BTA GATT Server API

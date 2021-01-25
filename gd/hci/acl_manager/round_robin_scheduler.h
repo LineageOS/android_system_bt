@@ -19,6 +19,7 @@
 #include <stdint.h>
 
 #include "common/bidi_queue.h"
+#include "common/multi_priority_queue.h"
 #include "hci/acl_manager.h"
 #include "hci/controller.h"
 #include "hci/hci_packets.h"
@@ -41,11 +42,13 @@ class RoundRobinScheduler {
     std::shared_ptr<acl_manager::AclConnection::Queue> queue_;
     bool dequeue_is_registered_ = false;
     uint16_t number_of_sent_packets_ = 0;  // Track credits
+    bool high_priority_ = false;           // For A2dp use
   };
 
   void Register(ConnectionType connection_type, uint16_t handle,
                 std::shared_ptr<acl_manager::AclConnection::Queue> queue);
   void Unregister(uint16_t handle);
+  void SetLinkPriority(uint16_t handle, bool high_priority);
   uint16_t GetCredits();
   uint16_t GetLeCredits();
 
@@ -60,7 +63,7 @@ class RoundRobinScheduler {
   os::Handler* handler_ = nullptr;
   Controller* controller_ = nullptr;
   std::map<uint16_t, acl_queue_handler> acl_queue_handlers_;
-  std::queue<std::pair<ConnectionType, std::unique_ptr<AclBuilder>>> fragments_to_send_;
+  common::MultiPriorityQueue<std::pair<ConnectionType, std::unique_ptr<AclBuilder>>, 2> fragments_to_send_;
   uint16_t max_acl_packet_credits_ = 0;
   uint16_t acl_packet_credits_ = 0;
   uint16_t le_max_acl_packet_credits_ = 0;

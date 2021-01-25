@@ -163,6 +163,8 @@ cc_defaults {
         "libchrome",
         "libcrypto",
         "libflatbuffers-cpp",
+        "libgrpc++",
+        "libgrpc_wrap",
     ],
     static_libs: [
         "libbluetooth-protos",
@@ -237,7 +239,9 @@ cc_binary {
         "libbacktrace",
         "libchrome",
         "libcrypto",
+        "libgrpc++",
         "libgrpc++_unsecure",
+        "libgrpc_wrap",
         "libprotobuf-cpp-full",
     ],
     target: {
@@ -247,6 +251,10 @@ cc_binary {
                 "libhidlbase",
                 "libutils",
                 "libcutils",
+            ],
+            static_libs: [
+                "libbt_common_sys_prop_cxx",
+                "libbt_hidl_hal_cxx",
             ],
         },
         host: {
@@ -295,6 +303,10 @@ cc_test {
                 "libutils",
                 "libcutils",
             ],
+            static_libs: [
+                "libbt_common_sys_prop_cxx",
+                "libbt_hidl_hal_cxx",
+            ],
         },
     },
     srcs: [
@@ -335,6 +347,8 @@ cc_test {
     shared_libs: [
         "libchrome",
         "libcrypto",
+        "libgrpc++",
+        "libgrpc_wrap",
     ],
     sanitize: {
         address: true,
@@ -370,6 +384,24 @@ cc_test {
         "libcxxbridge05",
         "libchrome",
     ],
+    shared_libs: [
+        "libgrpc++",
+        "libgrpc_wrap",
+    ],
+    target: {
+        android: {
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "libhidlbase",
+                "libutils",
+                "libcutils",
+            ],
+            static_libs: [
+                "libbt_common_sys_prop_cxx",
+                "libbt_hidl_hal_cxx",
+            ],
+        },
+    },
 }
 
 cc_defaults {
@@ -397,6 +429,8 @@ cc_defaults {
     shared_libs: [
         "libcrypto",
         "libflatbuffers-cpp",
+        "libgrpc++",
+        "libgrpc_wrap",
     ],
     cflags: [
         "-DFUZZ_TARGET",
@@ -408,6 +442,10 @@ cc_defaults {
                 "libcutils",
                 "libhidlbase",
                 "libutils",
+            ],
+            static_libs: [
+                "libbt_common_sys_prop_cxx",
+                "libbt_hidl_hal_cxx",
             ],
         },
     },
@@ -498,6 +536,7 @@ genrule {
 
 rust_library {
     name: "libbt_packets",
+    defaults: ["gd_rust_defaults"],
     crate_name: "bt_packets",
     srcs: ["rust/packets/lib.rs", ":BluetoothGeneratedPackets_rust"],
     edition: "2018",
@@ -507,6 +546,7 @@ rust_library {
         "libbytes",
         "libnum_traits",
         "libthiserror",
+        "libbt_hci_custom_types",
     ],
 }
 

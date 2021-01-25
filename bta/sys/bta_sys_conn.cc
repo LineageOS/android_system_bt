@@ -85,7 +85,7 @@ void bta_sys_ssr_cfg_register(tBTA_SYS_SSR_CFG_CBACK* p_cback) {
  *
  ******************************************************************************/
 void bta_sys_notify_role_chg(const RawAddress& peer_addr, uint8_t new_role,
-                             uint8_t hci_status) {
+                             tHCI_STATUS hci_status) {
   LOG_DEBUG("Role changed peer:%s new_role:%s hci_status:%s",
             PRIVATE_ADDRESS(peer_addr), RoleText(new_role).c_str(),
             hci_error_code_text(hci_status).c_str());

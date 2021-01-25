@@ -1,0 +1,27 @@
+rust_library {
+    name: "libbt_link",
+    defaults: ["gd_rust_defaults"],
+    crate_name: "bt_link",
+    srcs: ["src/lib.rs"],
+    edition: "2018",
+    rustlibs: [
+        "libbt_hci",
+        "libbt_hal",
+        "libbt_facade_proto",
+        "libbt_packets",
+        "libbytes",
+        "libfutures",
+        "libgrpcio",
+        "libnum_traits",
+        "libthiserror",
+        "libtokio",
+        "libprotobuf",
+        "libgddi",
+        "liblog_rust",
+        "libbt_common",
+        "libbt_hci_custom_types",
+    ],
+    proc_macros: [
+        "libnum_derive",
+    ],
+}

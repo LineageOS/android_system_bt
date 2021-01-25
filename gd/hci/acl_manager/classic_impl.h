@@ -134,6 +134,11 @@ struct classic_impl : public security::ISecurityManagerListener {
       round_robin_scheduler_->Unregister(handle);
       callbacks->OnDisconnection(reason);
       acl_connections_.erase(handle);
+    } else {
+      // This handle is probably for SCO, so we use the callback workaround.
+      if (sco_disconnect_callback_ != nullptr) {
+        sco_disconnect_callback_(handle, static_cast<uint8_t>(reason));
+      }
     }
   }
 
@@ -402,13 +407,14 @@ struct classic_impl : public security::ISecurityManagerListener {
     if (!mode_change_view.IsValid()) {
       LOG_ERROR("Received on_mode_change with invalid packet");
       return;
-    } else if (mode_change_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = mode_change_view.GetStatus();
+    }
+    auto status = mode_change_view.GetStatus();
+    uint16_t handle = mode_change_view.GetConnectionHandle();
+    if (status != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_mode_change with error code %s", error_code.c_str());
+      LOG_ERROR("Received on_mode_change on handle 0x0%04hx with error code %s", handle, error_code.c_str());
       return;
     }
-    uint16_t handle = mode_change_view.GetConnectionHandle();
     auto callbacks = get_callbacks(handle);
     if (callbacks == nullptr) {
       LOG_WARN("Unknown connection handle 0x%04hx", handle);
@@ -631,6 +637,10 @@ struct classic_impl : public security::ISecurityManagerListener {
     return 0xFFFF;
   }
 
+  void HACK_SetScoDisconnectCallback(std::function<void(uint16_t, uint8_t)> callback) {
+    sco_disconnect_callback_ = callback;
+  }
+
   HciLayer* hci_layer_ = nullptr;
   Controller* controller_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
@@ -646,6 +656,8 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   std::unique_ptr<security::SecurityManager> security_manager_;
   bool crash_on_unknown_handle_ = false;
+
+  std::function<void(uint16_t, uint8_t)> sco_disconnect_callback_;
 };
 
 }  // namespace acl_manager

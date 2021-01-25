@@ -77,6 +77,8 @@ using DiscoverabilityState = struct {
 };
 using ConnectabilityState = DiscoverabilityState;
 
+using HACK_ScoDisconnectCallback = std::function<void(uint16_t, uint8_t)>;
+
 namespace bluetooth {
 namespace shim {
 
@@ -205,6 +207,9 @@ class Btm {
 
   uint16_t GetAclHandle(const RawAddress& remote_bda, tBT_TRANSPORT transport);
 
+  void Register_HACK_SetScoDisconnectCallback(
+      HACK_ScoDisconnectCallback callback);
+
   static tBLE_ADDR_TYPE GetAddressType(const RawAddress& bd_addr);
 
   // Store the address type from advertising report or connection complete
@@ -235,11 +240,27 @@ class Btm {
   ReadRemoteName le_read_remote_name_;
   ReadRemoteName classic_read_remote_name_;
 
-  class ScanningCallbacks : public hci::LeScanningManagerCallbacks {
-    void on_advertisements(
-        std::vector<std::shared_ptr<hci::LeReport>> reports) override;
-    void on_timeout() override;
-    os::Handler* Handler() override;
+  class ScanningCallbacks : public hci::ScanningCallback {
+    void OnScannerRegistered(const bluetooth::hci::Uuid app_uuid,
+                             bluetooth::hci::ScannerId scanner_id,
+                             ScanningStatus status);
+    void OnScanResult(uint16_t event_type, uint8_t address_type,
+                      bluetooth::hci::Address address, uint8_t primary_phy,
+                      uint8_t secondary_phy, uint8_t advertising_sid,
+                      int8_t tx_power, int8_t rssi,
+                      uint16_t periodic_advertising_interval,
+                      std::vector<uint8_t> advertising_data);
+    void OnTrackAdvFoundLost();
+    void OnBatchScanReports(int client_if, int status, int report_format,
+                            int num_records, std::vector<uint8_t> data);
+    void OnTimeout();
+    void OnFilterEnable(bluetooth::hci::Enable enable, uint8_t status);
+    void OnFilterParamSetup(uint8_t available_spaces,
+                            bluetooth::hci::ApcfAction action, uint8_t status);
+    void OnFilterConfigCallback(bluetooth::hci::ApcfFilterType filter_type,
+                                uint8_t available_spaces,
+                                bluetooth::hci::ApcfAction action,
+                                uint8_t status);
   };
   ScanningCallbacks scanning_callbacks_;
 

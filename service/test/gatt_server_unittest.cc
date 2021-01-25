@@ -32,7 +32,8 @@ class MockGattHandler
   MockGattHandler() = default;
   ~MockGattHandler() override = default;
 
-  MOCK_METHOD1(RegisterServer, bt_status_t(const bluetooth::Uuid&));
+  MOCK_METHOD2(RegisterServer,
+               bt_status_t(const bluetooth::Uuid&, bool eatt_support));
   MOCK_METHOD1(UnregisterServer, bt_status_t(int));
   MOCK_METHOD2(AddService, bt_status_t(int, std::vector<btgatt_db_element_t>));
   MOCK_METHOD5(AddCharacteristic,
@@ -223,7 +224,7 @@ class GattServerPostRegisterTest : public GattServerTest {
           static_cast<GattServer*>(in_client.release()));
     };
 
-    EXPECT_CALL(*mock_handler_, RegisterServer(_))
+    EXPECT_CALL(*mock_handler_, RegisterServer(_, _))
         .Times(1)
         .WillOnce(Return(BT_STATUS_SUCCESS));
 
@@ -298,7 +299,7 @@ class GattServerPostRegisterTest : public GattServerTest {
 };
 
 TEST_F(GattServerTest, RegisterServer) {
-  EXPECT_CALL(*mock_handler_, RegisterServer(_))
+  EXPECT_CALL(*mock_handler_, RegisterServer(_, _))
       .Times(2)
       .WillOnce(Return(BT_STATUS_FAIL))
       .WillOnce(Return(BT_STATUS_SUCCESS));
@@ -337,7 +338,7 @@ TEST_F(GattServerTest, RegisterServer) {
 
   // Call with a different Uuid while one is pending.
   Uuid uuid1 = Uuid::GetRandom();
-  EXPECT_CALL(*mock_handler_, RegisterServer(_))
+  EXPECT_CALL(*mock_handler_, RegisterServer(_, _))
       .Times(1)
       .WillOnce(Return(BT_STATUS_SUCCESS));
   EXPECT_TRUE(factory_->RegisterInstance(uuid1, callback));

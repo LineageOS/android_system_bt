@@ -271,7 +271,7 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
   p_cb->in_use = true;
 
-  BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, true, BT_TRANSPORT_LE, false);
+  BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, true, false);
 }
 
 /*******************************************************************************
@@ -1359,7 +1359,7 @@ void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
   BTM_BleSetPrefConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
                            timeout);
   L2CA_UpdateBleConnParams(p_dev_cb->addr, min_interval, max_interval, latency,
-                           timeout);
+                           timeout, 0, 0);
 }
 
 /*******************************************************************************
@@ -1613,13 +1613,10 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   conn_dat.bda = p_cb->addr;
   conn_dat.le_hid = true;
   conn_dat.scps_supported = p_cb->scps_supported;
-
-  if (p_cb->status == BTA_HH_OK)
-    conn_dat.status = (p_data->le_close.reason == GATT_CONN_UNKNOWN)
-                          ? p_cb->status
-                          : BTA_HH_ERR;
-  else
-    conn_dat.status = p_cb->status;
+  conn_dat.status = p_cb->status;
+  if (p_data->le_close.reason != GATT_CONN_OK) {
+    conn_dat.status = BTA_HH_ERR;
+  }
 
   /* Report OPEN fail event */
   (*bta_hh_cb.p_cback)(BTA_HH_OPEN_EVT, (tBTA_HH*)&conn_dat);
@@ -1655,7 +1652,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     bta_hh_disc_cmpl();
   } else {
 #if (BTA_HH_LE_RECONN == TRUE)
-    if (p_data->le_close.reason == GATT_CONN_TIMEOUT) {
+    if (p_data->le_close.reason == HCI_ERR_CONNECTION_TOUT) {
       bta_hh_le_add_dev_bg_conn(p_cb, false);
     }
 #endif
@@ -1965,8 +1962,7 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond) {
 
   if (!p_cb->in_bg_conn && to_add) {
     /* add device into BG connection to accept remote initiated connection */
-    BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, BT_TRANSPORT_LE,
-                   false);
+    BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, false);
     p_cb->in_bg_conn = true;
   }
   return;

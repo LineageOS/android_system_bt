@@ -105,11 +105,22 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
                                      std::unique_ptr<hci::acl_manager::LeAclConnection> acl_connection) {
   // Same link should not be connected twice
   hci::AddressWithType connected_address_with_type = acl_connection->GetRemoteAddress();
+  uint16_t handle = acl_connection->GetHandle();
   ASSERT_LOG(GetLink(connected_address_with_type) == nullptr, "%s is connected twice without disconnection",
              acl_connection->GetRemoteAddress().ToString().c_str());
   links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection), parameter_provider_,
                      dynamic_channel_service_manager_, fixed_channel_service_manager_, this);
   auto* link = GetLink(connected_address_with_type);
+
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnLinkConnected,
+        connected_address_with_type,
+        handle,
+        link->GetRole());
+  }
+
   // Allocate and distribute channels for all registered fixed channel services
   auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
   for (auto& fixed_channel_service : fixed_channel_services) {
@@ -127,13 +138,15 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
 
   // Remove device from pending links list, if any
   pending_links_.erase(connecting_address_with_type);
+
+  link->ReadRemoteVersionInformation();
 }
 
 void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) {
   // Notify all pending links for this device
   auto pending_link = pending_links_.find(address_with_type);
-  if (pending_link == pending_links_.end()) {
-    // There is no pending link, exit
+  if (pending_link == pending_links_.end() && reason != hci::ErrorCode::UNKNOWN_CONNECTION) {
+    // There is no pending link, exit; UNKNOWN_CONNECTION means we cancelled
     LOG_INFO("Connection to %s failed without a pending link", address_with_type.ToString().c_str());
     return;
   }
@@ -147,21 +160,34 @@ void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::E
   pending_links_.erase(pending_link);
 }
 
-void LinkManager::OnAdvertisingSetTerminated(
-    bluetooth::hci::ErrorCode status, uint16_t connection_handle, hci::AddressWithType advertiser_address) {
-  for (auto& [address, link] : links_) {
-    if (link.GetAclConnection()->GetHandle() == connection_handle) {
-      link.GetAclConnection()->SetLocalAddress(advertiser_address);
-      return;
-    }
-  }
-}
-
 void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type) {
   auto* link = GetLink(address_with_type);
   ASSERT_LOG(link != nullptr, "Device %s is disconnected but not in local database",
              address_with_type.ToString().c_str());
   links_.erase(address_with_type);
+
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnLinkDisconnected, address_with_type);
+  }
+}
+
+void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener) {
+  link_property_callback_handler_ = handler;
+  link_property_listener_ = listener;
+}
+
+void LinkManager::OnReadRemoteVersionInformationComplete(
+    hci::AddressWithType address_with_type, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_,
+        &LinkPropertyListener::OnReadRemoteVersionInformation,
+        address_with_type,
+        lmp_version,
+        manufacturer_name,
+        sub_version);
+  }
 }
 
 }  // namespace internal

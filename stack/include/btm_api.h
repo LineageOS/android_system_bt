@@ -48,8 +48,6 @@ void btm_free();
  *  DEVICE CONTROL and COMMON FUNCTIONS
  ****************************************************************************/
 
-void BTM_db_reset(void);
-
 void BTM_reset_complete();
 
 /*******************************************************************************
@@ -950,6 +948,10 @@ extern tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
 void BTM_LogHistory(const std::string& tag, const RawAddress& addr,
                     const std::string& msg);
 void BTM_LogHistory(const std::string& tag, const RawAddress& addr,
+                    const std::string& msg, const std::string& extra);
+void BTM_LogHistory(const std::string& tag, const tBLE_BD_ADDR& addr,
+                    const std::string& msg);
+void BTM_LogHistory(const std::string& tag, const tBLE_BD_ADDR& addr,
                     const std::string& msg, const std::string& extra);
 
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);

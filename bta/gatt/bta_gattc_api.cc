@@ -119,11 +119,10 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    bool is_direct, tBT_TRANSPORT transport,
-                    bool opportunistic) {
+                    bool is_direct, bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
-  BTA_GATTC_Open(client_if, remote_bda, is_direct, transport, opportunistic,
-                 phy);
+  BTA_GATTC_Open(client_if, remote_bda, is_direct, BT_TRANSPORT_LE,
+                 opportunistic, phy);
 }
 
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
@@ -211,6 +210,19 @@ void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
   p_buf->hdr.event = BTA_GATTC_API_CFG_MTU_EVT;
   p_buf->hdr.layer_specific = conn_id;
   p_buf->mtu = mtu;
+
+  bta_sys_sendmsg(p_buf);
+}
+void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu,
+                            GATT_CONFIGURE_MTU_OP_CB callback, void* cb_data) {
+  tBTA_GATTC_API_CFG_MTU* p_buf =
+      (tBTA_GATTC_API_CFG_MTU*)osi_malloc(sizeof(tBTA_GATTC_API_CFG_MTU));
+
+  p_buf->hdr.event = BTA_GATTC_API_CFG_MTU_EVT;
+  p_buf->hdr.layer_specific = conn_id;
+  p_buf->mtu = mtu;
+  p_buf->mtu_cb = callback;
+  p_buf->mtu_cb_data = cb_data;
 
   bta_sys_sendmsg(p_buf);
 }

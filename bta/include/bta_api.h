@@ -841,6 +841,34 @@ extern void BTA_GetEirService(uint8_t* p_eir, size_t eir_len,
 
 /*******************************************************************************
  *
+ * Function         BTA_AddEirUuid
+ *
+ * Description      Request to add a new service class UUID to the local
+ *                  device's EIR data.
+ *
+ * Parameters       uuid16 - The service class UUID you wish to add
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void BTA_AddEirUuid(uint16_t uuid16);
+
+/*******************************************************************************
+ *
+ * Function         BTA_RemoveEirUuid
+ *
+ * Description      Request to remove a service class UID from the local
+ *                  device's EIR data.
+ *
+ * Parameters       uuid16 - The service class UUID you wish to remove
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+extern void BTA_RemoveEirUuid(uint16_t uuid16);
+
+/*******************************************************************************
+ *
  * Function         BTA_DmGetConnectionState
  *
  * Description      Returns whether the remote device is currently connected.
@@ -1096,8 +1124,7 @@ extern void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmBleSetDataLength(const RawAddress& remote_device,
-                                   uint16_t tx_data_length);
+extern void BTA_DmBleRequestMaxTxDataLength(const RawAddress& remote_device);
 
 /*******************************************************************************
  *

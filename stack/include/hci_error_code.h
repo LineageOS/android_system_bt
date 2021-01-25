@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <base/strings/stringprintf.h>
 #include <string>
 
 /*
@@ -63,10 +64,9 @@ typedef enum : uint8_t {
 
   HCI_ERR_MAX_ERR = 0x43,  // TODO remove. randomly used
   HCI_ERR_UNDEFINED = 0xff,
-} tHCI_STATUS;
+} tHCI_ERROR_CODE;
 
-// TODO Change type to tHCI_STATUS
-inline std::string hci_error_code_text(uint8_t error_code) {
+inline std::string hci_error_code_text(const tHCI_ERROR_CODE& error_code) {
   switch (error_code) {
     case HCI_SUCCESS:
       return std::string("Success");
@@ -143,6 +143,17 @@ inline std::string hci_error_code_text(uint8_t error_code) {
     case HCI_ERR_LIMIT_REACHED:
       return std::string("Limit Reached");
     default:
-      return std::string("Unknown Error");
+      return base::StringPrintf("Unknown Error[%02hx]", error_code);
   }
+}
+
+// Context equivalence
+using tHCI_STATUS = tHCI_ERROR_CODE;
+inline std::string hci_status_code_text(const tHCI_STATUS& status_code) {
+  return hci_error_code_text(status_code);
+}
+
+using tHCI_REASON = tHCI_ERROR_CODE;
+inline std::string hci_reason_code_text(const tHCI_REASON& reason_code) {
+  return hci_error_code_text(reason_code);
 }

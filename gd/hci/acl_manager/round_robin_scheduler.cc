@@ -67,6 +67,15 @@ void RoundRobinScheduler::Unregister(uint16_t handle) {
   starting_point_ = acl_queue_handlers_.begin();
 }
 
+void RoundRobinScheduler::SetLinkPriority(uint16_t handle, bool high_priority) {
+  auto acl_queue_handler = acl_queue_handlers_.find(handle);
+  if (acl_queue_handler == acl_queue_handlers_.end()) {
+    LOG_WARN("handle %d is invalid", handle);
+    return;
+  }
+  acl_queue_handler->second.high_priority_ = high_priority;
+}
+
 uint16_t RoundRobinScheduler::GetCredits() {
   return acl_packet_credits_;
 }
@@ -121,14 +130,20 @@ void RoundRobinScheduler::buffer_packet(std::map<uint16_t, acl_queue_handler>::i
   PacketBoundaryFlag packet_boundary_flag =
       (connection_type == ConnectionType::CLASSIC ? PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE
                                                   : PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE);
+  int acl_priority = acl_queue_handler->second.high_priority_ ? 1 : 0;
   if (packet->size() <= mtu) {
-    fragments_to_send_.push(std::make_pair(
-        connection_type, AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(packet))));
+    fragments_to_send_.push(
+        std::make_pair(
+            connection_type, AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(packet))),
+        acl_priority);
   } else {
     auto fragments = AclFragmenter(mtu, std::move(packet)).GetFragments();
     for (size_t i = 0; i < fragments.size(); i++) {
-      fragments_to_send_.push(std::make_pair(
-          connection_type, AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(fragments[i]))));
+      fragments_to_send_.push(
+          std::make_pair(
+              connection_type,
+              AclBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(fragments[i]))),
+          acl_priority);
       packet_boundary_flag = PacketBoundaryFlag::CONTINUING_FRAGMENT;
     }
   }

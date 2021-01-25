@@ -33,9 +33,11 @@ import zlib
 TYPE_IN_EVT = 0x10
 TYPE_IN_ACL = 0x11
 TYPE_IN_SCO = 0x12
+TYPE_IN_ISO = 0x17
 TYPE_OUT_CMD = 0x20
 TYPE_OUT_ACL = 0x21
 TYPE_OUT_SCO = 0x22
+TYPE_OUT_ISO = 0x2d
 
 
 def type_to_direction(type):
@@ -44,7 +46,7 @@ def type_to_direction(type):
   0 = sent packet
   1 = received packet
   """
-    if type in [TYPE_IN_EVT, TYPE_IN_ACL, TYPE_IN_SCO]:
+    if type in [TYPE_IN_EVT, TYPE_IN_ACL, TYPE_IN_SCO, TYPE_IN_ISO]:
         return 1
     return 0
 
@@ -61,6 +63,9 @@ def type_to_hci(type):
         return '\x03'
     if type == TYPE_IN_EVT:
         return '\x04'
+    if type == TYPE_IN_ISO or type == TYPE_OUT_ISO:
+        return '\x05'
+    raise RuntimeError("type_to_hci: unknown type (0x{:02x})".format(type))
 
 
 def decode_snooz(snooz):
@@ -120,16 +125,16 @@ def decode_snooz_v2(decompressed, last_timestamp_ms):
     first_timestamp_ms = last_timestamp_ms + 0x00dcddb30f2f8000
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
-        offset += 9 + length - 1
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHQb', decompressed, offset)
+        offset += 13 + length - 1
         first_timestamp_ms -= delta_time_ms
 
     # Second pass does the actual writing out to stdout.
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHQb', decompressed, offset)
         first_timestamp_ms += delta_time_ms
-        offset += 9
+        offset += 13
         sys.stdout.write(struct.pack('>II', packet_length, length))
         sys.stdout.write(struct.pack('>II', type_to_direction(snooz_type), 0))
         sys.stdout.write(struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))

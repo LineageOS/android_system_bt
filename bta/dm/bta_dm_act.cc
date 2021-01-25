@@ -326,7 +326,6 @@ void BTA_dm_on_hw_on() {
     get_btm_client_interface().security.BTM_SecRegister(&bta_security);
   }
 
-  BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
   BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
 
 #if (BLE_VND_INCLUDED == TRUE)
@@ -2183,7 +2182,7 @@ static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
 }
 
 static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
-                               uint8_t hci_status) {
+                               tHCI_STATUS hci_status) {
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
   if (!p_dev) {
     LOG_WARN(
@@ -2230,7 +2229,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
 }
 
 void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
-                               uint8_t hci_status) {
+                               tHCI_STATUS hci_status) {
   do_in_main_thread(
       FROM_HERE, base::Bind(handle_role_change, bd_addr, new_role, hci_status));
 }
@@ -3569,10 +3568,12 @@ void bta_dm_ble_observe(bool start, uint8_t duration,
 }
 
 /** This function set the maximum transmission packet size */
-void bta_dm_ble_set_data_length(const RawAddress& bd_addr,
-                                uint16_t tx_data_length) {
-  if (BTM_SetBleDataLength(bd_addr, tx_data_length) != BTM_SUCCESS) {
-    LOG_INFO("Unable to set ble data length:%hu", tx_data_length);
+void bta_dm_ble_set_data_length(const RawAddress& bd_addr) {
+  const controller_t* controller = controller_get_interface();
+  uint16_t max_len = controller->get_ble_maximum_tx_data_length();
+
+  if (BTM_SetBleDataLength(bd_addr, max_len) != BTM_SUCCESS) {
+    LOG_INFO("Unable to set ble data length:%hu", max_len);
   }
 }
 
@@ -3716,11 +3717,9 @@ void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
     BTA_GATTC_ServiceSearchRequest(bta_dm_search_cb.conn_id, nullptr);
   } else {
     if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-      BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true, BT_TRANSPORT_LE,
-                     true);
+      BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true, true);
     } else {
-      BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true, BT_TRANSPORT_LE,
-                     false);
+      BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true, false);
     }
   }
 }

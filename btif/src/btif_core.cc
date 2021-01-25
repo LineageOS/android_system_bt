@@ -85,6 +85,11 @@ static void bt_jni_msg_ready(void* context);
 #endif  // defined(OS_GENERIC)
 #endif  // BTE_DID_CONF_FILE
 
+#define CODEC_TYPE_NUMBER 32
+#define DEFAULT_BUFFER_TIME (MAX_PCM_FRAME_NUM_PER_TICK * 2)
+#define MAXIMUM_BUFFER_TIME (MAX_PCM_FRAME_NUM_PER_TICK * 2)
+#define MINIMUM_BUFFER_TIME MAX_PCM_FRAME_NUM_PER_TICK
+
 /*******************************************************************************
  *  Static variables
  ******************************************************************************/
@@ -242,6 +247,70 @@ bt_status_t btif_init_bluetooth() {
   return BT_STATUS_SUCCESS;
 }
 
+static bool btif_is_a2dp_offload_enabled() {
+  char value_sup[PROPERTY_VALUE_MAX] = {'\0'};
+  char value_dis[PROPERTY_VALUE_MAX] = {'\0'};
+  bool a2dp_offload_enabled_;
+
+  osi_property_get("ro.bluetooth.a2dp_offload.supported", value_sup, "false");
+  osi_property_get("persist.bluetooth.a2dp_offload.disabled", value_dis,
+                   "false");
+  a2dp_offload_enabled_ =
+      (strcmp(value_sup, "true") == 0) && (strcmp(value_dis, "false") == 0);
+  BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled_);
+
+  return a2dp_offload_enabled_;
+}
+
+void btif_dynamic_audio_buffer_init() {
+  LOG_INFO("%s entered", __func__);
+
+  char buf[512];
+  bt_property_t prop;
+  prop.type = BT_PROPERTY_DYNAMIC_AUDIO_BUFFER;
+  prop.val = (void*)buf;
+
+  bt_dynamic_audio_buffer_item_t dynamic_audio_buffer_item;
+  prop.len = sizeof(bt_dynamic_audio_buffer_item_t);
+  LOG_DEBUG("%s prop.len = %d", __func__, prop.len);
+
+  tBTM_BLE_VSC_CB cmn_vsc_cb;
+  BTM_BleGetVendorCapabilities(&cmn_vsc_cb);
+
+  if (btif_is_a2dp_offload_enabled() == false) {
+    BTIF_TRACE_DEBUG("%s Get buffer time for A2DP software encoding", __func__);
+    for (int i = 0; i < CODEC_TYPE_NUMBER; i++) {
+      dynamic_audio_buffer_item.dab_item[i] = {
+          .default_buffer_time = DEFAULT_BUFFER_TIME,
+          .maximum_buffer_time = MAXIMUM_BUFFER_TIME,
+          .minimum_buffer_time = MINIMUM_BUFFER_TIME};
+    }
+    memcpy(prop.val, &dynamic_audio_buffer_item, prop.len);
+    invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &prop);
+  } else {
+    if (cmn_vsc_cb.dynamic_audio_buffer_support != 0) {
+      BTIF_TRACE_DEBUG("%s Get buffer time for A2DP Offload", __func__);
+      tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB
+          bt_dynamic_audio_buffer_cb[CODEC_TYPE_NUMBER];
+      BTM_BleGetDynamicAudioBuffer(bt_dynamic_audio_buffer_cb);
+
+      for (int i = 0; i < CODEC_TYPE_NUMBER; i++) {
+        dynamic_audio_buffer_item.dab_item[i] = {
+            .default_buffer_time =
+                bt_dynamic_audio_buffer_cb[i].default_buffer_time,
+            .maximum_buffer_time =
+                bt_dynamic_audio_buffer_cb[i].maximum_buffer_time,
+            .minimum_buffer_time =
+                bt_dynamic_audio_buffer_cb[i].minimum_buffer_time};
+      }
+      memcpy(prop.val, &dynamic_audio_buffer_item, prop.len);
+      invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &prop);
+    } else {
+      BTIF_TRACE_DEBUG("%s Don't support Dynamic Audio Buffer", __func__);
+    }
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btif_enable_bluetooth_evt
@@ -287,6 +356,9 @@ void btif_enable_bluetooth_evt() {
 
   /* init pan */
   btif_pan_init();
+
+  /* init dynamic audio buffer */
+  btif_dynamic_audio_buffer_init();
 
   /* load did configuration */
   bte_load_did_conf(BTE_DID_CONF_FILE);
@@ -754,4 +826,78 @@ void btif_disable_service(tBTA_SERVICE_ID service_id) {
   if (btif_is_enabled()) {
     btif_dm_enable_service(service_id, false);
   }
+}
+
+void DynamicAudiobufferSizeCompleteCallback(tBTM_VSC_CMPL* p_vsc_cmpl_params) {
+  LOG(INFO) << __func__;
+
+  if (p_vsc_cmpl_params->param_len < 1) {
+    LOG(ERROR) << __func__
+               << ": The length of returned parameters is less than 1";
+    return;
+  }
+  uint8_t* p_event_param_buf = p_vsc_cmpl_params->p_param_buf;
+  uint8_t status = 0xff;
+  uint8_t opcode = 0xff;
+  uint16_t respond_buffer_time = 0xffff;
+
+  // [Return Parameter]         | [Size]   | [Purpose]
+  // Status                     | 1 octet  | Command complete status
+  // Dynamic_Audio_Buffer_opcode| 1 octet  | 0x02 - Set buffer time
+  // Audio_Codec_Buffer_Time    | 2 octet  | Current buffer time
+  STREAM_TO_UINT8(status, p_event_param_buf);
+  if (status != HCI_SUCCESS) {
+    LOG(ERROR) << __func__
+               << ": Fail to configure DFTB. status: " << loghex(status);
+    return;
+  }
+
+  if (p_vsc_cmpl_params->param_len != 4) {
+    LOG(FATAL) << __func__
+               << ": The length of returned parameters is not equal to 4: "
+               << std::to_string(p_vsc_cmpl_params->param_len);
+    return;
+  }
+
+  STREAM_TO_UINT8(opcode, p_event_param_buf);
+  LOG(INFO) << __func__ << ": opcode = " << loghex(opcode);
+
+  if (opcode == 0x02) {
+    STREAM_TO_UINT16(respond_buffer_time, p_event_param_buf);
+    LOG(INFO) << __func__
+              << ": Succeed to configure Media Tx Buffer, used_buffer_time = "
+              << loghex(respond_buffer_time);
+  }
+}
+
+bt_status_t btif_set_dynamic_audio_buffer_size(int codec, int size) {
+  BTIF_TRACE_DEBUG("%s", __func__);
+
+  tBTM_BLE_VSC_CB cmn_vsc_cb;
+  BTM_BleGetVendorCapabilities(&cmn_vsc_cb);
+
+  if (!btif_av_is_a2dp_offload_enabled()) {
+    BTIF_TRACE_DEBUG("%s Set buffer size (%d) for A2DP software encoding",
+                     __func__, size);
+    btif_av_set_dynamic_audio_buffer_size((uint8_t(size)));
+  } else {
+    if (cmn_vsc_cb.dynamic_audio_buffer_support != 0) {
+      BTIF_TRACE_DEBUG("%s Set buffer size (%d) for A2DP offload", __func__,
+                       size);
+      uint16_t firmware_tx_buffer_length_byte;
+      uint8_t param[3] = {0};
+      uint8_t* p_param = param;
+
+      firmware_tx_buffer_length_byte = static_cast<uint16_t>(size);
+      LOG(INFO) << __func__ << "firmware_tx_buffer_length_byte: "
+                << firmware_tx_buffer_length_byte;
+
+      UINT8_TO_STREAM(p_param, HCI_CONTROLLER_DAB_SET_BUFFER_TIME);
+      UINT16_TO_STREAM(p_param, firmware_tx_buffer_length_byte);
+      BTM_VendorSpecificCommand(HCI_CONTROLLER_DAB, p_param - param, param,
+                                DynamicAudiobufferSizeCompleteCallback);
+    }
+  }
+
+  return BT_STATUS_SUCCESS;
 }

@@ -17,6 +17,7 @@ filegroup {
         "init_flags_test.cc",
         "list_map_test.cc",
         "lru_cache_test.cc",
+        "multi_priority_queue_test.cc",
         "numbers_test.cc",
         "strings_test.cc",
     ],

@@ -2846,6 +2846,9 @@ packet LeReadRemoteFeatures : LeConnectionManagementCommand (op_code = LE_READ_R
   _reserved_ : 4,
 }
 
+packet LeReadRemoteFeaturesStatus : CommandStatus (command_op_code = LE_READ_REMOTE_FEATURES) {
+}
+
 packet LeEncrypt : LeSecurityCommand (op_code = LE_ENCRYPT) {
   key : 8[16],
   plaintext_data : 8[16],
@@ -3987,6 +3990,7 @@ enum ApcfOpcode : 8 {
   SERVICE_DATA = 0x07,
 }
 
+// https://source.android.com/devices/bluetooth/hci_requirements#advertising-packet-content-filter
 packet LeAdvFilter : LeScanningCommand (op_code = LE_ADV_FILTER) {
   apcf_opcode : ApcfOpcode,
   _body_,
@@ -3995,7 +3999,150 @@ packet LeAdvFilter : LeScanningCommand (op_code = LE_ADV_FILTER) {
 packet LeAdvFilterComplete : CommandComplete (command_op_code = LE_ADV_FILTER) {
   status : ErrorCode,
   apcf_opcode : ApcfOpcode,
+  _body_,
 }
+
+packet LeAdvFilterEnable : LeAdvFilter (apcf_opcode = ENABLE) {
+  apcf_enable : Enable,
+}
+
+packet LeAdvFilterEnableComplete : LeAdvFilterComplete (apcf_opcode = ENABLE) {
+  apcf_enable : Enable,
+}
+
+enum ApcfAction : 8 {
+  ADD = 0x00,
+  DELETE = 0x01,
+  CLEAR = 0x02,
+}
+
+enum DeliveryMode : 8 {
+  IMMEDIATE = 0x00,
+  ONFOUND = 0x01,
+  BATCHED = 0x02,
+}
+
+// Bit masks for the selected features
+enum ApcfFilterType : 8 {
+  BROADCASTER_ADDRESS = 0x00,
+  SERVICE_DATA_CHANGE = 0x01,
+  SERVICE_UUID = 0x02,
+  SERVICE_SOLICITATION_UUID = 0x03,
+  LOCAL_NAME = 0x04,
+  MANUFACTURER_DATA = 0x05,
+  SERVICE_DATA = 0x06,
+}
+
+packet LeAdvFilterSetFilteringParameters : LeAdvFilter (apcf_opcode = SET_FILTERING_PARAMETERS) {
+  apcf_action : ApcfAction,
+  _body_,
+}
+
+packet LeAdvFilterAddFilteringParameters : LeAdvFilterSetFilteringParameters (apcf_action = ADD) {
+  apcf_filter_index : 8,
+  apcf_feature_selection : 16,
+  apcf_list_logic_type : 16,
+  apcf_filter_logic_type : 8,
+  rssi_high_thresh : 8,
+  delivery_mode : DeliveryMode,
+  onfound_timeout : 16,
+  onfound_timeout_cnt : 8,
+  rssi_low_thresh : 8,
+  onlost_timeout : 16,
+  num_of_tracking_entries : 16,
+}
+
+packet LeAdvFilterDeleteFilteringParameters : LeAdvFilterSetFilteringParameters (apcf_action = DELETE) {
+  apcf_filter_index : 8,
+}
+
+packet LeAdvFilterClearFilteringParameters : LeAdvFilterSetFilteringParameters (apcf_action = CLEAR) {
+}
+
+packet LeAdvFilterSetFilteringParametersComplete : LeAdvFilterComplete (apcf_opcode = SET_FILTERING_PARAMETERS) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
+enum ApcfApplicationAddressType : 8 {
+  PUBLIC = 0x00,
+  RANDOM = 0x01,
+  NOT_APPLICABLE = 0x02,
+}
+
+packet LeAdvFilterBroadcasterAddress : LeAdvFilter (apcf_opcode = BROADCASTER_ADDRESS) {
+  apcf_action : ApcfAction,
+  apcf_filter_index : 8,
+  apcf_broadcaster_address : Address,
+  apcf_application_address_type : ApcfApplicationAddressType,
+}
+
+packet LeAdvFilterClearBroadcasterAddress : LeAdvFilter (apcf_opcode = BROADCASTER_ADDRESS) {
+  _fixed_ = 0x02 : 8,
+  apcf_filter_index : 8,
+}
+
+packet LeAdvFilterBroadcasterAddressComplete : LeAdvFilterComplete (apcf_opcode = BROADCASTER_ADDRESS) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
+
+packet LeAdvFilterServiceUuid : LeAdvFilter (apcf_opcode = SERVICE_UUID) {
+  apcf_action : ApcfAction,
+  apcf_filter_index : 8,
+  acpf_uuid_data : 8[],
+}
+
+packet LeAdvFilterServiceUuidComplete : LeAdvFilterComplete (apcf_opcode = SERVICE_UUID) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
+packet LeAdvFilterSolicitationUuid : LeAdvFilter (apcf_opcode = SERVICE_SOLICITATION_UUID) {
+  apcf_action : ApcfAction,
+  apcf_filter_index : 8,
+  acpf_uuid_data : 8[],
+}
+
+packet LeAdvFilterSolicitationUuidComplete : LeAdvFilterComplete (apcf_opcode = SERVICE_SOLICITATION_UUID) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
+packet LeAdvFilterLocalName : LeAdvFilter (apcf_opcode = LOCAL_NAME) {
+  apcf_action : ApcfAction,
+  apcf_filter_index : 8,
+  apcf_local_name : 8[],
+}
+
+packet LeAdvFilterLocalNameComplete : LeAdvFilterComplete (apcf_opcode = LOCAL_NAME) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
+packet LeAdvFilterManufacturerData : LeAdvFilter (apcf_opcode = MANUFACTURER_DATA) {
+  apcf_action : ApcfAction,
+  apcf_filter_index : 8,
+  apcf_manufacturer_data : 8[],
+}
+
+packet LeAdvFilterManufacturerDataComplete : LeAdvFilterComplete (apcf_opcode = MANUFACTURER_DATA) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
+packet LeAdvFilterServiceData : LeAdvFilter (apcf_opcode = SERVICE_DATA) {
+  apcf_action : ApcfAction,
+  apcf_filter_index : 8,
+  apcf_service_data : 8[],
+}
+
+packet LeAdvFilterServiceDataComplete : LeAdvFilterComplete (apcf_opcode = SERVICE_DATA) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
 
 packet LeTrackAdv : VendorCommand (op_code = LE_TRACK_ADV) {
   _payload_,  // placeholder (unimplemented)
@@ -4596,7 +4743,11 @@ packet LeDirectedAdvertisingReport : LeMetaEvent (subevent_code = DIRECTED_ADVER
 }
 
 packet LePhyUpdateComplete : LeMetaEvent (subevent_code = PHY_UPDATE_COMPLETE) {
-  _payload_, // placeholder (unimplemented)
+    status : ErrorCode,
+    connection_handle : 12,
+    _reserved_ : 4,
+    tx_phy : 8,
+    rx_phy : 8,
 }
 
 enum DataStatus : 2 {
@@ -4618,15 +4769,14 @@ struct LeExtendedAdvertisingReport {
   address : Address,
   primary_phy : PrimaryPhyType,
   secondary_phy : SecondaryPhyType,
-  advertising_sid : 4, // SID subfield in the ADI field
-  _reserved_ : 4,
+  advertising_sid : 8, // SID subfield in the ADI field
   tx_power : 8,
   rssi : 8, // -127 to +20 (0x7F means not available)
   periodic_advertising_interval : 16, // 0x006 to 0xFFFF (7.5 ms to 82s)
   direct_address_type : DirectAdvertisingAddressType,
   direct_address : Address,
   _size_(advertising_data) : 8,
-  advertising_data : GapData[],
+  advertising_data : 8[],
 }
 
 packet LeExtendedAdvertisingReport : LeMetaEvent (subevent_code = EXTENDED_ADVERTISING_REPORT) {

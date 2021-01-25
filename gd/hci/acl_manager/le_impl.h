@@ -33,12 +33,11 @@ namespace acl_manager {
 using common::BindOnce;
 
 struct le_acl_connection {
-  le_acl_connection(
-      AddressWithType address_with_type, AclConnection::QueueDownEnd* queue_down_end, os::Handler* handler)
-      : assembler_(address_with_type, queue_down_end, handler), address_with_type_(address_with_type) {}
+  le_acl_connection(AddressWithType remote_address, AclConnection::QueueDownEnd* queue_down_end, os::Handler* handler)
+      : assembler_(remote_address, queue_down_end, handler), remote_address_(remote_address) {}
   ~le_acl_connection() = default;
   struct acl_manager::assembler assembler_;
-  AddressWithType address_with_type_;
+  AddressWithType remote_address_;
   LeConnectionManagementCallbacks* le_connection_management_callbacks_ = nullptr;
 };
 
@@ -92,7 +91,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         on_le_connection_update_complete(event_packet);
         break;
       case SubeventCode::PHY_UPDATE_COMPLETE:
-        LOG_INFO("PHY_UPDATE_COMPLETE");
+        on_le_phy_update_complete(event_packet);
         break;
       case SubeventCode::DATA_LENGTH_CHANGE:
         on_data_length_change(event_packet);
@@ -266,6 +265,27 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
     callbacks->OnConnectionUpdate(
         complete_view.GetConnInterval(), complete_view.GetConnLatency(), complete_view.GetSupervisionTimeout());
+  }
+
+  void on_le_phy_update_complete(LeMetaEventView view) {
+    auto complete_view = LePhyUpdateCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_le_phy_update_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_le_connection_update_complete with error code %s", error_code.c_str());
+      return;
+    }
+    auto handle = complete_view.GetConnectionHandle();
+    auto callbacks = get_callbacks(handle);
+    if (callbacks == nullptr) {
+      LOG_WARN("Can't find connection 0x%hx", handle);
+      ASSERT(!crash_on_unknown_handle_);
+      return;
+    }
+    callbacks->OnPhyUpdate(complete_view.GetTxPhy(), complete_view.GetRxPhy());
   }
 
   void on_le_read_remote_version_information(
@@ -597,11 +617,21 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   uint16_t HACK_get_handle(Address address) {
     for (auto it = le_acl_connections_.begin(); it != le_acl_connections_.end(); it++) {
-      if (it->second.address_with_type_.GetAddress() == address) {
+      if (it->second.remote_address_.GetAddress() == address) {
         return it->first;
       }
     }
     return 0xFFFF;
+  }
+
+  void UpdateLocalAddress(uint16_t handle, hci::AddressWithType address_with_type) {
+    auto callbacks = get_callbacks(handle);
+    if (callbacks == nullptr) {
+      LOG_WARN("Can't find connection 0x%hx", handle);
+      ASSERT(!crash_on_unknown_handle_);
+      return;
+    }
+    callbacks->OnLocalAddressUpdate(address_with_type);
   }
 
   static constexpr uint16_t kMinimumCeLength = 0x0002;

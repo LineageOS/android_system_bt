@@ -63,6 +63,9 @@ void SecurityManager::AuthenticationRequest(const Address& addr, uint16_t handle
   authenticating_ = true;
   current_handle_ = handle;
   peer_address_ = addr;
+  peer_pin_requested_ = false;
+  peer_pin_received_ = false;
+  host_pin_received_ = false;
 }
 
 void SecurityManager::AuthenticationRequestFinished() {
@@ -188,4 +191,36 @@ PairingType SecurityManager::GetSimplePairingType() {
   }
 }
 
+void SecurityManager::SetPinRequested(const Address& addr) {
+  ASSERT(addr == peer_address_);
+  peer_pin_requested_ = true;
+}
+
+bool SecurityManager::GetPinRequested(const Address& addr) {
+  return peer_pin_requested_;
+}
+
+void SecurityManager::SetLocalPin(const Address& peer,
+                                  const std::vector<uint8_t>& pin) {
+  host_pin_received_ = true;
+  host_pin_ = pin;
+}
+
+void SecurityManager::SetRemotePin(const Address& peer,
+                                   const std::vector<uint8_t>& pin) {
+  peer_pin_received_ = true;
+  peer_pin_ = pin;
+}
+
+bool SecurityManager::GetLocalPinResponseReceived(const Address& peer) {
+  return host_pin_received_;
+}
+
+bool SecurityManager::GetRemotePinResponseReceived(const Address& peer) {
+  return peer_pin_received_;
+}
+
+bool SecurityManager::PinCompare() {
+  return host_pin_received_ && peer_pin_received_ && peer_pin_ == host_pin_;
+}
 }  // namespace test_vendor_lib

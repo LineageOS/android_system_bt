@@ -66,6 +66,7 @@ class LeAddressManager {
       crypto_toolbox::Octet16 rotation_irk,
       std::chrono::milliseconds minimum_rotation_time,
       std::chrono::milliseconds maximum_rotation_time);
+  AddressPolicy GetAddressPolicy();
   void AckPause(LeAddressManagerCallback* callback);
   void AckResume(LeAddressManagerCallback* callback);
   virtual AddressPolicy Register(LeAddressManagerCallback* callback);
@@ -86,6 +87,7 @@ class LeAddressManager {
   void ClearConnectList();
   void ClearResolvingList();
   void OnCommandComplete(CommandCompleteView view);
+  std::chrono::milliseconds GetNextPrivateAddressIntervalMs();
 
  private:
   enum ClientState {
@@ -123,7 +125,6 @@ class LeAddressManager {
   void set_random_address();
   hci::Address generate_rpa();
   hci::Address generate_nrpa();
-  std::chrono::milliseconds get_next_private_address_interval_ms();
   void handle_next_command();
 
   common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command_;
@@ -132,6 +133,7 @@ class LeAddressManager {
 
   AddressPolicy address_policy_ = AddressPolicy::POLICY_NOT_SET;
   AddressWithType le_address_;
+  AddressWithType cached_address_;
   Address public_address_;
   std::unique_ptr<os::Alarm> address_rotation_alarm_;
   crypto_toolbox::Octet16 rotation_irk_;

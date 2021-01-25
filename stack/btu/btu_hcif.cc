@@ -90,9 +90,7 @@ static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len);
 static void btu_ble_proc_ltk_req(uint8_t* p);
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p);
 static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len);
-#if (BLE_LLT_INCLUDED == TRUE)
 static void btu_ble_rc_param_req_evt(uint8_t* p);
-#endif
 
 /**
  * Log HCI event metrics that are not handled in special functions
@@ -400,11 +398,9 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
         case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:
           btm_ble_conn_complete(p, hci_evt_len, true);
           break;
-#if (BLE_LLT_INCLUDED == TRUE)
         case HCI_BLE_RC_PARAM_REQ_EVT:
           btu_ble_rc_param_req_evt(p);
           break;
-#endif
         case HCI_BLE_DATA_LENGTH_CHANGE_EVT:
           btu_ble_data_length_change_evt(p, hci_evt_len);
           break;
@@ -966,7 +962,7 @@ static void btu_hcif_connection_comp_evt(uint8_t* p, uint8_t evt_len) {
     memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
     /* esco_data.link_type = HCI_LINK_TYPE_SCO; already zero */
     esco_data.bd_addr = bda;
-    btm_sco_connected(status, &bda, handle, &esco_data);
+    btm_sco_connected(status, bda, handle, &esco_data);
   }
 }
 
@@ -1182,7 +1178,7 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
   handle = HCID_GET_HANDLE(handle);
 
   data.bd_addr = bda;
-  btm_sco_connected(status, &bda, handle, &data);
+  btm_sco_connected(status, bda, handle, &data);
 }
 
 /*******************************************************************************
@@ -1441,8 +1437,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
         // Determine if initial connection failed or is a change of setup
         if (btm_is_sco_active(handle)) {
           btm_esco_proc_conn_chg(status, handle, 0, 0, 0, 0);
-        } else {
-          btm_sco_connected(status, nullptr, handle, nullptr);
         }
       }
       break;
@@ -1632,7 +1626,6 @@ static void btu_hcif_read_clock_off_comp_evt(uint8_t* p) {
 
   handle = HCID_GET_HANDLE(handle);
 
-  btm_process_clk_off_comp_evt(handle, clock_offset);
   btm_sec_update_clock_offset(handle, clock_offset);
 }
 
@@ -1762,7 +1755,6 @@ static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
 /**********************************************
  * End of BLE Events Handler
  **********************************************/
-#if (BLE_LLT_INCLUDED == TRUE)
 static void btu_ble_rc_param_req_evt(uint8_t* p) {
   uint16_t handle;
   uint16_t int_min, int_max, latency, timeout;
@@ -1776,4 +1768,3 @@ static void btu_ble_rc_param_req_evt(uint8_t* p) {
   l2cble_process_rc_param_request_evt(handle, int_min, int_max, latency,
                                       timeout);
 }
-#endif /* BLE_LLT_INCLUDED */

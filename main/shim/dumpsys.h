@@ -36,8 +36,18 @@ constexpr char kPrivateAddressPrefix[] = "xx:xx:xx:xx";
        .replace(0, strlen(kPrivateAddressPrefix), kPrivateAddressPrefix) \
        .c_str())
 
+#define PRIVATE_CELL(number)                                      \
+  (number                                                         \
+       .replace(0, (number.size() > 2) ? number.size() - 2 : 0,   \
+                (number.size() > 2) ? number.size() - 2 : 0, '*') \
+       .c_str())
+
 inline double ticks_to_seconds(uint16_t ticks) {
   return (static_cast<double>(ticks) * 0.625 * 0.001);
+}
+
+inline double supervision_timeout_to_seconds(uint16_t timeout) {
+  return (static_cast<double>(timeout) * 0.01);
 }
 
 namespace bluetooth {

@@ -256,7 +256,8 @@ void SecurityManagerImpl::HandleEvent(T packet) {
     auto bd_addr = packet.GetBdAddr();
     auto event_code = packet.GetEventCode();
 
-    if (event_code != hci::EventCode::LINK_KEY_REQUEST) {
+    if (event_code != hci::EventCode::LINK_KEY_REQUEST && event_code != hci::EventCode::PIN_CODE_REQUEST &&
+        event_code != hci::EventCode::IO_CAPABILITY_RESPONSE) {
       LOG_ERROR("No classic pairing handler for device '%s' ready for command %s ", bd_addr.ToString().c_str(),
                 hci::EventCodeText(event_code).c_str());
       return;

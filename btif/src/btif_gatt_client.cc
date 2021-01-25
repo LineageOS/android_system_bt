@@ -31,21 +31,20 @@
 #include <base/threading/thread.h>
 #include <errno.h>
 #include <hardware/bluetooth.h>
-#include <string>
-#include "device/include/controller.h"
-
-#include "btif_common.h"
-#include "btif_util.h"
-
 #include <hardware/bt_gatt.h>
+
+#include <string>
 
 #include "bta_api.h"
 #include "bta_gatt_api.h"
+#include "btif_common.h"
 #include "btif_config.h"
 #include "btif_dm.h"
 #include "btif_gatt.h"
 #include "btif_gatt_util.h"
 #include "btif_storage.h"
+#include "btif_util.h"
+#include "device/include/controller.h"
 #include "osi/include/log.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_api_types.h"
@@ -255,7 +254,8 @@ void btm_read_rssi_cb(void* p_void) {
  *  Client API Functions
  ******************************************************************************/
 
-static bt_status_t btif_gattc_register_app(const Uuid& uuid) {
+static bt_status_t btif_gattc_register_app(const Uuid& uuid,
+                                           bool eatt_support) {
   CHECK_BTGATT_INIT();
 
   return do_in_jni_thread(Bind(
@@ -274,7 +274,7 @@ static bt_status_t btif_gattc_register_app(const Uuid& uuid) {
                 uuid),
             eatt_support);
       },
-      uuid, false));
+      uuid, eatt_support));
 }
 
 static void btif_gattc_unregister_app_impl(int client_if) {
@@ -577,7 +577,9 @@ static bt_status_t btif_gattc_read_remote_rssi(int client_if,
 static bt_status_t btif_gattc_configure_mtu(int conn_id, int mtu) {
   CHECK_BTGATT_INIT();
   return do_in_jni_thread(
-      Bind(base::IgnoreResult(&BTA_GATTC_ConfigureMTU), conn_id, mtu));
+      Bind(base::IgnoreResult(
+        static_cast<void (*)(uint16_t,uint16_t)>(&BTA_GATTC_ConfigureMTU)),
+        conn_id, mtu));
 }
 
 static void btif_gattc_conn_parameter_update_impl(

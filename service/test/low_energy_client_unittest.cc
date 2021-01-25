@@ -41,7 +41,8 @@ class MockGattHandler
   MockGattHandler(){};
   ~MockGattHandler() override = default;
 
-  MOCK_METHOD1(RegisterClient, bt_status_t(const bluetooth::Uuid&));
+  MOCK_METHOD2(RegisterClient,
+               bt_status_t(const bluetooth::Uuid&, bool eatt_support));
   MOCK_METHOD1(UnregisterClient, bt_status_t(int));
   MOCK_METHOD4(Connect, bt_status_t(int, const RawAddress&, bool, int));
   MOCK_METHOD3(Disconnect, bt_status_t(int, const RawAddress&, int));
@@ -146,7 +147,7 @@ class LowEnergyClientPostRegisterTest : public LowEnergyClientTest {
           static_cast<LowEnergyClient*>(in_client.release())));
     };
 
-    EXPECT_CALL(*mock_handler_, RegisterClient(_))
+    EXPECT_CALL(*mock_handler_, RegisterClient(_, _))
         .Times(1)
         .WillOnce(Return(BT_STATUS_SUCCESS));
 
@@ -167,7 +168,7 @@ class LowEnergyClientPostRegisterTest : public LowEnergyClientTest {
 };
 
 TEST_F(LowEnergyClientTest, RegisterInstance) {
-  EXPECT_CALL(*mock_handler_, RegisterClient(_))
+  EXPECT_CALL(*mock_handler_, RegisterClient(_, _))
       .Times(2)
       .WillOnce(Return(BT_STATUS_FAIL))
       .WillOnce(Return(BT_STATUS_SUCCESS));
@@ -206,7 +207,7 @@ TEST_F(LowEnergyClientTest, RegisterInstance) {
 
   // Call with a different Uuid while one is pending.
   Uuid uuid1 = Uuid::GetRandom();
-  EXPECT_CALL(*mock_handler_, RegisterClient(_))
+  EXPECT_CALL(*mock_handler_, RegisterClient(_, _))
       .Times(1)
       .WillOnce(Return(BT_STATUS_SUCCESS));
   EXPECT_TRUE(ble_factory_->RegisterInstance(uuid1, callback));

@@ -36,6 +36,7 @@ void DataPipelineManager::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> ch
 void DataPipelineManager::DetachChannel(Cid cid) {
   ASSERT(sender_map_.find(cid) != sender_map_.end());
   sender_map_.erase(cid);
+  scheduler_->SetChannelTxPriority(cid, false);
 }
 
 DataController* DataPipelineManager::GetDataController(Cid cid) {
@@ -53,6 +54,11 @@ void DataPipelineManager::OnPacketSent(Cid cid) {
 void DataPipelineManager::UpdateClassicConfiguration(Cid cid, classic::internal::ChannelConfigurationState config) {
   ASSERT(sender_map_.find(cid) != sender_map_.end());
   sender_map_.find(cid)->second.UpdateClassicConfiguration(config);
+}
+
+void DataPipelineManager::SetChannelTxPriority(Cid cid, bool high_priority) {
+  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  scheduler_->SetChannelTxPriority(cid, high_priority);
 }
 
 }  // namespace internal

@@ -229,6 +229,9 @@ static bluetooth::common::MessageLoopThread btif_a2dp_source_thread(
     "bt_a2dp_source_worker_thread");
 static BtifA2dpSource btif_a2dp_source_cb;
 
+static uint8_t btif_a2dp_source_dynamic_audio_buffer_size =
+    MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ;
+
 static void btif_a2dp_source_init_delayed(void);
 static void btif_a2dp_source_startup_delayed(void);
 static void btif_a2dp_source_start_session_delayed(
@@ -265,7 +268,6 @@ static void update_scheduling_stats(SchedulingStats* stats, uint64_t now_us,
 static void btif_a2dp_source_update_metrics(void);
 static void btm_read_rssi_cb(void* data);
 static void btm_read_failed_contact_counter_cb(void* data);
-static void btm_read_automatic_flush_timeout_cb(void* data);
 static void btm_read_tx_power_cb(void* data);
 
 void btif_a2dp_source_accumulate_scheduling_stats(SchedulingStats* src,
@@ -950,10 +952,10 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
   // Check for TX queue overflow
   // TODO: Using frames_n here is probably wrong: should be "+ 1" instead.
   if (fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue) + frames_n >
-      MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ) {
+      btif_a2dp_source_dynamic_audio_buffer_size) {
     LOG_WARN("%s: TX queue buffer size now=%u adding=%u max=%d", __func__,
              (uint32_t)fixed_queue_length(btif_a2dp_source_cb.tx_audio_queue),
-             (uint32_t)frames_n, MAX_OUTPUT_A2DP_FRAME_QUEUE_SZ);
+             (uint32_t)frames_n, btif_a2dp_source_dynamic_audio_buffer_size);
     // Keep track of drop-outs
     btif_a2dp_source_cb.stats.tx_queue_dropouts++;
     btif_a2dp_source_cb.stats.tx_queue_last_dropouts_us = now_us;
@@ -990,12 +992,6 @@ static bool btif_a2dp_source_enqueue_callback(BT_HDR* p_buf, size_t frames_n,
                                           btm_read_failed_contact_counter_cb);
     if (status != BTM_CMD_STARTED) {
       LOG_WARN("%s: Cannot read Failed Contact Counter: status %d", __func__,
-               status);
-    }
-    status = BTM_ReadAutomaticFlushTimeout(peer_bda,
-                                           btm_read_automatic_flush_timeout_cb);
-    if (status != BTM_CMD_STARTED) {
-      LOG_WARN("%s: Cannot read Automatic Flush Timeout: status %d", __func__,
                status);
     }
     status =
@@ -1320,6 +1316,11 @@ static void btif_a2dp_source_update_metrics(void) {
   BluetoothMetricsLogger::GetInstance()->LogA2dpSession(metrics);
 }
 
+void btif_a2dp_source_set_dynamic_audio_buffer_size(
+    uint8_t dynamic_audio_buffer_size) {
+  btif_a2dp_source_dynamic_audio_buffer_size = dynamic_audio_buffer_size;
+}
+
 static void btm_read_rssi_cb(void* data) {
   if (data == nullptr) {
     LOG_ERROR("%s: Read RSSI request timed out", __func__);
@@ -1359,24 +1360,6 @@ static void btm_read_failed_contact_counter_cb(void* data) {
 
   LOG_WARN("%s: device: %s, Failed Contact Counter: %u", __func__,
            result->rem_bda.ToString().c_str(), result->failed_contact_counter);
-}
-
-static void btm_read_automatic_flush_timeout_cb(void* data) {
-  if (data == nullptr) {
-    LOG_ERROR("%s: Read Automatic Flush Timeout request timed out", __func__);
-    return;
-  }
-
-  tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT* result =
-      (tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT*)data;
-  if (result->status != BTM_SUCCESS) {
-    LOG_ERROR("%s: unable to read Automatic Flush Timeout (status %d)",
-              __func__, result->status);
-    return;
-  }
-
-  LOG_WARN("%s: device: %s, Automatic Flush Timeout: %u", __func__,
-           result->rem_bda.ToString().c_str(), result->automatic_flush_timeout);
 }
 
 static void btm_read_tx_power_cb(void* data) {

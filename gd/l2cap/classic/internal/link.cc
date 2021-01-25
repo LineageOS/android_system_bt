@@ -171,6 +171,10 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid,
   }
 }
 
+void Link::SetChannelTxPriority(Cid local_cid, bool high_priority) {
+  data_pipeline_manager_.SetChannelTxPriority(local_cid, high_priority);
+}
+
 void Link::SetPendingDynamicChannels(std::list<Psm> psm_list,
                                      std::list<Link::PendingDynamicChannelConnection> callback_list) {
   ASSERT(psm_list.size() == callback_list.size());
@@ -333,11 +337,11 @@ void Link::OnChangeConnectionLinkKeyComplete() {
 }
 
 void Link::OnReadClockOffsetComplete(uint16_t clock_offset) {
-  LOG_INFO("UNIMPLEMENTED %s clock_offset:%d", __func__, clock_offset);
+  link_manager_->OnReadClockOffset(GetDevice().GetAddress(), clock_offset);
 }
 
 void Link::OnModeChange(hci::Mode current_mode, uint16_t interval) {
-  LOG_INFO("UNIMPLEMENTED %s mode:%s interval:%d", __func__, hci::ModeText(current_mode).c_str(), interval);
+  link_manager_->OnModeChange(GetDevice().GetAddress(), current_mode, interval);
 }
 
 void Link::OnSniffSubrating(
@@ -345,7 +349,12 @@ void Link::OnSniffSubrating(
     uint16_t maximum_receive_latency,
     uint16_t minimum_remote_timeout,
     uint16_t minimum_local_timeout) {
-  LOG_INFO("UNIMPLEMENTED");
+  link_manager_->OnSniffSubrating(
+      GetDevice().GetAddress(),
+      maximum_transmit_latency,
+      maximum_receive_latency,
+      minimum_remote_timeout,
+      minimum_local_timeout);
 }
 
 void Link::OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
@@ -411,6 +420,7 @@ void Link::OnCentralLinkKeyComplete(hci::KeyFlag key_flag) {
 }
 void Link::OnRoleChange(hci::Role new_role) {
   role_ = new_role;
+  link_manager_->OnRoleChange(GetDevice().GetAddress(), new_role);
 }
 void Link::OnDisconnection(hci::ErrorCode reason) {
   OnAclDisconnected(reason);
@@ -427,7 +437,7 @@ void Link::OnReadRemoteVersionInformationComplete(
 }
 void Link::OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) {
   LOG_INFO(
-      "UNIMPLEMENTED page_number:%hhu max_page_number:%hhu sub_version:0x%lx",
+      "page_number:%hhu max_page_number:%hhu sub_version:0x%lx",
       page_number,
       max_page_number,
       static_cast<unsigned long>(features));

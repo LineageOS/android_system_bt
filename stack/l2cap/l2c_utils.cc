@@ -1502,8 +1502,7 @@ bool l2cu_start_post_bond_timer(uint16_t handle) {
     uint64_t timeout_ms = L2CAP_BONDING_TIMEOUT * 1000;
 
     if (p_lcb->idle_timeout == 0) {
-      acl_disconnect(p_lcb->remote_bd_addr, p_lcb->transport,
-                     HCI_ERR_PEER_USER);
+      acl_disconnect_from_handle(p_lcb->Handle(), HCI_ERR_PEER_USER);
       p_lcb->link_state = LST_DISCONNECTING;
       timeout_ms = L2CAP_LINK_DISCONNECT_TIMEOUT_MS;
     }
@@ -2038,18 +2037,11 @@ void l2cu_device_reset(void) {
   }
 }
 
-bool l2cu_create_conn_le(tL2C_LCB* p_lcb) {
-  uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
-  return l2cu_create_conn_le(p_lcb, phy);
-}
-
 /* This function initiates an acl connection to a LE device.
  * Returns true if request started successfully, false otherwise. */
-bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys) {
+bool l2cu_create_conn_le(tL2C_LCB* p_lcb) {
   if (!controller_get_interface()->supports_ble()) return false;
-
   p_lcb->transport = BT_TRANSPORT_LE;
-
   return (l2cble_create_conn(p_lcb));
 }
 
@@ -2497,8 +2489,7 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
       p_lcb->link_state = LST_DISCONNECTING;
       start_timeout = false;
     } else if (p_lcb->IsBonding()) {
-      acl_disconnect(p_lcb->remote_bd_addr, p_lcb->transport,
-                     HCI_ERR_PEER_USER);
+      acl_disconnect_from_handle(p_lcb->Handle(), HCI_ERR_PEER_USER);
       l2cu_process_fixed_disc_cback(p_lcb);
       p_lcb->link_state = LST_DISCONNECTING;
       timeout_ms = L2CAP_LINK_DISCONNECT_TIMEOUT_MS;

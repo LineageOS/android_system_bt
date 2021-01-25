@@ -395,7 +395,6 @@ enum {
 typedef struct {
   DEV_CLASS dev_class; /* local device class */
   uint16_t page_timeout; /* timeout for page in slots */
-  uint16_t link_timeout; /* link supervision timeout in slots */
   bool avoid_scatter; /* true to avoid scatternet when av is streaming (be the
                          central) */
 
@@ -506,7 +505,7 @@ extern void bta_dm_ble_update_conn_params(const RawAddress&, uint16_t, uint16_t,
                                           uint16_t);
 extern void bta_dm_ble_config_local_privacy(bool);
 
-extern void bta_dm_ble_set_data_length(const RawAddress&, uint16_t);
+extern void bta_dm_ble_set_data_length(const RawAddress& bd_addr);
 
 extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 

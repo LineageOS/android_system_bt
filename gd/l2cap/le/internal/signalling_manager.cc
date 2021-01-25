@@ -110,6 +110,10 @@ void LeSignallingManager::SendCredit(Cid local_cid, uint16_t credits) {
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
 }
 
+void LeSignallingManager::SendEnhancedConnectionRequest(Psm psm, std::vector<Cid> local_cid, Mtu mtu) {}
+
+void LeSignallingManager::SendEnhancedReconfigureRequest(std::vector<Cid> local_cid, Mtu mtu) {}
+
 void LeSignallingManager::CancelAlarm() {
   alarm_.Cancel();
 }
@@ -441,6 +445,38 @@ void LeSignallingManager::on_incoming_packet() {
       OnDisconnectionResponse(disconnection_response_view.GetIdentifier(),
                               disconnection_response_view.GetDestinationCid(),
                               disconnection_response_view.GetSourceCid());
+      return;
+    }
+    case LeCommandCode::CREDIT_BASED_CONNECTION_REQUEST: {
+      LeEnhancedCreditBasedConnectionRequestView request_view =
+          LeEnhancedCreditBasedConnectionRequestView::Create(control_packet_view);
+      if (!request_view.IsValid()) {
+        return;
+      }
+      return;
+    }
+    case LeCommandCode::CREDIT_BASED_CONNECTION_RESPONSE: {
+      LeEnhancedCreditBasedConnectionResponseView response_view =
+          LeEnhancedCreditBasedConnectionResponseView::Create(control_packet_view);
+      if (!response_view.IsValid()) {
+        return;
+      }
+      return;
+    }
+    case LeCommandCode::CREDIT_BASED_RECONFIGURE_REQUEST: {
+      LeEnhancedCreditBasedReconfigureRequestView request_view =
+          LeEnhancedCreditBasedReconfigureRequestView::Create(control_packet_view);
+      if (!request_view.IsValid()) {
+        return;
+      }
+      return;
+    }
+    case LeCommandCode::CREDIT_BASED_RECONFIGURE_RESPONSE: {
+      LeEnhancedCreditBasedReconfigureResponseView response_view =
+          LeEnhancedCreditBasedReconfigureResponseView::Create(control_packet_view);
+      if (!response_view.IsValid()) {
+        return;
+      }
       return;
     }
     default:

@@ -814,8 +814,7 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len,
 
   LOG(INFO) << "MTU request PDU with MTU size " << +tcb.payload_size;
 
-  l2cble_set_fixed_channel_tx_data_length(tcb.peer_bda, L2CAP_ATT_CID,
-                                          tcb.payload_size);
+  BTM_SetBleDataLength(tcb.peer_bda, tcb.payload_size);
 
   tGATT_SR_MSG gatt_sr_msg;
   gatt_sr_msg.mtu = tcb.payload_size;

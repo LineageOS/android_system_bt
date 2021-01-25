@@ -76,6 +76,15 @@ bool bluetooth::shim::L2CA_IsLinkEstablished(const RawAddress& bd_addr,
   mock_function_count_map[__func__]++;
   return false;
 }
+uint16_t bluetooth::shim::L2CA_GetLeHandle(uint16_t cid,
+                                           const RawAddress& bd_addr) {
+  mock_function_count_map[__func__]++;
+  return 0;
+}
+bool bluetooth::shim::L2CA_IsLeLink(uint16_t) {
+  mock_function_count_map[__func__]++;
+  return false;
+}
 bool bluetooth::shim::L2CA_ReconfigCreditBasedConnsReq(
     const RawAddress& bd_addr, std::vector<uint16_t>& lcids,
     tL2CAP_LE_CFG_INFO* p_cfg) {
@@ -97,9 +106,8 @@ bool bluetooth::shim::L2CA_SetChnlFlushability(uint16_t cid,
   mock_function_count_map[__func__]++;
   return false;
 }
-bool bluetooth::shim::L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
-                                               uint16_t fixed_cid,
-                                               uint16_t idle_tout) {
+bool bluetooth::shim::L2CA_SetLeGattTimeout(const RawAddress& rem_bda,
+                                            uint16_t idle_tout) {
   mock_function_count_map[__func__]++;
   return false;
 }
@@ -198,6 +206,10 @@ bool bluetooth::shim::L2CA_ReadRemoteVersion(const RawAddress& addr,
                                              uint16_t* lmp_sub_version) {
   mock_function_count_map[__func__]++;
   return false;
+}
+uint8_t* bluetooth::shim::L2CA_ReadRemoteFeatures(const RawAddress& remote) {
+  mock_function_count_map[__func__]++;
+  return 0;
 }
 void bluetooth::shim::L2CA_DisconnectLink(const RawAddress& remote) {
   mock_function_count_map[__func__]++;

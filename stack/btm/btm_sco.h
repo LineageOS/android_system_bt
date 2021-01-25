@@ -22,6 +22,8 @@
 #include "device/include/esco_parameters.h"
 #include "stack/include/btm_api_types.h"
 
+constexpr uint16_t kMaxScoLinks = static_cast<uint16_t>(BTM_MAX_SCO_LINKS);
+
 /* Define the structures needed by sco
  */
 
@@ -77,7 +79,12 @@ typedef struct {
   tBTM_SCO_CB* p_conn_cb; /* Callback for when connected  */
   tBTM_SCO_CB* p_disc_cb; /* Callback for when disconnect */
   tSCO_STATE state;       /* The state of the SCO link    */
+
   uint16_t hci_handle;    /* HCI Handle                   */
+ public:
+  bool is_active() const { return state != SCO_ST_UNUSED; }
+  uint16_t Handle() const { return hci_handle; }
+
   bool is_orig;           /* true if the originator       */
   bool rem_bd_known;      /* true if remote BD addr known */
 
@@ -88,9 +95,40 @@ typedef struct {
   tBTM_SCO_IND_CBACK* app_sco_ind_cb;
   tSCO_CONN sco_db[BTM_MAX_SCO_LINKS];
   enh_esco_params_t def_esco_parms;
-  uint16_t sco_disc_reason;
   bool esco_supported;        /* true if 1.2 cntlr AND supports eSCO links */
   esco_data_path_t sco_route; /* HCI, PCM, or TEST */
+
+  tSCO_CONN* get_sco_connection_from_index(uint16_t index) {
+    return (index < kMaxScoLinks) ? (&sco_db[index]) : nullptr;
+  }
+
+  tSCO_CONN* get_sco_connection_from_handle(uint16_t handle) {
+    tSCO_CONN* p_sco = sco_db;
+    for (uint16_t xx = 0; xx < kMaxScoLinks; xx++, p_sco++) {
+      if (p_sco->hci_handle == handle) {
+        return p_sco;
+      }
+    }
+    return nullptr;
+  }
+
+  void Init() {
+    def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD);
+    def_esco_parms.max_latency_ms = 12;
+    sco_route = ESCO_DATA_PATH_PCM;
+  }
+
+  uint16_t get_index(const tSCO_CONN* p_sco) const {
+    CHECK(p_sco != nullptr);
+    const tSCO_CONN* p = sco_db;
+    for (uint16_t xx = 0; xx < kMaxScoLinks; xx++, p++) {
+      if (p_sco == p) {
+        return xx;
+      }
+    }
+    return 0xffff;
+  }
+
 } tSCO_CB;
 
 extern void btm_sco_chk_pend_rolechange(uint16_t hci_handle);

@@ -588,7 +588,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
  ******************************************************************************/
 static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
                                  uint16_t conn_id, bool connected,
-                                 tGATT_DISCONN_REASON reason,
+                                 tGATT_DISCONN_REASON,
                                  tBT_TRANSPORT transport) {
   tBTA_GATTS cb_data;
   uint8_t evt = connected ? BTA_GATTS_CONNECT_EVT : BTA_GATTS_DISCONNECT_EVT;

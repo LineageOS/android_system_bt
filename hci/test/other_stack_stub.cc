@@ -24,7 +24,7 @@
 
 const btsnoop_t* btsnoop_get_interface() { return nullptr; }
 const packet_fragmenter_t* packet_fragmenter_get_interface() { return nullptr; }
-base::MessageLoop* get_main_message_loop() { return nullptr; }
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 
 namespace bluetooth {
 namespace bqr {

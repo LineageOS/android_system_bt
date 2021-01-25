@@ -58,6 +58,12 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
   void OnReadRemoteVersionInformationComplete(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
     SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, lmp_version, manufacturer_name, sub_version);
   }
+  void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {
+    SAVE_OR_CALL(OnPhyUpdate, tx_phy, rx_phy);
+  }
+  void OnLocalAddressUpdate(AddressWithType address_with_type) override {
+    SAVE_OR_CALL(OnLocalAddressUpdate, address_with_type);
+  }
 
   void OnDisconnection(ErrorCode reason) override {
     SAVE_OR_CALL(OnDisconnection, reason);

@@ -951,6 +951,33 @@ static BT_HDR* avrc_pass_msg(tAVRC_MSG_PASS* p_msg) {
 
 /******************************************************************************
  *
+ * Function         ARVC_GetProfileVersion
+ *
+ * Description      Get the user assigned AVRCP profile version
+ *
+ * Returns          The AVRCP profile version
+ *
+ *****************************************************************************/
+uint16_t AVRC_GetProfileVersion() {
+  uint16_t profile_version = AVRC_REV_1_4;
+  char avrcp_version[PROPERTY_VALUE_MAX] = {0};
+  osi_property_get(AVRC_VERSION_PROPERTY, avrcp_version, AVRC_DEFAULT_VERSION);
+
+  if (!strncmp(AVRC_1_6_STRING, avrcp_version, sizeof(AVRC_1_6_STRING))) {
+    profile_version = AVRC_REV_1_6;
+  } else if (!strncmp(AVRC_1_5_STRING, avrcp_version,
+             sizeof(AVRC_1_5_STRING))) {
+    profile_version = AVRC_REV_1_5;
+  } else if (!strncmp(AVRC_1_3_STRING, avrcp_version,
+             sizeof(AVRC_1_3_STRING))) {
+    profile_version = AVRC_REV_1_3;
+  }
+
+  return profile_version;
+}
+
+/******************************************************************************
+ *
  * Function         AVRC_Open
  *
  * Description      This function is called to open a connection to AVCTP.
