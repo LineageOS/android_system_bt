@@ -32,6 +32,7 @@
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "stack/include/security_client_callbacks.h"
 
 #define BTM_SEC_IS_SM4(sm) ((bool)(BTM_SM4_TRUE == ((sm)&BTM_SM4_TRUE)))
 #define BTM_SEC_IS_SM4_LEGACY(sm) ((bool)(BTM_SM4_KNOWN == ((sm)&BTM_SM4_TRUE)))

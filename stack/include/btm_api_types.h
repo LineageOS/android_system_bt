@@ -971,20 +971,6 @@ typedef union {
 typedef void(tBTM_LE_KEY_CALLBACK)(uint8_t key_type,
                                    tBTM_BLE_LOCAL_KEYS* p_key);
 
-/***************************
- *  Security Manager Types
- ***************************/
-/* Structure that applications use to register with BTM_SecRegister */
-typedef struct {
-  tBTM_PIN_CALLBACK* p_pin_callback;
-  tBTM_LINK_KEY_CALLBACK* p_link_key_callback;
-  tBTM_AUTH_COMPLETE_CALLBACK* p_auth_complete_callback;
-  tBTM_BOND_CANCEL_CMPL_CALLBACK* p_bond_cancel_cmpl_callback;
-  tBTM_SP_CALLBACK* p_sp_callback;
-  tBTM_LE_CALLBACK* p_le_callback;
-  tBTM_LE_KEY_CALLBACK* p_le_key_callback;
-} tBTM_APPL_INFO;
-
 /* Callback function for when a link supervision timeout event occurs.
  * This asynchronous event is enabled/disabled by calling BTM_RegForLstoEvt().
 */
