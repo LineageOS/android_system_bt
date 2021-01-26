@@ -280,6 +280,9 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
   } else {
     codec_config->peerMtu = peer_param.peer_mtu;
   }
+  if (codec_config->peerMtu > MAX_3MBPS_AVDTP_MTU) {
+    codec_config->peerMtu = MAX_3MBPS_AVDTP_MTU;
+  }
   LOG(INFO) << __func__ << ": CodecConfiguration=" << toString(*codec_config);
   return true;
 }
