@@ -15,6 +15,7 @@ rust_library {
         "libnum_traits",
         "libthiserror",
         "libtokio",
+        "libtokio_stream",
         "libprotobuf",
         "libgddi",
         "liblog_rust",
