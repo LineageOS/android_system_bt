@@ -14,8 +14,9 @@ use futures::stream::StreamExt;
 use grpcio::*;
 use log::debug;
 use nix::sys::signal;
-use std::net::{IpAddr, Ipv4Addr, Shutdown, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::{Arc, Mutex};
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::runtime::Runtime;
 
@@ -35,29 +36,16 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
                 .default_value("8897")
                 .takes_value(true),
         )
-        .arg(
-            Arg::with_name("grpc-port")
-                .long("grpc-port")
-                .default_value("8899")
-                .takes_value(true),
-        )
+        .arg(Arg::with_name("grpc-port").long("grpc-port").default_value("8899").takes_value(true))
         .arg(
             Arg::with_name("signal-port")
                 .long("signal-port")
                 .default_value("8895")
                 .takes_value(true),
         )
-        .arg(
-            Arg::with_name("rootcanal-port")
-                .long("rootcanal-port")
-                .takes_value(true),
-        )
+        .arg(Arg::with_name("rootcanal-port").long("rootcanal-port").takes_value(true))
         .arg(Arg::with_name("btsnoop").long("btsnoop").takes_value(true))
-        .arg(
-            Arg::with_name("btconfig")
-                .long("btconfig")
-                .takes_value(true),
-        )
+        .arg(Arg::with_name("btconfig").long("btconfig").takes_value(true))
         .get_matches();
 
     let root_server_port = value_t!(matches, "root-server-port", u16).unwrap();
@@ -84,8 +72,8 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
 
 async fn indicate_started(signal_port: u16) {
     let address = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), signal_port);
-    let stream = TcpStream::connect(address).await.unwrap();
-    stream.shutdown(Shutdown::Both).unwrap();
+    let mut stream = TcpStream::connect(address).await.unwrap();
+    stream.shutdown().await.unwrap();
 }
 
 // TODO: remove as this is a temporary nix-based hack to catch SIGINT
