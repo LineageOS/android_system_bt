@@ -26,6 +26,7 @@
 
 #include "stack/btm/btm_sec.h"
 
+#include <base/strings/stringprintf.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <string.h>
@@ -48,6 +49,12 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/l2cap_security_interface.h"
 #include "stack/smp/smp_int.h"
+
+namespace {
+
+constexpr char kBtmLogTag[] = "SEC";
+
+}
 
 extern tBTM_CB btm_cb;
 
@@ -767,7 +774,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
   p_dev_rec->security_required = BTM_SEC_OUT_AUTHENTICATE;
   p_dev_rec->is_originator = true;
 
-  BTM_LogHistory("Sec", bd_addr, "Bonding initiated",
+  BTM_LogHistory(kBtmLogTag, bd_addr, "Bonding initiated",
                  BtTransportText(transport));
 
   if (transport == BT_TRANSPORT_LE) {
@@ -3089,7 +3096,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
         btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_PEER_USER,
                                     p_dev_rec->hci_handle);
     } else {
-      BTM_LogHistory("Sec", p_dev_rec->bd_addr, "Bonding completed",
+      BTM_LogHistory(kBtmLogTag, p_dev_rec->bd_addr, "Bonding completed",
                      hci_error_code_text(status));
       BTM_TRACE_DEBUG("TRYING TO DECIDE IF CAN USE SMP_BR_CHNL");
       if (p_dev_rec->new_encryption_key_is_p256 &&
@@ -4442,11 +4449,14 @@ tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state) {
 static void btm_sec_change_pairing_state(tBTM_PAIRING_STATE new_state) {
   tBTM_PAIRING_STATE old_state = btm_cb.pairing_state;
 
-  BTM_TRACE_EVENT("%s()  Old: %s", __func__,
-                  btm_pair_state_descr(btm_cb.pairing_state));
-  BTM_TRACE_EVENT("%s()  New: %s pairing_flags:0x%x", __func__,
-                  btm_pair_state_descr(new_state), btm_cb.pairing_flags);
+  LOG_DEBUG("Pairing state changed %s => %s pairing_flags:0x%x",
+            btm_pair_state_descr(btm_cb.pairing_state),
+            btm_pair_state_descr(new_state), btm_cb.pairing_flags);
 
+  BTM_LogHistory(
+      kBtmLogTag, btm_cb.pairing_bda, "Pairing state changed",
+      base::StringPrintf("%s => %s", btm_pair_state_descr(btm_cb.pairing_state),
+                         btm_pair_state_descr(new_state)));
   btm_cb.pairing_state = new_state;
 
   if (new_state == BTM_PAIR_STATE_IDLE) {
