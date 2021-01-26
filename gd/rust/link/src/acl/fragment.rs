@@ -8,8 +8,9 @@ use bt_packets::hci::{AclBuilder, AclChild, AclPacket, BroadcastFlag};
 use bytes::{Buf, Bytes, BytesMut};
 use futures::stream::{self, StreamExt};
 use log::{error, info, warn};
-use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::mpsc::Sender;
 use tokio::sync::oneshot;
+use tokio_stream::wrappers::ReceiverStream;
 
 const L2CAP_BASIC_FRAME_HEADER_LEN: usize = 4;
 
@@ -87,7 +88,7 @@ fn get_l2cap_pdu_size(first_packet: &Bytes) -> usize {
 }
 
 pub fn fragmenting_stream(
-    rx: Receiver<Bytes>,
+    rx: ReceiverStream<Bytes>,
     mtu: usize,
     handle: u16,
     bt: Bluetooth,
