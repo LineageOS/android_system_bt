@@ -630,7 +630,8 @@ struct iso_impl {
     uint32_t ts = bluetooth::common::time_get_os_boottime_us();
     uint32_t new_calc_seq_nb =
         (ts - iso->sync_info.first_sync_ts) / iso->sdu_itv;
-    if (new_calc_seq_nb == iso->sync_info.seq_nb) ++new_calc_seq_nb;
+    if (new_calc_seq_nb <= iso->sync_info.seq_nb)
+      new_calc_seq_nb = iso->sync_info.seq_nb + 1;
 
     if (iso->sync_info.seq_nb == 0) {
       evt.evt_lost = 0;
