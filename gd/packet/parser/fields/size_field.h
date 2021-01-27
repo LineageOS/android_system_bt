@@ -48,6 +48,8 @@ class SizeField : public ScalarField {
 
   virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
 
+  virtual void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const override;
+
  private:
   int size_;
   std::string sized_field_name_;
