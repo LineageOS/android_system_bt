@@ -616,7 +616,7 @@ class LeSecurityEnforcementShim
   void Enforce(bluetooth::hci::AddressWithType remote,
                bluetooth::l2cap::le::SecurityPolicy policy,
                ResultCallback result_callback) override {
-    tBTM_BLE_SEC_ACT sec_act = 0;
+    tBTM_BLE_SEC_ACT sec_act = BTM_BLE_SEC_NONE;
     switch (policy) {
       case bluetooth::l2cap::le::SecurityPolicy::
           NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
