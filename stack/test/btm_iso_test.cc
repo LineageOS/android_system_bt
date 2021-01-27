@@ -2176,3 +2176,27 @@ TEST_F(IsoManagerTest, HandleDisconnectDisconnectedCig) {
   handle = volatile_test_cig_create_cmpl_evt_.conn_handles[1];
   IsoManager::GetInstance()->HandleDisconnect(handle, 16);
 }
+
+TEST_F(IsoManagerTest, HandleIsoDataSameSeqNb) {
+  IsoManager::GetInstance()->CreateCig(
+      volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
+
+  auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
+
+  EXPECT_CALL(
+      *cig_callbacks_,
+      OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisDataAvailable, _))
+      .Times(2);
+
+  std::vector<uint8_t> dummy_msg(18);
+  uint8_t* p = dummy_msg.data();
+  UINT16_TO_STREAM(p, BT_EVT_TO_BTU_HCI_ISO);
+  UINT16_TO_STREAM(p, 10);  // .len
+  UINT16_TO_STREAM(p, 0);   // .offset
+  UINT16_TO_STREAM(p, 0);   // .layer_specific
+  UINT16_TO_STREAM(p, handle);
+
+  IsoManager::GetInstance()->HandleIsoData(dummy_msg.data());
+  IsoManager::GetInstance()->HandleIsoData(dummy_msg.data());
+}
