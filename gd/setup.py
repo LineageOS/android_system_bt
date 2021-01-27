@@ -74,9 +74,9 @@ class InstallLocalPackagesForInstallation(install):
         if self.reuse_acts and is_acts_importable():
             self.announce('Reusing existing ACTS installation', log.WARN)
         else:
-            self.announce('Installing ACTS for installation', log.WARN)
+            self.announce('Installing ACTS library', log.WARN)
             setup_acts_for_cmd_or_die("install")
-            self.announce('ACTS installed for installation.', log.WARN)
+            self.announce('ACTS installed.', log.WARN)
         if not is_acts_importable():
             raise DistutilsModuleError("Cannot import acts after installation")
         install.run(self)
