@@ -1193,7 +1193,7 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
 
       if (p_fcrb->rx_sdu_len > p_ccb->max_rx_mtu) {
         L2CAP_TRACE_WARNING("SAR - SDU len: %u  larger than MTU: %u",
-                            p_fcrb->rx_sdu_len, p_fcrb->rx_sdu_len);
+                            p_fcrb->rx_sdu_len, p_ccb->max_rx_mtu);
         packet_ok = false;
       } else {
         p_fcrb->p_rx_sdu = (BT_HDR*)osi_malloc(
