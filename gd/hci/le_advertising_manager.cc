@@ -196,7 +196,6 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     if (advertising_sets_.count(advertiser_id) == 0) {
       return;
     }
-    advertising_sets_.erase(advertiser_id);
     if (advertising_sets_.empty() && address_manager_registered) {
       le_address_manager_->Unregister(this);
       address_manager_registered = false;
@@ -212,6 +211,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         advertising_sets_[advertiser_id].address_rotation_alarm.reset();
       }
     }
+    advertising_sets_.erase(advertiser_id);
   }
 
   void create_advertiser(
