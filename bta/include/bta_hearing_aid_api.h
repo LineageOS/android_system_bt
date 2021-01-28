@@ -20,6 +20,7 @@
 
 #include <base/callback_forward.h>
 #include <hardware/bt_hearing_aid.h>
+#include <cstdint>
 #include <deque>
 #include <vector>
 
