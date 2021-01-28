@@ -24,13 +24,16 @@
 #ifndef BTA_AV_INT_H
 #define BTA_AV_INT_H
 
-#include "avdt_api.h"
-#include "bta_api.h"
-#include "bta_av_api.h"
-#include "bta_av_co.h"
-#include "bta_sys.h"
+#include <cstdint>
+#include <string>
+
+#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_av_api.h"
+#include "bta/include/bta_av_co.h"
+#include "bta/sys/bta_sys.h"
 #include "osi/include/list.h"
-#include "stack/include/a2dp_api.h"
+#include "stack/include/avdt_api.h"
+#include "stack/include/bt_types.h"
 
 #define CASE_RETURN_TEXT(code) \
   case code:                   \
