@@ -51,6 +51,10 @@
 #define BTA_HF_CLIENT_INDICATOR_CALLSETUP "callsetup"
 #define BTA_HF_CLIENT_INDICATOR_CALLHELD "callheld"
 
+/* BIND parse mode */
+#define BTA_HF_CLIENT_BIND_PARSE_READ_ENABLED_IND 0
+#define BTA_HF_CLIENT_BIND_PARSE_READ_SUPPOETED_IND 1
+
 #define MIN(a, b)           \
   ({                        \
     __typeof__(a) _a = (a); \
@@ -146,7 +150,7 @@ static void bta_hf_client_at_resp_timer_cback(void* data) {
   } else {
     APPL_TRACE_ERROR("HFPClient: AT response timeout, disconnecting");
 
-    tBTA_HF_CLIENT_DATA msg;
+    tBTA_HF_CLIENT_DATA msg = {};
     msg.hdr.layer_specific = client_cb->handle;
     bta_hf_client_sm_execute(BTA_HF_CLIENT_API_CLOSE_EVT, &msg);
   }
@@ -388,6 +392,24 @@ static void bta_hf_client_handle_chld(tBTA_HF_CLIENT_CB* client_cb,
   APPL_TRACE_DEBUG("%s: 0x%x", __func__, mask);
 
   client_cb->chld_features |= mask;
+}
+
+static void bta_hf_client_handle_bind_read_supported_ind(
+    tBTA_HF_CLIENT_CB* client_cb, int indicator_id) {
+  APPL_TRACE_DEBUG("%s: %d", __func__, indicator_id);
+
+  client_cb->peer_hf_indicators.insert(indicator_id);
+}
+
+static void bta_hf_client_handle_bind_read_enabled_ind(
+    tBTA_HF_CLIENT_CB* client_cb, int indicator_id, bool enable) {
+  APPL_TRACE_DEBUG("%s: %d", __func__, indicator_id);
+
+  if (enable) {
+    client_cb->enabled_hf_indicators.insert(indicator_id);
+  } else {
+    client_cb->enabled_hf_indicators.erase(indicator_id);
+  }
 }
 
 static void bta_hf_client_handle_ciev(tBTA_HF_CLIENT_CB* client_cb,
@@ -982,6 +1004,46 @@ static char* bta_hf_client_parse_chld(tBTA_HF_CLIENT_CB* client_cb,
   return buffer;
 }
 
+static char* bta_hf_client_parse_bind(tBTA_HF_CLIENT_CB* client_cb,
+                                      char* buffer) {
+  AT_CHECK_EVENT(buffer, "+BIND:");
+
+  uint8_t mode = BTA_HF_CLIENT_BIND_PARSE_READ_ENABLED_IND;
+
+  int idx = -1;
+
+  while (*buffer != 0) {
+    switch (*buffer) {
+      case '(':
+        mode = BTA_HF_CLIENT_BIND_PARSE_READ_SUPPOETED_IND;
+        break;
+      case ')':
+        break;
+      case '0':
+      case '1':
+      case '2':
+        if (mode == BTA_HF_CLIENT_BIND_PARSE_READ_SUPPOETED_IND) {
+          // +BIND: (id0, id1, ...)
+          bta_hf_client_handle_bind_read_supported_ind(client_cb,
+                                                       (*buffer - '0'));
+        } else if (idx == -1) {
+          // +BIND: [id]...
+          idx = *buffer - '0';
+        } else {
+          // +BIND: ...[status]
+          bta_hf_client_handle_bind_read_enabled_ind(client_cb, idx,
+                                                     *buffer - '0');
+        }
+        break;
+      default:
+        break;
+    }
+    buffer++;
+  }
+
+  return buffer;
+}
+
 static char* bta_hf_client_parse_ciev(tBTA_HF_CLIENT_CB* client_cb,
                                       char* buffer) {
   uint32_t index, value;
@@ -1485,20 +1547,21 @@ static char* bta_hf_client_process_unknown(tBTA_HF_CLIENT_CB* client_cb,
 typedef char* (*tBTA_HF_CLIENT_PARSER_CALLBACK)(tBTA_HF_CLIENT_CB*, char*);
 
 static const tBTA_HF_CLIENT_PARSER_CALLBACK bta_hf_client_parser_cb[] = {
-    bta_hf_client_parse_ok,           bta_hf_client_parse_error,
-    bta_hf_client_parse_ring,         bta_hf_client_parse_brsf,
-    bta_hf_client_parse_cind,         bta_hf_client_parse_ciev,
-    bta_hf_client_parse_chld,         bta_hf_client_parse_bcs,
-    bta_hf_client_parse_bsir,         bta_hf_client_parse_cmeerror,
-    bta_hf_client_parse_vgm,          bta_hf_client_parse_vgme,
-    bta_hf_client_parse_vgs,          bta_hf_client_parse_vgse,
-    bta_hf_client_parse_bvra,         bta_hf_client_parse_clip,
-    bta_hf_client_parse_ccwa,         bta_hf_client_parse_cops,
-    bta_hf_client_parse_binp,         bta_hf_client_parse_clcc,
-    bta_hf_client_parse_cnum,         bta_hf_client_parse_btrh,
-    bta_hf_client_parse_busy,         bta_hf_client_parse_delayed,
-    bta_hf_client_parse_no_carrier,   bta_hf_client_parse_no_answer,
-    bta_hf_client_parse_rejectlisted, bta_hf_client_process_unknown};
+    bta_hf_client_parse_ok,        bta_hf_client_parse_error,
+    bta_hf_client_parse_ring,      bta_hf_client_parse_brsf,
+    bta_hf_client_parse_cind,      bta_hf_client_parse_ciev,
+    bta_hf_client_parse_chld,      bta_hf_client_parse_bcs,
+    bta_hf_client_parse_bsir,      bta_hf_client_parse_cmeerror,
+    bta_hf_client_parse_vgm,       bta_hf_client_parse_vgme,
+    bta_hf_client_parse_vgs,       bta_hf_client_parse_vgse,
+    bta_hf_client_parse_bvra,      bta_hf_client_parse_clip,
+    bta_hf_client_parse_ccwa,      bta_hf_client_parse_cops,
+    bta_hf_client_parse_binp,      bta_hf_client_parse_clcc,
+    bta_hf_client_parse_cnum,      bta_hf_client_parse_btrh,
+    bta_hf_client_parse_bind,      bta_hf_client_parse_busy,
+    bta_hf_client_parse_delayed,   bta_hf_client_parse_no_carrier,
+    bta_hf_client_parse_no_answer, bta_hf_client_parse_rejectlisted,
+    bta_hf_client_process_unknown};
 
 /* calculate supported event list length */
 static const uint16_t bta_hf_client_parser_cb_count =
@@ -1567,7 +1630,7 @@ static void bta_hf_client_at_parse_start(tBTA_HF_CLIENT_CB* client_cb) {
           "HFPCient: could not skip unknown AT event, disconnecting");
       bta_hf_client_at_reset(client_cb);
 
-      tBTA_HF_CLIENT_DATA msg;
+      tBTA_HF_CLIENT_DATA msg = {};
       msg.hdr.layer_specific = client_cb->handle;
       bta_hf_client_sm_execute(BTA_HF_CLIENT_API_CLOSE_EVT, &msg);
       return;
@@ -1630,7 +1693,7 @@ void bta_hf_client_at_parse(tBTA_HF_CLIENT_CB* client_cb, char* buf,
 
         bta_hf_client_at_reset(client_cb);
 
-        tBTA_HF_CLIENT_DATA msg;
+        tBTA_HF_CLIENT_DATA msg = {};
         msg.hdr.layer_specific = client_cb->handle;
         bta_hf_client_sm_execute(BTA_HF_CLIENT_API_CLOSE_EVT, &msg);
         return;
@@ -1752,6 +1815,54 @@ void bta_hf_client_send_at_chld(tBTA_HF_CLIENT_CB* client_cb, char cmd,
   }
 
   bta_hf_client_send_at(client_cb, BTA_HF_CLIENT_AT_CHLD, buf, at_len);
+}
+
+void bta_hf_client_send_at_bind(tBTA_HF_CLIENT_CB* client_cb, int step) {
+  std::string buf;
+  tBTA_HF_CLIENT_AT_CMD cmd = BTA_HF_CLIENT_AT_BIND_SET_IND;
+
+  APPL_TRACE_DEBUG("%s", __func__);
+
+  switch (step) {
+    case 0:  // List HF supported indicators
+      // TODO: Add flags to determine enabled HF features
+      buf = "AT+BIND=1,2\r";
+      cmd = BTA_HF_CLIENT_AT_BIND_SET_IND;
+      break;
+    case 1:  // Read AG supported indicators
+      buf = "AT+BIND=?\r";
+      cmd = BTA_HF_CLIENT_AT_BIND_READ_SUPPORTED_IND;
+      break;
+    case 2:  // Read AG enabled/disabled status of indicators
+      buf = "AT+BIND?\r";
+      cmd = BTA_HF_CLIENT_AT_BIND_READ_ENABLED_IND;
+      break;
+    default:
+      break;
+  }
+  bta_hf_client_send_at(client_cb, cmd, buf.c_str(), buf.size());
+}
+
+void bta_hf_client_send_at_biev(tBTA_HF_CLIENT_CB* client_cb, int indicator_id,
+                                int indicator_value) {
+  char buf[32];
+  tBTA_HF_CLIENT_AT_CMD cmd = BTA_HF_CLIENT_AT_BIEV;
+
+  if ((client_cb->peer_features & BTA_HF_CLIENT_FEAT_HF_IND) == 0) {
+    APPL_TRACE_ERROR("%s peer does not support HF Indicators", __func__);
+    return;
+  }
+
+  if (client_cb->enabled_hf_indicators.count(indicator_id) <= 0) {
+    APPL_TRACE_ERROR("%s HF indicators %d is disabled", __func__, indicator_id);
+    return;
+  }
+
+  APPL_TRACE_DEBUG("%s", __func__);
+
+  int len = sprintf(buf, "AT+BIEV=%d,%d\r", indicator_id, indicator_value);
+
+  bta_hf_client_send_at(client_cb, cmd, buf, len);
 }
 
 void bta_hf_client_send_at_clip(tBTA_HF_CLIENT_CB* client_cb, bool activate) {
@@ -2104,6 +2215,11 @@ void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA* p_data) {
     case BTA_HF_CLIENT_AT_CMD_CHLD:
       /* expects ascii code for command */
       bta_hf_client_send_at_chld(client_cb, '0' + p_val->uint32_val1,
+                                 p_val->uint32_val2);
+      break;
+    case BTA_HF_CLIENT_AT_CMD_BIEV:
+      /* expects ascii code for command */
+      bta_hf_client_send_at_biev(client_cb, p_val->uint32_val1,
                                  p_val->uint32_val2);
       break;
     case BTA_HF_CLIENT_AT_CMD_BCC:
