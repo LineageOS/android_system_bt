@@ -24,7 +24,9 @@
 #ifndef BTA_HH_CO_H
 #define BTA_HH_CO_H
 
-#include "bta_hh_api.h"
+#include <cstdint>
+
+#include "bta/include/bta_hh_api.h"
 
 typedef struct {
   uint16_t rpt_uuid;
