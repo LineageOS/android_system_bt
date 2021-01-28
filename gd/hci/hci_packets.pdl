@@ -350,7 +350,6 @@ enum OpCode : 16 {
   LE_MULTI_ADVT = 0xFD54,
   LE_BATCH_SCAN = 0xFD56,
   LE_ADV_FILTER = 0xFD57,
-  LE_TRACK_ADV = 0xFD58,
   LE_ENERGY_INFO = 0xFD59,
   LE_EXTENDED_SCAN_PARAMS = 0xFD5A,
   CONTROLLER_DEBUG_INFO = 0xFD5B,
@@ -4143,10 +4142,6 @@ packet LeAdvFilterServiceDataComplete : LeAdvFilterComplete (apcf_opcode = SERVI
   apcf_available_spaces : 8,
 }
 
-
-packet LeTrackAdv : VendorCommand (op_code = LE_TRACK_ADV) {
-  _payload_,  // placeholder (unimplemented)
-}
 
 packet LeEnergyInfo : VendorCommand (op_code = LE_ENERGY_INFO) {
   _payload_,  // placeholder (unimplemented)

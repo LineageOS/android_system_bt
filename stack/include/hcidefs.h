@@ -438,9 +438,6 @@
 /* ADV filter opcode */
 #define HCI_BLE_ADV_FILTER (0x0157 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Tracking opcode */
-#define HCI_BLE_TRACK_ADV (0x0158 | HCI_GRP_VENDOR_SPECIFIC)
-
 /* Energy info opcode */
 #define HCI_BLE_ENERGY_INFO (0x0159 | HCI_GRP_VENDOR_SPECIFIC)
 
