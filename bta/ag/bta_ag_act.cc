@@ -22,18 +22,15 @@
  *
  ******************************************************************************/
 
+#include <cstdint>
 #include <cstring>
 
-#include "bta_ag_api.h"
-#include "bta_ag_int.h"
-#include "bta_api.h"
-#include "bta_dm_api.h"
-#include "bta_sys.h"
-#include "btif_config.h"
-#include "l2c_api.h"
-#include "osi/include/osi.h"
-#include "port_api.h"
-#include "utl.h"
+#include "bta/ag/bta_ag_int.h"
+#include "bta/include/bta_dm_api.h"
+#include "btif/include/btif_config.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "stack/include/l2c_api.h"
+#include "stack/include/port_api.h"
 
 /*****************************************************************************
  *  Constants
