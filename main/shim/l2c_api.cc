@@ -389,7 +389,7 @@ struct LinkPropertyListenerShim
   }
 
   void OnRoleChange(hci::Address remote, hci::Role role) override {
-    btm_blacklist_role_change_device(ToRawAddress(remote), HCI_SUCCESS);
+    btm_rejectlist_role_change_device(ToRawAddress(remote), HCI_SUCCESS);
     btm_acl_role_changed(HCI_SUCCESS, ToRawAddress(remote),
                          static_cast<uint8_t>(role));
   }
