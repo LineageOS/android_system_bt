@@ -89,7 +89,7 @@ cc_library_shared {
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth@1.0",
         "android.hardware.bluetooth@1.1",
-        "android.system.suspend.control-ndk",
+        "android.system.suspend.control-V1-ndk",
         "libaaudio",
         "libbinder_ndk",
         "libcrypto",
