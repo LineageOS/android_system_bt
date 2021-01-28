@@ -1087,16 +1087,38 @@ packet ReadLmpHandleComplete : CommandComplete (command_op_code = READ_LMP_HANDL
 }
 
 packet SetupSynchronousConnection : ScoConnectionCommand (op_code = SETUP_SYNCHRONOUS_CONNECTION) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  transmit_bandwidth : 32,
+  receive_bandwidth : 32,
+  max_latency : 16, // 0-3 reserved, 0xFFFF = don't care
+  voice_setting : 10,
+  _reserved_ : 6,
+  retransmission_effort : 8,
+  packet_type : 16,
+}
+
+packet SetupSynchronousConnectionStatus : CommandStatus (command_op_code = SETUP_SYNCHRONOUS_CONNECTION) {
 }
 
 packet AcceptSynchronousConnection : ScoConnectionCommand (op_code = ACCEPT_SYNCHRONOUS_CONNECTION) {
-  _payload_,  // placeholder (unimplemented)
+  bd_addr : Address,
+  _reserved_ : 4,
+  transmit_bandwidth : 32,
+  receive_bandwidth : 32,
+  max_latency : 16, // 0-3 reserved, 0xFFFF = don't care
+  voice_setting : 10,
+  _reserved_ : 6,
+  retransmission_effort : 8,
+  packet_type : 16,
+}
+
+packet AcceptSynchronousConnectionStatus : CommandStatus (command_op_code = ACCEPT_SYNCHRONOUS_CONNECTION) {
 }
 
 packet RejectSynchronousConnection : ScoConnectionCommand (op_code = REJECT_SYNCHRONOUS_CONNECTION) {
   bd_addr : Address,
-  reason : ErrorCode,
+  reason : RejectConnectionReason,
 }
 
 packet RejectSynchronousConnectionStatus : CommandStatus (command_op_code = REJECT_SYNCHRONOUS_CONNECTION) {
@@ -1844,11 +1866,17 @@ packet WriteClassOfDeviceComplete : CommandComplete (command_op_code = WRITE_CLA
 }
 
 packet ReadVoiceSetting : Command (op_code = READ_VOICE_SETTING) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadVoiceSettingComplete : CommandComplete (command_op_code = READ_VOICE_SETTING) {
+  status : ErrorCode,
+  voice_setting : 10,
+  _reserved_ : 6,
 }
 
 packet WriteVoiceSetting : Command (op_code = WRITE_VOICE_SETTING) {
-  _payload_,  // placeholder (unimplemented)
+  voice_setting : 10,
+  _reserved_ : 6,
 }
 
 packet WriteVoiceSettingComplete : CommandComplete (command_op_code = WRITE_VOICE_SETTING) {
@@ -1880,21 +1908,43 @@ packet WriteAutomaticFlushTimeoutComplete : CommandComplete (command_op_code = W
 }
 
 packet ReadNumBroadcastRetransmits : Command (op_code = READ_NUM_BROADCAST_RETRANSMITS) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadNumBroadcastRetransmitsComplete : CommandComplete (command_op_code = READ_NUM_BROADCAST_RETRANSMITS) {
+  status : ErrorCode,
+  num_broadcast_retransmissions : 8,
 }
 
 packet WriteNumBroadcastRetransmits : Command (op_code = WRITE_NUM_BROADCAST_RETRANSMITS) {
-  _payload_,  // placeholder (unimplemented)
+  num_broadcast_retransmissions : 8,
+}
+
+packet WriteNumBroadcastRetransmitsComplete : CommandComplete (command_op_code = WRITE_NUM_BROADCAST_RETRANSMITS) {
+  status : ErrorCode,
+}
+
+enum HoldModeActivity : 8 {
+  MAINTAIN_CURRENT_POWER_STATE = 0x00,
+  SUSPEND_PAGE_SCAN = 0x01,
+  SUSPEND_INQUIRY_SCAN = 0x02,
+  SUSPEND_PERIODIC_INQUIRY = 0x03,
 }
 
 packet ReadHoldModeActivity : Command (op_code = READ_HOLD_MODE_ACTIVITY) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadHoldModeActivityComplete : CommandComplete (command_op_code = READ_HOLD_MODE_ACTIVITY) {
+  status : ErrorCode,
+  hold_mode_activity : HoldModeActivity,
 }
 
 packet WriteHoldModeActivity : Command (op_code = WRITE_HOLD_MODE_ACTIVITY) {
-  _payload_,  // placeholder (unimplemented)
+  hold_mode_activity : HoldModeActivity,
 }
 
+packet WriteHoldModeActivityComplete : CommandComplete (command_op_code = WRITE_HOLD_MODE_ACTIVITY) {
+  status : ErrorCode,
+}
 
 enum TransmitPowerLevelType : 8 {
   CURRENT = 0x00,
@@ -2090,11 +2140,19 @@ packet WritePageScanTypeComplete : CommandComplete (command_op_code = WRITE_PAGE
 }
 
 packet ReadAfhChannelAssessmentMode : Command (op_code = READ_AFH_CHANNEL_ASSESSMENT_MODE) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadAfhChannelAssessmentModeComplete : CommandComplete (command_op_code = READ_AFH_CHANNEL_ASSESSMENT_MODE) {
+  status : ErrorCode,
+  controller_channel_assessment : Enable,
 }
 
 packet WriteAfhChannelAssessmentMode : Command (op_code = WRITE_AFH_CHANNEL_ASSESSMENT_MODE) {
-  _payload_,  // placeholder (unimplemented)
+  controller_channel_assessment : Enable,
+}
+
+packet WriteAfhChannelAssessmentModeComplete : CommandComplete (command_op_code = WRITE_AFH_CHANNEL_ASSESSMENT_MODE) {
+  status : ErrorCode,
 }
 
 enum FecRequired : 8 {
@@ -2350,6 +2408,13 @@ packet ReadBdAddrComplete : CommandComplete (command_op_code = READ_BD_ADDR) {
 }
 
 packet ReadDataBlockSize : Command (op_code = READ_DATA_BLOCK_SIZE) {
+}
+
+packet ReadDataBlockSizeComplete : CommandComplete (command_op_code = READ_DATA_BLOCK_SIZE) {
+  status : ErrorCode,
+  max_acl_data_packet_length : 16,
+  data_block_length : 16,
+  total_num_data_blocks : 16,
 }
 
 packet ReadLocalSupportedCodecsV1 : Command (op_code = READ_LOCAL_SUPPORTED_CODECS_V1) {
@@ -2828,7 +2893,7 @@ packet LeSetHostChannelClassificationComplete : CommandComplete (command_op_code
 packet LeReadChannelMap : LeConnectionManagementCommand (op_code = LE_READ_CHANNEL_MAP) {
 }
 
-packet LeReadChannelMapComplete : CommandComplete (command_op_code = LE_SET_HOST_CHANNEL_CLASSIFICATION) {
+packet LeReadChannelMapComplete : CommandComplete (command_op_code = LE_READ_CHANNEL_MAP) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -2902,15 +2967,39 @@ packet LeReadSupportedStatesComplete : CommandComplete (command_op_code = LE_REA
 }
 
 packet LeReceiverTest : Command (op_code = LE_RECEIVER_TEST) {
-  _payload_,  // placeholder (unimplemented)
+  rx_channel : 8,
+}
+
+packet LeReceiverTestComplete : CommandComplete (command_op_code = LE_RECEIVER_TEST) {
+  status : ErrorCode,
+}
+
+enum LeTestPayload : 8 {
+  PRBS9 = 0x00,
+  REPEATED_F0 = 0x01,
+  REPEATED_AA = 0x02,
+  PRBS15 = 0x03,
+  REPEATED_FF = 0x04,
+  REPEATED_00 = 0x05,
+  REPEATED_0F = 0x06,
+  REPEATED_55 = 0x07,
 }
 
 packet LeTransmitterTest : Command (op_code = LE_TRANSMITTER_TEST) {
-  _payload_,  // placeholder (unimplemented)
+  tx_channel : 8,
+  test_data_length : 8,
+  packet_payload : LeTestPayload,
+}
+
+packet LeTransmitterTestComplete : CommandComplete (command_op_code = LE_TRANSMITTER_TEST) {
+  status : ErrorCode,
 }
 
 packet LeTestEnd : Command (op_code = LE_TEST_END) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeTestEndComplete : CommandComplete (command_op_code = LE_TEST_END) {
+  status : ErrorCode,
 }
 
 packet LeRemoteConnectionParameterRequestReply : LeConnectionManagementCommand (op_code = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY) {
@@ -2974,6 +3063,9 @@ packet LeWriteSuggestedDefaultDataLengthComplete : CommandComplete (command_op_c
 }
 
 packet LeReadLocalP256PublicKeyCommand : LeSecurityCommand (op_code = LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND) {
+}
+
+packet LeReadLocalP256PublicKeyCommandStatus : CommandStatus (command_op_code = LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND) {
 }
 
 packet LeGenerateDhkeyV1Command : LeSecurityCommand (op_code = LE_GENERATE_DHKEY_COMMAND_V1) {
@@ -3070,23 +3162,84 @@ packet LeReadMaximumDataLengthComplete : CommandComplete (command_op_code = LE_R
 }
 
 packet LeReadPhy : LeConnectionManagementCommand (op_code = LE_READ_PHY) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+enum PhyType : 8 {
+  LE_1M = 0x01,
+  LE_2M = 0x02,
+  LE_CODED = 0x03,
+}
+
+packet LeReadPhyComplete : CommandComplete (command_op_code = LE_READ_PHY) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  tx_phy : PhyType,
+  rx_phy : PhyType,
 }
 
 packet LeSetDefaultPhy : LeConnectionManagementCommand (op_code = LE_SET_DEFAULT_PHY) {
-  _payload_,  // placeholder (unimplemented)
+  all_phys_no_transmit_preference : 1,
+  all_phys_no_receive_preference : 1,
+  _reserved_ : 6,
+  tx_phys_bitmask : 3,
+  _reserved_ : 5,
+  rx_phys_bitmask : 3,
+  _reserved_ : 5,
+}
+
+packet LeSetDefaultPhyComplete : CommandComplete (command_op_code = LE_SET_DEFAULT_PHY) {
+  status : ErrorCode,
+}
+
+enum PhyOptions : 8 {
+  NO_PREFERENCE = 0x00,
+  S_2 = 0x01,
+  S_8 = 0x02,
 }
 
 packet LeSetPhy : LeConnectionManagementCommand (op_code = LE_SET_PHY) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  all_phys_no_transmit_preference : 1,
+  all_phys_no_receive_preference : 1,
+  _reserved_ : 6,
+  tx_phys_bitmask : 3,
+  _reserved_ : 5,
+  rx_phys_bitmask : 3,
+  _reserved_ : 5,
+  phy_options : PhyOptions,
+}
+
+packet LeSetPhyStatus : CommandStatus (command_op_code = LE_SET_PHY) {
+}
+
+enum ModulationIndex : 8 {
+  STANDARD = 0x00,
+  STABLE = 0x01,
 }
 
 packet LeEnhancedReceiverTest : Command (op_code = LE_ENHANCED_RECEIVER_TEST) {
-  _payload_,  // placeholder (unimplemented)
+  rx_channel : 8,
+  phy : PhyType,
+  modulation_index : ModulationIndex,
+}
+
+packet LeEnhancedReceiverTestComplete : CommandComplete (command_op_code = LE_ENHANCED_RECEIVER_TEST) {
+  status : ErrorCode,
 }
 
 packet LeEnhancedTransmitterTest : Command (op_code = LE_ENHANCED_TRANSMITTER_TEST) {
-  _payload_,  // placeholder (unimplemented)
+  tx_channel : 8,
+  test_data_length : 8,
+  packet_payload : LeTestPayload,
+  phy : PhyType,
+}
+
+packet LeEnhancedTransmitterTestComplete : CommandComplete (command_op_code = LE_ENHANCED_TRANSMITTER_TEST) {
+  status : ErrorCode,
 }
 
 packet LeSetExtendedAdvertisingRandomAddress : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS) {
@@ -3389,23 +3542,54 @@ packet LePeriodicAdvertisingCreateSync : LeAdvertisingCommand (op_code = LE_PERI
   _payload_,  // placeholder (unimplemented)
 }
 
+packet LePeriodicAdvertisingCreateSyncStatus : CommandStatus (command_op_code = LE_PERIODIC_ADVERTISING_CREATE_SYNC) {
+}
+
 packet LePeriodicAdvertisingCreateSyncCancel : LeAdvertisingCommand (op_code = LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL) {
   _payload_,  // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingCreateSyncCancelComplete : CommandComplete (command_op_code = LE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL) {
+  status : ErrorCode,
 }
 
 packet LePeriodicAdvertisingTerminateSync : LeAdvertisingCommand (op_code = LE_PERIODIC_ADVERTISING_TERMINATE_SYNC) {
   _payload_,  // placeholder (unimplemented)
 }
 
+packet LePeriodicAdvertisingTerminateSyncComplete : CommandComplete (command_op_code = LE_PERIODIC_ADVERTISING_TERMINATE_SYNC) {
+  status : ErrorCode,
+}
+
+enum AdvertisingAddressType : 8 {
+  PUBLIC_ADDRESS = 0x00,
+  RANDOM_ADDRESS = 0x01,
+}
+
 packet LeAddDeviceToPeriodicAdvertisingList : LeAdvertisingCommand (op_code = LE_ADD_DEVICE_TO_PERIODIC_ADVERTISING_LIST) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_address_type : AdvertisingAddressType,
+  advertiser_address : Address,
+  advertising_sid : 4,
+  _reserved_ : 4,
+}
+
+packet LeAddDeviceToPeriodicAdvertisingListComplete : CommandComplete (command_op_code = LE_ADD_DEVICE_TO_PERIODIC_ADVERTISING_LIST) {
+  status : ErrorCode,
 }
 
 packet LeRemoveDeviceFromPeriodicAdvertisingList : LeAdvertisingCommand (op_code = LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISING_LIST) {
   _payload_,  // placeholder (unimplemented)
 }
 
+packet LeRemoveDeviceFromPeriodicAdvertisingListComplete : CommandComplete (command_op_code = LE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISING_LIST) {
+  status : ErrorCode,
+}
+
 packet LeClearPeriodicAdvertisingList : LeAdvertisingCommand (op_code = LE_CLEAR_PERIODIC_ADVERTISING_LIST) {
+}
+
+packet LeClearPeriodicAdvertisingListComplete : CommandComplete (command_op_code = LE_CLEAR_PERIODIC_ADVERTISING_LIST) {
+  status : ErrorCode,
 }
 
 packet LeReadPeriodicAdvertiserListSize : Command (op_code = LE_READ_PERIODIC_ADVERTISING_LIST_SIZE) {
@@ -3417,15 +3601,30 @@ packet LeReadPeriodicAdvertiserListSizeComplete : CommandComplete (command_op_co
 }
 
 packet LeReadTransmitPower : LeAdvertisingCommand (op_code = LE_READ_TRANSMIT_POWER) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeReadTransmitPowerComplete : CommandComplete (command_op_code = LE_READ_TRANSMIT_POWER) {
+  status : ErrorCode,
+  min_tx_power_dbm : 8,
+  max_tx_power_dbm : 8,
 }
 
 packet LeReadRfPathCompensationPower : LeAdvertisingCommand (op_code = LE_READ_RF_PATH_COMPENSATION_POWER) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeReadRfPathCompensationPowerComplete : CommandComplete (command_op_code = LE_READ_RF_PATH_COMPENSATION_POWER) {
+  status : ErrorCode,
+  rf_tx_path_compensation_tenths_db : 16,
+  rf_rx_path_compensation_tenths_db : 16,
 }
 
 packet LeWriteRfPathCompensationPower : LeAdvertisingCommand (op_code = LE_WRITE_RF_PATH_COMPENSATION_POWER) {
-  _payload_,  // placeholder (unimplemented)
+  rf_tx_path_compensation_tenths_db : 16,
+  rf_rx_path_compensation_tenths_db : 16,
+}
+
+packet LeWriteRfPathCompensationPowerComplete : CommandComplete (command_op_code = LE_WRITE_RF_PATH_COMPENSATION_POWER) {
+  status : ErrorCode,
 }
 
 enum PrivacyMode : 8 {
@@ -3506,6 +3705,9 @@ packet LeSetDefaultPeriodicAdvertisingSyncTransferParameters : Command (op_code 
   skip: 16,
   sync_timeout : 16,
   cte_type : 8,
+}
+
+packet LeSetDefaultPeriodicAdvertisingSyncTransferParametersComplete : CommandComplete (command_op_code = LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS) {
 }
 
 enum UseDebugKey : 8 {
@@ -3969,8 +4171,96 @@ packet LeMultiAdvtSetEnable : LeMultiAdvt (sub_cmd = SET_ENABLE) {
 packet LeMultiAdvtSetEnableComplete : LeMultiAdvtComplete (sub_cmd = SET_ENABLE) {
 }
 
+enum BatchScanOpcode : 8 {
+  ENABLE = 0x01,
+  SET_STORAGE_PARAMETERS = 0x02,
+  SET_SCAN_PARAMETERS = 0x03,
+  READ_RESULT_PARAMETERS = 0x04,
+}
+
 packet LeBatchScan : VendorCommand (op_code = LE_BATCH_SCAN) {
-  _payload_,  // placeholder (unimplemented)
+  batch_scan_opcode : BatchScanOpcode,
+  _body_,
+}
+
+packet LeBatchScanComplete : CommandComplete (command_op_code = LE_BATCH_SCAN) {
+  status : ErrorCode,
+  batch_scan_opcode : BatchScanOpcode,
+  _body_,
+}
+
+packet LeBatchScanEnable : LeBatchScan (batch_scan_opcode = ENABLE) {
+  enable : Enable,
+}
+
+packet LeBatchScanEnableComplete : LeBatchScanComplete (batch_scan_opcode = ENABLE) {
+}
+
+packet LeBatchScanSetStorageParameters : LeBatchScan (batch_scan_opcode = SET_STORAGE_PARAMETERS) {
+  batch_scan_full_max_percentage : 8,
+  batch_scan_truncated_max_percentage : 8,
+  batch_scan_notify_threshold_percentage : 8,
+}
+
+packet LeBatchScanSetStorageParametersComplete : LeBatchScanComplete (batch_scan_opcode = SET_STORAGE_PARAMETERS) {
+}
+
+enum BatchScanDiscardRule : 8 {
+  OLDEST = 0x00,
+  WEAKEST_RSSI = 0x01,
+}
+
+packet LeBatchScanSetScanParameters : LeBatchScan (batch_scan_opcode = SET_SCAN_PARAMETERS) {
+  truncated_mode_enabled : 1,
+  full_mode_enabled : 1,
+  _reserved_ : 6,
+  duty_cycle_scan_window_slots : 32,
+  duty_cycle_scan_interval_slots : 32,
+  own_address_type : AdvertisingAddressType,
+  batch_scan_discard_rule : BatchScanDiscardRule,
+}
+
+packet LeBatchScanSetScanParametersComplete : LeBatchScanComplete (batch_scan_opcode = SET_SCAN_PARAMETERS) {
+}
+
+packet LeBatchScanReadTruncatedResultParameters : LeBatchScan (batch_scan_opcode = READ_RESULT_PARAMETERS) {
+  _fixed_ = 0x01 : 8,
+}
+
+struct TruncatedResult {
+  bd_addr : Address,
+  address_type : AddressType,
+  tx_power : 8,
+  rssi : 8,
+  timestamp : 16,
+}
+
+packet LeBatchScanReadTruncatedResultParametersComplete : LeBatchScanComplete (batch_scan_opcode = READ_RESULT_PARAMETERS) {
+  _fixed_ = 0x01 : 8,
+}
+
+packet LeBatchScanReadFullResultParameters : LeBatchScan (batch_scan_opcode = READ_RESULT_PARAMETERS) {
+  _fixed_ = 0x02 : 8,
+  _count_(results) : 8,
+  results : TruncatedResult[],
+}
+
+struct FullResult {
+  bd_addr : Address,
+  address_type : AddressType,
+  tx_power : 8,
+  rssi : 8,
+  timestamp : 16,
+  _size_(adv_packet) : 8,
+  adv_packet : 8[],
+  _size_(scan_response) : 8,
+  scan_response : 8[],
+}
+
+packet LeBatchScanReadFullResultParametersComplete : LeBatchScanComplete (batch_scan_opcode = READ_RESULT_PARAMETERS) {
+  _fixed_ = 0x02 : 8,
+  _count_(results) : 8,
+  results : FullResult[],
 }
 
 enum ApcfOpcode : 8 {
@@ -4137,9 +4427,15 @@ packet LeAdvFilterServiceDataComplete : LeAdvFilterComplete (apcf_opcode = SERVI
   apcf_available_spaces : 8,
 }
 
-
 packet LeEnergyInfo : VendorCommand (op_code = LE_ENERGY_INFO) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeEnergyInfoComplete : CommandComplete (command_op_code = LE_ENERGY_INFO) {
+  status : ErrorCode,
+  total_tx_time_ms : 32,
+  total_rx_time_ms : 32,
+  total_idle_time_ms : 32,
+  total_energy_used_ma_v_ms : 32,
 }
 
 packet LeExtendedScanParams : LeScanningCommand (op_code = LE_EXTENDED_SCAN_PARAMS) {
@@ -4158,7 +4454,15 @@ packet ControllerDebugInfo : VendorCommand (op_code = CONTROLLER_DEBUG_INFO) {
   _payload_,  // placeholder (unimplemented)
 }
 
+packet ControllerDebugInfoComplete : CommandComplete (command_op_code = CONTROLLER_DEBUG_INFO) {
+  _payload_,  // placeholder (unimplemented)
+}
+
 packet ControllerA2DPOpcode : VendorCommand (op_code = CONTROLLER_A2DP_OPCODE) {
+  _payload_,  // placeholder (unimplemented)
+}
+
+packet ControllerA2DPOpcodeComplete : CommandComplete (command_op_code = CONTROLLER_A2DP_OPCODE) {
   _payload_,  // placeholder (unimplemented)
 }
 
@@ -4400,11 +4704,13 @@ packet ConnectionPacketTypeChanged : Event (event_code = CONNECTION_PACKET_TYPE_
 }
 
 packet QosViolation : Event (event_code = QOS_VIOLATION){
-  _payload_, // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet PageScanRepetitionModeChange : Event (event_code = PAGE_SCAN_REPETITION_MODE_CHANGE){
-  _payload_, // placeholder (unimplemented)
+  bd_addr : Address,
+  page_scan_repetition_mode : PageScanRepetitionMode,
 }
 
 packet FlowSpecificationComplete : Event (event_code = FLOW_SPECIFICATION_COMPLETE){
@@ -4595,7 +4901,8 @@ packet LeMetaEvent : Event (event_code = LE_META_EVENT) {
   _body_,
 }
 
-packet NumberOfCompletedDataBlocks : Event (event_code = NUMBER_OF_COMPLETED_DATA_BLOCKS){
+packet NumberOfCompletedDataBlocks : Event (event_code = NUMBER_OF_COMPLETED_DATA_BLOCKS) {
+  total_num_data_blocks : 16,
   _payload_, // placeholder (unimplemented)
 }
 
@@ -4803,15 +5110,15 @@ packet LeScanRequestReceived : LeMetaEvent (subevent_code = SCAN_REQUEST_RECEIVE
   scanner_address : Address,
 }
 
-enum ChannelSelectionAlGorithm : 8 {
-  ALGORITHM1 = 0,
-  ALGORITHM2 = 1,
+enum ChannelSelectionAlgorithm : 8 {
+  ALGORITHM_1 = 0,
+  ALGORITHM_2 = 1,
 }
 
 packet LeChannelSelectionAlgorithm : LeMetaEvent (subevent_code = CHANNEL_SELECTION_ALGORITHM) {
   connection_handle : 12,
   _reserved_ : 4,
-  channel_selection_algorithm : ChannelSelectionAlGorithm,
+  channel_selection_algorithm : ChannelSelectionAlgorithm,
 }
 
 packet LeConnectionlessIqReport : LeMetaEvent (subevent_code = CONNECTIONLESS_IQ_REPORT) {
