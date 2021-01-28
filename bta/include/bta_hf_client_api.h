@@ -25,7 +25,10 @@
 #ifndef BTA_HF_CLIENT_API_H
 #define BTA_HF_CLIENT_API_H
 
-#include "bta_api.h"
+#include <cstdint>
+
+#include "bta/include/bta_api.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types
