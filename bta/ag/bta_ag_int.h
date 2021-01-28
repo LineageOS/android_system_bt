@@ -26,10 +26,10 @@
 
 #include <cstdint>
 
-#include "bta_ag_api.h"
-#include "bta_ag_at.h"
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "bta/ag/bta_ag_at.h"
+#include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_api.h"
+#include "bta/sys/bta_sys.h"
 
 /*****************************************************************************
  *  Constants
