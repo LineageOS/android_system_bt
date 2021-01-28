@@ -324,13 +324,11 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-    crypto_toolbox::Octet16 irk = {};
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
     auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
     acl_manager_->SetPrivacyPolicyForInitiatorAddress(
         LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS,
         address_with_type,
-        irk,
         minimum_rotation_time,
         maximum_rotation_time);
 
@@ -1247,7 +1245,6 @@ class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
     hci::Address address;
     Address::FromString("D0:05:04:03:02:01", address);
     hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-    crypto_toolbox::Octet16 irk = {};
     acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
     acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
@@ -1255,7 +1252,6 @@ class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
     acl_manager_->SetPrivacyPolicyForInitiatorAddress(
         LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS,
         address_with_type,
-        irk,
         minimum_rotation_time,
         maximum_rotation_time);
 

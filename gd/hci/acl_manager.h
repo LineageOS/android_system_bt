@@ -76,7 +76,6 @@ public:
  virtual void SetPrivacyPolicyForInitiatorAddress(
      LeAddressManager::AddressPolicy address_policy,
      AddressWithType fixed_address,
-     crypto_toolbox::Octet16 rotation_irk,
      std::chrono::milliseconds minimum_rotation_time,
      std::chrono::milliseconds maximum_rotation_time);
 
