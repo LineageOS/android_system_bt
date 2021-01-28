@@ -945,10 +945,10 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
         s << name_ << "DataChild::";
         s << desc_path[0]->name_ << "(Arc::new(";
         if (desc_path[0]->parent_constraints_.empty()) {
-          s << desc_path[0]->name_ << "Data::parse(&bytes[" << payload_offset.bytes() << "..]";
+          s << desc_path[0]->name_ << "Data::parse(&bytes[..]";
           s << ", " << enum_variant << ")?))";
         } else {
-          s << desc_path[0]->name_ << "Data::parse(&bytes[" << payload_offset.bytes() << "..])?))";
+          s << desc_path[0]->name_ << "Data::parse(&bytes[..])?))";
         }
       } else if (constraint_type == ScalarField::kFieldType) {
         s << std::get<int64_t>(desc.second) << " => {";
