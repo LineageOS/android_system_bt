@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-#include <vector>
-
+#include <cstdint>
 #include <list>
 #include <unordered_map>
 #include <unordered_set>
-#include "bta_gatt_api.h"
+#include <vector>
+
+#include "bta/include/bta_gatt_api.h"
 
 /* BTA GATTC implementation does not allow for multiple commands queuing. So one
  * client making calls to BTA_GATTC_ReadCharacteristic, BTA_GATTC_ReadCharDescr,
