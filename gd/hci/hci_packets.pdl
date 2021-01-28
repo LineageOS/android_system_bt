@@ -140,7 +140,6 @@ enum OpCode : 16 {
   FLUSH = 0x0C08,
   READ_PIN_TYPE = 0x0C09,
   WRITE_PIN_TYPE = 0x0C0A,
-  CREATE_NEW_UNIT_KEY = 0x0C0B,
   READ_STORED_LINK_KEY = 0x0C0D,
   WRITE_STORED_LINK_KEY = 0x0C11,
   DELETE_STORED_LINK_KEY = 0x0C12,
@@ -1652,10 +1651,6 @@ packet WritePinType : Command (op_code = WRITE_PIN_TYPE) {
 
 packet WritePinTypeComplete : CommandComplete (command_op_code = WRITE_PIN_TYPE) {
   status : ErrorCode,
-}
-
-packet CreateNewUnitKey : Command (op_code = CREATE_NEW_UNIT_KEY) {
-  _payload_,  // placeholder (unimplemented)
 }
 
 enum ReadStoredLinkKeyReadAllFlag : 8 {
