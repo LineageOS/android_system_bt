@@ -26,17 +26,9 @@
 
 #define LOG_TAG "bt_bta_av"
 
-#include <base/logging.h>
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "bt_target.h"
-
-#include <string.h>
-#include "bt_common.h"
-#include "bta_api.h"
-#include "bta_av_api.h"
-#include "bta_av_int.h"
-#include "bta_sys.h"
-
+#include "bta/av/bta_av_int.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 
