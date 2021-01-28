@@ -1930,7 +1930,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
   if (btm_inq_find_bdaddr(bda)) {
     /* never been report as an LE device */
     if (p_i && (!(p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BLE) ||
-                /* scan repsonse to be updated */
+                /* scan response to be updated */
                 (!p_i->scan_rsp))) {
       update = true;
     } else if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
@@ -1984,6 +1984,71 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
   }
 
   cache.Clear(addr_type, bda);
+}
+
+/**
+ * This function copy from btm_ble_process_adv_pkt_cont to process adv packet
+ * from gd scanning module to handle inquiry result callback.
+ */
+void btm_ble_process_adv_pkt_cont_for_inquiry(
+    uint16_t evt_type, uint8_t addr_type, const RawAddress& bda,
+    uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
+    int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int,
+    std::vector<uint8_t> advertising_data) {
+  tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
+  bool update = true;
+
+  tINQ_DB_ENT* p_i = btm_inq_db_find(bda);
+
+  /* Check if this address has already been processed for this inquiry */
+  if (btm_inq_find_bdaddr(bda)) {
+    /* never been report as an LE device */
+    if (p_i && (!(p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BLE) ||
+                /* scan response to be updated */
+                (!p_i->scan_rsp))) {
+      update = true;
+    } else if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
+      update = false;
+    } else {
+      /* if yes, skip it */
+      return; /* assumption: one result per event */
+    }
+  }
+
+  /* If existing entry, use that, else get  a new one (possibly reusing the
+   * oldest) */
+  if (p_i == NULL) {
+    p_i = btm_inq_db_new(bda);
+    if (p_i != NULL) {
+      p_inq->inq_cmpl_info.num_resp++;
+      p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
+    } else
+      return;
+  } else if (p_i->inq_count !=
+             p_inq->inq_counter) /* first time seen in this inquiry */
+  {
+    p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
+    p_inq->inq_cmpl_info.num_resp++;
+  }
+
+  /* update the LE device information in inquiry database */
+  btm_ble_update_inq_result(p_i, addr_type, bda, evt_type, primary_phy,
+                            secondary_phy, advertising_sid, tx_power, rssi,
+                            periodic_adv_int, advertising_data);
+
+  uint8_t result = btm_ble_is_discoverable(bda, advertising_data);
+  if (result == 0) {
+    return;
+  }
+
+  if (!update) result &= ~BTM_BLE_INQ_RESULT;
+
+  tBTM_INQ_RESULTS_CB* p_inq_results_cb = p_inq->p_inq_results_cb;
+  if (p_inq_results_cb && (result & BTM_BLE_INQ_RESULT)) {
+    (p_inq_results_cb)((tBTM_INQ_RESULTS*)&p_i->inq_info.results,
+                       const_cast<uint8_t*>(advertising_data.data()),
+                       advertising_data.size());
+  }
 }
 
 void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* data) {
