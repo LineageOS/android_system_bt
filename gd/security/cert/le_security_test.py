@@ -48,6 +48,8 @@ import time
 from bluetooth_packets_python3.hci_packets import OpCode
 from bluetooth_packets_python3.security_packets import PairingFailedReason
 
+from mobly import asserts
+
 LeIoCapabilities = LeIoCapabilityMessage.LeIoCapabilities
 LeOobDataFlag = LeOobDataPresentMessage.LeOobDataFlag
 
@@ -92,6 +94,8 @@ class LeSecurityTest(GdBaseTestClass):
             address_policy=le_initiator_address_facade.AddressPolicy.USE_PUBLIC_ADDRESS,
             address_with_type=self.cert_address)
         self.cert.security.SetLeInitiatorAddressPolicy(cert_privacy_policy)
+
+        asserts.skip("Unhandled race condition - Flaky test")
 
     def teardown_test(self):
         self.dut_hci.close()
