@@ -38,7 +38,7 @@ class ConnectionManagementCallbacks {
   // Invoked when controller sends Read Clock Offset Complete event with Success error code
   virtual void OnReadClockOffsetComplete(uint16_t clock_offset) = 0;
   // Invoked when controller sends Mode Change event with Success error code
-  virtual void OnModeChange(Mode current_mode, uint16_t interval) = 0;
+  virtual void OnModeChange(ErrorCode status, Mode current_mode, uint16_t interval) = 0;
   // Invoked when controller sends Sniff Subrating event with Success error code
   virtual void OnSniffSubrating(
       uint16_t maximum_transmit_latency,
