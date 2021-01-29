@@ -548,26 +548,34 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(tACL_CONN& p_acl, uint8_t pm_id,
   mode = btm_pm_get_set_mode(pm_id, p_cb, p_mode, &md_res);
   md_res.mode = mode;
 
+  LOG_DEBUG("Found controller in mode:%s", power_mode_text(mode).c_str());
+
   if (p_cb->State() == mode) {
-    LOG_INFO("Link already in requested mode pm_id:%hhu link_ind:%d mode:%d",
-             pm_id, link_ind, mode);
+    LOG_INFO(
+        "Link already in requested mode pm_id:%hhu link_ind:%d mode:%s[%hhu]",
+        pm_id, link_ind, power_mode_text(mode).c_str(), mode);
 
     /* already in the resulting mode */
     if ((mode == BTM_PM_MD_ACTIVE) ||
-        ((md_res.max >= p_cb->interval) && (md_res.min <= p_cb->interval)))
+        ((md_res.max >= p_cb->interval) && (md_res.min <= p_cb->interval))) {
+      LOG_DEBUG("Storing command");
       return BTM_CMD_STORED;
-    /* Otherwise, needs to wake, then sleep */
+    }
+    LOG_DEBUG("Need to wake then sleep");
     chg_ind = true;
   }
   p_cb->chg_ind = chg_ind;
 
   /* cannot go directly from current mode to resulting mode. */
-  if (mode != BTM_PM_MD_ACTIVE && p_cb->State() != BTM_PM_MD_ACTIVE)
+  if (mode != BTM_PM_MD_ACTIVE && p_cb->State() != BTM_PM_MD_ACTIVE) {
+    LOG_DEBUG("Power mode change delay required");
     p_cb->chg_ind = true; /* needs to wake, then sleep */
+  }
 
-  if (p_cb->chg_ind) /* needs to wake first */
+  if (p_cb->chg_ind) {
+    LOG_DEBUG("Need to wake first");
     md_res.mode = BTM_PM_MD_ACTIVE;
-  else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
+  } else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
     LOG_DEBUG("Sending sniff subrating to controller");
     send_sniff_subrating(btm_cb.acl_cb_.acl_db[link_ind], p_cb->max_lat,
                          p_cb->min_rmt_to, p_cb->min_loc_to);
@@ -741,6 +749,13 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status) {
 void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
                              tHCI_MODE hci_mode, uint16_t interval) {
   tBTM_PM_STATUS mode = static_cast<tBTM_PM_STATUS>(hci_mode);
+
+  LOG_DEBUG(
+      "On power mode changed complete status:%s handle:0x%04x"
+      " mode:%s interval:%hu",
+      hci_error_code_text(hci_status).c_str(), hci_handle,
+      hci_mode_text(hci_mode).c_str(), interval);
+
   int xx, yy, zz;
   tBTM_PM_STATE old_state;
 

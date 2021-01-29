@@ -24,6 +24,7 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
+#include "stack/include/security_client_callbacks.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
@@ -69,6 +70,10 @@ struct btm_client_interface_s {
 
   // Acl peer and lifecycle
   struct {
+    struct {
+      bool (*SupportTransparentSynchronousData)(const RawAddress& bd_addr);
+    } features;
+
     bool (*BTM_IsAclConnectionUp)(const RawAddress& bd_addr,
                                   tBT_TRANSPORT transport);
     bool (*BTM_ReadConnectedTransportAddress)(RawAddress* bd_addr,
@@ -77,11 +82,6 @@ struct btm_client_interface_s {
     tBTM_STATUS (*BTM_ReadRemoteDeviceName)(const RawAddress& bd_addr,
                                             tBTM_CMPL_CB* p_cb,
                                             tBT_TRANSPORT transport);
-    tBTM_STATUS (*BTM_SetEncryption)(const RawAddress& bd_addr,
-                                     tBT_TRANSPORT transport,
-                                     tBTM_SEC_CALLBACK* p_callback,
-                                     void* p_ref_data,
-                                     tBTM_BLE_SEC_ACT sec_act);
     uint8_t* (*BTM_ReadRemoteFeatures)(const RawAddress&);
     void (*BTM_ReadDevInfo)(const RawAddress& bd_addr,
                             tBT_DEVICE_TYPE* p_dev_type,
@@ -137,6 +137,7 @@ struct btm_client_interface_s {
                                 tBT_DEVICE_TYPE dev_type,
                                 tBLE_ADDR_TYPE addr_type);
     void (*BTM_SecClearSecurityFlags)(const RawAddress& bd_addr);
+    uint8_t (*BTM_SecClrService)(uint8_t service_id);
     uint8_t (*BTM_SecClrServiceByPsm)(uint16_t psm);
     void (*BTM_RemoteOobDataReply)(tBTM_STATUS res, const RawAddress& bd_addr,
                                    const Octet16& c, const Octet16& r);
@@ -145,7 +146,15 @@ struct btm_client_interface_s {
     void (*BTM_ConfirmReqReply)(tBTM_STATUS res, const RawAddress& bd_addr);
     bool (*BTM_SecDeleteRmtNameNotifyCallback)(
         tBTM_RMT_NAME_CALLBACK* p_callback);
-
+    tBTM_STATUS (*BTM_SetEncryption)(const RawAddress& bd_addr,
+                                     tBT_TRANSPORT transport,
+                                     tBTM_SEC_CALLBACK* p_callback,
+                                     void* p_ref_data,
+                                     tBTM_BLE_SEC_ACT sec_act);
+    bool (*BTM_IsEncrypted)(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+    bool (*BTM_SecIsSecurityPending)(const RawAddress& bd_addr);
+    bool (*BTM_IsLinkKeyKnown)(const RawAddress& bd_addr,
+                               tBT_TRANSPORT transport);
   } security;
 
   struct {
@@ -170,6 +179,7 @@ struct btm_client_interface_s {
                                      uint16_t max_conn_int,
                                      uint16_t peripheral_latency,
                                      uint16_t supervision_tout);
+    bool (*BTM_UseLeLink)(const RawAddress& bd_addr);
   } ble;
 
   struct {
