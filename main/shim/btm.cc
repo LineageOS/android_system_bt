@@ -103,14 +103,6 @@ std::string Btm::ReadRemoteName::AddressString() const {
   return raw_address_.ToString();
 }
 
-static std::unordered_map<RawAddress, tBLE_ADDR_TYPE> le_address_type_cache_;
-
-static void store_le_address_type(RawAddress address, tBLE_ADDR_TYPE type) {
-  if (le_address_type_cache_.count(address) == 0) {
-    le_address_type_cache_[address] = type;
-  }
-}
-
 void Btm::ScanningCallbacks::OnScannerRegistered(
     const bluetooth::hci::Uuid app_uuid, bluetooth::hci::ScannerId scanner_id,
     ScanningStatus status){};
@@ -136,7 +128,6 @@ void Btm::ScanningCallbacks::OnScanResult(
                                advertising_sid, tx_power, rssi,
                                periodic_advertising_interval,
                                advertising_data.size(), &advertising_data[0]);
-  store_le_address_type(raw_address, ble_address_type);
 }
 
 void Btm::ScanningCallbacks::OnTrackAdvFoundLost(){};
@@ -666,24 +657,19 @@ uint16_t Btm::GetAclHandle(const RawAddress& remote_bda,
   }
 }
 
-tBLE_ADDR_TYPE Btm::GetAddressType(const RawAddress& bd_addr) {
+hci::AddressWithType Btm::GetAddressAndType(const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec != NULL && p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
     if (!p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
-      return p_dev_rec->ble.identity_address_with_type.type;
+      return ToAddressWithType(p_dev_rec->ble.identity_address_with_type.bda,
+                               p_dev_rec->ble.identity_address_with_type.type);
     } else {
-      return p_dev_rec->ble.ble_addr_type;
+      return ToAddressWithType(p_dev_rec->ble.pseudo_addr,
+                               p_dev_rec->ble.ble_addr_type);
     }
   }
-  if (le_address_type_cache_.count(bd_addr) == 0) {
-    LOG(ERROR) << "Unknown bd_addr. Use public address";
-    return BLE_ADDR_PUBLIC;
-  }
-  return le_address_type_cache_[bd_addr];
-}
-
-void Btm::StoreAddressType(const RawAddress& bd_addr, tBLE_ADDR_TYPE type) {
-  store_le_address_type(bd_addr, type);
+  LOG(ERROR) << "Unknown bd_addr. Use public address";
+  return ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC);
 }
 
 void Btm::Register_HACK_SetScoDisconnectCallback(

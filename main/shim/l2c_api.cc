@@ -262,6 +262,24 @@ struct ClassicDynamicChannelHelper {
     return true;
   }
 
+  void FlushChannel(uint16_t cid) {
+    auto buffer = channel_enqueue_buffer_.find(cid);
+    if (buffer == channel_enqueue_buffer_.end()) {
+      LOG_ERROR("Channel is not open");
+      return;
+    }
+    buffer->second->Clear();
+  }
+
+  uint16_t GetNumBufferedPackets(uint16_t cid) {
+    auto buffer = channel_enqueue_buffer_.find(cid);
+    if (buffer == channel_enqueue_buffer_.end()) {
+      LOG_ERROR("Channel is not open");
+      return 0;
+    }
+    return buffer->second->Size();
+  }
+
   std::unordered_map<uint16_t, std::unique_ptr<classic::DynamicChannel>>
       channels_;
   std::unordered_map<uint16_t, std::unique_ptr<bluetooth::os::EnqueueBuffer<
@@ -496,13 +514,16 @@ bluetooth::l2cap::classic::SecurityInterface* security_interface_ = nullptr;
 
 struct LeLinkPropertyListenerShim
     : public bluetooth::l2cap::le::LinkPropertyListener {
-  std::unordered_map<hci::Address, uint16_t> address_to_handle_;
-  std::unordered_map<hci::Address, hci::Role> address_to_role_;
+  struct ConnectionInfo {
+    uint16_t handle;
+    hci::Role role;
+    AddressWithType address_with_type;
+  };
+  std::unordered_map<hci::Address, ConnectionInfo> info_;
 
-  void OnLinkConnected(hci::AddressWithType remote, uint16_t handle,
+  void OnLinkConnected(AddressWithType remote, uint16_t handle,
                        hci::Role role) override {
-    address_to_handle_[remote.GetAddress()] = handle;
-    address_to_role_[remote.GetAddress()] = role;
+    info_[remote.GetAddress()] = {handle, role, remote};
     btm_ble_connected(ToRawAddress(remote.GetAddress()), handle,
                       HCI_ENCRYPT_MODE_DISABLED, static_cast<uint8_t>(role),
                       static_cast<tBLE_ADDR_TYPE>(remote.GetAddressType()),
@@ -510,7 +531,7 @@ struct LeLinkPropertyListenerShim
   }
 
   void OnLinkDisconnected(hci::AddressWithType remote) override {
-    address_to_handle_.erase(remote.GetAddress());
+    info_.erase(remote.GetAddress());
   }
 
   void OnReadRemoteVersionInformation(hci::AddressWithType remote,
@@ -530,14 +551,14 @@ struct LeLinkPropertyListenerShim
                           uint16_t connection_latency,
                           uint16_t supervision_timeout) override {
     acl_ble_update_event_received(
-        HCI_SUCCESS, address_to_handle_[remote.GetAddress()],
-        connection_interval, connection_latency, supervision_timeout);
+        HCI_SUCCESS, info_[remote.GetAddress()].handle, connection_interval,
+        connection_latency, supervision_timeout);
   }
 
   void OnPhyUpdate(hci::AddressWithType remote, uint8_t tx_phy,
                    uint8_t rx_phy) override {
-    gatt_notify_phy_updated(
-        GATT_SUCCESS, address_to_handle_[remote.GetAddress()], tx_phy, rx_phy);
+    gatt_notify_phy_updated(GATT_SUCCESS, info_[remote.GetAddress()].handle,
+                            tx_phy, rx_phy);
   }
 
   void OnDataLengthChange(hci::AddressWithType remote, uint16_t tx_octets,
@@ -563,7 +584,6 @@ class LeSecurityEnforcementShim
       LOG_ERROR("Received unexpected callback");
       return;
     }
-
     auto& callback = le_security_enforce_callback_map[counter];
     std::move(callback).Invoke(result == BTM_SUCCESS);
     le_security_enforce_callback_map.erase(counter);
@@ -864,12 +884,7 @@ struct LeFixedChannelHelper {
 
     auto address = bluetooth::ToRawAddress(device);
 
-    LOG(ERROR) << __func__ << "!!!!!!!!!!!!!!!!!!" << +cid_
-               << device.ToString();
-
     (freg_.pL2CA_FixedConn_Cb)(cid_, address, true, 0, BT_TRANSPORT_LE);
-    Btm::StoreAddressType(address,
-                          static_cast<tBLE_ADDR_TYPE>(remote.GetAddressType()));
   }
 
   void on_incoming_data(bluetooth::hci::Address device) {
@@ -964,7 +979,12 @@ bool L2CA_ConnectFixedChnl(uint16_t cid, const RawAddress& rem_bda) {
   }
 
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
-  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  auto remote = Btm::GetAddressAndType(rem_bda);
+  auto record =
+      le_link_property_listener_shim_.info_.find(ToGdAddress(rem_bda));
+  if (record != le_link_property_listener_shim_.info_.end()) {
+    remote = record->second.address_with_type;
+  }
   LOG(ERROR) << __func__ << remote.ToString();
   auto manager = GetL2capLeModule()->GetFixedChannelManager();
   manager->ConnectServices(
@@ -1123,8 +1143,19 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
 }
 
 uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return 0;
+  auto psm = classic_cid_token_to_channel_map_[lcid];
+  if (classic_dynamic_channel_helper_map_.count(psm) == 0) {
+    LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    return 0;
+  }
+  if (num_to_flush == L2CAP_FLUSH_CHANS_GET) {
+    return classic_dynamic_channel_helper_map_[psm]->GetNumBufferedPackets(
+        lcid);
+  } else {
+    classic_dynamic_channel_helper_map_[psm]->FlushChannel(lcid);
+    return 1;  // Client doesn't care
+  }
+  // TODO: Implement LE part
 }
 
 bool L2CA_IsLinkEstablished(const RawAddress& bd_addr,
@@ -1137,19 +1168,46 @@ bool L2CA_IsLinkEstablished(const RawAddress& bd_addr,
 }
 
 bool L2CA_IsLeLink(uint16_t acl_handle) {
-  for (const auto& entry : le_link_property_listener_shim_.address_to_handle_) {
-    if (entry.second == acl_handle) return true;
+  for (const auto& entry : le_link_property_listener_shim_.info_) {
+    if (entry.second.handle == acl_handle) return true;
   }
   return false;
 }
 
+void L2CA_ReadConnectionAddr(const RawAddress& pseudo_addr,
+                             RawAddress& conn_addr, uint8_t* p_addr_type) {
+  auto* helper = &le_fixed_channel_helper_.find(kSmpCid)->second;
+  auto channel = helper->channels_.find(ToGdAddress(pseudo_addr));
+  if (channel == helper->channels_.end() || channel->second == nullptr) {
+    LOG(ERROR) << "Channel is not open!";
+    return;
+  }
+  auto local = channel->second->GetLinkOptions()->GetLocalAddress();
+  conn_addr = ToRawAddress(local.GetAddress());
+  *p_addr_type = static_cast<uint8_t>(local.GetAddressType());
+}
+
+bool L2CA_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
+                                   RawAddress& conn_addr,
+                                   uint8_t* p_addr_type) {
+  auto remote = ToGdAddress(pseudo_addr);
+  if (le_link_property_listener_shim_.info_.count(remote) == 0) {
+    LOG(ERROR) << __func__ << ": Unknown address";
+    return false;
+  }
+  auto info = le_link_property_listener_shim_.info_[remote].address_with_type;
+  conn_addr = ToRawAddress(info.GetAddress());
+  *p_addr_type = static_cast<tBLE_ADDR_TYPE>(info.GetAddressType());
+  return true;
+}
+
 hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
   auto remote = ToGdAddress(bd_addr);
-  if (le_link_property_listener_shim_.address_to_role_.count(remote) == 0) {
+  if (le_link_property_listener_shim_.info_.count(remote) == 0) {
     return HCI_ROLE_UNKNOWN;
   }
   return static_cast<hci_role_t>(
-      le_link_property_listener_shim_.address_to_role_[remote]);
+      le_link_property_listener_shim_.info_[remote].role);
 }
 
 void L2CA_ConnectForSecurity(const RawAddress& bd_addr) {
@@ -1437,8 +1495,13 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
     return 0;
   }
   uint16_t cid_token = add_le_cid_token_entry(psm);
-  le_dynamic_channel_helper_map_[psm]->Connect(
-      cid_token, ToAddressWithType(p_bd_addr, Btm::GetAddressType(p_bd_addr)));
+  auto remote = Btm::GetAddressAndType(p_bd_addr);
+  auto record =
+      le_link_property_listener_shim_.info_.find(ToGdAddress(p_bd_addr));
+  if (record != le_link_property_listener_shim_.info_.end()) {
+    remote = record->second.address_with_type;
+  }
+  le_dynamic_channel_helper_map_[psm]->Connect(cid_token, remote);
   return cid_token;
 }
 
