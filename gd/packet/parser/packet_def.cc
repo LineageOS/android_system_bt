@@ -871,7 +871,6 @@ void PacketDef::GenRustStructSizeField(std::ostream& s) const {
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
       CountField::kFieldType,
-      SizeField::kFieldType,
   });
   for (int i = 0; i < fields.size(); i++) {
     size += fields[i]->GetSize().bytes();
@@ -998,7 +997,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   // write_to function
   s << "fn write_to(&self, buffer: &mut BytesMut) {";
   if (fields.size() > 0) {
-    s << " buffer.resize(buffer.len() + self.get_size(), 0);";
+    s << " buffer.resize(buffer.len() + self.get_total_size(), 0);";
   }
 
   fields = fields_.GetFieldsWithoutTypes({
@@ -1006,7 +1005,6 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
       CountField::kFieldType,
       PaddingField::kFieldType,
       ReservedField::kFieldType,
-      SizeField::kFieldType,
       FixedScalarField::kFieldType,
   });
 
