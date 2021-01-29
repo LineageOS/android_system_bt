@@ -200,8 +200,8 @@ void btm_establish_continue_from_address(const RawAddress& remote_bda,
 bool acl_peer_supports_ble_connection_parameters_request(
     const RawAddress& remote_bda);
 
-bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle);
-bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle);
+bool sco_peer_supports_esco_2m_phy(const RawAddress& remote_bda);
+bool sco_peer_supports_esco_3m_phy(const RawAddress& remote_bda);
 
 bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle);
 bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle);
