@@ -476,14 +476,14 @@ static void btsnoop_write_packet(packet_type_t type, uint8_t* packet,
   btsnoop_header_t header;
   header.length_original = htonl(length_he);
 
-  bool blacklisted = false;
+  bool rejectlisted = false;
   if (is_btsnoop_filtered && type == kAclPacket) {
-    blacklisted = should_filter_log(is_received, packet);
+    rejectlisted = should_filter_log(is_received, packet);
   }
 
   header.length_captured =
-      blacklisted ? htonl(L2C_HEADER_SIZE) : header.length_original;
-  if (blacklisted) length_he = L2C_HEADER_SIZE;
+      rejectlisted ? htonl(L2C_HEADER_SIZE) : header.length_original;
+  if (rejectlisted) length_he = L2C_HEADER_SIZE;
   header.flags = htonl(flags);
   header.dropped_packets = 0;
   header.timestamp = htonll(timestamp_us + BTSNOOP_EPOCH_DELTA);
