@@ -747,14 +747,14 @@ timeout configurable via @ref OI_CONFIG_DEVMGR::connectQueueTimeoutSecs
       2602, /**< HID: Cannot connect to a HID host unless HID device is started
              */
 
-  OI_AT_ERROR = 2701,       /**< AT: ERROR response */
-  OI_AT_NO_CARRIER = 2702,  /**< AT: NO CARRIER response */
-  OI_AT_BUSY = 2703,        /**< AT: BUSY response */
-  OI_AT_NO_ANSWER = 2704,   /**< AT: NO ANSWER response */
-  OI_AT_DELAYED = 2705,     /**< AT: DELAYED response */
-  OI_AT_BLACKLISTED = 2706, /**< AT: BLACKLISTED response */
-  OI_AT_CME_ERROR = 2707,   /**< AT: +CME ERROR response */
-  OI_AT_CMS_ERROR = 2708,   /**< AT: +CMS ERROR response */
+  OI_AT_ERROR = 2701,        /**< AT: ERROR response */
+  OI_AT_NO_CARRIER = 2702,   /**< AT: NO CARRIER response */
+  OI_AT_BUSY = 2703,         /**< AT: BUSY response */
+  OI_AT_NO_ANSWER = 2704,    /**< AT: NO ANSWER response */
+  OI_AT_DELAYED = 2705,      /**< AT: DELAYED response */
+  OI_AT_REJECTLISTED = 2706, /**< AT: REJECTLISTED response */
+  OI_AT_CME_ERROR = 2707,    /**< AT: +CME ERROR response */
+  OI_AT_CMS_ERROR = 2708,    /**< AT: +CMS ERROR response */
 
   OI_BLST_CHARACTER_TIMEOUT = 2801, /**< BLST: Timeout expired while waiting for
                                        a character from the client. */
