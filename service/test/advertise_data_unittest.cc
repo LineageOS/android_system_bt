@@ -85,12 +85,12 @@ TEST(AdvertiseDataTest, DisallowedFields) {
   AdvertiseData adv2(data2);
   EXPECT_FALSE(adv2.IsValid());
 
-  // Check all blacklisted fields
-  uint8_t blacklist[] = {HCI_EIR_FLAGS_TYPE, HCI_EIR_OOB_BD_ADDR_TYPE,
-                         HCI_EIR_OOB_COD_TYPE, HCI_EIR_OOB_SSP_HASH_C_TYPE,
-                         HCI_EIR_OOB_SSP_RAND_R_TYPE};
-  for (size_t i = 0; i < sizeof(blacklist); i++) {
-    const std::vector<uint8_t> data{0x02, blacklist[i], 0x00};
+  // Check all rejectlisted fields
+  uint8_t rejectlist[] = {HCI_EIR_FLAGS_TYPE, HCI_EIR_OOB_BD_ADDR_TYPE,
+                          HCI_EIR_OOB_COD_TYPE, HCI_EIR_OOB_SSP_HASH_C_TYPE,
+                          HCI_EIR_OOB_SSP_RAND_R_TYPE};
+  for (size_t i = 0; i < sizeof(rejectlist); i++) {
+    const std::vector<uint8_t> data{0x02, rejectlist[i], 0x00};
     AdvertiseData adv(data);
     EXPECT_FALSE(adv.IsValid());
   }

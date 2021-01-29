@@ -1325,9 +1325,9 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
 
 /*******************************************************************************
  *
- * Function         btm_blacklist_role_change_device
+ * Function         btm_rejectlist_role_change_device
  *
- * Description      This function is used to blacklist the device if the role
+ * Description      This function is used to rejectlist the device if the role
  *                  switch fails for maximum number of times. It also removes
  *                  the device from the black list if the role switch succeeds.
  *
@@ -1337,8 +1337,8 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
  * Returns          void
  *
  *******************************************************************************/
-void btm_blacklist_role_change_device(const RawAddress& bd_addr,
-                                      uint8_t hci_status) {
+void btm_rejectlist_role_change_device(const RawAddress& bd_addr,
+                                       uint8_t hci_status) {
   tACL_CONN* p = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
 
   if (!p) {
@@ -1364,7 +1364,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
     p->switch_role_failed_attempts++;
     if (p->switch_role_failed_attempts == BTM_MAX_SW_ROLE_FAILED_ATTEMPTS) {
       LOG_WARN(
-          "Device %s blacklisted for role switching - "
+          "Device %s rejectlisted for role switching - "
           "multiple role switch failed attempts: %u",
           bd_addr.ToString().c_str(), p->switch_role_failed_attempts);
       interop_database_add(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr, 3);

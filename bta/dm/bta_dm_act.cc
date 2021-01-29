@@ -2615,7 +2615,7 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
             setup and
             causing encryption (and in turn the link) to fail .  These device .
             Firmware
-            versions are stored in a blacklist and role switch with these
+            versions are stored in a rejectlist and role switch with these
             devices are
             delayed to avoid the collision with link encryption setup */
 
