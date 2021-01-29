@@ -51,6 +51,7 @@
 #define BT_PROFILE_LE_AUDIO_ID "le_audio"
 #define BT_KEYSTORE_ID "bluetooth_keystore"
 #define BT_ACTIVITY_ATTRIBUTION_ID "activity_attribution"
+#define BT_PROFILE_VC_ID "volume_control"
 
 /** Bluetooth Device Name */
 typedef struct { uint8_t name[249]; } __attribute__((packed)) bt_bdname_t;
