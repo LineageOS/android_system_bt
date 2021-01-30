@@ -1410,12 +1410,13 @@ static char* bta_hf_client_parse_no_answer(tBTA_HF_CLIENT_CB* client_cb,
   return buffer;
 }
 
-static char* bta_hf_client_parse_blacklisted(tBTA_HF_CLIENT_CB* client_cb,
-                                             char* buffer) {
-  AT_CHECK_EVENT(buffer, "BLACKLISTED");
+static char* bta_hf_client_parse_rejectlisted(tBTA_HF_CLIENT_CB* client_cb,
+                                              char* buffer) {
+  AT_CHECK_EVENT(buffer, "REJECTLISTED");
   AT_CHECK_RN(buffer);
 
-  bta_hf_client_handle_error(client_cb, BTA_HF_CLIENT_AT_RESULT_BLACKLISTED, 0);
+  bta_hf_client_handle_error(client_cb, BTA_HF_CLIENT_AT_RESULT_REJECTLISTED,
+                             0);
 
   return buffer;
 }
@@ -1487,20 +1488,20 @@ static char* bta_hf_client_process_unknown(tBTA_HF_CLIENT_CB* client_cb,
 typedef char* (*tBTA_HF_CLIENT_PARSER_CALLBACK)(tBTA_HF_CLIENT_CB*, char*);
 
 static const tBTA_HF_CLIENT_PARSER_CALLBACK bta_hf_client_parser_cb[] = {
-    bta_hf_client_parse_ok,          bta_hf_client_parse_error,
-    bta_hf_client_parse_ring,        bta_hf_client_parse_brsf,
-    bta_hf_client_parse_cind,        bta_hf_client_parse_ciev,
-    bta_hf_client_parse_chld,        bta_hf_client_parse_bcs,
-    bta_hf_client_parse_bsir,        bta_hf_client_parse_cmeerror,
-    bta_hf_client_parse_vgm,         bta_hf_client_parse_vgme,
-    bta_hf_client_parse_vgs,         bta_hf_client_parse_vgse,
-    bta_hf_client_parse_bvra,        bta_hf_client_parse_clip,
-    bta_hf_client_parse_ccwa,        bta_hf_client_parse_cops,
-    bta_hf_client_parse_binp,        bta_hf_client_parse_clcc,
-    bta_hf_client_parse_cnum,        bta_hf_client_parse_btrh,
-    bta_hf_client_parse_busy,        bta_hf_client_parse_delayed,
-    bta_hf_client_parse_no_carrier,  bta_hf_client_parse_no_answer,
-    bta_hf_client_parse_blacklisted, bta_hf_client_process_unknown};
+    bta_hf_client_parse_ok,           bta_hf_client_parse_error,
+    bta_hf_client_parse_ring,         bta_hf_client_parse_brsf,
+    bta_hf_client_parse_cind,         bta_hf_client_parse_ciev,
+    bta_hf_client_parse_chld,         bta_hf_client_parse_bcs,
+    bta_hf_client_parse_bsir,         bta_hf_client_parse_cmeerror,
+    bta_hf_client_parse_vgm,          bta_hf_client_parse_vgme,
+    bta_hf_client_parse_vgs,          bta_hf_client_parse_vgse,
+    bta_hf_client_parse_bvra,         bta_hf_client_parse_clip,
+    bta_hf_client_parse_ccwa,         bta_hf_client_parse_cops,
+    bta_hf_client_parse_binp,         bta_hf_client_parse_clcc,
+    bta_hf_client_parse_cnum,         bta_hf_client_parse_btrh,
+    bta_hf_client_parse_busy,         bta_hf_client_parse_delayed,
+    bta_hf_client_parse_no_carrier,   bta_hf_client_parse_no_answer,
+    bta_hf_client_parse_rejectlisted, bta_hf_client_process_unknown};
 
 /* calculate supported event list length */
 static const uint16_t bta_hf_client_parser_cb_count =
