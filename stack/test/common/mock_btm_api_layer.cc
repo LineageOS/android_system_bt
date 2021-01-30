@@ -31,8 +31,3 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
                                              sec_level, psm, mx_proto_id,
                                              mx_chan_id);
 }
-
-uint8_t acl_link_role(const RawAddress& remote_bd_addr,
-                      tBT_TRANSPORT transport) {
-  return btm_api_interface->acl_link_role(remote_bd_addr, transport);
-}
