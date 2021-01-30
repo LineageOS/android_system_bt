@@ -65,3 +65,38 @@ std::string SizeField::GetSizedFieldName() const {
 void SizeField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
   s << accessor;
 }
+
+void SizeField::GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const {
+  Size size = GetSize();
+  int num_leading_bits = GetRustBitOffset(s, start_offset, end_offset, GetSize());
+
+  s << "let mut " << GetName() << ": " << GetRustDataType() << " = self.get_total_size() as ";
+  s << GetRustDataType() << ";";
+  s << GetName() << " -= self.get_size() as " << GetRustDataType() << ";";
+  if (util::RoundSizeUp(size.bits()) != size.bits()) {
+    uint64_t mask = 0;
+    for (int i = 0; i < size.bits(); i++) {
+      mask <<= 1;
+      mask |= 1;
+    }
+    s << "let " << GetName() << " = ";
+    s << GetName() << " & 0x" << std::hex << mask << std::dec << ";";
+  }
+
+  int access_offset = 0;
+  if (num_leading_bits != 0) {
+    access_offset = -1;
+    uint64_t mask = 0;
+    for (int i = 0; i < num_leading_bits; i++) {
+      mask <<= 1;
+      mask |= 1;
+    }
+    s << "let " << GetName() << " = (" << GetName() << " << " << num_leading_bits << ") | ("
+      << "(buffer[" << start_offset.bytes() << "] as " << GetRustParseDataType() << ") & 0x" << std::hex << mask
+      << std::dec << ");";
+  }
+
+  s << "buffer[" << start_offset.bytes() + access_offset << ".."
+    << start_offset.bytes() + GetSize().bytes() + access_offset << "].copy_from_slice(&" << GetName()
+    << ".to_le_bytes());";
+}
