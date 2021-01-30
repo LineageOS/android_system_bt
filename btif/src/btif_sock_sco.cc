@@ -39,6 +39,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/socket.h"
 #include "osi/include/thread.h"
+#include "stack/include/btm_api.h"
 
 // This module provides a socket abstraction for SCO connections to a higher
 // layer. It returns file descriptors representing two types of sockets:

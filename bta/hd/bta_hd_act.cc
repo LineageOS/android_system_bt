@@ -38,6 +38,7 @@
 
 #include "log/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/hidd_api.h"
 
 static void bta_hd_cback(const RawAddress& bd_addr, uint8_t event,
                          uint32_t data, BT_HDR* pdata);

@@ -65,6 +65,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/btu.h"
+#include "stack/include/pan_api.h"
 
 #define FORWARD_IGNORE 1
 #define FORWARD_SUCCESS 0

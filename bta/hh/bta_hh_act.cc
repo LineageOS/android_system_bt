@@ -35,6 +35,7 @@
 #include "btm_api.h"
 #include "l2c_api.h"
 #include "osi/include/osi.h"
+#include "stack/include/hidh_api.h"
 #include "utl.h"
 
 /*****************************************************************************
