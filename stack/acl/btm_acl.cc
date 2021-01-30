@@ -2787,17 +2787,6 @@ bool acl_create_le_connection(const RawAddress& bd_addr) {
   return acl_create_le_connection_with_id(CONN_MGR_ID_L2CAP, bd_addr);
 }
 
-void acl_cancel_le_connection(const RawAddress& bd_addr) {
-  if (bluetooth::shim::is_gd_acl_enabled()) {
-    tBLE_BD_ADDR address_with_type{
-        .bda = bd_addr,
-        .type = BLE_ADDR_RANDOM,
-    };
-    return bluetooth::shim::ACL_CancelLeConnection(address_with_type);
-  }
-  connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, bd_addr);
-}
-
 void acl_rcv_acl_data(BT_HDR* p_msg) {
   acl_header_t acl_header{
       .handle = HCI_INVALID_HANDLE,
