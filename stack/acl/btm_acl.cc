@@ -2432,30 +2432,26 @@ void btm_ble_refresh_local_resolvable_private_addr(
   }
 }
 
-bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle) {
-  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
-  if (p_acl == nullptr) {
-    return false;
-  }
-  if (!p_acl->peer_lmp_feature_valid[0]) {
+bool sco_peer_supports_esco_2m_phy(const RawAddress& remote_bda) {
+  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
+  if (features == nullptr) {
     LOG_WARN(
         "Checking remote features but remote feature read is "
         "incomplete");
+    return false;
   }
-  return HCI_EDR_ESCO_2MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
+  return HCI_EDR_ESCO_2MPS_SUPPORTED(features);
 }
 
-bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle) {
-  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
-  if (p_acl == nullptr) {
-    return false;
-  }
-  if (!p_acl->peer_lmp_feature_valid[0]) {
+bool sco_peer_supports_esco_3m_phy(const RawAddress& remote_bda) {
+  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
+  if (features == nullptr) {
     LOG_WARN(
         "Checking remote features but remote feature read is "
         "incomplete");
+    return false;
   }
-  return HCI_EDR_ESCO_3MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
+  return HCI_EDR_ESCO_3MPS_SUPPORTED(features);
 }
 
 bool acl_is_switch_role_idle(const RawAddress& bd_addr,
