@@ -210,12 +210,7 @@ class Btm {
   void Register_HACK_SetScoDisconnectCallback(
       HACK_ScoDisconnectCallback callback);
 
-  static tBLE_ADDR_TYPE GetAddressType(const RawAddress& bd_addr);
-
-  // Store the address type from advertising report or connection complete
-  // packet.
-  // TODO(b/161319293): Obtain from storage
-  static void StoreAddressType(const RawAddress& bd_addr, tBLE_ADDR_TYPE type);
+  static hci::AddressWithType GetAddressAndType(const RawAddress& bd_addr);
 
  private:
   os::Alarm scanning_timer_;
