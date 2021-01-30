@@ -222,7 +222,7 @@ void BTA_AvDisconnect(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void BTA_AvStart(tBTA_AV_HNDL handle) {
-  LOG_INFO("%s: bta_handle=0x%x", __func__, handle);
+  LOG_INFO("Starting audio/video stream data transfer bta_handle:%hhu", handle);
 
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
 

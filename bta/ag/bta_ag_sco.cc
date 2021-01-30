@@ -358,12 +358,7 @@ static void bta_ag_cback_sco(tBTA_AG_SCB* p_scb, tBTA_AG_EVT event) {
  *
  ******************************************************************************/
 static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
-  APPL_TRACE_DEBUG(
-      "%s: BEFORE codec_updated=%d, codec_fallback=%d, "
-      "sco_codec=%d, peer_codec=%d, msbc_settings=%d, device=%s",
-      __func__, p_scb->codec_updated, p_scb->codec_fallback, p_scb->sco_codec,
-      p_scb->peer_codecs, p_scb->codec_msbc_settings,
-      p_scb->peer_addr.ToString().c_str());
+  LOG_DEBUG("BEFORE %s", p_scb->ToString().c_str());
   tBTA_AG_PEER_CODEC esco_codec = BTA_AG_CODEC_CVSD;
 
   if (!bta_ag_sco_is_active_device(p_scb->peer_addr)) {
@@ -451,12 +446,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
               p_scb->sco_idx, btm_status_text(btm_status).c_str(),
               params.packet_types);
   }
-  APPL_TRACE_DEBUG(
-      "%s: AFTER codec_updated=%d, codec_fallback=%d, "
-      "sco_codec=%d, peer_codec=%d, msbc_settings=%d, device=%s",
-      __func__, p_scb->codec_updated, p_scb->codec_fallback, p_scb->sco_codec,
-      p_scb->peer_codecs, p_scb->codec_msbc_settings,
-      p_scb->peer_addr.ToString().c_str());
+  LOG_DEBUG("AFTER %s", p_scb->ToString().c_str());
 }
 
 /*******************************************************************************
