@@ -124,6 +124,20 @@ constexpr tL2CAP_FCR_OPTS kDefaultErtmOptions = {
     1010   /* MPS segment size */
 };
 
+typedef struct {
+  uint8_t qos_flags;          /* TBD */
+  uint8_t service_type;       /* see below */
+  uint32_t token_rate;        /* bytes/second */
+  uint32_t token_bucket_size; /* bytes */
+  uint32_t peak_bandwidth;    /* bytes/second */
+  uint32_t latency;           /* microseconds */
+  uint32_t delay_variation;   /* microseconds */
+} FLOW_SPEC;
+
+/* Values for service_type */
+#define SVC_TYPE_BEST_EFFORT 1
+#define SVC_TYPE_GUARANTEED 2
+
 /* Define a structure to hold the configuration parameters. Since the
  * parameters are optional, for each parameter there is a boolean to
  * use to signify its presence or absence.

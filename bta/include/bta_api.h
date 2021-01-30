@@ -458,7 +458,7 @@ typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
 /* Maximum service name length */
 #define BTA_SERVICE_NAME_LEN 35
 
-enum : uint8_t {
+typedef enum : uint8_t {
   /* power mode actions  */
   BTA_DM_PM_NO_ACTION = 0x00, /* no change to the current pm setting */
   BTA_DM_PM_PARK = 0x10,      /* prefers park mode */
@@ -479,7 +479,8 @@ enum : uint8_t {
   BTA_DM_PM_SUSPEND = 0x04, /* prefers suspend mode */
   BTA_DM_PM_NO_PREF = 0x01, /* service has no preference on power mode setting.
                                eg. connection to \ service got closed */
-};
+  BTA_DM_PM_SNIFF_MASK = 0x0f,  // Masks the sniff submode
+} tBTA_DM_PM_ACTION_BITMASK;
 typedef uint8_t tBTA_DM_PM_ACTION;
 
 /* index to bta_dm_ssr_spec */
