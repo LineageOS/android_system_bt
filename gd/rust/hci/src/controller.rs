@@ -219,7 +219,7 @@ impl SupportedCommands {
     /// Check whether a given opcode is supported by the controller
     pub fn is_supported(&self, opcode: OpCode) -> bool {
         match opcode {
-            OpCode::ReadLocalSupportedCommands | OpCode::CreateNewUnitKey => true,
+            OpCode::ReadLocalSupportedCommands => true,
             _ => {
                 let converted = OpCodeIndex::try_from(opcode);
                 if converted.is_err() {
