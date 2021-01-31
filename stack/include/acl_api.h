@@ -200,8 +200,8 @@ void btm_establish_continue_from_address(const RawAddress& remote_bda,
 bool acl_peer_supports_ble_connection_parameters_request(
     const RawAddress& remote_bda);
 
-bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle);
-bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle);
+bool sco_peer_supports_esco_2m_phy(const RawAddress& remote_bda);
+bool sco_peer_supports_esco_3m_phy(const RawAddress& remote_bda);
 
 bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle);
 bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle);
@@ -247,9 +247,6 @@ void btm_ble_refresh_local_resolvable_private_addr(
 void btm_cont_rswitch_from_handle(uint16_t hci_handle);
 
 uint8_t acl_link_role_from_handle(uint16_t handle);
-
-uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
-                                     tBT_TRANSPORT transport);
 
 void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
 
@@ -314,3 +311,4 @@ void btm_acl_update_inquiry_status(uint8_t status);
 
 void ACL_RegisterClient(struct acl_client_callback_s* callbacks);
 void ACL_UnregisterClient(struct acl_client_callback_s* callbacks);
+bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr);

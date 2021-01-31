@@ -91,6 +91,9 @@ init_flags!(
     dependencies: {
         gd_core => gd_security,
         gd_security => gd_acl,
+        gd_l2cap => gd_scanning,
+        gd_scanning => gd_advertising,
+        gd_advertising => gd_acl,
         gd_acl => gd_controller,
         gd_controller => gd_hci,
         gd_link_policy => gd_acl

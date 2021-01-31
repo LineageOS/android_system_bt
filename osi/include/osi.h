@@ -56,3 +56,7 @@ int osi_rand(void);
 #define OSI_NO_INTR(fn) \
   do {                  \
   } while ((fn) == -1 && errno == EINTR)
+
+#ifndef FALLTHROUGH_INTENDED
+#define FALLTHROUGH_INTENDED [[clang::fallthrough]]  // NOLINT
+#endif

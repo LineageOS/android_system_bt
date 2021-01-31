@@ -1325,9 +1325,9 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
 
 /*******************************************************************************
  *
- * Function         btm_blacklist_role_change_device
+ * Function         btm_rejectlist_role_change_device
  *
- * Description      This function is used to blacklist the device if the role
+ * Description      This function is used to rejectlist the device if the role
  *                  switch fails for maximum number of times. It also removes
  *                  the device from the black list if the role switch succeeds.
  *
@@ -1337,8 +1337,8 @@ uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
  * Returns          void
  *
  *******************************************************************************/
-void btm_blacklist_role_change_device(const RawAddress& bd_addr,
-                                      uint8_t hci_status) {
+void btm_rejectlist_role_change_device(const RawAddress& bd_addr,
+                                       uint8_t hci_status) {
   tACL_CONN* p = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
 
   if (!p) {
@@ -1364,7 +1364,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
     p->switch_role_failed_attempts++;
     if (p->switch_role_failed_attempts == BTM_MAX_SW_ROLE_FAILED_ATTEMPTS) {
       LOG_WARN(
-          "Device %s blacklisted for role switching - "
+          "Device %s rejectlisted for role switching - "
           "multiple role switch failed attempts: %u",
           bd_addr.ToString().c_str(), p->switch_role_failed_attempts);
       interop_database_add(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr, 3);
@@ -2432,30 +2432,26 @@ void btm_ble_refresh_local_resolvable_private_addr(
   }
 }
 
-bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle) {
-  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
-  if (p_acl == nullptr) {
-    return false;
-  }
-  if (!p_acl->peer_lmp_feature_valid[0]) {
+bool sco_peer_supports_esco_2m_phy(const RawAddress& remote_bda) {
+  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
+  if (features == nullptr) {
     LOG_WARN(
         "Checking remote features but remote feature read is "
         "incomplete");
+    return false;
   }
-  return HCI_EDR_ESCO_2MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
+  return HCI_EDR_ESCO_2MPS_SUPPORTED(features);
 }
 
-bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle) {
-  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(hci_handle);
-  if (p_acl == nullptr) {
-    return false;
-  }
-  if (!p_acl->peer_lmp_feature_valid[0]) {
+bool sco_peer_supports_esco_3m_phy(const RawAddress& remote_bda) {
+  uint8_t* features = BTM_ReadRemoteFeatures(remote_bda);
+  if (features == nullptr) {
     LOG_WARN(
         "Checking remote features but remote feature read is "
         "incomplete");
+    return false;
   }
-  return HCI_EDR_ESCO_3MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
+  return HCI_EDR_ESCO_3MPS_SUPPORTED(features);
 }
 
 bool acl_is_switch_role_idle(const RawAddress& bd_addr,
@@ -2791,17 +2787,6 @@ bool acl_create_le_connection(const RawAddress& bd_addr) {
   return acl_create_le_connection_with_id(CONN_MGR_ID_L2CAP, bd_addr);
 }
 
-void acl_cancel_le_connection(const RawAddress& bd_addr) {
-  if (bluetooth::shim::is_gd_acl_enabled()) {
-    tBLE_BD_ADDR address_with_type{
-        .bda = bd_addr,
-        .type = BLE_ADDR_RANDOM,
-    };
-    return bluetooth::shim::ACL_CancelLeConnection(address_with_type);
-  }
-  connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, bd_addr);
-}
-
 void acl_rcv_acl_data(BT_HDR* p_msg) {
   acl_header_t acl_header{
       .handle = HCI_INVALID_HANDLE,
@@ -2897,4 +2882,15 @@ void ACL_RegisterClient(struct acl_client_callback_s* callbacks) {
 
 void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
   LOG_DEBUG("UNIMPLEMENTED");
+}
+
+bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr) {
+  const tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return false;
+  }
+
+  return HCI_LMP_TRANSPNT_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
 }

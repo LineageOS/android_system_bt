@@ -50,24 +50,6 @@ class BleAdvertiserInterfaceImpl : public BleAdvertiserInterface,
   void Init() {
     // Register callback
     bluetooth::shim::GetAdvertising()->RegisterAdvertisingCallback(this);
-
-    if (!bluetooth::common::init_flags::gd_security_is_enabled() &&
-        !bluetooth::common::init_flags::gd_acl_is_enabled()) {
-      // Set private policy
-      auto address = bluetooth::shim::GetController()->GetMacAddress();
-      auto storage = bluetooth::shim::GetStorage();
-      auto adapter_config = storage->GetAdapterConfig();
-      auto irk_bytes = adapter_config.GetLeIdentityResolvingKey();
-      std::array<uint8_t, 16> irk{0};
-      std::copy_n(irk.begin(), 16, irk_bytes->data());
-      bluetooth::hci::AddressWithType address_with_type(
-          address, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS);
-      auto minimum_rotation_time = std::chrono::minutes(7);
-      auto maximum_rotation_time = std::chrono::minutes(15);
-      bluetooth::shim::GetAclManager()->SetPrivacyPolicyForInitiatorAddress(
-          bluetooth::hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS,
-          address_with_type, irk, minimum_rotation_time, maximum_rotation_time);
-    }
   }
 
   // nobody use this function
