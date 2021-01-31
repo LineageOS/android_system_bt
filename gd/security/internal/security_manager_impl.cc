@@ -106,7 +106,7 @@ void SecurityManagerImpl::Init() {
   auto maximum_rotation_time = std::chrono::minutes(15);
 
   acl_manager_->SetPrivacyPolicyForInitiatorAddress(
-      address_policy, address_with_type, local_identity_resolving_key_, minimum_rotation_time, maximum_rotation_time);
+      address_policy, address_with_type, minimum_rotation_time, maximum_rotation_time);
 }
 
 void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
