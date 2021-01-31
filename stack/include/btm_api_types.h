@@ -975,11 +975,11 @@ typedef enum : uint8_t {
  *  Power Manager Types
  ************************/
 typedef struct {
-  uint16_t max;
-  uint16_t min;
-  uint16_t attempt;
-  uint16_t timeout;
-  tBTM_PM_MODE mode;
+  uint16_t max = 0;
+  uint16_t min = 0;
+  uint16_t attempt = 0;
+  uint16_t timeout = 0;
+  tBTM_PM_MODE mode = BTM_PM_MD_ACTIVE;  // 0
 } tBTM_PM_PWR_MD;
 
 /*************************************

@@ -443,6 +443,7 @@ class SecurityListenerShim
     uint16_t handle = interface->GetAclHandle();
     address_to_handle_[bda] = handle;
     btm_sec_connected(bda, handle, HCI_SUCCESS, 0);
+    BTM_PM_OnConnected(handle, bda);
     BTA_dm_acl_up(bda, BT_TRANSPORT_BR_EDR);
     address_to_interface_[bda] = std::move(interface);
   }
@@ -461,6 +462,7 @@ class SecurityListenerShim
     address_to_interface_.erase(bda);
     btm_sec_disconnected(handle, HCI_ERR_PEER_USER);
     BTA_dm_acl_down(bda, BT_TRANSPORT_BR_EDR);
+    BTM_PM_OnDisconnected(handle);
   }
 
   void OnEncryptionChange(bluetooth::hci::Address remote,
