@@ -152,32 +152,22 @@ typedef struct {
   uint8_t role;              /* HCI_ROLE_CENTRAL or HCI_ROLE_PERIPHERAL */
 } tBTM_ROLE_SWITCH_CMPL;
 
-typedef struct {
-  bool chg_ind;
+struct tBTM_PM_MCB {
+  bool chg_ind = false;
   tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
   tBTM_PM_PWR_MD set_mode;
-
- private:
-  friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
-                                      const RawAddress& remote_bda,
-                                      const tBTM_PM_PWR_MD* p_mode);
-  friend tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda,
-                                      uint16_t max_lat, uint16_t min_rmt_to,
-                                      uint16_t min_loc_to);
-  friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
-  friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
-                                      uint16_t hci_handle, tHCI_MODE mode,
-                                      uint16_t interval);
-  tBTM_PM_STATE state;
-
- public:
-  tBTM_PM_STATE State() const { return state; }
-  uint16_t interval;
-  uint16_t max_lat;
-  uint16_t min_loc_to;
-  uint16_t min_rmt_to;
-  void Init() { state = BTM_PM_ST_ACTIVE; }
-} tBTM_PM_MCB;
+  tBTM_PM_STATE state = BTM_PM_ST_ACTIVE;  // 0
+  uint16_t interval = 0;
+  uint16_t max_lat = 0;
+  uint16_t min_loc_to = 0;
+  uint16_t min_rmt_to = 0;
+  void Init(RawAddress bda, uint16_t handle) {
+    bda_ = bda;
+    handle_ = handle;
+  }
+  RawAddress bda_;
+  uint16_t handle_;
+};
 
 struct sACL_CONN {
   BD_FEATURES peer_le_features;
@@ -388,8 +378,6 @@ struct controller_t;
  ****************************************************/
 struct sACL_CB {
  private:
-  friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
-  friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
   friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
                                       const RawAddress& remote_bda,
                                       const tBTM_PM_PWR_MD* p_mode);
@@ -399,7 +387,6 @@ struct sACL_CB {
   friend uint16_t BTM_GetNumAclLinks(void);
   friend uint16_t acl_get_supported_packet_types();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
-  friend void acl_initialize_power_mode(const tACL_CONN& p_acl);
   friend void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
   friend void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                               uint8_t link_role, tBT_TRANSPORT transport);
@@ -416,18 +403,12 @@ struct sACL_CB {
   friend void DumpsysAcl(int fd);
 
   friend struct StackAclBtmAcl;
-  friend struct StackAclBtmPm;
 
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
-  tBTM_PM_MCB pm_mode_db[MAX_L2CAP_LINKS];
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
   uint16_t btm_acl_pkt_types_supported;
   uint16_t btm_def_link_policy;
   tHCI_STATUS acl_disc_reason;
-  uint8_t pm_pend_link;
-
- public:
-  bool is_power_mode_pending() const { return pm_pend_link != MAX_L2CAP_LINKS; }
 
  public:
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
