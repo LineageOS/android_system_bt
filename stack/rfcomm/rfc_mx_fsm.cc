@@ -28,6 +28,8 @@
 #include "bt_utils.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "main/shim/dumpsys.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "port_api.h"
 #include "port_int.h"
@@ -70,8 +72,11 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result);
  ******************************************************************************/
 void rfc_mx_sm_execute(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
   CHECK(p_mcb != nullptr) << __func__ << ": NULL mcb for event " << event;
-  VLOG(1) << __func__ << ": bd_addr=" << p_mcb->bd_addr
-          << ", state=" << std::to_string(p_mcb->state) << ", event=" << event;
+
+  LOG_DEBUG("RFCOMM peer:%s event:%s state:%s", PRIVATE_ADDRESS(p_mcb->bd_addr),
+            rfcomm_mx_state_text(static_cast<tRFC_MX_STATE>(event)).c_str(),
+            std::to_string(p_mcb->state).c_str());
+
   switch (p_mcb->state) {
     case RFC_MX_STATE_IDLE:
       rfc_mx_sm_state_idle(p_mcb, event, p_data);

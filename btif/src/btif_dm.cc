@@ -171,7 +171,7 @@ typedef struct {
 
 #define MAX_BTIF_BOND_EVENT_ENTRIES 15
 
-static skip_sdp_entry_t sdp_blacklist[] = {{76}};  // Apple Mouse and Keyboard
+static skip_sdp_entry_t sdp_rejectlist[] = {{76}};  // Apple Mouse and Keyboard
 
 /* This flag will be true if HCI_Inquiry is in progress */
 static bool btif_dm_inquiry_in_progress = false;
@@ -395,11 +395,11 @@ bool check_cod_hid(const RawAddress* remote_bdaddr) {
  *
  * Function        check_sdp_bl
  *
- * Description     Checks if a given device is blacklisted to skip sdp
+ * Description     Checks if a given device is rejectlisted to skip sdp
  *
  * Parameters     skip_sdp_entry
  *
- * Returns         true if the device is present in blacklist, else false
+ * Returns         true if the device is present in rejectlist, else false
  *
  ******************************************************************************/
 bool check_sdp_bl(const RawAddress* remote_bdaddr) {
@@ -418,8 +418,8 @@ bool check_sdp_bl(const RawAddress* remote_bdaddr) {
   }
   uint16_t manufacturer = info.manufacturer;
 
-  for (unsigned int i = 0; i < ARRAY_SIZE(sdp_blacklist); i++) {
-    if (manufacturer == sdp_blacklist[i].manufact_id) return true;
+  for (unsigned int i = 0; i < ARRAY_SIZE(sdp_rejectlist); i++) {
+    if (manufacturer == sdp_rejectlist[i].manufact_id) return true;
   }
   return false;
 }

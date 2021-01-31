@@ -65,6 +65,12 @@ struct btm_client_interface_s btm_client_interface = {
     // Acl peer and lifecycle
     .peer =
         {
+            .features =
+                {
+                    .SupportTransparentSynchronousData =
+                        ACL_SupportTransparentSynchronousData,
+                },
+
             .BTM_CancelRemoteDeviceName = BTM_CancelRemoteDeviceName,
             .BTM_IsAclConnectionUp = BTM_IsAclConnectionUp,
             .BTM_ReadConnectedTransportAddress =
@@ -72,7 +78,6 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_ReadDevInfo = BTM_ReadDevInfo,
             .BTM_ReadRemoteDeviceName = BTM_ReadRemoteDeviceName,
             .BTM_ReadRemoteFeatures = BTM_ReadRemoteFeatures,
-            .BTM_SetEncryption = BTM_SetEncryption,
             .BTM_GetMaxPacketSize = BTM_GetMaxPacketSize,
             .BTM_ReadRemoteVersion = BTM_ReadRemoteVersion,
         },
@@ -109,12 +114,17 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_SecBond = BTM_SecBond,
             .BTM_SecBondCancel = BTM_SecBondCancel,
             .BTM_SecClearSecurityFlags = BTM_SecClearSecurityFlags,
+            .BTM_SecClrService = BTM_SecClrService,
             .BTM_SecClrServiceByPsm = BTM_SecClrServiceByPsm,
             .BTM_SecDeleteDevice = BTM_SecDeleteDevice,
             .BTM_SecDeleteRmtNameNotifyCallback =
                 BTM_SecDeleteRmtNameNotifyCallback,
             .BTM_SecReadDevName = BTM_SecReadDevName,
             .BTM_SecRegister = BTM_SecRegister,
+            .BTM_SetEncryption = BTM_SetEncryption,
+            .BTM_IsEncrypted = BTM_IsEncrypted,
+            .BTM_SecIsSecurityPending = BTM_SecIsSecurityPending,
+            .BTM_IsLinkKeyKnown = BTM_IsLinkKeyKnown,
         },
 
     .ble =
@@ -128,6 +138,7 @@ struct btm_client_interface_s btm_client_interface = {
             .BTM_BleSetPhy = BTM_BleSetPhy,
             .BTM_BleSetPrefConnParams = BTM_BleSetPrefConnParams,
             .BTM_SetBleDataLength = BTM_SetBleDataLength,
+            .BTM_UseLeLink = BTM_UseLeLink,
         },
 
     .sco =

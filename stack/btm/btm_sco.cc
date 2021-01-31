@@ -238,12 +238,12 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
     /* UPF25:  Only SCO was brought up in this case */
     const RawAddress bd_addr = acl_address_from_handle(acl_handle);
     if (bd_addr != RawAddress::kEmpty) {
-      if (!sco_peer_supports_esco_2m_phy(acl_handle)) {
+      if (!sco_peer_supports_esco_2m_phy(bd_addr)) {
         BTM_TRACE_DEBUG("BTM Remote does not support 2-EDR eSCO");
         temp_packet_types |=
             (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5);
       }
-      if (!sco_peer_supports_esco_3m_phy(acl_handle)) {
+      if (!sco_peer_supports_esco_3m_phy(bd_addr)) {
         BTM_TRACE_DEBUG("BTM Remote does not support 3-EDR eSCO");
         temp_packet_types |=
             (ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV5);
@@ -252,27 +252,44 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
       /* Check to see if BR/EDR Secure Connections is being used
       ** If so, we cannot use SCO-only packet types (HFP 1.7)
       */
-      if (BTM_BothEndsSupportSecureConnections(bd_addr)) {
-        temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
-        BTM_TRACE_DEBUG("%s: SCO Conn: pkt_types after removing SCO (0x%04x)",
-                        __func__, temp_packet_types);
+      const bool local_supports_sc =
+          controller_get_interface()->supports_secure_connections();
+      const bool remote_supports_sc =
+          BTM_PeerSupportsSecureConnections(bd_addr);
 
-        /* Return error if no packet types left */
+      if (local_supports_sc && remote_supports_sc) {
+        temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
         if (temp_packet_types == 0) {
-          LOG(ERROR) << __func__
-                     << ": SCO Conn (BR/EDR SC): No packet types available for "
-                        "acl_handle "
-                     << unsigned(acl_handle);
-          return (BTM_WRONG_MODE);
+          LOG_ERROR(
+              "SCO connection cannot support any packet types for "
+              "acl_handle:0x%04x",
+              acl_handle);
+          return BTM_WRONG_MODE;
         }
+        LOG_DEBUG(
+            "Both local and remote controllers support SCO secure connections "
+            "handle:0x%04x pkt_types:0x%04x",
+            acl_handle, temp_packet_types);
+
+      } else if (!local_supports_sc && !remote_supports_sc) {
+        LOG_DEBUG(
+            "Both local and remote controllers do not support secure "
+            "connections for handle:0x%04x",
+            acl_handle);
+      } else if (remote_supports_sc) {
+        LOG_DEBUG(
+            "Only remote controller supports secure connections for "
+            "handle:0x%04x",
+            acl_handle);
       } else {
-        LOG(WARNING) << __func__
-                     << ": SCO Conn(BR/EDR SC):local or peer does not support "
-                        "BR/EDR SC for acl_handle "
-                     << unsigned(acl_handle);
+        LOG_DEBUG(
+            "Only local controller supports secure connections for "
+            "handle:0x%04x",
+            acl_handle);
       }
     } else {
-      BTM_TRACE_ERROR("%s Received SCO connect from unknown peer", __func__);
+      LOG_ERROR("Received SCO connect from unknown peer:%s",
+                PRIVATE_ADDRESS(bd_addr));
     }
 
     /* Save the previous types in case command fails */
@@ -282,6 +299,8 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
     /* Use Enhanced Synchronous commands if supported */
     if (controller_get_interface()
             ->supports_enhanced_setup_synchronous_connection()) {
+      LOG_INFO("Sending enhanced SCO connect request over handle:0x%04x",
+               acl_handle);
       /* Use the saved SCO routing */
       p_setup->input_data_path = p_setup->output_data_path =
           btm_cb.sco_cb.sco_route;
@@ -296,6 +315,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
       btsnd_hcic_enhanced_set_up_synchronous_connection(acl_handle, p_setup);
       p_setup->packet_types = saved_packet_types;
     } else { /* Use older command */
+      LOG_INFO("Sending eSCO connect request over handle:0x%04x", acl_handle);
       uint16_t voice_content_format = btm_sco_voice_settings_to_legacy(p_setup);
       LOG(INFO) << __func__ << std::hex << ": legacy parameter list"
                 << " txbw=0x" << unsigned(p_setup->transmit_bandwidth)
@@ -449,8 +469,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
       if (p->state != SCO_ST_PEND_UNPARK &&
           p->state != SCO_ST_PEND_ROLECHANGE) {
         if (is_orig) {
-          BTM_TRACE_API("%s:(e)SCO Link for ACL handle 0x%04x", __func__,
-                        acl_handle);
+          LOG_DEBUG("Initiating (e)SCO link for ACL handle:0x%04x", acl_handle);
 
           if ((btm_send_connect_request(acl_handle, p_setup)) !=
               BTM_CMD_STARTED) {
@@ -461,8 +480,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
 
           p->state = SCO_ST_CONNECTING;
         } else {
-          BTM_TRACE_API("%s:(e)SCO listening for ACL handle 0x%04x", __func__,
-                        acl_handle);
+          LOG_DEBUG("Listening for (e)SCO on ACL handle:0x%04x", acl_handle);
           p->state = SCO_ST_LISTENING;
         }
       }
@@ -683,7 +701,7 @@ void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_connected(uint8_t hci_status, const RawAddress& bda,
+void btm_sco_connected(tHCI_STATUS hci_status, const RawAddress& bda,
                        uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data) {
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
@@ -697,29 +715,49 @@ void btm_sco_connected(uint8_t hci_status, const RawAddress& bda,
       if (hci_status != HCI_SUCCESS) {
         /* Report the error if originator, otherwise remain in Listen mode */
         if (p->is_orig) {
-          /* If role switch is pending, we need try again after role switch is
-           * complete */
-          if (hci_status == HCI_ERR_ROLE_SWITCH_PENDING) {
-            BTM_TRACE_API("Role Change pending for HCI handle 0x%04x",
-                          hci_handle);
-            p->state = SCO_ST_PEND_ROLECHANGE;
+          LOG_DEBUG("SCO initiating connection failed handle:0x%04x reason:%s",
+                    hci_handle, hci_error_code_text(hci_status).c_str());
+          switch (hci_status) {
+            case HCI_ERR_ROLE_SWITCH_PENDING:
+              /* If role switch is pending, we need try again after role switch
+               * is complete */
+              p->state = SCO_ST_PEND_ROLECHANGE;
+              break;
+            case HCI_ERR_LMP_ERR_TRANS_COLLISION:
+              /* Avoid calling disconnect callback because of sco creation race
+               */
+              break;
+            default: /* Notify client about SCO failure */
+              p->state = SCO_ST_UNUSED;
+              (*p->p_disc_cb)(xx);
           }
-          /* avoid calling disconnect callback because of sco creation race */
-          else if (hci_status != HCI_ERR_LMP_ERR_TRANS_COLLISION) {
-            p->state = SCO_ST_UNUSED;
-            (*p->p_disc_cb)(xx);
-          }
+          BTM_LogHistory(
+              kBtmLogTag, bda, "Connection failed",
+              base::StringPrintf(
+                  "locally_initiated reason:%s",
+                  hci_reason_code_text(static_cast<tHCI_REASON>(hci_status))
+                      .c_str()));
         } else {
-          /* Notify the upper layer that incoming sco connection has failed. */
+          LOG_DEBUG("SCO terminating connection failed handle:0x%04x reason:%s",
+                    hci_handle, hci_error_code_text(hci_status).c_str());
           if (p->state == SCO_ST_CONNECTING) {
             p->state = SCO_ST_UNUSED;
             (*p->p_disc_cb)(xx);
           } else
             p->state = SCO_ST_LISTENING;
+          BTM_LogHistory(
+              kBtmLogTag, bda, "Connection failed",
+              base::StringPrintf(
+                  "remote_initiated reason:%s",
+                  hci_reason_code_text(static_cast<tHCI_REASON>(hci_status))
+                      .c_str()));
         }
-
         return;
       }
+
+      BTM_LogHistory(
+          kBtmLogTag, bda, "Connection created",
+          base::StringPrintf("sco_idx:%hu handle:0x%04x ", xx, hci_handle));
 
       if (p->state == SCO_ST_LISTENING) spt = true;
 
@@ -953,25 +991,31 @@ const RawAddress* BTM_ReadScoBdAddr(uint16_t sco_inx) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SetEScoMode(enh_esco_params_t* p_parms) {
+  ASSERT_LOG(p_parms != nullptr, "eSCO parameters must have a value");
   enh_esco_params_t* p_def = &btm_cb.sco_cb.def_esco_parms;
 
   if (btm_cb.sco_cb.esco_supported) {
     *p_def = *p_parms;
+    LOG_DEBUG(
+        "Setting eSCO mode parameters txbw:0x%08x rxbw:0x%08x max_lat:0x%04x"
+        " pkt:0x%04x rtx_effort:0x%02x",
+        p_def->transmit_bandwidth, p_def->receive_bandwidth,
+        p_def->max_latency_ms, p_def->packet_types,
+        p_def->retransmission_effort);
   } else {
     /* Load defaults for SCO only */
     *p_def = esco_parameters_for_codec(ESCO_CODEC_CVSD);
     p_def->packet_types &= BTM_SCO_LINK_ONLY_MASK;
     p_def->retransmission_effort = ESCO_RETRANSMISSION_OFF;
     p_def->max_latency_ms = 12;
-    BTM_TRACE_WARNING("%s: eSCO not supported", __func__);
+    LOG_WARN("eSCO not supported so setting SCO parameters instead");
+    LOG_DEBUG(
+        "Setting SCO mode parameters txbw:0x%08x rxbw:0x%08x max_lat:0x%04x"
+        " pkt:0x%04x rtx_effort:0x%02x",
+        p_def->transmit_bandwidth, p_def->receive_bandwidth,
+        p_def->max_latency_ms, p_def->packet_types,
+        p_def->retransmission_effort);
   }
-
-  BTM_TRACE_API(
-      "%s: txbw 0x%08x, rxbw 0x%08x, max_lat 0x%04x, "
-      "pkt 0x%04x, rtx effort 0x%02x",
-      __func__, p_def->transmit_bandwidth, p_def->receive_bandwidth,
-      p_def->max_latency_ms, p_def->packet_types, p_def->retransmission_effort);
-
   return BTM_SUCCESS;
 }
 

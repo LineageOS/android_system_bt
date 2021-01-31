@@ -2054,9 +2054,7 @@ void btm_ble_reset_id(void) {
 void btm_ble_set_random_address(const RawAddress& random_bda) {
   tBTM_LE_RANDOM_CB* p_cb = &btm_cb.ble_ctr_cb.addr_mgnt_cb;
   tBTM_BLE_CB* p_ble_cb = &btm_cb.ble_ctr_cb;
-  bool adv_mode = btm_cb.ble_ctr_cb.inq_var.adv_mode;
-
-  BTM_TRACE_DEBUG("%s", __func__);
+  const bool adv_mode = btm_cb.ble_ctr_cb.inq_var.adv_mode;
 
   if (adv_mode == BTM_BLE_ADV_ENABLE)
     btsnd_hcic_ble_set_adv_enable(BTM_BLE_ADV_DISABLE);
@@ -2067,6 +2065,7 @@ void btm_ble_set_random_address(const RawAddress& random_bda) {
 
   p_cb->private_addr = random_bda;
   btsnd_hcic_ble_set_random_addr(p_cb->private_addr);
+  LOG_DEBUG("Updating local random address:%s", PRIVATE_ADDRESS(random_bda));
 
   if (adv_mode == BTM_BLE_ADV_ENABLE)
     btsnd_hcic_ble_set_adv_enable(BTM_BLE_ADV_ENABLE);

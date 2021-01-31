@@ -962,7 +962,8 @@ static void btu_hcif_connection_comp_evt(uint8_t* p, uint8_t evt_len) {
     memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
     /* esco_data.link_type = HCI_LINK_TYPE_SCO; already zero */
     esco_data.bd_addr = bda;
-    btm_sco_connected(status, bda, handle, &esco_data);
+    btm_sco_connected(static_cast<tHCI_STATUS>(status), bda, handle,
+                      &esco_data);
   }
 }
 
@@ -1178,7 +1179,7 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p) {
   handle = HCID_GET_HANDLE(handle);
 
   data.bd_addr = bda;
-  btm_sco_connected(status, bda, handle, &data);
+  btm_sco_connected(static_cast<tHCI_STATUS>(status), bda, handle, &data);
 }
 
 /*******************************************************************************
@@ -1548,7 +1549,7 @@ static void btu_hcif_role_change_evt(uint8_t* p) {
   STREAM_TO_BDADDR(bda, p);
   STREAM_TO_UINT8(role, p);
 
-  btm_blacklist_role_change_device(bda, status);
+  btm_rejectlist_role_change_device(bda, status);
   btm_acl_role_changed(static_cast<tHCI_STATUS>(status), bda, role);
 }
 
