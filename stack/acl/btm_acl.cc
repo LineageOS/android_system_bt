@@ -2329,6 +2329,13 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
     return bluetooth::shim::BTM_ReadConnectionAddr(remote_bda, local_conn_addr,
                                                    p_addr_type);
   }
+
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    bluetooth::shim::L2CA_ReadConnectionAddr(remote_bda, local_conn_addr,
+                                             p_addr_type);
+    return;
+  }
+
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
 
   if (p_acl == NULL) {
@@ -2485,6 +2492,12 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
     return bluetooth::shim::BTM_ReadRemoteConnectionAddr(pseudo_addr, conn_addr,
                                                          p_addr_type);
   }
+
+  if (bluetooth::shim::is_gd_l2cap_enabled()) {
+    return bluetooth::shim::L2CA_ReadRemoteConnectionAddr(
+        pseudo_addr, conn_addr, p_addr_type);
+  }
+
   bool st = true;
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
 
