@@ -394,7 +394,6 @@ TEST_F(ControllerTest, is_supported_test) {
 TEST_F(ControllerTest, feature_spec_version_055_test) {
   EXPECT_EQ(controller_->GetVendorCapabilities().version_supported_, 55);
   EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
-  EXPECT_FALSE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
   EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
   EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
   feature_spec_version = 95;
@@ -403,7 +402,6 @@ TEST_F(ControllerTest, feature_spec_version_055_test) {
 TEST_F(ControllerTest, feature_spec_version_095_test) {
   EXPECT_EQ(controller_->GetVendorCapabilities().version_supported_, 95);
   EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
-  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
   EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
   EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
   feature_spec_version = 96;
@@ -412,7 +410,6 @@ TEST_F(ControllerTest, feature_spec_version_095_test) {
 TEST_F(ControllerTest, feature_spec_version_096_test) {
   EXPECT_EQ(controller_->GetVendorCapabilities().version_supported_, 96);
   EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
-  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
   EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
   EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
   feature_spec_version = 98;
@@ -421,7 +418,6 @@ TEST_F(ControllerTest, feature_spec_version_096_test) {
 TEST_F(ControllerTest, feature_spec_version_098_test) {
   EXPECT_EQ(controller_->GetVendorCapabilities().version_supported_, 98);
   EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
-  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
   EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
   EXPECT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
 }
