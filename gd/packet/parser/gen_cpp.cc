@@ -209,15 +209,33 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
   if (input_filename == "hci_packets") {
     out_file << "class Checker { public: static bool IsCommandStatusOpcode(OpCode op_code) {";
     out_file << "switch (op_code) {";
+    std::set<std::string> op_codes;
     for (const auto& packet_def : decls.packet_defs_queue_) {
       auto packet = packet_def.second;
-      auto constraint = packet->parent_constraints_.find("command_op_code");
-      if (constraint == packet->parent_constraints_.end()) {
-        continue;
+      auto op_constraint = packet->parent_constraints_.find("op_code");
+      if (op_constraint == packet->parent_constraints_.end()) {
+        auto constraint = packet->parent_constraints_.find("command_op_code");
+        if (constraint == packet->parent_constraints_.end()) {
+          continue;
+        }
+        if (packet->HasAncestorNamed("CommandStatus")) {
+          out_file << "case " << std::get<std::string>(constraint->second) << ":";
+          op_codes.erase(std::get<std::string>(constraint->second));
+        }
+        if (packet->HasAncestorNamed("CommandComplete")) {
+          op_codes.erase(std::get<std::string>(constraint->second));
+        }
+      } else {
+        op_codes.insert(std::get<std::string>(op_constraint->second));
       }
-      if (packet->HasAncestorNamed("CommandStatus")) {
-        out_file << "case " << std::get<std::string>(constraint->second) << ":";
-      }
+    }
+    bool unhandled_opcode = false;
+    for (const auto& opcode : op_codes) {
+      unhandled_opcode = true;
+      std::cerr << "Opcode with no Status or Complete " << opcode << std::endl;
+    }
+    if (unhandled_opcode) {
+      ERROR() << "At least one unhandled opcode";
     }
     out_file << "return true; default: return false; }}};";
   }
