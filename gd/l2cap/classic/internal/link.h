@@ -155,7 +155,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   void OnEncryptionChange(hci::EncryptionEnabled enabled) override;
   void OnChangeConnectionLinkKeyComplete() override;
   void OnReadClockOffsetComplete(uint16_t clock_offset) override;
-  void OnModeChange(hci::Mode current_mode, uint16_t interval) override;
+  void OnModeChange(hci::ErrorCode status, hci::Mode current_mode, uint16_t interval) override;
   void OnSniffSubrating(
       uint16_t maximum_transmit_latency,
       uint16_t maximum_receive_latency,
