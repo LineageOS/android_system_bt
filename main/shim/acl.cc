@@ -345,10 +345,10 @@ class ClassicShimAclConnection
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnModeChange(hci::Mode current_mode, uint16_t interval) override {
-    TRY_POSTING_ON_MAIN(interface_.on_mode_change,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
-                        ToLegacyHciMode(current_mode), interval);
+  void OnModeChange(hci::ErrorCode status, hci::Mode current_mode,
+                    uint16_t interval) override {
+    TRY_POSTING_ON_MAIN(interface_.on_mode_change, ToLegacyHciErrorCode(status),
+                        handle_, ToLegacyHciMode(current_mode), interval);
   }
 
   void OnSniffSubrating(uint16_t maximum_transmit_latency,
