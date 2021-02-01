@@ -479,14 +479,15 @@ class AclManagerWithConnectionTest : public AclManagerTest {
   class MockConnectionManagementCallbacks : public ConnectionManagementCallbacks {
    public:
     MOCK_METHOD1(OnConnectionPacketTypeChanged, void(uint16_t packet_type));
-    MOCK_METHOD0(OnAuthenticationComplete, void());
+    MOCK_METHOD1(OnAuthenticationComplete, void(hci::ErrorCode hci_status));
     MOCK_METHOD1(OnEncryptionChange, void(EncryptionEnabled enabled));
     MOCK_METHOD0(OnChangeConnectionLinkKeyComplete, void());
     MOCK_METHOD1(OnReadClockOffsetComplete, void(uint16_t clock_offse));
     MOCK_METHOD3(OnModeChange, void(ErrorCode status, Mode current_mode, uint16_t interval));
-    MOCK_METHOD4(
+    MOCK_METHOD5(
         OnSniffSubrating,
         void(
+            ErrorCode status,
             uint16_t maximum_transmit_latency,
             uint16_t maximum_receive_latency,
             uint16_t minimum_remote_timeout,
@@ -508,11 +509,11 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     MOCK_METHOD1(OnReadRssiComplete, void(uint8_t rssi));
     MOCK_METHOD2(OnReadClockComplete, void(uint32_t clock, uint16_t accuracy));
     MOCK_METHOD1(OnCentralLinkKeyComplete, void(KeyFlag flag));
-    MOCK_METHOD1(OnRoleChange, void(Role new_role));
+    MOCK_METHOD2(OnRoleChange, void(ErrorCode hci_status, Role new_role));
     MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
-    MOCK_METHOD3(
+    MOCK_METHOD4(
         OnReadRemoteVersionInformationComplete,
-        void(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version));
+        void(hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version));
     MOCK_METHOD3(
         OnReadRemoteExtendedFeaturesComplete, void(uint8_t page_number, uint8_t max_page_number, uint64_t features));
   } mock_connection_management_callbacks_;
@@ -648,14 +649,18 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
   class MockLeConnectionManagementCallbacks : public LeConnectionManagementCallbacks {
    public:
     MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
-    MOCK_METHOD3(
+    MOCK_METHOD4(
         OnConnectionUpdate,
-        void(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout));
+        void(
+            hci::ErrorCode hci_status,
+            uint16_t connection_interval,
+            uint16_t connection_latency,
+            uint16_t supervision_timeout));
     MOCK_METHOD4(OnDataLengthChange, void(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time));
-    MOCK_METHOD3(
+    MOCK_METHOD4(
         OnReadRemoteVersionInformationComplete,
-        void(uint8_t version, uint16_t manufacturer_name, uint16_t sub_version));
-    MOCK_METHOD2(OnPhyUpdate, void(uint8_t tx_phy, uint8_t rx_phy));
+        void(hci::ErrorCode hci_status, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version));
+    MOCK_METHOD3(OnPhyUpdate, void(hci::ErrorCode hci_status, uint8_t tx_phy, uint8_t rx_phy));
     MOCK_METHOD1(OnLocalAddressUpdate, void(AddressWithType address_with_type));
   } mock_le_connection_management_callbacks_;
 };
@@ -780,6 +785,7 @@ TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_connection_
   connection_->RegisterCallbacks(&mock_le_connection_management_callbacks_, client_handler_);
 
   std::promise<ErrorCode> promise;
+  ErrorCode hci_status = hci::ErrorCode::SUCCESS;
   uint16_t connection_interval_min = 0x0012;
   uint16_t connection_interval_max = 0x0080;
   uint16_t connection_interval = (connection_interval_max + connection_interval_min) / 2;
@@ -793,8 +799,9 @@ TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_connection_
       LeConnectionUpdateView::Create(LeConnectionManagementCommandView::Create(AclCommandView::Create(update_packet)));
   ASSERT_TRUE(update_view.IsValid());
   EXPECT_EQ(update_view.GetConnectionHandle(), handle_);
-  EXPECT_CALL(mock_le_connection_management_callbacks_,
-              OnConnectionUpdate(connection_interval, connection_latency, supervision_timeout));
+  EXPECT_CALL(
+      mock_le_connection_management_callbacks_,
+      OnConnectionUpdate(hci_status, connection_interval, connection_latency, supervision_timeout));
   test_hci_layer_->IncomingLeMetaEvent(LeConnectionUpdateCompleteBuilder::Create(
       ErrorCode::SUCCESS, handle_, connection_interval, connection_latency, supervision_timeout));
 }
@@ -897,7 +904,7 @@ TEST_F(AclManagerWithConnectionTest, send_switch_role) {
   ASSERT_EQ(command_view.GetBdAddr(), connection_->GetAddress());
   ASSERT_EQ(command_view.GetRole(), Role::PERIPHERAL);
 
-  EXPECT_CALL(mock_connection_management_callbacks_, OnRoleChange(Role::PERIPHERAL));
+  EXPECT_CALL(mock_connection_management_callbacks_, OnRoleChange(hci::ErrorCode::SUCCESS, Role::PERIPHERAL));
   test_hci_layer_->IncomingEvent(
       RoleChangeBuilder::Create(ErrorCode::SUCCESS, connection_->GetAddress(), Role::PERIPHERAL));
 }

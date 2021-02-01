@@ -124,7 +124,7 @@ class SecurityManagerChannel : public l2cap::classic::LinkSecurityInterfaceListe
   // Interface overrides
   void OnLinkConnected(std::unique_ptr<l2cap::classic::LinkSecurityInterface> link) override;
   void OnLinkDisconnected(hci::Address address) override;
-  void OnAuthenticationComplete(hci::Address remote) override;
+  void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address remote) override;
   void OnEncryptionChange(hci::Address, bool encrypted) override;
 
  private:

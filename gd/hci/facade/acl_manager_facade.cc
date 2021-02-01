@@ -383,7 +383,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       LOG_INFO("key_flag:%s", KeyFlagText(key_flag).c_str());
     }
 
-    void OnRoleChange(Role new_role) override {
+    void OnRoleChange(hci::ErrorCode hci_status, Role new_role) override {
       LOG_INFO("new_role:%d", (uint8_t)new_role);
     }
 
@@ -395,7 +395,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       LOG_INFO("OnConnectionPacketTypeChanged packet_type:%d", packet_type);
     }
 
-    void OnAuthenticationComplete() override {
+    void OnAuthenticationComplete(hci::ErrorCode hci_status) override {
       LOG_INFO("OnAuthenticationComplete");
     }
 
@@ -416,6 +416,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     };
 
     void OnSniffSubrating(
+        hci::ErrorCode hci_status,
         uint16_t maximum_transmit_latency,
         uint16_t maximum_receive_latency,
         uint16_t minimum_remote_timeout,
@@ -511,7 +512,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       event_stream_->OnIncomingEvent(disconnection);
     }
     void OnReadRemoteVersionInformationComplete(
-        uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {
+        hci::ErrorCode error_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {
       LOG_INFO(
           "OnReadRemoteVersionInformationComplete lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
           lmp_version,
