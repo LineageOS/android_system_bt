@@ -35,11 +35,6 @@
 */
 tBTM_CB btm_cb;
 
-extern void btm_inq_db_init(void);
-extern void btm_inq_db_free(void);
-extern void btm_sco_init(void);
-extern void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
-
 /*******************************************************************************
  *
  * Function         btm_init
