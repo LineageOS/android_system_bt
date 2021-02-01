@@ -483,7 +483,7 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     MOCK_METHOD1(OnEncryptionChange, void(EncryptionEnabled enabled));
     MOCK_METHOD0(OnChangeConnectionLinkKeyComplete, void());
     MOCK_METHOD1(OnReadClockOffsetComplete, void(uint16_t clock_offse));
-    MOCK_METHOD2(OnModeChange, void(Mode current_mode, uint16_t interval));
+    MOCK_METHOD3(OnModeChange, void(ErrorCode status, Mode current_mode, uint16_t interval));
     MOCK_METHOD4(
         OnSniffSubrating,
         void(
@@ -949,7 +949,7 @@ TEST_F(AclManagerWithConnectionTest, send_hold_mode) {
   ASSERT_EQ(command_view.GetHoldModeMaxInterval(), 0x0500);
   ASSERT_EQ(command_view.GetHoldModeMinInterval(), 0x0020);
 
-  EXPECT_CALL(mock_connection_management_callbacks_, OnModeChange(Mode::HOLD, 0x0020));
+  EXPECT_CALL(mock_connection_management_callbacks_, OnModeChange(ErrorCode::SUCCESS, Mode::HOLD, 0x0020));
   test_hci_layer_->IncomingEvent(ModeChangeBuilder::Create(ErrorCode::SUCCESS, handle_, Mode::HOLD, 0x0020));
 }
 
@@ -964,7 +964,7 @@ TEST_F(AclManagerWithConnectionTest, send_sniff_mode) {
   ASSERT_EQ(command_view.GetSniffAttempt(), 0x0040);
   ASSERT_EQ(command_view.GetSniffTimeout(), 0x0014);
 
-  EXPECT_CALL(mock_connection_management_callbacks_, OnModeChange(Mode::SNIFF, 0x0028));
+  EXPECT_CALL(mock_connection_management_callbacks_, OnModeChange(ErrorCode::SUCCESS, Mode::SNIFF, 0x0028));
   test_hci_layer_->IncomingEvent(ModeChangeBuilder::Create(ErrorCode::SUCCESS, handle_, Mode::SNIFF, 0x0028));
 }
 
@@ -975,7 +975,7 @@ TEST_F(AclManagerWithConnectionTest, send_exit_sniff_mode) {
   auto command_view = ExitSniffModeView::Create(packet);
   ASSERT_TRUE(command_view.IsValid());
 
-  EXPECT_CALL(mock_connection_management_callbacks_, OnModeChange(Mode::ACTIVE, 0x00));
+  EXPECT_CALL(mock_connection_management_callbacks_, OnModeChange(ErrorCode::SUCCESS, Mode::ACTIVE, 0x00));
   test_hci_layer_->IncomingEvent(ModeChangeBuilder::Create(ErrorCode::SUCCESS, handle_, Mode::ACTIVE, 0x00));
 }
 

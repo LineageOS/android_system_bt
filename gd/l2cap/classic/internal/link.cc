@@ -340,7 +340,7 @@ void Link::OnReadClockOffsetComplete(uint16_t clock_offset) {
   link_manager_->OnReadClockOffset(GetDevice().GetAddress(), clock_offset);
 }
 
-void Link::OnModeChange(hci::Mode current_mode, uint16_t interval) {
+void Link::OnModeChange(hci::ErrorCode status, hci::Mode current_mode, uint16_t interval) {
   link_manager_->OnModeChange(GetDevice().GetAddress(), current_mode, interval);
 }
 
