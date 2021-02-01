@@ -1017,6 +1017,43 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
                    << "no method exists to determine field location from begin() or end().\n";
     }
 
+    if (field->GetFieldType() == SizeField::kFieldType) {
+      const auto& field_name = ((SizeField*)field)->GetSizedFieldName();
+      const auto& sized_field = fields_.GetField(field_name);
+      if (sized_field == nullptr) {
+        ERROR(field) << __func__ << ": Can't find sized field named " << field_name;
+      }
+      if (sized_field->GetFieldType() == PayloadField::kFieldType) {
+        std::string modifier = ((PayloadField*)sized_field)->size_modifier_;
+        if (modifier != "") {
+          ERROR(field) << __func__ << ": size modifiers not implemented yet for " << field_name;
+        }
+
+        s << "let " << field->GetName() << " = " << field->GetRustDataType()
+          << "::try_from(self.child.get_total_size()).expect(\"payload size did not fit\");";
+      } else if (sized_field->GetFieldType() == BodyField::kFieldType) {
+        s << "let " << field->GetName() << " = " << field->GetRustDataType()
+          << "::try_from(self.get_total_size() - self.get_size()).expect(\"payload size did not fit\");";
+      } else if (sized_field->GetFieldType() == VectorField::kFieldType) {
+        const auto& vector_name = field_name + "_bytes";
+        const VectorField* vector = (VectorField*)sized_field;
+        if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
+          s << "let " << vector_name + " = self." << field_name << ".iter().fold(0, |acc, x| acc + x.get_size());";
+        } else {
+          s << "let " << vector_name + " = self." << field_name << ".len() * ((" << vector->element_size_ << ") / 8);";
+        }
+        std::string modifier = vector->GetSizeModifier();
+        if (modifier != "") {
+          ERROR(field) << __func__ << ": size modifiers not implemented yet for " << field_name;
+        }
+
+        s << "let " << field->GetName() << " = " << field->GetRustDataType() << "::try_from(" << vector_name
+          << ").expect(\"payload size did not fit\");";
+      } else {
+        ERROR(field) << __func__ << ": Unhandled sized field type for " << field_name;
+      }
+    }
+
     field->GenRustWriter(s, start_field_offset, end_field_offset);
   }
 
