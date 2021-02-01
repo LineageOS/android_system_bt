@@ -24,11 +24,13 @@
 #ifndef BTA_JV_API_H
 #define BTA_JV_API_H
 
-#include "bt_target.h"
-#include "bt_types.h"
-#include "bta_api.h"
-#include "btm_api.h"
-#include "l2c_api.h"
+#include <cstdint>
+#include <memory>
+
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/include/bta_api.h"
+#include "stack/include/l2c_api.h"
 
 /*****************************************************************************
  *  Constants and data types

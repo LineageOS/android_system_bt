@@ -27,7 +27,10 @@
 #include <base/strings/stringprintf.h>
 #include <memory>
 #include <string>
-#include "bt_target.h"
+
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/include/bta_api.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/sys/bta_sys.h"
 #include "main/shim/dumpsys.h"

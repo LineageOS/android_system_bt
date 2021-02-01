@@ -18,10 +18,10 @@
 #ifndef BTA_HH_API_H
 #define BTA_HH_API_H
 
-#include "bta_api.h"
-#include "hidh_api.h"
+#include <cstdint>
 
-#include "gatt_api.h"
+#include "bta/include/bta_api.h"
+#include "stack/include/hiddefs.h"
 
 /*****************************************************************************
  *  Constants and Type Definitions

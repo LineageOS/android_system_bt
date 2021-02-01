@@ -24,6 +24,7 @@
 #include "bta_hf_client_int.h"
 #include "device/include/esco_parameters.h"
 #include "osi/include/osi.h"
+#include "stack/include/btm_api.h"
 
 #define BTA_HF_CLIENT_NO_EDR_ESCO                                \
   (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \

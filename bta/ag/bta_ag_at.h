@@ -24,6 +24,7 @@
 #ifndef BTA_AG_AT_H
 #define BTA_AG_AT_H
 
+#include <cstddef>
 #include <cstdint>
 
 /*****************************************************************************

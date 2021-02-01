@@ -25,10 +25,13 @@
 #ifndef BTA_AG_API_H
 #define BTA_AG_API_H
 
-#include "bta_api.h"
-
+#include <cstdint>
 #include <string>
 #include <vector>
+
+#include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_api.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

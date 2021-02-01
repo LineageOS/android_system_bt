@@ -29,6 +29,7 @@
 #include "bt_target.h"
 #include "bta_api.h"
 #include "bta_av_int.h"
+#include "stack/include/avrc_api.h"
 
 #ifndef BTA_AV_RC_COMP_ID
 #define BTA_AV_RC_COMP_ID AVRC_CO_GOOGLE

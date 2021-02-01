@@ -29,6 +29,7 @@
 #include "bta_sys.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/include/btm_api.h"
 #include "utl.h"
 
 static const char* bta_hf_client_evt_str(uint16_t event);
