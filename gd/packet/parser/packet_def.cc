@@ -873,9 +873,12 @@ void PacketDef::GenRustStructSizeField(std::ostream& s) const {
       CountField::kFieldType,
   });
   for (int i = 0; i < fields.size(); i++) {
-    size += fields[i]->GetSize().bytes();
+    size += fields[i]->GetSize().bits();
   }
-  s << size;
+  if (size % 8 != 0) {
+    ERROR() << "Packet size is not a multiple of 8!\n";
+  }
+  s << size / 8;
 }
 
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
@@ -996,9 +999,6 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
 
   // write_to function
   s << "fn write_to(&self, buffer: &mut BytesMut) {";
-  if (fields.size() > 0) {
-    s << " buffer.resize(buffer.len() + self.get_total_size(), 0);";
-  }
 
   fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
@@ -1069,6 +1069,7 @@ void PacketDef::GenRustAccessStructImpls(std::ostream& s) const {
 
   s << "fn to_bytes(self) -> Bytes {";
   s << " let mut buffer = BytesMut::new();";
+  s << " buffer.resize(self." << root_accessor << ".get_total_size(), 0);";
   s << " self." << root_accessor << ".write_to(&mut buffer);";
   s << " buffer.freeze()";
   s << "}\n";
