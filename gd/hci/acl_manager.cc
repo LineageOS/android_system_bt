@@ -29,6 +29,7 @@
 #include "hci/hci_layer.h"
 #include "hci_acl_manager_generated.h"
 #include "security/security_module.h"
+#include "storage/storage_module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -154,9 +155,13 @@ void AclManager::SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t t
 void AclManager::SetPrivacyPolicyForInitiatorAddress(
     LeAddressManager::AddressPolicy address_policy,
     AddressWithType fixed_address,
-    crypto_toolbox::Octet16 rotation_irk,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
+  crypto_toolbox::Octet16 rotation_irk{};
+  auto irk = GetDependency<storage::StorageModule>()->GetAdapterConfig().GetLeIdentityResolvingKey();
+  if (irk.has_value()) {
+    rotation_irk = irk->bytes;
+  }
   CallOn(
       pimpl_->le_impl_,
       &le_impl::set_privacy_policy_for_initiator_address,
@@ -262,6 +267,7 @@ void AclManager::HACK_SetAclTxPriority(uint8_t handle, bool high_priority) {
 void AclManager::ListDependencies(ModuleList* list) {
   list->add<HciLayer>();
   list->add<Controller>();
+  list->add<storage::StorageModule>();
 }
 
 void AclManager::Start() {
