@@ -154,7 +154,7 @@ typedef struct {
 
 struct tBTM_PM_MCB {
   bool chg_ind = false;
-  tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1];
+  tBTM_PM_PWR_MD req_mode;
   tBTM_PM_PWR_MD set_mode;
   tBTM_PM_STATE state = BTM_PM_ST_ACTIVE;  // 0
   uint16_t interval = 0;
