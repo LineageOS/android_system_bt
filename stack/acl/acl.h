@@ -376,38 +376,24 @@ struct controller_t;
 /****************************************************
  **      ACL Management API
  ****************************************************/
-struct sACL_CB {
+struct tACL_CB {
  private:
-  friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
-                                      const RawAddress& remote_bda,
-                                      const tBTM_PM_PWR_MD* p_mode);
-  friend tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda,
-                                      uint16_t max_lat, uint16_t min_rmt_to,
-                                      uint16_t min_loc_to);
-  friend uint16_t BTM_GetNumAclLinks(void);
-  friend uint16_t acl_get_supported_packet_types();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
-  friend void acl_set_disconnect_reason(tHCI_STATUS acl_disc_reason);
-  friend void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
-                              uint8_t link_role, tBT_TRANSPORT transport);
   friend void btm_acl_device_down(void);
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
-  friend void btm_pm_proc_cmd_status(tHCI_STATUS status);
-  friend void btm_pm_proc_mode_change(tHCI_STATUS hci_status,
-                                      uint16_t hci_handle, tHCI_MODE mode,
-                                      uint16_t interval);
-  friend void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
+
   friend void DumpsysL2cap(int fd);
   friend void DumpsysAcl(int fd);
-
   friend struct StackAclBtmAcl;
 
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
-  uint16_t btm_acl_pkt_types_supported;
+  uint16_t btm_acl_pkt_types_supported =
+      HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1 + HCI_PKT_TYPES_MASK_DH3 +
+      HCI_PKT_TYPES_MASK_DM3 + HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5;
   uint16_t btm_def_link_policy;
-  tHCI_STATUS acl_disc_reason;
+  tHCI_STATUS acl_disc_reason = HCI_ERR_UNDEFINED;
 
  public:
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
@@ -426,7 +412,4 @@ struct sACL_CB {
     }
     return cnt;
   }
-
-  void Init();
 };
-typedef sACL_CB tACL_CB;
