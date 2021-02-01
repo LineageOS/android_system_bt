@@ -119,42 +119,47 @@ bool bluetooth::shim::UnregisterLinkPolicyClient(tBTM_PM_STATUS_CBACK* p_cb) {
   return true;
 }
 
-tBTM_STATUS bluetooth::shim::BTM_SetPowerMode(tACL_CONN& p_acl,
+tBTM_STATUS bluetooth::shim::BTM_SetPowerMode(uint16_t handle,
                                               const tBTM_PM_PWR_MD& new_mode) {
+  tACL_CONN* p_acl = acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    return BTM_UNKNOWN_ADDR;
+  }
+
   if (!controller_supports_link_policy_mode(
           new_mode.mode,
-          interop_match_addr(INTEROP_DISABLE_SNIFF, &p_acl.remote_addr))) {
+          interop_match_addr(INTEROP_DISABLE_SNIFF, &p_acl->remote_addr))) {
     return BTM_MODE_UNSUPPORTED;
   }
 
-  if (p_acl.policy.Mode() == new_mode.mode) {
+  if (p_acl->policy.Mode() == new_mode.mode) {
     LOG_INFO("Controller already in mode:%s[0x%02x]",
-             power_mode_state_text(p_acl.policy.Mode()).c_str(),
-             p_acl.policy.Mode());
+             power_mode_state_text(p_acl->policy.Mode()).c_str(),
+             p_acl->policy.Mode());
   }
 
-  if (p_acl.policy.mode.IsPending()) {
+  if (p_acl->policy.mode.IsPending()) {
     LOG_INFO("Link policy mode is pending");
   }
 
   LOG_INFO("Switching mode from %s(0x%x) to %s(0x%x)",
-           power_mode_state_text(p_acl.policy.Mode()).c_str(),
-           p_acl.policy.Mode(), power_mode_state_text(new_mode.mode).c_str(),
+           power_mode_state_text(p_acl->policy.Mode()).c_str(),
+           p_acl->policy.Mode(), power_mode_state_text(new_mode.mode).c_str(),
            new_mode.mode);
 
-  p_acl.policy.mode.pending_ = new_mode.mode;
+  p_acl->policy.mode.pending_ = new_mode.mode;
   switch (new_mode.mode) {
     case BTM_PM_MD_ACTIVE:
-      set_active_mode(p_acl);
+      set_active_mode(*p_acl);
       return BTM_SUCCESS;
       break;
     case BTM_PM_MD_SNIFF:
-      set_sniff_mode(p_acl, new_mode.max, new_mode.min, new_mode.attempt,
+      set_sniff_mode(*p_acl, new_mode.max, new_mode.min, new_mode.attempt,
                      new_mode.timeout);
       return BTM_SUCCESS;
       break;
     case BTM_PM_MD_HOLD:
-      return set_hold_mode(p_acl, new_mode.max, new_mode.min);
+      return set_hold_mode(*p_acl, new_mode.max, new_mode.min);
       break;
   }
   return BTM_MODE_UNSUPPORTED;
@@ -234,14 +239,18 @@ void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
       PRIVATE_ADDRESS(p_acl->remote_addr), hci_error_code_text(status).c_str());
 }
 
-tBTM_STATUS bluetooth::shim::BTM_SetSsrParams(tACL_CONN& p_acl,
-                                              uint16_t max_lat,
+tBTM_STATUS bluetooth::shim::BTM_SetSsrParams(uint16_t handle, uint16_t max_lat,
                                               uint16_t min_rmt_to,
                                               uint16_t min_loc_to) {
   LOG_DEBUG("Sending gd power mode SSR Params");
-  p_acl.policy.sniff_subrating.pending_ = true;
+  tACL_CONN* p_acl = acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    return BTM_UNKNOWN_ADDR;
+  }
+
+  p_acl->policy.sniff_subrating.pending_ = true;
   bluetooth::shim::Stack::GetInstance()->LinkPolicy()->SniffSubrating(
-      p_acl.hci_handle, max_lat, min_rmt_to, min_loc_to);
+      handle, max_lat, min_rmt_to, min_loc_to);
   return BTM_SUCCESS;
 }
 

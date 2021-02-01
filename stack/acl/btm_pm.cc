@@ -42,7 +42,6 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
-#include "stack/include/acl_api.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
@@ -50,7 +49,7 @@
 
 void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote);
 void btm_sco_chk_pend_unpark(tHCI_STATUS status, uint16_t handle);
-
+void btm_cont_rswitch_from_handle(uint16_t hci_handle);
 extern tBTM_CB btm_cb;
 
 namespace {
@@ -67,6 +66,10 @@ tBTM_PM_MCB* btm_pm_get_power_manager_from_address(const RawAddress& bda) {
   return nullptr;
 }
 
+tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
+
+uint8_t pm_pend_id = 0; /* the id pf the module, which has a pending PM cmd */
+
 constexpr char kBtmLogTag[] = "ACL";
 }
 
@@ -78,9 +81,6 @@ constexpr char kBtmLogTag[] = "ACL";
 #define BTM_PM_GET_MD1 1
 #define BTM_PM_GET_MD2 2
 #define BTM_PM_GET_COMP 3
-
-tACL_CONN* acl_get_connection_from_address(const RawAddress& bd_addr,
-                                           tBT_TRANSPORT transport);
 
 const uint8_t
     btm_pm_md_comp_matrix[BTM_PM_NUM_SET_MODES * BTM_PM_NUM_SET_MODES] = {
@@ -139,19 +139,19 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
   /* de-register */
   if (mask & BTM_PM_DEREG) {
     if (*p_pm_id >= BTM_MAX_PM_RECORDS) return BTM_ILLEGAL_VALUE;
-    btm_cb.acl_cb_.pm_reg_db[*p_pm_id].mask = BTM_PM_REC_NOT_USED;
+    pm_reg_db[*p_pm_id].mask = BTM_PM_REC_NOT_USED;
     return BTM_SUCCESS;
   }
 
   for (int xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
     /* find an unused entry */
-    if (btm_cb.acl_cb_.pm_reg_db[xx].mask == BTM_PM_REC_NOT_USED) {
+    if (pm_reg_db[xx].mask == BTM_PM_REC_NOT_USED) {
       /* if register for notification, should provide callback routine */
       if (mask & BTM_PM_REG_NOTIF) {
         if (p_cb == NULL) return BTM_ILLEGAL_VALUE;
-        btm_cb.acl_cb_.pm_reg_db[xx].cback = p_cb;
+        pm_reg_db[xx].cback = p_cb;
       }
-      btm_cb.acl_cb_.pm_reg_db[xx].mask = mask;
+      pm_reg_db[xx].mask = mask;
       *p_pm_id = xx;
       return BTM_SUCCESS;
     }
@@ -190,12 +190,14 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
     return BTM_ILLEGAL_VALUE;
   }
 
-  tACL_CONN* p_acl =
-      acl_get_connection_from_address(remote_bda, BT_TRANSPORT_BR_EDR);
-  if (p_acl == nullptr) {
-    LOG_WARN("Unable to find acl");
-    return BTM_UNKNOWN_ADDR;
+  // per ACL link
+  auto* p_cb = btm_pm_get_power_manager_from_address(remote_bda);
+  if (p_cb == nullptr) {
+    LOG_WARN("Unable to find power manager for peer: %s",
+             PRIVATE_ADDRESS(remote_bda));
+    return false;
   }
+  uint16_t handle = p_cb->handle_;
 
   tBTM_PM_MODE mode = p_mode->mode;
   if (!is_legal_power_mode(mode)) {
@@ -212,15 +214,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   if (bluetooth::shim::is_gd_link_policy_enabled()) {
     tBTM_PM_PWR_MD power_mode_request = *p_mode;
     power_mode_request.mode &= (~BTM_PM_MD_FORCE);
-    return bluetooth::shim::BTM_SetPowerMode(*p_acl, power_mode_request);
-  }
-
-  // per ACL link
-  uint16_t handle = p_acl->Handle();
-  auto* p_cb = btm_pm_get_power_manager_from_address(remote_bda);
-  if (p_cb == nullptr) {
-    LOG_WARN("Unable to find acl for %s", PRIVATE_ADDRESS(remote_bda));
-    return false;
+    return bluetooth::shim::BTM_SetPowerMode(handle, power_mode_request);
   }
 
   if (mode != BTM_PM_MD_ACTIVE) {
@@ -258,10 +252,10 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 
   /* update mode database */
   if (((pm_id != BTM_PM_SET_ONLY_ID) &&
-       (btm_cb.acl_cb_.pm_reg_db[pm_id].mask & BTM_PM_REG_SET)) ||
+       (pm_reg_db[pm_id].mask & BTM_PM_REG_SET)) ||
       ((pm_id == BTM_PM_SET_ONLY_ID) && (pm_pend_link != 0))) {
     /* Make sure mask is set to BTM_PM_REG_SET */
-    btm_cb.acl_cb_.pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
+    pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
     *(&p_cb->req_mode[temp_pm_id]) = *p_mode;
     p_cb->chg_ind = true;
   }
@@ -338,16 +332,15 @@ bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
  ******************************************************************************/
 tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
                              uint16_t min_rmt_to, uint16_t min_loc_to) {
-  tACL_CONN* p_acl =
-      acl_get_connection_from_address(remote_bda, BT_TRANSPORT_BR_EDR);
-  if (p_acl == nullptr || pm_mode_db.count(p_acl->Handle()) == 0) {
-    LOG_WARN("Unable to find acl for peer:%s", PRIVATE_ADDRESS(remote_bda));
+  tBTM_PM_MCB* p_cb = btm_pm_get_power_manager_from_address(remote_bda);
+  if (p_cb == nullptr) {
+    LOG_WARN("Unable to find power manager for peer:%s",
+             PRIVATE_ADDRESS(remote_bda));
     return BTM_UNKNOWN_ADDR;
   }
-  tBTM_PM_MCB* p_cb = &pm_mode_db[p_acl->Handle()];
 
   if (bluetooth::shim::is_gd_link_policy_enabled()) {
-    return bluetooth::shim::BTM_SetSsrParams(*p_acl, max_lat, min_rmt_to,
+    return bluetooth::shim::BTM_SetSsrParams(p_cb->handle_, max_lat, min_rmt_to,
                                              min_loc_to);
   }
 
@@ -358,7 +351,7 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
         " min_local_timeout:0x%04x",
         power_mode_state_text(p_cb->state).c_str(), p_cb->state, max_lat,
         min_rmt_to, min_loc_to);
-    send_sniff_subrating(p_acl->Handle(), remote_bda, max_lat, min_rmt_to,
+    send_sniff_subrating(p_cb->handle_, remote_bda, max_lat, min_rmt_to,
                          min_loc_to);
     return BTM_SUCCESS;
   }
@@ -383,15 +376,14 @@ void btm_pm_reset(void) {
   tBTM_PM_STATUS_CBACK* cb = NULL;
 
   /* clear the pending request for application */
-  if ((btm_cb.acl_cb_.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].mask &
-       BTM_PM_REG_NOTIF)) {
-    cb = btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].cback;
+  if ((pm_pend_id != BTM_PM_SET_ONLY_ID) &&
+      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_NOTIF)) {
+    cb = pm_reg_db[pm_pend_id].cback;
   }
 
   /* clear the register record */
   for (xx = 0; xx < BTM_MAX_PM_RECORDS; xx++) {
-    btm_cb.acl_cb_.pm_reg_db[xx].mask = BTM_PM_REC_NOT_USED;
+    pm_reg_db[xx].mask = BTM_PM_REC_NOT_USED;
   }
 
   if (cb != NULL && pm_pend_link != 0) {
@@ -401,6 +393,8 @@ void btm_pm_reset(void) {
   /* no command pending */
   pm_pend_link = 0;
   pm_mode_db.clear();
+  pm_pend_id = 0;
+  memset(&pm_reg_db, 0, sizeof(pm_reg_db));
   LOG_INFO("reset pm");
 }
 
@@ -502,7 +496,7 @@ static tBTM_PM_MODE btm_pm_get_set_mode(uint8_t pm_id, tBTM_PM_MCB* p_cb,
 
   for (xx = 0; xx < loop_max; xx++) {
     /* g through all the registered "set" parties */
-    if (btm_cb.acl_cb_.pm_reg_db[xx].mask & BTM_PM_REG_SET) {
+    if (pm_reg_db[xx].mask & BTM_PM_REG_SET) {
       if (p_cb->req_mode[xx].mode == BTM_PM_MD_ACTIVE) {
         /* if at least one registered (SET) party says ACTIVE, stay active */
         return BTM_PM_MD_ACTIVE;
@@ -591,7 +585,7 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id,
   pm_pend_link = 0;
 
   /* send the appropriate HCI command */
-  btm_cb.acl_cb_.pm_pend_id = pm_id;
+  pm_pend_id = pm_id;
 
   LOG_INFO("Switching from %s[0x%02x] to %s[0x%02x]",
            power_mode_state_text(p_cb->state).c_str(), p_cb->state,
@@ -676,14 +670,12 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status) {
   }
 
   /* notify the caller is appropriate */
-  if ((btm_cb.acl_cb_.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].mask &
-       BTM_PM_REG_NOTIF)) {
+  if ((pm_pend_id != BTM_PM_SET_ONLY_ID) &&
+      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_NOTIF)) {
     const RawAddress bd_addr = pm_mode_db[pm_pend_link].bda_;
     LOG_DEBUG("Notifying callback that link power mode is complete peer:%s",
               PRIVATE_ADDRESS(bd_addr));
-    (*btm_cb.acl_cb_.pm_reg_db[btm_cb.acl_cb_.pm_pend_id].cback)(
-        bd_addr, pm_status, 0, status);
+    (*pm_reg_db[pm_pend_id].cback)(bd_addr, pm_status, 0, status);
   }
 
   LOG_INFO("Clearing pending power mode link state:%s",
@@ -766,9 +758,8 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
 
   /* notify registered parties */
   for (int yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (btm_cb.acl_cb_.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.acl_cb_.pm_reg_db[yy].cback)(p_cb->bda_, mode, interval,
-                                            hci_status);
+    if (pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
+      (*pm_reg_db[yy].cback)(p_cb->bda_, mode, interval, hci_status);
     }
   }
   /*check if sco disconnect  is waiting for the mode change */
@@ -807,9 +798,9 @@ void process_ssr_event(tHCI_STATUS status, uint16_t handle,
 
   int cnt = 0;
   for (int yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (btm_cb.acl_cb_.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.acl_cb_.pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR,
-                                            (use_ssr) ? 1 : 0, status);
+    if (pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
+      (*pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR, (use_ssr) ? 1 : 0,
+                             status);
       cnt++;
     }
   }
@@ -858,7 +849,7 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
  * Returns          true, if in active or sniff mode
  *
  ******************************************************************************/
-bool btm_pm_device_in_active_or_sniff_mode(void) {
+static bool btm_pm_device_in_active_or_sniff_mode(void) {
   /* The active state is the highest state-includes connected device and sniff
    * mode*/
 
@@ -886,7 +877,7 @@ bool btm_pm_device_in_active_or_sniff_mode(void) {
  * Returns          true, if in paging, inquiry or connecting mode
  *
  ******************************************************************************/
-bool btm_pm_device_in_scan_state(void) {
+static bool btm_pm_device_in_scan_state(void) {
   /* Scan state-paging, inquiry, and trying to connect */
 
   /* Check for paging */
