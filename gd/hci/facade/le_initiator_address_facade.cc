@@ -67,7 +67,7 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
     auto minimum_rotation_time = std::chrono::milliseconds(request->minimum_rotation_time());
     auto maximum_rotation_time = std::chrono::milliseconds(request->maximum_rotation_time());
     acl_manager_->SetPrivacyPolicyForInitiatorAddress(
-        address_policy, address_with_type, irk, minimum_rotation_time, maximum_rotation_time);
+        address_policy, address_with_type, minimum_rotation_time, maximum_rotation_time);
     return ::grpc::Status::OK;
   }
 
