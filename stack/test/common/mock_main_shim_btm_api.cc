@@ -441,8 +441,7 @@ void btm_api_process_inquiry_result_with_rssi(RawAddress raw_address,
                                               int8_t rssi) {
   mock_function_count_map[__func__]++;
 }
-tBTM_STATUS bluetooth::shim::BTM_SetPowerMode(tACL_CONN&,
-                                              tBTM_PM_PWR_MD const&) {
+tBTM_STATUS bluetooth::shim::BTM_SetPowerMode(uint16_t, tBTM_PM_PWR_MD const&) {
   mock_function_count_map[__func__]++;
   return BTM_SUCCESS;
 }
@@ -451,7 +450,7 @@ void bluetooth::shim::btm_pm_on_mode_change(tHCI_STATUS status, uint16_t handle,
                                             uint16_t interval) {
   mock_function_count_map[__func__]++;
 }
-tBTM_STATUS bluetooth::shim::BTM_SetSsrParams(tACL_CONN&, uint16_t max_lat,
+tBTM_STATUS bluetooth::shim::BTM_SetSsrParams(uint16_t, uint16_t max_lat,
                                               uint16_t min_rmt_to,
                                               uint16_t min_loc_to) {
   mock_function_count_map[__func__]++;
