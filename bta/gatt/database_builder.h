@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "gatt/database.h"
+#include "bta/gatt/database.h"
 
 #include <utility>
 

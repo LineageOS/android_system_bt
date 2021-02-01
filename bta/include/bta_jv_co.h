@@ -24,7 +24,9 @@
 #ifndef BTA_JV_CO_H
 #define BTA_JV_CO_H
 
-#include "bta_jv_api.h"
+#include <cstdint>
+
+#include "stack/include/bt_types.h"
 
 /*****************************************************************************
  *  Function Declarations

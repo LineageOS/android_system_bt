@@ -24,7 +24,9 @@
 #ifndef BTA_PAN_CO_H
 #define BTA_PAN_CO_H
 
-#include "bta_pan_api.h"
+#include <cstdint>
+
+#include "bta/include/bta_pan_api.h"
 
 /*****************************************************************************
  *  Constants

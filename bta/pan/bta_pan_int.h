@@ -24,9 +24,14 @@
 #ifndef BTA_PAN_INT_H
 #define BTA_PAN_INT_H
 
-#include "bta_pan_api.h"
-#include "bta_sys.h"
+#include <cstdint>
+
+#include "bta/include/bta_api.h"
+#include "bta/include/bta_pan_api.h"
+#include "bta/sys/bta_sys.h"
 #include "osi/include/fixed_queue.h"
+#include "stack/include/pan_api.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

@@ -25,11 +25,13 @@
 #ifndef BTA_HH_INT_H
 #define BTA_HH_INT_H
 
-#include "bta_hh_api.h"
-#include "bta_sys.h"
-#include "utl.h"
+#include <cstdint>
 
-#include "bta_gatt_api.h"
+#include "bta/include/bta_api.h"
+#include "bta/include/bta_gatt_api.h"
+#include "bta/include/bta_hh_api.h"
+#include "bta/sys/bta_sys.h"
+#include "stack/include/bt_types.h"
 
 /* can be moved to bta_api.h */
 #define BTA_HH_MAX_RPT_CHARS 8

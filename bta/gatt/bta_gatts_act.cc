@@ -28,6 +28,7 @@
 #include <base/logging.h>
 #include <string.h>
 #include "bt_common.h"
+#include "bta/include/bta_api.h"
 #include "bta_gatts_co.h"
 #include "bta_gatts_int.h"
 #include "bta_sys.h"
