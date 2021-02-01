@@ -24,7 +24,10 @@
 #ifndef BTA_DM_CI_H
 #define BTA_DM_CI_H
 
-#include "bta_api.h"
+#include <cstdint>
+
+#include "stack/include/bt_types.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Function Declarations

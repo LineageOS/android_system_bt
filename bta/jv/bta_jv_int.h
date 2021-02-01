@@ -24,13 +24,11 @@
 #ifndef BTA_JV_INT_H
 #define BTA_JV_INT_H
 
-#include "bta_api.h"
-#include "bta_jv_api.h"
-#include "bta_sys.h"
-#include "port_api.h"
-#include "rfcdefs.h"
-
 #include <memory>
+#include <unordered_set>
+
+#include "bta/include/bta_jv_api.h"
+#include "stack/include/rfcdefs.h"
 
 /*****************************************************************************
  *  Constants

@@ -43,6 +43,7 @@
 #include "btif_hd.h"
 #include "btif_storage.h"
 #include "btif_util.h"
+#include "osi/include/allocator.h"
 
 #define BTIF_HD_APP_NAME_LEN 50
 #define BTIF_HD_APP_DESCRIPTION_LEN 50

@@ -24,7 +24,7 @@
 #ifndef BTA_GATTS_CO_H
 #define BTA_GATTS_CO_H
 
-#include "bta_gatt_api.h"
+#include "bta/include/bta_gatt_api.h"
 
 /*******************************************************************************
  *

@@ -26,8 +26,9 @@
 #ifndef BTA_PAN_API_H
 #define BTA_PAN_API_H
 
-#include "bta_api.h"
-#include "pan_api.h"
+#include <cstdint>
+
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

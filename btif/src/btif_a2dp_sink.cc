@@ -35,6 +35,7 @@
 #include "btif_avrcp_audio_track.h"
 #include "btif_util.h"
 #include "common/message_loop_thread.h"
+#include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"

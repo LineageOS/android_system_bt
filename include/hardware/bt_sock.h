@@ -16,6 +16,12 @@
 
 #pragma once
 
+#include <stddef.h>
+
+#include "bluetooth.h"
+#include "bluetooth/uuid.h"
+#include "raw_address.h"
+
 __BEGIN_DECLS
 
 #define BTSOCK_FLAG_ENCRYPT 1
