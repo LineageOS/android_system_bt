@@ -48,6 +48,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "utl.h"
 

@@ -26,12 +26,10 @@
 #ifndef BTA_AR_API_H
 #define BTA_AR_API_H
 
-#include "avct_api.h"
-#include "avdt_api.h"
-#include "avrc_api.h"
-#include "bta_av_api.h"
-#include "bta_sys.h"
-#include "sdp_api.h"
+#include <cstdint>
+
+#include "bta/sys/bta_sys.h"
+#include "stack/include/avdt_api.h"
 
 /*****************************************************************************
  *  Constants and data types

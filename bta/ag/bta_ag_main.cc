@@ -31,6 +31,7 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/btm_api.h"
 #include "utl.h"
 
 /*****************************************************************************

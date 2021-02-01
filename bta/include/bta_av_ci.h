@@ -24,7 +24,9 @@
 #ifndef BTA_AV_CI_H
 #define BTA_AV_CI_H
 
-#include "bta_av_api.h"
+#include <cstdint>
+
+#include "bta/include/bta_av_api.h"
 
 /*****************************************************************************
  *  Function Declarations

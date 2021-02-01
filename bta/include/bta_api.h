@@ -25,14 +25,19 @@
 #ifndef BTA_API_H
 #define BTA_API_H
 
-#include <hardware/bt_common_types.h>
-#include <memory>
-#include "bt_target.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_ble_api.h"
+#include <cstdint>
+#include <vector>
+
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_api_types.h"
+#include "stack/include/btm_ble_api_types.h"
+#include "stack/include/sdp_api.h"
 #include "types/ble_address_with_type.h"
+#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants and data types

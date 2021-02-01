@@ -23,8 +23,13 @@
 #ifndef BTIF_AV_H
 #define BTIF_AV_H
 
-#include "bta_av_api.h"
-#include "btif_common.h"
+#include <cstdint>
+
+#include "include/hardware/bt_av.h"
+#include "types/raw_address.h"
+
+// #include "bta/include/bta_av_api.h"
+// #include "btif/include/btif_common.h"
 
 /**
  * When the local device is A2DP source, get the address of the active peer.
