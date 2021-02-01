@@ -147,10 +147,8 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
     /* find an unused entry */
     if (pm_reg_db[xx].mask == BTM_PM_REC_NOT_USED) {
       /* if register for notification, should provide callback routine */
-      if (mask & BTM_PM_REG_NOTIF) {
-        if (p_cb == NULL) return BTM_ILLEGAL_VALUE;
-        pm_reg_db[xx].cback = p_cb;
-      }
+      if (p_cb == NULL) return BTM_ILLEGAL_VALUE;
+      pm_reg_db[xx].cback = p_cb;
       pm_reg_db[xx].mask = mask;
       *p_pm_id = xx;
       return BTM_SUCCESS;
@@ -377,7 +375,7 @@ void btm_pm_reset(void) {
 
   /* clear the pending request for application */
   if ((pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_NOTIF)) {
+      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_SET)) {
     cb = pm_reg_db[pm_pend_id].cback;
   }
 
@@ -665,7 +663,7 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status) {
 
   /* notify the caller is appropriate */
   if ((pm_pend_id != BTM_PM_SET_ONLY_ID) &&
-      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_NOTIF)) {
+      (pm_reg_db[pm_pend_id].mask & BTM_PM_REG_SET)) {
     const RawAddress bd_addr = pm_mode_db[pm_pend_link].bda_;
     LOG_DEBUG("Notifying callback that link power mode is complete peer:%s",
               PRIVATE_ADDRESS(bd_addr));
@@ -752,7 +750,7 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
 
   /* notify registered parties */
   for (int yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
+    if (pm_reg_db[yy].mask & BTM_PM_REG_SET) {
       (*pm_reg_db[yy].cback)(p_cb->bda_, mode, interval, hci_status);
     }
   }
@@ -792,7 +790,7 @@ void process_ssr_event(tHCI_STATUS status, uint16_t handle,
 
   int cnt = 0;
   for (int yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
-    if (pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
+    if (pm_reg_db[yy].mask & BTM_PM_REG_SET) {
       (*pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR, (use_ssr) ? 1 : 0,
                              status);
       cnt++;
