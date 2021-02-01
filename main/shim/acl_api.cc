@@ -17,6 +17,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "gd/hci/acl_manager.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
@@ -49,7 +50,22 @@ void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
 }
 
 void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
-  Stack::GetInstance()->GetAcl()->ConfigureLePrivacy(is_le_privacy_enabled);
+  hci::LeAddressManager::AddressPolicy address_policy =
+      is_le_privacy_enabled
+          ? hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS
+          : hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS;
+  hci::AddressWithType empty_address_with_type(
+      hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
+  auto minimum_rotation_time = std::chrono::minutes(7);
+  auto maximum_rotation_time = std::chrono::minutes(15);
+
+  Stack::GetInstance()
+      ->GetStackManager()
+      ->GetInstance<bluetooth::hci::AclManager>()
+      ->SetPrivacyPolicyForInitiatorAddress(
+          address_policy, empty_address_with_type, minimum_rotation_time,
+          maximum_rotation_time);
 }
 
 void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
