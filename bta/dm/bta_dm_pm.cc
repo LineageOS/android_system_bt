@@ -87,8 +87,7 @@ void bta_dm_init_pm(void) {
   if (p_bta_dm_pm_cfg[0].app_id != 0) {
     bta_sys_pm_register(bta_dm_pm_cback);
 
-    BTM_PmRegister((BTM_PM_REG_SET | BTM_PM_REG_NOTIF), &bta_dm_cb.pm_id,
-                   bta_dm_pm_btm_cback);
+    BTM_PmRegister((BTM_PM_REG_SET), &bta_dm_cb.pm_id, bta_dm_pm_btm_cback);
   }
 
   /* Need to initialize all PM timer service IDs */
