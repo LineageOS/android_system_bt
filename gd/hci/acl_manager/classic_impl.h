@@ -241,7 +241,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     connection->locally_initiated_ = locally_initiated;
     auto& connection_proxy = conn_pair.first->second;
     connection_proxy.connection_management_callbacks_ = connection->GetEventCallbacks();
-    connection_proxy.connection_management_callbacks_->OnRoleChange(current_role);
+    connection_proxy.connection_management_callbacks_->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
     client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
                                            common::Unretained(client_callbacks_), std::move(connection)));
     while (!pending_outgoing_connections_.empty()) {
@@ -307,11 +307,6 @@ struct classic_impl : public security::ISecurityManagerListener {
     if (!authentication_complete.IsValid()) {
       LOG_ERROR("Received on_authentication_complete with invalid packet");
       return;
-    } else if (authentication_complete.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = authentication_complete.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_authentication_complete with error code %s", error_code.c_str());
-      return;
     }
     uint16_t handle = authentication_complete.GetConnectionHandle();
     auto callbacks = get_callbacks(handle);
@@ -320,7 +315,7 @@ struct classic_impl : public security::ISecurityManagerListener {
       ASSERT(!crash_on_unknown_handle_);
       return;
     }
-    callbacks->OnAuthenticationComplete();
+    callbacks->OnAuthenticationComplete(authentication_complete.GetStatus());
   }
 
   void cancel_connect(Address address) {
@@ -408,32 +403,21 @@ struct classic_impl : public security::ISecurityManagerListener {
       LOG_ERROR("Received on_mode_change with invalid packet");
       return;
     }
-    auto status = mode_change_view.GetStatus();
     uint16_t handle = mode_change_view.GetConnectionHandle();
-    if (status != ErrorCode::SUCCESS) {
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_mode_change on handle 0x0%04hx with error code %s", handle, error_code.c_str());
-    }
     auto callbacks = get_callbacks(handle);
     if (callbacks == nullptr) {
       LOG_WARN("Unknown connection handle 0x%04hx", handle);
       ASSERT(!crash_on_unknown_handle_);
       return;
     }
-    Mode current_mode = mode_change_view.GetCurrentMode();
-    uint16_t interval = mode_change_view.GetInterval();
-    callbacks->OnModeChange(status, current_mode, interval);
+    callbacks->OnModeChange(
+        mode_change_view.GetStatus(), mode_change_view.GetCurrentMode(), mode_change_view.GetInterval());
   }
 
   void on_sniff_subrating(EventView packet) {
     SniffSubratingEventView sniff_subrating_view = SniffSubratingEventView::Create(packet);
     if (!sniff_subrating_view.IsValid()) {
       LOG_ERROR("Received on_sniff_subrating with invalid packet");
-      return;
-    } else if (sniff_subrating_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = sniff_subrating_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_sniff_subrating with error code %s", error_code.c_str());
       return;
     }
     uint16_t handle = sniff_subrating_view.GetConnectionHandle();
@@ -443,11 +427,12 @@ struct classic_impl : public security::ISecurityManagerListener {
       ASSERT(!crash_on_unknown_handle_);
       return;
     }
-    uint16_t max_tx_lat = sniff_subrating_view.GetMaximumTransmitLatency();
-    uint16_t max_rx_lat = sniff_subrating_view.GetMaximumReceiveLatency();
-    uint16_t min_remote_timeout = sniff_subrating_view.GetMinimumRemoteTimeout();
-    uint16_t min_local_timeout = sniff_subrating_view.GetMinimumLocalTimeout();
-    callbacks->OnSniffSubrating(max_tx_lat, max_rx_lat, min_remote_timeout, min_local_timeout);
+    callbacks->OnSniffSubrating(
+        sniff_subrating_view.GetStatus(),
+        sniff_subrating_view.GetMaximumTransmitLatency(),
+        sniff_subrating_view.GetMaximumReceiveLatency(),
+        sniff_subrating_view.GetMinimumRemoteTimeout(),
+        sniff_subrating_view.GetMinimumLocalTimeout());
   }
 
   void on_qos_setup_complete(EventView packet) {
@@ -481,17 +466,13 @@ struct classic_impl : public security::ISecurityManagerListener {
     if (!role_change_view.IsValid()) {
       LOG_ERROR("Received on_role_change with invalid packet");
       return;
-    } else if (role_change_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = role_change_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_role_change with error code %s", error_code.c_str());
-      return;
     }
+    auto hci_status = role_change_view.GetStatus();
     Address bd_addr = role_change_view.GetBdAddr();
     Role new_role = role_change_view.GetNewRole();
     for (auto& connection_pair : acl_connections_) {
       if (connection_pair.second.address_with_type_.GetAddress() == bd_addr) {
-        connection_pair.second.connection_management_callbacks_->OnRoleChange(new_role);
+        connection_pair.second.connection_management_callbacks_->OnRoleChange(hci_status, new_role);
       }
     }
   }
@@ -541,14 +522,14 @@ struct classic_impl : public security::ISecurityManagerListener {
   }
 
   void on_read_remote_version_information(
-      uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
+      hci::ErrorCode hci_status, uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
     auto callbacks = get_callbacks(handle);
     if (callbacks == nullptr) {
       LOG_WARN("Unknown connection handle 0x%04hx", handle);
       ASSERT(!crash_on_unknown_handle_);
       return;
     }
-    callbacks->OnReadRemoteVersionInformationComplete(version, manufacturer_name, sub_version);
+    callbacks->OnReadRemoteVersionInformationComplete(hci_status, version, manufacturer_name, sub_version);
   }
 
   void on_read_remote_supported_features_complete(EventView packet) {

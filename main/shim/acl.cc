@@ -326,9 +326,9 @@ class ClassicShimAclConnection
     TRY_POSTING_ON_MAIN(interface_.on_packet_type_changed, packet_type);
   }
 
-  void OnAuthenticationComplete() override {
+  void OnAuthenticationComplete(hci::ErrorCode hci_status) override {
     TRY_POSTING_ON_MAIN(interface_.on_authentication_complete, handle_,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS));
+                        ToLegacyHciErrorCode(hci_status));
   }
 
   void OnEncryptionChange(hci::EncryptionEnabled enabled) override {
@@ -351,12 +351,13 @@ class ClassicShimAclConnection
                         handle_, ToLegacyHciMode(current_mode), interval);
   }
 
-  void OnSniffSubrating(uint16_t maximum_transmit_latency,
+  void OnSniffSubrating(hci::ErrorCode hci_status,
+                        uint16_t maximum_transmit_latency,
                         uint16_t maximum_receive_latency,
                         uint16_t minimum_remote_timeout,
                         uint16_t minimum_local_timeout) {
     TRY_POSTING_ON_MAIN(interface_.on_sniff_subrating,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
+                        ToLegacyHciErrorCode(hci_status), handle_,
                         maximum_transmit_latency, maximum_receive_latency,
                         minimum_remote_timeout, minimum_local_timeout);
   }
@@ -424,14 +425,14 @@ class ClassicShimAclConnection
     LOG_INFO("%s UNIMPLEMENTED", __func__);
   }
 
-  void OnRoleChange(hci::Role new_role) override {
-    TRY_POSTING_ON_MAIN(interface_.on_role_change,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS),
-                        ToRawAddress(connection_->GetAddress()),
-                        ToLegacyRole(new_role));
+  void OnRoleChange(hci::ErrorCode hci_status, hci::Role new_role) override {
+    TRY_POSTING_ON_MAIN(
+        interface_.on_role_change, ToLegacyHciErrorCode(hci_status),
+        ToRawAddress(connection_->GetAddress()), ToLegacyRole(new_role));
     BTM_LogHistory(kBtmLogTag, ToRawAddress(connection_->GetAddress()),
                    "Role change",
-                   base::StringPrintf("classic new_role:%s",
+                   base::StringPrintf("classic  status:%s new_role:%s",
+                                      hci::ErrorCodeText(hci_status).c_str(),
                                       hci::RoleText(new_role).c_str()));
   }
 
@@ -440,12 +441,13 @@ class ClassicShimAclConnection
     on_disconnect_(handle_, reason);
   }
 
-  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version,
+  void OnReadRemoteVersionInformationComplete(hci::ErrorCode hci_status,
+                                              uint8_t lmp_version,
                                               uint16_t manufacturer_name,
                                               uint16_t sub_version) override {
     TRY_POSTING_ON_MAIN(interface_.on_read_remote_version_information_complete,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
-                        lmp_version, manufacturer_name, sub_version);
+                        ToLegacyHciErrorCode(hci_status), handle_, lmp_version,
+                        manufacturer_name, sub_version);
   }
 
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number,
@@ -519,13 +521,13 @@ class LeShimAclConnection
     // TODO Issue LeReadRemoteFeatures Command
   }
 
-  void OnConnectionUpdate(uint16_t connection_interval,
+  void OnConnectionUpdate(hci::ErrorCode hci_status,
+                          uint16_t connection_interval,
                           uint16_t connection_latency,
                           uint16_t supervision_timeout) {
-    TRY_POSTING_ON_MAIN(interface_.on_connection_update,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
-                        connection_interval, connection_latency,
-                        supervision_timeout);
+    TRY_POSTING_ON_MAIN(
+        interface_.on_connection_update, ToLegacyHciErrorCode(hci_status),
+        handle_, connection_interval, connection_latency, supervision_timeout);
   }
   void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time,
                           uint16_t rx_octets, uint16_t rx_time) {
@@ -533,18 +535,20 @@ class LeShimAclConnection
                         rx_octets, rx_time);
   }
 
-  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version,
+  void OnReadRemoteVersionInformationComplete(hci::ErrorCode hci_status,
+                                              uint8_t lmp_version,
                                               uint16_t manufacturer_name,
                                               uint16_t sub_version) override {
     TRY_POSTING_ON_MAIN(interface_.on_read_remote_version_information_complete,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
-                        lmp_version, manufacturer_name, sub_version);
+                        ToLegacyHciErrorCode(hci_status), handle_, lmp_version,
+                        manufacturer_name, sub_version);
   }
 
-  void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {
+  void OnPhyUpdate(hci::ErrorCode hci_status, uint8_t tx_phy,
+                   uint8_t rx_phy) override {
     TRY_POSTING_ON_MAIN(interface_.on_phy_update,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
-                        tx_phy, rx_phy);
+                        ToLegacyHciErrorCode(hci_status), handle_, tx_phy,
+                        rx_phy);
   }
 
   void OnLocalAddressUpdate(hci::AddressWithType address_with_type) override {}

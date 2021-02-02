@@ -46,7 +46,11 @@ class LinkPropertyListener {
    * Invoked when received remote version information for a given link
    */
   virtual void OnReadRemoteVersionInformation(
-      hci::Address remote, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {}
+      hci::ErrorCode hci_status,
+      hci::Address remote,
+      uint8_t lmp_version,
+      uint16_t manufacturer_name,
+      uint16_t sub_version) {}
 
   /**
    * Invoked when received remote features and remote extended features for a given link
@@ -57,7 +61,7 @@ class LinkPropertyListener {
   /**
    * Invoked when received role change
    */
-  virtual void OnRoleChange(hci::Address remote, hci::Role role) {}
+  virtual void OnRoleChange(hci::ErrorCode hci_status, hci::Address remote, hci::Role role) {}
 
   /**
    * Invoked when received clock offset
@@ -67,12 +71,13 @@ class LinkPropertyListener {
   /**
    * Invoked when received mode change
    */
-  virtual void OnModeChange(hci::Address remote, hci::Mode mode, uint16_t interval) {}
+  virtual void OnModeChange(hci::ErrorCode hci_status, hci::Address remote, hci::Mode mode, uint16_t interval) {}
 
   /**
    * Invoked when received sniff subrating
    */
   virtual void OnSniffSubrating(
+      hci::ErrorCode hci_status,
       hci::Address remote,
       uint16_t max_tx_lat,
       uint16_t max_rx_lat,

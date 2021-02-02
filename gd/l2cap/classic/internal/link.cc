@@ -316,8 +316,8 @@ void Link::OnConnectionPacketTypeChanged(uint16_t packet_type) {
   LOG_INFO("UNIMPLEMENTED %s packet_type:%x", __func__, packet_type);
 }
 
-void Link::OnAuthenticationComplete() {
-  link_manager_->OnAuthenticationComplete(GetDevice().GetAddress());
+void Link::OnAuthenticationComplete(hci::ErrorCode hci_status) {
+  link_manager_->OnAuthenticationComplete(hci_status, GetDevice().GetAddress());
 }
 
 void Link::OnEncryptionChange(hci::EncryptionEnabled enabled) {
@@ -341,15 +341,17 @@ void Link::OnReadClockOffsetComplete(uint16_t clock_offset) {
 }
 
 void Link::OnModeChange(hci::ErrorCode status, hci::Mode current_mode, uint16_t interval) {
-  link_manager_->OnModeChange(GetDevice().GetAddress(), current_mode, interval);
+  link_manager_->OnModeChange(status, GetDevice().GetAddress(), current_mode, interval);
 }
 
 void Link::OnSniffSubrating(
+    hci::ErrorCode hci_status,
     uint16_t maximum_transmit_latency,
     uint16_t maximum_receive_latency,
     uint16_t minimum_remote_timeout,
     uint16_t minimum_local_timeout) {
   link_manager_->OnSniffSubrating(
+      hci_status,
       GetDevice().GetAddress(),
       maximum_transmit_latency,
       maximum_receive_latency,
@@ -418,22 +420,24 @@ void Link::OnReadClockComplete(uint32_t clock, uint16_t accuracy) {
 void Link::OnCentralLinkKeyComplete(hci::KeyFlag key_flag) {
   LOG_INFO("UNIMPLEMENTED key_flag:%s", hci::KeyFlagText(key_flag).c_str());
 }
-void Link::OnRoleChange(hci::Role new_role) {
+void Link::OnRoleChange(hci::ErrorCode hci_status, hci::Role new_role) {
   role_ = new_role;
-  link_manager_->OnRoleChange(GetDevice().GetAddress(), new_role);
+  link_manager_->OnRoleChange(hci_status, GetDevice().GetAddress(), new_role);
 }
 void Link::OnDisconnection(hci::ErrorCode reason) {
   OnAclDisconnected(reason);
   link_manager_->OnDisconnect(GetDevice().GetAddress(), reason);
 }
 void Link::OnReadRemoteVersionInformationComplete(
-    uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+    hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
   LOG_INFO(
-      "UNIMPLEMENTED lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
+      "UNIMPLEMENTED hci_status:%s lmp_version:%hhu manufacturer_name:%hu sub_version:%hu",
+      ErrorCodeText(hci_status).c_str(),
       lmp_version,
       manufacturer_name,
       sub_version);
-  link_manager_->OnReadRemoteVersionInformation(GetDevice().GetAddress(), lmp_version, manufacturer_name, sub_version);
+  link_manager_->OnReadRemoteVersionInformation(
+      hci_status, GetDevice().GetAddress(), lmp_version, manufacturer_name, sub_version);
 }
 void Link::OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) {
   LOG_INFO(

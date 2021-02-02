@@ -75,14 +75,17 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
 
   void OnDisconnection(hci::ErrorCode reason) override;
 
-  void OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency,
-                          uint16_t supervision_timeout) override;
+  void OnConnectionUpdate(
+      hci::ErrorCode hci_status,
+      uint16_t connection_interval,
+      uint16_t connection_latency,
+      uint16_t supervision_timeout) override;
 
   void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) override;
 
   void OnReadRemoteVersionInformationComplete(
-      uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override;
-  void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override;
+      hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override;
+  void OnPhyUpdate(hci::ErrorCode hci_status, uint8_t tx_phy, uint8_t rx_phy) override;
 
   void OnLocalAddressUpdate(hci::AddressWithType address_with_type) override;
 
