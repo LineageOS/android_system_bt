@@ -483,9 +483,10 @@ void LinkLayerController::IncomingReadRemoteExtendedFeaturesResponse(
 void LinkLayerController::IncomingReadRemoteVersion(
     model::packets::LinkLayerPacketView packet) {
   SendLinkLayerPacket(
-      model::packets::ReadRemoteSupportedFeaturesResponseBuilder::Create(
+      model::packets::ReadRemoteVersionInformationResponseBuilder::Create(
           packet.GetDestinationAddress(), packet.GetSourceAddress(),
-          properties_.GetSupportedFeatures()));
+          properties_.GetLmpPalVersion(), properties_.GetLmpPalSubversion(),
+          properties_.GetManufacturerName()));
 }
 
 void LinkLayerController::IncomingReadRemoteVersionResponse(
