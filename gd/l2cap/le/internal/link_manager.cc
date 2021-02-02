@@ -130,8 +130,8 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
 void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) {
   // Notify all pending links for this device
   auto pending_link = pending_links_.find(address_with_type);
-  if (pending_link == pending_links_.end() && reason != hci::ErrorCode::UNKNOWN_CONNECTION) {
-    // There is no pending link, exit; UNKNOWN_CONNECTION means we cancelled
+  if (pending_link == pending_links_.end()) {
+    // There is no pending link, exit
     LOG_INFO("Connection to %s failed without a pending link", address_with_type.ToString().c_str());
     return;
   }
