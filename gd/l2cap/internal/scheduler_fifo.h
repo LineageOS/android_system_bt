@@ -42,6 +42,7 @@ class Fifo : public Scheduler {
   ~Fifo();
   void OnPacketsReady(Cid cid, int number_packets) override;
   void SetChannelTxPriority(Cid cid, bool high_priority) override;
+  void RemoveChannel(Cid cid) override;
 
  private:
   DataPipelineManager* data_pipeline_manager_;
