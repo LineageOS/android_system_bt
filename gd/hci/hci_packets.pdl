@@ -1103,7 +1103,6 @@ packet SetupSynchronousConnectionStatus : CommandStatus (command_op_code = SETUP
 
 packet AcceptSynchronousConnection : ScoConnectionCommand (op_code = ACCEPT_SYNCHRONOUS_CONNECTION) {
   bd_addr : Address,
-  _reserved_ : 4,
   transmit_bandwidth : 32,
   receive_bandwidth : 32,
   max_latency : 16, // 0-3 reserved, 0xFFFF = don't care

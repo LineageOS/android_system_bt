@@ -14,6 +14,7 @@ rust_library {
       "libtokio",
       "libgddi",
       "libbt_main",
+      "liblog_rust",
     ],
 }
 
