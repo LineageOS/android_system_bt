@@ -82,8 +82,8 @@ impl HciFacade for HciFacadeService {
         let packet = CommandPacket::parse(&data.take_payload()).unwrap();
         let mut commands = self.commands.clone();
         ctx.spawn(async move {
-            commands.send(packet).await.unwrap();
             sink.success(Empty::default()).await.unwrap();
+            commands.send(packet).await.unwrap();
         });
     }
 
