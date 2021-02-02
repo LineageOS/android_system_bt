@@ -72,7 +72,7 @@ BluetoothAdapter::BluetoothAdapter(scoped_refptr<Bus> bus,
 void BluetoothAdapter::Enable(MethodCall* method_call,
                               ExportedObject::ResponseSender response_sender) {
   VLOG(1) << __func__;
-  adapter_->Enable(false);
+  adapter_->Enable();
   response_sender.Run(Response::FromMethodCall(method_call));
 }
 

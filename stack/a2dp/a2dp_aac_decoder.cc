@@ -18,7 +18,11 @@
 
 #include "a2dp_aac_decoder.h"
 
+#ifdef OS_ANDROID
 #include <aacdecoder_lib.h>
+#else
+#include <fdk-aac/aacdecoder_lib.h>
+#endif
 #include <base/logging.h>
 
 #include "a2dp_aac.h"

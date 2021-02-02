@@ -20,6 +20,7 @@
 
 #include <base/rand_util.h>
 #include <base/strings/stringprintf.h>
+#include <string.h>
 #include <algorithm>
 
 namespace bluetooth {
