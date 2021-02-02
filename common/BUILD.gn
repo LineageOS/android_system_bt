@@ -19,18 +19,22 @@ static_library("common") {
     "message_loop_thread.cc",
     "metrics_linux.cc",
     "time_util.cc",
-    "timer.cc",
   ]
 
   include_dirs = [
-    "//",
-    "//stack/include",
-    "//linux_include",
-    "//internal_include",
+    "//bt/",
+    "//bt/stack/include",
+    "//bt/linux_include",
+    "//bt/internal_include",
   ]
 
   deps = [
-    "//third_party/libchrome:base",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
   ]
 }
 
@@ -40,19 +44,21 @@ executable("bt_test_common") {
     "leaky_bonded_queue_unittest.cc",
     "state_machine_unittest.cc",
     "time_util_unittest.cc",
-    "timer_unittest.cc"
   ]
 
   include_dirs = [
-    "//",
-    "//common",
+    "//bt/",
+    "//bt/common",
   ]
 
   deps = [
-    "//common",
-    "//third_party/googletest:gtest_main",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+    "//bt/common",
+  ]
+
+  configs += [
+    "//bt:external_gtest_main",
+    "//bt:external_gmock_main",
+    "//bt:target_defaults",
   ]
 
   libs = [
