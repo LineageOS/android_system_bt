@@ -107,7 +107,7 @@ class LinkSecurityInterfaceListener {
   /**
    * Invoked when AuthenticationComplete event is received for a given link
    */
-  virtual void OnAuthenticationComplete(hci::Address remote) {}
+  virtual void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address remote) {}
 
   /**
    * Invoked when EncryptionChange event is received for a given link

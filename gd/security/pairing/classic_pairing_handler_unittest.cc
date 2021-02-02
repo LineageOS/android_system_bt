@@ -65,7 +65,7 @@ class FakeSecurityManagerChannel : public channel::SecurityManagerChannel {
     LOG_ERROR("CALLED");
   }
 
-  void OnAuthenticationComplete(hci::Address remote) override {
+  void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address remote) override {
     LOG_ERROR("CALLED");
   }
 };

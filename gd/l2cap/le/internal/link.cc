@@ -64,7 +64,11 @@ void Link::OnDisconnection(hci::ErrorCode status) {
   link_manager_->OnDisconnect(GetAclConnection()->GetRemoteAddress());
 }
 
-void Link::OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout) {
+void Link::OnConnectionUpdate(
+    hci::ErrorCode hci_status,
+    uint16_t connection_interval,
+    uint16_t connection_latency,
+    uint16_t supervision_timeout) {
   LOG_INFO(
       "interval %hx latency %hx supervision_timeout %hx", connection_interval, connection_latency, supervision_timeout);
   if (update_request_signal_id_ != kInvalidSignalId) {
@@ -88,12 +92,13 @@ void Link::OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_
 }
 
 void Link::OnReadRemoteVersionInformationComplete(
-    uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+    hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
   LOG_INFO("lmp_version:%hhu manufacturer_name:%hu sub_version:%hu", lmp_version, manufacturer_name, sub_version);
-  link_manager_->OnReadRemoteVersionInformationComplete(GetDevice(), lmp_version, manufacturer_name, sub_version);
+  link_manager_->OnReadRemoteVersionInformationComplete(
+      hci_status, GetDevice(), lmp_version, manufacturer_name, sub_version);
 }
 
-void Link::OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) {}
+void Link::OnPhyUpdate(hci::ErrorCode hci_status, uint8_t tx_phy, uint8_t rx_phy) {}
 
 void Link::OnLocalAddressUpdate(hci::AddressWithType address_with_type) {
   acl_connection_->UpdateLocalAddress(address_with_type);
