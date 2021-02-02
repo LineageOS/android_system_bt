@@ -673,7 +673,7 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
   }
 
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
-    uint16_t handle = bluetooth::shim::L2CA_GetLeHandle(L2CAP_ATT_CID, bd_addr);
+    uint16_t handle = bluetooth::shim::L2CA_GetLeHandle(bd_addr);
     btsnd_hcic_ble_set_data_length(handle, tx_pdu_length, tx_time);
     return BTM_SUCCESS;
   }
