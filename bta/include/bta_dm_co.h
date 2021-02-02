@@ -24,8 +24,10 @@
 #ifndef BTA_DM_CO_H
 #define BTA_DM_CO_H
 
-#include "bta_sys.h"
-#include "btm_api.h"
+#include "bta/include/bta_api.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_api_types.h"
+#include "types/raw_address.h"
 
 #ifndef BTA_SCO_OUT_PKT_SIZE
 #define BTA_SCO_OUT_PKT_SIZE BTM_SCO_DATA_SIZE_MAX

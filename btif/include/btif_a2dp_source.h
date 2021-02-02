@@ -20,10 +20,13 @@
 #ifndef BTIF_A2DP_SOURCE_H
 #define BTIF_A2DP_SOURCE_H
 
-#include <stdbool.h>
+#include <cstdint>
 #include <future>
+#include <vector>
 
-#include "bta_av_api.h"
+#include "bta/include/bta_av_api.h"
+#include "include/hardware/bt_av.h"
+#include "types/raw_address.h"
 
 // Initialize the A2DP Source module.
 // This function should be called by the BTIF state machine prior to using the

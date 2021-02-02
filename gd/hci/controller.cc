@@ -777,8 +777,6 @@ struct Controller::impl {
         return vendor_capabilities_.total_scan_results_storage_ != 0x00;
       case OpCode::LE_ADV_FILTER:
         return vendor_capabilities_.filtering_support_ == 0x01;
-      case OpCode::LE_TRACK_ADV:
-        return vendor_capabilities_.total_num_of_advt_tracked_ > 0;
       case OpCode::LE_ENERGY_INFO:
         return vendor_capabilities_.activity_energy_info_support_ == 0x01;
       case OpCode::LE_EXTENDED_SCAN_PARAMS:
@@ -790,7 +788,6 @@ struct Controller::impl {
       case OpCode::CONTROLLER_BQR:
         return vendor_capabilities_.bluetooth_quality_report_support_ == 0x01;
       // undefined in local_supported_commands_
-      case OpCode::CREATE_NEW_UNIT_KEY:
       case OpCode::READ_LOCAL_SUPPORTED_COMMANDS:
         return true;
       case OpCode::NONE:

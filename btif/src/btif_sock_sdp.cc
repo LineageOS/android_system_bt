@@ -22,6 +22,7 @@
 
 #include "bt_target.h"
 #include "bta/pb/bta_pbs_int.h"
+#include "bta/sys/bta_sys.h"
 #include "bta_jv_api.h"
 #include "bta_op_api.h"
 #include "btif_sock_util.h"

@@ -46,6 +46,7 @@
 #include "btif_util.h"
 #include "common/metrics.h"
 #include "main/shim/dumpsys.h"
+#include "stack/include/btm_api.h"
 
 namespace {
 constexpr char kBtmLogTag[] = "HFP";

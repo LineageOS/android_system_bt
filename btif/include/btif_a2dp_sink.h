@@ -20,12 +20,12 @@
 #ifndef BTIF_A2DP_SINK_H
 #define BTIF_A2DP_SINK_H
 
-#include <inttypes.h>
-#include <stdbool.h>
+#include <cstdint>
 #include <future>
 
-#include "bt_types.h"
-#include "bta_av_api.h"
+#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
+#include "bta/include/bta_av_api.h"
+#include "types/raw_address.h"
 
 //
 // Audio focus state for audio track.

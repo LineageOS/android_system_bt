@@ -26,9 +26,13 @@
 #ifndef BTA_HD_INT_H
 #define BTA_HD_INT_H
 
-#include "bta_hd_api.h"
-#include "bta_sys.h"
-#include "hiddefs.h"
+#include <cstdint>
+
+#include "bta/include/bta_hd_api.h"
+#include "bta/sys/bta_sys.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/hiddefs.h"
+#include "types/raw_address.h"
 
 enum {
   BTA_HD_API_REGISTER_APP_EVT = BTA_SYS_EVT_START(BTA_ID_HD),

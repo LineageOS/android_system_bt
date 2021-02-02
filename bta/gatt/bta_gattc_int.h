@@ -24,17 +24,15 @@
 #ifndef BTA_GATTC_INT_H
 #define BTA_GATTC_INT_H
 
-#include "bt_target.h"
+#include <cstdint>
 
-#include "bta_gatt_api.h"
-#include "bta_sys.h"
-#include "database_builder.h"
-#include "osi/include/fixed_queue.h"
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "bt_common.h"
-
-#include <base/logging.h>
-#include <base/strings/stringprintf.h>
+#include "bta/gatt/database.h"
+#include "bta/gatt/database_builder.h"
+#include "bta/include/bta_gatt_api.h"
+#include "bta/sys/bta_sys.h"
+#include "stack/include/gatt_api.h"
 #include "types/bt_transport.h"
 
 /*****************************************************************************
