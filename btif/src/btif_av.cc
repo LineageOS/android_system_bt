@@ -36,6 +36,7 @@
 #include "bt_utils.h"
 #include "bta/include/bta_api.h"
 #include "btif/include/btif_a2dp_source.h"
+#include "btif/include/btif_common.h"
 #include "btif_a2dp.h"
 #include "btif_a2dp_audio_interface.h"
 #include "btif_a2dp_control.h"
@@ -48,8 +49,10 @@
 #include "common/state_machine.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/include/btm_api.h"
 
 /*****************************************************************************
  *  Constants & Macros

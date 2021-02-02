@@ -965,8 +965,6 @@ inline std::string power_mode_text(tBTM_PM_MODE mode) {
 typedef enum : uint8_t {
   /* The module wants to set the desired power mode */
   BTM_PM_REG_SET = (1u << 0),
-  /* The module wants to receive mode change event */
-  BTM_PM_REG_NOTIF = (1u << 1),
   /* The module does not want to involve with PM anymore */
   BTM_PM_DEREG = (1u << 2),
 } tBTM_PM_REGISTER;
@@ -975,11 +973,11 @@ typedef enum : uint8_t {
  *  Power Manager Types
  ************************/
 typedef struct {
-  uint16_t max;
-  uint16_t min;
-  uint16_t attempt;
-  uint16_t timeout;
-  tBTM_PM_MODE mode;
+  uint16_t max = 0;
+  uint16_t min = 0;
+  uint16_t attempt = 0;
+  uint16_t timeout = 0;
+  tBTM_PM_MODE mode = BTM_PM_MD_ACTIVE;  // 0
 } tBTM_PM_PWR_MD;
 
 /*************************************

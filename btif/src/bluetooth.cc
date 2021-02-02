@@ -75,6 +75,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/wakelock.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/avdt_api.h"
 #include "stack/include/btu.h"
 #include "stack_manager.h"
 

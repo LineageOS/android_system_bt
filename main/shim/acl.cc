@@ -345,10 +345,10 @@ class ClassicShimAclConnection
     LOG_INFO("UNIMPLEMENTED");
   }
 
-  void OnModeChange(hci::Mode current_mode, uint16_t interval) override {
-    TRY_POSTING_ON_MAIN(interface_.on_mode_change,
-                        ToLegacyHciErrorCode(hci::ErrorCode::SUCCESS), handle_,
-                        ToLegacyHciMode(current_mode), interval);
+  void OnModeChange(hci::ErrorCode status, hci::Mode current_mode,
+                    uint16_t interval) override {
+    TRY_POSTING_ON_MAIN(interface_.on_mode_change, ToLegacyHciErrorCode(status),
+                        handle_, ToLegacyHciMode(current_mode), interval);
   }
 
   void OnSniffSubrating(uint16_t maximum_transmit_latency,
@@ -692,7 +692,6 @@ void DumpsysAcl(int fd) {
 
   for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
     const tACL_CONN& acl_conn = acl_cb.acl_db[i];
-    const tBTM_PM_MCB& btm_pm_mcb = acl_cb.pm_mode_db[i];
     if (!acl_conn.in_use) continue;
 
     LOG_DUMPSYS(fd, "    peer_le_features valid:%s data:%s",
@@ -728,10 +727,7 @@ void DumpsysAcl(int fd) {
                 ticks_to_seconds(acl_conn.link_super_tout));
     LOG_DUMPSYS(fd, "    pkt_types_mask:0x%04x", acl_conn.pkt_types_mask);
     LOG_DUMPSYS(fd, "    disconnect_reason:0x%02x", acl_conn.disconnect_reason);
-    LOG_DUMPSYS(fd, "    chg_ind:%s", (btm_pm_mcb.chg_ind) ? "true" : "false");
     LOG_DUMPSYS(fd, "    role:%s", RoleText(acl_conn.link_role).c_str());
-    LOG_DUMPSYS(fd, "    power_mode_state:%s",
-                power_mode_state_text(btm_pm_mcb.State()).c_str());
   }
 }
 #undef DUMPSYS_TAG

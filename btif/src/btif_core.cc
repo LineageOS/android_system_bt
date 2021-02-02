@@ -64,6 +64,9 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/include/a2dp_api.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btm_ble_api.h"
 #include "stack_manager.h"
 
 using base::PlatformThread;

@@ -64,8 +64,8 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   void OnReadClockOffsetComplete(uint16_t clock_offset) override {
     SAVE_OR_CALL(OnReadClockOffsetComplete, clock_offset)
   }
-  void OnModeChange(Mode current_mode, uint16_t interval) override {
-    SAVE_OR_CALL(OnModeChange, current_mode, interval)
+  void OnModeChange(ErrorCode status, Mode current_mode, uint16_t interval) override {
+    SAVE_OR_CALL(OnModeChange, status, current_mode, interval)
   }
   void OnSniffSubrating(
       uint16_t maximum_transmit_latency,

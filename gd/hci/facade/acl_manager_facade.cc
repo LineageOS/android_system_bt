@@ -411,7 +411,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       LOG_INFO("OnReadClockOffsetComplete clock_offset:%d", clock_offset);
     };
 
-    void OnModeChange(Mode current_mode, uint16_t interval) override {
+    void OnModeChange(ErrorCode status, Mode current_mode, uint16_t interval) override {
       LOG_INFO("OnModeChange Mode:%d, interval:%d", (uint8_t)current_mode, interval);
     };
 

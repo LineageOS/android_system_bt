@@ -413,7 +413,6 @@ struct classic_impl : public security::ISecurityManagerListener {
     if (status != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(status);
       LOG_ERROR("Received on_mode_change on handle 0x0%04hx with error code %s", handle, error_code.c_str());
-      return;
     }
     auto callbacks = get_callbacks(handle);
     if (callbacks == nullptr) {
@@ -423,7 +422,7 @@ struct classic_impl : public security::ISecurityManagerListener {
     }
     Mode current_mode = mode_change_view.GetCurrentMode();
     uint16_t interval = mode_change_view.GetInterval();
-    callbacks->OnModeChange(current_mode, interval);
+    callbacks->OnModeChange(status, current_mode, interval);
   }
 
   void on_sniff_subrating(EventView packet) {

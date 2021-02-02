@@ -24,7 +24,9 @@
 #ifndef BTA_PAN_CI_H
 #define BTA_PAN_CI_H
 
-#include "bta_pan_api.h"
+#include <cstdint>
+
+#include "bta/include/bta_pan_api.h"
 
 /*****************************************************************************
  *  Function Declarations

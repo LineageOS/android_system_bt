@@ -42,6 +42,7 @@
 #include "btif_hf.h"
 #include "common/metrics.h"
 #include "common/time_util.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/btu.h"
 
