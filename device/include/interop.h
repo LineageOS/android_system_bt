@@ -107,7 +107,11 @@ typedef enum {
   // Disable sniff mode for headsets/car-kits
   // Some car kits supports sniff mode but when DUT initiates sniff req
   // Remote will go to bad state and its leads to LMP time out.
-  INTEROP_DISABLE_SNIFF
+  INTEROP_DISABLE_SNIFF,
+
+  // Do not send AVDTP SUSPEND while the playback is paused.
+  // Some older A2DP Sink devices might not support to pause the streaming.
+  INTEROP_DISABLE_AVDTP_SUSPEND
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as
