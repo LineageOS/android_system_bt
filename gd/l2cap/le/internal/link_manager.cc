@@ -121,21 +121,6 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
         link->GetRole());
   }
 
-  // Allocate and distribute channels for all registered fixed channel services
-  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
-  for (auto& fixed_channel_service : fixed_channel_services) {
-    auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first,
-                                                         SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK);
-    fixed_channel_service.second->NotifyChannelCreation(
-        std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
-  }
-  if (pending_dynamic_channels_.find(connected_address_with_type) != pending_dynamic_channels_.end()) {
-    for (auto& psm_callback : pending_dynamic_channels_[connected_address_with_type]) {
-      link->SendConnectionRequest(psm_callback.first, std::move(psm_callback.second));
-    }
-    pending_dynamic_channels_.erase(connected_address_with_type);
-  }
-
   // Remove device from pending links list, if any
   pending_links_.erase(connecting_address_with_type);
 
@@ -187,6 +172,22 @@ void LinkManager::OnReadRemoteVersionInformationComplete(
         lmp_version,
         manufacturer_name,
         sub_version);
+  }
+
+  auto* link = GetLink(address_with_type);
+  // Allocate and distribute channels for all registered fixed channel services
+  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
+  for (auto& fixed_channel_service : fixed_channel_services) {
+    auto fixed_channel_impl = link->AllocateFixedChannel(
+        fixed_channel_service.first, SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK);
+    fixed_channel_service.second->NotifyChannelCreation(
+        std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
+  }
+  if (pending_dynamic_channels_.find(address_with_type) != pending_dynamic_channels_.end()) {
+    for (auto& psm_callback : pending_dynamic_channels_[address_with_type]) {
+      link->SendConnectionRequest(psm_callback.first, std::move(psm_callback.second));
+    }
+    pending_dynamic_channels_.erase(address_with_type);
   }
 }
 
