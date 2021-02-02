@@ -379,27 +379,6 @@ void StructDef::GenRustDeclarations(std::ostream& s) const {
 
 void StructDef::GenRustImpls(std::ostream& s) const {
   s << "impl " << name_ << "{";
-  /*s << "pub fn new(";
-  GenRustFieldNameAndType(s, false);
-  s << ") -> Self { Self {";
-  auto fields = fields_.GetFieldsWithoutTypes({
-      BodyField::kFieldType,
-      CountField::kFieldType,
-      PaddingField::kFieldType,
-      ReservedField::kFieldType,
-      SizeField::kFieldType,
-  });
-  for (const auto& field : fields) {
-    if (field->GetFieldType() == FixedScalarField::kFieldType) {
-      s << field->GetName() << ": ";
-      static_cast<FixedScalarField*>(field)->GenValue(s);
-    } else {
-      s << field->GetName();
-    }
-    s << ", ";
-  }
-  s << "}}";*/
-
   s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
@@ -439,26 +418,7 @@ void StructDef::GenRustImpls(std::ostream& s) const {
 
   // write_to function
   s << "fn write_to(&self, buffer: &mut BytesMut) {";
-  fields = fields_.GetFieldsWithoutTypes({
-      BodyField::kFieldType,
-      CountField::kFieldType,
-      PaddingField::kFieldType,
-      ReservedField::kFieldType,
-      SizeField::kFieldType,
-  });
-
-  for (auto const& field : fields) {
-    auto start_field_offset = GetOffsetForField(field->GetName(), false);
-    auto end_field_offset = GetOffsetForField(field->GetName(), true);
-
-    if (start_field_offset.empty() && end_field_offset.empty()) {
-      ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
-                   << "no method exists to determine field location from begin() or end().\n";
-    }
-
-    field->GenRustWriter(s, start_field_offset, end_field_offset);
-  }
-
+  GenRustWriteToFields(s);
   s << "}\n";
 
   if (fields.size() > 0) {
