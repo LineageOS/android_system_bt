@@ -150,7 +150,7 @@ void LeAddressManager::register_client(LeAddressManagerCallback* callback) {
   } else if (
       address_policy_ == AddressPolicy::USE_RESOLVABLE_ADDRESS ||
       address_policy_ == AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
-    if (bluetooth::common::init_flags::gd_acl_is_enabled()) {
+    if (bluetooth::common::init_flags::gd_acl_is_enabled() || bluetooth::common::init_flags::gd_l2cap_is_enabled()) {
       if (registered_clients_.size() == 1) {
         schedule_rotate_random_address();
       }
