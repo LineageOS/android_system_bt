@@ -133,6 +133,7 @@ static const char* interop_feature_string_(const interop_feature_t feature) {
     CASE_RETURN_STR(INTEROP_DISABLE_NAME_REQUEST)
     CASE_RETURN_STR(INTEROP_AVRCP_1_4_ONLY)
     CASE_RETURN_STR(INTEROP_DISABLE_SNIFF)
+    CASE_RETURN_STR(INTEROP_DISABLE_AVDTP_SUSPEND)
   }
 
   return "UNKNOWN";
