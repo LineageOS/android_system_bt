@@ -250,11 +250,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     if (!complete_view.IsValid()) {
       LOG_ERROR("Received on_le_connection_update_complete with invalid packet");
       return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_le_connection_update_complete with error code %s", error_code.c_str());
-      return;
     }
     auto handle = complete_view.GetConnectionHandle();
     auto callbacks = get_callbacks(handle);
@@ -264,18 +259,16 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     }
     callbacks->OnConnectionUpdate(
-        complete_view.GetConnInterval(), complete_view.GetConnLatency(), complete_view.GetSupervisionTimeout());
+        complete_view.GetStatus(),
+        complete_view.GetConnInterval(),
+        complete_view.GetConnLatency(),
+        complete_view.GetSupervisionTimeout());
   }
 
   void on_le_phy_update_complete(LeMetaEventView view) {
     auto complete_view = LePhyUpdateCompleteView::Create(view);
     if (!complete_view.IsValid()) {
       LOG_ERROR("Received on_le_phy_update_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_le_connection_update_complete with error code %s", error_code.c_str());
       return;
     }
     auto handle = complete_view.GetConnectionHandle();
@@ -285,18 +278,18 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       ASSERT(!crash_on_unknown_handle_);
       return;
     }
-    callbacks->OnPhyUpdate(complete_view.GetTxPhy(), complete_view.GetRxPhy());
+    callbacks->OnPhyUpdate(complete_view.GetStatus(), complete_view.GetTxPhy(), complete_view.GetRxPhy());
   }
 
   void on_le_read_remote_version_information(
-      uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
+      hci::ErrorCode hci_status, uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
     auto callbacks = get_callbacks(handle);
     if (callbacks == nullptr) {
       LOG_WARN("Can't find connection 0x%hx", handle);
       ASSERT(!crash_on_unknown_handle_);
       return;
     }
-    callbacks->OnReadRemoteVersionInformationComplete(version, manufacturer_name, sub_version);
+    callbacks->OnReadRemoteVersionInformationComplete(hci_status, version, manufacturer_name, sub_version);
   }
 
   void enqueue_command(std::unique_ptr<CommandBuilder> command_packet) {

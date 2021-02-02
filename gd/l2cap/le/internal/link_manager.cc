@@ -163,11 +163,16 @@ void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropert
 }
 
 void LinkManager::OnReadRemoteVersionInformationComplete(
-    hci::AddressWithType address_with_type, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+    hci::ErrorCode hci_status,
+    hci::AddressWithType address_with_type,
+    uint8_t lmp_version,
+    uint16_t manufacturer_name,
+    uint16_t sub_version) {
   if (link_property_callback_handler_ != nullptr) {
     link_property_callback_handler_->CallOn(
         link_property_listener_,
         &LinkPropertyListener::OnReadRemoteVersionInformation,
+        hci_status,
         address_with_type,
         lmp_version,
         manufacturer_name,

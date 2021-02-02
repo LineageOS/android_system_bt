@@ -66,16 +66,21 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   void OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason) override;
   virtual void OnDisconnect(hci::Address device, hci::ErrorCode status);
-  void OnAuthenticationComplete(hci::Address device);
+  void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address device);
   void OnEncryptionChange(hci::Address device, hci::EncryptionEnabled enabled);
   void OnReadRemoteVersionInformation(
-      hci::Address device, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
+      hci::ErrorCode hci_status,
+      hci::Address device,
+      uint8_t lmp_version,
+      uint16_t manufacturer_name,
+      uint16_t sub_version);
   void OnReadRemoteExtendedFeatures(
       hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features);
-  void OnRoleChange(hci::Address remote, hci::Role role);
+  void OnRoleChange(hci::ErrorCode hci_status, hci::Address remote, hci::Role role);
   void OnReadClockOffset(hci::Address remote, uint16_t clock_offset);
-  void OnModeChange(hci::Address remote, hci::Mode mode, uint16_t interval);
+  void OnModeChange(hci::ErrorCode hci_status, hci::Address remote, hci::Mode mode, uint16_t interval);
   void OnSniffSubrating(
+      hci::ErrorCode hci_status,
       hci::Address remote,
       uint16_t max_tx_lat,
       uint16_t max_rx_lat,

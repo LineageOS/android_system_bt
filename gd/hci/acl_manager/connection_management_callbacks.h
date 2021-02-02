@@ -30,7 +30,7 @@ class ConnectionManagementCallbacks {
   // Invoked when controller sends Connection Packet Type Changed event with Success error code
   virtual void OnConnectionPacketTypeChanged(uint16_t packet_type) = 0;
   // Invoked when controller sends Authentication Complete event with Success error code
-  virtual void OnAuthenticationComplete() = 0;
+  virtual void OnAuthenticationComplete(hci::ErrorCode hci_status) = 0;
   // Invoked when controller sends Encryption Change event with Success error code
   virtual void OnEncryptionChange(EncryptionEnabled enabled) = 0;
   // Invoked when controller sends Change Connection Link Key Complete event with Success error code
@@ -41,6 +41,7 @@ class ConnectionManagementCallbacks {
   virtual void OnModeChange(ErrorCode status, Mode current_mode, uint16_t interval) = 0;
   // Invoked when controller sends Sniff Subrating event with Success error code
   virtual void OnSniffSubrating(
+      hci::ErrorCode hci_status,
       uint16_t maximum_transmit_latency,
       uint16_t maximum_receive_latency,
       uint16_t minimum_remote_timeout,
@@ -80,12 +81,12 @@ class ConnectionManagementCallbacks {
   // Invoked when controller sends Central Link Key Complete event
   virtual void OnCentralLinkKeyComplete(KeyFlag key_flag) = 0;
   // Invoked when controller sends Role Change event
-  virtual void OnRoleChange(Role new_role) = 0;
+  virtual void OnRoleChange(hci::ErrorCode hci_status, Role new_role) = 0;
   // Invoked when controller sends DisconnectComplete
   virtual void OnDisconnection(ErrorCode reason) = 0;
   // Invoked when controller sends Read Remote Version Information Complete
   virtual void OnReadRemoteVersionInformationComplete(
-      uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) = 0;
+      hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) = 0;
   // Invoked when controller sends Read Remote Extended Features Complete
   virtual void OnReadRemoteExtendedFeaturesComplete(
       uint8_t page_number, uint8_t max_page_number, uint64_t features) = 0;
