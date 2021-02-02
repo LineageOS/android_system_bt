@@ -609,7 +609,8 @@ void ParentDef::GenRustWriteToFields(std::ostream& s) const {
         const auto& vector_name = field_name + "_bytes";
         const VectorField* vector = (VectorField*)sized_field;
         if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
-          s << "let " << vector_name + " = self." << field_name << ".iter().fold(0, |acc, x| acc + x.get_size());";
+          s << "let " << vector_name + " = self." << field_name
+            << ".iter().fold(0, |acc, x| acc + x.get_total_size());";
         } else {
           s << "let " << vector_name + " = self." << field_name << ".len() * ((" << vector->element_size_ << ") / 8);";
         }
@@ -626,5 +627,32 @@ void ParentDef::GenRustWriteToFields(std::ostream& s) const {
     }
 
     field->GenRustWriter(s, start_field_offset, end_field_offset);
+  }
+}
+
+void ParentDef::GenSizeRetVal(std::ostream& s) const {
+  int size = 0;
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+  });
+  for (int i = 0; i < fields.size(); i++) {
+    size += fields[i]->GetSize().bits();
+  }
+  if (size % 8 != 0) {
+    ERROR() << "size is not a multiple of 8!\n";
+  }
+  s << size / 8;
+
+  fields = fields_.GetFieldsWithTypes({
+      VectorField::kFieldType,
+  });
+  for (int i = 0; i < fields.size(); i++) {
+    const VectorField* vector = (VectorField*)fields[i];
+    if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
+      s << " + self." << vector->GetName() << ".iter().fold(0, |acc, x| acc + x.get_total_size())";
+    } else {
+      s << " + (self." << vector->GetName() << ".len() * ((" << vector->element_size_ << ") / 8))";
+    }
   }
 }

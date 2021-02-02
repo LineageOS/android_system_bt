@@ -342,21 +342,6 @@ void StructDef::GenRustFieldNames(std::ostream& s) const {
   }
 }
 
-void StructDef::GenRustSizeField(std::ostream& s) const {
-  int size = 0;
-  auto fields = fields_.GetFieldsWithoutTypes({
-      BodyField::kFieldType,
-      CountField::kFieldType,
-      SizeField::kFieldType,
-  });
-  for (const auto& field : fields) {
-    size += field->GetSize().bytes();
-  }
-  if (fields.size() > 0) {
-    s << size;
-  }
-}
-
 void StructDef::GenRustDeclarations(std::ostream& s) const {
   s << "#[derive(Debug, Clone)] ";
   s << "pub struct " << name_ << "{";
@@ -421,11 +406,9 @@ void StructDef::GenRustImpls(std::ostream& s) const {
   GenRustWriteToFields(s);
   s << "}\n";
 
-  if (fields.size() > 0) {
-    s << "pub fn get_size(&self) -> usize {";
-    GenRustSizeField(s);
-    s << "}";
-  }
+  s << "fn get_total_size(&self) -> usize {";
+  GenSizeRetVal(s);
+  s << "}";
   s << "}\n";
 }
 

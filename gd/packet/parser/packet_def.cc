@@ -866,21 +866,6 @@ void PacketDef::GenRustStructFieldNames(std::ostream& s) const {
   }
 }
 
-void PacketDef::GenRustStructSizeField(std::ostream& s) const {
-  int size = 0;
-  auto fields = fields_.GetFieldsWithoutTypes({
-      BodyField::kFieldType,
-      CountField::kFieldType,
-  });
-  for (int i = 0; i < fields.size(); i++) {
-    size += fields[i]->GetSize().bits();
-  }
-  if (size % 8 != 0) {
-    ERROR() << "Packet size is not a multiple of 8!\n";
-  }
-  s << size / 8;
-}
-
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Data {";
 
@@ -1026,8 +1011,8 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   }
   s << "}\n";
 
-  s << "pub fn get_size(&self) -> usize {";
-  GenRustStructSizeField(s);
+  s << "fn get_size(&self) -> usize {";
+  GenSizeRetVal(s);
   s << "}\n";
   s << "}\n";
 }

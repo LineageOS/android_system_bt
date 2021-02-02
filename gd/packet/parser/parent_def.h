@@ -89,4 +89,6 @@ class ParentDef : public TypeDef {
   bool HasChildEnums() const;
 
   void GenRustWriteToFields(std::ostream& s) const;
+
+  void GenSizeRetVal(std::ostream& s) const;
 };
