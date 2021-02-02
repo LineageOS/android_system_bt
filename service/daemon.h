@@ -17,7 +17,7 @@
 #pragma once
 
 #include <base/macros.h>
-#include <base/message_loop/message_loop.h>
+#include "abstract_message_loop.h"
 
 namespace ipc {
 class IPCManager;
@@ -55,7 +55,7 @@ class Daemon {
 
   // The main event loop. This should be used for any events and delayed tasks
   // that should be executed on the daemon's main thread.
-  virtual base::MessageLoop* GetMessageLoop() const = 0;
+  virtual btbase::AbstractMessageLoop* GetMessageLoop() const = 0;
 
   // Starts the daemon's main loop.
   virtual void StartMainLoop() = 0;

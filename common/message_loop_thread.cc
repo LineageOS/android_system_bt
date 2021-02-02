@@ -180,7 +180,7 @@ void MessageLoopThread::RunThread(MessageLoopThread* thread,
   thread->Run(std::move(start_up_promise));
 }
 
-base::MessageLoop* MessageLoopThread::message_loop() const {
+btbase::AbstractMessageLoop* MessageLoopThread::message_loop() const {
   ASSERT_LOG(!is_main_,
              "you are not allowed to get the main thread's message loop");
 
@@ -224,7 +224,7 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
     LOG(INFO) << __func__ << ": message loop starting for thread "
               << thread_name_;
     base::PlatformThread::SetName(thread_name_);
-    message_loop_ = new base::MessageLoop();
+    message_loop_ = new btbase::AbstractMessageLoop();
     run_loop_ = new base::RunLoop();
     thread_id_ = base::PlatformThread::CurrentId();
     linux_tid_ = static_cast<pid_t>(syscall(SYS_gettid));

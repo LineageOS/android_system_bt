@@ -15,6 +15,7 @@
  */
 
 #pragma once
+#include <base/logging.h>
 
 #include "stack/include/bt_types.h"
 

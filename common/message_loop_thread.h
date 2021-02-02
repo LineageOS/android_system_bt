@@ -24,10 +24,11 @@
 
 #include <base/bind.h>
 #include <base/location.h>
-#include <base/message_loop/message_loop.h>
 #include <base/run_loop.h>
 #include <base/threading/platform_thread.h>
 #include "src/message_loop_thread.rs.h"
+
+#include "abstract_message_loop.h"
 
 namespace bluetooth {
 
@@ -135,7 +136,7 @@ class MessageLoopThread final {
    * @return message loop associated with this thread, nullptr if thread is not
    * running
    */
-  base::MessageLoop* message_loop() const;
+  btbase::AbstractMessageLoop* message_loop() const;
 
   /**
    * Post a task to run on this thread after a specified delay. If the task
@@ -188,7 +189,7 @@ class MessageLoopThread final {
 
   mutable std::recursive_mutex api_mutex_;
   const std::string thread_name_;
-  base::MessageLoop* message_loop_;
+  btbase::AbstractMessageLoop* message_loop_;
   base::RunLoop* run_loop_;
   std::thread* thread_;
   base::PlatformThreadId thread_id_;

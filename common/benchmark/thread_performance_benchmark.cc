@@ -23,6 +23,7 @@
 #include <memory>
 #include <thread>
 
+#include "abstract_message_loop.h"
 #include "common/message_loop_thread.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/thread.h"
@@ -93,7 +94,7 @@ class BM_MessageLoop : public BM_ThreadPerformance {
     return nullptr;
   }
   void RunMessageLoop() {
-    message_loop_ = new base::MessageLoop();
+    message_loop_ = new btbase::AbstractMessageLoop();
     run_loop_ = new base::RunLoop();
     message_loop_->task_runner()->PostTask(
         FROM_HERE, base::BindOnce(&std::promise<void>::set_value,
@@ -106,7 +107,7 @@ class BM_MessageLoop : public BM_ThreadPerformance {
   }
 
  protected:
-  base::MessageLoop* message_loop_ = nullptr;
+  btbase::AbstractMessageLoop* message_loop_ = nullptr;
   base::RunLoop* run_loop_ = nullptr;
 };
 
