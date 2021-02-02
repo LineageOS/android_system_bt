@@ -23,9 +23,10 @@
 #include <mutex>
 #include <sstream>
 
+#include "abstract_message_loop.h"
 #include "btif_av.h"
-#include "btif_dm.h"
 #include "btif_common.h"
+#include "btif_dm.h"
 #include "device.h"
 #include "stack/include/btu.h"
 
@@ -36,7 +37,7 @@ AvrcpService* AvrcpService::instance_ = nullptr;
 AvrcpService::ServiceInterfaceImpl* AvrcpService::service_interface_ = nullptr;
 
 std::mutex jni_mutex_;
-base::MessageLoop* jni_message_loop_ = nullptr;
+btbase::AbstractMessageLoop* jni_message_loop_ = nullptr;
 base::CancelableTaskTracker task_tracker_;
 
 void do_in_avrcp_jni(const base::Closure& task) {

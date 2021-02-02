@@ -22,6 +22,7 @@
 #include <base/memory/ptr_util.h>
 #include <base/observer_list.h>
 
+#include "abstract_observer_list.h"
 #include "service/hal/bluetooth_interface.h"
 
 namespace bluetooth {
@@ -41,9 +42,9 @@ using shared_mutex_impl = std::shared_timed_mutex;
 // use unique_lock. If only accessing |g_interface| use shared lock.
 shared_mutex_impl g_instance_lock;
 
-base::ObserverList<BluetoothAvInterface::A2dpSourceObserver>*
+btbase::AbstractObserverList<BluetoothAvInterface::A2dpSourceObserver>*
 GetA2dpSourceObservers();
-base::ObserverList<BluetoothAvInterface::A2dpSinkObserver>*
+btbase::AbstractObserverList<BluetoothAvInterface::A2dpSinkObserver>*
 GetA2dpSinkObservers();
 
 #define VERIFY_INTERFACE_OR_RETURN(...)                                \
@@ -250,17 +251,17 @@ class BluetoothAvInterfaceImpl : public BluetoothAvInterface {
     return A2dpSinkEnable();
   }
 
-  base::ObserverList<A2dpSourceObserver>* source_observers() {
+  btbase::AbstractObserverList<A2dpSourceObserver>* source_observers() {
     return &a2dp_source_observers_;
   }
 
-  base::ObserverList<A2dpSinkObserver>* sink_observers() {
+  btbase::AbstractObserverList<A2dpSinkObserver>* sink_observers() {
     return &a2dp_sink_observers_;
   }
 
  private:
-  base::ObserverList<A2dpSourceObserver> a2dp_source_observers_;
-  base::ObserverList<A2dpSinkObserver> a2dp_sink_observers_;
+  btbase::AbstractObserverList<A2dpSourceObserver> a2dp_source_observers_;
+  btbase::AbstractObserverList<A2dpSinkObserver> a2dp_sink_observers_;
 
   const btav_source_interface_t* hal_source_iface_ = nullptr;
   const btav_sink_interface_t* hal_sink_iface_ = nullptr;
@@ -273,14 +274,14 @@ class BluetoothAvInterfaceImpl : public BluetoothAvInterface {
 
 namespace {
 
-base::ObserverList<BluetoothAvInterface::A2dpSourceObserver>*
+btbase::AbstractObserverList<BluetoothAvInterface::A2dpSourceObserver>*
 GetA2dpSourceObservers() {
   CHECK(g_interface);
   return static_cast<BluetoothAvInterfaceImpl*>(g_interface)
       ->source_observers();
 }
 
-base::ObserverList<BluetoothAvInterface::A2dpSinkObserver>*
+btbase::AbstractObserverList<BluetoothAvInterface::A2dpSinkObserver>*
 GetA2dpSinkObservers() {
   CHECK(g_interface);
   return static_cast<BluetoothAvInterfaceImpl*>(g_interface)->sink_observers();

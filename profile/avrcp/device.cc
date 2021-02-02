@@ -15,8 +15,7 @@
  */
 #include "device.h"
 
-#include <base/message_loop/message_loop.h>
-
+#include "abstract_message_loop.h"
 #include "connection_handler.h"
 #include "packet/avrcp/avrcp_reject_packet.h"
 #include "packet/avrcp/general_reject_packet.h"
@@ -539,7 +538,7 @@ void Device::PlaybackPosNotificationResponse(uint8_t label, bool interim,
     DEVICE_VLOG(0) << __func__ << ": Queue next play position update";
     play_pos_update_cb_.Reset(base::Bind(&Device::HandlePlayPosUpdate,
                                          weak_ptr_factory_.GetWeakPtr()));
-    base::MessageLoop::current()->task_runner()->PostDelayedTask(
+    btbase::AbstractMessageLoop::current_task_runner()->PostDelayedTask(
         FROM_HERE, play_pos_update_cb_.callback(),
         base::TimeDelta::FromSeconds(play_pos_interval_));
   }
