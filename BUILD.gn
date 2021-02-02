@@ -20,11 +20,17 @@
 # you add a new build file, there must be some path of dependencies from this
 # file to your new one or GN won't know about it.
 
+group("all") {
+  deps = [
+    ":bluetooth",
+  ]
+}
+
 # This pulls in main/BUILD.gn and all of its dependencies.
 group("bluetooth") {
   deps = [
-    "//main:bluetooth",
-    "//service:bluetoothtbd",
+    "//bt/main:bluetooth",
+    "//bt/service:bluetoothtbd",
   ]
 }
 
@@ -32,10 +38,131 @@ group("bluetooth_tests") {
   testonly = true
 
   deps = [
-    "//test/suite:net_test_bluetooth",
-    "//btcore:net_test_btcore",
-    "//hci:net_test_hci",
-    "//osi:net_test_osi",
-    "//device:net_test_device",
+    "//bt/test/suite:net_test_bluetooth",
+    "//bt/btcore:net_test_btcore",
+    "//bt/hci:net_test_hci",
+    "//bt/osi:net_test_osi",
+    "//bt/device:net_test_device",
   ]
 }
+
+config("target_defaults") {
+  include_dirs = [
+    "//bt/linux_include",
+    "//bt/types",
+    "//bt/include",
+  ]
+
+  cflags = [
+    "-DEXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
+    "-DFALLTHROUGH_INTENDED=[[clang::fallthrough]]",
+    "-fPIC",
+    "-Wno-non-c-typedef-for-linkage",
+    "-Wno-unreachable-code-return",
+    "-Wno-defaulted-function-deleted",
+    "-Wno-gnu-variable-sized-type-not-at-end",
+    "-Wno-format-nonliteral",
+    "-Wno-inconsistent-missing-override",
+    "-Wno-unreachable-code",
+    "-Wno-range-loop-construct",
+    "-Wno-reorder-init-list",
+    "-Wno-unused-function",
+    "-Wno-unused-result",
+    "-Wno-unused-variable",
+    "-Wno-unused-const-variable",
+  ]
+
+  cflags_cc = [
+    "-std=c++17",
+  ]
+
+  defines = [
+    "HAS_NO_BDROID_BUILDCFG",
+    "OS_GENERIC",
+  ]
+
+  configs = [
+    ":external_libchrome",
+  ]
+}
+
+# Configurations to use as dependencies for GN build
+config("external_gtest") {
+  configs = [
+    ":pkg_gtest",
+    ":pkg_gmock",
+  ]
+}
+
+config("external_gtest_main") {
+  configs = [ ":pkg_gtest_main" ]
+}
+
+config("external_gmock_main") {
+  configs = [ ":pkg_gmock_main" ]
+}
+
+config("external_libchrome") {
+  configs = [ ":pkg_libchrome" ]
+}
+
+config("external_modp_b64") {
+  configs = [ ":pkg_modp_b64" ]
+}
+
+config("external_tinyxml2") {
+  configs = [ ":pkg_tinyxml2" ]
+}
+
+# Package configurations to extract dependencies from env
+pkg_config("pkg_gtest") {
+  pkg_deps = [ "gtest" ]
+}
+
+pkg_config("pkg_gtest_main") {
+  pkg_deps = [ "gtest_main" ]
+}
+
+pkg_config("pkg_gmock") {
+  pkg_deps = [ "gmock" ]
+}
+
+pkg_config("pkg_gmock_main") {
+  pkg_deps = [ "gmock_main" ]
+}
+
+pkg_config("pkg_libchrome") {
+  pkg_deps = [ "libchrome" ]
+}
+
+pkg_config("pkg_modp_b64") {
+  pkg_deps = [ "libmodp_b64" ]
+}
+
+pkg_config("pkg_tinyxml2") {
+  pkg_deps = [ "tinyxml2" ]
+}
+
+# Uncomment if building nonstandard codecs
+# config("external_aac") {
+#   configs = [ ":pkg_aac" ]
+# }
+#
+# pkg_config("pkg_aac") {
+#   pkg_deps = [ "fdk-aac" ]
+# }
+#
+# config("external_libldac") {
+#   configs = [
+#     ":pkg_libldacBT_enc",
+#     ":pkg_libldacBT_abr",
+#   ]
+# }
+#
+# pkg_config("pkg_libldacBT_enc") {
+#   pkg_deps = [ "ldacBT-enc", ]
+# }
+#
+# pkg_config("pkg_libldacBT_abr") {
+#   pkg_deps = [ "ldacBT-abr", ]
+# }

@@ -234,7 +234,7 @@ typedef struct {
 
 #define BT_HDR_SIZE (sizeof(BT_HDR))
 
-enum : uint16_t {
+enum {
   BT_PSM_SDP = 0x0001,
   BT_PSM_RFCOMM = 0x0003,
   BT_PSM_TCS = 0x0005,
@@ -667,7 +667,7 @@ typedef uint8_t COF[COF_LEN]; /* ciphering offset number */
 
 /* Device Types
  */
-enum : uint8_t {
+enum {
   BT_DEVICE_TYPE_BREDR = (1 << 0),
   BT_DEVICE_TYPE_BLE = (1 << 1),
   BT_DEVICE_TYPE_DUMO = BT_DEVICE_TYPE_BREDR | BT_DEVICE_TYPE_BLE,

@@ -22,19 +22,22 @@ executable("net_test_bluetooth") {
   ]
 
   include_dirs = [
-    "//",
-    "//test/suite",
+    "//bt",
+    "//bt/test/suite",
   ]
 
   deps = [
-    "//btcore",
-    "//main:bluetooth",
-    "//service:service",
-    "//service:service_unittests",
-    "//types:types_unittests",
-    "//third_party/libchrome:base",
-    "//osi",
-    "//third_party/googletest:gtest_main",
+    "//bt/btcore",
+    "//bt/main:bluetooth",
+    "//bt/service:service",
+    "//bt/service:service_unittests",
+    "//bt/types:types_unittests",
+    "//bt/osi",
+  ]
+
+  configs += [
+    "//bt:external_libchrome",
+    "//bt:external_gtest_main",
   ]
 
   libs = [
