@@ -21,6 +21,7 @@
 #include <base/macros.h>
 #include <base/observer_list.h>
 
+#include "abstract_observer_list.h"
 #include "service/hal/bluetooth_gatt_interface.h"
 
 namespace bluetooth {
@@ -140,9 +141,9 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
   const btgatt_server_interface_t* GetServerHALInterface() const override;
 
  private:
-  base::ObserverList<ScannerObserver> scanner_observers_;
-  base::ObserverList<ClientObserver> client_observers_;
-  base::ObserverList<ServerObserver> server_observers_;
+  btbase::AbstractObserverList<ScannerObserver> scanner_observers_;
+  btbase::AbstractObserverList<ClientObserver> client_observers_;
+  btbase::AbstractObserverList<ServerObserver> server_observers_;
   std::shared_ptr<BleScannerInterface> scanner_handler_;
   std::shared_ptr<TestClientHandler> client_handler_;
   std::shared_ptr<TestServerHandler> server_handler_;

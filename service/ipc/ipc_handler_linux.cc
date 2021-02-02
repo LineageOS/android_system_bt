@@ -21,6 +21,7 @@
 
 #include <base/bind.h>
 
+#include "abstract_message_loop.h"
 #include "osi/include/socket_utils/sockets.h"
 #include "service/daemon.h"
 #include "service/ipc/linux_ipc_host.h"
@@ -56,8 +57,9 @@ bool IPCHandlerLinux::Run() {
     return false;
   }
 
-  CHECK(base::MessageLoop::current());  // An origin event loop is required.
-  origin_task_runner_ = base::MessageLoop::current()->task_runner();
+  // An origin event loop is required.
+  CHECK(btbase::AbstractMessageLoop::current_task_runner());
+  origin_task_runner_ = btbase::AbstractMessageLoop::current_task_runner();
 
   if (!android_suffix.empty()) {
     int server_fd = osi_android_get_control_socket(android_suffix.c_str());
@@ -102,7 +104,8 @@ bool IPCHandlerLinux::Run() {
   running_ = true;  // Set this here before launching the thread.
 
   // Start an IO thread and post the listening task.
-  base::Thread::Options options(base::MessageLoop::TYPE_IO, 0);
+  base::Thread::Options options;
+  btbase::set_message_loop_type_IO(options);
   if (!thread_.StartWithOptions(options)) {
     LOG(ERROR) << "Failed to start IPCHandlerLinux thread";
     running_ = false;

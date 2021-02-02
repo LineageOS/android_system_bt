@@ -27,6 +27,7 @@
 #include <base/strings/stringprintf.h>
 #include <gtest/gtest.h>
 
+#include "abstract_message_loop"
 #include "array_utils.h"
 #include "service/adapter.h"
 #include "service/hal/fake_bluetooth_gatt_interface.h"
@@ -102,7 +103,7 @@ class IPCLinuxTest : public ::testing::Test {
 
  protected:
   base::AtExitManager exit_manager_;
-  base::MessageLoop message_loop_;
+  DEFINE_TEST_TASK_ENV(message_loop_);
   bluetooth::Settings settings_;
 
   std::unique_ptr<bluetooth::Adapter> adapter_;
@@ -135,13 +136,13 @@ class TestDelegate : public ipc::IPCManager::Delegate,
   void OnIPCHandlerStarted(ipc::IPCManager::Type type) override {
     ASSERT_EQ(ipc::IPCManager::TYPE_LINUX, type);
     started_count_++;
-    base::MessageLoop::current()->QuitWhenIdle();
+    btbase::AbstractTestMessageLoop::currentIO()->QuitWhenIdle();
   }
 
   void OnIPCHandlerStopped(ipc::IPCManager::Type type) override {
     ASSERT_EQ(ipc::IPCManager::TYPE_LINUX, type);
     stopped_count_++;
-    base::MessageLoop::current()->QuitWhenIdle();
+    btbase::AbstractTestMessageLoop::currentIO()->QuitWhenIdle();
   }
 
   int started_count() const { return started_count_; }

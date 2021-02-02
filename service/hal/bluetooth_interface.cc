@@ -22,6 +22,7 @@
 #include <base/logging.h>
 #include <base/observer_list.h>
 
+#include "abstract_observer_list.h"
 #include "service/logging_helpers.h"
 
 #include "btcore/include/hal_util.h"
@@ -52,7 +53,7 @@ shared_mutex_impl g_instance_lock;
 
 // Helper for obtaining the observer list. This is forward declared here and
 // defined below since it depends on BluetoothInterfaceImpl.
-base::ObserverList<BluetoothInterface::Observer>* GetObservers();
+btbase::AbstractObserverList<BluetoothInterface::Observer>* GetObservers();
 
 #define FOR_EACH_BLUETOOTH_OBSERVER(func)  \
   for (auto& observer : *GetObservers()) { \
@@ -269,14 +270,14 @@ class BluetoothInterfaceImpl : public BluetoothInterface {
     return true;
   }
 
-  base::ObserverList<Observer>* observers() { return &observers_; }
+  btbase::AbstractObserverList<Observer>* observers() { return &observers_; }
 
  private:
   // List of observers that are interested in notifications from us. We're not
   // using a base::ObserverListThreadSafe, which it posts observer events
   // automatically on the origin threads, as we want to avoid that overhead and
   // simply forward the events to the upper layer.
-  base::ObserverList<Observer> observers_;
+  btbase::AbstractObserverList<Observer> observers_;
 
   // The HAL handle obtained from the shared library. We hold a weak reference
   // to this since the actual data resides in the shared Bluetooth library.
@@ -289,7 +290,7 @@ namespace {
 
 // Helper for obtaining the observer list from the global instance. This
 // function is NOT thread safe.
-base::ObserverList<BluetoothInterface::Observer>* GetObservers() {
+btbase::AbstractObserverList<BluetoothInterface::Observer>* GetObservers() {
   CHECK(g_bluetooth_interface);
   return static_cast<BluetoothInterfaceImpl*>(g_bluetooth_interface)
       ->observers();

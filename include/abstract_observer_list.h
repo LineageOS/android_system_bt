@@ -1,5 +1,5 @@
 //
-//  Copyright 2015 Google, Inc.
+//  Copyright 2021 Google, Inc.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,27 +16,21 @@
 
 #pragma once
 
-#include <gmock/gmock.h>
+#include <base/observer_list.h>
 
-#include "abstract_message_loop.h"
-#include "service/daemon.h"
+namespace btbase {
+#if defined(BASE_VER) && BASE_VER > 780000
 
-namespace bluetooth {
-namespace testing {
+// Checked Observers aren't supported in the older libchrome so use unchecked
+// ones instead to preserve behavior.
+template <class ObserverType>
+class AbstractObserverList
+    : public base::ObserverList<ObserverType>::Unchecked {};
 
-class MockDaemon : public Daemon {
- public:
-  MockDaemon() = default;
-  ~MockDaemon() override = default;
+#else
 
-  MOCK_CONST_METHOD0(GetSettings, Settings*());
-  MOCK_CONST_METHOD0(GetMessageLoop, btbase::AbstractMessageLoop*());
-  MOCK_METHOD0(StartMainLoop, void());
-  MOCK_METHOD0(Init, bool());
+template <class ObserverType>
+class AbstractObserverList : public base::ObserverList<ObserverType> {};
 
- private:
-  DISALLOW_COPY_AND_ASSIGN(MockDaemon);
-};
-
-}  // namespace testing
-}  // namespace bluetooth
+#endif
+}  // namespace btbase

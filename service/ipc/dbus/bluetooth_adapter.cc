@@ -46,6 +46,20 @@ const char kDBusIntrospectMethod[] = "Introspect";
 namespace ipc {
 namespace dbus {
 
+#if defined(BASE_VER) && BASE_VER > 780000
+// New libchrome treats ResponseSender as base::OnceCallback so we need to move
+// ownership before calling ::Run()
+inline void RunResponse(std::unique_ptr<Response> response,
+                        ExportedObject::ResponseSender& response_sender) {
+  std::move(response_sender).Run(std::move(response));
+}
+#else
+inline void RunResponse(std::unique_ptr<Response> response,
+                        ExportedObject::ResponseSender& response_sender) {
+  response_sender.Run(std::move(response));
+}
+#endif
+
 BluetoothAdapter::BluetoothAdapter(scoped_refptr<Bus> bus,
                                    bluetooth::Adapter* adapter)
     : adapter_(adapter) {
@@ -73,14 +87,14 @@ void BluetoothAdapter::Enable(MethodCall* method_call,
                               ExportedObject::ResponseSender response_sender) {
   VLOG(1) << __func__;
   adapter_->Enable();
-  response_sender.Run(Response::FromMethodCall(method_call));
+  RunResponse(Response::FromMethodCall(method_call), response_sender);
 }
 
 void BluetoothAdapter::Disable(MethodCall* method_call,
                                ExportedObject::ResponseSender response_sender) {
   VLOG(1) << __func__;
   adapter_->Disable();
-  response_sender.Run(Response::FromMethodCall(method_call));
+  RunResponse(Response::FromMethodCall(method_call), response_sender);
 }
 
 void BluetoothAdapter::Introspect(
@@ -90,14 +104,16 @@ void BluetoothAdapter::Introspect(
   std::string output;
   if (!base::ReadFileToString(base::FilePath(kBindingsPath), &output)) {
     PLOG(ERROR) << "Can't read XML bindings from disk:";
-    response_sender.Run(ErrorResponse::FromMethodCall(
-        method_call, "Can't read XML bindings from disk.", ""));
+    RunResponse(ErrorResponse::FromMethodCall(
+                    method_call, "Can't read XML bindings from disk.", ""),
+                response_sender);
   }
+
   std::unique_ptr<Response> response(Response::FromMethodCall(method_call));
   MessageWriter writer(response.get());
   writer.AppendString(output);
 
-  response_sender.Run(std::move(response));
+  RunResponse(std::move(response), response_sender);
 }
 
 BluetoothAdapter::~BluetoothAdapter() {}
