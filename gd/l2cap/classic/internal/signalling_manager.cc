@@ -313,12 +313,14 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
         if (config->mtu_ < initial_config_option.minimal_remote_mtu) {
           LOG_WARN("Configuration request with unacceptable MTU");
           config->mtu_ = initial_config_option.minimal_remote_mtu;
-          rsp_options.emplace_back(std::make_unique<MtuConfigurationOption>(*config));
           result = ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS;
         }
+        rsp_options.emplace_back(std::make_unique<MtuConfigurationOption>(*config));
         break;
       }
       case ConfigurationOptionType::FLUSH_TIMEOUT: {
+        auto* config = FlushTimeoutConfigurationOption::Specialize(option.get());
+        rsp_options.emplace_back(std::make_unique<FlushTimeoutConfigurationOption>(*config));
         break;
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
