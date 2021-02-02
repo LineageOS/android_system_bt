@@ -150,6 +150,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   connection_management_handler->Post(common::BindOnce(
       &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
       common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
       0,
       0,
       0));
@@ -345,6 +346,7 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
   connection_management_handler->Post(common::BindOnce(
       &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
       common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
       0,
       0,
       0));
@@ -440,6 +442,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
   connection_management_handler->Post(common::BindOnce(
       &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
       common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
       0,
       0,
       0));
@@ -537,6 +540,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
   connection_management_handler->Post(common::BindOnce(
       &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
       common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
       0,
       0,
       0));
