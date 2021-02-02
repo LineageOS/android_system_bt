@@ -87,4 +87,8 @@ class ParentDef : public TypeDef {
   bool is_little_endian_;
 
   bool HasChildEnums() const;
+
+  void GenRustWriteToFields(std::ostream& s) const;
+
+  void GenSizeRetVal(std::ostream& s) const;
 };

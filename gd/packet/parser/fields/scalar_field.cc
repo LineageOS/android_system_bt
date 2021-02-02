@@ -16,6 +16,7 @@
 
 #include "fields/scalar_field.h"
 
+#include "fields/size_field.h"
 #include "util.h"
 
 const std::string ScalarField::kFieldType = "ScalarField";
@@ -194,8 +195,10 @@ void ScalarField::GenRustWriter(std::ostream& s, Size start_offset, Size end_off
   Size size = GetSize();
   int num_leading_bits = GetRustBitOffset(s, start_offset, end_offset, GetSize());
 
-  // needs casting to primitive
-  if (GetRustParseDataType() != GetRustDataType()) {
+  if (GetFieldType() == SizeField::kFieldType) {
+    // Do nothing, the field access has already happened in packet_def
+  } else if (GetRustParseDataType() != GetRustDataType()) {
+    // needs casting to primitive
     s << "let " << GetName() << " = self." << GetName() << ".to_" << GetRustParseDataType() << "().unwrap();";
   } else {
     s << "let " << GetName() << " = self." << GetName() << ";";
