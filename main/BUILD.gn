@@ -24,7 +24,7 @@ shared_library("bluetooth") {
 
   # HAL layer
   sources = [
-    "//btif/src/bluetooth.cc",
+    "//bt/btif/src/bluetooth.cc",
   ]
 
   # platform specific
@@ -39,58 +39,61 @@ shared_library("bluetooth") {
   public_configs = [ ":libbluetooth_config" ]
 
   include_dirs = [
-    "//",
-    "//bta/include",
-    "//bta/sys",
-    "//bta/dm",
-    "//btcore/include",
-    "//internal_include",
-    "//stack/include",
-    "//stack/l2cap",
-    "//stack/a2dp",
-    "//stack/btm",
-    "//stack/avdt",
-    "//hci",
-    "//hci/include",
-    "//udrv/include",
-    "//btif/include",
-    "//btif/co",
-    "//hci/includ",
-    "//vnd/include",
-    "//brcm/include",
-    "//embdrv/sbc/encoder/include",
-    "//embdrv/sbc/decoder/include",
-    "//utils/include",
-    "//test/suite",
+    "//bt/",
+    "//bt/bta/include",
+    "//bt/bta/sys",
+    "//bt/bta/dm",
+    "//bt/btcore/include",
+    "//bt/internal_include",
+    "//bt/stack/include",
+    "//bt/stack/l2cap",
+    "//bt/stack/a2dp",
+    "//bt/stack/btm",
+    "//bt/stack/avdt",
+    "//bt/hci",
+    "//bt/hci/include",
+    "//bt/udrv/include",
+    "//bt/btif/include",
+    "//bt/btif/co",
+    "//bt/hci/includ",
+    "//bt/vnd/include",
+    "//bt/brcm/include",
+    "//bt/embdrv/sbc/encoder/include",
+    "//bt/embdrv/sbc/decoder/include",
+    "//bt/utils/include",
+    "//bt/test/suite",
   ]
 
   deps = [
-    "//bta",
-    "//btcore",
-    "//btif",
-    "//device",
-    "//embdrv/g722",
-    "//embdrv/sbc",
-    "//hci",
-    "//osi",
-    "//packet",
-    "//stack",
-    "//third_party/libchrome:base",
-    "//third_party/tinyxml2",
-    "//udrv",
-    "//utils",
+    "//bt/bta",
+    "//bt/btcore",
+    "//bt/btif",
+    "//bt/device",
+    "//bt/embdrv/g722",
+    "//bt/embdrv/sbc",
+    "//bt/hci",
+    "//bt/osi",
+    "//bt/packet",
+    "//bt/stack",
+    "//bt/udrv",
+    "//bt/utils",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
+    "//bt:external_tinyxml2",
   ]
 
   cflags_c = [
     "-Lobj/osi",
     "-losi",
   ]
+
   libs = [
-    "-ldl",
-    "-lpthread",
-    "-lresolv",
-    "-lrt",
-    "-lz",
-    "-latomic",
+    "dl",
+    "pthread",
+    "resolv",
+    "rt",
+    "z",
   ]
 }

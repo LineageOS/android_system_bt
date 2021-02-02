@@ -1,5 +1,5 @@
 #
-#  Copyright 2015 Google, Inc.
+#  Copyright 2020 Google
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,9 +14,16 @@
 #  limitations under the License.
 #
 
-# This file is used by the GN meta build system to find the root of the source
-# tree and to set startup options. For documentation on the values set in this
-# file, run "gn help dotfile" at the command line.
+import("//common-mk/cxxbridge.gni")
 
-buildconfig = "//build/config/BUILDCONFIG.gn"
-secondary_source = "//build/secondary/"
+cxxbridge_header("shim_bridge_header") {
+  sources = [ "src/stack.rs" ]
+}
+
+cxxbridge_header("init_flags_bridge_header") {
+  sources = [ "src/init_flags.rs" ]
+}
+
+cxxbridge_header("hci_bridge_header") {
+  sources = [ "src/hci.rs" ]
+}

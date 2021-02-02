@@ -92,28 +92,32 @@ static_library("bta") {
     "hd",
     "include",
     "sys",
-    "//",
-    "//linux_include",
-    "//bta",
-    "//internal_include",
-    "//btcore/include",
-    "//hci/include",
-    "//internal_include",
-    "//stack/include",
-    "//stack/btm",
-    "//udrv/include",
-    "//utils/include",
-    "//vnd/include",
-    "//btif/include",
-    "//btif/avrcp",
-    "//include/hardware/avrcp",
-    "//profile/avrcp",
-    "//packet/avrcp",
-    "//packet/base",
+    "//bt/",
+    "//bt/linux_include",
+    "//bt/bta",
+    "//bt/internal_include",
+    "//bt/btcore/include",
+    "//bt/hci/include",
+    "//bt/internal_include",
+    "//bt/stack/include",
+    "//bt/stack/btm",
+    "//bt/udrv/include",
+    "//bt/utils/include",
+    "//bt/vnd/include",
+    "//bt/btif/include",
+    "//bt/btif/avrcp",
+    "//bt/include/hardware/avrcp",
+    "//bt/profile/avrcp",
+    "//bt/packet/avrcp",
+    "//bt/packet/base",
+  ]
+
+  configs += [
+    "//bt:target_defaults"
   ]
 
   deps = [
-    "//third_party/libchrome:base"
+    "//bt/gd/rust/shim:init_flags_bridge_header",
   ]
 }
 
@@ -128,18 +132,21 @@ executable("net_test_bta") {
 
   include_dirs = [
     "include",
-    "//",
-    "//bta",
-    "//btcore/include",
-    "//hci/include",
-    "//internal_include",
-    "//stack/btm",
+    "//bt/",
+    "//bt/bta",
+    "//bt/btcore/include",
+    "//bt/hci/include",
+    "//bt/internal_include",
+    "//bt/stack/btm",
   ]
 
   deps = [
-    "//bta",
-    "//types",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+    "//bt/bta",
+    "//bt/types",
+  ]
+
+  configs += [
+    "//bt:external_gmock_main",
+    "//bt:target_defaults",
   ]
 }

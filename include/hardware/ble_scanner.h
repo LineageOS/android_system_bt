@@ -19,6 +19,7 @@
 
 #include <bluetooth/uuid.h>
 #include <stdint.h>
+#include <memory>
 #include <vector>
 #include "bt_common_types.h"
 #include "bt_gatt_client.h"

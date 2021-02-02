@@ -40,13 +40,14 @@ static_library("packet") {
  ]
 
   include_dirs = [
-    "//",
-    "//internal_include",
-    "//stack/include",
-    "//profile/avrcp",
+    "//bt/",
+    "//bt/include",
+    "//bt/internal_include",
+    "//bt/stack/include",
+    "//bt/profile/avrcp",
   ]
 
-  deps = [
-    "//third_party/libchrome:base"
+  configs += [
+    "//bt:target_defaults"
   ]
 }

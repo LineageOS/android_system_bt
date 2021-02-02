@@ -27,6 +27,7 @@
 #include <base/strings/stringprintf.h>
 #include <gtest/gtest.h>
 
+#include "array_utils.h"
 #include "service/adapter.h"
 #include "service/hal/fake_bluetooth_gatt_interface.h"
 #include "service/hal/fake_bluetooth_interface.h"
@@ -82,7 +83,7 @@ class IPCLinuxTest : public ::testing::Test {
     const base::CommandLine::CharType* argv[] = {
         "program", ipc_socket_arg.c_str(),
     };
-    base::CommandLine::Init(arraysize(argv), argv);
+    base::CommandLine::Init(ARRAY_SIZE(argv), argv);
   }
 
   void ConnectToTestSocket() {
@@ -119,7 +120,7 @@ class IPCLinuxTestDisabled : public IPCLinuxTest {
   void SetUpCommandLine() override {
     // Set up with no --ipc-socket-path
     const base::CommandLine::CharType* argv[] = {"program"};
-    base::CommandLine::Init(arraysize(argv), argv);
+    base::CommandLine::Init(ARRAY_SIZE(argv), argv);
   }
 
  private:
