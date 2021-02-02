@@ -995,7 +995,8 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
       s << name_ << "DataChild::" << child->name_ << "(value) => value.write_to(buffer),";
     }
     if (fields_.HasPayload()) {
-      s << name_ << "DataChild::Payload(p) => buffer.put(&p[..]),";
+      auto offset = GetOffsetForField("payload");
+      s << name_ << "DataChild::Payload(p) => buffer[" << offset.bytes() << "..].copy_from_slice(&p[..]),";
     }
     s << name_ << "DataChild::None => {}";
     s << "}";
