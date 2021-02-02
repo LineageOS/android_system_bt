@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "abstract_message_loop.h"
 #include "bt_common.h"
 #include "bt_utils.h"
 #include "bta_api.h"
@@ -183,7 +184,9 @@ bool is_on_jni_thread() {
   return jni_thread.GetThreadId() == PlatformThread::CurrentId();
 }
 
-base::MessageLoop* get_jni_message_loop() { return jni_thread.message_loop(); }
+btbase::AbstractMessageLoop* get_jni_message_loop() {
+  return jni_thread.message_loop();
+}
 
 /*******************************************************************************
  *

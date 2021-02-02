@@ -22,6 +22,7 @@
 #include <base/logging.h>
 #include <base/observer_list.h>
 
+#include "abstract_observer_list.h"
 #include "service/hal/bluetooth_interface.h"
 #include "service/logging_helpers.h"
 
@@ -51,10 +52,10 @@ shared_mutex_impl g_instance_lock;
 
 // Helper for obtaining the observer lists. This is forward declared here
 // and defined below since it depends on BluetoothInterfaceImpl.
-base::ObserverList<BluetoothAvrcpInterface::TargetObserver>*
+btbase::AbstractObserverList<BluetoothAvrcpInterface::TargetObserver>*
 GetTargetObservers();
 
-base::ObserverList<BluetoothAvrcpInterface::ControlObserver>*
+btbase::AbstractObserverList<BluetoothAvrcpInterface::ControlObserver>*
 GetControlObservers();
 
 #define VERIFY_INTERFACE_OR_RETURN()                                   \
@@ -589,11 +590,11 @@ class BluetoothAvrcpInterfaceImpl : public BluetoothAvrcpInterface {
     return AvrcpControlEnable();
   }
 
-  base::ObserverList<TargetObserver>* target_observers() {
+  btbase::AbstractObserverList<TargetObserver>* target_observers() {
     return &target_observers_;
   }
 
-  base::ObserverList<ControlObserver>* control_observers() {
+  btbase::AbstractObserverList<ControlObserver>* control_observers() {
     return &control_observers_;
   }
 
@@ -602,8 +603,8 @@ class BluetoothAvrcpInterfaceImpl : public BluetoothAvrcpInterface {
   // We're not using a base::ObserverListThreadSafe, which it posts observer
   // events automatically on the origin threads, as we want to avoid that
   // overhead and simply forward the events to the upper layer.
-  base::ObserverList<TargetObserver> target_observers_;
-  base::ObserverList<ControlObserver> control_observers_;
+  btbase::AbstractObserverList<TargetObserver> target_observers_;
+  btbase::AbstractObserverList<ControlObserver> control_observers_;
 
   // The HAL handle obtained from the shared library. We hold a weak reference
   // to this since the actual data resides in the shared Bluetooth library.
@@ -618,14 +619,14 @@ class BluetoothAvrcpInterfaceImpl : public BluetoothAvrcpInterface {
 
 namespace {
 
-base::ObserverList<BluetoothAvrcpInterface::TargetObserver>*
+btbase::AbstractObserverList<BluetoothAvrcpInterface::TargetObserver>*
 GetTargetObservers() {
   CHECK(g_interface);
   return static_cast<BluetoothAvrcpInterfaceImpl*>(g_interface)
       ->target_observers();
 }
 
-base::ObserverList<BluetoothAvrcpInterface::ControlObserver>*
+btbase::AbstractObserverList<BluetoothAvrcpInterface::ControlObserver>*
 GetControlObservers() {
   CHECK(g_interface);
   return static_cast<BluetoothAvrcpInterfaceImpl*>(g_interface)
