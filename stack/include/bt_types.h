@@ -39,19 +39,8 @@
 #define BT_SUB_EVT_MASK 0x00FF
 /* To Bluetooth Upper Layers        */
 /************************************/
-/* L2CAP event */
-#define BT_EVT_TO_BTU_L2C_EVT 0x0900
 /* HCI Event                        */
 #define BT_EVT_TO_BTU_HCI_EVT 0x1000
-/* event from BR/EDR controller */
-#define BT_EVT_TO_BTU_HCI_BR_EDR_EVT (0x0000 | BT_EVT_TO_BTU_HCI_EVT)
-/* event from local AMP 1 controller */
-#define BT_EVT_TO_BTU_HCI_AMP1_EVT (0x0001 | BT_EVT_TO_BTU_HCI_EVT)
-/* event from local AMP 2 controller */
-#define BT_EVT_TO_BTU_HCI_AMP2_EVT (0x0002 | BT_EVT_TO_BTU_HCI_EVT)
-/* event from local AMP 3 controller */
-#define BT_EVT_TO_BTU_HCI_AMP3_EVT (0x0003 | BT_EVT_TO_BTU_HCI_EVT)
-
 /* ACL Data from HCI                */
 #define BT_EVT_TO_BTU_HCI_ACL 0x1100
 /* SCO Data from HCI                */
@@ -59,8 +48,6 @@
 /* HCI Transport Error              */
 #define BT_EVT_TO_BTU_HCIT_ERR 0x1300
 
-/* Serial Port Event                */
-#define BT_EVT_TO_BTU_SP_EVT 0x1400
 /* Serial Port Data                 */
 #define BT_EVT_TO_BTU_SP_DATA 0x1500
 
@@ -73,14 +60,6 @@
 /* L2CAP segment(s) transmitted     */
 #define BT_EVT_TO_BTU_L2C_SEG_XMIT 0x1900
 
-/* BlueStackTester event: incoming message from target */
-#define BT_EVT_PROXY_INCOMING_MSG 0x1A00
-
-/* Insight BTSIM event */
-#define BT_EVT_BTSIM 0x1B00
-/* Insight Script Engine event */
-#define BT_EVT_BTISE 0x1C00
-
 /* To LM                            */
 /************************************/
 /* HCI Command                      */
@@ -89,114 +68,10 @@
 #define BT_EVT_TO_LM_HCI_ACL 0x2100
 /* HCI SCO Data                     */
 #define BT_EVT_TO_LM_HCI_SCO 0x2200
-/* HCI Transport Error              */
-#define BT_EVT_TO_LM_HCIT_ERR 0x2300
-/* LC event                         */
-#define BT_EVT_TO_LM_LC_EVT 0x2400
-/* LC Received LMP command frame    */
-#define BT_EVT_TO_LM_LC_LMP 0x2500
-/* LC Received ACL data             */
-#define BT_EVT_TO_LM_LC_ACL 0x2600
-/* LC Received SCO data  (not used) */
-#define BT_EVT_TO_LM_LC_SCO 0x2700
-/* LMP data transmit complete       */
-#define BT_EVT_TO_LM_LC_ACL_TX 0x2800
-/* LMP Command transmit complete    */
-#define BT_EVT_TO_LM_LC_LMPC_TX 0x2900
-/* Data to be locally loopbacked    */
-#define BT_EVT_TO_LM_LOCAL_ACL_LB 0x2a00
-/* HCI ACL Data ack      (not used) */
-#define BT_EVT_TO_LM_HCI_ACL_ACK 0x2b00
-/* LM Diagnostics commands          */
-#define BT_EVT_TO_LM_DIAG 0x2c00
 /* HCI ISO Data                     */
 #define BT_EVT_TO_LM_HCI_ISO 0x2d00
 
-#define BT_EVT_TO_BTM_CMDS 0x2f00
-#define BT_EVT_TO_BTM_PM_MDCHG_EVT (0x0001 | BT_EVT_TO_BTM_CMDS)
-
-#define BT_EVT_TO_TCS_CMDS 0x3000
-
-#define BT_EVT_TO_CTP_CMDS 0x3300
-
-/* ftp events */
-#define BT_EVT_TO_FTP_SRVR_CMDS 0x3600
-#define BT_EVT_TO_FTP_CLNT_CMDS 0x3700
-
-/* SIM Access Profile events */
-#define BT_EVT_TO_BTU_SAP 0x3800
-
-/* opp events */
-#define BT_EVT_TO_OPP_SRVR_CMDS 0x3900
-#define BT_EVT_TO_OPP_CLNT_CMDS 0x3a00
-
-/* for NFC                          */
-/************************************/
-/* NCI Command, Notification or Data*/
-#define BT_EVT_TO_NFC_NCI 0x4000
-/* Initialization message */
-#define BT_EVT_TO_NFC_INIT 0x4100
-/* Low power */
-#define BT_EVT_TO_NCI_LP 0x4200
-/* Error notification to NFC Task */
-#define BT_EVT_TO_NFC_ERR 0x4300
-
-/* events to NFCC simulation (NCI packets) */
-#define BT_EVT_TO_NFCCSIM_NCI 0x4a00
-
-/* HCISU Events */
-
 #define BT_EVT_HCISU 0x5000
-
-#define BT_EVT_TO_HCISU_RECONFIG_EVT (0x0001 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_UPDATE_BAUDRATE_EVT (0x0002 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_LP_ENABLE_EVT (0x0003 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_LP_DISABLE_EVT (0x0004 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_LP_APP_SLEEPING_EVT (0x0005 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_LP_ALLOW_BT_SLEEP_EVT (0x0006 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_LP_WAKEUP_HOST_EVT (0x0007 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_LP_RCV_H4IBSS_EVT (0x0008 | BT_EVT_HCISU)
-#define BT_EVT_TO_HCISU_H5_RESET_EVT (0x0009 | BT_EVT_HCISU)
-#define BT_EVT_HCISU_START_QUICK_TIMER (0x000a | BT_EVT_HCISU)
-
-#define BT_EVT_DATA_TO_AMP_1 0x5100
-#define BT_EVT_DATA_TO_AMP_15 0x5f00
-
-/* HSP Events */
-
-#define BT_EVT_BTU_HSP2 0x6000
-
-#define BT_EVT_TO_BTU_HSP2_EVT (0x0001 | BT_EVT_BTU_HSP2)
-
-/* BPP Events */
-#define BT_EVT_TO_BPP_PR_CMDS 0x6100  /* Printer Events */
-#define BT_EVT_TO_BPP_SND_CMDS 0x6200 /* BPP Sender Events */
-
-/* BIP Events */
-#define BT_EVT_TO_BIP_CMDS 0x6300
-
-/* HCRP Events */
-
-#define BT_EVT_BTU_HCRP 0x7000
-
-#define BT_EVT_TO_BTU_HCRP_EVT (0x0001 | BT_EVT_BTU_HCRP)
-#define BT_EVT_TO_BTU_HCRPM_EVT (0x0002 | BT_EVT_BTU_HCRP)
-
-#define BT_EVT_BTU_HFP 0x8000
-#define BT_EVT_TO_BTU_HFP_EVT (0x0001 | BT_EVT_BTU_HFP)
-
-#define BT_EVT_BTU_IPC_EVT 0x9000
-#define BT_EVT_BTU_IPC_LOGMSG_EVT (0x0000 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_ACL_EVT (0x0001 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_BTU_EVT (0x0002 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_L2C_EVT (0x0003 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_L2C_MSG_EVT (0x0004 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_BTM_EVT (0x0005 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_AVDT_EVT (0x0006 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_SLIP_EVT (0x0007 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_MGMT_EVT (0x0008 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_BTTRC_EVT (0x0009 | BT_EVT_BTU_IPC_EVT)
-#define BT_EVT_BTU_IPC_BURST_EVT (0x000A | BT_EVT_BTU_IPC_EVT)
 
 /* BTIF Events */
 #define BT_EVT_BTIF 0xA000
@@ -241,19 +116,6 @@ enum {
   BRCM_RESERVED_PSM_START = 0x5AE1,
   BRCM_RESERVED_PSM_END = 0x5AFF,
 };
-
-/* These macros extract the HCI opcodes from a buffer
- */
-#define HCI_GET_CMD_HDR_OPCODE(p)                    \
-  (uint16_t)((*((uint8_t*)((p) + 1) + (p)->offset) + \
-              (*((uint8_t*)((p) + 1) + (p)->offset + 1) << 8)))
-#define HCI_GET_CMD_HDR_PARAM_LEN(p) \
-  (uint8_t)(*((uint8_t*)((p) + 1) + (p)->offset + 2))
-
-#define HCI_GET_EVT_HDR_OPCODE(p) \
-  (uint8_t)(*((uint8_t*)((p) + 1) + (p)->offset))
-#define HCI_GET_EVT_HDR_PARAM_LEN(p) \
-  (uint8_t)(*((uint8_t*)((p) + 1) + (p)->offset + 1))
 
 /*******************************************************************************
  * Macros to get and put bytes to and from a stream (Little Endian format).
