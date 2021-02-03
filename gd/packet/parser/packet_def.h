@@ -73,8 +73,6 @@ class PacketDef : public ParentDef {
 
   void GenRustStructFieldNames(std::ostream& s) const;
 
-  void GenRustStructSizeField(std::ostream& s) const;
-
   void GenRustStructImpls(std::ostream& s) const;
 
   void GenRustAccessStructImpls(std::ostream& s) const;

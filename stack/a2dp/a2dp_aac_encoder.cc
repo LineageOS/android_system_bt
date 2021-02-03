@@ -23,7 +23,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#ifdef OS_ANDROID
 #include <aacenc_lib.h>
+#else
+#include <fdk-aac/aacenc_lib.h>
+#endif
 #include <base/logging.h>
 
 #include "a2dp_aac.h"

@@ -19,6 +19,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <string.h>
 #include <cstdint>
 #include <string>
 

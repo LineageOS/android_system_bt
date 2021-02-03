@@ -17,6 +17,7 @@
 #include <base/macros.h>
 #include <base/observer_list.h>
 
+#include "abstract_observer_list.h"
 #include "service/hal/bluetooth_interface.h"
 
 namespace bluetooth {
@@ -65,7 +66,7 @@ class FakeBluetoothInterface : public BluetoothInterface {
   bt_callbacks_t* GetHALCallbacks() const override;
 
  private:
-  base::ObserverList<Observer> observers_;
+  btbase::AbstractObserverList<Observer> observers_;
 
   DISALLOW_COPY_AND_ASSIGN(FakeBluetoothInterface);
 };

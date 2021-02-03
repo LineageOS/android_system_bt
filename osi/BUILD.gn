@@ -44,16 +44,20 @@ static_library("osi") {
   ]
 
   include_dirs = [
-    "//",
-    "//linux_include",
-    "//internal_include",
-    "//utils/include",
-    "//stack/include",
+    "//bt/",
+    "//bt/linux_include",
+    "//bt/internal_include",
+    "//bt/utils/include",
+    "//bt/stack/include",
   ]
 
   deps = [
-    "//common",
-    "//third_party/libchrome:base",
+    "//bt/common",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
   ]
 }
 
@@ -78,15 +82,18 @@ executable("net_test_osi") {
   ]
 
   include_dirs = [
-    "//",
-    "//osi/test",
+    "//bt/",
+    "//bt/osi/test",
   ]
 
   deps = [
-    "//osi",
-    "//third_party/googletest:gtest_main",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+    "//bt/osi",
+  ]
+
+  configs += [
+    "//bt:external_gtest_main",
+    "//bt:external_gmock_main",
+    "//bt:target_defaults",
   ]
 
   libs = [

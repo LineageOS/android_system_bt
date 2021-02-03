@@ -267,7 +267,10 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
         std::shared_ptr<::bluetooth::grpc::GrpcEventQueue<LeConnectionEvent>> event_stream)
         : handle_(handle), connection_(std::move(connection)), event_stream_(std::move(event_stream)) {}
     void OnConnectionUpdate(
-        uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout) override {
+        hci::ErrorCode hci_status,
+        uint16_t connection_interval,
+        uint16_t connection_latency,
+        uint16_t supervision_timeout) override {
       LOG_INFO(
           "interval: 0x%hx, latency: 0x%hx, timeout 0x%hx",
           connection_interval,
@@ -280,7 +283,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
           "tx_octets: 0x%hx, tx_time: 0x%hx, rx_octets 0x%hx, rx_time 0x%hx", tx_octets, tx_time, rx_octets, rx_time);
     }
 
-    void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {}
+    void OnPhyUpdate(hci::ErrorCode hci_status, uint8_t tx_phy, uint8_t rx_phy) override {}
     void OnLocalAddressUpdate(AddressWithType address_with_type) override {}
     void OnDisconnection(ErrorCode reason) override {
       std::unique_ptr<BasePacketBuilder> builder =
@@ -291,7 +294,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     }
 
     void OnReadRemoteVersionInformationComplete(
-        uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {}
+        hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {}
 
     LeConnectionManagementCallbacks* GetCallbacks() {
       return this;

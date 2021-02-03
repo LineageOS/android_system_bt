@@ -60,7 +60,7 @@ class FakeSecurityManagerChannel : public SecurityManagerChannel {
     on_link_disconnected_called = true;
   }
 
-  void OnAuthenticationComplete(hci::Address remote) override {}
+  void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address remote) override {}
 
   void OnEncryptionChange(hci::Address address, bool encrypted) override {}
 };

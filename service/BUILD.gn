@@ -60,17 +60,20 @@ source_set("service") {
   ]
 
   include_dirs = [
-    "//",
-    "//linux_include",
-    "//include",
-    "//service/common",
-    "//third_party/modp_b64/modp64",
+    "//bt/",
+    "//bt/linux_include",
+    "//bt/include",
+    "//bt/service/common",
   ]
 
   deps = [
-    "//types",
-    "//osi",
-    "//third_party/libchrome:base",
+    "//bt/types",
+    "//bt/osi",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
   ]
 }
 
@@ -81,17 +84,19 @@ executable("bluetoothtbd") {
 
   deps = [
     ":service",
-    "//btcore",
-    "//third_party/libchrome:base",
-    "//third_party/modp_b64",
+    "//bt/btcore",
   ]
 
-  include_dirs = [ "//" ]
+  configs += [
+    "//bt:target_defaults",
+  ]
+
+  include_dirs = [ "//bt/" ]
 
   libs = [
-    "-ldl",
-    "-lpthread",
-    "-lrt",
+    "dl",
+    "pthread",
+    "rt",
   ]
 }
 
@@ -102,12 +107,14 @@ executable("service_unittests") {
     "test/settings_unittest.cc",
   ]
 
-  include_dirs = [ "//" ]
+  include_dirs = [ "//bt/" ]
 
   deps = [
     ":service",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
-    "//third_party/modp_b64",
+  ]
+
+  configs += [
+    "//bt:external_gmock_main",
+    "//bt:target_defaults",
   ]
 }

@@ -335,26 +335,26 @@ void HciLayer::Disconnect(uint16_t handle, ErrorCode reason) {
 void HciLayer::on_read_remote_version_complete(EventView event_view) {
   auto view = ReadRemoteVersionInformationCompleteView::Create(event_view);
   ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");
-  if (view.GetStatus() != ErrorCode::SUCCESS) {
-    auto status = view.GetStatus();
-    std::string error_code = ErrorCodeText(status);
-    LOG_ERROR("Received with error code %s", error_code.c_str());
-    return;
-  }
-  uint16_t handle = view.GetConnectionHandle();
-  ReadRemoteVersion(handle, view.GetVersion(), view.GetManufacturerName(), view.GetSubVersion());
+  ReadRemoteVersion(
+      view.GetStatus(),
+      view.GetConnectionHandle(),
+      view.GetVersion(),
+      view.GetManufacturerName(),
+      view.GetSubVersion());
 }
 
-void HciLayer::ReadRemoteVersion(uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
+void HciLayer::ReadRemoteVersion(
+    hci::ErrorCode hci_status, uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
   for (auto callback : read_remote_version_handlers_) {
-    callback.Invoke(handle, version, manufacturer_name, sub_version);
+    callback.Invoke(hci_status, handle, version, manufacturer_name, sub_version);
   }
 }
 
 AclConnectionInterface* HciLayer::GetAclConnectionInterface(
     ContextualCallback<void(EventView)> event_handler,
     ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect,
-    ContextualCallback<void(uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
+    ContextualCallback<
+        void(hci::ErrorCode hci_status, uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
         on_read_remote_version) {
   for (const auto event : AclConnectionEvents) {
     RegisterEventHandler(event, event_handler);
@@ -367,7 +367,8 @@ AclConnectionInterface* HciLayer::GetAclConnectionInterface(
 LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
     ContextualCallback<void(LeMetaEventView)> event_handler,
     ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect,
-    ContextualCallback<void(uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
+    ContextualCallback<
+        void(hci::ErrorCode hci_status, uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
         on_read_remote_version) {
   for (const auto event : LeConnectionManagementEvents) {
     RegisterLeEventHandler(event, event_handler);

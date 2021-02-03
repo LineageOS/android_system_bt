@@ -22,26 +22,19 @@ static_library("crypto_toolbox") {
   ]
 
   include_dirs = [
-    "//",
+    "//bt/",
   ]
 
-  deps = [
-    "//third_party/libchrome:base",
+  configs += [
+    "//bt:target_defaults",
   ]
 }
 
-static_library("stack") {
+source_set("nonstandard_codecs") {
   sources = [
     "a2dp/a2dp_aac.cc",
     "a2dp/a2dp_aac_decoder.cc",
     "a2dp/a2dp_aac_encoder.cc",
-    "a2dp/a2dp_api.cc",
-    "a2dp/a2dp_codec_config.cc",
-    "a2dp/a2dp_sbc.cc",
-    "a2dp/a2dp_sbc_decoder.cc",
-    "a2dp/a2dp_sbc_encoder.cc",
-    "a2dp/a2dp_sbc_up_sample.cc",
-    "a2dp/a2dp_vendor.cc",
     "a2dp/a2dp_vendor_aptx.cc",
     "a2dp/a2dp_vendor_aptx_encoder.cc",
     "a2dp/a2dp_vendor_aptx_hd.cc",
@@ -50,6 +43,25 @@ static_library("stack") {
     "a2dp/a2dp_vendor_ldac_abr.cc",
     "a2dp/a2dp_vendor_ldac_decoder.cc",
     "a2dp/a2dp_vendor_ldac_encoder.cc",
+  ]
+
+  configs += [
+    # "//bt:external_libldac",
+    # "//bt:external_aac",
+  ]
+}
+
+static_library("stack") {
+  sources = [
+    "a2dp/a2dp_api.cc",
+    "a2dp/a2dp_codec_config.cc",
+    "a2dp/a2dp_sbc.cc",
+    "a2dp/a2dp_sbc_decoder.cc",
+    "a2dp/a2dp_sbc_encoder.cc",
+    "a2dp/a2dp_sbc_up_sample.cc",
+    "a2dp/a2dp_vendor.cc",
+    "acl/btm_acl.cc",
+    "acl/btm_pm.cc",
     "avct/avct_api.cc",
     "avct/avct_bcb_act.cc",
     "avct/avct_ccb.cc",
@@ -64,7 +76,8 @@ static_library("stack") {
     "avdt/avdt_l2c.cc",
     "avdt/avdt_msg.cc",
     "avdt/avdt_scb.cc",
-    "avdt/avdt_scb_act.cc",
+    # Disable temporarily due to libcutils dependency
+    #"avdt/avdt_scb_act.cc",
     "avrc/avrc_api.cc",
     "avrc/avrc_bld_ct.cc",
     "avrc/avrc_bld_tg.cc",
@@ -78,7 +91,6 @@ static_library("stack") {
     "bnep/bnep_utils.cc",
     "btm/ble_advertiser_hci_interface.cc",
     "btm/ble_scanner_hci_interface.cc",
-    "btm/btm_acl.cc",
     "btm/btm_ble.cc",
     "btm/btm_ble_addr.cc",
     "btm/btm_ble_adv_filter.cc",
@@ -93,7 +105,6 @@ static_library("stack") {
     "btm/btm_inq.cc",
     "btm/btm_iso.cc",
     "btm/btm_main.cc",
-    "btm/btm_pm.cc",
     "btm/btm_sco.cc",
     "btm/btm_sec.cc",
     "btu/btu_hcif.cc",
@@ -149,7 +160,8 @@ static_library("stack") {
     "smp/smp_api.cc",
     "smp/smp_br_main.cc",
     "smp/smp_keys.cc",
-    "smp/smp_l2c.cc",
+    # Disable temporarily due to libcutils dependency
+    #"smp/smp_l2c.cc",
     "smp/smp_main.cc",
     "smp/smp_utils.cc",
     "srvc/srvc_dis.cc",
@@ -157,6 +169,7 @@ static_library("stack") {
   ]
 
   include_dirs = [
+    ".",
     "include",
     "avct",
     "btm",
@@ -172,31 +185,34 @@ static_library("stack") {
     "sdp",
     "smp",
     "srvc",
-    "//linux_include",
-    "//internal_include",
-    "//btcore/include",
-    "//vnd/include",
-    "//vnd/ble",
-    "//btif/include",
-    "//hci/include",
-    "//internal_include",
-    "//udrv/include",
-    "//rpc/include",
-    "//hcis",
-    "//ctrlr/include",
-    "//bta/include",
-    "//bta/sys",
-    "//utils/include",
-    "//",
+    "//bt/types",
+    "//bt/linux_include",
+    "//bt/internal_include",
+    "//bt/btcore/include",
+    "//bt/vnd/include",
+    "//bt/vnd/ble",
+    "//bt/btif/include",
+    "//bt/hci/include",
+    "//bt/internal_include",
+    "//bt/udrv/include",
+    "//bt/rpc/include",
+    "//bt/hcis",
+    "//bt/ctrlr/include",
+    "//bt/bta/include",
+    "//bt/bta/sys",
+    "//bt/utils/include",
+    "//bt/",
   ]
 
   deps = [
     ":crypto_toolbox",
-    "//types",
-    "//third_party/libchrome:base",
-    "//third_party/libldac:libldacBT_enc",
-    "//third_party/libldac:libldacBT_abr",
-    "//third_party/aac:libFraunhoferAAC",
+    "//bt/types",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
   ]
 }
 
@@ -209,21 +225,20 @@ executable("stack_unittests") {
 
   include_dirs = [
     "include",
-    "//",
-    "//bta/eatt",
-    "//bta/include",
-    "//bta/sys",
-    "//btcore/include",
-    "//embdrv/sbc/encoder/include",
-    "//hci/include",
-    "//internal_include",
-    "//stack/a2dp",
-    "//stack/btm",
-    "//stack/include",
-    "//third_party/tinyxml2",
-    "//udrv/include",
-    "//utils/include",
-    "//vnd/include"
+    "//bt/",
+    "//bt/bta/eatt",
+    "//bt/bta/include",
+    "//bt/bta/sys",
+    "//bt/btcore/include",
+    "//bt/embdrv/sbc/encoder/include",
+    "//bt/hci/include",
+    "//bt/internal_include",
+    "//bt/stack/a2dp",
+    "//bt/stack/btm",
+    "//bt/stack/include",
+    "//bt/udrv/include",
+    "//bt/utils/include",
+    "//bt/vnd/include"
   ]
 
   libs = [
@@ -237,16 +252,20 @@ executable("stack_unittests") {
 
   deps = [
     ":stack",
-    "//osi",
-    "//btcore",
-    "//device",
-    "//embdrv/sbc",
-    "//embdrv/g722",
-    "//hci",
-    "//types",
-    "//main:bluetooth",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+    "//bt/osi",
+    "//bt/btcore",
+    "//bt/device",
+    "//bt/embdrv/sbc",
+    "//bt/embdrv/g722",
+    "//bt/hci",
+    "//bt/types",
+    "//bt/main:bluetooth",
+  ]
+
+  configs += [
+    "//bt:external_tinyxml2",
+    "//bt:external_gmock_main",
+    "//bt:external_libchrome",
   ]
 }
 
@@ -257,13 +276,16 @@ executable("net_test_stack_crypto_toolbox") {
   ]
 
   include_dirs = [
-    "//",
+    "//bt/",
   ]
 
   deps = [
     ":crypto_toolbox",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+  ]
+
+  configs += [
+    "//bt:external_gmock_main",
+    "//bt:external_libchrome",
   ]
 }
 
@@ -281,26 +303,25 @@ executable("net_test_stack_smp") {
   ]
 
   include_dirs = [
-    "//",
-    "//linux_include",
-    "//internal_include",
-    "//btcore/include",
-    "//hci/include",
-    "//utils/include",
-    "//bta/include",
-    "//bta/sys",
-    "//btcore/include",
-    "//embdrv/sbc/encoder/include",
-    "//hci/include",
-    "//internal_include",
-    "//stack/a2dp",
-    "//stack/l2cap",
-    "//stack/btm",
-    "//stack/include",
-    "//third_party/tinyxml2",
-    "//udrv/include",
-    "//utils/include",
-    "//vnd/include"
+    "//bt/",
+    "//bt/linux_include",
+    "//bt/internal_include",
+    "//bt/btcore/include",
+    "//bt/hci/include",
+    "//bt/utils/include",
+    "//bt/bta/include",
+    "//bt/bta/sys",
+    "//bt/btcore/include",
+    "//bt/embdrv/sbc/encoder/include",
+    "//bt/hci/include",
+    "//bt/internal_include",
+    "//bt/stack/a2dp",
+    "//bt/stack/l2cap",
+    "//bt/stack/btm",
+    "//bt/stack/include",
+    "//bt/udrv/include",
+    "//bt/utils/include",
+    "//bt/vnd/include"
   ]
 
   libs = [
@@ -314,10 +335,14 @@ executable("net_test_stack_smp") {
 
   deps = [
     ":crypto_toolbox",
-    "//osi",
-    "//types",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+    "//bt/osi",
+    "//bt/types",
+  ]
+
+  configs += [
+    "//bt:external_tinyxml2",
+    "//bt:external_gmock_main",
+    "//bt:target_defaults",
   ]
 }
 
@@ -330,11 +355,11 @@ executable("net_test_stack_multi_adv") {
 
   include_dirs = [
     "include",
-    "//",
-    "//btcore/include",
-    "//hci/include",
-    "//internal_include",
-    "//stack/btm",
+    "//bt/",
+    "//bt/btcore/include",
+    "//bt/hci/include",
+    "//bt/internal_include",
+    "//bt/stack/btm",
   ]
 
   libs = [
@@ -347,9 +372,12 @@ executable("net_test_stack_multi_adv") {
   ]
 
   deps = [
-    "//types",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+    "//bt/types",
+  ]
+
+  configs += [
+    "//bt:external_gmock_main",
+    "//bt:target_defaults",
   ]
 }
 

@@ -147,6 +147,13 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  connection_management_handler->Post(common::BindOnce(
+      &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
+      common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
+      0,
+      0,
+      0));
   auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
   EXPECT_EQ(future_1_status, std::future_status::ready);
   auto future_2_status = future_2.wait_for(kTestIdleDisconnectTimeoutShort);
@@ -336,6 +343,13 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  connection_management_handler->Post(common::BindOnce(
+      &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
+      common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
+      0,
+      0,
+      0));
   auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
   EXPECT_EQ(future_1_status, std::future_status::ready);
   EXPECT_NE(channel_1, nullptr);
@@ -425,6 +439,13 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  connection_management_handler->Post(common::BindOnce(
+      &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
+      common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
+      0,
+      0,
+      0));
   auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
   EXPECT_EQ(future_1_status, std::future_status::ready);
   EXPECT_NE(channel_1, nullptr);
@@ -516,6 +537,13 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  connection_management_handler->Post(common::BindOnce(
+      &hci::acl_manager::LeConnectionManagementCallbacks::OnReadRemoteVersionInformationComplete,
+      common::Unretained(connection_management_callbacks),
+      hci::ErrorCode::SUCCESS,
+      0,
+      0,
+      0));
   auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
   EXPECT_EQ(future_1_status, std::future_status::ready);
   EXPECT_NE(channel_1, nullptr);

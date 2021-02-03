@@ -19,7 +19,6 @@
 #include <base/command_line.h>
 #include <base/location.h>
 #include <base/logging.h>
-#include <base/message_loop/message_loop.h>
 #include <base/run_loop.h>
 
 #include <binder/IPCThreadState.h>
@@ -28,6 +27,7 @@
 
 #include <android/bluetooth/IBluetooth.h>
 
+#include "abstract_message_loop.h"
 #include "heart_rate_server.h"
 
 using android::sp;
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
 
   // Set up a message loop so that we can schedule timed Heart Rate
   // notifications.
-  base::MessageLoop main_loop;
+  btbase::AbstractMessageLoop main_loop;
 
   LOG(INFO) << "Starting GATT Heart Rate Service sample";
 

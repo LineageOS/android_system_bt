@@ -151,12 +151,13 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
 
   // ConnectionManagementCallbacks
   void OnConnectionPacketTypeChanged(uint16_t packet_type) override;
-  void OnAuthenticationComplete() override;
+  void OnAuthenticationComplete(hci::ErrorCode hci_status) override;
   void OnEncryptionChange(hci::EncryptionEnabled enabled) override;
   void OnChangeConnectionLinkKeyComplete() override;
   void OnReadClockOffsetComplete(uint16_t clock_offset) override;
   void OnModeChange(hci::ErrorCode status, hci::Mode current_mode, uint16_t interval) override;
   void OnSniffSubrating(
+      hci::ErrorCode hci_status,
       uint16_t maximum_transmit_latency,
       uint16_t maximum_receive_latency,
       uint16_t minimum_remote_timeout,
@@ -178,9 +179,10 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   void OnReadRssiComplete(uint8_t rssi) override;
   void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override;
   void OnCentralLinkKeyComplete(hci::KeyFlag key_flag) override;
-  void OnRoleChange(hci::Role new_role) override;
+  void OnRoleChange(hci::ErrorCode hci_status, hci::Role new_role) override;
   void OnDisconnection(hci::ErrorCode reason) override;
-  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
+  void OnReadRemoteVersionInformationComplete(
+      hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features);
 
   struct EncryptionChangeListener {

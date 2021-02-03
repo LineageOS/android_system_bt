@@ -26,11 +26,11 @@ static_library("types") {
   ]
 
   include_dirs = [
-    "//",
+    "//bt",
   ]
 
-  deps = [
-    "//third_party/libchrome:base",
+  configs += [
+    "//bt:external_libchrome",
   ]
 }
 
@@ -42,7 +42,7 @@ executable("types_unittests") {
   ]
 
   include_dirs = [
-    "//",
+    "//bt",
   ]
 
   libs = [
@@ -55,8 +55,11 @@ executable("types_unittests") {
   ]
 
   deps = [
-    "//types",
-    "//third_party/googletest:gmock_main",
-    "//third_party/libchrome:base",
+    "//bt/types",
+  ]
+
+  configs += [
+    "//bt:external_gmock_main",
+    "//bt:external_libchrome",
   ]
 }

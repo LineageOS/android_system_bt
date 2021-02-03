@@ -47,19 +47,21 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
         common::BindOnce(&LeConnectionManagementCallbacks::f, common::Unretained(client_callbacks_), __VA_ARGS__)); \
   }
 
-  void OnConnectionUpdate(uint16_t conn_interval, uint16_t conn_latency, uint16_t supervision_timeout) override {
-    SAVE_OR_CALL(OnConnectionUpdate, conn_interval, conn_latency, supervision_timeout)
+  void OnConnectionUpdate(
+      hci::ErrorCode hci_status, uint16_t conn_interval, uint16_t conn_latency, uint16_t supervision_timeout) override {
+    SAVE_OR_CALL(OnConnectionUpdate, hci_status, conn_interval, conn_latency, supervision_timeout)
   }
 
   void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) override {
     SAVE_OR_CALL(OnDataLengthChange, tx_octets, tx_time, rx_octets, rx_time)
   }
 
-  void OnReadRemoteVersionInformationComplete(uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
-    SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, lmp_version, manufacturer_name, sub_version);
+  void OnReadRemoteVersionInformationComplete(
+      hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+    SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, hci_status, lmp_version, manufacturer_name, sub_version);
   }
-  void OnPhyUpdate(uint8_t tx_phy, uint8_t rx_phy) override {
-    SAVE_OR_CALL(OnPhyUpdate, tx_phy, rx_phy);
+  void OnPhyUpdate(hci::ErrorCode hci_status, uint8_t tx_phy, uint8_t rx_phy) override {
+    SAVE_OR_CALL(OnPhyUpdate, hci_status, tx_phy, rx_phy);
   }
   void OnLocalAddressUpdate(AddressWithType address_with_type) override {
     SAVE_OR_CALL(OnLocalAddressUpdate, address_with_type);
