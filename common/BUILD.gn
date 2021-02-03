@@ -16,8 +16,12 @@
 
 static_library("common") {
   sources = [
+    "address_obfuscator.cc",
+    "once_timer.cc",
     "message_loop_thread.cc",
+    "metric_id_allocator.cc",
     "metrics_linux.cc",
+    "repeating_timer.cc",
     "time_util.cc",
   ]
 
@@ -38,31 +42,32 @@ static_library("common") {
   ]
 }
 
-executable("bt_test_common") {
-  testonly = true
-  sources = [
-    "leaky_bonded_queue_unittest.cc",
-    "state_machine_unittest.cc",
-    "time_util_unittest.cc",
-  ]
+if (use.test) {
+  executable("bluetooth_test_common") {
+    sources = [
+      "leaky_bonded_queue_unittest.cc",
+      "state_machine_unittest.cc",
+      "time_util_unittest.cc",
+    ]
 
-  include_dirs = [
-    "//bt/",
-    "//bt/common",
-  ]
+    include_dirs = [
+      "//bt/",
+      "//bt/common",
+    ]
 
-  deps = [
-    "//bt/common",
-  ]
+    deps = [
+      "//bt/common",
+    ]
 
-  configs += [
-    "//bt:external_gtest_main",
-    "//bt:external_gmock_main",
-    "//bt:target_defaults",
-  ]
+    configs += [
+      "//bt:external_gtest_main",
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
 
-  libs = [
-    "-lpthread",
-    "-lrt",
-  ]
+    libs = [
+      "pthread",
+      "rt",
+    ]
+  }
 }

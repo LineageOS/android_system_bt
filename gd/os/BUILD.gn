@@ -1,5 +1,5 @@
 #
-#  Copyright 2015 Google, Inc.
+#  Copyright 2021 Google
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,22 +14,18 @@
 #  limitations under the License.
 #
 
-static_library("utils") {
+source_set("BluetoothOsSources_linux_generic") {
   sources = [
-    "src/bt_utils.cc",
+    "linux_generic/alarm.cc",
+    "linux_generic/files.cc",
+    "linux_generic/handler.cc",
+    "linux_generic/reactive_semaphore.cc",
+    "linux_generic/reactor.cc",
+    "linux_generic/repeating_alarm.cc",
+    "linux_generic/thread.cc",
   ]
 
-  include_dirs = [
-    "include",
-    "//bt/",
-    "//bt/stack/include",
-  ]
+  include_dirs = [ "//bt/gd" ]
 
-  configs += [
-    "//bt:target_defaults",
-  ]
-
-  deps = [
-    "//bt/gd/rust/shim:init_flags_bridge_header",
-  ]
+  configs += [ "//bt:target_defaults" ]
 }
