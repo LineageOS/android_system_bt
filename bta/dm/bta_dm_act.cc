@@ -2941,7 +2941,7 @@ static void bta_dm_set_eir(char* local_name) {
     p_length = p;
 
     UINT8_TO_STREAM(p, p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len + 1);
-    UINT8_TO_STREAM(p, BTM_EIR_MANUFACTURER_SPECIFIC_TYPE);
+    UINT8_TO_STREAM(p, HCI_EIR_MANUFACTURER_SPECIFIC_TYPE);
     memcpy(p, p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec,
            p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len);
     p += p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec_len;
