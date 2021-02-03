@@ -1016,18 +1016,12 @@ bool L2CA_RemoveFixedChnl(uint16_t cid, const RawAddress& rem_bda) {
   return true;
 }
 
-uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda) {
-  if (cid != kAttCid && cid != kSmpCid) {
-    LOG(ERROR) << "Invalid cid " << cid;
+uint16_t L2CA_GetLeHandle(const RawAddress& rem_bda) {
+  auto addr = ToGdAddress(rem_bda);
+  if (le_link_property_listener_shim_.info_.count(addr) == 0) {
     return 0;
   }
-  auto* helper = &le_fixed_channel_helper_.find(cid)->second;
-  auto channel = helper->channels_.find(ToGdAddress(rem_bda));
-  if (channel == helper->channels_.end() || channel->second == nullptr) {
-    LOG(ERROR) << "Channel is not open";
-    return 0;
-  }
-  return channel->second->GetLinkOptions()->GetHandle();
+  return le_link_property_listener_shim_.info_[addr].handle;
 }
 
 void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
@@ -1156,7 +1150,7 @@ bool L2CA_IsLinkEstablished(const RawAddress& bd_addr,
   if (transport == BT_TRANSPORT_BR_EDR) {
     return security_listener_shim_.IsLinkUp(bd_addr);
   } else {
-    return bluetooth::shim::L2CA_GetLeHandle(kAttCid, bd_addr) != 0;
+    return bluetooth::shim::L2CA_GetLeHandle(bd_addr) != 0;
   }
 }
 
