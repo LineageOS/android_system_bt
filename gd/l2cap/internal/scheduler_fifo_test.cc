@@ -138,6 +138,29 @@ TEST_F(L2capSchedulerFifoTest, prioritize_channel) {
   enqueue_.enqueued.pop();
 }
 
+TEST_F(L2capSchedulerFifoTest, remove_channel) {
+  auto frame = BasicFrameBuilder::Create(1, CreateSdu({'a', 'b', 'c'}));
+  data_controller_1_.next_packets.push(std::move(frame));
+  frame = BasicFrameBuilder::Create(2, CreateSdu({'d', 'e', 'f'}));
+  data_controller_2_.next_packets.push(std::move(frame));
+
+  EXPECT_CALL(*mock_data_pipeline_manager_, GetDataController(1)).WillRepeatedly(Return(&data_controller_1_));
+  EXPECT_CALL(*mock_data_pipeline_manager_, GetDataController(2)).WillRepeatedly(Return(&data_controller_2_));
+  EXPECT_CALL(*mock_data_pipeline_manager_, OnPacketSent(2));
+  fifo_->OnPacketsReady(1, 1);
+  fifo_->OnPacketsReady(2, 1);
+  fifo_->RemoveChannel(1);
+  enqueue_.run_enqueue(1);
+  auto packet1 = std::move(enqueue_.enqueued.front());
+  auto packet_view = GetPacketView(std::move(packet1));
+  auto basic_frame_view = BasicFrameView::Create(packet_view);
+  ASSERT_TRUE(basic_frame_view.IsValid());
+  ASSERT_EQ(basic_frame_view.GetChannelId(), 2);
+  auto payload = basic_frame_view.GetPayload();
+  ASSERT_EQ(std::string(payload.begin(), payload.end()), "def");
+  enqueue_.enqueued.pop();
+}
+
 }  // namespace
 }  // namespace internal
 }  // namespace l2cap
