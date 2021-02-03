@@ -24,6 +24,55 @@
 extern "C" {
 #endif
 
+/*****************************************************************************/
+
+/* Define trace levels */
+typedef enum {
+  BT_TRACE_LEVEL_NONE = 0,    /* No trace messages to be generated    */
+  BT_TRACE_LEVEL_ERROR = 1,   /* Error condition trace messages       */
+  BT_TRACE_LEVEL_WARNING = 2, /* Warning condition trace messages     */
+  BT_TRACE_LEVEL_API = 3,     /* API traces                           */
+  BT_TRACE_LEVEL_EVENT = 4,   /* Debug messages for events            */
+  BT_TRACE_LEVEL_DEBUG = 5,   /* Full debug messages                  */
+  BT_TRACE_LEVEL_VERBOSE = 6, /* Verbose debug messages               */
+} tLEGACY_TRACE_LEVEL;
+
+#define TRACE_CTRL_GENERAL 0x00000000
+
+#define TRACE_LAYER_MASK 0x00ff0000
+#define TRACE_GET_LAYER(x) ((((uint32_t)(x)) & TRACE_LAYER_MASK) >> 16)
+
+#define TRACE_LAYER_NONE 0x00000000
+#define TRACE_LAYER_HCI 0x00070000
+#define TRACE_LAYER_L2CAP 0x00080000
+#define TRACE_LAYER_RFCOMM 0x00090000
+#define TRACE_LAYER_SDP 0x000a0000
+#define TRACE_LAYER_BTM 0x000d0000
+#define TRACE_LAYER_BNEP 0x001b0000
+#define TRACE_LAYER_PAN 0x001c0000
+#define TRACE_LAYER_HID 0x001e0000
+#define TRACE_LAYER_AVP 0x00200000
+#define TRACE_LAYER_A2DP 0x00210000
+#define TRACE_LAYER_SMP 0x00260000
+
+#define TRACE_LAYER_MAX_NUM 0x0031
+
+#define TRACE_ORG_MASK 0x0000ff00
+#define TRACE_GET_ORG(x) ((((uint32_t)(x)) & TRACE_ORG_MASK) >> 8)
+
+#define TRACE_ORG_STACK 0x00000000
+#define TRACE_ORG_APPL 0x00000500
+#define TRACE_ORG_USER_SCR 0x00000800
+
+#define TRACE_TYPE_MASK 0x000000ff
+#define TRACE_GET_TYPE(x) (((uint32_t)(x)) & TRACE_TYPE_MASK)
+
+#define TRACE_TYPE_ERROR 0x00000000
+#define TRACE_TYPE_WARNING 0x00000001
+#define TRACE_TYPE_API 0x00000002
+#define TRACE_TYPE_EVENT 0x00000003
+#define TRACE_TYPE_DEBUG 0x00000004
+
 static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
 
 /* BTE tracing IDs for debug purposes */
