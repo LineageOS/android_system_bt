@@ -1199,18 +1199,6 @@ tBTM_STATUS BTM_ReadAutomaticFlushTimeout(const RawAddress& remote_bda,
 tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
                             tBT_TRANSPORT transport, tBTM_CMPL_CB* p_cb);
 
-/*******************************************************************************
- *
- * Function         BTM_GetNumAclLinks
- *
- * Description      This function is called to count the number of
- *                  ACL links that are active.
- *
- * Returns          uint16_t Number of active ACL links
- *
- ******************************************************************************/
-uint16_t BTM_GetNumAclLinks(void);
-
 /*****************************************************************************
  *  (e)SCO CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/
