@@ -118,3 +118,9 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG is null after header inclusion");
       LOG_ALWAYS_FATAL("assertion '" #condition "' failed - " fmt, ##args); \
     }                                                                       \
   } while (false)
+
+#ifndef CASE_RETURN_TEXT
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+#endif
