@@ -42,7 +42,9 @@
  *
  ******************************************************************************/
 
+#ifndef LOG_TAG
 #define LOG_TAG "bt_btif_hfc"
+#endif
 
 #include <string.h>
 
