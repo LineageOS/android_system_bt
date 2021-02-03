@@ -1191,13 +1191,7 @@ uint16_t BTM_GetNumAclLinks(void) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return bluetooth::shim::L2CA_GetNumLinks();
   }
-  uint16_t num_acl = 0;
-
-  for (uint16_t i = 0; i < MAX_L2CAP_LINKS; ++i) {
-    if (btm_cb.acl_cb_.acl_db[i].in_use) ++num_acl;
-  }
-
-  return num_acl;
+  return static_cast<uint16_t>(btm_cb.acl_cb_.NumberOfActiveLinks());
 }
 
 /*******************************************************************************
@@ -2524,7 +2518,7 @@ bool acl_is_role_switch_allowed() {
 }
 
 uint16_t acl_get_supported_packet_types() {
-  return btm_cb.acl_cb_.btm_acl_pkt_types_supported;
+  return btm_cb.acl_cb_.DefaultPacketTypes();
 }
 
 bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
