@@ -30,6 +30,7 @@
 
 #include "bt_target.h"  // Must be first to define build configuration
 
+#include "osi/include/log.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
@@ -126,6 +127,17 @@ typedef uint16_t tBTA_DM_CONN;
   0x03 /* Used for PANU only, skip role switch to central */
 
 typedef uint8_t tBTA_PREF_ROLES;
+
+inline std::string preferred_role_text(const tBTA_PREF_ROLES& role) {
+  switch (role) {
+    CASE_RETURN_TEXT(BTA_ANY_ROLE);
+    CASE_RETURN_TEXT(BTA_CENTRAL_ROLE_PREF);
+    CASE_RETURN_TEXT(BTA_CENTRAL_ROLE_ONLY);
+    CASE_RETURN_TEXT(BTA_PERIPHERAL_ROLE_ONLY);
+    default:
+      return std::string("UNKNOWN:%hhu", role);
+  }
+}
 
 enum {
 
