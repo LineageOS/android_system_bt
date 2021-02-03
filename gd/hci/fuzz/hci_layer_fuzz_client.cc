@@ -37,11 +37,11 @@ void HciLayerFuzzClient::Start() {
   acl_connection_interface_ = hci_->GetAclConnectionInterface(
       GetHandler()->Bind([](EventView) {}),
       GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}),
-      GetHandler()->Bind([](uint16_t, uint8_t, uint16_t, uint16_t) {}));
+      GetHandler()->Bind([](hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t) {}));
   le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(
       GetHandler()->Bind([](LeMetaEventView) {}),
       GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}),
-      GetHandler()->Bind([](uint16_t, uint8_t, uint16_t, uint16_t) {}));
+      GetHandler()->Bind([](hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t) {}));
   le_advertising_interface_ = hci_->GetLeAdvertisingInterface(GetHandler()->Bind([](LeMetaEventView) {}));
   le_scanning_interface_ = hci_->GetLeScanningInterface(GetHandler()->Bind([](LeMetaEventView) {}));
 }

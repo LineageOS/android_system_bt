@@ -121,21 +121,6 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
         link->GetRole());
   }
 
-  // Allocate and distribute channels for all registered fixed channel services
-  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
-  for (auto& fixed_channel_service : fixed_channel_services) {
-    auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first,
-                                                         SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK);
-    fixed_channel_service.second->NotifyChannelCreation(
-        std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
-  }
-  if (pending_dynamic_channels_.find(connected_address_with_type) != pending_dynamic_channels_.end()) {
-    for (auto& psm_callback : pending_dynamic_channels_[connected_address_with_type]) {
-      link->SendConnectionRequest(psm_callback.first, std::move(psm_callback.second));
-    }
-    pending_dynamic_channels_.erase(connected_address_with_type);
-  }
-
   // Remove device from pending links list, if any
   pending_links_.erase(connecting_address_with_type);
 
@@ -145,8 +130,8 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
 void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) {
   // Notify all pending links for this device
   auto pending_link = pending_links_.find(address_with_type);
-  if (pending_link == pending_links_.end() && reason != hci::ErrorCode::UNKNOWN_CONNECTION) {
-    // There is no pending link, exit; UNKNOWN_CONNECTION means we cancelled
+  if (pending_link == pending_links_.end()) {
+    // There is no pending link, exit
     LOG_INFO("Connection to %s failed without a pending link", address_with_type.ToString().c_str());
     return;
   }
@@ -178,15 +163,36 @@ void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropert
 }
 
 void LinkManager::OnReadRemoteVersionInformationComplete(
-    hci::AddressWithType address_with_type, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+    hci::ErrorCode hci_status,
+    hci::AddressWithType address_with_type,
+    uint8_t lmp_version,
+    uint16_t manufacturer_name,
+    uint16_t sub_version) {
   if (link_property_callback_handler_ != nullptr) {
     link_property_callback_handler_->CallOn(
         link_property_listener_,
         &LinkPropertyListener::OnReadRemoteVersionInformation,
+        hci_status,
         address_with_type,
         lmp_version,
         manufacturer_name,
         sub_version);
+  }
+
+  auto* link = GetLink(address_with_type);
+  // Allocate and distribute channels for all registered fixed channel services
+  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
+  for (auto& fixed_channel_service : fixed_channel_services) {
+    auto fixed_channel_impl = link->AllocateFixedChannel(
+        fixed_channel_service.first, SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK);
+    fixed_channel_service.second->NotifyChannelCreation(
+        std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
+  }
+  if (pending_dynamic_channels_.find(address_with_type) != pending_dynamic_channels_.end()) {
+    for (auto& psm_callback : pending_dynamic_channels_[address_with_type]) {
+      link->SendConnectionRequest(psm_callback.first, std::move(psm_callback.second));
+    }
+    pending_dynamic_channels_.erase(address_with_type);
   }
 }
 

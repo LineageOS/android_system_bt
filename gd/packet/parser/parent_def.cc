@@ -569,3 +569,90 @@ std::vector<const ParentDef*> ParentDef::FindPathToDescendant(std::string descen
 bool ParentDef::HasChildEnums() const {
   return !children_.empty() || fields_.HasPayload();
 }
+
+void ParentDef::GenRustWriteToFields(std::ostream& s) const {
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+      PaddingField::kFieldType,
+      ReservedField::kFieldType,
+      FixedScalarField::kFieldType,
+  });
+
+  for (auto const& field : fields) {
+    auto start_field_offset = GetOffsetForField(field->GetName(), false);
+    auto end_field_offset = GetOffsetForField(field->GetName(), true);
+
+    if (start_field_offset.empty() && end_field_offset.empty()) {
+      ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
+                   << "no method exists to determine field location from begin() or end().\n";
+    }
+
+    if (field->GetFieldType() == SizeField::kFieldType) {
+      const auto& field_name = ((SizeField*)field)->GetSizedFieldName();
+      const auto& sized_field = fields_.GetField(field_name);
+      if (sized_field == nullptr) {
+        ERROR(field) << __func__ << ": Can't find sized field named " << field_name;
+      }
+      if (sized_field->GetFieldType() == PayloadField::kFieldType) {
+        std::string modifier = ((PayloadField*)sized_field)->size_modifier_;
+        if (modifier != "") {
+          ERROR(field) << __func__ << ": size modifiers not implemented yet for " << field_name;
+        }
+
+        s << "let " << field->GetName() << " = " << field->GetRustDataType()
+          << "::try_from(self.child.get_total_size()).expect(\"payload size did not fit\");";
+      } else if (sized_field->GetFieldType() == BodyField::kFieldType) {
+        s << "let " << field->GetName() << " = " << field->GetRustDataType()
+          << "::try_from(self.get_total_size() - self.get_size()).expect(\"payload size did not fit\");";
+      } else if (sized_field->GetFieldType() == VectorField::kFieldType) {
+        const auto& vector_name = field_name + "_bytes";
+        const VectorField* vector = (VectorField*)sized_field;
+        if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
+          s << "let " << vector_name + " = self." << field_name
+            << ".iter().fold(0, |acc, x| acc + x.get_total_size());";
+        } else {
+          s << "let " << vector_name + " = self." << field_name << ".len() * ((" << vector->element_size_ << ") / 8);";
+        }
+        std::string modifier = vector->GetSizeModifier();
+        if (modifier != "") {
+          s << "let " << vector_name << " = " << vector_name << " + (" << modifier.substr(1) << ") / 8;";
+        }
+
+        s << "let " << field->GetName() << " = " << field->GetRustDataType() << "::try_from(" << vector_name
+          << ").expect(\"payload size did not fit\");";
+      } else {
+        ERROR(field) << __func__ << ": Unhandled sized field type for " << field_name;
+      }
+    }
+
+    field->GenRustWriter(s, start_field_offset, end_field_offset);
+  }
+}
+
+void ParentDef::GenSizeRetVal(std::ostream& s) const {
+  int size = 0;
+  auto fields = fields_.GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+      CountField::kFieldType,
+  });
+  for (int i = 0; i < fields.size(); i++) {
+    size += fields[i]->GetSize().bits();
+  }
+  if (size % 8 != 0) {
+    ERROR() << "size is not a multiple of 8!\n";
+  }
+  s << size / 8;
+
+  fields = fields_.GetFieldsWithTypes({
+      VectorField::kFieldType,
+  });
+  for (int i = 0; i < fields.size(); i++) {
+    const VectorField* vector = (VectorField*)fields[i];
+    if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
+      s << " + self." << vector->GetName() << ".iter().fold(0, |acc, x| acc + x.get_total_size())";
+    } else {
+      s << " + (self." << vector->GetName() << ".len() * ((" << vector->element_size_ << ") / 8))";
+    }
+  }
+}

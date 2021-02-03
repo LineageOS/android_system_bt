@@ -88,7 +88,11 @@ class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
   void RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener);
 
   void OnReadRemoteVersionInformationComplete(
-      hci::AddressWithType address_with_type, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
+      hci::ErrorCode hci_status,
+      hci::AddressWithType address_with_type,
+      uint8_t lmp_version,
+      uint16_t manufacturer_name,
+      uint16_t sub_version);
 
  private:
   // Dependencies

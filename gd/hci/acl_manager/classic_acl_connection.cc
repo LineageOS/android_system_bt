@@ -52,8 +52,8 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   void OnConnectionPacketTypeChanged(uint16_t packet_type) override {
     SAVE_OR_CALL(OnConnectionPacketTypeChanged, packet_type)
   }
-  void OnAuthenticationComplete() override {
-    SAVE_OR_CALL(OnAuthenticationComplete)
+  void OnAuthenticationComplete(hci::ErrorCode hci_status) override {
+    SAVE_OR_CALL(OnAuthenticationComplete, hci_status)
   }
   void OnEncryptionChange(EncryptionEnabled enabled) override {
     SAVE_OR_CALL(OnEncryptionChange, enabled)
@@ -68,12 +68,14 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
     SAVE_OR_CALL(OnModeChange, status, current_mode, interval)
   }
   void OnSniffSubrating(
+      hci::ErrorCode hci_status,
       uint16_t maximum_transmit_latency,
       uint16_t maximum_receive_latency,
       uint16_t minimum_remote_timeout,
       uint16_t minimum_local_timeout) override {
     SAVE_OR_CALL(
         OnSniffSubrating,
+        hci_status,
         maximum_transmit_latency,
         maximum_receive_latency,
         minimum_remote_timeout,
@@ -125,12 +127,12 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   void OnCentralLinkKeyComplete(KeyFlag key_flag) override {
     SAVE_OR_CALL(OnCentralLinkKeyComplete, key_flag)
   }
-  void OnRoleChange(Role new_role) override {
-    SAVE_OR_CALL(OnRoleChange, new_role)
+  void OnRoleChange(hci::ErrorCode hci_status, Role new_role) override {
+    SAVE_OR_CALL(OnRoleChange, hci_status, new_role)
   }
   void OnReadRemoteVersionInformationComplete(
-      uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {
-    SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, lmp_version, manufacturer_name, sub_version);
+      hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {
+    SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, hci_status, lmp_version, manufacturer_name, sub_version);
   }
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) override {
     SAVE_OR_CALL(OnReadRemoteExtendedFeaturesComplete, page_number, max_page_number, features);

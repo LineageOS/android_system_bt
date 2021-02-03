@@ -16,13 +16,18 @@
 
 #include "service/settings.h"
 
-#include <base/base_switches.h>
 #include <base/command_line.h>
 #include <base/logging.h>
 
 #include "service/switches.h"
 
 namespace bluetooth {
+
+namespace switches {
+// Verbose switch that should be part of base_switches but doesn't seem to be
+// exported as part of libbase.
+const char kV[] = "v";
+};  // namespace switches
 
 Settings::Settings() : initialized_(false), enable_on_start_(false) {}
 
@@ -67,7 +72,7 @@ bool Settings::Init() {
     }
     // Check for libbase logging switches. These get processed by
     // logging::InitLogging directly.
-    else if (iter.first != ::switches::kV) {
+    else if (iter.first != switches::kV) {
       LOG(ERROR) << "Unexpected command-line switches found: " << iter.first;
       return false;
     }

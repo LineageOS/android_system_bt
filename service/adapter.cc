@@ -24,6 +24,7 @@
 #include <base/logging.h>
 #include <base/observer_list.h>
 
+#include "abstract_observer_list.h"
 #include "service/a2dp_sink.h"
 #include "service/a2dp_source.h"
 #include "service/avrcp_control.h"
@@ -761,7 +762,7 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
 
   // List of observers that are interested in notifications from us.
   std::mutex observers_lock_;
-  base::ObserverList<Adapter::Observer> observers_;
+  btbase::AbstractObserverList<Adapter::Observer> observers_;
 
   // List of devices addresses that are currently connected.
   std::mutex connected_devices_lock_;

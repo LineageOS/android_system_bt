@@ -1,5 +1,5 @@
 //
-//  Copyright 2015 Google, Inc.
+//  Copyright 2021 Google, Inc.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -13,30 +13,8 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-
 #pragma once
 
-#include <gmock/gmock.h>
-
-#include "abstract_message_loop.h"
-#include "service/daemon.h"
-
-namespace bluetooth {
-namespace testing {
-
-class MockDaemon : public Daemon {
- public:
-  MockDaemon() = default;
-  ~MockDaemon() override = default;
-
-  MOCK_CONST_METHOD0(GetSettings, Settings*());
-  MOCK_CONST_METHOD0(GetMessageLoop, btbase::AbstractMessageLoop*());
-  MOCK_METHOD0(StartMainLoop, void());
-  MOCK_METHOD0(Init, bool());
-
- private:
-  DISALLOW_COPY_AND_ASSIGN(MockDaemon);
-};
-
-}  // namespace testing
-}  // namespace bluetooth
+#ifndef ARRAY_SIZE
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof(arr[0]))
+#endif

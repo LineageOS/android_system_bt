@@ -18,11 +18,11 @@
 
 #include <base/bind.h>
 #include <base/logging.h>
-#include <base/message_loop/message_loop.h>
 #include <binder/IPCThreadState.h>
 #include <binder/IServiceManager.h>
 #include <binder/ProcessState.h>
 
+#include "abstract_message_loop.h"
 #include "service/ipc/binder/bluetooth_binder_server.h"
 
 using android::defaultServiceManager;
@@ -56,7 +56,7 @@ bool IPCHandlerBinder::Run() {
 
   // Notify the delegate. We do this in the message loop to avoid reentrancy.
   if (delegate()) {
-    base::MessageLoop::current()->task_runner()->PostTask(
+    btbase::AbstractMessageLoop::current_task_runner()->PostTask(
         FROM_HERE, base::Bind(&IPCHandlerBinder::NotifyStarted, this));
   }
 

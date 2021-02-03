@@ -47,6 +47,8 @@ SecurityPolicy SecurityLevelToPolicy(SecurityLevel level) {
   }
 }
 
+static constexpr auto kChannelOpenTimeout = std::chrono::seconds(4);
+
 class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
  public:
   L2capLeModuleFacadeService(L2capLeModule* l2cap_layer, os::Handler* facade_handler)
@@ -152,7 +154,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
           address, {}, psm_, common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)),
           common::Bind(&L2capDynamicChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
       std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
-      if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
+      if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
         LOG_WARN("Channel is not open for psm %d", psm_);
       }
     }
@@ -209,7 +211,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     bool SendPacket(std::vector<uint8_t> packet) {
       if (channel_ == nullptr) {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
-        if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
+        if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
           LOG_WARN("Channel is not open for psm %d", psm_);
           return false;
         }
@@ -302,7 +304,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       fixed_channel_manager_->ConnectServices(
           address, common::BindOnce(&L2capFixedChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
       std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
-      if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
+      if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
         LOG_WARN("Channel is not open for cid %d", cid_);
       }
     }
@@ -359,7 +361,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     bool SendPacket(std::vector<uint8_t> packet) {
       if (channel_ == nullptr) {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
-        if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
+        if (!channel_open_cv_.wait_for(lock, kChannelOpenTimeout, [this] { return channel_ != nullptr; })) {
           LOG_WARN("Channel is not open for cid %d", cid_);
           return false;
         }

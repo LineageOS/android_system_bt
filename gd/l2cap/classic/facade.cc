@@ -141,7 +141,8 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     return ::grpc::Status::OK;
   }
 
-  void SecurityConnectionEventOccurred(hci::Address remote, LinkSecurityInterfaceCallbackEventType event_type) {
+  void SecurityConnectionEventOccurred(
+      hci::ErrorCode hci_status, hci::Address remote, LinkSecurityInterfaceCallbackEventType event_type) {
     LinkSecurityInterfaceCallbackEvent msg;
     msg.mutable_address()->set_address(remote.ToString());
     msg.set_event_type(event_type);
@@ -226,7 +227,8 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       outgoing_pairing_remote_devices_.erase(remote);
     }
     security_link_map_.emplace(remote, std::move(link));
-    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_CONNECTED);
+    SecurityConnectionEventOccurred(
+        hci::ErrorCode::SUCCESS, remote, LinkSecurityInterfaceCallbackEventType::ON_CONNECTED);
   }
 
   void OnLinkDisconnected(hci::Address remote) override {
@@ -237,20 +239,23 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     }
     entry->second.reset();
     security_link_map_.erase(entry);
-    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_DISCONNECTED);
+    SecurityConnectionEventOccurred(
+        hci::ErrorCode::SUCCESS, remote, LinkSecurityInterfaceCallbackEventType::ON_DISCONNECTED);
   }
 
-  void OnAuthenticationComplete(hci::Address remote) override {
+  void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address remote) override {
     auto entry = security_link_map_.find(remote);
     if (entry != security_link_map_.end()) {
       entry->second->EnsureEncrypted();
       return;
     }
-    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_AUTHENTICATION_COMPLETE);
+    SecurityConnectionEventOccurred(
+        hci_status, remote, LinkSecurityInterfaceCallbackEventType::ON_AUTHENTICATION_COMPLETE);
   }
 
   void OnEncryptionChange(hci::Address remote, bool encrypted) override {
-    SecurityConnectionEventOccurred(remote, LinkSecurityInterfaceCallbackEventType::ON_ENCRYPTION_CHANGE);
+    SecurityConnectionEventOccurred(
+        hci::ErrorCode::SUCCESS, remote, LinkSecurityInterfaceCallbackEventType::ON_ENCRYPTION_CHANGE);
   }
 
   class L2capDynamicChannelHelper {

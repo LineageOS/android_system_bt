@@ -58,8 +58,6 @@ class StructDef : public ParentDef {
 
   void GenRustFieldNames(std::ostream& s) const;
 
-  void GenRustSizeField(std::ostream& s) const;
-
   void GenRustDef(std::ostream& s) const;
 
  private:

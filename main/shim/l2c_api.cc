@@ -375,7 +375,8 @@ struct LinkPropertyListenerShim
     address_to_handle_.erase(remote);
   }
 
-  void OnReadRemoteVersionInformation(hci::Address remote, uint8_t lmp_version,
+  void OnReadRemoteVersionInformation(hci::ErrorCode error_code,
+                                      hci::Address remote, uint8_t lmp_version,
                                       uint16_t manufacturer_name,
                                       uint16_t sub_version) override {
     auto bda = bluetooth::ToRawAddress(remote);
@@ -406,28 +407,33 @@ struct LinkPropertyListenerShim
     }
   }
 
-  void OnRoleChange(hci::Address remote, hci::Role role) override {
-    btm_rejectlist_role_change_device(ToRawAddress(remote), HCI_SUCCESS);
-    btm_acl_role_changed(HCI_SUCCESS, ToRawAddress(remote),
-                         static_cast<uint8_t>(role));
+  void OnRoleChange(hci::ErrorCode error_code, hci::Address remote,
+                    hci::Role role) override {
+    btm_rejectlist_role_change_device(ToRawAddress(remote),
+                                      ToLegacyHciErrorCode(error_code));
+    btm_acl_role_changed(ToLegacyHciErrorCode(error_code), ToRawAddress(remote),
+                         ToLegacyRole(role));
   }
 
   void OnReadClockOffset(hci::Address remote, uint16_t clock_offset) override {
     btm_sec_update_clock_offset(address_to_handle_[remote], clock_offset);
   }
 
-  void OnModeChange(hci::Address remote, hci::Mode mode,
-                    uint16_t interval) override {
-    btm_sco_chk_pend_unpark(HCI_SUCCESS, address_to_handle_[remote]);
-    btm_pm_proc_mode_change(HCI_SUCCESS, address_to_handle_[remote],
-                            static_cast<tHCI_MODE>(mode), interval);
+  void OnModeChange(hci::ErrorCode error_code, hci::Address remote,
+                    hci::Mode mode, uint16_t interval) override {
+    btm_sco_chk_pend_unpark(ToLegacyHciErrorCode(error_code),
+                            address_to_handle_[remote]);
+    btm_pm_proc_mode_change(ToLegacyHciErrorCode(error_code),
+                            address_to_handle_[remote], ToLegacyHciMode(mode),
+                            interval);
   }
 
-  void OnSniffSubrating(hci::Address remote, uint16_t max_tx_lat,
-                        uint16_t max_rx_lat, uint16_t min_remote_timeout,
+  void OnSniffSubrating(hci::ErrorCode error_code, hci::Address remote,
+                        uint16_t max_tx_lat, uint16_t max_rx_lat,
+                        uint16_t min_remote_timeout,
                         uint16_t min_local_timeout) override {
-    process_ssr_event(HCI_SUCCESS, address_to_handle_[remote], max_tx_lat,
-                      max_rx_lat);
+    process_ssr_event(ToLegacyHciErrorCode(error_code),
+                      address_to_handle_[remote], max_tx_lat, max_rx_lat);
   }
 
 } link_property_listener_shim_;
@@ -448,11 +454,12 @@ class SecurityListenerShim
     address_to_interface_[bda] = std::move(interface);
   }
 
-  void OnAuthenticationComplete(bluetooth::hci::Address remote) override {
+  void OnAuthenticationComplete(hci::ErrorCode hci_status,
+                                bluetooth::hci::Address remote) override {
     // Note: if gd security is not enabled, we should use btu_hcif.cc path
     auto bda = bluetooth::ToRawAddress(remote);
     uint16_t handle = address_to_handle_[bda];
-    btm_sec_auth_complete(handle, HCI_SUCCESS);
+    btm_sec_auth_complete(handle, ToLegacyHciErrorCode(hci_status));
   }
 
   void OnLinkDisconnected(bluetooth::hci::Address remote) override {
@@ -536,7 +543,8 @@ struct LeLinkPropertyListenerShim
     info_.erase(remote.GetAddress());
   }
 
-  void OnReadRemoteVersionInformation(hci::AddressWithType remote,
+  void OnReadRemoteVersionInformation(hci::ErrorCode hci_status,
+                                      hci::AddressWithType remote,
                                       uint8_t lmp_version,
                                       uint16_t manufacturer_name,
                                       uint16_t sub_version) override {
@@ -1008,18 +1016,12 @@ bool L2CA_RemoveFixedChnl(uint16_t cid, const RawAddress& rem_bda) {
   return true;
 }
 
-uint16_t L2CA_GetLeHandle(uint16_t cid, const RawAddress& rem_bda) {
-  if (cid != kAttCid && cid != kSmpCid) {
-    LOG(ERROR) << "Invalid cid " << cid;
+uint16_t L2CA_GetLeHandle(const RawAddress& rem_bda) {
+  auto addr = ToGdAddress(rem_bda);
+  if (le_link_property_listener_shim_.info_.count(addr) == 0) {
     return 0;
   }
-  auto* helper = &le_fixed_channel_helper_.find(cid)->second;
-  auto channel = helper->channels_.find(ToGdAddress(rem_bda));
-  if (channel == helper->channels_.end() || channel->second == nullptr) {
-    LOG(ERROR) << "Channel is not open";
-    return 0;
-  }
-  return channel->second->GetLinkOptions()->GetHandle();
+  return le_link_property_listener_shim_.info_[addr].handle;
 }
 
 void L2CA_LeConnectionUpdate(const RawAddress& rem_bda, uint16_t min_int,
@@ -1148,7 +1150,7 @@ bool L2CA_IsLinkEstablished(const RawAddress& bd_addr,
   if (transport == BT_TRANSPORT_BR_EDR) {
     return security_listener_shim_.IsLinkUp(bd_addr);
   } else {
-    return bluetooth::shim::L2CA_GetLeHandle(kAttCid, bd_addr) != 0;
+    return bluetooth::shim::L2CA_GetLeHandle(bd_addr) != 0;
   }
 }
 

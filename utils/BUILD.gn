@@ -21,9 +21,16 @@ static_library("utils") {
 
   include_dirs = [
     "include",
-    "//",
-    "//stack/include",
-    "//third_party/libchrome",
-    "//third_party/googletest/googletest/include/",
+    "//bt/",
+    "//bt/stack/include",
+  ]
+
+  configs += [
+    "//bt:target_defaults",
+    "//bt:external_gtest"
+  ]
+
+  deps = [
+    "//bt/gd/rust/shim:init_flags_bridge_header",
   ]
 }

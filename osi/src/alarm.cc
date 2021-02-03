@@ -24,7 +24,6 @@
 
 #include <base/cancelable_callback.h>
 #include <base/logging.h>
-#include <base/message_loop/message_loop.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -50,7 +49,6 @@
 
 using base::Bind;
 using base::CancelableClosure;
-using base::MessageLoop;
 
 // Callback and timer threads should run at RT priority in order to ensure they
 // meet audio deadlines.  Use this priority for all audio/timer related thread.
