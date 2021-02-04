@@ -39,6 +39,7 @@
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
+#include "stack/include/hci_error_code.h"
 
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
 
@@ -452,11 +453,13 @@ typedef struct t_l2c_linkcb {
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
 
  private:
-  uint16_t disc_reason_;
+  tHCI_REASON disc_reason_{HCI_ERR_UNDEFINED};
 
  public:
-  uint16_t DisconnectReason() const { return disc_reason_; }
-  void SetDisconnectReason(uint16_t disc_reason) { disc_reason_ = disc_reason; }
+  tHCI_REASON DisconnectReason() const { return disc_reason_; }
+  void SetDisconnectReason(tHCI_REASON disc_reason) {
+    disc_reason_ = disc_reason;
+  }
 
   tBT_TRANSPORT transport;
   bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }

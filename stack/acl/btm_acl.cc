@@ -59,6 +59,7 @@
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_iso_api.h"
 #include "stack/include/btu.h"
+#include "stack/include/hci_error_code.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/sco_hci_link_interface.h"
@@ -66,7 +67,7 @@
 
 void gatt_find_in_device_record(const RawAddress& bd_addr,
                                 tBLE_BD_ADDR* address_with_type);
-void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
+void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
                             const RawAddress& p_bda);
 
 void BTM_db_reset(void);

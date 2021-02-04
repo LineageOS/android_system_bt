@@ -18,10 +18,11 @@
 #pragma once
 
 #include "bt_common.h"
+#include "stack/include/hci_error_code.h"
 
 // This header contains functions for HCI-LinkManagement to invoke
 
-extern bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason);
+extern bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason);
 
 extern void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
                                   uint8_t hci_status);
