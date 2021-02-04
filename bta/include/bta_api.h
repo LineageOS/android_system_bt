@@ -30,6 +30,7 @@
 
 #include "bt_target.h"  // Must be first to define build configuration
 
+#include "osi/include/log.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
@@ -118,14 +119,32 @@ typedef uint16_t
 
 typedef uint16_t tBTA_DM_CONN;
 
-/* M/S preferred roles */
-#define BTA_ANY_ROLE 0x00
-#define BTA_CENTRAL_ROLE_PREF 0x01
-#define BTA_CENTRAL_ROLE_ONLY 0x02
-#define BTA_PERIPHERAL_ROLE_ONLY \
-  0x03 /* Used for PANU only, skip role switch to central */
+/* Central/peripheral preferred roles */
+typedef enum : uint8_t {
+  BTA_ANY_ROLE = 0x00,
+  BTA_CENTRAL_ROLE_PREF = 0x01,
+  BTA_CENTRAL_ROLE_ONLY = 0x02,
+  /* Used for PANU only, skip role switch to central */
+  BTA_PERIPHERAL_ROLE_ONLY = 0x03,
+} tBTA_PREF_ROLES;
 
-typedef uint8_t tBTA_PREF_ROLES;
+inline tBTA_PREF_ROLES toBTA_PREF_ROLES(uint8_t role) {
+  ASSERT_LOG(role <= BTA_PERIPHERAL_ROLE_ONLY,
+             "Passing illegal preferred role:0x%02x [0x%02x<=>0x%02x]", role,
+             BTA_ANY_ROLE, BTA_PERIPHERAL_ROLE_ONLY);
+  return static_cast<tBTA_PREF_ROLES>(role);
+}
+
+inline std::string preferred_role_text(const tBTA_PREF_ROLES& role) {
+  switch (role) {
+    CASE_RETURN_TEXT(BTA_ANY_ROLE);
+    CASE_RETURN_TEXT(BTA_CENTRAL_ROLE_PREF);
+    CASE_RETURN_TEXT(BTA_CENTRAL_ROLE_ONLY);
+    CASE_RETURN_TEXT(BTA_PERIPHERAL_ROLE_ONLY);
+    default:
+      return std::string("UNKNOWN:%hhu", role);
+  }
+}
 
 enum {
 

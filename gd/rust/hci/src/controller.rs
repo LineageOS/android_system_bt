@@ -218,21 +218,15 @@ pub struct SupportedCommands {
 impl SupportedCommands {
     /// Check whether a given opcode is supported by the controller
     pub fn is_supported(&self, opcode: OpCode) -> bool {
-        match opcode {
-            OpCode::ReadLocalSupportedCommands => true,
-            _ => {
-                let converted = OpCodeIndex::try_from(opcode);
-                if converted.is_err() {
-                    return false;
-                }
-
-                let index = converted.unwrap().to_usize().unwrap();
-
-                // The 10 here looks sus, but hci_packets.pdl mentions the index value
-                // is octet * 10 + bit
-                self.supported[index / 10] & (1 << (index % 10)) == 1
-            }
+        let converted = OpCodeIndex::try_from(opcode);
+        if converted.is_err() {
+            return false;
         }
+
+        let index = converted.unwrap().to_usize().unwrap();
+
+        // OpCodeIndex is encoded as octet * 10 + bit for readability
+        self.supported[index / 10] & (1 << (index % 10)) == 1
     }
 }
 

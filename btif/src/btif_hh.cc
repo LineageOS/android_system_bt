@@ -1370,7 +1370,7 @@ static bt_status_t set_idle_time(RawAddress* bd_addr, uint8_t idle_time) {
     return BT_STATUS_FAIL;
   }
 
-  btif_hh_device_t* p_dev = p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
+  btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
   if (p_dev == NULL) {
     BTIF_TRACE_WARNING("%s: addr = %s not opened", __func__,
                        bd_addr->ToString().c_str());
