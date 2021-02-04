@@ -452,6 +452,17 @@ void Link::AddEncryptionChangeListener(EncryptionChangeListener listener) {
   encryption_change_listener_.push_back(listener);
 }
 
+void Link::OnPendingPacketChange(Cid local_cid, bool has_packet) {
+  if (has_packet) {
+    remaining_packets_to_be_sent_++;
+  } else {
+    remaining_packets_to_be_sent_--;
+  }
+  if (link_manager_ != nullptr) {
+    link_manager_->OnPendingPacketChange(GetDevice().GetAddress(), remaining_packets_to_be_sent_);
+  }
+}
+
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap
