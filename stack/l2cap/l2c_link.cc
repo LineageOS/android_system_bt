@@ -35,6 +35,7 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/hci_error_code.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/bt_transport.h"
@@ -134,7 +135,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
   }
 }
 
-void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
+void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
                             const RawAddress& p_bda) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return;
@@ -325,7 +326,7 @@ void l2c_link_sec_comp2(const RawAddress& p_bda,
  * Returns          true if the link is known about, else false
  *
  ******************************************************************************/
-bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
+bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
   if (bluetooth::shim::is_gd_l2cap_enabled()) {
     return false;
   }

@@ -30,7 +30,7 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb) {
   mock_function_count_map[__func__]++;
   return nullptr;
 }
-bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
+bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
   mock_function_count_map[__func__]++;
   return false;
 }
@@ -56,7 +56,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
                               BT_HDR* p_buf) {
   mock_function_count_map[__func__]++;
 }
-void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
+void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
                             const RawAddress& p_bda) {
   mock_function_count_map[__func__]++;
 }
