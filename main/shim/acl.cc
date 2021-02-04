@@ -23,6 +23,7 @@
 #include <chrono>
 #include <cstdint>
 #include <functional>
+#include <future>
 #include <map>
 #include <memory>
 #include <string>
@@ -255,6 +256,11 @@ class ShimAclConnection {
 
   CreationTime GetCreationTime() const { return creation_time_; }
   uint16_t Handle() const { return handle_; }
+
+  void Shutdown() {
+    Disconnect();
+    LOG_INFO("Shutdown ACL connection handle:0x%04x", handle_);
+  }
 
  protected:
   const uint16_t handle_{kInvalidHciHandle};
@@ -608,6 +614,24 @@ struct bluetooth::shim::legacy::Acl::impl {
     handle_to_le_connection_map_[handle]->EnqueuePacket(std::move(packet));
   }
 
+  void ShutdownClassicConnections(std::promise<void> promise) {
+    LOG_INFO("Shutdown gd acl shim classic connections");
+    for (auto& connection : handle_to_classic_connection_map_) {
+      connection.second->Shutdown();
+    }
+    handle_to_classic_connection_map_.clear();
+    promise.set_value();
+  }
+
+  void ShutdownLeConnections(std::promise<void> promise) {
+    LOG_INFO("Shutdown gd acl shim le connections");
+    for (auto& connection : handle_to_le_connection_map_) {
+      connection.second->Shutdown();
+    }
+    handle_to_le_connection_map_.clear();
+    promise.set_value();
+  }
+
   void HoldMode(HciHandle handle, uint16_t max_interval,
                 uint16_t min_interval) {
     ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
@@ -807,11 +831,17 @@ bluetooth::shim::legacy::Acl::~Acl() {
   bluetooth::shim::UnregisterDumpsysFunction(static_cast<void*>(this));
   GetController()->UnregisterCompletedMonitorAclPacketsCallback();
 
-  bool dump_connection_history = false;
+  if (CheckForOrphanedAclConnections()) {
+    pimpl_->DumpConnectionHistory();
+  }
+}
+
+bool bluetooth::shim::legacy::Acl::CheckForOrphanedAclConnections() const {
+  bool orphaned_acl_connections = false;
 
   if (!pimpl_->handle_to_classic_connection_map_.empty()) {
     LOG_ERROR("About to destroy classic active ACL");
-    for (auto& connection : pimpl_->handle_to_classic_connection_map_) {
+    for (const auto& connection : pimpl_->handle_to_classic_connection_map_) {
       LOG_ERROR("  Orphaned classic ACL handle:0x%04x bd_addr:%s created:%s",
                 connection.second->Handle(),
                 PRIVATE_ADDRESS(connection.second->GetRemoteAddress()),
@@ -820,12 +850,12 @@ bluetooth::shim::legacy::Acl::~Acl() {
                     connection.second->GetCreationTime())
                     .c_str());
     }
-    dump_connection_history = true;
+    orphaned_acl_connections = true;
   }
 
   if (!pimpl_->handle_to_le_connection_map_.empty()) {
     LOG_ERROR("About to destroy le active ACL");
-    for (auto& connection : pimpl_->handle_to_le_connection_map_) {
+    for (const auto& connection : pimpl_->handle_to_le_connection_map_) {
       LOG_ERROR("  Orphaned le ACL handle:0x%04x bd_addr:%s created:%s",
                 connection.second->Handle(),
                 PRIVATE_ADDRESS(connection.second->GetRemoteAddressWithType()),
@@ -834,11 +864,9 @@ bluetooth::shim::legacy::Acl::~Acl() {
                     connection.second->GetCreationTime())
                     .c_str());
     }
-    dump_connection_history = true;
+    orphaned_acl_connections = true;
   }
-  if (dump_connection_history) {
-    pimpl_->DumpConnectionHistory();
-  }
+  return orphaned_acl_connections;
 }
 
 void bluetooth::shim::legacy::Acl::on_incoming_acl_credits(uint16_t handle,
@@ -1147,4 +1175,24 @@ void bluetooth::shim::legacy::Acl::HACK_OnScoDisconnected(uint16_t handle,
 
 void bluetooth::shim::legacy::Acl::DumpConnectionHistory(int fd) const {
   pimpl_->DumpConnectionHistory(fd);
+}
+
+void bluetooth::shim::legacy::Acl::Shutdown() {
+  if (CheckForOrphanedAclConnections()) {
+    std::promise<void> shutdown_promise;
+    auto shutdown_future = shutdown_promise.get_future();
+    handler_->CallOn(pimpl_.get(), &Acl::impl::ShutdownClassicConnections,
+                     std::move(shutdown_promise));
+    shutdown_future.wait();
+
+    shutdown_promise = std::promise<void>();
+    ;
+    shutdown_future = shutdown_promise.get_future();
+    handler_->CallOn(pimpl_.get(), &Acl::impl::ShutdownLeConnections,
+                     std::move(shutdown_promise));
+    shutdown_future.wait();
+    LOG_WARN("Flushed open ACL connections");
+  } else {
+    LOG_INFO("All ACL connections have been previously closed");
+  }
 }

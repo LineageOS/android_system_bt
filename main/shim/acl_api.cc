@@ -74,3 +74,7 @@ void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
       ? Stack::GetInstance()->GetAcl()->DisconnectClassic(handle, reason)
       : Stack::GetInstance()->GetAcl()->DisconnectLe(handle, reason);
 }
+
+void bluetooth::shim::ACL_Shutdown() {
+  Stack::GetInstance()->GetAcl()->Shutdown();
+}
