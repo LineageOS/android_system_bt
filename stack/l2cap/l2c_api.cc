@@ -1220,7 +1220,6 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
 
   // Get a CCB and link the lcb to it
   if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
-    p_lcb->SetDisconnectReason(L2CAP_CONN_NO_RESOURCES);
     LOG_WARN("Unable to allocate fixed channel resource fixed_cid:0x%04x",
              fixed_cid);
     l2cu_release_lcb(p_lcb);
