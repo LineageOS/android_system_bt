@@ -235,8 +235,6 @@ typedef struct {
   MX_FRAME rx_frame;
   tL2CAP_APPL_INFO reg_info; /* L2CAP Registration info */
 
-  /* MCB based on the L2CAP's lcid */
-  tRFC_MCB* p_rfc_lcid_mcb[MAX_L2CAP_CHANNELS];
   bool peer_rx_disabled; /* If true peer sent FCOFF */
   uint8_t last_mux;      /* Last mux allocated */
   uint8_t last_port_index;  // Index of last port allocated in rfc_cb.port
@@ -253,6 +251,9 @@ extern tRFC_CB rfc_cb;
 
 extern std::unordered_map<uint32_t /* scn */, uint16_t /* sec_mask */>
     rfcomm_security_records;
+
+/* MCB based on the L2CAP's lcid */
+extern std::unordered_map<uint16_t /* cid */, tRFC_MCB*> rfc_lcid_mcb;
 
 /* Timer running on the multiplexor channel while no DLCI connection is open */
 #define RFC_MCB_INIT_INACT_TIMER 60 /* in seconds */
