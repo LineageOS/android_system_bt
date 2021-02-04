@@ -741,46 +741,6 @@ uint16_t AVDT_ReconfigReq(uint8_t handle, AvdtpSepConfig* p_cfg) {
 
 /*******************************************************************************
  *
- * Function         AVDT_ReconfigRsp
- *
- * Description      Respond to a reconfigure request from the peer device.
- *                  This function must be called if the application receives
- *                  an AVDT_RECONFIG_IND_EVT through its control callback.
- *
- *
- * Returns          AVDT_SUCCESS if successful, otherwise error.
- *
- ******************************************************************************/
-uint16_t AVDT_ReconfigRsp(uint8_t handle, uint8_t label, uint8_t error_code,
-                          uint8_t category) {
-  AvdtpScb* p_scb;
-  tAVDT_SCB_EVT evt;
-  uint16_t result = AVDT_SUCCESS;
-
-  AVDT_TRACE_DEBUG("%s: avdt_handle=%d label=%d error_code=0x%x category=%d",
-                   __func__, handle, label, error_code, category);
-
-  /* map handle to scb */
-  p_scb = avdt_scb_by_hdl(handle);
-  if (p_scb == NULL) {
-    result = AVDT_BAD_HANDLE;
-  }
-  /* send event to scb */
-  else {
-    evt.msg.hdr.err_code = error_code;
-    evt.msg.hdr.err_param = category;
-    evt.msg.hdr.label = label;
-    avdt_scb_event(p_scb, AVDT_SCB_API_RECONFIG_RSP_EVT, &evt);
-  }
-
-  if (result != AVDT_SUCCESS) {
-    AVDT_TRACE_ERROR("%s: result=%d avdt_handle=%d", __func__, result, handle);
-  }
-  return result;
-}
-
-/*******************************************************************************
- *
  * Function         AVDT_SecurityReq
  *
  * Description      Send a security request to the peer device.  When the
@@ -925,45 +885,6 @@ uint16_t AVDT_WriteReqOpt(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
 
 /*******************************************************************************
  *
- * Function         AVDT_WriteReq
- *
- * Description      Send a media packet to the peer device.  The stream must
- *                  be started before this function is called.  Also, this
- *                  function can only be called if the stream is a SRC.
- *
- *                  When AVDTP has sent the media packet and is ready for the
- *                  next packet, an AVDT_WRITE_CFM_EVT is sent to the
- *                  application via the control callback.  The application must
- *                  wait for the AVDT_WRITE_CFM_EVT before it makes the next
- *                  call to AVDT_WriteReq().  If the applications calls
- *                  AVDT_WriteReq() before it receives the event the packet
- *                  will not be sent.  The application may make its first call
- *                  to AVDT_WriteReq() after it receives an AVDT_START_CFM_EVT
- *                  or AVDT_START_IND_EVT.
- *
- *                  The application passes the packet using the BT_HDR
- *                  structure.
- *                  This structure is described in section 2.1.  The offset
- *                  field must be equal to or greater than AVDT_MEDIA_OFFSET.
- *                  This allows enough space in the buffer for the L2CAP and
- *                  AVDTP headers.
- *
- *                  The memory pointed to by p_pkt must be a GKI buffer
- *                  allocated by the application.  This buffer will be freed
- *                  by the protocol stack; the application must not free
- *                  this buffer.
- *
- *
- * Returns          AVDT_SUCCESS if successful, otherwise error.
- *
- ******************************************************************************/
-uint16_t AVDT_WriteReq(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
-                       uint8_t m_pt) {
-  return AVDT_WriteReqOpt(handle, p_pkt, time_stamp, m_pt, AVDT_DATA_OPT_NONE);
-}
-
-/*******************************************************************************
- *
  * Function         AVDT_ConnectReq
  *
  * Description      This function initiates an AVDTP signaling connection
@@ -1076,105 +997,6 @@ uint16_t AVDT_GetL2CapChannel(uint8_t handle) {
   }
 
   return (lcid);
-}
-
-/*******************************************************************************
- *
- * Function         AVDT_SendReport
- *
- * Description
- *
- *
- *
- * Returns
- *
- ******************************************************************************/
-uint16_t AVDT_SendReport(uint8_t handle, AVDT_REPORT_TYPE type,
-                         tAVDT_REPORT_DATA* p_data) {
-  AvdtpScb* p_scb;
-  uint16_t result = AVDT_BAD_PARAMS;
-  AvdtpTransportChannel* p_tbl;
-  uint8_t *p, *plen, *pm1, *p_end;
-  uint32_t ssrc;
-  uint16_t len;
-
-  AVDT_TRACE_DEBUG("%s: avdt_handle=%d type=%d", __func__, handle, type);
-
-  /* map handle to scb && verify parameters */
-  if (((p_scb = avdt_scb_by_hdl(handle)) != NULL) && (p_scb->p_ccb != NULL) &&
-      (((type == AVDT_RTCP_PT_SR) &&
-        (p_scb->stream_config.tsep == AVDT_TSEP_SRC)) ||
-       ((type == AVDT_RTCP_PT_RR) &&
-        (p_scb->stream_config.tsep == AVDT_TSEP_SNK)) ||
-       (type == AVDT_RTCP_PT_SDES))) {
-    result = AVDT_NO_RESOURCES;
-
-    /* build SR - assume fit in one packet */
-    p_tbl = avdt_ad_tc_tbl_by_type(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb);
-    if (p_tbl->state == AVDT_AD_ST_OPEN) {
-      BT_HDR* p_pkt = (BT_HDR*)osi_malloc(p_tbl->peer_mtu + sizeof(BT_HDR));
-
-      p_pkt->offset = L2CAP_MIN_OFFSET;
-      p = (uint8_t*)(p_pkt + 1) + p_pkt->offset;
-      pm1 = p;
-      *p++ = AVDT_MEDIA_OCTET1 | 1;
-      *p++ = type;
-      /* save the location for length */
-      plen = p;
-      p += 2;
-      ssrc = avdt_scb_gen_ssrc(p_scb);
-      UINT32_TO_BE_STREAM(p, ssrc);
-
-      switch (type) {
-        case AVDT_RTCP_PT_SR: /* Sender Report */
-          *pm1 = AVDT_MEDIA_OCTET1;
-          UINT32_TO_BE_STREAM(p, p_data->sr.ntp_sec);
-          UINT32_TO_BE_STREAM(p, p_data->sr.ntp_frac);
-          UINT32_TO_BE_STREAM(p, p_data->sr.rtp_time);
-          UINT32_TO_BE_STREAM(p, p_data->sr.pkt_count);
-          UINT32_TO_BE_STREAM(p, p_data->sr.octet_count);
-          break;
-
-        case AVDT_RTCP_PT_RR: /* Receiver Report */
-          *p++ = p_data->rr.frag_lost;
-          AVDT_TRACE_API("packet_lost: %d", p_data->rr.packet_lost);
-          p_data->rr.packet_lost &= 0xFFFFFF;
-          AVDT_TRACE_API("packet_lost: %d", p_data->rr.packet_lost);
-          UINT24_TO_BE_STREAM(p, p_data->rr.packet_lost);
-          UINT32_TO_BE_STREAM(p, p_data->rr.seq_num_rcvd);
-          UINT32_TO_BE_STREAM(p, p_data->rr.jitter);
-          UINT32_TO_BE_STREAM(p, p_data->rr.lsr);
-          UINT32_TO_BE_STREAM(p, p_data->rr.dlsr);
-          break;
-
-        case AVDT_RTCP_PT_SDES: /* Source Description */
-          *p++ = AVDT_RTCP_SDES_CNAME;
-          len = strlen((char*)p_data->cname);
-          if (len > AVDT_MAX_CNAME_SIZE) len = AVDT_MAX_CNAME_SIZE;
-          *p++ = (uint8_t)len;
-          strlcpy((char*)p, (char*)p_data->cname, len + 1);
-          p += len;
-          break;
-      }
-      p_end = p;
-      len = p - pm1 - 1;
-      UINT16_TO_BE_STREAM(plen, len);
-
-      /* set the actual payload length */
-      p_pkt->len = p_end - p;
-      /* send the packet */
-      if (L2CAP_DW_FAILED !=
-          avdt_ad_write_req(AVDT_CHAN_REPORT, p_scb->p_ccb, p_scb, p_pkt))
-        result = AVDT_SUCCESS;
-    }
-  }
-
-  if (result != AVDT_SUCCESS) {
-    AVDT_TRACE_WARNING("%s: result=%d avdt_handle=%d", __func__, result,
-                       handle);
-  }
-
-  return result;
 }
 
 /******************************************************************************
