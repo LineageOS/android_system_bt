@@ -1,5 +1,6 @@
 LOCAL_PATH := $(call my-dir)
 
+#LINT.IfChange
 LOCAL_cert_test_sources := \
 	$(call all-named-files-under,*.py,.) \
 	cert/all_cert_testcases
@@ -42,6 +43,7 @@ LOCAL_target_libraries := \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libcrypto.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so
+#LINT.ThenChange(cert/run)
 
 bluetooth_cert_src_and_bin_zip := \
 	$(call intermediates-dir-for,PACKAGING,bluetooth_cert_src_and_bin,HOST)/bluetooth_cert_src_and_bin.zip
