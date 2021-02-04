@@ -1040,7 +1040,9 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
       controller_get_interface()->get_acl_packet_size_classic();
   const uint16_t link_xmit_quota = p_lcb->link_xmit_quota;
   const bool is_bdr_and_fits_in_buffer =
-      (p_buf->len <= acl_packet_size_classic);
+      bluetooth::shim::is_gd_acl_enabled()
+          ? true
+          : (p_buf->len <= acl_packet_size_classic);
 
   if (is_bdr_and_fits_in_buffer) {
     if (link_xmit_quota == 0) {
