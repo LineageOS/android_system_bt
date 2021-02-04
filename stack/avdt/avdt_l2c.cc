@@ -77,8 +77,7 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
   if (p_tbl == NULL) return;
 
   /* store idx in LCID table, store LCID in routing table */
-  avdtp_cb.ad.lcid_tbl[p_tbl->lcid - L2CAP_BASE_APPL_CID] =
-      avdt_ad_tc_tbl_to_idx(p_tbl);
+  avdtp_cb.ad.lcid_tbl[p_tbl->lcid] = avdt_ad_tc_tbl_to_idx(p_tbl);
   avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = p_tbl->lcid;
 
   /* transition to configuration state */
@@ -204,8 +203,7 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
   /* if result ok, proceed with connection */
   /* store idx in LCID table, store LCID in routing table */
-  avdtp_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] =
-      avdt_ad_tc_tbl_to_idx(p_tbl);
+  avdtp_cb.ad.lcid_tbl[lcid] = avdt_ad_tc_tbl_to_idx(p_tbl);
   avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;
 
   /* transition to configuration state */

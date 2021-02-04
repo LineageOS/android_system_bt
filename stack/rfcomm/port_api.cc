@@ -1110,6 +1110,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len,
 void RFCOMM_Init(void) {
   memset(&rfc_cb, 0, sizeof(tRFC_CB)); /* Init RFCOMM control block */
   rfcomm_security_records = {};
+  rfc_lcid_mcb = {};
 
   rfc_cb.rfc.last_mux = MAX_BD_CONNECTIONS;
 
