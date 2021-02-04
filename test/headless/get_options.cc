@@ -32,6 +32,7 @@ enum OptionType {
   kOptionMsleep = 3,
   kOptionStdErr = 4,
   kOptionFlags = 5,
+  kOptionClear = 6,
 };
 
 constexpr struct option long_options[] = {
@@ -41,14 +42,16 @@ constexpr struct option long_options[] = {
     {"msleep", required_argument, 0, 0},  // kOptionMsleep
     {"stderr", no_argument, 0, 0},        // kOptionStdErr
     {"flags", required_argument, 0, 0},   // kOptionFlags
+    {"clear", no_argument, 0, 0},         // kOptionDevice
     {0, 0, 0, 0}};
 
-const char* kShortArgs = "d:l:u:";
+const char* kShortArgs = "cd:l:u:";
 
 }  // namespace
 
 void bluetooth::test::headless::GetOpt::Usage() const {
   fprintf(stdout, "%s: Usage:\n", name_);
+  fprintf(stdout, "%s  -c  Clear logcat logs\n", name_);
   fprintf(stdout,
           "%s  --device=<device,>  Comma separated list of remote devices\n",
           name_);
@@ -131,6 +134,9 @@ void bluetooth::test::headless::GetOpt::ProcessOption(int option_index,
       for (auto& flag : string_list) {
         init_flags_.push_back(flag);
       }
+      break;
+    case kOptionClear:
+      clear_logcat_ = true;
       break;
     default:
       fflush(nullptr);

@@ -16,7 +16,11 @@
 
 #define LOG_TAG "bt_headless"
 
+#include <iostream>
 #include <unordered_map>
+
+#include <sys/wait.h>
+#include <unistd.h>
 
 #include "base/logging.h"     // LOG() stdout and android log
 #include "osi/include/log.h"  // android log only
@@ -32,6 +36,24 @@
 using namespace bluetooth::test::headless;
 
 namespace {
+
+void clear_logcat() {
+  int pid;
+  if ((pid = fork())) {
+    // parent process
+    int status;
+    waitpid(pid, &status, 0);  // wait for the child to exit
+    ASSERT_LOG(WIFEXITED(status), "Unable to clear logcat");
+  } else {
+    // child process
+    const char exec[] = "/system/bin/logcat";
+    const char arg0[] = "-c";
+
+    execl(exec, exec, arg0, NULL);
+
+    ASSERT_LOG(false, "Should not return from exec process");
+  }
+}
 
 class Main : public HeadlessTest<int> {
  public:
@@ -58,6 +80,11 @@ class Main : public HeadlessTest<int> {
     if (options_.close_stderr_) {
       fclose(stderr);
     }
+
+    if (options_.clear_logcat_) {
+      clear_logcat();
+    }
+
     return HeadlessTest<int>::Run();
   }
 };
