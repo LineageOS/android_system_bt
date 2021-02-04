@@ -24,6 +24,8 @@
 #ifndef AVDT_INT_H
 #define AVDT_INT_H
 
+#include <unordered_map>
+
 #include "avdt_api.h"
 #include "avdt_defs.h"
 #include "avdtc_api.h"
@@ -686,7 +688,7 @@ class AvdtpRoutingEntry {
  */
 class AvdtpAdaptationLayer {
  public:
-  AvdtpAdaptationLayer() : lcid_tbl{} {}
+  AvdtpAdaptationLayer() {}
 
   void Reset() {
     for (size_t i = 0; i < AVDT_NUM_LINKS; i++) {
@@ -697,7 +699,7 @@ class AvdtpAdaptationLayer {
     for (size_t i = 0; i < AVDT_NUM_TC_TBL; i++) {
       tc_tbl[i].Reset();
     }
-    memset(lcid_tbl, 0, sizeof(lcid_tbl));
+    lcid_tbl.clear();
   }
 
   /**
@@ -711,7 +713,8 @@ class AvdtpAdaptationLayer {
 
   AvdtpRoutingEntry rt_tbl[AVDT_NUM_LINKS][AVDT_NUM_RT_TBL];
   AvdtpTransportChannel tc_tbl[AVDT_NUM_TC_TBL];
-  uint8_t lcid_tbl[MAX_L2CAP_CHANNELS];  // Map LCID to tc_tbl index
+
+  std::unordered_map<uint16_t, uint8_t> lcid_tbl;  // Map LCID to tc_tbl index
 };
 
 /**

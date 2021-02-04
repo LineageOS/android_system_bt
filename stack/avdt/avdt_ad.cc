@@ -193,14 +193,11 @@ AvdtpTransportChannel* avdt_ad_tc_tbl_by_st(uint8_t type, AvdtpCcb* p_ccb,
  *
  ******************************************************************************/
 AvdtpTransportChannel* avdt_ad_tc_tbl_by_lcid(uint16_t lcid) {
-  uint8_t idx;
-
-  idx = avdtp_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID];
-
-  if (idx < AVDT_NUM_TC_TBL) {
+  if (avdtp_cb.ad.lcid_tbl.count(lcid) != 0) {
+    uint8_t idx = avdtp_cb.ad.lcid_tbl[lcid];
     return &avdtp_cb.ad.tc_tbl[idx];
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -553,10 +550,8 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
         L2CA_ConnectReq2(AVDT_PSM, p_ccb->peer_addr, BTM_SEC_OUT_AUTHENTICATE);
     if (lcid != 0) {
       /* if connect req ok, store tcid in lcid table  */
-      avdtp_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] =
-          avdt_ad_tc_tbl_to_idx(p_tbl);
-      AVDT_TRACE_DEBUG("avdtp_cb.ad.lcid_tbl[%d] = %d",
-                       (lcid - L2CAP_BASE_APPL_CID),
+      avdtp_cb.ad.lcid_tbl[lcid] = avdt_ad_tc_tbl_to_idx(p_tbl);
+      AVDT_TRACE_DEBUG("avdtp_cb.ad.lcid_tbl[%d] = %d", (lcid),
                        avdt_ad_tc_tbl_to_idx(p_tbl));
 
       avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;

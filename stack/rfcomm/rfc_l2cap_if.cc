@@ -357,20 +357,15 @@ void RFCOMM_CongestionStatusInd(uint16_t lcid, bool is_congested) {
  *
  ******************************************************************************/
 tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
-  if (lcid - L2CAP_BASE_APPL_CID >= MAX_L2CAP_CHANNELS) {
-    RFCOMM_TRACE_ERROR("rfc_find_lcid_mcb LCID:0x%x", lcid);
-    return nullptr;
-  } else {
-    tRFC_MCB* p_mcb = rfc_cb.rfc.p_rfc_lcid_mcb[lcid - L2CAP_BASE_APPL_CID];
-    if (p_mcb != nullptr) {
-      if (p_mcb->lcid != lcid) {
-        LOG(WARNING) << __func__ << "LCID reused lcid=:" << loghex(lcid)
-                     << ", current_lcid=" << loghex(p_mcb->lcid);
-        return nullptr;
-      }
+  tRFC_MCB* p_mcb = rfc_lcid_mcb[lcid];
+  if (p_mcb != nullptr) {
+    if (p_mcb->lcid != lcid) {
+      LOG(WARNING) << __func__ << "LCID reused lcid=:" << loghex(lcid)
+                   << ", current_lcid=" << loghex(p_mcb->lcid);
+      return nullptr;
     }
-    return p_mcb;
   }
+  return p_mcb;
 }
 
 /*******************************************************************************
@@ -381,14 +376,6 @@ tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
  *
  ******************************************************************************/
 void rfc_save_lcid_mcb(tRFC_MCB* p_mcb, uint16_t lcid) {
-  if (lcid < L2CAP_BASE_APPL_CID) {
-    LOG(ERROR) << __func__ << ": LCID " << lcid << " is too small";
-    return;
-  }
-  auto mcb_index = static_cast<size_t>(lcid - L2CAP_BASE_APPL_CID);
-  if (mcb_index >= MAX_L2CAP_CHANNELS) {
-    LOG(ERROR) << __func__ << ": LCID " << lcid << " is too large";
-    return;
-  }
-  rfc_cb.rfc.p_rfc_lcid_mcb[mcb_index] = p_mcb;
+  auto mcb_index = static_cast<size_t>(lcid);
+  rfc_lcid_mcb[mcb_index] = p_mcb;
 }
