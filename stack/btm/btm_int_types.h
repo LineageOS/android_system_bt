@@ -351,7 +351,7 @@ typedef struct {
 
     /* Initialize BTM component structures */
     btm_inq_vars.Init(); /* Inquiry Database and Structures */
-    acl_cb_.Init();      /* ACL Database and Structures */
+    acl_cb_ = {};
     sco_cb.Init();       /* SCO Database and Structures (If included) */
     devcb.Init();
 

@@ -22,6 +22,8 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "bluetooth"
+
 #include "bt_target.h"
 
 #if (BTA_HH_INCLUDED == TRUE)

@@ -60,6 +60,11 @@ class Scheduler {
    */
   virtual void SetChannelTxPriority(Cid cid, bool high_priority) {}
 
+  /**
+   * Called by data controller to indicate that a channel is closed and packets should be dropped
+   */
+  virtual void RemoveChannel(Cid cid) {}
+
   virtual ~Scheduler() = default;
 };
 

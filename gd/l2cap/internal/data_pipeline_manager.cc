@@ -36,6 +36,7 @@ void DataPipelineManager::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> ch
 void DataPipelineManager::DetachChannel(Cid cid) {
   ASSERT(sender_map_.find(cid) != sender_map_.end());
   sender_map_.erase(cid);
+  scheduler_->RemoveChannel(cid);
   scheduler_->SetChannelTxPriority(cid, false);
 }
 
