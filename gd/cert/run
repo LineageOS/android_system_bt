@@ -79,7 +79,9 @@ CERT_TEST_VENV=${ANDROID_BUILD_TOP}/out/dist/bluetooth_venv
 OUT_TARGET="${ANDROID_BUILD_TOP}/out/target"
 TEST_CONFIG="${ANDROID_BUILD_TOP}/system/bt/gd/cert/host_config.json"
 TEST_FILTER="-tf ${ANDROID_BUILD_TOP}/system/bt/gd/cert/all_cert_testcases"
-BUILD_TARGET="bluetooth_stack_with_facade"
+CPP_BUILD_TARGET="bluetooth_stack_with_facade root-canal bluetooth_packets_python3"
+RUST_BUILD_TARGET="bluetooth_with_facades root-canal bluetooth_packets_python3"
+BUILD_TARGET=$CPP_BUILD_TARGET
 
 CLEAN_VENV=false
 GOTTA_GO_FAST=false
@@ -193,12 +195,14 @@ function parse_options {
         shift # past argument
         ;;
         --rust)
-        BUILD_TARGET="bluetooth_with_facades"
+        BUILD_TARGET=$RUST_BUILD_TARGET
+        export RUST_BACKTRACE=1
         TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/rust_android_devices_config.json
         shift # past argument
         ;;
         --rhost)
-        BUILD_TARGET="bluetooth_with_facades"
+        export RUST_BACKTRACE=1
+        BUILD_TARGET=$RUST_BUILD_TARGET
         TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/rust_host_config.json
         shift # past argument
         ;;
@@ -234,10 +238,18 @@ function parse_options {
 }
 
 function soong_build {
-    $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"modules-in-a-dir" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" dist $BUILD_TARGET
-    if [[ $? -ne 0 ]] ; then
-        echo "Failed to build ${BUILD_TARGET}"
-        exit 1
+    if [ "$CLEAN_VENV" == true ] ; then
+        $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"modules-in-a-dir" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" dist $BUILD_TARGET -j20
+        if [[ $? -ne 0 ]] ; then
+            echo "Failed to build ${BUILD_TARGET}"
+            exit 1
+        fi
+    else
+        $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" $BUILD_TARGET -j20
+        if [[ $? -ne 0 ]] ; then
+            echo "Failed to build ${BUILD_TARGET}"
+            exit 1
+        fi
     fi
 }
 
@@ -283,6 +295,48 @@ function setup_venv {
         exit 1
     fi
 
+    venv_common
+}
+
+function incremental_venv {
+#LINT.IfChange
+    HOST_BIN="${ANDROID_BUILD_TOP}/out/host/linux-x86/bin"
+    HOST_LIB="${ANDROID_BUILD_TOP}/out/host/linux-x86/lib64"
+    DEST_DIR="${ANDROID_BUILD_TOP}/out/dist/bluetooth_venv/acts"
+    DEST_LIB_DIR="${DEST_DIR}/lib64"
+    cp {$HOST_BIN,$DEST_DIR}/bluetooth_stack_with_facade
+    cp {$HOST_BIN,$DEST_DIR}/bluetooth_with_facades
+    cp {$HOST_BIN,$DEST_DIR}/root-canal
+
+    cp {$HOST_LIB,$DEST_DIR}/bluetooth_packets_python3.so
+
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libbase.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libbluetooth_gd.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libc++.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libchrome.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libcrypto-host.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libevent-host.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libgrpc++_unsecure.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libgrpc++.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libgrpc_wrap.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/liblog.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libssl-host.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libz-host.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libprotobuf-cpp-full.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libunwindstack.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libdexfile_support.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/liblzma.so
+    cp {$HOST_LIB,$DEST_LIB_DIR}/libbacktrace.so
+
+    for i in `find ${ANDROID_BUILD_TOP}/system/bt/gd -name "*.py" -type f`; do
+        cp {${ANDROID_BUILD_TOP}/system/bt/gd,$DEST_DIR}${i#${ANDROID_BUILD_TOP}/system/bt/gd}
+    done
+#LINT.ThenChange(../Android.mk)
+
+    venv_common
+}
+
+function venv_common {
     $(echo "${CERT_TEST_VENV}/bin/python" "${CERT_TEST_VENV}/acts/setup.py" --quiet build --force)
     if [[ $? -ne 0 ]] ; then
         echo "Error building GD Python libraries"
@@ -320,7 +374,6 @@ print(json.dumps(config))
     exit 1
   fi
 fi
-
 }
 
 function gotta_go_fast {
@@ -425,7 +478,11 @@ function main {
     if [[ "${SKIP_SOONG_BUILD}" != true ]] ; then
         soong_build
     fi
-    setup_venv
+    if [ "$CLEAN_VENV" == true ] ; then
+        setup_venv
+    else
+        incremental_venv
+    fi
     gotta_go_fast
     run_tests
 }
