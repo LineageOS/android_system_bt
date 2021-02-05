@@ -285,8 +285,8 @@ void VectorField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
 	  s << "bytes[" << start_offset.bytes() << "..].to_vec().chunks_exact(";
 	} else {
           s << "bytes[" << start_offset.bytes() << "..(";
-          s << start_offset.bytes() << " + " << size_field_->GetName();
-          s << " as usize)].to_vec().chunks_exact(";
+          s << start_offset.bytes() << " + (" << size_field_->GetName() << " as usize * ";
+          s << GetElementField()->GetSize().bytes() << "))].to_vec().chunks_exact(";
 	}
 
         s << element_size << ").into_iter().map(|i| ";
@@ -302,6 +302,15 @@ void VectorField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
   }
 }
 
-void VectorField::GenRustWriter(std::ostream& s, Size, Size) const {
-  s << "unimplemented!();";
+void VectorField::GenRustWriter(std::ostream& s, Size start_offset, Size) const {
+  s << "for (i, e) in self." << GetName() << ".iter().enumerate() {";
+  if (GetElementField()->GetFieldType() == ScalarField::kFieldType) {
+    s << "buffer[" << start_offset.bytes() << "+i..";
+    s << start_offset.bytes() << "+i+" << GetElementField()->GetSize().bytes() << "]";
+    s << ".copy_from_slice(&e.to_le_bytes())";
+  } else {
+    s << "self." << GetName() << "[i].write_to(&mut buffer[" << start_offset.bytes() << "+i..";
+    s << start_offset.bytes() << "+i+" << GetElementField()->GetSize().bytes() << "]);";
+  }
+  s << "}";
 }
