@@ -40,6 +40,7 @@
 #include "osi/include/log.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/hci_error_code.h"
 
 tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb); // TODO Move
 
@@ -2032,7 +2033,7 @@ void l2cu_device_reset(void) {
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
     if ((p_lcb->in_use) && (p_lcb->Handle() != HCI_INVALID_HANDLE)) {
-      l2c_link_hci_disc_comp(p_lcb->Handle(), (uint8_t)-1);
+      l2c_link_hci_disc_comp(p_lcb->Handle(), HCI_ERR_UNDEFINED);
     }
   }
 }
