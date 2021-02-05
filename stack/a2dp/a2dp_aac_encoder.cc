@@ -19,7 +19,6 @@
 #include "a2dp_aac_encoder.h"
 
 #include <inttypes.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -559,7 +558,7 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations,
       a2dp_aac_encoder_cb.feeding_params.bits_per_sample / 8;
   LOG_VERBOSE("%s: pcm_bytes_per_frame %u", __func__, pcm_bytes_per_frame);
 
-  uint32_t us_this_tick = A2DP_AAC_ENCODER_INTERVAL_MS * 1000;
+  uint32_t us_this_tick = a2dp_aac_encoder_interval_ms * 1000;
   uint64_t now_us = timestamp_us;
   if (a2dp_aac_encoder_cb.aac_feeding_state.last_frame_us != 0)
     us_this_tick =
@@ -567,8 +566,8 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations,
   a2dp_aac_encoder_cb.aac_feeding_state.last_frame_us = now_us;
 
   a2dp_aac_encoder_cb.aac_feeding_state.counter +=
-      (float)a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick * us_this_tick /
-      (A2DP_AAC_ENCODER_INTERVAL_MS * 1000);
+      (float)a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick *
+      us_this_tick / (a2dp_aac_encoder_interval_ms * 1000);
 
   result = a2dp_aac_encoder_cb.aac_feeding_state.counter / pcm_bytes_per_frame;
   a2dp_aac_encoder_cb.aac_feeding_state.counter -= result * pcm_bytes_per_frame;

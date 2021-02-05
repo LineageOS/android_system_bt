@@ -22,7 +22,6 @@
 #include "a2dp_sbc_encoder.h"
 
 #include <limits.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
