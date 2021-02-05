@@ -425,6 +425,12 @@ typedef void (*acl_state_changed_callback)(bt_status_t status,
                                            RawAddress* remote_bd_addr,
                                            bt_acl_state_t state);
 
+/** Bluetooth link quality report callback */
+typedef void (*link_quality_report_callback)(
+    uint64_t timestamp, int report_id, int rssi, int snr,
+    int retransmission_count, int packets_not_receive_count,
+    int negative_acknowledgement_count);
+
 typedef enum { ASSOCIATE_JVM, DISASSOCIATE_JVM } bt_cb_thread_evt;
 
 /** Thread Associate/Disassociate JVM Callback */
@@ -475,6 +481,7 @@ typedef struct {
   dut_mode_recv_callback dut_mode_recv_cb;
   le_test_mode_callback le_test_mode_cb;
   energy_info_callback energy_info_cb;
+  link_quality_report_callback link_quality_report_cb;
 } bt_callbacks_t;
 
 typedef void (*alarm_cb)(void* data);
