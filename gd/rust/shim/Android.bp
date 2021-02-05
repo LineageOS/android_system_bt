@@ -83,7 +83,7 @@ cc_library_static {
     shared_libs: [
         "libchrome",
     ],
-    static_libs: [
+    whole_static_libs: [
         "libbt_shim_ffi",
     ],
 }
