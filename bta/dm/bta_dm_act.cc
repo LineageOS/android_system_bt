@@ -2448,6 +2448,7 @@ static void bta_dm_disable_conn_down_timer_cback(UNUSED_ATTR void* data) {
   bta_dm_disable_pm();
 
   bta_dm_cb.disabling = false;
+  LOG_INFO("Stack device manager shutdown completed");
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 
