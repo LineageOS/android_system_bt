@@ -271,6 +271,7 @@ tAVCT_LCB* avct_lcb_alloc(const RawAddress& bd_addr) {
       p_lcb->peer_addr = bd_addr;
       AVCT_TRACE_DEBUG("avct_lcb_alloc %d", p_lcb->allocated);
       p_lcb->tx_q = fixed_queue_new(SIZE_MAX);
+      p_lcb->peer_mtu = L2CAP_LE_MIN_MTU;
       break;
     }
   }

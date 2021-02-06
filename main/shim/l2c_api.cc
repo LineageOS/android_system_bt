@@ -178,17 +178,9 @@ struct ClassicDynamicChannelHelper {
     channel->RegisterOnCloseCallback(GetGdShimHandler()->BindOnceOn(
         this, &ClassicDynamicChannelHelper::on_channel_close, cid_token));
 
-    channel->GetQueueUpEnd()->RegisterDequeue(
-        GetGdShimHandler(),
-        bluetooth::common::Bind(&ClassicDynamicChannelHelper::on_incoming_data,
-                                bluetooth::common::Unretained(this),
-                                cid_token));
-
     channel_enqueue_buffer_[cid_token] = std::make_unique<
         bluetooth::os::EnqueueBuffer<bluetooth::packet::BasePacketBuilder>>(
         channel->GetQueueUpEnd());
-
-    channels_[cid_token] = std::move(channel);
 
     if (initiator_local) {
       do_in_main_thread(
@@ -211,6 +203,14 @@ struct ClassicDynamicChannelHelper {
                                               cid_token, L2CAP_INITIATOR_LOCAL,
                                               base::Unretained(&cfg_info)));
     }
+
+    channel->GetQueueUpEnd()->RegisterDequeue(
+        GetGdShimHandler(),
+        bluetooth::common::Bind(&ClassicDynamicChannelHelper::on_incoming_data,
+                                bluetooth::common::Unretained(this),
+                                cid_token));
+
+    channels_[cid_token] = std::move(channel);
   }
 
   void on_incoming_data(uint16_t cid_token) {
