@@ -66,7 +66,7 @@ static thread_t* thread;
 static list_t* clients;
 
 static bool hci_inject_open(const hci_t* hci_interface) {
-#if (BT_NET_DEBUG != TRUE)
+#if (BT_NET_DEBUG != true)
   return true;  // Disable using network sockets for security reasons
 #endif
 
@@ -98,7 +98,7 @@ error:;
 }
 
 static void hci_inject_close(void) {
-#if (BT_NET_DEBUG != TRUE)
+#if (BT_NET_DEBUG != true)
   return;  // Disable using network sockets for security reasons
 #endif
 

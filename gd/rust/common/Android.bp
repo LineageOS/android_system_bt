@@ -70,4 +70,5 @@ cc_library_static {
     shared_libs: [
         "libcutils",
     ],
+    whole_static_libs: ["libcxxbridge05"],
 }
