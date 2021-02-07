@@ -17,11 +17,20 @@
 import grpc
 import re
 
+from facade import common_pb2 as common
 from google.protobuf import text_format
 
 
+def custom_message_formatter(m, ident, as_one_line):
+    if m.DESCRIPTOR == common.Data.DESCRIPTOR:
+        return 'payload: (hex) "{}"'.format(m.payload.hex())
+    return None
+
+
 def pretty_print(request):
-    return '{} {}'.format(type(request).__name__, text_format.MessageToString(request, as_one_line=True))
+    return '{} {}'.format(
+        type(request).__name__,
+        text_format.MessageToString(request, as_one_line=True, message_formatter=custom_message_formatter))
 
 
 class LoggingRandezvousWrapper():
