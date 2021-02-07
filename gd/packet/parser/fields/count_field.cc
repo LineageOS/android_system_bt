@@ -57,3 +57,9 @@ void CountField::GenValidator(std::ostream&) const {
 std::string CountField::GetSizedFieldName() const {
   return sized_field_name_;
 }
+
+void CountField::GenRustWriter(std::ostream& s, Size start_offset, Size) const {
+  s << "buffer[" << start_offset.bytes() << "..";
+  s << start_offset.bytes() + GetSize().bytes() << "].copy_from_slice(&";
+  s << "(self." << GetSizedFieldName() << ".len() as u8).to_le_bytes());";
+}
