@@ -145,7 +145,8 @@ async fn provide_snooped_hal(config: SnoopConfig, raw_hal: RawHal, rt: Arc<Runti
                 Some(acl) = consume(&raw_hal.acl_rx) => {
                     acl_up_tx.send(acl.clone()).await.unwrap();
                     logger.log(Type::Acl, Direction::Up, acl.to_bytes()).await;
-                }
+                },
+                else => break,
             }
         }
     });

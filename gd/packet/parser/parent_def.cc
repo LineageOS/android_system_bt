@@ -573,7 +573,6 @@ bool ParentDef::HasChildEnums() const {
 void ParentDef::GenRustWriteToFields(std::ostream& s) const {
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
-      CountField::kFieldType,
       PaddingField::kFieldType,
       ReservedField::kFieldType,
       FixedScalarField::kFieldType,
@@ -634,7 +633,6 @@ void ParentDef::GenSizeRetVal(std::ostream& s) const {
   int size = 0;
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
-      CountField::kFieldType,
   });
   for (int i = 0; i < fields.size(); i++) {
     size += fields[i]->GetSize().bits();
