@@ -21,6 +21,7 @@
 #include "bta/dm/bta_dm_int.h"
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_hf_client_api.h"
+#include "bta/test/common/fake_osi.h"
 #include "common/message_loop_thread.h"
 
 std::map<std::string, int> mock_function_count_map;
@@ -66,4 +67,60 @@ class BtaDmTest : public testing::Test {
 TEST_F(BtaDmTest, nop) {
   bool status = true;
   ASSERT_EQ(true, status);
+}
+
+extern struct fake_osi_alarm_set_on_mloop fake_osi_alarm_set_on_mloop_;
+
+TEST_F(BtaDmTest, disable_no_acl_links) {
+  bta_dm_cb.disabling = true;
+
+  bta_dm_disable();  // Waiting for all ACL connections to drain
+  ASSERT_EQ(0, mock_function_count_map["btm_remove_acl"]);
+  ASSERT_EQ(1, mock_function_count_map["alarm_set_on_mloop"]);
+
+  // Execute timer callback
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  ASSERT_EQ(1, mock_function_count_map["alarm_set_on_mloop"]);
+  ASSERT_EQ(0, mock_function_count_map["BTIF_dm_disable"]);
+  ASSERT_EQ(1, mock_function_count_map["future_ready"]);
+  ASSERT_TRUE(!bta_dm_cb.disabling);
+}
+
+extern uint16_t mock_stack_acl_num_links;
+TEST_F(BtaDmTest, disable_first_pass_with_acl_links) {
+  bta_dm_cb.disabling = true;
+  // ACL link is open
+  mock_stack_acl_num_links = bta_dm_cb.device_list.count = 1;
+
+  bta_dm_disable();              // Waiting for all ACL connections to drain
+  mock_stack_acl_num_links = 0;  // ACL link has closed
+  ASSERT_EQ(1, mock_function_count_map["alarm_set_on_mloop"]);
+  ASSERT_EQ(0, mock_function_count_map["BTIF_dm_disable"]);
+
+  // First disable pass
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  ASSERT_EQ(1, mock_function_count_map["alarm_set_on_mloop"]);
+  ASSERT_EQ(1, mock_function_count_map["BTIF_dm_disable"]);
+  ASSERT_TRUE(!bta_dm_cb.disabling);
+}
+
+TEST_F(BtaDmTest, disable_second_pass_with_acl_links) {
+  bta_dm_cb.disabling = true;
+  // ACL link is open
+  mock_stack_acl_num_links = bta_dm_cb.device_list.count = 1;
+
+  bta_dm_disable();  // Waiting for all ACL connections to drain
+  ASSERT_EQ(1, mock_function_count_map["alarm_set_on_mloop"]);
+  ASSERT_EQ(0, mock_function_count_map["BTIF_dm_disable"]);
+
+  // First disable pass
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  ASSERT_EQ(2, mock_function_count_map["alarm_set_on_mloop"]);
+  ASSERT_EQ(0, mock_function_count_map["BTIF_dm_disable"]);
+  ASSERT_EQ(1, mock_function_count_map["btm_remove_acl"]);
+
+  // Second disable pass
+  fake_osi_alarm_set_on_mloop_.cb(fake_osi_alarm_set_on_mloop_.data);
+  ASSERT_EQ(1, mock_function_count_map["BTIF_dm_disable"]);
+  ASSERT_TRUE(!bta_dm_cb.disabling);
 }
