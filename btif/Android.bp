@@ -97,6 +97,7 @@ cc_library_static {
     shared_libs: [
         "android.hardware.bluetooth.a2dp@1.0",
         "android.hardware.bluetooth.audio@2.0",
+        "android.hardware.bluetooth.audio@2.1",
         "libaaudio",
         "libcrypto",
         "libcutils",
@@ -134,6 +135,7 @@ cc_test {
         "android.hardware.bluetooth@1.0",
         "android.hardware.bluetooth.a2dp@1.0",
         "android.hardware.bluetooth.audio@2.0",
+        "android.hardware.bluetooth.audio@2.1",
         "libfmq",
         "libhidlbase",
         "liblog",

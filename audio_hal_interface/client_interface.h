@@ -20,8 +20,8 @@
 #include <mutex>
 #include <vector>
 
-#include <android/hardware/bluetooth/audio/2.0/IBluetoothAudioProvider.h>
-#include <android/hardware/bluetooth/audio/2.0/types.h>
+#include <android/hardware/bluetooth/audio/2.1/IBluetoothAudioProvider.h>
+#include <android/hardware/bluetooth/audio/2.1/types.h>
 #include <fmq/MessageQueue.h>
 #include <hardware/audio.h>
 
