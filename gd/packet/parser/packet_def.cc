@@ -964,7 +964,8 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     }
 
     if (!constrained_descendants.empty()) {
-      s << "_ => panic!(\"unexpected value " << "\"),";
+      s << "v => return Err(Error::ConstraintOutOfBounds{field: \"" << constraint_name
+        << "\".to_string(), value: v as u64}),";
     }
 
     s << "};\n";

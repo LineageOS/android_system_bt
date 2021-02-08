@@ -62,16 +62,24 @@ pub fn hci_send_command(
     data: &[u8],
     callback: cxx::UniquePtr<ffi::u8SliceOnceCallback>,
 ) {
-    let packet = CommandPacket::parse(data).unwrap();
-    let mut commands = hci.internal.commands.clone();
-    hci.rt.spawn(async move {
-        let resp = commands.send(packet).await.unwrap();
-        callback.Run(&resp.to_bytes());
-    });
+    log::error!("sending command: {:02x?}", data);
+    match CommandPacket::parse(data) {
+        Ok(packet) => {
+            let mut commands = hci.internal.commands.clone();
+            hci.rt.spawn(async move {
+                let resp = commands.send(packet).await.unwrap();
+                callback.Run(&resp.to_bytes());
+            });
+        }
+        Err(e) => panic!("could not parse command: {:?} {:02x?}", e, data),
+    }
 }
 
 pub fn hci_send_acl(hci: &mut Hci, data: &[u8]) {
-    hci.rt.block_on(hci.internal.acl_tx.send(AclPacket::parse(data).unwrap())).unwrap();
+    match AclPacket::parse(data) {
+        Ok(packet) => hci.rt.block_on(hci.internal.acl_tx.send(packet)).unwrap(),
+        Err(e) => panic!("could not parse acl: {:?} {:02x?}", e, data),
+    }
 }
 
 pub fn hci_register_event(hci: &mut Hci, event: u8) {
