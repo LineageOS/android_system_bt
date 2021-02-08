@@ -405,7 +405,7 @@ void ConnectionHandler::MessageCb(uint8_t handle, uint8_t label, uint8_t opcode,
   device_map_[handle]->MessageReceived(label, Packet::Parse(pkt));
 }
 
-void ConnectionHandler::SdpCb(const RawAddress& bdaddr, SdpCallback cb,
+void ConnectionHandler::SdpCb(RawAddress bdaddr, SdpCallback cb,
                               tSDP_DISCOVERY_DB* disc_db, uint16_t status) {
   LOG(INFO) << __PRETTY_FUNCTION__ << ": SDP lookup callback received";
 
