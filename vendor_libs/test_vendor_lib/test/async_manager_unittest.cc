@@ -145,7 +145,7 @@ TEST_F(AsyncManagerSocketTest, TestOneConnection) {
 }
 
 TEST_F(AsyncManagerSocketTest, TestRepeatedConnections) {
-  static const int num_connections = 300;
+  static const int num_connections = 30;
   for (int i = 0; i < num_connections; i++) {
     int socket_cli_fd = ConnectClient();
     WriteFromClient(socket_cli_fd);
@@ -155,7 +155,7 @@ TEST_F(AsyncManagerSocketTest, TestRepeatedConnections) {
 }
 
 TEST_F(AsyncManagerSocketTest, TestMultipleConnections) {
-  static const int num_connections = 300;
+  static const int num_connections = 30;
   int socket_cli_fd[num_connections];
   for (int i = 0; i < num_connections; i++) {
     socket_cli_fd[i] = ConnectClient();
