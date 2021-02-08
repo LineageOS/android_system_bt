@@ -19,6 +19,7 @@ cc_library_static {
     ],
     shared_libs: [
         "android.hardware.bluetooth.audio@2.0",
+        "android.hardware.bluetooth.audio@2.1",
         "libfmq",
         "libhidlbase",
     ],
@@ -45,6 +46,7 @@ cc_test {
     ],
     shared_libs: [
         "android.hardware.bluetooth.audio@2.0",
+        "android.hardware.bluetooth.audio@2.1",
         "libcutils",
         "libfmq",
         "libhidlbase",
