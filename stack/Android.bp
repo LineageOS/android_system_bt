@@ -7,6 +7,7 @@ crypto_toolbox_srcs = [
 cc_test_library {
     name: "crypto_toolbox_for_tests",
     defaults: ["fluoride_defaults"],
+    host_supported: true,
     include_dirs: [
         "system/bt",
     ],
