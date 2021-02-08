@@ -46,37 +46,38 @@ static_library("hci") {
   ]
 }
 
-executable("net_test_hci") {
-  testonly = true
-  sources = [
-    "//bt/osi/test/AllocationTestHarness.cc",
-    "//bt/osi/test/AlarmTestHarness.cc",
-    "test/packet_fragmenter_test.cc",
-  ]
+if (use.test) {
+  executable("net_test_hci") {
+    sources = [
+      "//bt/osi/test/AllocationTestHarness.cc",
+      "//bt/osi/test/AlarmTestHarness.cc",
+      "test/packet_fragmenter_test.cc",
+    ]
 
-  include_dirs = [
-    "//bt/",
-    "//bt/internal_include",
-    "//bt/btcore/include",
-    "//bt/hci/include",
-    "//bt/osi/test",
-    "//bt/stack/include",
-  ]
+    include_dirs = [
+      "//bt/",
+      "//bt/internal_include",
+      "//bt/btcore/include",
+      "//bt/hci/include",
+      "//bt/osi/test",
+      "//bt/stack/include",
+    ]
 
-  deps = [
-    "//bt/hci",
-    "//bt/osi",
-    "//bt/btcore",
-  ]
+    deps = [
+      "//bt/hci",
+      "//bt/osi",
+      "//bt/btcore",
+    ]
 
-  configs += [
-    "//bt:target_defaults",
-    "//bt:external_gtest_main",
-  ]
+    configs += [
+      "//bt:target_defaults",
+      "//bt:external_gtest_main",
+    ]
 
-  libs = [
-    "-lpthread",
-    "-lrt",
-    "-ldl",
-  ]
+    libs = [
+      "pthread",
+      "rt",
+      "dl",
+    ]
+  }
 }

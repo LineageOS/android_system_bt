@@ -61,43 +61,44 @@ static_library("osi") {
   ]
 }
 
-executable("net_test_osi") {
-  testonly = true
-  sources = [
-    "test/AlarmTestHarness.cc",
-    "test/AllocationTestHarness.cc",
-    "test/alarm_test.cc",
-    "test/allocation_tracker_test.cc",
-    "test/allocator_test.cc",
-    "test/array_test.cc",
-    "test/config_test.cc",
-    "test/future_test.cc",
-    "test/hash_map_utils_test.cc",
-    "test/list_test.cc",
-    "test/properties_test.cc",
-    "test/rand_test.cc",
-    "test/reactor_test.cc",
-    "test/ringbuffer_test.cc",
-    "test/thread_test.cc",
-  ]
+if (use.test) {
+  executable("net_test_osi") {
+    sources = [
+      "test/AlarmTestHarness.cc",
+      "test/AllocationTestHarness.cc",
+      "test/alarm_test.cc",
+      "test/allocation_tracker_test.cc",
+      "test/allocator_test.cc",
+      "test/array_test.cc",
+      "test/config_test.cc",
+      "test/future_test.cc",
+      "test/hash_map_utils_test.cc",
+      "test/list_test.cc",
+      "test/properties_test.cc",
+      "test/rand_test.cc",
+      "test/reactor_test.cc",
+      "test/ringbuffer_test.cc",
+      "test/thread_test.cc",
+    ]
 
-  include_dirs = [
-    "//bt/",
-    "//bt/osi/test",
-  ]
+    include_dirs = [
+      "//bt/",
+      "//bt/osi/test",
+    ]
 
-  deps = [
-    "//bt/osi",
-  ]
+    deps = [
+      "//bt/osi",
+    ]
 
-  configs += [
-    "//bt:external_gtest_main",
-    "//bt:external_gmock_main",
-    "//bt:target_defaults",
-  ]
+    configs += [
+      "//bt:external_gtest_main",
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
 
-  libs = [
-    "-lpthread",
-    "-lrt",
-  ]
+    libs = [
+      "pthread",
+      "rt",
+    ]
+  }
 }

@@ -14,36 +14,36 @@
 #  limitations under the License.
 #
 
-executable("net_test_bluetooth") {
-  testonly = true
-  sources = [
-    "adapter/adapter_unittest.cc",
-    "adapter/bluetooth_test.cc",
-  ]
+if (defined(use.android) && use.android) {
+  executable("net_test_bluetooth") {
+    sources = [
+      "adapter/adapter_unittest.cc",
+      "adapter/bluetooth_test.cc",
+    ]
 
-  include_dirs = [
-    "//bt",
-    "//bt/test/suite",
-  ]
+    include_dirs = [
+      "//bt",
+      "//bt/test/suite",
+    ]
 
-  deps = [
-    "//bt/btcore",
-    "//bt/main:bluetooth",
-    "//bt/service:service",
-    "//bt/service:service_unittests",
-    "//bt/types:types_unittests",
-    "//bt/osi",
-  ]
+    deps = [
+      "//bt/btcore",
+      "//bt/main:bluetooth",
+      "//bt/service:service",
+      "//bt/service:service_unittests",
+      "//bt/types:types_unittests",
+      "//bt/osi",
+    ]
 
-  configs += [
-    "//bt:external_libchrome",
-    "//bt:external_gtest_main",
-  ]
+    configs += [
+      "//bt:target_defaults",
+      "//bt:external_gtest_main",
+    ]
 
-  libs = [
-    "-lpthread",
-    "-lrt",
-    "-ldl",
-    "-latomic",
-  ]
+    libs = [
+      "pthread",
+      "rt",
+      "dl",
+    ]
+  }
 }

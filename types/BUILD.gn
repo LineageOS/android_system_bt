@@ -20,6 +20,7 @@ static_library("types") {
   ]
 
   sources = [
+    "class_of_device.cc",
     "bluetooth/uuid.cc",
     "raw_address.cc",
   ]
@@ -29,36 +30,37 @@ static_library("types") {
   ]
 
   configs += [
-    "//bt:external_libchrome",
+    "//bt:target_defaults",
   ]
 }
 
-executable("types_unittests") {
-  testonly = true
-  sources = [
-    "test/raw_address_unittest.cc",
-    "test/bluetooth/uuid_unittest.cc",
-  ]
+if (use.test) {
+  executable("net_test_types") {
+    sources = [
+      "test/class_of_device_unittest.cc",
+      "test/raw_address_unittest.cc",
+      "test/bluetooth/uuid_unittest.cc",
+    ]
 
-  include_dirs = [
-    "//bt/",
-  ]
+    include_dirs = [
+      "//bt/",
+    ]
 
-  libs = [
-     "-ldl",
-     "-lpthread",
-     "-lresolv",
-     "-lrt",
-     "-lz",
-     "-latomic",
-  ]
+    libs = [
+      "dl",
+      "pthread",
+      "resolv",
+      "rt",
+      "z",
+    ]
 
-  deps = [
-    "//bt/types",
-  ]
+    deps = [
+      ":types",
+    ]
 
-  configs += [
-    "//bt:external_gmock_main",
-    "//bt:external_libchrome",
-  ]
+    configs += [
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
+  }
 }
