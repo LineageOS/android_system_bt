@@ -15,17 +15,12 @@
 #
 
 config("libbluetooth_config") {
-  include_dirs = [
-    "../include",
-  ]
+  include_dirs = [ "../include" ]
 }
 
 shared_library("bluetooth") {
-
   # HAL layer
-  sources = [
-    "//bt/btif/src/bluetooth.cc",
-  ]
+  sources = [ "//bt/btif/src/bluetooth.cc" ]
 
   # platform specific
   sources += [
@@ -71,6 +66,7 @@ shared_library("bluetooth") {
     "//bt/device",
     "//bt/embdrv/g722",
     "//bt/embdrv/sbc",
+    "//bt/gd/common:BluetoothCommonSources",
     "//bt/hci",
     "//bt/osi",
     "//bt/packet",
