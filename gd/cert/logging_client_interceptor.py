@@ -23,7 +23,7 @@ from google.protobuf import text_format
 
 def custom_message_formatter(m, ident, as_one_line):
     if m.DESCRIPTOR == common.Data.DESCRIPTOR:
-        return 'payload: (hex) "{}"'.format(m.payload.hex())
+        return 'payload: (hex) "{}"'.format(m.payload.hex(" "))
     return None
 
 
