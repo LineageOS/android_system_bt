@@ -16,42 +16,54 @@
 
 static_library("crypto_toolbox") {
   sources = [
-    "crypto_toolbox/crypto_toolbox.cc",
     "crypto_toolbox/aes.cc",
     "crypto_toolbox/aes_cmac.cc",
+    "crypto_toolbox/crypto_toolbox.cc",
   ]
 
-  include_dirs = [
-    "//bt/",
-  ]
+  include_dirs = [ "//bt/" ]
 
-  configs += [
-    "//bt:target_defaults",
-  ]
+  configs += [ "//bt:target_defaults" ]
 }
 
 source_set("nonstandard_codecs") {
-  sources = [
-    "a2dp/a2dp_aac.cc",
-    "a2dp/a2dp_aac_decoder.cc",
-    "a2dp/a2dp_aac_encoder.cc",
-    "a2dp/a2dp_vendor_aptx.cc",
-    "a2dp/a2dp_vendor_aptx_encoder.cc",
-    "a2dp/a2dp_vendor_aptx_hd.cc",
-    "a2dp/a2dp_vendor_aptx_hd_encoder.cc",
-    "a2dp/a2dp_vendor_ldac.cc",
-    "a2dp/a2dp_vendor_ldac_abr.cc",
-    "a2dp/a2dp_vendor_ldac_decoder.cc",
-    "a2dp/a2dp_vendor_ldac_encoder.cc",
-  ]
+  if (defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs) {
+    sources = [
+      "a2dp/a2dp_aac.cc",
+      "a2dp/a2dp_aac_decoder.cc",
+      "a2dp/a2dp_aac_encoder.cc",
+      "a2dp/a2dp_vendor_aptx.cc",
+      "a2dp/a2dp_vendor_aptx_encoder.cc",
+      "a2dp/a2dp_vendor_aptx_hd.cc",
+      "a2dp/a2dp_vendor_aptx_hd_encoder.cc",
+      "a2dp/a2dp_vendor_ldac.cc",
+      "a2dp/a2dp_vendor_ldac_abr.cc",
+      "a2dp/a2dp_vendor_ldac_decoder.cc",
+      "a2dp/a2dp_vendor_ldac_encoder.cc",
+    ]
 
-  configs += [
-    # "//bt:external_libldac",
-    # "//bt:external_aac",
-  ]
+    include_dirs = [
+      "//bt",
+      "//bt/bta/include",
+      "//bt/btif/include",
+      "//bt/internal_include",
+      "//bt/stack/include",
+      "//bt/utils/include",
+    ]
+
+    deps = [
+      "//bt/gd/rust/shim:init_flags_bridge_header",
+    ]
+
+    configs += [
+      "//bt:target_defaults",
+      "//bt:external_libldac",
+      "//bt:external_aac",
+    ]
+  }
 }
 
-static_library("stack") {
+source_set("stack") {
   sources = [
     "a2dp/a2dp_api.cc",
     "a2dp/a2dp_codec_config.cc",
@@ -61,6 +73,7 @@ static_library("stack") {
     "a2dp/a2dp_sbc_up_sample.cc",
     "a2dp/a2dp_vendor.cc",
     "acl/btm_acl.cc",
+    "acl/btm_ble_connection_establishment.cc",
     "acl/btm_pm.cc",
     "avct/avct_api.cc",
     "avct/avct_bcb_act.cc",
@@ -76,8 +89,7 @@ static_library("stack") {
     "avdt/avdt_l2c.cc",
     "avdt/avdt_msg.cc",
     "avdt/avdt_scb.cc",
-    # Disable temporarily due to libcutils dependency
-    #"avdt/avdt_scb_act.cc",
+    "avdt/avdt_scb_act.cc",
     "avrc/avrc_api.cc",
     "avrc/avrc_bld_ct.cc",
     "avrc/avrc_bld_tg.cc",
@@ -124,10 +136,10 @@ static_library("stack") {
     "gatt/gatt_utils.cc",
     "hcic/hciblecmds.cc",
     "hcic/hcicmds.cc",
-    "hid/hidh_api.cc",
-    "hid/hidh_conn.cc",
     "hid/hidd_api.cc",
     "hid/hidd_conn.cc",
+    "hid/hidh_api.cc",
+    "hid/hidh_conn.cc",
     "l2cap/l2c_api.cc",
     "l2cap/l2c_ble.cc",
     "l2cap/l2c_csm.cc",
@@ -160,8 +172,7 @@ static_library("stack") {
     "smp/smp_api.cc",
     "smp/smp_br_main.cc",
     "smp/smp_keys.cc",
-    # Disable temporarily due to libcutils dependency
-    #"smp/smp_l2c.cc",
+    "smp/smp_l2c.cc",
     "smp/smp_main.cc",
     "smp/smp_utils.cc",
     "srvc/srvc_dis.cc",
@@ -193,7 +204,6 @@ static_library("stack") {
     "//bt/vnd/ble",
     "//bt/btif/include",
     "//bt/hci/include",
-    "//bt/internal_include",
     "//bt/udrv/include",
     "//bt/rpc/include",
     "//bt/hcis",
@@ -206,178 +216,194 @@ static_library("stack") {
 
   deps = [
     ":crypto_toolbox",
+    ":nonstandard_codecs",
     "//bt/types",
     "//bt/gd/rust/shim:init_flags_bridge_header",
     "//bt/third_party/proto_logging/stats:libbt-platform-protos",
-  ]
-
-  configs += [
-    "//bt:target_defaults",
-  ]
-}
-
-executable("stack_unittests") {
-  testonly = true
-  sources = [
-    "test/stack_a2dp_test.cc",
-    "test/stack_avrcp_test.cc",
-  ]
-
-  include_dirs = [
-    "include",
-    "//bt/",
-    "//bt/bta/eatt",
-    "//bt/bta/include",
-    "//bt/bta/sys",
-    "//bt/btcore/include",
-    "//bt/embdrv/sbc/encoder/include",
-    "//bt/hci/include",
-    "//bt/internal_include",
-    "//bt/stack/a2dp",
-    "//bt/stack/btm",
-    "//bt/stack/include",
-    "//bt/udrv/include",
-    "//bt/utils/include",
-    "//bt/vnd/include"
-  ]
-
-  libs = [
-    "-ldl",
-    "-lpthread",
-    "-lresolv",
-    "-lrt",
-    "-lz",
-    "-latomic",
-  ]
-
-  deps = [
-    ":stack",
-    "//bt/osi",
-    "//bt/btcore",
-    "//bt/device",
-    "//bt/embdrv/sbc",
-    "//bt/embdrv/g722",
-    "//bt/hci",
-    "//bt/types",
-    "//bt/main:bluetooth",
-  ]
-
-  configs += [
-    "//bt:external_tinyxml2",
-    "//bt:external_gmock_main",
-    "//bt:external_libchrome",
-  ]
-}
-
-executable("net_test_stack_crypto_toolbox") {
-  testonly = true
-  sources = [
-    "test/crypto_toolbox_test.cc",
-  ]
-
-  include_dirs = [
-    "//bt/",
-  ]
-
-  deps = [
-    ":crypto_toolbox",
-  ]
-
-  configs += [
-    "//bt:external_gmock_main",
-    "//bt:external_libchrome",
-  ]
-}
-
-executable("net_test_stack_smp") {
-  testonly = true
-  sources = [
-        "smp/p_256_curvepara.cc",
-        "smp/p_256_ecc_pp.cc",
-        "smp/p_256_multprecision.cc",
-        "smp/smp_keys.cc",
-        "smp/smp_api.cc",
-        "smp/smp_main.cc",
-        "smp/smp_utils.cc",
-        "test/stack_smp_test.cc",
-  ]
-
-  include_dirs = [
-    "//bt/",
-    "//bt/linux_include",
-    "//bt/internal_include",
-    "//bt/btcore/include",
-    "//bt/hci/include",
-    "//bt/utils/include",
-    "//bt/bta/include",
-    "//bt/bta/sys",
-    "//bt/btcore/include",
-    "//bt/embdrv/sbc/encoder/include",
-    "//bt/hci/include",
-    "//bt/internal_include",
-    "//bt/stack/a2dp",
-    "//bt/stack/l2cap",
-    "//bt/stack/btm",
-    "//bt/stack/include",
-    "//bt/udrv/include",
-    "//bt/utils/include",
-    "//bt/vnd/include"
-  ]
-
-  libs = [
-    "-ldl",
-    "-lpthread",
-    "-lresolv",
-    "-lrt",
-    "-lz",
-    "-latomic",
-  ]
-
-  deps = [
-    ":crypto_toolbox",
-    "//bt/osi",
     "//bt/types",
   ]
 
-  configs += [
-    "//bt:external_tinyxml2",
-    "//bt:external_gmock_main",
-    "//bt:target_defaults",
-  ]
+  configs += [ "//bt:target_defaults" ]
 }
 
-executable("net_test_stack_multi_adv") {
-  testonly = true
-  sources = [
-    "btm/btm_ble_multi_adv.cc",
-    "test/ble_advertiser_test.cc",
-  ]
+if (use.test) {
+  executable("net_test_btm_iso") {
+    sources = [
+      "btm/btm_iso.cc",
+      "test/btm_iso_test.cc",
+      "test/common/mock_controller.cc",
+      "test/common/mock_gatt_layer.cc",
+      "test/common/mock_hcic_layer.cc",
+    ]
 
-  include_dirs = [
-    "include",
-    "//bt/",
-    "//bt/btcore/include",
-    "//bt/hci/include",
-    "//bt/internal_include",
-    "//bt/stack/btm",
-  ]
+    include_dirs = [
+      "btm",
+      "include",
+      "test/common",
+      "//bt/internal_include",
+      "//bt/packet/tests",
+    ]
 
-  libs = [
-    "-ldl",
-    "-lpthread",
-    "-lresolv",
-    "-lrt",
-    "-lz",
-    "-latomic",
-  ]
+    deps = [
+      "//bt/osi",
+      "//bt/common",
+    ]
 
-  deps = [
-    "//bt/types",
-  ]
-
-  configs += [
-    "//bt:external_gmock_main",
-    "//bt:target_defaults",
-  ]
+    configs += [
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
+  }
 }
 
+if (defined(use.android) && use.android) {
+  executable("stack_unittests") {
+    sources = [
+      "test/stack_a2dp_test.cc",
+      "test/stack_avrcp_test.cc",
+    ]
+
+    include_dirs = [
+      "include",
+      "//bt/",
+      "//bt/bta/eatt",
+      "//bt/bta/include",
+      "//bt/bta/sys",
+      "//bt/btcore/include",
+      "//bt/embdrv/sbc/encoder/include",
+      "//bt/hci/include",
+      "//bt/internal_include",
+      "//bt/stack/a2dp",
+      "//bt/stack/btm",
+      "//bt/stack/include",
+      "//bt/udrv/include",
+      "//bt/utils/include",
+      "//bt/vnd/include",
+    ]
+
+    libs = [
+      "dl",
+      "pthread",
+      "resolv",
+      "rt",
+      "z",
+    ]
+
+    deps = [
+      ":stack",
+      "//bt/btcore",
+      "//bt/device",
+      "//bt/embdrv/g722",
+      "//bt/embdrv/sbc",
+      "//bt/hci",
+      "//bt/main:bluetooth",
+      "//bt/osi",
+      "//bt/types",
+    ]
+
+    configs += [
+      "//bt:external_tinyxml2",
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
+  }
+
+  executable("net_test_stack_crypto_toolbox") {
+    sources = [ "test/crypto_toolbox_test.cc" ]
+
+    include_dirs = [ "//bt/" ]
+
+    deps = [ ":crypto_toolbox" ]
+
+    configs += [
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
+  }
+
+  executable("net_test_stack_smp") {
+    sources = [
+      "smp/p_256_curvepara.cc",
+      "smp/p_256_ecc_pp.cc",
+      "smp/p_256_multprecision.cc",
+      "smp/smp_api.cc",
+      "smp/smp_keys.cc",
+      "smp/smp_main.cc",
+      "smp/smp_utils.cc",
+      "test/stack_smp_test.cc",
+    ]
+
+    include_dirs = [
+      "//bt/",
+      "//bt/linux_include",
+      "//bt/internal_include",
+      "//bt/btcore/include",
+      "//bt/hci/include",
+      "//bt/utils/include",
+      "//bt/bta/include",
+      "//bt/bta/sys",
+      "//bt/btcore/include",
+      "//bt/embdrv/sbc/encoder/include",
+      "//bt/hci/include",
+      "//bt/internal_include",
+      "//bt/stack/a2dp",
+      "//bt/stack/l2cap",
+      "//bt/stack/btm",
+      "//bt/stack/include",
+      "//bt/udrv/include",
+      "//bt/utils/include",
+      "//bt/vnd/include",
+    ]
+
+    libs = [
+      "dl",
+      "pthread",
+      "resolv",
+      "rt",
+      "z",
+    ]
+
+    deps = [
+      ":crypto_toolbox",
+      "//bt/osi",
+      "//bt/types",
+    ]
+
+    configs += [
+      "//bt:external_tinyxml2",
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
+  }
+
+  executable("net_test_stack_multi_adv") {
+    sources = [
+      "btm/btm_ble_multi_adv.cc",
+      "test/ble_advertiser_test.cc",
+    ]
+
+    include_dirs = [
+      "include",
+      "//bt/",
+      "//bt/btcore/include",
+      "//bt/hci/include",
+      "//bt/internal_include",
+      "//bt/stack/btm",
+    ]
+
+    libs = [
+      "dl",
+      "pthread",
+      "resolv",
+      "rt",
+      "z",
+    ]
+
+    deps = [ "//bt/types" ]
+
+    configs += [
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
+  }
+}

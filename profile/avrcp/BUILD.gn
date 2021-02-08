@@ -14,21 +14,50 @@
 #  limitations under the License.
 #
 
-static_library("profile_avrcp") {
-  sources = [
-    "connection_handler.cc",
-    "device.cc",
-  ]
-
+config("avrcp_config") {
   include_dirs = [
     "//bt/",
     "//bt/btcore/include",
     "//bt/internal_include",
     "//bt/stack/include",
     "//bt/profile/avrcp",
+    "//bt/packet",
+    "//bt/packet/include",
+    "//bt/include/hardware/avrcp",
+  ]
+
+  configs = ["//bt:target_defaults"]
+}
+
+static_library("profile_avrcp") {
+  sources = [
+    "connection_handler.cc",
+    "device.cc",
   ]
 
   configs += [
-    "//bt:target_defaults"
+    ":avrcp_config"
   ]
+}
+
+if (use.test) {
+  executable("net_test_avrcp") {
+    sources = [
+      "tests/avrcp_connection_handler_test.cc",
+      "tests/avrcp_device_test.cc",
+    ]
+
+    deps = [
+      ":profile_avrcp",
+      "//bt/device:device",
+      "//bt/osi:osi",
+      "//bt/packet:packet",
+      "//bt/types:types",
+    ]
+
+    configs += [
+      "//bt:external_gmock_main",
+      ":avrcp_config",
+    ]
+  }
 }
