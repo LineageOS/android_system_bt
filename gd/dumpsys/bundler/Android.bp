@@ -70,4 +70,7 @@ cc_test {
     data: [
         "test.bfbs",
     ],
+    test_options: {
+        unit_test: true,
+    },
 }
