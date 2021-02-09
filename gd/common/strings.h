@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <string.h>
 #include <charconv>
 #include <iomanip>
 #include <iterator>
