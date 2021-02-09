@@ -558,11 +558,6 @@ static void transmit_command(BT_HDR* command,
 
   // little endian command opcode
   uint16_t command_op_code = (data[1] << 8 | data[0]);
-  // Gd stack API requires opcode specification and calculates length, so
-  // no need to provide opcode or length here.
-  data += (kCommandOpcodeSize + kCommandLengthSize);
-  len -= (kCommandOpcodeSize + kCommandLengthSize);
-
   auto op_code = static_cast<const bluetooth::hci::OpCode>(command_op_code);
 
   LOG_DEBUG("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
