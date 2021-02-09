@@ -34,7 +34,12 @@ type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug, Error)]
 pub enum Error {
   #[error("Packet parsing failed")]
-  InvalidPacketError
+  InvalidPacketError,
+  #[error("{field} was {value:x}, which is not known")]
+  ConstraintOutOfBounds {
+    field: String,
+    value: u64,
+  },
 }
 
 pub trait Packet {
