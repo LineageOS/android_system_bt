@@ -17,13 +17,11 @@
 #define LOG_TAG "BTAudioClientIf"
 
 #include "client_interface.h"
+#include "hal_version_manager.h"
 
 #include <android/hardware/bluetooth/audio/2.0/IBluetoothAudioPort.h>
-#include <android/hardware/bluetooth/audio/2.0/IBluetoothAudioProvidersFactory.h>
-#include <android/hidl/manager/1.2/IServiceManager.h>
 #include <base/logging.h>
 #include <hidl/MQDescriptor.h>
-#include <hidl/ServiceManagement.h>
 #include <future>
 
 #include "osi/include/log.h"
@@ -36,15 +34,15 @@ using ::android::hardware::Return;
 using ::android::hardware::Void;
 using ::android::hardware::audio::common::V5_0::SourceMetadata;
 using ::android::hardware::bluetooth::audio::V2_0::IBluetoothAudioPort;
-using ::android::hardware::bluetooth::audio::V2_0::
-    IBluetoothAudioProvidersFactory;
+
 using DataMQ = ::android::hardware::MessageQueue<
     uint8_t, ::android::hardware::kSynchronizedReadWrite>;
 
 static constexpr int kDefaultDataReadTimeoutMs = 10;      // 10 ms
 static constexpr int kDefaultDataReadPollIntervalMs = 1;  // non-blocking poll
-static constexpr char kFullyQualifiedInterfaceName[] =
-    "android.hardware.bluetooth.audio@2.0::IBluetoothAudioProvidersFactory";
+
+std::unique_ptr<HalVersionManager> HalVersionManager::instance_ptr =
+    std::unique_ptr<HalVersionManager>(new HalVersionManager());
 
 std::ostream& operator<<(std::ostream& os, const BluetoothAudioCtrlAck& ack) {
   switch (ack) {
@@ -191,7 +189,8 @@ BluetoothAudioClientInterface::BluetoothAudioClientInterface(IBluetoothTransport
                                                              bluetooth::common::MessageLoopThread* message_loop)
     : sink_(sink), provider_(nullptr), session_started_(false), mDataMQ(nullptr),
       death_recipient_(new BluetoothAudioDeathRecipient(this, message_loop)) {
-  if (IsSupported()) {
+  if (HalVersionManager::GetHalVersion() !=
+      BluetoothAudioHalVersion::VERSION_UNAVAILABLE) {
     FetchAudioProvider();
   } else {
     LOG(WARNING) << "IBluetoothAudioProvidersFactory not declared";
@@ -212,39 +211,17 @@ BluetoothAudioClientInterface::GetAudioCapabilities() const {
   return capabilities_;
 }
 
-bool BluetoothAudioClientInterface::IsSupported() {
-  auto service_manager = android::hardware::defaultServiceManager1_2();
-  CHECK(service_manager != nullptr);
-  size_t instance_count = 0;
-  auto listManifestByInterface_cb =
-      [&instance_count](
-          const hidl_vec<android::hardware::hidl_string>& instanceNames) {
-        instance_count = instanceNames.size();
-        LOG(INFO) << "listManifestByInterface_cb returns " << instance_count
-                  << " instance(s)";
-      };
-  auto hidl_retval = service_manager->listManifestByInterface(
-      kFullyQualifiedInterfaceName, listManifestByInterface_cb);
-  if (!hidl_retval.isOk()) {
-    LOG(FATAL) << __func__ << ": IServiceManager::listByInterface failure: "
-               << hidl_retval.description();
-    return false;
-  }
-  return (instance_count > 0);
-}
 
 std::vector<AudioCapabilities>
 BluetoothAudioClientInterface::GetAudioCapabilities(SessionType session_type) {
   std::vector<AudioCapabilities> capabilities(0);
-  if (!IsSupported()) return capabilities;
+  if (HalVersionManager::GetHalVersion() ==
+      BluetoothAudioHalVersion::VERSION_UNAVAILABLE) {
+    return capabilities;
+  }
 
-  android::sp<IBluetoothAudioProvidersFactory> providersFactory =
-      IBluetoothAudioProvidersFactory::getService();
-  CHECK(providersFactory != nullptr)
-      << "IBluetoothAudioProvidersFactory::getService() failed";
-  LOG(INFO) << "IBluetoothAudioProvidersFactory::getService() returned "
-            << providersFactory.get()
-            << (providersFactory->isRemote() ? " (remote)" : " (local)");
+  android::sp<IBluetoothAudioProvidersFactory_2_0> providersFactory =
+      HalVersionManager::GetProviderFactory_2_0();
 
   auto getProviderCapabilities_cb =
       [&capabilities](const hidl_vec<AudioCapabilities>& audioCapabilities) {
@@ -267,12 +244,8 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
     LOG(WARNING) << __func__ << ": reflash";
   }
 
-  android::sp<IBluetoothAudioProvidersFactory> providersFactory =
-      IBluetoothAudioProvidersFactory::getService();
-  CHECK(providersFactory != nullptr) << "IBluetoothAudioProvidersFactory::getService() failed";
-  LOG(INFO) << "IBluetoothAudioProvidersFactory::getService() returned "
-            << providersFactory.get()
-            << (providersFactory->isRemote() ? " (remote)" : " (local)");
+  android::sp<IBluetoothAudioProvidersFactory_2_0> providersFactory =
+      HalVersionManager::GetProviderFactory_2_0();
 
   auto getProviderCapabilities_cb =
       [& capabilities = this->capabilities_](

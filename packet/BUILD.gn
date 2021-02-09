@@ -14,6 +14,18 @@
 #  limitations under the License.
 #
 
+config("packet_config") {
+  include_dirs = [
+    "//bt/",
+    "//bt/include",
+    "//bt/internal_include",
+    "//bt/stack/include",
+    "//bt/profile/avrcp",
+  ]
+
+  configs = [ "//bt:target_defaults" ]
+}
+
 static_library("packet") {
   sources = [
     "avrcp/get_folder_items.cc",
@@ -39,15 +51,51 @@ static_library("packet") {
     "base/packet_builder.cc",
  ]
 
-  include_dirs = [
-    "//bt/",
-    "//bt/include",
-    "//bt/internal_include",
-    "//bt/stack/include",
-    "//bt/profile/avrcp",
-  ]
+  configs += [":packet_config"]
+}
 
-  configs += [
-    "//bt:target_defaults"
-  ]
+if (use.test) {
+  executable("net_test_btpackets") {
+    sources = [
+      "tests/avrcp/avrcp_browse_packet_test.cc",
+      "tests/avrcp/avrcp_packet_test.cc",
+      "tests/avrcp/avrcp_reject_packet_test.cc",
+      "tests/avrcp/change_path_packet_test.cc",
+      "tests/avrcp/general_reject_packet_test.cc",
+      "tests/avrcp/get_capabilities_packet_test.cc",
+      "tests/avrcp/get_element_attributes_packet_test.cc",
+      "tests/avrcp/get_folder_items_packet_test.cc",
+      "tests/avrcp/get_item_attributes_packet_test.cc",
+      "tests/avrcp/get_play_status_packet_test.cc",
+      "tests/avrcp/get_total_number_of_items_packet_test.cc",
+      "tests/avrcp/pass_through_packet_test.cc",
+      "tests/avrcp/play_item_packet_test.cc",
+      "tests/avrcp/register_notification_packet_test.cc",
+      "tests/avrcp/set_absolute_volume_packet_test.cc",
+      "tests/avrcp/set_addressed_player_packet_test.cc",
+      "tests/avrcp/set_browsed_player_packet_test.cc",
+      "tests/avrcp/vendor_packet_test.cc",
+      "tests/base/iterator_test.cc",
+      "tests/base/packet_builder_test.cc",
+      "tests/base/packet_test.cc",
+    ]
+
+    include_dirs = [
+      "//bt/packet/avrcp",
+      "//bt/packet/base",
+      "//bt/packet/include",
+      "//bt/packet/tests",
+      "//bt/packet/tests/avrcp",
+      "//bt/packet/tests/base",
+    ]
+
+    deps = [
+      ":packet",
+    ]
+
+    configs += [
+      ":packet_config",
+      "//bt:external_gmock_main",
+    ]
+  }
 }

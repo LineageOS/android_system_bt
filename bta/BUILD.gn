@@ -121,32 +121,33 @@ static_library("bta") {
   ]
 }
 
-executable("net_test_bta") {
-  testonly = true
-  sources = [
-    "gatt/database_builder.cc",
-    "test/gatt/database_builder_test.cc",
-    "test/gatt/database_builder_sample_device_test.cc",
-    "test/gatt/database_test.cc",
-  ]
+if (use.test) {
+  executable("net_test_bta") {
+    sources = [
+      "gatt/database_builder.cc",
+      "test/gatt/database_builder_test.cc",
+      "test/gatt/database_builder_sample_device_test.cc",
+      "test/gatt/database_test.cc",
+    ]
 
-  include_dirs = [
-    "include",
-    "//bt/",
-    "//bt/bta",
-    "//bt/btcore/include",
-    "//bt/hci/include",
-    "//bt/internal_include",
-    "//bt/stack/btm",
-  ]
+    include_dirs = [
+      "include",
+      "//bt/",
+      "//bt/bta",
+      "//bt/btcore/include",
+      "//bt/hci/include",
+      "//bt/internal_include",
+      "//bt/stack/btm",
+    ]
 
-  deps = [
-    "//bt/bta",
-    "//bt/types",
-  ]
+    deps = [
+      "//bt/bta",
+      "//bt/types",
+    ]
 
-  configs += [
-    "//bt:external_gmock_main",
-    "//bt:target_defaults",
-  ]
+    configs += [
+      "//bt:external_gmock_main",
+      "//bt:target_defaults",
+    ]
+  }
 }

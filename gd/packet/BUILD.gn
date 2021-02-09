@@ -1,5 +1,5 @@
 #
-#  Copyright 2015 Google, Inc.
+#  Copyright 2021 Google
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,22 +14,19 @@
 #  limitations under the License.
 #
 
-static_library("utils") {
+source_set("BluetoothPacketSources") {
   sources = [
-    "src/bt_utils.cc",
+    "bit_inserter.cc",
+    "byte_inserter.cc",
+    "byte_observer.cc",
+    "fragmenting_inserter.cc",
+    "iterator.cc",
+    "packet_view.cc",
+    "raw_builder.cc",
+    "view.cc",
   ]
 
-  include_dirs = [
-    "include",
-    "//bt/",
-    "//bt/stack/include",
-  ]
+  include_dirs = [ "//bt/gd" ]
 
-  configs += [
-    "//bt:target_defaults",
-  ]
-
-  deps = [
-    "//bt/gd/rust/shim:init_flags_bridge_header",
-  ]
+  configs += [ "//bt:target_defaults" ]
 }

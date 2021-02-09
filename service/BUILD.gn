@@ -14,13 +14,68 @@
 #  limitations under the License.
 #
 
-source_set("service") {
+config("service_config") {
+  include_dirs = [
+    "//bt/",
+    "//bt/linux_include",
+    "//bt/include",
+    "//bt/service",
+    "//bt/service/common",
+  ]
+
+  configs = ["//bt:target_defaults"]
+}
+
+source_set("service_daemon_src") {
   sources = [
     "a2dp_sink.cc",
     "a2dp_source.cc",
     "adapter.cc",
     "avrcp_control.cc",
     "avrcp_target.cc",
+    "daemon.cc",
+    "gatt_client.cc",
+    "gatt_server.cc",
+    "gatt_server_old.cc",
+    "hal/bluetooth_av_interface.cc",
+    "hal/bluetooth_avrcp_interface.cc",
+    "hal/bluetooth_gatt_interface.cc",
+    "hal/bluetooth_interface.cc",
+    "ipc/ipc_handler.cc",
+    "ipc/ipc_manager.cc",
+    "logging_helpers.cc",
+    "low_energy_advertiser.cc",
+    "low_energy_scanner.cc",
+    "low_energy_client.cc",
+    "settings.cc",
+  ]
+
+  deps = [
+    "//bt/types",
+    "//bt/osi",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+  ]
+
+  configs += [":service_config"]
+}
+
+source_set("service_linux_src") {
+  sources = [
+    "ipc/ipc_handler_linux.cc",
+    "ipc/linux_ipc_host.cc",
+  ]
+
+  deps = [
+    "//bt/types",
+    "//bt/osi",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+  ]
+
+  configs += [":service_config"]
+}
+
+source_set("service") {
+  sources = [
     "common/bluetooth/a2dp_codec_config.cc",
     "common/bluetooth/adapter_state.cc",
     "common/bluetooth/advertise_data.cc",
@@ -36,45 +91,20 @@ source_set("service") {
     "common/bluetooth/scan_settings.cc",
     "common/bluetooth/service.cc",
     "common/bluetooth/util/atomic_string.cc",
-    "daemon.cc",
-    "gatt_client.cc",
-    "gatt_server.cc",
-    "gatt_server_old.cc",
-    "hal/bluetooth_gatt_interface.cc",
-    "hal/bluetooth_interface.cc",
     "ipc/dbus/bluetooth_adapter.cc",
     "ipc/dbus/ipc_handler_dbus.cc",
-    "hal/bluetooth_av_interface.cc",
-    "hal/bluetooth_avrcp_interface.cc",
-    "hal/fake_bluetooth_gatt_interface.cc",
-    "hal/fake_bluetooth_interface.cc",
-    "ipc/ipc_handler.cc",
-    "ipc/ipc_handler_linux.cc",
-    "ipc/ipc_manager.cc",
-    "ipc/linux_ipc_host.cc",
-    "logging_helpers.cc",
-    "low_energy_advertiser.cc",
-    "low_energy_scanner.cc",
-    "low_energy_client.cc",
-    "settings.cc",
-  ]
-
-  include_dirs = [
-    "//bt/",
-    "//bt/linux_include",
-    "//bt/include",
-    "//bt/service/common",
   ]
 
   deps = [
+    ":service_daemon_src",
+    ":service_linux_src",
     "//bt/types",
     "//bt/osi",
     "//bt/gd/rust/shim:init_flags_bridge_header",
   ]
 
-  configs += [
-    "//bt:target_defaults",
-  ]
+
+  configs += [ ":service_config" ]
 }
 
 executable("bluetoothtbd") {
@@ -87,11 +117,7 @@ executable("bluetoothtbd") {
     "//bt/btcore",
   ]
 
-  configs += [
-    "//bt:target_defaults",
-  ]
-
-  include_dirs = [ "//bt/" ]
+  configs += [ ":service_config" ]
 
   libs = [
     "dl",
@@ -100,21 +126,42 @@ executable("bluetoothtbd") {
   ]
 }
 
-executable("service_unittests") {
-  testonly = true
-  sources = [
-    "test/fake_hal_util.cc",
-    "test/settings_unittest.cc",
-  ]
+if (use.test) {
+  source_set("service_base_test_src") {
+    sources = [
+      "hal/fake_bluetooth_av_interface.cc",
+      "hal/fake_bluetooth_gatt_interface.cc",
+      "hal/fake_bluetooth_interface.cc",
+      "test/a2dp_sink_unittest.cc",
+      "test/a2dp_source_unittest.cc",
+      "test/adapter_unittest.cc",
+      "test/advertise_data_unittest.cc",
+      "test/fake_hal_util.cc",
+      "test/gatt_client_unittest.cc",
+      "test/gatt_server_unittest.cc",
+      "test/low_energy_advertiser_unittest.cc",
+      "test/low_energy_client_unittest.cc",
+      "test/low_energy_scanner_unittest.cc",
+      "test/settings_unittest.cc",
+    ]
 
-  include_dirs = [ "//bt/" ]
+    configs += [ ":service_config" ]
+  }
 
-  deps = [
-    ":service",
-  ]
+  executable("bluetoothtbd_test") {
+    sources = [
+      "test/main.cc"
+    ]
 
-  configs += [
-    "//bt:external_gmock_main",
-    "//bt:target_defaults",
-  ]
+    deps = [
+      ":service_base_test_src",
+      ":service_daemon_src",
+      "//bt/service/common:libbluetooth_common",
+    ]
+
+    configs += [
+      "//bt:external_gmock_main",
+      ":service_config"
+    ]
+  }
 }
