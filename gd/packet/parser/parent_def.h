@@ -91,4 +91,6 @@ class ParentDef : public TypeDef {
   void GenRustWriteToFields(std::ostream& s) const;
 
   void GenSizeRetVal(std::ostream& s) const;
+
+  void GenRustConformanceCheck(std::ostream& s) const;
 };
