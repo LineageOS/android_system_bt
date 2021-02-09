@@ -37,33 +37,34 @@ static_library("btcore") {
   ]
 }
 
-executable("net_test_btcore") {
-  testonly = true
-  sources = [
-    "test/device_class_test.cc",
-    "test/property_test.cc",
-    "//bt/osi/test/AllocationTestHarness.cc",
-  ]
+if (use.test) {
+  executable("net_test_btcore") {
+    sources = [
+      "test/device_class_test.cc",
+      "test/property_test.cc",
+      "//bt/osi/test/AllocationTestHarness.cc",
+    ]
 
-  include_dirs = [
-    "include",
-    "//bt",
-  ]
+    include_dirs = [
+      "include",
+      "//bt",
+    ]
 
-  deps = [
-    "//bt/btcore",
-    "//bt/osi",
-    "//bt/types",
-  ]
+    deps = [
+      "//bt/btcore",
+      "//bt/osi",
+      "//bt/types",
+    ]
 
-  configs += [
-    "//bt:external_gtest_main",
-    "//bt:target_defaults",
-  ]
+    configs += [
+      "//bt:external_gtest_main",
+      "//bt:target_defaults",
+    ]
 
-  libs = [
-    "-lpthread",
-    "-lrt",
-    "-ldl",
-  ]
+    libs = [
+      "pthread",
+      "rt",
+      "dl",
+    ]
+  }
 }

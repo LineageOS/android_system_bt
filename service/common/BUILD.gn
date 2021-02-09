@@ -1,0 +1,42 @@
+#
+#  Copyright 2021 Google
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+#
+
+source_set("libbluetooth_common") {
+  sources = [
+    "bluetooth/a2dp_codec_config.cc",
+    "bluetooth/adapter_state.cc",
+    "bluetooth/advertise_data.cc",
+    "bluetooth/advertise_settings.cc",
+    "bluetooth/avrcp_int_value.cc",
+    "bluetooth/avrcp_media_attr.cc",
+    "bluetooth/avrcp_register_notification_response.cc",
+    "bluetooth/characteristic.cc",
+    "bluetooth/descriptor.cc",
+    "bluetooth/remote_device_props.cc",
+    "bluetooth/scan_filter.cc",
+    "bluetooth/scan_result.cc",
+    "bluetooth/scan_settings.cc",
+    "bluetooth/service.cc",
+    "bluetooth/util/atomic_string.cc",
+  ]
+
+  include_dirs = [
+    ".",
+    "//bt",
+  ]
+
+  configs += ["//bt:target_defaults"]
+}

@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <android/hardware/bluetooth/audio/2.0/types.h>
+#include <android/hardware/bluetooth/audio/2.1/types.h>
 #include <hardware/audio.h>
 #include <condition_variable>
 #include <mutex>
@@ -28,7 +28,8 @@ namespace android {
 namespace bluetooth {
 namespace audio {
 
-using ::android::hardware::bluetooth::audio::V2_0::SessionType;
+using SessionType_2_1 =
+    ::android::hardware::bluetooth::audio::V2_1::SessionType;
 
 // Proxy for Bluetooth Audio HW Module to communicate with Bluetooth Audio
 // Session Control. All methods are not thread safe, so users must acquire a
@@ -87,13 +88,13 @@ class BluetoothAudioPortOut {
   void SetState(BluetoothStreamState state);
 
   bool IsA2dp() const {
-    return session_type_ == SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH ||
-           session_type_ == SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH;
+    return session_type_ == SessionType_2_1::A2DP_SOFTWARE_ENCODING_DATAPATH ||
+           session_type_ == SessionType_2_1::A2DP_HARDWARE_OFFLOAD_DATAPATH;
   }
 
  private:
   BluetoothStreamState state_;
-  SessionType session_type_;
+  SessionType_2_1 session_type_;
   uint16_t cookie_;
   mutable std::mutex cv_mutex_;
   std::condition_variable internal_cv_;

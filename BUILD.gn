@@ -24,6 +24,12 @@ group("all") {
   deps = [
     ":bluetooth",
   ]
+
+  if (use.test) {
+    deps += [
+      ":bluetooth_tests"
+    ]
+  }
 }
 
 # This pulls in main/BUILD.gn and all of its dependencies.
@@ -34,20 +40,34 @@ group("bluetooth") {
   ]
 }
 
-group("bluetooth_tests") {
-  testonly = true
+if (use.test) {
+  group("bluetooth_tests") {
+    deps = [
+      "//bt/common:bluetooth_test_common",
+      "//bt/service:bluetoothtbd_test",
+      "//bt/profile/avrcp:net_test_avrcp",
+      "//bt/btcore:net_test_btcore",
+      "//bt/types:net_test_types",
+      "//bt/stack:net_test_btm_iso",
+      #"//bt/packet:net_test_btpackets",
+    ]
+  }
+}
 
-  deps = [
-    "//bt/test/suite:net_test_bluetooth",
-    "//bt/btcore:net_test_btcore",
-    "//bt/hci:net_test_hci",
-    "//bt/osi:net_test_osi",
-    "//bt/device:net_test_device",
-  ]
+if (defined(use.android) && use.android) {
+  group("android_bluetooth_tests") {
+    deps = [
+      "//bt/test/suite:net_test_bluetooth",
+      "//bt/hci:net_test_hci",
+      "//bt/osi:net_test_osi",
+      "//bt/device:net_test_device",
+    ]
+  }
 }
 
 config("target_defaults") {
   include_dirs = [
+    "//bt",
     "//bt/linux_include",
     "//bt/types",
     "//bt/include",
@@ -143,26 +163,30 @@ pkg_config("pkg_tinyxml2") {
   pkg_deps = [ "tinyxml2" ]
 }
 
-# Uncomment if building nonstandard codecs
-# config("external_aac") {
-#   configs = [ ":pkg_aac" ]
-# }
-#
-# pkg_config("pkg_aac") {
-#   pkg_deps = [ "fdk-aac" ]
-# }
-#
-# config("external_libldac") {
-#   configs = [
-#     ":pkg_libldacBT_enc",
-#     ":pkg_libldacBT_abr",
-#   ]
-# }
-#
-# pkg_config("pkg_libldacBT_enc") {
-#   pkg_deps = [ "ldacBT-enc", ]
-# }
-#
-# pkg_config("pkg_libldacBT_abr") {
-#   pkg_deps = [ "ldacBT-abr", ]
-# }
+# To use non-standard codecs (i.e. ldac, aac, aptx), set this use flag when
+# building. These codecs may have licensing issues that need to be resolved
+# first.
+if (defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs) {
+  config("external_aac") {
+    configs = [ ":pkg_aac" ]
+  }
+
+  pkg_config("pkg_aac") {
+    pkg_deps = [ "fdk-aac" ]
+  }
+
+  config("external_libldac") {
+    configs = [
+      ":pkg_libldacBT_enc",
+      ":pkg_libldacBT_abr",
+    ]
+  }
+
+  pkg_config("pkg_libldacBT_enc") {
+    pkg_deps = [ "ldacBT-enc", ]
+  }
+
+  pkg_config("pkg_libldacBT_abr") {
+    pkg_deps = [ "ldacBT-abr", ]
+  }
+}

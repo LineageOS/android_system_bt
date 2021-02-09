@@ -44,6 +44,8 @@ class CountField : public ScalarField {
 
   virtual std::string GetSizedFieldName() const;
 
+  void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const override;
+
  private:
   int size_;
   std::string sized_field_name_;

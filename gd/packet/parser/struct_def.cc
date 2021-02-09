@@ -402,7 +402,7 @@ void StructDef::GenRustImpls(std::ostream& s) const {
   s << "})}\n";
 
   // write_to function
-  s << "fn write_to(&self, buffer: &mut BytesMut) {";
+  s << "fn write_to(&self, buffer: &mut [u8]) {";
   GenRustWriteToFields(s);
   s << "}\n";
 
