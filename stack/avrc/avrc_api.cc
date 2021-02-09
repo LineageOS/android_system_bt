@@ -237,7 +237,7 @@ static uint8_t* avrc_get_data_ptr(BT_HDR* p_pkt) {
 static BT_HDR* avrc_copy_packet(BT_HDR* p_pkt, int rsp_pkt_len) {
   const int offset = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
   const int pkt_len = MAX(rsp_pkt_len, p_pkt->len);
-  BT_HDR* p_pkt_copy = (BT_HDR*)osi_malloc(BT_HDR_SIZE + offset + pkt_len);
+  BT_HDR* p_pkt_copy = (BT_HDR*)osi_calloc(BT_HDR_SIZE + offset + pkt_len);
 
   /* Copy the packet header, set the new offset, and copy the payload */
   memcpy(p_pkt_copy, p_pkt, BT_HDR_SIZE);
@@ -316,7 +316,7 @@ static uint16_t avrc_send_continue_frag(uint8_t handle, uint8_t label) {
   if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
     int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
     p_pkt_old = p_fcb->p_fmsg;
-    p_pkt = (BT_HDR*)osi_malloc(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE);
+    p_pkt = (BT_HDR*)osi_calloc(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE);
     p_pkt->len = AVRC_MAX_CTRL_DATA_LEN;
     p_pkt->offset = AVCT_MSG_OFFSET;
     p_pkt->layer_specific = p_pkt_old->layer_specific;
@@ -426,7 +426,7 @@ static BT_HDR* avrc_proc_vendor_command(uint8_t handle, uint8_t label,
   }
 
   if (status != AVRC_STS_NO_ERROR) {
-    p_rsp = (BT_HDR*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
+    p_rsp = (BT_HDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
     p_rsp->offset = p_pkt->offset;
     p_data = (uint8_t*)(p_rsp + 1) + p_pkt->offset;
     *p_data++ = AVRC_RSP_REJ;
@@ -487,7 +487,7 @@ static uint8_t avrc_proc_far_msg(uint8_t handle, uint8_t label, uint8_t cr,
     if (pkt_type == AVRC_PKT_START) {
       /* Allocate buffer for re-assembly */
       p_rcb->rasm_pdu = *p_data;
-      p_rcb->p_rmsg = (BT_HDR*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
+      p_rcb->p_rmsg = (BT_HDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
       /* Copy START packet to buffer for re-assembling fragments */
       memcpy(p_rcb->p_rmsg, p_pkt, sizeof(BT_HDR)); /* Copy bt hdr */
 
@@ -922,7 +922,7 @@ static BT_HDR* avrc_pass_msg(tAVRC_MSG_PASS* p_msg) {
   CHECK(p_msg != NULL);
   CHECK(AVRC_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->pass_len));
 
-  BT_HDR* p_cmd = (BT_HDR*)osi_malloc(AVRC_CMD_BUF_SIZE);
+  BT_HDR* p_cmd = (BT_HDR*)osi_calloc(AVRC_CMD_BUF_SIZE);
   p_cmd->offset = AVCT_MSG_OFFSET;
   p_cmd->layer_specific = AVCT_DATA_CTRL;
 
@@ -1190,7 +1190,7 @@ uint16_t AVRC_MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
     if (p_pkt->len > AVRC_MAX_CTRL_DATA_LEN) {
       int offset_len = MAX(AVCT_MSG_OFFSET, p_pkt->offset);
       BT_HDR* p_pkt_new =
-          (BT_HDR*)osi_malloc(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE);
+          (BT_HDR*)osi_calloc(AVRC_PACKET_LEN + offset_len + BT_HDR_SIZE);
       if (p_start != NULL) {
         p_fcb->frag_enabled = true;
         p_fcb->p_fmsg = p_pkt;
