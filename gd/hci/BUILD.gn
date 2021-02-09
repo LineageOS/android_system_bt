@@ -1,5 +1,5 @@
 #
-#  Copyright 2021 Google
+#  Copyright 2021 Google, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,20 +12,32 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
 
-source_set("BluetoothCommonSources") {
+source_set("BluetoothHciSources") {
   sources = [
-    "init_flags.cc",
-    "stop_watch.cc",
-    "strings.cc",
-  ]
-
-  deps = [
-    "//bt/gd/rust/shim:init_flags_bridge_header",
+    "acl_manager.cc",
+    "acl_manager/acl_connection.cc",
+    "acl_manager/acl_fragmenter.cc",
+    "acl_manager/classic_acl_connection.cc",
+    "acl_manager/le_acl_connection.cc",
+    "acl_manager/round_robin_scheduler.cc",
+    "address.cc",
+    "class_of_device.cc",
+    "controller.cc",
+    "hci_layer.cc",
+    "le_address_manager.cc",
+    "le_advertising_manager.cc",
+    "le_scanning_manager.cc",
+    "link_key.cc",
+    "uuid.cc",
   ]
 
   include_dirs = [ "//bt/gd" ]
+
+  deps = [
+    "//bt/gd:dumpsys",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+  ]
 
   configs += [ "//bt:target_defaults" ]
 }

@@ -34,6 +34,7 @@ static_library("btcore") {
 
   deps = [
     "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/gd/rust/shim:message_loop_thread_bridge_header",
   ]
 }
 
