@@ -37,3 +37,12 @@ void FixedScalarField::GenValue(std::ostream& s) const {
 void FixedScalarField::GenStringRepresentation(std::ostream& s, std::string) const {
   s << "+" << value_;
 }
+
+void FixedScalarField::GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const {
+  s << "let " << GetName() << ": " << GetRustDataType() << " = " << value_ << ";";
+  FixedField::GenRustWriter(s, start_offset, end_offset);
+}
+
+void FixedScalarField::GenRustGetter(std::ostream& s, Size start_offset, Size end_offset) const {
+  FixedField::GenRustGetter(s, start_offset, end_offset);
+}
