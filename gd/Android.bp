@@ -517,6 +517,7 @@ rust_library {
         "libnum_traits",
         "libthiserror",
         "libbt_hci_custom_types",
+        "liblog_rust",
     ],
 }
 

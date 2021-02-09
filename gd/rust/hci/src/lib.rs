@@ -22,6 +22,7 @@ use bt_packets::hci::{
 };
 use error::Result;
 use gddi::{module, part_out, provides, Stoppable};
+use log::error;
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
@@ -178,7 +179,11 @@ async fn dispatch(
                         hci_timeout.cancel();
                         let this_opcode = evt.get_command_op_code();
                         match pending.take() {
-                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode => {
+                                if let Err(e) = fut.send(evt.into()) {
+                                    error!("failure dispatching command status {:?}", e);
+                                }
+                            },
                             Some(QueuedCommand{cmd, ..}) => panic!("Waiting for {:?}, got {:?}", cmd.get_op_code(), this_opcode),
                             None => panic!("Unexpected status event with opcode {:?}", this_opcode),
                         }
@@ -187,7 +192,11 @@ async fn dispatch(
                         hci_timeout.cancel();
                         let this_opcode = evt.get_command_op_code();
                         match pending.take() {
-                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode  => fut.send(evt.into()).unwrap(),
+                            Some(QueuedCommand{cmd, fut}) if cmd.get_op_code() == this_opcode => {
+                                if let Err(e) = fut.send(evt.into()) {
+                                    error!("failure dispatching command complete {:?}", e);
+                                }
+                            },
                             Some(QueuedCommand{cmd, ..}) => panic!("Waiting for {:?}, got {:?}", cmd.get_op_code(), this_opcode),
                             None => panic!("Unexpected complete event with opcode {:?}", this_opcode),
                         }
@@ -195,7 +204,11 @@ async fn dispatch(
                     LeMetaEvent(evt) => {
                         let code = evt.get_subevent_code();
                         match le_evt_handlers.lock().await.get(&code) {
-                            Some(sender) => sender.send(evt).await.unwrap(),
+                            Some(sender) => {
+                                if let Err(e) = sender.send(evt).await {
+                                    error!("le meta event channel closed {:?}", e);
+                                }
+                            },
                             None => panic!("Unhandled le subevent {:?}", code),
                         }
                     },
@@ -205,14 +218,21 @@ async fn dispatch(
                     _ => {
                         let code = evt.get_event_code();
                         match evt_handlers.lock().await.get(&code) {
-                            Some(sender) => sender.send(evt).await.unwrap(),
-                            None => panic!("Unhandled le subevent {:?}", code),
+                            Some(sender) => {
+                                if let Err(e) = sender.send(evt).await {
+                                    error!("hci event channel closed {:?}", e);
+                                }
+                            },
+                            None if code == EventCode::NumberOfCompletedPackets =>{},
+                            None => panic!("Unhandled subevent {:?}", code),
                         }
                     },
                 }
             },
             Some(queued) = cmd_rx.recv(), if pending.is_none() => {
-                cmd_tx.send(queued.cmd.clone()).await.unwrap();
+                if let Err(e) = cmd_tx.send(queued.cmd.clone()).await {
+                    error!("command queue closed: {:?}", e);
+                }
                 hci_timeout.reset(Duration::from_secs(2));
                 pending = Some(queued);
             },
