@@ -22,7 +22,6 @@
 
 #include <base/logging.h>
 #include <openssl/rand.h>
-#include <private/android_filesystem_config.h>
 #include <unistd.h>
 
 #include <cctype>
@@ -43,6 +42,7 @@
 #include "btif_keystore.h"
 #include "common/address_obfuscator.h"
 #include "common/metric_id_allocator.h"
+#include "common/os_utils.h"
 #include "main/shim/config.h"
 #include "main/shim/shim.h"
 #include "osi/include/alarm.h"
@@ -95,9 +95,7 @@ static std::unique_ptr<config_t> btif_config_open(const char* filename);
 static bool config_checksum_pass(int check_bit) {
   return ((get_niap_config_compare_result() & check_bit) == check_bit);
 }
-static bool btif_is_niap_mode() {
-  return getuid() == AID_BLUETOOTH && is_niap_mode();
-}
+static bool btif_is_niap_mode() { return is_bluetooth_uid() && is_niap_mode(); }
 static bool btif_in_encrypt_key_name_list(std::string key);
 
 static const int CONFIG_FILE_COMPARE_PASS = 1;
