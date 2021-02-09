@@ -570,12 +570,28 @@ bool ParentDef::HasChildEnums() const {
   return !children_.empty() || fields_.HasPayload();
 }
 
+void ParentDef::GenRustConformanceCheck(std::ostream& s) const {
+  auto fields = fields_.GetFieldsWithTypes({
+      FixedScalarField::kFieldType,
+  });
+
+  for (auto const& field : fields) {
+    auto start_offset = GetOffsetForField(field->GetName(), false);
+    auto end_offset = GetOffsetForField(field->GetName(), true);
+
+    auto f = (FixedScalarField*)field;
+    f->GenRustGetter(s, start_offset, end_offset);
+    s << "if " << f->GetName() << " != ";
+    f->GenValue(s);
+    s << " { return false; } ";
+  }
+}
+
 void ParentDef::GenRustWriteToFields(std::ostream& s) const {
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
       PaddingField::kFieldType,
       ReservedField::kFieldType,
-      FixedScalarField::kFieldType,
   });
 
   for (auto const& field : fields) {

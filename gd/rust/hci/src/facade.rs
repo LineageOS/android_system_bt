@@ -81,9 +81,11 @@ impl HciFacade for HciFacadeService {
     fn send_command(&mut self, ctx: RpcContext<'_>, mut data: Data, sink: UnarySink<Empty>) {
         let packet = CommandPacket::parse(&data.take_payload()).unwrap();
         let mut commands = self.commands.clone();
+        let evt_tx = self.evt_tx.clone();
         ctx.spawn(async move {
             sink.success(Empty::default()).await.unwrap();
-            commands.send(packet).await.unwrap();
+            let response = commands.send(packet).await.unwrap();
+            evt_tx.send(response).await.unwrap();
         });
     }
 

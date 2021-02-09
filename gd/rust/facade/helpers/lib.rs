@@ -43,7 +43,9 @@ impl<T: 'static + Packet + Send> RxAdapter<T> {
             while let Some(payload) = clone_rx.lock().await.recv().await {
                 let mut data = Data::default();
                 data.set_payload(payload.to_vec());
-                sink.send((data, WriteFlags::default())).await.unwrap();
+                if let Err(e) = sink.send((data, WriteFlags::default())).await {
+                    log::error!("failure sending data: {:?}", e);
+                }
             }
         });
     }
