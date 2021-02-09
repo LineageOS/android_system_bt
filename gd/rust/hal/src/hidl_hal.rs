@@ -64,13 +64,20 @@ fn on_init_complete() {
 }
 
 fn on_event(data: &[u8]) {
+    log::error!("got event: {:02x?}", data);
     let callbacks = CALLBACKS.lock().unwrap();
-    callbacks.as_ref().unwrap().evt_tx.send(EventPacket::parse(data).unwrap()).unwrap();
+    match EventPacket::parse(data) {
+        Ok(p) => callbacks.as_ref().unwrap().evt_tx.send(p).unwrap(),
+        Err(e) => log::error!("failure to parse event: {:?} data: {:02x?}", e, data),
+    }
 }
 
 fn on_acl(data: &[u8]) {
     let callbacks = CALLBACKS.lock().unwrap();
-    callbacks.as_ref().unwrap().acl_tx.send(AclPacket::parse(data).unwrap()).unwrap();
+    match AclPacket::parse(data) {
+        Ok(p) => callbacks.as_ref().unwrap().acl_tx.send(p).unwrap(),
+        Err(e) => log::error!("failure to parse incoming ACL: {:?} data: {:02x?}", e, data),
+    }
 }
 
 fn on_sco(_data: &[u8]) {}
