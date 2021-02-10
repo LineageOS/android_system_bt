@@ -1780,6 +1780,9 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
+
+  if (p_char == nullptr) return;
+
   uint16_t uuid = p_char->uuid.As16Bit();
   if (uuid != GATT_UUID_HID_REPORT && uuid != GATT_UUID_HID_BT_KB_INPUT &&
       uuid != GATT_UUID_HID_BT_MOUSE_INPUT &&
