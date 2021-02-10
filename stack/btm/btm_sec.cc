@@ -1190,8 +1190,6 @@ static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
 void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
   ASSERT_LOG(!bluetooth::shim::is_gd_shim_enabled(), "Unreachable code path");
 
-  tBTM_SEC_DEV_REC* p_dev_rec;
-
   BTM_TRACE_EVENT("BTM_ConfirmReqReply() State: %s  Res: %u",
                   btm_pair_state_descr(btm_cb.pairing_state), res);
 
@@ -1204,14 +1202,6 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
 
   if ((res == BTM_SUCCESS) || (res == BTM_SUCCESS_NO_SECURITY)) {
     acl_set_disconnect_reason(HCI_SUCCESS);
-
-    if (res == BTM_SUCCESS) {
-      p_dev_rec = btm_find_dev(bd_addr);
-      if (p_dev_rec != NULL) {
-        p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
-        p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
-      }
-    }
 
     btsnd_hcic_user_conf_reply(bd_addr, true);
   } else {
@@ -3787,6 +3777,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
   if (p_dev_rec->pin_code_length >= 16 ||
       p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB ||
       p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
+    p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
     p_dev_rec->sec_flags |= BTM_SEC_16_DIGIT_PIN_AUTHED;
   }
 
