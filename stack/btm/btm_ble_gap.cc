@@ -47,6 +47,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/gap_api.h"
+#include "stack/include/hci_error_code.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/inq_hci_link_interface.h"
 #include "types/raw_address.h"
@@ -2491,7 +2492,9 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
 
   /* in case of disconnected, we must cancel bgconn and restart
      in order to add back device to acceptlist in order to reconnect */
-  if (bd_addr) btm_ble_bgconn_cancel_if_disconnected(*bd_addr);
+  if (bd_addr != nullptr) {
+    btm_ble_bgconn_cancel_if_disconnected(*bd_addr);
+  }
 
   /* when no connection is attempted, and controller is not rejecting last
      request
@@ -2501,6 +2504,7 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
   if (btm_cb.ble_ctr_cb.is_connection_state_idle() &&
       status != HCI_ERR_HOST_REJECT_RESOURCES &&
       status != HCI_ERR_MAX_NUM_OF_CONNECTIONS) {
+    LOG_DEBUG("Resuming le background connections");
     btm_ble_resume_bg_conn();
   }
 }
