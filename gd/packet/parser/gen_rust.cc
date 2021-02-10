@@ -40,6 +40,15 @@ pub enum Error {
     field: String,
     value: u64,
   },
+  #[error("when parsing {obj}.{field} needed length of {wanted} but got {got}")]
+  InvalidLengthError {
+    obj: String,
+    field: String,
+    wanted: usize,
+    got: usize,
+  },
+  #[error("Due to size restrictions a struct could not be parsed.")]
+  ImpossibleStructError,
 }
 
 pub trait Packet {

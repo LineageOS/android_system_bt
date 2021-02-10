@@ -130,3 +130,14 @@ bool PacketField::GenRustNameAndType(std::ostream& s) const {
   s << GetName() << ": " << param_type;
   return true;
 }
+
+void PacketField::GenBoundsCheck(std::ostream& s, Size start_offset, Size, std::string context) const {
+  Size size = GetSize();
+  s << "if bytes.len() < " << start_offset.bytes() + size.bytes() << " {";
+  s << " return Err(Error::InvalidLengthError{";
+  s << "    obj: \"" << context << "\".to_string(),";
+  s << "    field: \"" << GetName() << "\".to_string(),";
+  s << "    wanted: " << start_offset.bytes() + size.bytes() << ",";
+  s << "    got: bytes.len()});";
+  s << "}";
+}

@@ -62,6 +62,8 @@ class PayloadField : public PacketField {
 
   void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
+  void GenBoundsCheck(std::ostream&, Size, Size, std::string) const override{};
+
   // Payload fields can only be dynamically sized.
   const SizeField* size_field_;
   // Only used if the size of the payload is based on another field.
