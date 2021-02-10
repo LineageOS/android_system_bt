@@ -131,19 +131,31 @@ async fn provide_snooped_hal(config: SnoopConfig, raw_hal: RawHal, rt: Arc<Runti
         loop {
             select! {
                 Some(evt) = consume(&raw_hal.evt_rx) => {
-                    evt_up_tx.send(evt.clone()).await.unwrap();
+                    if let Err(e) = evt_up_tx.send(evt.clone()).await {
+                        error!("evt channel closed {:?}", e);
+                        break;
+                    }
                     logger.log(Type::Evt, Direction::Up, evt.to_bytes()).await;
                 },
                 Some(cmd) = cmd_down_rx.recv() => {
-                    raw_hal.cmd_tx.send(cmd.clone()).unwrap();
+                    if let Err(e) = raw_hal.cmd_tx.send(cmd.clone())  {
+                        error!("cmd channel closed {:?}", e);
+                        break;
+                    }
                     logger.log(Type::Cmd, Direction::Down, cmd.to_bytes()).await;
                 },
                 Some(acl) = acl_down_rx.recv() => {
-                    raw_hal.acl_tx.send(acl.clone()).unwrap();
+                    if let Err(e) = raw_hal.acl_tx.send(acl.clone()) {
+                        error!("acl down channel closed {:?}", e);
+                        break;
+                    }
                     logger.log(Type::Acl, Direction::Down, acl.to_bytes()).await;
                 },
                 Some(acl) = consume(&raw_hal.acl_rx) => {
-                    acl_up_tx.send(acl.clone()).await.unwrap();
+                    if let Err(e) = acl_up_tx.send(acl.clone()).await {
+                        error!("acl up channel closed {:?}", e);
+                        break;
+                    }
                     logger.log(Type::Acl, Direction::Up, acl.to_bytes()).await;
                 },
                 else => break,

@@ -20,6 +20,7 @@
 
 #include <openssl/rand.h>
 
+#include <string.h>
 #include <algorithm>
 
 namespace bluetooth {

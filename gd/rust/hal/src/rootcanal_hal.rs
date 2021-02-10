@@ -93,16 +93,24 @@ where
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            evt_tx.send(EventPacket::parse(&buffer.freeze()).unwrap()).unwrap();
+            let frozen = buffer.freeze();
+            match EventPacket::parse(&frozen) {
+                Ok(p) => evt_tx.send(p).unwrap(),
+                Err(e) => log::error!("dropping invalid event packet: {}: {:02x}", e, frozen),
+            }
         } else if buffer[0] == HciPacketType::Acl as u8 {
             buffer.resize(HciPacketHeaderSize::Acl as usize, 0);
             reader.read_exact(&mut buffer).await?;
             let len: usize = (buffer[2] as u16 + ((buffer[3] as u16) << 8)).into();
-            let mut payload = buffer.split_off(HciPacketHeaderSize::Event as usize);
+            let mut payload = buffer.split_off(HciPacketHeaderSize::Acl as usize);
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
-            acl_tx.send(AclPacket::parse(&buffer.freeze()).unwrap()).unwrap();
+            let frozen = buffer.freeze();
+            match AclPacket::parse(&frozen) {
+                Ok(p) => acl_tx.send(p).unwrap(),
+                Err(e) => log::error!("dropping invalid ACL packet: {}: {:02x}", e, frozen),
+            }
         }
     }
 }

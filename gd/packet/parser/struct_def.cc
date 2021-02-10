@@ -364,6 +364,12 @@ void StructDef::GenRustDeclarations(std::ostream& s) const {
 
 void StructDef::GenRustImpls(std::ostream& s) const {
   s << "impl " << name_ << "{";
+
+  s << "fn conforms(bytes: &[u8]) -> bool {";
+  GenRustConformanceCheck(s);
+  s << " true";
+  s << "}";
+
   s << "pub fn parse(bytes: &[u8]) -> Result<Self> {";
   auto fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,

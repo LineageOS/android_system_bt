@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <cstring>
 #include <string>
 
 namespace bluetooth {
