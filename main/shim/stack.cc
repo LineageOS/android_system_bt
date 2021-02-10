@@ -81,6 +81,7 @@ void Stack::StartEverything() {
       rust_controller_ = new ::rust::Box<rust::Controller>(
           rust::get_controller(**rust_stack_));
     }
+    bluetooth::shim::hci_on_reset_complete();
     return;
   }
 
