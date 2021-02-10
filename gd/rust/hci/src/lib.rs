@@ -224,7 +224,7 @@ async fn dispatch(
                                 }
                             },
                             None if code == EventCode::NumberOfCompletedPackets =>{},
-                            None => panic!("Unhandled subevent {:?}", code),
+                            None => panic!("Unhandled event {:?}", code),
                         }
                     },
                 }
