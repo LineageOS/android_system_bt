@@ -19,6 +19,8 @@
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 
+#include <bitset>
+
 #include "bt_types.h"
 #include "btm_int.h"
 #include "common/metrics.h"

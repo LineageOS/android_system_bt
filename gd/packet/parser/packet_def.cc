@@ -869,6 +869,25 @@ void PacketDef::GenRustStructFieldNames(std::ostream& s) const {
 void PacketDef::GenRustStructImpls(std::ostream& s) const {
   s << "impl " << name_ << "Data {";
 
+  // conforms function
+  s << "fn conforms(bytes: &[u8]) -> bool {";
+  GenRustConformanceCheck(s);
+
+  auto fields = fields_.GetFieldsWithTypes({
+      StructField::kFieldType,
+  });
+
+  for (auto const& field : fields) {
+    auto start_offset = GetOffsetForField(field->GetName(), false);
+    auto end_offset = GetOffsetForField(field->GetName(), true);
+
+    s << "if !" << field->GetRustDataType() << "::conforms(&bytes[" << start_offset.bytes();
+    s << ".." << start_offset.bytes() + field->GetSize().bytes() << "]) { return false; }";
+  }
+
+  s << " true";
+  s << "}";
+
   // parse function
   if (parent_constraints_.empty() && !children_.empty() && parent_ != nullptr) {
       auto constraint = FindConstraintField();
@@ -879,9 +898,8 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   } else {
     s << "fn parse(bytes: &[u8]) -> Result<Self> {";
   }
-  auto fields = fields_.GetFieldsWithoutTypes({
+  fields = fields_.GetFieldsWithoutTypes({
       BodyField::kFieldType,
-      FixedScalarField::kFieldType,
   });
 
   for (auto const& field : fields) {
@@ -928,6 +946,7 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
         auto enum_variant = enum_type + "::"
             + util::UnderscoreToCamelCase(util::ToLowerCase(variant_name));
         s << enum_variant;
+        s << " if " << desc_path[0]->name_ << "Data::conforms(&bytes[..])";
         s << " => {";
         s << name_ << "DataChild::";
         s << desc_path[0]->name_ << "(Arc::new(";
@@ -945,7 +964,8 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
     }
 
     if (!constrained_descendants.empty()) {
-      s << "_ => panic!(\"unexpected value " << "\"),";
+      s << "v => return Err(Error::ConstraintOutOfBounds{field: \"" << constraint_name
+        << "\".to_string(), value: v as u64}),";
     }
 
     s << "};\n";

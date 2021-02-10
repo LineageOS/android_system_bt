@@ -262,14 +262,21 @@ void VectorField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
   if (element_field_type == ScalarField::kFieldType) {
     s << "let " << GetName() << ": " << GetRustDataType() << " = ";
     if (size_field_ == nullptr) {
-      s << "bytes[" << start_offset.bytes() << "..].to_vec().chunks_exact(";
+      s << "bytes[" << start_offset.bytes() << "..]";
+    } else if (size_field_->GetFieldType() == CountField::kFieldType) {
+      s << "bytes[" << start_offset.bytes() << ".." << start_offset.bytes() << " + ((";
+      s << size_field_->GetName() << " as usize) * " << element_size << ")]";
     } else {
       s << "bytes[" << start_offset.bytes() << "..(";
       s << start_offset.bytes() << " + " << size_field_->GetName();
-      s << " as usize)].to_vec().chunks_exact(";
+      s << " as usize)";
+      if (GetSizeModifier() != "") {
+        s << " - ((" << GetSizeModifier().substr(1) << ") / 8)";
+      }
+      s << "]";
     }
 
-    s << element_size << ").into_iter().map(|i| ";
+    s << ".to_vec().chunks_exact(" << element_size << ").into_iter().map(|i| ";
     s << element_field->GetRustDataType() << "::from_le_bytes([";
 
     for (int j=0; j < element_size; j++) {
@@ -280,37 +287,42 @@ void VectorField::GenRustGetter(std::ostream& s, Size start_offset, Size) const 
     }
     s << "])).collect();";
   } else {
-        s << "let " << GetName() << ": " << GetRustDataType() << " = ";
-        if (size_field_ == nullptr) {
-	  s << "bytes[" << start_offset.bytes() << "..].to_vec().chunks_exact(";
-	} else {
-          s << "bytes[" << start_offset.bytes() << "..(";
-          s << start_offset.bytes() << " + (" << size_field_->GetName() << " as usize * ";
-          s << GetElementField()->GetSize().bytes() << "))].to_vec().chunks_exact(";
-	}
-
-        s << element_size << ").into_iter().map(|i| ";
-        s << element_field->GetRustDataType() << "::parse(&[";
-
-        for (int j=0; j < element_size; j++) {
-          s << "i[" << j << "]";
-	  if (j != element_size - 1) {
-            s << ", ";
-	  }
-        }
-        s << "]).unwrap()).collect();";
+    s << "let mut " << GetName() << ": " << GetRustDataType() << " = Vec::new();";
+    if (size_field_ == nullptr) {
+      s << "let mut parsable_ = &bytes[" << start_offset.bytes() << "..];";
+      s << "while parsable_.len() > 0 {";
+    } else if (size_field_->GetFieldType() == CountField::kFieldType) {
+      s << "let mut parsable_ = &bytes[" << start_offset.bytes() << "..];";
+      s << "let count_ = " << size_field_->GetName() << " as usize;";
+      s << "for _ in 0..count_ {";
+    } else {
+      s << "let mut parsable_ = &bytes[" << start_offset.bytes() << ".." << start_offset.bytes() << " + ("
+        << size_field_->GetName() << " as usize)";
+      if (GetSizeModifier() != "") {
+        s << " - ((" << GetSizeModifier().substr(1) << ") / 8)";
+      }
+      s << "];";
+      s << "while parsable_.len() > 0 {";
+    }
+    s << " let parsed = " << element_field->GetRustDataType() << "::parse(&parsable_)?;";
+    s << " parsable_ = &parsable_[parsed.get_total_size()..];";
+    s << GetName() << ".push(parsed);";
+    s << "}";
   }
 }
 
 void VectorField::GenRustWriter(std::ostream& s, Size start_offset, Size) const {
-  s << "for (i, e) in self." << GetName() << ".iter().enumerate() {";
   if (GetElementField()->GetFieldType() == ScalarField::kFieldType) {
+    s << "for (i, e) in self." << GetName() << ".iter().enumerate() {";
     s << "buffer[" << start_offset.bytes() << "+i..";
     s << start_offset.bytes() << "+i+" << GetElementField()->GetSize().bytes() << "]";
     s << ".copy_from_slice(&e.to_le_bytes())";
+    s << "}";
   } else {
-    s << "self." << GetName() << "[i].write_to(&mut buffer[" << start_offset.bytes() << "+i..";
-    s << start_offset.bytes() << "+i+" << GetElementField()->GetSize().bytes() << "]);";
+    s << "let mut vec_buffer_ = &mut buffer[" << start_offset.bytes() << "..];";
+    s << "for e_ in &self." << GetName() << " {";
+    s << " e_.write_to(&mut vec_buffer_[0..e_.get_total_size()]);";
+    s << " vec_buffer_ = &mut vec_buffer_[e_.get_total_size()..];";
+    s << "}";
   }
-  s << "}";
 }

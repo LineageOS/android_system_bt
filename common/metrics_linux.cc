@@ -88,6 +88,66 @@ void BluetoothMetricsLogger::ResetLog() {}
 
 void BluetoothMetricsLogger::Reset() {}
 
+void LogClassicPairingEvent(const RawAddress& address, uint16_t handle,
+                            uint32_t hci_cmd, uint16_t hci_event,
+                            uint16_t cmd_status, uint16_t reason_code,
+                            int64_t event_value) {}
+
+void LogSocketConnectionState(
+    const RawAddress& address, int port, int type,
+    android::bluetooth::SocketConnectionstateEnum connection_state,
+    int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
+    android::bluetooth::SocketRoleEnum socket_role) {}
+
+void LogHciTimeoutEvent(uint32_t hci_cmd) {}
+
+void LogA2dpAudioUnderrunEvent(const RawAddress& address,
+                               uint64_t encoding_interval_millis,
+                               int num_missing_pcm_bytes) {}
+
+void LogA2dpAudioOverrunEvent(const RawAddress& address,
+                              uint64_t encoding_interval_millis,
+                              int num_dropped_buffers,
+                              int num_dropped_encoded_frames,
+                              int num_dropped_encoded_bytes) {}
+
+void LogReadRssiResult(const RawAddress& address, uint16_t handle,
+                       uint32_t cmd_status, int8_t rssi) {}
+
+void LogReadFailedContactCounterResult(const RawAddress& address,
+                                       uint16_t handle, uint32_t cmd_status,
+                                       int32_t failed_contact_counter) {}
+
+void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
+                               uint32_t cmd_status,
+                               int32_t transmit_power_level) {}
+
+void LogRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
+                          uint16_t manufacturer_name, uint16_t subversion) {}
+
+void LogLinkLayerConnectionEvent(const RawAddress* address,
+                                 uint32_t connection_handle,
+                                 android::bluetooth::DirectionEnum direction,
+                                 uint16_t link_type, uint32_t hci_cmd,
+                                 uint16_t hci_event, uint16_t hci_ble_event,
+                                 uint16_t cmd_status, uint16_t reason_code) {}
+
+void LogManufacturerInfo(const RawAddress& address,
+                         android::bluetooth::DeviceInfoSrcEnum source_type,
+                         const std::string& source_name,
+                         const std::string& manufacturer,
+                         const std::string& model,
+                         const std::string& hardware_version,
+                         const std::string& software_version) {}
+
+void LogSdpAttribute(const RawAddress& address, uint16_t protocol_uuid,
+                     uint16_t attribute_id, size_t attribute_size,
+                     const char* attribute_value) {}
+
+void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
+                        android::bluetooth::DirectionEnum direction,
+                        uint8_t smp_fail_reason) {}
+
 }  // namespace common
 
 }  // namespace bluetooth
