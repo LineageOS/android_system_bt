@@ -37,15 +37,23 @@ void bluetooth::shim::ACL_CreateClassicConnection(
     const RawAddress& raw_address) {
   mock_function_count_map[__func__]++;
 }
-void bluetooth::shim::ACL_CancelLeConnection(
+void bluetooth::shim::ACL_CancelClassicConnection(
+    const RawAddress& raw_address) {
+  mock_function_count_map[__func__]++;
+}
+bool bluetooth::shim::ACL_AcceptLeConnectionFrom(
     const tBLE_BD_ADDR& legacy_address_with_type) {
+  mock_function_count_map[__func__]++;
+  return true;
+}
+void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  mock_function_count_map[__func__]++;
+}
+void bluetooth::shim::ACL_IgnoreAllLeConnections() {
   mock_function_count_map[__func__]++;
 }
 void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
-  mock_function_count_map[__func__]++;
-}
-void bluetooth::shim::ACL_CreateLeConnection(
-    const tBLE_BD_ADDR& legacy_address_with_type) {
   mock_function_count_map[__func__]++;
 }
 void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,

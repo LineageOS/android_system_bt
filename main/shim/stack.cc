@@ -16,6 +16,8 @@
 
 #define LOG_TAG "bt_gd_shim"
 
+#include "device/include/controller.h"
+
 #include "gd/att/att_module.h"
 #include "gd/common/init_flags.h"
 #include "gd/hal/hci_hal.h"
@@ -137,7 +139,9 @@ void Stack::StartEverything() {
   }
   if (common::init_flags::gd_acl_is_enabled()) {
     if (!common::init_flags::gd_core_is_enabled()) {
-      acl_ = new legacy::Acl(stack_handler_, legacy::GetAclInterface());
+      acl_ = new legacy::Acl(
+          stack_handler_, legacy::GetAclInterface(),
+          controller_get_interface()->get_ble_acceptlist_size());
     }
   }
   if (!common::init_flags::gd_core_is_enabled()) {
