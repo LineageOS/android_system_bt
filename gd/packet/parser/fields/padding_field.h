@@ -57,6 +57,8 @@ class PaddingField : public PacketField {
 
   void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
+  void GenBoundsCheck(std::ostream&, Size, Size, std::string) const override{};
+
  private:
   Size size_;
 };

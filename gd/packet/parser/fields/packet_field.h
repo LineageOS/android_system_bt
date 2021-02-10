@@ -128,6 +128,8 @@ class PacketField : public Loggable {
 
   virtual void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const = 0;
 
+  virtual void GenBoundsCheck(std::ostream& s, Size start_offset, Size, std::string) const;
+
   virtual bool GetterIsByRef() const {
     return true;
   }
