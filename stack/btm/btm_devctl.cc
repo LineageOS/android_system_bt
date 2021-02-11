@@ -204,7 +204,6 @@ void BTM_reset_complete() {
   }
 
   if (controller->supports_ble()) {
-    btm_ble_acceptlist_init(controller->get_ble_acceptlist_size());
     l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
   }
 
