@@ -356,7 +356,8 @@ typedef struct {
   /**
    * Register the BtAv callbacks
    */
-  bt_status_t (*init)(btav_sink_callbacks_t* callbacks);
+  bt_status_t (*init)(btav_sink_callbacks_t* callbacks,
+                      int max_connected_audio_devices);
 
   /** connect to headset */
   bt_status_t (*connect)(const RawAddress& bd_addr);

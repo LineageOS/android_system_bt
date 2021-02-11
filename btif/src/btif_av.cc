@@ -554,7 +554,8 @@ class BtifAvSink {
         max_connected_peers_(kDefaultMaxConnectedAudioDevices) {}
   ~BtifAvSink();
 
-  bt_status_t Init(btav_sink_callbacks_t* callbacks);
+  bt_status_t Init(btav_sink_callbacks_t* callbacks,
+                   int max_connected_audio_devices);
   void Cleanup();
 
   btav_sink_callbacks_t* Callbacks() { return callbacks_; }
@@ -1179,12 +1180,14 @@ void BtifAvSource::BtaHandleRegistered(uint8_t peer_id,
 
 BtifAvSink::~BtifAvSink() { CleanupAllPeers(); }
 
-bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks) {
-  LOG_INFO("%s", __PRETTY_FUNCTION__);
+bt_status_t BtifAvSink::Init(btav_sink_callbacks_t* callbacks,
+                             int max_connected_audio_devices) {
+  LOG_INFO("%s(max_connected_audio_devices=%d)", __PRETTY_FUNCTION__,
+           max_connected_audio_devices);
   if (enabled_) return BT_STATUS_SUCCESS;
 
   CleanupAllPeers();
-  max_connected_peers_ = kDefaultMaxConnectedAudioDevices;
+  max_connected_peers_ = max_connected_audio_devices;
   callbacks_ = callbacks;
 
   std::vector<btav_a2dp_codec_config_t> codec_priorities;  // Default priorities
@@ -2759,9 +2762,10 @@ static bt_status_t init_src(
 }
 
 // Initializes the AV interface for sink mode
-static bt_status_t init_sink(btav_sink_callbacks_t* callbacks) {
+static bt_status_t init_sink(btav_sink_callbacks_t* callbacks,
+                             int max_connected_audio_devices) {
   BTIF_TRACE_EVENT("%s", __func__);
-  return btif_av_sink.Init(callbacks);
+  return btif_av_sink.Init(callbacks, max_connected_audio_devices);
 }
 
 // Updates the final focus state reported by components calling this module
