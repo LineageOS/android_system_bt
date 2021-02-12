@@ -57,6 +57,8 @@ class StructField : public PacketField {
 
   void GenRustWriter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
+  void GenBoundsCheck(std::ostream& s, Size start_offset, Size end_offset, std::string) const override;
+
  private:
   std::string type_name_;
 

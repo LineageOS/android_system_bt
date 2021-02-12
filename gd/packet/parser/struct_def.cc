@@ -384,6 +384,7 @@ void StructDef::GenRustImpls(std::ostream& s) const {
                    << "no method exists to determine field location from begin() or end().\n";
     }
 
+    field->GenBoundsCheck(s, start_field_offset, end_field_offset, name_);
     field->GenRustGetter(s, start_field_offset, end_field_offset);
   }
 
