@@ -86,7 +86,7 @@ DEFINE_AND_INSTANTIATE_WriteSimplePairingModeReflectionTest(write_simple_paring_
 std::vector<uint8_t> write_simple_paring_mode_complete = {0x0e, 0x04, 0x01, 0x56, 0x0c, 0x00};
 DEFINE_AND_INSTANTIATE_WriteSimplePairingModeCompleteReflectionTest(write_simple_paring_mode_complete);
 
-std::vector<uint8_t> write_le_host_supported = {0x6d, 0x0c, 0x02, 0x01, 0x00};
+std::vector<uint8_t> write_le_host_supported = {0x6d, 0x0c, 0x02, 0x01, 0x01};
 DEFINE_AND_INSTANTIATE_WriteLeHostSupportReflectionTest(write_le_host_supported);
 
 std::vector<uint8_t> write_le_host_supported_complete = {0x0e, 0x04, 0x01, 0x6d, 0x0c, 0x00};
