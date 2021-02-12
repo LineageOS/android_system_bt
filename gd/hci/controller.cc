@@ -446,7 +446,9 @@ struct Controller::impl {
   }
 
   void write_le_host_support(Enable enable) {
-    std::unique_ptr<WriteLeHostSupportBuilder> packet = WriteLeHostSupportBuilder::Create(enable);
+    // Since Bluetooth Core Spec 4.1, this bit should be 0, but some controllers still require it
+    Enable simultaneous_le_host = Enable::ENABLED;
+    std::unique_ptr<WriteLeHostSupportBuilder> packet = WriteLeHostSupportBuilder::Create(enable, simultaneous_le_host);
     hci_->EnqueueCommand(
         std::move(packet),
         module_.GetHandler()->BindOnceOn(this, &Controller::impl::check_status<WriteLeHostSupportCompleteView>));
