@@ -40,7 +40,10 @@ async fn provide_controller(mut hci: CommandSender) -> Arc<ControllerExports> {
     assert_success!(
         hci.send(WriteSimplePairingModeBuilder { simple_pairing_mode: Enable::Enabled })
     );
-    assert_success!(hci.send(WriteLeHostSupportBuilder { le_supported_host: Enable::Enabled }));
+    assert_success!(hci.send(WriteLeHostSupportBuilder {
+        le_supported_host: Enable::Enabled,
+        simultaneous_le_host: Enable::Enabled
+    }));
 
     let name = null_terminated_to_string(
         assert_success!(hci.send(ReadLocalNameBuilder {})).get_local_name(),
