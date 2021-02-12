@@ -119,7 +119,7 @@ class HalVersionManager {
       return;
     }
 
-    LOG(FATAL) << __func__ << " No supported HAL version";
+    LOG(INFO) << __func__ << " No supported HAL version";
   }
 
  private:

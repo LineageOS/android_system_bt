@@ -40,6 +40,15 @@ pub enum Error {
     field: String,
     value: u64,
   },
+  #[error("when parsing {obj}.{field} needed length of {wanted} but got {got}")]
+  InvalidLengthError {
+    obj: String,
+    field: String,
+    wanted: usize,
+    got: usize,
+  },
+  #[error("Due to size restrictions a struct could not be parsed.")]
+  ImpossibleStructError,
 }
 
 pub trait Packet {
@@ -150,9 +159,6 @@ bool generate_rust_source_one_file(
   }
 
   for (const auto& packet_def : decls.packet_defs_queue_) {
-    if (packet_def.second->name_.rfind("LeGetVendorCapabilitiesComplete", 0) == 0) {
-      continue;
-    }
     packet_def.second->GenRustDef(out_file);
     out_file << "\n\n";
   }
