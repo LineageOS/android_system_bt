@@ -24,8 +24,8 @@
 
 #define LOG_TAG "bluetooth"
 
-#include <cutils/log.h>
 #include "bt_target.h"
+#include "log/log.h"
 
 #include <string.h>
 #include "btm_ble_api.h"
