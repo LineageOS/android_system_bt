@@ -2251,12 +2251,12 @@ packet ReadLeHostSupport : Command (op_code = READ_LE_HOST_SUPPORT) {
 packet ReadLeHostSupportComplete : CommandComplete (command_op_code = READ_LE_HOST_SUPPORT) {
   status : ErrorCode,
   le_supported_host : Enable,
-  _reserved_ : 8, // simultaneous_le_host (ignored and always 0)
+  _reserved_ : 8, // simultaneous_le_host reserved since 4.1
 }
 
 packet WriteLeHostSupport : Command (op_code = WRITE_LE_HOST_SUPPORT) {
   le_supported_host : Enable,
-  _reserved_ : 8, // simultaneous_le_host (ignored and always 0)
+  simultaneous_le_host : Enable,  // According to the spec, this should be 0x00 since 4.1
 }
 
 packet WriteLeHostSupportComplete : CommandComplete (command_op_code = WRITE_LE_HOST_SUPPORT) {
