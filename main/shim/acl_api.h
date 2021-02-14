@@ -31,6 +31,7 @@ void ACL_CreateLeConnection(const tBLE_BD_ADDR& legacy_address_with_type);
 void ACL_Disconnect(uint16_t handle, bool is_classic, tHCI_STATUS reason);
 void ACL_WriteData(uint16_t handle, const BT_HDR* p_buf);
 void ACL_ConfigureLePrivacy(bool is_le_privacy_enabled);
+void ACL_Shutdown();
 
 }  // namespace shim
 }  // namespace bluetooth
