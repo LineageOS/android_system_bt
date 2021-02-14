@@ -84,6 +84,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void Dump(int fd) const;
   void DumpConnectionHistory(int fd) const;
 
+  void Shutdown();
+
  protected:
   void on_incoming_acl_credits(uint16_t handle, uint16_t credits);
   void write_data_sync(uint16_t hci_handle,
@@ -92,6 +94,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
  private:
   os::Handler* handler_;
   const acl_interface_t acl_interface_;
+
+  bool CheckForOrphanedAclConnections() const;
 
   struct impl;
   std::unique_ptr<impl> pimpl_;
