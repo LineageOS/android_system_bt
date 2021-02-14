@@ -514,6 +514,7 @@ tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
     return GATT_ILLEGAL_PARAMETER;
   }
 
+  memset(&notif, 0, sizeof(notif));
   notif.handle = attr_handle;
   notif.len = val_len;
   memcpy(notif.value, p_val, val_len);
