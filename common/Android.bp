@@ -16,6 +16,7 @@ cc_library_static {
         "metric_id_allocator.cc",
         "metrics.cc",
         "once_timer.cc",
+        "os_utils.cc",
         "repeating_timer.cc",
         "time_util.cc",
     ],
