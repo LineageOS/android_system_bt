@@ -3352,20 +3352,22 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
   }
 
   if (!p_dev_rec) {
-    LOG_DEBUG("Allocating new device record for new connection peer:%s",
-              PRIVATE_ADDRESS(bda));
     if (status == HCI_SUCCESS) {
       p_dev_rec = btm_sec_alloc_dev(bda);
+      LOG_DEBUG("Allocated new device record for new connection peer:%s",
+                PRIVATE_ADDRESS(bda));
     } else {
       /* If the device matches with stored paring address
        * reset the paring state to idle */
       if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
           btm_cb.pairing_bda == bda) {
+        LOG_WARN("Connection failed during bonding attempt peer:%s reason:%s",
+                 PRIVATE_ADDRESS(bda), hci_error_code_text(status).c_str());
         btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
       }
 
-      /* can not find the device record and the status is error,
-       * just ignore it */
+      LOG_DEBUG("Ignoring failed device connection peer:%s reason:%s",
+                PRIVATE_ADDRESS(bda), hci_error_code_text(status).c_str());
       return;
     }
   } else /* Update the timestamp for this device */
