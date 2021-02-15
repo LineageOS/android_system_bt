@@ -3352,20 +3352,22 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
   }
 
   if (!p_dev_rec) {
-    LOG_DEBUG("Allocating new device record for new connection peer:%s",
-              PRIVATE_ADDRESS(bda));
     if (status == HCI_SUCCESS) {
       p_dev_rec = btm_sec_alloc_dev(bda);
+      LOG_DEBUG("Allocated new device record for new connection peer:%s",
+                PRIVATE_ADDRESS(bda));
     } else {
       /* If the device matches with stored paring address
        * reset the paring state to idle */
       if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
           btm_cb.pairing_bda == bda) {
+        LOG_WARN("Connection failed during bonding attempt peer:%s reason:%s",
+                 PRIVATE_ADDRESS(bda), hci_error_code_text(status).c_str());
         btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
       }
 
-      /* can not find the device record and the status is error,
-       * just ignore it */
+      LOG_DEBUG("Ignoring failed device connection peer:%s reason:%s",
+                PRIVATE_ADDRESS(bda), hci_error_code_text(status).c_str());
       return;
     }
   } else /* Update the timestamp for this device */
@@ -4527,23 +4529,21 @@ static const char* btm_pair_state_descr(tBTM_PAIRING_STATE state) {
  * Parameters:      void
  *
  ******************************************************************************/
-void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
-                                 bool is_le_transport) {
+void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
+                                 tBTM_STATUS btm_status, bool is_le_transport) {
+  ASSERT(p_dev_rec != nullptr);
+  LOG_DEBUG("transport=%s, btm_status=%s", is_le_transport ? "le" : "classic",
+            btm_status_text(btm_status).c_str());
+
   tBTM_SEC_CALLBACK* p_callback = p_dev_rec->p_callback;
-
-  BTM_TRACE_DEBUG("%s: p_callback=%p, is_le_transport=%d, res=%d, p_dev_rec=%p",
-                  __func__, p_dev_rec->p_callback, is_le_transport, res,
-                  p_dev_rec);
-
-  if (p_dev_rec->p_callback) {
-    p_dev_rec->p_callback = NULL;
-
+  p_dev_rec->p_callback = NULL;
+  if (p_callback != nullptr) {
     if (is_le_transport)
       (*p_callback)(&p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE,
-                    p_dev_rec->p_ref_data, res);
+                    p_dev_rec->p_ref_data, btm_status);
     else
       (*p_callback)(&p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR,
-                    p_dev_rec->p_ref_data, res);
+                    p_dev_rec->p_ref_data, btm_status);
   }
 
   btm_sec_check_pending_reqs();
