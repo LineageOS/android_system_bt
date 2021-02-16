@@ -2033,24 +2033,30 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
     bluetooth::shim::L2CA_DisconnectLink(bd_addr);
     return BTM_SUCCESS;
   }
-  uint16_t hci_handle = BTM_GetHCIConnHandle(bd_addr, transport);
-  tBTM_STATUS status = BTM_SUCCESS;
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl == nullptr) return BTM_UNKNOWN_ADDR;
 
-  /* Role Switch is pending, postpone until completed */
-  if (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING) {
-    p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
-  } else /* otherwise can disconnect right away */
-  {
-    if (hci_handle != HCI_INVALID_HANDLE) {
-      hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER);
-    } else {
-      status = BTM_UNKNOWN_ADDR;
-    }
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return BTM_UNKNOWN_ADDR;
   }
 
-  return status;
+  if (p_acl->Handle() == HCI_INVALID_HANDLE) {
+    LOG_WARN("Cannot remove unknown acl bd_addr:%s transport:%s",
+             PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+    return BTM_UNKNOWN_ADDR;
+  }
+
+  if (p_acl->rs_disc_pending == BTM_SEC_RS_PENDING) {
+    LOG_DEBUG(
+        "Delay disconnect until role switch is complete bd_addr:%s "
+        "transport:%s",
+        PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+    p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
+    return BTM_SUCCESS;
+  }
+
+  hci_btsnd_hcic_disconnect(*p_acl, HCI_ERR_PEER_USER);
+  return BTM_SUCCESS;
 }
 
 /*******************************************************************************
