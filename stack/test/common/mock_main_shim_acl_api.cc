@@ -34,19 +34,24 @@ extern std::map<std::string, int> mock_function_count_map;
 #define UNUSED_ATTR
 #endif
 
-void bluetooth::shim::ACL_CancelLeConnection(
-    const tBLE_BD_ADDR& legacy_address_with_type) {
-  mock_function_count_map[__func__]++;
-}
-void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
-  mock_function_count_map[__func__]++;
-}
 void bluetooth::shim::ACL_CreateClassicConnection(
     const RawAddress& raw_address) {
   mock_function_count_map[__func__]++;
 }
-void bluetooth::shim::ACL_CreateLeConnection(
+void bluetooth::shim::ACL_CancelClassicConnection(
+    const RawAddress& raw_address) {
+  mock_function_count_map[__func__]++;
+}
+bool bluetooth::shim::ACL_AcceptLeConnectionFrom(
     const tBLE_BD_ADDR& legacy_address_with_type) {
+  mock_function_count_map[__func__]++;
+  return true;
+}
+void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  mock_function_count_map[__func__]++;
+}
+void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   mock_function_count_map[__func__]++;
 }
 void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
@@ -54,5 +59,8 @@ void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
 }
 void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
                                      tHCI_STATUS reason) {
+  mock_function_count_map[__func__]++;
+}
+void bluetooth::shim::ACL_IgnoreAllLeConnections() {
   mock_function_count_map[__func__]++;
 }
