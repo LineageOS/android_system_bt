@@ -396,6 +396,9 @@ struct tBTM_SEC_DEV_REC {
     return device_type == BT_DEVICE_TYPE_DUMO;
   }
 
+  bool is_device_type_has_ble() const {
+    return device_type & BT_DEVICE_TYPE_BLE;
+  }
   bool new_encryption_key_is_p256; /* Set to true when the newly generated LK
                                    ** is generated from P-256.
                                    ** Link encrypted with such LK can be used
