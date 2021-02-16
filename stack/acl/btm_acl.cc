@@ -2746,7 +2746,7 @@ bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr) {
     gatt_find_in_device_record(bd_addr, &address_with_type);
     LOG_DEBUG("Creating le connection to:%s",
               address_with_type.ToString().c_str());
-    bluetooth::shim::ACL_CreateLeConnection(address_with_type);
+    bluetooth::shim::ACL_AcceptLeConnectionFrom(address_with_type);
     return true;
   }
   return connection_manager::direct_connect_add(id, bd_addr);

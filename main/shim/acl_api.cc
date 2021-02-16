@@ -16,9 +16,11 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <future>
 
 #include "gd/hci/acl_manager.h"
 #include "main/shim/acl_api.h"
+#include "main/shim/dumpsys.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
 #include "types/ble_address_with_type.h"
@@ -30,15 +32,25 @@ void bluetooth::shim::ACL_CreateClassicConnection(
   Stack::GetInstance()->GetAcl()->CreateClassicConnection(address);
 }
 
-void bluetooth::shim::ACL_CreateLeConnection(
-    const tBLE_BD_ADDR& legacy_address_with_type) {
-  Stack::GetInstance()->GetAcl()->CreateLeConnection(
-      ToAddressWithTypeFromLegacy(legacy_address_with_type));
+void bluetooth::shim::ACL_CancelClassicConnection(
+    const RawAddress& raw_address) {
+  auto address = ToGdAddress(raw_address);
+  Stack::GetInstance()->GetAcl()->CancelClassicConnection(address);
 }
 
-void bluetooth::shim::ACL_CancelLeConnection(
+bool bluetooth::shim::ACL_AcceptLeConnectionFrom(
     const tBLE_BD_ADDR& legacy_address_with_type) {
-  Stack::GetInstance()->GetAcl()->CancelLeConnection(
+  std::promise<bool> promise;
+  auto future = promise.get_future();
+  Stack::GetInstance()->GetAcl()->AcceptLeConnectionFrom(
+      ToAddressWithTypeFromLegacy(legacy_address_with_type),
+      std::move(promise));
+  return future.get();
+}
+
+void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  Stack::GetInstance()->GetAcl()->IgnoreLeConnectionFrom(
       ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
 
@@ -77,4 +89,8 @@ void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
 
 void bluetooth::shim::ACL_Shutdown() {
   Stack::GetInstance()->GetAcl()->Shutdown();
+}
+
+void bluetooth::shim::ACL_IgnoreAllLeConnections() {
+  return Stack::GetInstance()->GetAcl()->ClearAcceptList();
 }

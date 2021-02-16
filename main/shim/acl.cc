@@ -19,6 +19,7 @@
 #include <base/location.h>
 #include <base/strings/stringprintf.h>
 #include <time.h>
+#include <unordered_set>
 
 #include <chrono>
 #include <cstdint>
@@ -76,6 +77,49 @@ using SendDataUpwards = void (*const)(BT_HDR*);
 using OnDisconnect = std::function<void(HciHandle, hci::ErrorCode reason)>;
 
 constexpr char kConnectionDescriptorTimeFormat[] = "%Y-%m-%d %H:%M:%S";
+
+class ShadowAcceptlist {
+ public:
+  ShadowAcceptlist(uint8_t max_acceptlist_size)
+      : max_acceptlist_size_(max_acceptlist_size) {}
+
+  bool Add(const hci::AddressWithType& address_with_type) {
+    if (acceptlist_set_.size() == max_acceptlist_size_) {
+      LOG_ERROR("Acceptlist is full size:%zu", acceptlist_set_.size());
+      return false;
+    }
+    if (!acceptlist_set_.insert(address_with_type).second) {
+      LOG_WARN("Attempted to add duplicate le address to acceptlist:%s",
+               PRIVATE_ADDRESS(address_with_type));
+    }
+    return true;
+  }
+
+  bool Remove(const hci::AddressWithType& address_with_type) {
+    auto iter = acceptlist_set_.find(address_with_type);
+    if (iter == acceptlist_set_.end()) {
+      LOG_WARN("Unknown device being removed from acceptlist:%s",
+               PRIVATE_ADDRESS(address_with_type));
+      return false;
+    }
+    acceptlist_set_.erase(iter);
+    return true;
+  }
+
+  std::unordered_set<hci::AddressWithType> GetCopy() const {
+    return acceptlist_set_;
+  }
+
+  bool IsFull() const {
+    return acceptlist_set_.size() == static_cast<size_t>(max_acceptlist_size_);
+  }
+
+  void Clear() { acceptlist_set_.clear(); }
+
+ private:
+  uint8_t max_acceptlist_size_{0};
+  std::unordered_set<hci::AddressWithType> acceptlist_set_;
+};
 
 struct ConnectionDescriptor {
   CreationTime creation_time_;
@@ -582,6 +626,9 @@ class LeShimAclConnection
 };
 
 struct shim::legacy::Acl::impl {
+  impl(uint8_t max_acceptlist_size)
+      : shadow_acceptlist_(ShadowAcceptlist(max_acceptlist_size)) {}
+
   std::map<HciHandle, std::unique_ptr<ClassicShimAclConnection>>
       handle_to_classic_connection_map_;
   std::map<HciHandle, std::unique_ptr<LeShimAclConnection>>
@@ -589,6 +636,8 @@ struct shim::legacy::Acl::impl {
 
   FixedQueue<std::unique_ptr<ConnectionDescriptor>> connection_history_ =
       FixedQueue<std::unique_ptr<ConnectionDescriptor>>(kConnectionHistorySize);
+
+  ShadowAcceptlist shadow_acceptlist_;
 
   bool IsClassicAcl(HciHandle handle) {
     return handle_to_classic_connection_map_.find(handle) !=
@@ -668,11 +717,51 @@ struct shim::legacy::Acl::impl {
     handle_to_classic_connection_map_[handle]->SetConnectionEncryption(enable);
   }
 
+  void accept_le_connection_from(const hci::AddressWithType& address_with_type,
+                                 std::promise<bool> promise) {
+    if (shadow_acceptlist_.IsFull()) {
+      LOG_ERROR("Acceptlist is full preventing new Le connection");
+      promise.set_value(false);
+      return;
+    }
+    shadow_acceptlist_.Add(address_with_type);
+    promise.set_value(true);
+    GetAclManager()->CreateLeConnection(address_with_type);
+    LOG_DEBUG("Allow Le connection from remote:%s",
+              PRIVATE_ADDRESS(address_with_type));
+    BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
+                   "Allow connection from", "Le");
+  }
+
+  void ignore_le_connection_from(
+      const hci::AddressWithType& address_with_type) {
+    shadow_acceptlist_.Remove(address_with_type);
+    GetAclManager()->CancelLeConnect(address_with_type);
+    LOG_DEBUG("Ignore Le connection from remote:%s",
+              PRIVATE_ADDRESS(address_with_type));
+    BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
+                   "Ignore connection from", "Le");
+  }
+
+  void clear_acceptlist() {
+    auto shadow_acceptlist = shadow_acceptlist_.GetCopy();
+    size_t count = shadow_acceptlist.size();
+    for (auto address_with_type : shadow_acceptlist) {
+      ignore_le_connection_from(address_with_type);
+    }
+    shadow_acceptlist_.Clear();
+    LOG_DEBUG("Cleared entire Le address acceptlist count:%zu", count);
+  }
+
   void DumpConnectionHistory() const {
     std::vector<std::string> history =
         connection_history_.ReadElementsAsString();
     for (auto& entry : history) {
       LOG_DEBUG("%s", entry.c_str());
+    }
+    const auto acceptlist = shadow_acceptlist_.GetCopy();
+    for (auto& entry : acceptlist) {
+      LOG_DEBUG("acceptlist:%s", entry.ToString().c_str());
     }
   }
 
@@ -682,6 +771,11 @@ struct shim::legacy::Acl::impl {
         connection_history_.ReadElementsAsString();
     for (auto& entry : history) {
       LOG_DUMPSYS(fd, "%s", entry.c_str());
+    }
+    unsigned cnt = 0;
+    auto acceptlist = shadow_acceptlist_.GetCopy();
+    for (auto& entry : acceptlist) {
+      LOG_DUMPSYS(fd, "%03u le acceptlist:%s", ++cnt, entry.ToString().c_str());
     }
   }
 #undef DUMPSYS_TAG
@@ -809,10 +903,11 @@ void shim::legacy::Acl::Dump(int fd) const {
 }
 
 shim::legacy::Acl::Acl(os::Handler* handler,
-                       const acl_interface_t& acl_interface)
+                       const acl_interface_t& acl_interface,
+                       uint8_t max_acceptlist_size)
     : handler_(handler), acl_interface_(acl_interface) {
   ValidateAclInterface(acl_interface_);
-  pimpl_ = std::make_unique<Acl::impl>();
+  pimpl_ = std::make_unique<Acl::impl>(max_acceptlist_size);
   GetAclManager()->RegisterCallbacks(this, handler_);
   GetAclManager()->RegisterLeCallbacks(this, handler_);
   GetController()->RegisterCompletedMonitorAclPacketsCallback(
@@ -899,22 +994,24 @@ void shim::legacy::Acl::CreateClassicConnection(const hci::Address& address) {
                  "classic");
 }
 
-void shim::legacy::Acl::CreateLeConnection(
-    const hci::AddressWithType& address_with_type) {
-  GetAclManager()->CreateLeConnection(address_with_type);
-  LOG_DEBUG("Connection initiated for le connection to remote:%s",
-            PRIVATE_ADDRESS(address_with_type));
-  BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
-                 "Initiated connection", "le");
+void shim::legacy::Acl::CancelClassicConnection(const hci::Address& address) {
+  GetAclManager()->CancelConnect(address);
+  LOG_DEBUG("Connection cancelled for classic to remote:%s",
+            PRIVATE_ADDRESS(address));
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Cancelled connection",
+                 "classic");
 }
 
-void shim::legacy::Acl::CancelLeConnection(
+void shim::legacy::Acl::AcceptLeConnectionFrom(
+    const hci::AddressWithType& address_with_type, std::promise<bool> promise) {
+  handler_->CallOn(pimpl_.get(), &Acl::impl::accept_le_connection_from,
+                   address_with_type, std::move(promise));
+}
+
+void shim::legacy::Acl::IgnoreLeConnectionFrom(
     const hci::AddressWithType& address_with_type) {
-  GetAclManager()->CancelLeConnect(address_with_type);
-  LOG_DEBUG("Cancelled le connection to remote:%s",
-            PRIVATE_ADDRESS(address_with_type));
-  BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
-                 "Cancelled connection", "le");
+  handler_->CallOn(pimpl_.get(), &Acl::impl::ignore_le_connection_from,
+                   address_with_type);
 }
 
 void shim::legacy::Acl::OnClassicLinkDisconnected(HciHandle handle,
@@ -965,7 +1062,7 @@ void shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
   BTM_LogHistory(
       kBtmLogTag, ToLegacyAddressWithType(remote_address_with_type),
       "Disconnected",
-      base::StringPrintf("le reason:%s", ErrorCodeText(reason).c_str()));
+      base::StringPrintf("Le reason:%s", ErrorCodeText(reason).c_str()));
   pimpl_->connection_history_.Push(
       std::move(std::make_unique<LeConnectionDescriptor>(
           remote_address_with_type, creation_time, teardown_time, handle,
@@ -1054,7 +1151,7 @@ void shim::legacy::Acl::OnLeConnectSuccess(
             PRIVATE_ADDRESS(address_with_type), handle,
             (locally_initiated) ? "local" : "remote");
   BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
-                 "Connection successful", "le");
+                 "Connection successful", "Le");
 }
 
 void shim::legacy::Acl::OnLeConnectFail(hci::AddressWithType address_with_type,
@@ -1124,7 +1221,7 @@ void shim::legacy::Acl::DisconnectLe(uint16_t handle, tHCI_STATUS reason) {
               PRIVATE_ADDRESS(remote_address_with_type), handle);
     BTM_LogHistory(kBtmLogTag,
                    ToLegacyAddressWithType(remote_address_with_type),
-                   "Disconnection initiated", "le");
+                   "Disconnection initiated", "Le");
   } else {
     LOG_WARN("Unable to disconnect unknown le connection handle:0x%04x",
              handle);
@@ -1179,7 +1276,7 @@ void shim::legacy::Acl::Shutdown() {
     shutdown_future.wait();
 
     shutdown_promise = std::promise<void>();
-    ;
+
     shutdown_future = shutdown_promise.get_future();
     handler_->CallOn(pimpl_.get(), &Acl::impl::ShutdownLeConnections,
                      std::move(shutdown_promise));
@@ -1188,4 +1285,8 @@ void shim::legacy::Acl::Shutdown() {
   } else {
     LOG_INFO("All ACL connections have been previously closed");
   }
+}
+
+void shim::legacy::Acl::ClearAcceptList() {
+  handler_->CallOn(pimpl_.get(), &Acl::impl::clear_acceptlist);
 }
