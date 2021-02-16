@@ -86,11 +86,11 @@ void btm_send_hci_create_connection(
 }
 
 /** LE connection complete. */
-void btm_ble_create_ll_conn_complete(uint8_t status) {
+void btm_ble_create_ll_conn_complete(tHCI_STATUS status) {
   if (status == HCI_SUCCESS) return;
 
   LOG(WARNING) << "LE Create Connection attempt failed, status="
-               << loghex(status);
+               << hci_error_code_text(status);
 
   if (status == HCI_ERR_COMMAND_DISALLOWED) {
     btm_cb.ble_ctr_cb.set_connection_state_connecting();
@@ -235,7 +235,8 @@ void btm_ble_create_conn_cancel_complete(uint8_t* p) {
     if (btm_cb.ble_ctr_cb.is_connection_state_cancelled()) {
       btm_cb.ble_ctr_cb.set_connection_state_idle();
       btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
-      btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr, status);
+      btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr,
+                                    static_cast<tHCI_STATUS>(status));
     }
   }
 }

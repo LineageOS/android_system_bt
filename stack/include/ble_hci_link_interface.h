@@ -28,7 +28,7 @@ void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* p);
 void btm_ble_read_remote_features_complete(uint8_t* p);
 void btm_le_on_advertising_set_terminated(uint8_t* p, uint16_t length);
 extern void btm_ble_write_adv_enable_complete(uint8_t* p);
-extern void btm_ble_create_ll_conn_complete(uint8_t status);
+extern void btm_ble_create_ll_conn_complete(tHCI_STATUS status);
 extern void btm_ble_ltk_request(uint16_t handle, uint8_t rand[8],
                                 uint16_t ediv);
 extern void btm_ble_test_command_complete(uint8_t* p);
