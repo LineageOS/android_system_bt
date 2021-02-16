@@ -447,17 +447,6 @@ void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         btm_ble_acceptlist_init
- *
- * Description      Initialize acceptlist size
- *
- ******************************************************************************/
-void btm_ble_acceptlist_init(uint8_t acceptlist_size) {
-  BTM_TRACE_DEBUG("%s acceptlist_size = %d", __func__, acceptlist_size);
-}
-
-/*******************************************************************************
- *
  * Function         btm_ble_suspend_bg_conn
  *
  * Description      This function is to suspend an active background connection
