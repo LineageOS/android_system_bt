@@ -33,6 +33,8 @@
 #include "btm_api.h"
 #include "btu.h"
 #include "l2c_api.h"
+#include "main/shim/dumpsys.h"
+#include "osi/include/log.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/a2dp_codec_api.h"
 
@@ -949,27 +951,22 @@ uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t channel_index,
 uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
                             tAVDT_CTRL_CBACK* p_cback) {
   AvdtpCcb* p_ccb = NULL;
-  uint16_t result = AVDT_SUCCESS;
+  tAVDT_RESULT result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
-
-  AVDT_TRACE_WARNING("%s: address=%s", __func__, bd_addr.ToString().c_str());
 
   /* find channel control block for this bd addr; if none, error */
   p_ccb = avdt_ccb_by_bd(bd_addr);
   if (p_ccb == NULL) {
+    LOG_ERROR("Unable to find AVDT stream endpoint peer:%s",
+              PRIVATE_ADDRESS(bd_addr));
     result = AVDT_BAD_PARAMS;
-  }
-
-  if (result == AVDT_SUCCESS) {
-    /* send event to ccb */
+  } else {
+    LOG_DEBUG("Sending disconnect request to ccb peer:%s",
+              PRIVATE_ADDRESS(bd_addr));
     evt.disconnect.p_cback = p_cback;
     avdt_ccb_event(p_ccb, AVDT_CCB_API_DISCONNECT_REQ_EVT, &evt);
-  } else {
-    AVDT_TRACE_ERROR("%s: address=%s result=%d", __func__,
-                     bd_addr.ToString().c_str(), result);
   }
-
-  return result;
+  return static_cast<uint16_t>(result);
 }
 
 /*******************************************************************************
