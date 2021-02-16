@@ -154,32 +154,31 @@ void AVDT_AbortReq(uint8_t handle) {
  ******************************************************************************/
 uint16_t AVDT_CreateStream(uint8_t peer_id, uint8_t* p_handle,
                            const AvdtpStreamConfig& avdtp_stream_config) {
-  uint16_t result = AVDT_SUCCESS;
+  tAVDT_RESULT result = AVDT_SUCCESS;
   AvdtpScb* p_scb;
-
-  AVDT_TRACE_DEBUG("%s: peer_id=%d", __func__, peer_id);
 
   /* Verify parameters; if invalid, return failure */
   if (((avdtp_stream_config.cfg.psc_mask & (~AVDT_PSC)) != 0) ||
       (avdtp_stream_config.p_avdt_ctrl_cback == NULL)) {
     result = AVDT_BAD_PARAMS;
+    LOG_ERROR("Invalid AVDT stream endpoint parameters peer_id=%d scb_index=%d",
+              peer_id, avdtp_stream_config.scb_index);
   }
+
   /* Allocate scb; if no scbs, return failure */
   else {
     p_scb = avdt_scb_alloc(peer_id, avdtp_stream_config);
     if (p_scb == NULL) {
+      LOG_ERROR("Unable to create AVDT stream endpoint peer_id=%d scb_index=%d",
+                peer_id, avdtp_stream_config.scb_index);
       result = AVDT_NO_RESOURCES;
     } else {
       *p_handle = avdt_scb_to_hdl(p_scb);
+      LOG_DEBUG("Created stream endpoint peer_id=%d handle=%hhu", peer_id,
+                *p_handle);
     }
   }
-
-  if (result != AVDT_SUCCESS) {
-    AVDT_TRACE_ERROR("%s: result=%d peer_id=%d scb_index=%d", __func__, result,
-                     peer_id, avdtp_stream_config.scb_index);
-  }
-
-  return result;
+  return static_cast<uint16_t>(result);
 }
 
 /*******************************************************************************
