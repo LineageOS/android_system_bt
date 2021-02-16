@@ -24,6 +24,7 @@
 #include <queue>
 #include "gap_api.h"
 #include "gatt_api.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "types/bt_transport.h"
 
@@ -293,7 +294,8 @@ void client_connect_cback(tGATT_IF, const RawAddress& bda, uint16_t conn_id,
                           tBT_TRANSPORT) {
   tGAP_CLCB* p_clcb = find_clcb_by_bd_addr(bda);
   if (p_clcb == NULL) {
-    LOG_WARN("Unable to find device after connection");
+    LOG_INFO("No active GAP service found for peer:%s callback:%s",
+             PRIVATE_ADDRESS(bda), (connected) ? "Connected" : "Disconnected");
     return;
   }
 
