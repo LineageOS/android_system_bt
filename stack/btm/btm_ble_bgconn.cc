@@ -27,6 +27,7 @@
 #include <unordered_map>
 
 #include "device/include/controller.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/shim.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
@@ -193,6 +194,25 @@ static int background_connections_count() {
   return count;
 }
 
+static const tBLE_BD_ADDR convert_to_address_with_type(
+    const RawAddress& bd_addr, const tBTM_SEC_DEV_REC* p_dev_rec) {
+  if (p_dev_rec == nullptr || !p_dev_rec->is_device_type_has_ble()) {
+    return {
+        .type = BLE_ADDR_PUBLIC,
+        .bda = bd_addr,
+    };
+  }
+
+  if (p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
+    return {
+        .type = p_dev_rec->ble.ble_addr_type,
+        .bda = bd_addr,
+    };
+  } else {
+    return p_dev_rec->ble.identity_address_with_type;
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btm_add_dev_to_controller
@@ -208,7 +228,7 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
         LOG_DEBUG(
             "Adding known device record into acceptlist with identity "
             "device:%s",
-            p_dev_rec->ble.identity_address_with_type.bda.ToString().c_str());
+            PRIVATE_ADDRESS(p_dev_rec->ble.identity_address_with_type));
         background_connection_add(
             p_dev_rec->ble.identity_address_with_type.type,
             p_dev_rec->ble.identity_address_with_type.bda);
@@ -216,12 +236,12 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
         LOG_DEBUG(
             "Adding known device record into acceptlist without identity "
             "device:%s",
-            bd_addr.ToString().c_str());
+            PRIVATE_ADDRESS(bd_addr));
         background_connection_add(p_dev_rec->ble.ble_addr_type, bd_addr);
 
         if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
             BTM_BLE_IS_RESOLVE_BDA(bd_addr)) {
-          LOG(INFO) << __func__ << " addig RPA into acceptlist";
+          LOG(INFO) << __func__ << " adding RPA into acceptlist";
         }
       }
 
@@ -231,14 +251,14 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
         LOG_DEBUG(
             "Removing known device record into acceptlist with identity "
             "device:%s",
-            p_dev_rec->ble.identity_address_with_type.bda.ToString().c_str());
+            PRIVATE_ADDRESS(p_dev_rec->ble.identity_address_with_type));
         background_connection_remove(
             p_dev_rec->ble.identity_address_with_type.bda);
       } else {
         LOG_DEBUG(
             "Removing known device record into acceptlist without identity "
             "device:%s",
-            bd_addr.ToString().c_str());
+            PRIVATE_ADDRESS(bd_addr));
         background_connection_remove(bd_addr);
 
         if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM &&
@@ -308,15 +328,14 @@ static bool btm_execute_wl_dev_operation(void) {
 /** This function is to start auto connection procedure */
 static bool btm_ble_start_auto_conn() {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
+  ASSERT(p_cb != nullptr);
 
-  BTM_TRACE_EVENT("%s", __func__);
-
-  uint16_t scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF)
-                          ? BTM_BLE_SCAN_SLOW_INT_1
-                          : p_cb->scan_int;
-  uint16_t scan_win = (p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF)
-                          ? BTM_BLE_SCAN_SLOW_WIN_1
-                          : p_cb->scan_win;
+  const uint16_t scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF)
+                                ? BTM_BLE_SCAN_SLOW_INT_1
+                                : p_cb->scan_int;
+  const uint16_t scan_win = (p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF)
+                                ? BTM_BLE_SCAN_SLOW_WIN_1
+                                : p_cb->scan_win;
   uint8_t own_addr_type = p_cb->addr_mgnt_cb.own_addr_type;
   uint8_t peer_addr_type = BLE_ADDR_PUBLIC;
 
@@ -325,12 +344,16 @@ static bool btm_ble_start_auto_conn() {
   if (controller_get_interface()->supports_ble_coded_phy()) phy |= PHY_LE_CODED;
 
   if (!btm_ble_topology_check(BTM_BLE_STATE_INIT)) {
-    LOG(INFO) << "initate background connection fail, topology limitation";
+    LOG_INFO(
+        "Unable to initiate background connection due to topology limitation");
     return false;
   }
 
   if (!btm_cb.ble_ctr_cb.is_connection_state_idle() ||
       !background_connections_pending()) {
+    LOG_DEBUG(
+        "Connection state not idle or already have background connection "
+        "pending");
     return false;
   }
 
@@ -401,6 +424,15 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  *
  ******************************************************************************/
 void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    if (!bluetooth::shim::ACL_AcceptLeConnectionFrom(
+            convert_to_address_with_type(bd_addr, btm_find_dev(bd_addr)))) {
+      LOG_ERROR("Unable to add to acceptlist as it is full:%s",
+                PRIVATE_ADDRESS(bd_addr));
+    }
+    return;
+  }
+
   if (!btm_cb.ble_ctr_cb.is_connection_state_connecting()) return;
 
   auto map_it = background_connections.find(bd_addr);
@@ -437,7 +469,10 @@ void btm_ble_acceptlist_init(uint8_t acceptlist_size) {
  *
  ******************************************************************************/
 bool btm_ble_suspend_bg_conn(void) {
-  BTM_TRACE_EVENT("%s", __func__);
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    LOG_DEBUG("Gd acl_manager handles sync of background connections");
+    return true;
+  }
   return btm_ble_stop_auto_conn();
 }
 
@@ -453,7 +488,13 @@ bool btm_ble_suspend_bg_conn(void) {
  * Returns          none.
  *
  ******************************************************************************/
-bool btm_ble_resume_bg_conn(void) { return btm_ble_start_auto_conn(); }
+bool btm_ble_resume_bg_conn(void) {
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    LOG_DEBUG("Gd acl_manager handles sync of background connections");
+    return true;
+  }
+  return btm_ble_start_auto_conn();
+}
 
 bool BTM_BackgroundConnectAddressKnown(const RawAddress& address) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
@@ -515,16 +556,14 @@ void BTM_SetLeConnectionModeToSlow() {
 /** Adds the device into acceptlist. Returns false if acceptlist is full and
  * device can't be added, true otherwise. */
 bool BTM_AcceptlistAdd(const RawAddress& address) {
-  VLOG(1) << __func__ << ": " << address;
-
   if (!controller_get_interface()->supports_ble()) {
-    LOG_WARN("Controller does not support ble");
+    LOG_WARN("Controller does not support Le");
     return false;
   }
 
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    LOG_DEBUG("gd_acl running so skipping adding to acceptlist");
-    return true;
+    return bluetooth::shim::ACL_AcceptLeConnectionFrom(
+        convert_to_address_with_type(address, btm_find_dev(address)));
   }
 
   if (background_connections_count() ==
@@ -538,19 +577,20 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
   }
   btm_add_dev_to_controller(true, address);
   btm_ble_resume_bg_conn();
+  LOG_DEBUG("Added to Le acceptlist device:%s", PRIVATE_ADDRESS(address));
   return true;
 }
 
 /** Removes the device from acceptlist */
 void BTM_AcceptlistRemove(const RawAddress& address) {
-  VLOG(1) << __func__ << ": " << address;
   if (!controller_get_interface()->supports_ble()) {
-    LOG_WARN("Controller does not support ble");
+    LOG_WARN("Controller does not support Le");
     return;
   }
 
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    LOG_DEBUG("gd_acl running so skipping adding to acceptlist");
+    bluetooth::shim::ACL_IgnoreLeConnectionFrom(
+        convert_to_address_with_type(address, btm_find_dev(address)));
     return;
   }
 
@@ -559,18 +599,18 @@ void BTM_AcceptlistRemove(const RawAddress& address) {
   }
   btm_add_dev_to_controller(false, address);
   btm_ble_resume_bg_conn();
+  LOG_DEBUG("Removed from Le acceptlist device:%s", PRIVATE_ADDRESS(address));
 }
 
 /** Clear the acceptlist, end any pending acceptlist connections */
 void BTM_AcceptlistClear() {
-  VLOG(1) << __func__;
   if (!controller_get_interface()->supports_ble()) {
-    LOG_WARN("Controller does not support ble");
+    LOG_WARN("Controller does not support Le");
     return;
   }
 
   if (bluetooth::shim::is_gd_acl_enabled()) {
-    LOG_DEBUG("gd_acl running so skipping adding to acceptlist");
+    bluetooth::shim::ACL_IgnoreAllLeConnections();
     return;
   }
 
@@ -578,4 +618,5 @@ void BTM_AcceptlistClear() {
   btsnd_hcic_ble_clear_acceptlist(
       base::BindOnce(&acceptlist_clear_command_complete));
   background_connections_clear();
+  LOG_DEBUG("Cleared Le acceptlist");
 }
