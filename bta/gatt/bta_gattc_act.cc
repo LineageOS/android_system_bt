@@ -38,6 +38,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/btu.h"
+#include "stack/include/gatt_api.h"
 #include "utl.h"
 
 #include "bta_hh_int.h"
@@ -553,14 +554,18 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 
   if (p_data->hdr.event == BTA_GATTC_API_CLOSE_EVT) {
     GATT_Disconnect(p_data->hdr.layer_specific);
-    LOG_DEBUG("Local close event client_if:%hu conn_id:%hu reason:%hu",
+    LOG_DEBUG("Local close event client_if:%hu conn_id:%hu reason:%s",
               cb_data.close.client_if, cb_data.close.conn_id,
-              cb_data.close.reason);
+              gatt_disconnection_reason_text(
+                  static_cast<tGATT_DISCONN_REASON>(cb_data.close.reason))
+                  .c_str());
   } else if (p_data->hdr.event == BTA_GATTC_INT_DISCONN_EVT) {
     cb_data.close.reason = p_data->int_conn.reason;
-    LOG_DEBUG(
-        "Peer close disconnect event client_if:%hu conn_id:%hu reason:%hu",
-        cb_data.close.client_if, cb_data.close.conn_id, cb_data.close.reason);
+    LOG_DEBUG("Peer close disconnect event client_if:%hu conn_id:%hu reason:%s",
+              cb_data.close.client_if, cb_data.close.conn_id,
+              gatt_disconnection_reason_text(
+                  static_cast<tGATT_DISCONN_REASON>(cb_data.close.reason))
+                  .c_str());
   }
 
   if (p_cback) (*p_cback)(BTA_GATTC_CLOSE_EVT, &cb_data);
