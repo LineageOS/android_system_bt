@@ -33,6 +33,7 @@
 #include "bta_gattc_int.h"
 #include "bta_sys.h"
 #include "btif/include/btif_debug_conn.h"
+#include "device/include/controller.h"
 #include "l2c_api.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -206,8 +207,13 @@ void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg) {
     return;
   }
 
+  uint8_t accept_list_size = 0;
+  if (controller_get_interface()->supports_ble()) {
+    accept_list_size = controller_get_interface()->get_ble_acceptlist_size();
+  }
+
   /* remove bg connection associated with this rcb */
-  for (uint8_t i = 0; i < BTM_GetAcceptlistSize(); i++) {
+  for (uint8_t i = 0; i < accept_list_size; i++) {
     if (!bta_gattc_cb.bg_track[i].in_use) continue;
 
     if (bta_gattc_cb.bg_track[i].cif_mask & (1 << (p_clreg->client_if - 1))) {
