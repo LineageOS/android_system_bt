@@ -27,6 +27,7 @@
 #include <unordered_map>
 
 #include "device/include/controller.h"
+#include "main/shim/shim.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/security_device_record.h"
@@ -127,13 +128,14 @@ static bool btm_ble_stop_auto_conn() {
   BTM_TRACE_EVENT("%s", __func__);
 
   if (!btm_cb.ble_ctr_cb.is_connection_state_connecting()) {
-    BTM_TRACE_DEBUG("%s not in auto conn state, cannot stop", __func__);
+    LOG_DEBUG(
+        "No need to stop auto connection procedure that is not connecting");
     return false;
   }
 
   btm_ble_create_conn_cancel();
 
-  btm_cb.ble_ctr_cb.wl_state &= ~BTM_BLE_ACCEPTLIST_INIT;
+  btm_cb.ble_ctr_cb.reset_acceptlist_process_in_progress();
   return true;
 }
 
@@ -519,6 +521,12 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
     LOG_WARN("Controller does not support ble");
     return false;
   }
+
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    LOG_DEBUG("gd_acl running so skipping adding to acceptlist");
+    return true;
+  }
+
   if (background_connections_count() ==
       controller_get_interface()->get_ble_acceptlist_size()) {
     LOG_ERROR("Unable to add device to acceptlist since it is full");
@@ -540,6 +548,12 @@ void BTM_AcceptlistRemove(const RawAddress& address) {
     LOG_WARN("Controller does not support ble");
     return;
   }
+
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    LOG_DEBUG("gd_acl running so skipping adding to acceptlist");
+    return;
+  }
+
   if (btm_cb.ble_ctr_cb.wl_state & BTM_BLE_ACCEPTLIST_INIT) {
     btm_ble_stop_auto_conn();
   }
@@ -554,6 +568,12 @@ void BTM_AcceptlistClear() {
     LOG_WARN("Controller does not support ble");
     return;
   }
+
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    LOG_DEBUG("gd_acl running so skipping adding to acceptlist");
+    return;
+  }
+
   btm_ble_stop_auto_conn();
   btsnd_hcic_ble_clear_acceptlist(
       base::BindOnce(&acceptlist_clear_command_complete));
