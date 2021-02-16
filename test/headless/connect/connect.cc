@@ -24,7 +24,8 @@
 #include <map>
 #include <string>
 
-#include "base/logging.h"     // LOG() stdout and android log
+#include "base/logging.h"  // LOG() stdout and android log
+#include "btif/include/stack_manager.h"
 #include "osi/include/log.h"  // android log only
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
@@ -36,6 +37,7 @@
 #include "test/headless/interface.h"
 #include "types/raw_address.h"
 
+const stack_manager_t* stack_manager_get_interface();
 extern bt_interface_t bluetoothInterface;
 
 void power_mode_callback(const RawAddress& p_bda, tBTM_PM_STATUS status,
@@ -85,16 +87,19 @@ int do_connect(unsigned int num_loops, const RawAddress& bd_addr,
   acl_create_classic_connection(bd_addr, false, false);
 
   acl_state_changed_params_t result = future.get();
-  fprintf(stdout, "Connected created to:%s result:%u\n",
-          bd_addr.ToString().c_str(), result.status);
+  fprintf(stdout, "Connected created to:%s result:%s[%u]\n",
+          bd_addr.ToString().c_str(), bt_status_text(result.status).c_str(),
+          result.status);
   acl_state_changed_promise = std::promise<acl_state_changed_params_t>();
   future = acl_state_changed_promise.get_future();
 
   uint64_t connect = std::chrono::duration_cast<std::chrono::milliseconds>(
                          std::chrono::system_clock::now().time_since_epoch())
                          .count();
-  fprintf(stdout, "Waiting for supervision timeout\n");
-  result = future.get();
+
+  fprintf(stdout, "Just crushing stack\n");
+  LOG(INFO) << "Just crushing stack";
+  stack_manager_get_interface()->clean_up_stack();
 
   if (disconnect_wait_time == 0) {
     fprintf(stdout, "Waiting to disconnect from supervision timeout\n");
@@ -104,8 +109,9 @@ int do_connect(unsigned int num_loops, const RawAddress& bd_addr,
             std::chrono::system_clock::now().time_since_epoch())
             .count();
 
-    fprintf(stdout, "Disconnected after:%" PRId64 "ms from:%s result:%u\n",
-            disconnect - connect, bd_addr.ToString().c_str(), result.status);
+    fprintf(stdout, "Disconnected after:%" PRId64 "ms from:%s result:%s[%u]\n",
+            disconnect - connect, bd_addr.ToString().c_str(),
+            bt_status_text(result.status).c_str(), result.status);
 
     headless_remove_callback("acl_state_changed", callback_interface);
   } else {
