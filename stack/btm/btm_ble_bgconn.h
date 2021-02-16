@@ -25,9 +25,6 @@ extern bool BTM_AcceptlistAdd(const RawAddress& address);
 /** Removes the device from acceptlist */
 extern void BTM_AcceptlistRemove(const RawAddress& address);
 
-/** Get max acceptlist size supports of the Bluetooth controller */
-extern uint8_t BTM_GetAcceptlistSize();
-
 /** Clear the acceptlist, end any pending acceptlist connections */
 extern void BTM_AcceptlistClear();
 
