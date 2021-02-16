@@ -4745,8 +4745,9 @@ bool btm_sec_is_a_bonded_dev(const RawAddress& bda) {
                     (p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN))) {
     is_bonded = true;
   }
-  BTM_TRACE_DEBUG("%s() is_bonded=%d", __func__, is_bonded);
-  return (is_bonded);
+  LOG_DEBUG("Device record bonded check peer:%s is_bonded:%s",
+            PRIVATE_ADDRESS(bda), logbool(is_bonded).c_str());
+  return is_bonded;
 }
 
 /*******************************************************************************
