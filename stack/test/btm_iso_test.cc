@@ -440,6 +440,12 @@ class IsoManagerDeathTestNoInit : public IsoManagerTest {
   }
 };
 
+class IsoManagerDeathTestNoCleanup : public IsoManagerTest {
+ protected:
+  void CleanupIsoManager() override { /* DO NOTHING */
+  }
+};
+
 bool operator==(const EXT_CIS_CFG& x, const EXT_CIS_CFG& y) {
   return ((x.cis_id == y.cis_id) &&
           (x.max_sdu_size_mtos == y.max_sdu_size_mtos) &&
@@ -2175,6 +2181,129 @@ TEST_F(IsoManagerTest, HandleDisconnectDisconnectedCig) {
   // This one was never connected - expect no events
   handle = volatile_test_cig_create_cmpl_evt_.conn_handles[1];
   IsoManager::GetInstance()->HandleDisconnect(handle, 16);
+}
+
+TEST_F(IsoManagerTest, HandleIsoData) {
+  IsoManager::GetInstance()->CreateCig(
+      volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
+
+  auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
+
+  EXPECT_CALL(
+      *cig_callbacks_,
+      OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisDataAvailable, _))
+      .Times(1);
+
+  std::vector<uint8_t> dummy_msg(18);
+  uint8_t* p = dummy_msg.data();
+  UINT16_TO_STREAM(p, BT_EVT_TO_BTU_HCI_ISO);
+  UINT16_TO_STREAM(p, 10);  // .len
+  UINT16_TO_STREAM(p, 0);   // .offset
+  UINT16_TO_STREAM(p, 0);   // .layer_specific
+  UINT16_TO_STREAM(p, handle);
+  IsoManager::GetInstance()->HandleIsoData(dummy_msg.data());
+}
+
+/* This test case simulates HCI thread scheduling events on the main thread,
+ * without knowing the we are already shutting down the stack and Iso Manager
+ * is already stopped.
+ */
+TEST_F(IsoManagerDeathTestNoCleanup, HandleLateArivingEventHandleIsoData) {
+  IsoManager::GetInstance()->CreateCig(
+      volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
+
+  auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
+
+  // Stop iso manager before trying to call the HCI callbacks
+  IsoManager::GetInstance()->Stop();
+
+  EXPECT_CALL(
+      *cig_callbacks_,
+      OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisDataAvailable, _))
+      .Times(0);
+
+  // Expect no assert on this call - should be gracefully ignored
+  std::vector<uint8_t> dummy_msg(18);
+  uint8_t* p = dummy_msg.data();
+  UINT16_TO_STREAM(p, BT_EVT_TO_BTU_HCI_ISO);
+  UINT16_TO_STREAM(p, 10);  // .len
+  UINT16_TO_STREAM(p, 0);   // .offset
+  UINT16_TO_STREAM(p, 0);   // .layer_specific
+  UINT16_TO_STREAM(p, handle);
+  IsoManager::GetInstance()->HandleIsoData(dummy_msg.data());
+}
+
+/* This test case simulates HCI thread scheduling events on the main thread,
+ * without knowing the we are already shutting down the stack and Iso Manager
+ * is already stopped.
+ */
+TEST_F(IsoManagerDeathTestNoCleanup, HandleLateArivingEventHandleDisconnect) {
+  IsoManager::GetInstance()->CreateCig(
+      volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
+
+  auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
+
+  // Stop iso manager before trying to call the HCI callbacks
+  IsoManager::GetInstance()->Stop();
+
+  // Expect no event when callback is being called on a stopped iso manager
+  EXPECT_CALL(*cig_callbacks_, OnCisEvent).Times(0);
+  // Expect no assert on this call - should be gracefully ignored
+  IsoManager::GetInstance()->HandleDisconnect(handle, 16);
+}
+
+/* This test case simulates HCI thread scheduling events on the main thread,
+ * without knowing the we are already shutting down the stack and Iso Manager
+ * is already stopped.
+ */
+TEST_F(IsoManagerDeathTestNoCleanup,
+       HandleLateArivingEventHandleNumComplDataPkts) {
+  uint8_t num_buffers = controller_interface_.GetIsoBufferCount();
+
+  IsoManager::GetInstance()->CreateCig(
+      volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
+
+  auto handle = volatile_test_cig_create_cmpl_evt_.conn_handles[0];
+  IsoManager::GetInstance()->EstablishCis({{{handle, 1}}});
+
+  // Stop iso manager before trying to call the HCI callbacks
+  IsoManager::GetInstance()->Stop();
+
+  // Expect no assert on this call - should be gracefully ignored
+  uint8_t mock_rsp[5];
+  uint8_t* p = mock_rsp;
+  UINT8_TO_STREAM(p, 1);
+  UINT16_TO_STREAM(p, handle);
+  UINT16_TO_STREAM(p, num_buffers);
+  IsoManager::GetInstance()->HandleNumComplDataPkts(mock_rsp, sizeof(mock_rsp));
+}
+
+/* This test case simulates HCI thread scheduling events on the main thread,
+ * without knowing the we are already shutting down the stack and Iso Manager
+ * is already stopped.
+ */
+TEST_F(IsoManagerDeathTestNoCleanup, HandleLateArivingEventHandleHciEvent) {
+  const uint8_t big_id = 0x22;
+
+  IsoManager::GetInstance()->CreateBig(big_id, kDefaultBigParams);
+
+  // Stop iso manager before trying to call the HCI callbacks
+  IsoManager::GetInstance()->Stop();
+  EXPECT_CALL(
+      *big_callbacks_,
+      OnBigEvent(bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, _))
+      .Times(0);
+
+  // Expect no assert on this call - should be gracefully ignored
+  std::vector<uint8_t> buf(2);
+  uint8_t* p = buf.data();
+  UINT8_TO_STREAM(p, big_id);
+  UINT8_TO_STREAM(p, 16);  // Terminated by local host
+  IsoManager::GetInstance()->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT,
+                                            buf.data(), buf.size());
 }
 
 TEST_F(IsoManagerTest, HandleIsoDataSameSeqNb) {
