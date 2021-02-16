@@ -28,7 +28,6 @@
 
 #if (BTA_HH_INCLUDED == TRUE)
 
-#include <log/log.h>
 #include <string.h>
 
 #include "bta_hh_co.h"
