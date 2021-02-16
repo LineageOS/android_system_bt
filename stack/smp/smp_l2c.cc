@@ -31,7 +31,7 @@
 #include "btm_ble_api.h"
 #include "common/metrics.h"
 #include "l2c_api.h"
-
+#include "main/shim/dumpsys.h"
 #include "smp_int.h"
 
 static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
@@ -93,11 +93,21 @@ static void smp_connect_callback(uint16_t channel, const RawAddress& bd_addr,
                   bd_addr.ToString().c_str(),
                   p_cb->pairing_bda.ToString().c_str());
 
-  if (transport == BT_TRANSPORT_BR_EDR || bd_addr.IsEmpty()) return;
+  if (bd_addr.IsEmpty()) {
+    LOG_WARN("Received unexpected callback for empty address");
+    return;
+  }
+
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    LOG_WARN("Received unexpected callback on classic channel peer:%s",
+             PRIVATE_ADDRESS(bd_addr));
+    return;
+  }
 
   if (bd_addr == p_cb->pairing_bda) {
-    VLOG(2) << __func__ << " for pairing BDA: " << bd_addr
-            << " Event: " << ((connected) ? "connected" : "disconnected");
+    LOG_DEBUG("Received callback for device in pairing process:%s state:%s",
+              PRIVATE_ADDRESS(bd_addr),
+              (connected) ? "connected" : "disconnected");
 
     if (connected) {
       if (!p_cb->connect_initialized) {
