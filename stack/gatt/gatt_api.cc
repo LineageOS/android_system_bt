@@ -31,6 +31,7 @@
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "stack/gatt/connection_manager.h"
 #include "types/bt_transport.h"
@@ -1193,6 +1194,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, bool is_direct,
                 << +gatt_if;
       ret = true;
     } else {
+      LOG_DEBUG("Adding to acceptlist device:%s", PRIVATE_ADDRESS(bd_addr));
       ret = connection_manager::background_connect_add(gatt_if, bd_addr);
     }
   }
