@@ -519,14 +519,6 @@ bool BTM_BackgroundConnectAddressKnown(const RawAddress& address) {
   return false;
 }
 
-uint8_t BTM_GetAcceptlistSize() {
-  const controller_t* controller = controller_get_interface();
-  if (!controller->supports_ble()) {
-    return 0;
-  }
-  return controller->get_ble_acceptlist_size();
-}
-
 bool BTM_SetLeConnectionModeToFast() {
   VLOG(2) << __func__;
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
