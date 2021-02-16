@@ -41,6 +41,7 @@ const char* dev_path = "/dev/uhid";
 #define BTA_HH_NV_LOAD_MAX 16
 static tBTA_HH_RPT_CACHE_ENTRY sReportCache[BTA_HH_NV_LOAD_MAX];
 #define GET_RPT_RSP_OFFSET 9
+#define BTA_HH_CACHE_REPORT_VERSION 1
 #define THREAD_NORMAL_PRIORITY 0
 #define BT_HH_THREAD "bt_hh_thread"
 
@@ -645,6 +646,7 @@ void bta_hh_le_co_rpt_info(const RawAddress& remote_bda,
     memcpy(&sReportCache[idx++], p_entry, sizeof(tBTA_HH_RPT_CACHE_ENTRY));
     btif_config_set_bin(bdstr, "HidReport", (const uint8_t*)sReportCache,
                         idx * sizeof(tBTA_HH_RPT_CACHE_ENTRY));
+    btif_config_set_int(bdstr, "HidReportVersion", BTA_HH_CACHE_REPORT_VERSION);
     BTIF_TRACE_DEBUG("%s() - Saving report; dev=%s, idx=%d", __func__, bdstr,
                      idx);
   }
@@ -656,14 +658,14 @@ void bta_hh_le_co_rpt_info(const RawAddress& remote_bda,
  *
  * Description      This callout function is to request the application to load
  *                  the cached HOGP report if there is any. When cache reading
- *                  is completed, bta_hh_le_ci_cache_load() is called by the
+ *                  is completed, bta_hh_le_co_cache_load() is called by the
  *                  application.
  *
  * Parameters       remote_bda  - remote device address
- *                  p_num_rpt: number of cached report
+ *                  p_num_rpt   - number of cached report
  *                  app_id      - application id
  *
- * Returns          the acched report array
+ * Returns          the cached report array
  *
  ******************************************************************************/
 tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const RawAddress& remote_bda,
@@ -677,6 +679,15 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const RawAddress& remote_bda,
 
   if (len > sizeof(sReportCache)) len = sizeof(sReportCache);
   btif_config_get_bin(bdstr, "HidReport", (uint8_t*)sReportCache, &len);
+
+  int cache_version = -1;
+  btif_config_get_int(bdstr, "HidReportVersion", &cache_version);
+
+  if (cache_version != BTA_HH_CACHE_REPORT_VERSION) {
+    bta_hh_le_co_reset_rpt_cache(remote_bda, app_id);
+    return NULL;
+  }
+
   *p_num_rpt = len / sizeof(tBTA_HH_RPT_CACHE_ENTRY);
 
   BTIF_TRACE_DEBUG("%s() - Loaded %d reports; dev=%s", __func__, *p_num_rpt,
@@ -702,6 +713,6 @@ void bta_hh_le_co_reset_rpt_cache(const RawAddress& remote_bda,
   const char* bdstr = addrstr.c_str();
 
   btif_config_remove(bdstr, "HidReport");
-
+  btif_config_remove(bdstr, "HidReportVersion");
   BTIF_TRACE_DEBUG("%s() - Reset cache for bda %s", __func__, bdstr);
 }
