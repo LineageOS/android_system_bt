@@ -24,7 +24,16 @@ namespace activity_attribution {
 
 class ActivityAttributionCallbacks {
  public:
-  enum class Activity { UNKNOWN = 0, ADVERTISE, CONNECT, SCAN };
+  enum class Activity : uint8_t {
+    UNKNOWN = 0,
+    ADVERTISE,
+    CONNECT,
+    CONTROL,
+    SCAN,
+    HFP,
+    VENDOR
+  };
+
   virtual ~ActivityAttributionCallbacks() = default;
 
   /** Callback when Blutooth woke up the system */
