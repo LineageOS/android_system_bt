@@ -184,7 +184,12 @@ class BluetoothAvInterfaceImpl : public BluetoothAvInterface {
     if (sink_enabled_) {
       return true;
     }
-    if (hal_sink_iface_->init(&av_sink_callbacks) != BT_STATUS_SUCCESS) {
+
+    // Right now we only support one connected audio device.
+    int max_connected_audio_devices = 1;
+    if (hal_sink_iface_->init(&av_sink_callbacks,
+                              max_connected_audio_devices) !=
+        BT_STATUS_SUCCESS) {
       LOG(ERROR) << "Failed to initialize HAL A2DP sink interface";
       return false;
     }
