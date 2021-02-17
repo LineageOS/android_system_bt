@@ -119,6 +119,13 @@ void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
            (state) ? "disconnected" : "connected");
 }
 
+/** Bluetooth Link Quality Report callback */
+void link_quality_report(uint64_t timestamp, int report_id, int rssi, int snr,
+    int retransmission_count, int packets_not_receive_count,
+    int negative_acknowledgement_count) {
+  LOG_INFO("%s", __func__);
+}
+
 void thread_event(bt_cb_thread_evt evt) { LOG_INFO("%s", __func__); }
 
 void dut_mode_recv(uint16_t opcode, uint8_t* buf, uint8_t len) {
@@ -150,6 +157,7 @@ bt_callbacks_t bt_callbacks{
     .dut_mode_recv_cb = dut_mode_recv,
     .le_test_mode_cb = le_test_mode,
     .energy_info_cb = energy_info,
+    .link_quality_report_cb = link_quality_report,
 };
 // HAL HARDWARE CALLBACKS
 
