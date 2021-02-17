@@ -229,31 +229,50 @@ AclConnectionHandler::SetCigParameters(
 
 void AclConnectionHandler::CreatePendingCis(
     bluetooth::hci::CreateCisConfig config) {
-  pending_streams_.emplace_back(std::move(config));
+  CisHandles handles;
+  handles.cis_handle_ = config.cis_connection_handle_;
+  handles.acl_handle_ = config.acl_connection_handle_;
+  handles.remote_cis_handle_ = kReservedHandle;
+  pending_streams_.emplace_back(std::move(handles));
 }
 
 bool AclConnectionHandler::ConnectCis(uint16_t handle) {
   size_t position;
-  bluetooth::hci::CreateCisConfig config;
+  CisHandles connection;
   for (position = 0; position < pending_streams_.size(); position++) {
-    if (handle == pending_streams_[position].cis_connection_handle_) {
-      config = pending_streams_[position];
+    if (handle == pending_streams_[position].cis_handle_) {
+      LOG_INFO("Found handle 0x%04hx", handle);
+      connection = pending_streams_[position];
       pending_streams_.erase(pending_streams_.begin() + position);
-      break;
+      connected_streams_.push_back(connection);
+      ASSERT(connection.cis_handle_ != kReservedHandle);
+      ASSERT(connection.acl_handle_ != kReservedHandle);
+      ASSERT(connection.remote_cis_handle_ != kReservedHandle);
+      return true;
     }
   }
-  if (position == pending_streams_.size()) {
-    LOG_INFO("No pending connection with handle 0x%hx", handle);
-    return false;
+
+  LOG_INFO("No pending CIS connection with handle 0x%04hx", handle);
+  return false;
+}
+
+void AclConnectionHandler::SetRemoteCisHandle(uint16_t handle,
+                                              uint16_t remote_handle) {
+  for (size_t position = 0; position < pending_streams_.size(); position++) {
+    if (handle == pending_streams_[position].cis_handle_) {
+      LOG_INFO("Added remote handle 0x%04hx to handle 0x%04hx", remote_handle,
+               pending_streams_[position].cis_handle_);
+      pending_streams_[position].remote_cis_handle_ = remote_handle;
+      return;
+    }
   }
-  connected_streams_.push_back(config);
-  return true;
+  LOG_INFO("Couldn't find CIS connection with handle 0x%04hx", handle);
 }
 
 bool AclConnectionHandler::RejectCis(uint16_t handle) {
   size_t position;
   for (position = 0; position < pending_streams_.size(); position++) {
-    if (handle == pending_streams_[position].cis_connection_handle_) {
+    if (handle == pending_streams_[position].cis_handle_) {
       pending_streams_.erase(pending_streams_.begin() + position);
       break;
     }
@@ -269,8 +288,8 @@ uint16_t AclConnectionHandler::GetPendingAclHandle(uint16_t cis_handle) const {
   size_t position;
   uint16_t handle = 0xffff;
   for (position = 0; position < pending_streams_.size(); position++) {
-    if (cis_handle == pending_streams_[position].cis_connection_handle_) {
-      handle = pending_streams_[position].acl_connection_handle_;
+    if (cis_handle == pending_streams_[position].cis_handle_) {
+      handle = pending_streams_[position].acl_handle_;
       break;
     }
   }
@@ -283,7 +302,7 @@ uint16_t AclConnectionHandler::GetPendingAclHandle(uint16_t cis_handle) const {
 bool AclConnectionHandler::DisconnectCis(uint16_t cis_handle) {
   size_t position;
   for (position = 0; position < connected_streams_.size(); position++) {
-    if (cis_handle == connected_streams_[position].cis_connection_handle_) {
+    if (cis_handle == connected_streams_[position].cis_handle_) {
       connected_streams_.erase(connected_streams_.begin() + position);
       break;
     }
@@ -297,14 +316,14 @@ bool AclConnectionHandler::DisconnectCis(uint16_t cis_handle) {
 
 bluetooth::hci::ErrorCode AclConnectionHandler::RemoveCig(uint8_t cig_id) {
   for (const auto& stream : connected_streams_) {
-    if (isochronous_connection_handler_.GetGroupId(
-            stream.cis_connection_handle_) == cig_id) {
+    if (isochronous_connection_handler_.GetGroupId(stream.cis_handle_) ==
+        cig_id) {
       return bluetooth::hci::ErrorCode::COMMAND_DISALLOWED;
     }
   }
   for (const auto& stream : pending_streams_) {
-    if (isochronous_connection_handler_.GetGroupId(
-            stream.cis_connection_handle_) == cig_id) {
+    if (isochronous_connection_handler_.GetGroupId(stream.cis_handle_) ==
+        cig_id) {
       return bluetooth::hci::ErrorCode::COMMAND_DISALLOWED;
     }
   }
@@ -317,7 +336,7 @@ bluetooth::hci::ErrorCode AclConnectionHandler::RemoveCig(uint8_t cig_id) {
 
 bool AclConnectionHandler::HasPendingCisConnection(uint16_t handle) const {
   for (const auto& config : pending_streams_) {
-    if (config.cis_connection_handle_ == handle) {
+    if (config.cis_handle_ == handle) {
       return true;
     }
   }
@@ -329,11 +348,46 @@ bool AclConnectionHandler::HasPendingCis() const {
 }
 
 bool AclConnectionHandler::HasConnectedCis(uint16_t handle) const {
-  return isochronous_connection_handler_.GetStreamIsConnected(handle);
+  for (const auto& cs : connected_streams_) {
+    if (handle == cs.cis_handle_) {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool AclConnectionHandler::HasCisHandle(uint16_t handle) const {
+  for (const auto& cs : pending_streams_) {
+    if (handle == cs.cis_handle_) {
+      return true;
+    }
+  }
+  for (const auto& cs : connected_streams_) {
+    if (handle == cs.cis_handle_) {
+      return true;
+    }
+  }
   return isochronous_connection_handler_.HasHandle(handle);
+}
+
+uint16_t AclConnectionHandler::GetAclHandleForCisHandle(
+    uint16_t cis_handle) const {
+  for (const auto& cs : connected_streams_) {
+    if (cis_handle == cs.cis_handle_) {
+      return cs.acl_handle_;
+    }
+  }
+  return kReservedHandle;
+}
+
+uint16_t AclConnectionHandler::GetRemoteCisHandleForCisHandle(
+    uint16_t cis_handle) const {
+  for (const auto& cs : connected_streams_) {
+    if (cis_handle == cs.cis_handle_) {
+      return cs.remote_cis_handle_;
+    }
+  }
+  return kReservedHandle;
 }
 
 GroupParameters AclConnectionHandler::GetGroupParameters(uint8_t id) const {

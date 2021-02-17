@@ -262,8 +262,6 @@ enum Complete : 1 {
 packet IsoDataPacket : LinkLayerPacket (type = ISO) {
   handle : 12,
   _reserved_ : 4,
-  remote_handle : 12,
-  _reserved_ : 4,
   sc : StartContinuation,
   cmplt : Complete,
   _reserved_ : 6,
@@ -306,6 +304,9 @@ packet IsoConnectionResponse  : LinkLayerPacket (type = ISO_CONNECTION_RESPONSE)
   requester_cis_handle : 12,
   _reserved_ : 4,
   requester_acl_handle : 12,
+  _reserved_ : 4,
+  // For the link layer
+  responder_cis_handle : 12,
   _reserved_ : 4,
 }
 
