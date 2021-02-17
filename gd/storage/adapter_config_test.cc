@@ -20,8 +20,6 @@
 #include "storage/adapter_config.h"
 #include "storage/mutation.h"
 
-namespace testing {
-
 using bluetooth::common::ByteArray;
 using bluetooth::hci::Address;
 using bluetooth::hci::DeviceType;
@@ -29,6 +27,8 @@ using bluetooth::storage::AdapterConfig;
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::Device;
 using bluetooth::storage::Mutation;
+using ::testing::Eq;
+using ::testing::Optional;
 
 TEST(AdapterConfigTest, create_new_adapter_config) {
   ConfigCache config(10, Device::kLinkKeyProperties);
@@ -61,4 +61,3 @@ TEST(AdapterConfigTest, equality_test) {
   ASSERT_NE(adapter_config_1, adapter_config_3);
 }
 
-}  // namespace testing
