@@ -24,13 +24,14 @@
 #include "storage/le_device.h"
 #include "storage/mutation.h"
 
-namespace testing {
-
 using bluetooth::hci::Address;
 using bluetooth::hci::DeviceType;
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::Device;
 using bluetooth::storage::Mutation;
+using ::testing::Eq;
+using ::testing::Optional;
+using ::testing::StrEq;
 
 TEST(DeviceTest, create_new_device_using_legacy_key_address) {
   ConfigCache config(10, Device::kLinkKeyProperties);
@@ -235,4 +236,3 @@ TEST(DeviceTest, remove_config_test) {
   ASSERT_FALSE(config.GetProperty(address.ToString(), "Name"));
 }
 
-}  // namespace testing
