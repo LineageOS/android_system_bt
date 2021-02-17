@@ -192,6 +192,23 @@ int ReleaseWakeLockCallout(const char* /* lock_name */) {
   return BT_STATUS_SUCCESS;
 }
 
+void LinkQualityReportCallback(uint64_t timestamp, int report_id, int rssi,
+    int snr, int retransmission_count, int packets_not_receive_count,
+    int negative_acknowledgement_count) {
+  shared_lock<shared_mutex_impl> lock(g_instance_lock);
+  VERIFY_INTERFACE_OR_RETURN();
+  LOG(WARNING) << __func__ << " - timestamp: " << timestamp
+               << " - report_id: " << report_id << " - rssi: " << rssi
+               << " - snr: " << snr
+               << " - retransmission_count: " << retransmission_count
+               << " - packets_not_receive_count: " << packets_not_receive_count
+               << " - negative_acknowledgement_count: "
+               << negative_acknowledgement_count;
+  FOR_EACH_BLUETOOTH_OBSERVER(LinkQualityReportCallback(
+      timestamp, report_id, rssi, snr, retransmission_count,
+      packets_not_receive_count, negative_acknowledgement_count));
+}
+
 // The HAL Bluetooth DM callbacks.
 bt_callbacks_t bt_callbacks = {
     sizeof(bt_callbacks_t),
@@ -207,7 +224,8 @@ bt_callbacks_t bt_callbacks = {
     ThreadEventCallback,
     nullptr, /* dut_mode_recv_cb */
     nullptr, /* le_test_mode_cb */
-    nullptr  /* energy_info_cb */
+    nullptr, /* energy_info_cb */
+    LinkQualityReportCallback
 };
 
 bt_os_callouts_t bt_os_callouts = {sizeof(bt_os_callouts_t),
@@ -347,6 +365,14 @@ void BluetoothInterface::Observer::BondStateChangedCallback(
 void BluetoothInterface::Observer::AclStateChangedCallback(
     bt_status_t /* status */, const RawAddress& /* remote_bdaddr */,
     bt_acl_state_t /* state */) {
+  // Do nothing.
+}
+
+void BluetoothInterface::Observer::LinkQualityReportCallback(
+    uint64_t /* timestamp */, int /* report_id */, int /* rssi */,
+    int /* snr */, int /* retransmission_count */,
+    int /* packets_not_receive_count */,
+    int /* negative_acknowledgement_count */) {
   // Do nothing.
 }
 

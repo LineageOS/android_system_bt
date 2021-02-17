@@ -768,3 +768,22 @@ void invoke_energy_info_cb(bt_activity_energy_info energy_info,
           },
           energy_info, uid_data));
 }
+
+void invoke_link_quality_report_cb(
+    uint64_t timestamp, int report_id, int rssi, int snr,
+    int retransmission_count, int packets_not_receive_count,
+    int negative_acknowledgement_count) {
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](uint64_t timestamp, int report_id, int rssi, int snr,
+             int retransmission_count, int packets_not_receive_count,
+             int negative_acknowledgement_count) {
+            HAL_CBACK(bt_hal_cbacks, link_quality_report_cb,
+                      timestamp, report_id, rssi, snr, retransmission_count,
+                      packets_not_receive_count,
+                      negative_acknowledgement_count);
+          },
+          timestamp, report_id, rssi, snr, retransmission_count,
+          packets_not_receive_count, negative_acknowledgement_count));
+}

@@ -73,6 +73,10 @@ class BluetoothInterface {
     virtual void AclStateChangedCallback(bt_status_t status,
                                          const RawAddress& remote_bdaddr,
                                          bt_acl_state_t state);
+    virtual void LinkQualityReportCallback(
+        uint64_t timestamp, int report_id, int rssi, int snr,
+        int retransmission_count, int packets_not_receive_count,
+        int negative_acknowledgement_count);
 
     // TODO(armansito): Complete the list of callbacks.
   };

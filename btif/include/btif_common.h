@@ -215,5 +215,9 @@ void invoke_thread_evt_cb(bt_cb_thread_evt event);
 void invoke_le_test_mode_cb(bt_status_t status, uint16_t count);
 void invoke_energy_info_cb(bt_activity_energy_info energy_info,
                            bt_uid_traffic_t* uid_data);
+void invoke_link_quality_report_cb(
+    uint64_t timestamp, int report_id, int rssi, int snr,
+    int retransmission_count, int packets_not_receive_count,
+    int negative_acknowledgement_count);
 
 #endif /* BTIF_COMMON_H */
