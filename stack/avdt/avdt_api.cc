@@ -33,6 +33,8 @@
 #include "btm_api.h"
 #include "btu.h"
 #include "l2c_api.h"
+#include "main/shim/dumpsys.h"
+#include "osi/include/log.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/a2dp_codec_api.h"
 
@@ -152,32 +154,31 @@ void AVDT_AbortReq(uint8_t handle) {
  ******************************************************************************/
 uint16_t AVDT_CreateStream(uint8_t peer_id, uint8_t* p_handle,
                            const AvdtpStreamConfig& avdtp_stream_config) {
-  uint16_t result = AVDT_SUCCESS;
+  tAVDT_RESULT result = AVDT_SUCCESS;
   AvdtpScb* p_scb;
-
-  AVDT_TRACE_DEBUG("%s: peer_id=%d", __func__, peer_id);
 
   /* Verify parameters; if invalid, return failure */
   if (((avdtp_stream_config.cfg.psc_mask & (~AVDT_PSC)) != 0) ||
       (avdtp_stream_config.p_avdt_ctrl_cback == NULL)) {
     result = AVDT_BAD_PARAMS;
+    LOG_ERROR("Invalid AVDT stream endpoint parameters peer_id=%d scb_index=%d",
+              peer_id, avdtp_stream_config.scb_index);
   }
+
   /* Allocate scb; if no scbs, return failure */
   else {
     p_scb = avdt_scb_alloc(peer_id, avdtp_stream_config);
     if (p_scb == NULL) {
+      LOG_ERROR("Unable to create AVDT stream endpoint peer_id=%d scb_index=%d",
+                peer_id, avdtp_stream_config.scb_index);
       result = AVDT_NO_RESOURCES;
     } else {
       *p_handle = avdt_scb_to_hdl(p_scb);
+      LOG_DEBUG("Created stream endpoint peer_id=%d handle=%hhu", peer_id,
+                *p_handle);
     }
   }
-
-  if (result != AVDT_SUCCESS) {
-    AVDT_TRACE_ERROR("%s: result=%d peer_id=%d scb_index=%d", __func__, result,
-                     peer_id, avdtp_stream_config.scb_index);
-  }
-
-  return result;
+  return static_cast<uint16_t>(result);
 }
 
 /*******************************************************************************
@@ -949,27 +950,22 @@ uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t channel_index,
 uint16_t AVDT_DisconnectReq(const RawAddress& bd_addr,
                             tAVDT_CTRL_CBACK* p_cback) {
   AvdtpCcb* p_ccb = NULL;
-  uint16_t result = AVDT_SUCCESS;
+  tAVDT_RESULT result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
-
-  AVDT_TRACE_WARNING("%s: address=%s", __func__, bd_addr.ToString().c_str());
 
   /* find channel control block for this bd addr; if none, error */
   p_ccb = avdt_ccb_by_bd(bd_addr);
   if (p_ccb == NULL) {
+    LOG_ERROR("Unable to find AVDT stream endpoint peer:%s",
+              PRIVATE_ADDRESS(bd_addr));
     result = AVDT_BAD_PARAMS;
-  }
-
-  if (result == AVDT_SUCCESS) {
-    /* send event to ccb */
+  } else {
+    LOG_DEBUG("Sending disconnect request to ccb peer:%s",
+              PRIVATE_ADDRESS(bd_addr));
     evt.disconnect.p_cback = p_cback;
     avdt_ccb_event(p_ccb, AVDT_CCB_API_DISCONNECT_REQ_EVT, &evt);
-  } else {
-    AVDT_TRACE_ERROR("%s: address=%s result=%d", __func__,
-                     bd_addr.ToString().c_str(), result);
   }
-
-  return result;
+  return static_cast<uint16_t>(result);
 }
 
 /*******************************************************************************

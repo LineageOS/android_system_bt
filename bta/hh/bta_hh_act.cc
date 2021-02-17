@@ -28,9 +28,9 @@
 
 #if (BTA_HH_INCLUDED == TRUE)
 
-#include <log/log.h>
 #include <string.h>
 
+#include "bta/include/bta_hh_api.h"
 #include "bta_hh_co.h"
 #include "bta_hh_int.h"
 #include "bta_sys.h"
@@ -827,7 +827,7 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   uint16_t event = p_cb->vp ? BTA_HH_VC_UNPLUG_EVT : BTA_HH_CLOSE_EVT;
 
   disc_dat.handle = p_cb->hid_handle;
-  disc_dat.status = p_data->hid_cback.data;
+  disc_dat.status = to_bta_hh_status(p_data->hid_cback.data);
 
   /* Check reason for closing */
   if ((reason & (HID_L2CAP_CONN_FAIL |

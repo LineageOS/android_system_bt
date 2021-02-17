@@ -304,10 +304,12 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
 
   std::unique_lock<std::recursive_mutex> schedule_lock(pm_timer_schedule_mutex);
   std::unique_lock<std::recursive_mutex> state_lock(pm_timer_state_mutex);
-  if (p_timer->srvc_id[timer_idx] == BTA_ID_MAX)
-    return; /* The timer was not scheduled */
+  if (p_timer->srvc_id[timer_idx] == BTA_ID_MAX) {
+    return;
+  } /* The timer was not scheduled */
 
-  CHECK(p_timer->in_use && (p_timer->active > 0));
+  CHECK(p_timer->in_use);
+  CHECK(p_timer->active > 0);
 
   p_timer->srvc_id[timer_idx] = BTA_ID_MAX;
   /* NOTE: pm_action[timer_idx] intentionally not reset */

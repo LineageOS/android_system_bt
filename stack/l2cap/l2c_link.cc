@@ -153,25 +153,30 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
 
   /* If we don't have one, allocate one */
   if (p_lcb == nullptr) {
-    LOG_WARN("No available link control block, try allocate one");
     p_lcb = l2cu_allocate_lcb(ci.bd_addr, false, BT_TRANSPORT_BR_EDR);
     if (p_lcb == nullptr) {
       LOG_WARN("Failed to allocate an LCB");
       return;
     }
+    LOG_DEBUG("Allocated l2cap control block for new connection state:%s",
+              link_state_text(p_lcb->link_state).c_str());
     p_lcb->link_state = LST_CONNECTING;
   }
 
   if ((p_lcb->link_state == LST_CONNECTED) &&
       (status == HCI_ERR_CONNECTION_EXISTS)) {
-    LOG_WARN("An ACL connection already exists. Handle:%d", handle);
+    LOG_WARN("Connection already exists handle:0x%04x", handle);
     return;
   } else if (p_lcb->link_state != LST_CONNECTING) {
-    LOG_ERROR("L2CAP got conn_comp in bad state: %d  status: 0x%d",
-              p_lcb->link_state, status);
-
-    if (status != HCI_SUCCESS) l2c_link_hci_disc_comp(p_lcb->Handle(), status);
-
+    LOG_ERROR(
+        "Link received unexpected connection complete state:%s status:%s "
+        "handle:0x%04x",
+        link_state_text(p_lcb->link_state).c_str(),
+        hci_error_code_text(status).c_str(), p_lcb->Handle());
+    if (status != HCI_SUCCESS) {
+      LOG_ERROR("Disconnecting...");
+      l2c_link_hci_disc_comp(p_lcb->Handle(), status);
+    }
     return;
   }
 
@@ -185,8 +190,8 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
     /* Get the peer information if the l2cap flow-control/rtrans is supported */
     l2cu_send_peer_info_req(p_lcb, L2CAP_EXTENDED_FEATURES_INFO_TYPE);
 
-    /* If dedicated bonding do not process any further */
     if (p_lcb->IsBonding()) {
+      LOG_DEBUG("Link is dedicated bonding handle:0x%04x", p_lcb->Handle());
       if (l2cu_start_post_bond_timer(handle)) return;
     }
 
@@ -211,6 +216,8 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
   /* If there's an lcb disconnecting set this one to holding */
   else if ((ci.status == HCI_ERR_MAX_NUM_OF_CONNECTIONS) &&
            l2cu_lcb_disconnecting()) {
+    LOG_WARN("Delaying connection as reached max number of links:%u",
+             HCI_ERR_MAX_NUM_OF_CONNECTIONS);
     p_lcb->link_state = LST_CONNECT_HOLDING;
     p_lcb->InvalidateHandle();
   } else {
@@ -227,6 +234,8 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
       p_ccb = pn;
     }
 
+    LOG_INFO("Disconnecting link handle:0x%04x status:%s", p_lcb->Handle(),
+             hci_error_code_text(status).c_str());
     p_lcb->SetDisconnectReason(status);
     /* Release the LCB */
     if (p_lcb->ccb_queue.p_first_ccb == NULL)
@@ -242,7 +251,6 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
       }
     }
   }
-  return;
 }
 
 /*******************************************************************************

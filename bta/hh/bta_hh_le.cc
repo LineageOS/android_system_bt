@@ -2041,7 +2041,8 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
 
   switch (event) {
     case BTA_GATTC_DEREG_EVT: /* 1 */
-      bta_hh_cleanup_disable(p_data->reg_oper.status);
+      bta_hh_cleanup_disable(
+          static_cast<tBTA_HH_STATUS>(p_data->reg_oper.status));
       break;
 
     case BTA_GATTC_OPEN_EVT: /* 2 */

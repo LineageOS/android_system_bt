@@ -1217,7 +1217,7 @@ void btif_hh_timer_timeout(void* data) {
   if (p_dev->dev_status != BTHH_CONN_STATE_CONNECTED) return;
 
   memset(&p_data, 0, sizeof(tBTA_HH));
-  p_data.dev_status.status = BTHH_ERR;
+  p_data.dev_status.status = BTA_HH_ERR;  // tBTA_HH_STATUS
   p_data.dev_status.handle = p_dev->dev_handle;
 
   /* switch context to btif task context */

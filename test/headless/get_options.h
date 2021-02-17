@@ -49,6 +49,7 @@ class GetOpt {
   unsigned long msec_{0};
 
   bool close_stderr_{true};
+  bool clear_logcat_{false};
 
   mutable std::list<std::string> non_options_;
 

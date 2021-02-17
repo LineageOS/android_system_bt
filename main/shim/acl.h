@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <future>
 #include <memory>
 
 #include "gd/hci/acl_manager/connection_callbacks.h"
@@ -38,7 +39,8 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
             public LinkConnectionInterface,
             public LinkPolicyInterface {
  public:
-  Acl(os::Handler* handler, const acl_interface_t& acl_interface);
+  Acl(os::Handler* handler, const acl_interface_t& acl_interface,
+      uint8_t max_acceptlist_size);
   ~Acl();
 
   // hci::acl_manager::ConnectionCallbacks
@@ -55,13 +57,14 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void OnLeLinkDisconnected(uint16_t handle, hci::ErrorCode reason);
 
   // LinkConnectionInterface
-  void CreateClassicConnection(const bluetooth::hci::Address& address) override;
-  void CreateLeConnection(
-      const bluetooth::hci::AddressWithType& address_with_type) override;
-  void CancelLeConnection(
-      const bluetooth::hci::AddressWithType& address_with_type) override;
-  void DisconnectClassic(uint16_t handle, tHCI_STATUS reason) override;
-  void DisconnectLe(uint16_t handle, tHCI_STATUS reason) override;
+  void CreateClassicConnection(const hci::Address& address) override;
+  void CancelClassicConnection(const hci::Address& address) override;
+  void AcceptLeConnectionFrom(const hci::AddressWithType& address_with_type,
+                              std::promise<bool> promise) override;
+  void IgnoreLeConnectionFrom(
+      const hci::AddressWithType& address_with_type) override;
+  void DisconnectClassic(uint16_t handle, tHCI_REASON reason) override;
+  void DisconnectLe(uint16_t handle, tHCI_REASON reason) override;
 
   // LinkPolicyInterface
   bool HoldMode(uint16_t hci_handle, uint16_t max_interval,
@@ -77,7 +80,7 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void HACK_OnScoDisconnected(uint16_t handle, uint8_t reason);
 
   void WriteData(uint16_t hci_handle,
-                 std::unique_ptr<bluetooth::packet::RawBuilder> packet);
+                 std::unique_ptr<packet::RawBuilder> packet);
 
   void ConfigureLePrivacy(bool is_le_privacy_enabled);
 
@@ -86,10 +89,12 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
 
   void Shutdown();
 
+  void ClearAcceptList();
+
  protected:
   void on_incoming_acl_credits(uint16_t handle, uint16_t credits);
   void write_data_sync(uint16_t hci_handle,
-                       std::unique_ptr<bluetooth::packet::RawBuilder> packet);
+                       std::unique_ptr<packet::RawBuilder> packet);
 
  private:
   os::Handler* handler_;
