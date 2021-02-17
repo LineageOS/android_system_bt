@@ -33,6 +33,7 @@
 #include "btm_int_types.h"
 #include "hcidefs.h"
 #include "smp_api.h"
+#include "stack/include/hci_error_code.h"
 
 extern void btm_ble_process_periodic_adv_sync_est_evt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_periodic_adv_pkt(uint8_t len, uint8_t* p);
@@ -90,14 +91,13 @@ extern uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 
 /* acceptlist function */
 extern void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
-extern void btm_ble_acceptlist_init(uint8_t acceptlist_size);
 
 /* background connection function */
 extern bool btm_ble_suspend_bg_conn(void);
 extern bool btm_ble_resume_bg_conn(void);
 extern void btm_ble_update_mode_operation(uint8_t link_role,
                                           const RawAddress* bda,
-                                          uint8_t status);
+                                          tHCI_STATUS status);
 extern void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr);
 
 /* BLE address management */

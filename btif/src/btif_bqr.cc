@@ -22,8 +22,10 @@
 #include <sys/stat.h>
 
 #include "btif_bqr.h"
+#include "btif_common.h"
 #include "btm_api.h"
 #include "common/leaky_bonded_queue.h"
+#include "common/time_util.h"
 #include "osi/include/properties.h"
 
 namespace bluetooth {
@@ -384,6 +386,15 @@ void AddLinkQualityEventToQueue(uint8_t length, uint8_t* p_link_quality_event) {
   p_bqr_event->ParseBqrLinkQualityEvt(length, p_link_quality_event);
 
   LOG(WARNING) << *p_bqr_event;
+  invoke_link_quality_report_cb(
+      bluetooth::common::time_get_os_boottime_ms(),
+      p_bqr_event->bqr_link_quality_event_.quality_report_id,
+      p_bqr_event->bqr_link_quality_event_.rssi,
+      p_bqr_event->bqr_link_quality_event_.snr,
+      p_bqr_event->bqr_link_quality_event_.retransmission_count,
+      p_bqr_event->bqr_link_quality_event_.no_rx_count,
+      p_bqr_event->bqr_link_quality_event_.nak_count);
+
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_QUALITY_REPORT_REPORTED,
       p_bqr_event->bqr_link_quality_event_.quality_report_id,

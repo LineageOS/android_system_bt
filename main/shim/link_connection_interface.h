@@ -17,6 +17,7 @@
 #pragma once
 
 #include <cstdint>
+#include <future>
 
 #include "gd/hci/address.h"
 #include "gd/hci/address_with_type.h"
@@ -31,13 +32,16 @@ class LinkConnectionInterface {
 
   virtual void CreateClassicConnection(
       const bluetooth::hci::Address& address) = 0;
-  virtual void CreateLeConnection(
-      const bluetooth::hci::AddressWithType& address_with_type) = 0;
-  virtual void CancelLeConnection(
+  virtual void CancelClassicConnection(
+      const bluetooth::hci::Address& address) = 0;
+  virtual void AcceptLeConnectionFrom(
+      const bluetooth::hci::AddressWithType& address_with_type,
+      std::promise<bool>) = 0;
+  virtual void IgnoreLeConnectionFrom(
       const bluetooth::hci::AddressWithType& address_with_type) = 0;
 
-  virtual void DisconnectClassic(uint16_t handle, tHCI_STATUS reason) = 0;
-  virtual void DisconnectLe(uint16_t handle, tHCI_STATUS reason) = 0;
+  virtual void DisconnectClassic(uint16_t handle, tHCI_REASON reason) = 0;
+  virtual void DisconnectLe(uint16_t handle, tHCI_REASON reason) = 0;
 };
 
 }  // namespace shim

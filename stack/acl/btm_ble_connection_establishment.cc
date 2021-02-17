@@ -25,6 +25,7 @@
 #include "btm_int.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
+#include "main/shim/shim.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
@@ -46,6 +47,9 @@ void btm_send_hci_create_connection(
     uint16_t conn_int_min, uint16_t conn_int_max, uint16_t conn_latency,
     uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
     uint8_t initiating_phys) {
+  ASSERT_LOG(!bluetooth::shim::is_gd_acl_enabled(),
+             "When gd_acl enabled this code path should not be exercised");
+
   if (controller_get_interface()->supports_ble_extended_advertising()) {
     EXT_CONN_PHY_CFG phy_cfg[3];  // maximum three phys
 
@@ -82,11 +86,11 @@ void btm_send_hci_create_connection(
 }
 
 /** LE connection complete. */
-void btm_ble_create_ll_conn_complete(uint8_t status) {
+void btm_ble_create_ll_conn_complete(tHCI_STATUS status) {
   if (status == HCI_SUCCESS) return;
 
   LOG(WARNING) << "LE Create Connection attempt failed, status="
-               << loghex(status);
+               << hci_error_code_text(status);
 
   if (status == HCI_ERR_COMMAND_DISALLOWED) {
     btm_cb.ble_ctr_cb.set_connection_state_connecting();
@@ -201,6 +205,9 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 }
 
 void btm_ble_create_conn_cancel() {
+  ASSERT_LOG(!bluetooth::shim::is_gd_acl_enabled(),
+             "When gd_acl enabled this code path should not be exercised");
+
   btsnd_hcic_ble_create_conn_cancel();
   btm_cb.ble_ctr_cb.set_connection_state_cancelled();
   btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
@@ -228,7 +235,8 @@ void btm_ble_create_conn_cancel_complete(uint8_t* p) {
     if (btm_cb.ble_ctr_cb.is_connection_state_cancelled()) {
       btm_cb.ble_ctr_cb.set_connection_state_idle();
       btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
-      btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr, status);
+      btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr,
+                                    static_cast<tHCI_STATUS>(status));
     }
   }
 }

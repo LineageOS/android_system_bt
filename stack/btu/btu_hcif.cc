@@ -1448,7 +1448,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
     case HCI_BLE_CREATE_LL_CONN:
     case HCI_LE_EXTENDED_CREATE_CONNECTION:
       if (status != HCI_SUCCESS) {
-        btm_ble_create_ll_conn_complete(status);
+        btm_ble_create_ll_conn_complete(static_cast<tHCI_STATUS>(status));
       }
       break;
     case HCI_BLE_START_ENC:

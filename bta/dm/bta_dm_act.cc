@@ -35,6 +35,7 @@
 #include "btif/include/stack_manager.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/shim.h"
@@ -45,7 +46,7 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_client_interface.h"
-#include "stack/include/btu.h"
+#include "stack/include/btu.h"  // do_in_main_thread
 #include "types/raw_address.h"
 
 #if (GAP_INCLUDED == TRUE)
@@ -139,13 +140,58 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
 #define BTA_DM_SWITCH_DELAY_TIMER_MS 500
 #endif
 
+namespace {
+
+// Time to wait after receiving shutdown request to delay the actual shutdown
+// process. This time may be zero which invokes immediate shutdown.
+#ifndef BTA_DISABLE_DELAY
+constexpr uint64_t kDisableDelayTimerInMs = 0;
+#else
+constexpr uint64_t kDisableDelayTimerInMs =
+    static_cast<uint64_t>(BTA_DISABLE_DELAY);
+#endif
+
+struct WaitForAllAclConnectionsToDrain {
+  uint64_t time_to_wait_in_ms;
+  unsigned long TimeToWaitInMs() const {
+    return static_cast<unsigned long>(time_to_wait_in_ms);
+  }
+  void* AlarmCallbackData() const {
+    return const_cast<void*>(static_cast<const void*>(this));
+  }
+
+  static const WaitForAllAclConnectionsToDrain* FromAlarmCallbackData(
+      void* data);
+  static bool IsFirstPass(const WaitForAllAclConnectionsToDrain*);
+} first_pass =
+    {
+        .time_to_wait_in_ms = static_cast<uint64_t>(BTA_DM_DISABLE_TIMER_MS),
+},
+  second_pass = {
+      .time_to_wait_in_ms =
+          static_cast<uint64_t>(BTA_DM_DISABLE_TIMER_RETRIAL_MS),
+};
+
+bool WaitForAllAclConnectionsToDrain::IsFirstPass(
+    const WaitForAllAclConnectionsToDrain* pass) {
+  return pass == &first_pass;
+}
+
+const WaitForAllAclConnectionsToDrain*
+WaitForAllAclConnectionsToDrain::FromAlarmCallbackData(void* data) {
+  return const_cast<const WaitForAllAclConnectionsToDrain*>(
+      static_cast<WaitForAllAclConnectionsToDrain*>(data));
+}
+
+}  // namespace
+
 static void bta_dm_reset_sec_dev_pending(const RawAddress& remote_bd_addr);
 static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr);
 static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
                                       uint16_t eir_len);
 static void bta_dm_observe_cmpl_cb(void* p_result);
 static void bta_dm_delay_role_switch_cback(void* data);
-static void bta_dm_disable_timer_cback(void* data);
+static void bta_dm_wait_for_acl_to_drain_cback(void* data);
 
 const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
     UUID_SERVCLASS_PNP_INFORMATION,       /* Reserved */
@@ -377,26 +423,30 @@ void bta_dm_disable() {
   connection_manager::reset(false);
 
   if (BTM_GetNumAclLinks() == 0) {
-#if (BTA_DISABLE_DELAY > 0)
-    /* If BTA_DISABLE_DELAY is defined and greater than zero, then delay the
-     * shutdown by
-     * BTA_DISABLE_DELAY milliseconds
-     */
-    LOG_WARN("BTA_DISABLE_DELAY set to %d ms", BTA_DISABLE_DELAY);
-    alarm_set_on_mloop(bta_dm_cb.disable_timer, BTA_DISABLE_DELAY,
-                       bta_dm_disable_conn_down_timer_cback, NULL);
-#else
-    bta_dm_disable_conn_down_timer_cback(NULL);
-#endif
+    // We can shut down faster if there are no ACL links
+    switch (kDisableDelayTimerInMs) {
+      case 0:
+        LOG_DEBUG("Immediately disabling device manager");
+        bta_dm_disable_conn_down_timer_cback(nullptr);
+        break;
+      default:
+        LOG_DEBUG("Set timer to delay disable initiation:%lu ms",
+                  static_cast<unsigned long>(kDisableDelayTimerInMs));
+        alarm_set_on_mloop(bta_dm_cb.disable_timer, kDisableDelayTimerInMs,
+                           bta_dm_disable_conn_down_timer_cback, nullptr);
+    }
   } else {
-    alarm_set_on_mloop(bta_dm_cb.disable_timer, BTA_DM_DISABLE_TIMER_MS,
-                       bta_dm_disable_timer_cback, UINT_TO_PTR(0));
+    LOG_DEBUG("Set timer to wait for all ACL connections to close:%lu ms",
+              first_pass.TimeToWaitInMs());
+    alarm_set_on_mloop(bta_dm_cb.disable_timer, first_pass.time_to_wait_in_ms,
+                       bta_dm_wait_for_acl_to_drain_cback,
+                       first_pass.AlarmCallbackData());
   }
 }
 
 /*******************************************************************************
  *
- * Function         bta_dm_disable_timer_cback
+ * Function         bta_dm_wait_for_all_acl_to_drain
  *
  * Description      Called if the disable timer expires
  *                  Used to close ACL connections which are still active
@@ -406,31 +456,41 @@ void bta_dm_disable() {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_disable_timer_cback(void* data) {
-  uint8_t i;
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-  bool trigger_disc = false;
-  uint32_t param = PTR_TO_UINT(data);
+static bool force_disconnect_all_acl_connections() {
+  const bool is_force_disconnect_needed = (bta_dm_cb.device_list.count > 0);
 
-  APPL_TRACE_EVENT("%s trial %u", __func__, param);
+  for (auto i = 0; i < bta_dm_cb.device_list.count; i++) {
+    btm_remove_acl(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
+                   bta_dm_cb.device_list.peer_device[i].transport);
+  }
+  return is_force_disconnect_needed;
+}
 
-  if (BTM_GetNumAclLinks() && (param == 0)) {
-    for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      transport = bta_dm_cb.device_list.peer_device[i].transport;
-      btm_remove_acl(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
-                     transport);
-      trigger_disc = true;
-    }
+static void bta_dm_wait_for_acl_to_drain_cback(void* data) {
+  ASSERT(data != nullptr);
+  const WaitForAllAclConnectionsToDrain* pass =
+      WaitForAllAclConnectionsToDrain::FromAlarmCallbackData(data);
 
-    /* Retrigger disable timer in case ACL disconnect failed, DISABLE_EVT still
-       need
-        to be sent out to avoid jave layer disable timeout */
-    if (trigger_disc) {
-      alarm_set_on_mloop(bta_dm_cb.disable_timer,
-                         BTA_DM_DISABLE_TIMER_RETRIAL_MS,
-                         bta_dm_disable_timer_cback, UINT_TO_PTR(1));
+  if (BTM_GetNumAclLinks() &&
+      WaitForAllAclConnectionsToDrain::IsFirstPass(pass)) {
+    /* DISABLE_EVT still need to be sent out to avoid java layer disable timeout
+     */
+    if (force_disconnect_all_acl_connections()) {
+      LOG_DEBUG(
+          "Set timer for second pass to wait for all ACL connections to "
+          "close:%lu ms ",
+          second_pass.TimeToWaitInMs());
+      alarm_set_on_mloop(
+          bta_dm_cb.disable_timer, second_pass.time_to_wait_in_ms,
+          bta_dm_wait_for_acl_to_drain_cback, second_pass.AlarmCallbackData());
     }
   } else {
+    // No ACL links were up or is second pass at ACL closure
+    if (bluetooth::shim::is_gd_acl_enabled()) {
+      LOG_INFO("Ensuring all ACL connections have been properly flushed");
+      bluetooth::shim::ACL_Shutdown();
+    }
+
     bta_dm_cb.disabling = false;
 
     bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
@@ -2448,6 +2508,7 @@ static void bta_dm_disable_conn_down_timer_cback(UNUSED_ATTR void* data) {
   bta_dm_disable_pm();
 
   bta_dm_cb.disabling = false;
+  LOG_INFO("Stack device manager shutdown completed");
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 

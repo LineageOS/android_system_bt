@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define LOG_TAG "bluetooth"
+
 #include <gtest/gtest.h>
 
 #include "client_interface.h"

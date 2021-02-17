@@ -68,7 +68,8 @@ interface IBluetooth
     int getProfileConnectionState(int profile);
 
     BluetoothDevice[] getBondedDevices();
-    boolean createBond(in BluetoothDevice device, in int transport, in OobData oobData);
+    boolean createBond(in BluetoothDevice device, in int transport, in OobData oobData,
+    String packageName);
     boolean cancelBondProcess(in BluetoothDevice device);
     boolean removeBond(in BluetoothDevice device);
     int getBondState(in BluetoothDevice device);
@@ -150,4 +151,6 @@ interface IBluetooth
 
     boolean registerBluetoothConnectionCallback(in IBluetoothConnectionCallback callback);
     boolean unregisterBluetoothConnectionCallback(in IBluetoothConnectionCallback callback);
+
+    boolean canBondWithoutDialog(in BluetoothDevice device);
 }
