@@ -26,6 +26,7 @@ namespace {
 std::mutex parameter_mutex;
 std::string config_file_path;
 std::string snoop_log_file_path;
+std::string snooz_log_file_path;
 }  // namespace
 
 // On Android we always write a single default location
@@ -57,6 +58,22 @@ std::string ParameterProvider::SnoopLogFilePath() {
 void ParameterProvider::OverrideSnoopLogFilePath(const std::string& path) {
   std::lock_guard<std::mutex> lock(parameter_mutex);
   snoop_log_file_path = path;
+}
+
+// Return the path to the default snooz log file location
+std::string ParameterProvider::SnoozLogFilePath() {
+  {
+    std::lock_guard<std::mutex> lock(parameter_mutex);
+    if (!snooz_log_file_path.empty()) {
+      return snooz_log_file_path;
+    }
+  }
+  return "/data/misc/bluetooth/logs/btsnooz_hci.log";
+}
+
+void ParameterProvider::OverrideSnoozLogFilePath(const std::string& path) {
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  snooz_log_file_path = path;
 }
 
 }  // namespace os

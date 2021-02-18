@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include <stddef.h>
-
+#include <cstddef>
+#include <iterator>
 #include <mutex>
 #include <queue>
 
@@ -29,8 +29,12 @@ class CircularBuffer {
  public:
   explicit CircularBuffer(size_t size);
 
+  // Push one item to the circular buffer
   void Push(T item);
+  // Take a snapshot of the circular buffer and return it as a vector
   std::vector<T> Pull() const;
+  // Drain everything from the circular buffer and return them as a vector
+  std::vector<T> Drain();
 
  private:
   const size_t size_;
@@ -67,6 +71,7 @@ class TimestampedCircularBuffer : public CircularBuffer<TimestampedEntry<T>> {
 
   void Push(T item);
   std::vector<TimestampedEntry<T>> Pull() const;
+  std::vector<TimestampedEntry<T>> Drain();
 
  private:
   std::unique_ptr<Timestamper> timestamper_{std::make_unique<TimestamperInMilliseconds>()};
@@ -90,10 +95,14 @@ void bluetooth::common::CircularBuffer<T>::Push(const T item) {
 template <typename T>
 std::vector<T> bluetooth::common::CircularBuffer<T>::Pull() const {
   std::unique_lock<std::mutex> lock(mutex_);
-  std::vector<T> items;
-  for (auto it = queue_.cbegin(); it != queue_.cend(); ++it) {
-    items.push_back(*it);
-  }
+  return std::vector<T>(queue_.cbegin(), queue_.cend());
+}
+
+template <typename T>
+std::vector<T> bluetooth::common::CircularBuffer<T>::Drain() {
+  std::unique_lock<std::mutex> lock(mutex_);
+  std::vector<T> items(std::make_move_iterator(queue_.begin()), std::make_move_iterator(queue_.end()));
+  queue_.clear();
   return items;
 }
 
@@ -112,4 +121,9 @@ template <typename T>
 std::vector<struct bluetooth::common::TimestampedEntry<T>> bluetooth::common::TimestampedCircularBuffer<T>::Pull()
     const {
   return bluetooth::common::CircularBuffer<TimestampedEntry<T>>::Pull();
+}
+
+template <typename T>
+std::vector<struct bluetooth::common::TimestampedEntry<T>> bluetooth::common::TimestampedCircularBuffer<T>::Drain() {
+  return bluetooth::common::CircularBuffer<TimestampedEntry<T>>::Drain();
 }
