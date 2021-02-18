@@ -123,6 +123,17 @@ void LinkManager::RegisterLinkPropertyListener(os::Handler* handler, LinkPropert
   link_property_listener_ = listener;
 }
 
+void LinkManager::OnPendingPacketChange(hci::Address remote, int num_packets) {
+  if (disconnected_links_.count(remote) != 0 && num_packets == 0) {
+    links_.erase(remote);
+    links_with_pending_packets_.erase(remote);
+  } else if (num_packets != 0) {
+    links_with_pending_packets_.emplace(remote);
+  } else {
+    links_with_pending_packets_.erase(remote);
+  }
+}
+
 Link* LinkManager::GetLink(const hci::Address device) {
   if (links_.find(device) == links_.end()) {
     return nullptr;
@@ -314,7 +325,11 @@ void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
     link_property_callback_handler_->CallOn(link_property_listener_, &LinkPropertyListener::OnLinkDisconnected, device);
   }
 
-  links_.erase(device);
+  if (links_with_pending_packets_.count(device) != 0) {
+    disconnected_links_.emplace(device);
+  } else {
+    links_.erase(device);
+  }
 }
 
 void LinkManager::OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address device) {

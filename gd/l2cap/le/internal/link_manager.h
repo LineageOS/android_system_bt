@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 #include "os/handler.h"
@@ -94,6 +95,10 @@ class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
       uint16_t manufacturer_name,
       uint16_t sub_version);
 
+  // Reported by link to indicate how many pending packets are remaining to be set.
+  // If there is anything outstanding, don't delete link
+  void OnPendingPacketChange(hci::AddressWithType remote, int num_packets);
+
  private:
   // Dependencies
   os::Handler* l2cap_handler_;
@@ -109,6 +114,8 @@ class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
       pending_dynamic_channels_;
   os::Handler* link_property_callback_handler_ = nullptr;
   LinkPropertyListener* link_property_listener_ = nullptr;
+  std::unordered_set<hci::AddressWithType> disconnected_links_;
+  std::unordered_set<hci::AddressWithType> links_with_pending_packets_;
 
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
