@@ -19,9 +19,12 @@
 #include <arpa/inet.h>
 #include <sys/stat.h>
 
+#include <algorithm>
 #include <bitset>
 #include <chrono>
+#include <sstream>
 
+#include "common/circular_buffer.h"
 #include "common/strings.h"
 #include "os/files.h"
 #include "os/log.h"
@@ -63,34 +66,94 @@ constexpr SnoopLogger::FileHeaderType kBtSnoopFileHeader = {
 // the relevant system property
 constexpr size_t kDefaultBtSnoopMaxPacketsPerFile = 0xffff;
 
-std::string get_btsnoop_log_path(std::string btsnoop_path, bool filtered) {
+// We want to use at most 256 KB memory for btsnooz log
+constexpr size_t kDefaultBtsnoozMaxMemoryUsageBytes = 256 * 1024;
+// We restrict the maximum packet size to 150 bytes
+constexpr size_t kDefaultBtSnoozMaxBytesPerPacket = 150;
+constexpr size_t kDefaultBtSnoozMaxPayloadBytesPerPacket =
+    kDefaultBtSnoozMaxBytesPerPacket - sizeof(SnoopLogger::PacketHeaderType);
+// Calculate max number of packets based on max memory usage and max packet size
+constexpr size_t kDefaultBtSnoozMaxPacketsPerBuffer =
+    kDefaultBtsnoozMaxMemoryUsageBytes / kDefaultBtSnoozMaxBytesPerPacket;
+
+std::string get_btsnoop_log_path(std::string log_dir, bool filtered) {
   if (filtered) {
-    return btsnoop_path.append(".filtered");
+    log_dir.append(".filtered");
   }
-  return btsnoop_path;
+  return log_dir;
 }
 
-std::string get_btsnoop_last_log_path(std::string btsnoop_path) {
-  return btsnoop_path.append(".last");
+std::string get_last_log_path(std::string log_file_path) {
+  return log_file_path.append(".last");
 }
 
 void delete_btsnoop_files(const std::string& log_path) {
-  LOG_INFO("Deleting snoop logs if they exist");
+  LOG_INFO("Deleting logs if they exist");
   if (os::FileExists(log_path)) {
     if (!os::RemoveFile(log_path)) {
-      LOG_ERROR("Failed to remove main snoop log faile at \"%s\"", log_path.c_str());
+      LOG_ERROR("Failed to remove main log file at \"%s\"", log_path.c_str());
     }
   } else {
-    LOG_INFO("Main snoop log file does not exist at \"%s\"", log_path.c_str());
+    LOG_INFO("Main log file does not exist at \"%s\"", log_path.c_str());
   }
-  auto last_log_path = get_btsnoop_last_log_path(log_path);
+  auto last_log_path = get_last_log_path(log_path);
   if (os::FileExists(last_log_path)) {
     if (!os::RemoveFile(last_log_path)) {
-      LOG_ERROR("Failed to remove last snoop log faile at \"%s\"", log_path.c_str());
+      LOG_ERROR("Failed to remove last log file at \"%s\"", log_path.c_str());
     }
   } else {
-    LOG_INFO("Last snoop log file does not exist at \"%s\"", log_path.c_str());
+    LOG_INFO("Last log file does not exist at \"%s\"", log_path.c_str());
   }
+}
+
+size_t get_btsnooz_packet_length_to_write(const HciPacket& packet, SnoopLogger::PacketType type) {
+  static const size_t kAclHeaderSize = 4;
+  static const size_t kL2capHeaderSize = 4;
+  static const size_t kL2capCidOffset = (kAclHeaderSize + 2);
+  static const uint16_t kL2capSignalingCid = 0x0001;
+
+  // Maximum amount of ACL data to log.
+  // Enough for an RFCOMM frame up to the frame check;
+  // not enough for a HID report or audio data.
+  static const size_t kMaxBtsnoozAclSize = 14;
+
+  // Calculate packet length to be included
+  size_t included_length = 0;
+  switch (type) {
+    case SnoopLogger::PacketType::CMD:
+    case SnoopLogger::PacketType::EVT:
+      included_length = packet.size();
+      break;
+
+    case SnoopLogger::PacketType::ACL: {
+      // Log ACL and L2CAP header by default
+      size_t len_hci_acl = kAclHeaderSize + kL2capHeaderSize;
+      // Check if we have enough data for an L2CAP header
+      if (packet.size() > len_hci_acl) {
+        uint16_t l2cap_cid =
+            static_cast<uint16_t>(packet[kL2capCidOffset]) |
+            static_cast<uint16_t>((static_cast<uint16_t>(packet[kL2capCidOffset + 1]) << static_cast<uint16_t>(8)));
+        if (l2cap_cid == kL2capSignalingCid) {
+          // For the signaling CID, take the full packet.
+          // That way, the PSM setup is captured, allowing decoding of PSMs down
+          // the road.
+          return packet.size();
+        } else {
+          // Otherwise, return as much as we reasonably can
+          len_hci_acl = kMaxBtsnoozAclSize;
+        }
+      }
+      included_length = std::min(len_hci_acl, packet.size());
+      break;
+    }
+
+    case SnoopLogger::PacketType::ISO:
+    case SnoopLogger::PacketType::SCO:
+    default:
+      // We are not logging SCO and ISO packets in snooz log as they may contain voice data
+      break;
+  }
+  return std::min(included_length, kDefaultBtSnoozMaxPayloadBytesPerPacket);
 }
 
 }  // namespace
@@ -104,31 +167,42 @@ const std::string SnoopLogger::kIsDebuggableProperty = "ro.debuggable";
 const std::string SnoopLogger::kBtSnoopLogModeProperty = "persist.bluetooth.btsnooplogmode";
 const std::string SnoopLogger::kBtSnoopDefaultLogModeProperty = "persist.bluetooth.btsnoopdefaultmode";
 
-SnoopLogger::SnoopLogger(std::string log_path, size_t max_packets_per_file, const std::string& btsnoop_mode)
-    : file_path_(std::move(log_path)), max_packets_per_file_(max_packets_per_file) {
+SnoopLogger::SnoopLogger(
+    std::string snoop_log_path,
+    std::string snooz_log_path,
+    size_t max_packets_per_file,
+    const std::string& btsnoop_mode)
+    : snoop_log_path_(std::move(snoop_log_path)),
+      snooz_log_path_(std::move(snooz_log_path)),
+      max_packets_per_file_(max_packets_per_file),
+      btsnooz_buffer_(kDefaultBtSnoozMaxPacketsPerBuffer) {
   if (false && btsnoop_mode == kBtSnoopLogModeFiltered) {
     // TODO(b/163733538): implement filtered snoop log in GD, currently filtered == disabled
     LOG_INFO("Filtered Snoop Logs enabled");
     is_enabled_ = true;
     is_filtered_ = true;
     // delete unfiltered logs
-    delete_btsnoop_files(get_btsnoop_log_path(file_path_, false));
+    delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, false));
+    // delete snooz logs
+    delete_btsnoop_files(snooz_log_path_);
   } else if (btsnoop_mode == kBtSnoopLogModeFull) {
     LOG_INFO("Snoop Logs fully enabled");
     is_enabled_ = true;
     is_filtered_ = false;
     // delete filtered logs
-    delete_btsnoop_files(get_btsnoop_log_path(file_path_, true));
+    delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, true));
+    // delete snooz logs
+    delete_btsnoop_files(snooz_log_path_);
   } else {
     LOG_INFO("Snoop Logs disabled");
     is_enabled_ = false;
     is_filtered_ = false;
     // delete both filtered and unfiltered logs
-    delete_btsnoop_files(get_btsnoop_log_path(file_path_, true));
-    delete_btsnoop_files(get_btsnoop_log_path(file_path_, false));
+    delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, true));
+    delete_btsnoop_files(get_btsnoop_log_path(snoop_log_path_, false));
   }
   // Add ".filtered" extension if necessary
-  file_path_ = get_btsnoop_log_path(file_path_, is_filtered_);
+  snoop_log_path_ = get_btsnoop_log_path(snoop_log_path_, is_filtered_);
 }
 
 void SnoopLogger::CloseCurrentSnoopLogFile() {
@@ -144,26 +218,28 @@ void SnoopLogger::OpenNextSnoopLogFile() {
   std::lock_guard<std::recursive_mutex> lock(file_mutex_);
   CloseCurrentSnoopLogFile();
 
-  auto last_file_path = get_btsnoop_last_log_path(file_path_);
+  auto last_file_path = get_last_log_path(snoop_log_path_);
 
-  if (os::FileExists(file_path_)) {
-    if (!os::RenameFile(file_path_, last_file_path)) {
+  if (os::FileExists(snoop_log_path_)) {
+    if (!os::RenameFile(snoop_log_path_, last_file_path)) {
       LOG_ERROR(
-          "Unabled to rename existing snoop log from \"%s\" to \"%s\"", file_path_.c_str(), last_file_path.c_str());
+          "Unabled to rename existing snoop log from \"%s\" to \"%s\"",
+          snoop_log_path_.c_str(),
+          last_file_path.c_str());
     }
   } else {
-    LOG_INFO("Previous log file \"%s\" does not exist, skip renaming", file_path_.c_str());
+    LOG_INFO("Previous log file \"%s\" does not exist, skip renaming", snoop_log_path_.c_str());
   }
 
   mode_t prevmask = umask(0);
   // do not use std::ios::app as we want override the existing file
-  btsnoop_ostream_.open(file_path_, std::ios::binary | std::ios::out);
+  btsnoop_ostream_.open(snoop_log_path_, std::ios::binary | std::ios::out);
   if (!btsnoop_ostream_.good()) {
-    LOG_ALWAYS_FATAL("Unable to open snoop log at \"%s\", error: \"%s\"", file_path_.c_str(), strerror(errno));
+    LOG_ALWAYS_FATAL("Unable to open snoop log at \"%s\", error: \"%s\"", snoop_log_path_.c_str(), strerror(errno));
   }
   umask(prevmask);
   if (!btsnoop_ostream_.write(reinterpret_cast<const char*>(&kBtSnoopFileHeader), sizeof(FileHeaderType))) {
-    LOG_ALWAYS_FATAL("Unable to write file header to \"%s\", error: \"%s\"", file_path_.c_str(), strerror(errno));
+    LOG_ALWAYS_FATAL("Unable to write file header to \"%s\", error: \"%s\"", snoop_log_path_.c_str(), strerror(errno));
   }
   if (!btsnoop_ostream_.flush()) {
     LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
@@ -171,10 +247,6 @@ void SnoopLogger::OpenNextSnoopLogFile() {
 }
 
 void SnoopLogger::Capture(const HciPacket& packet, Direction direction, PacketType type) {
-  if (!is_enabled_) {
-    // btsnoop disabled
-    return;
-  }
   uint64_t timestamp_us =
       std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch())
           .count();
@@ -207,15 +279,29 @@ void SnoopLogger::Capture(const HciPacket& packet, Direction direction, PacketTy
                              .type = static_cast<uint8_t>(type)};
   {
     std::lock_guard<std::recursive_mutex> lock(file_mutex_);
+    if (!is_enabled_) {
+      // btsnoop disabled, log in-memory btsnooz log only
+      std::stringstream ss;
+      size_t included_length = get_btsnooz_packet_length_to_write(packet, type);
+      header.length_captured = htonl(included_length + /* type byte */ 1);
+      if (!ss.write(reinterpret_cast<const char*>(&header), sizeof(PacketHeaderType))) {
+        LOG_ERROR("Failed to write packet header for btsnooz, error: \"%s\"", strerror(errno));
+      }
+      if (!ss.write(reinterpret_cast<const char*>(packet.data()), included_length)) {
+        LOG_ERROR("Failed to write packet payload for btsnooz, error: \"%s\"", strerror(errno));
+      }
+      btsnooz_buffer_.Push(ss.str());
+      return;
+    }
     packet_counter_++;
     if (packet_counter_ > max_packets_per_file_) {
       OpenNextSnoopLogFile();
     }
     if (!btsnoop_ostream_.write(reinterpret_cast<const char*>(&header), sizeof(PacketHeaderType))) {
-      LOG_ERROR("Failed to write packet header, error: \"%s\"", strerror(errno));
+      LOG_ERROR("Failed to write packet header for btsnoop, error: \"%s\"", strerror(errno));
     }
     if (!btsnoop_ostream_.write(reinterpret_cast<const char*>(packet.data()), packet.size())) {
-      LOG_ERROR("Failed to write packet payload, error: \"%s\"", strerror(errno));
+      LOG_ERROR("Failed to write packet payload for btsnoop, error: \"%s\"", strerror(errno));
     }
     // std::ofstream::flush() pushes user data into kernel memory. The data will be written even if this process
     // crashes. However, data will be lost if there is a kernel panic, which is out of scope of BT snoop log.
@@ -224,6 +310,46 @@ void SnoopLogger::Capture(const HciPacket& packet, Direction direction, PacketTy
     if (!btsnoop_ostream_.flush()) {
       LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
     }
+  }
+}
+
+void SnoopLogger::DumpSnoozLogToFile(const std::vector<std::string>& data) const {
+  std::lock_guard<std::recursive_mutex> lock(file_mutex_);
+  if (is_enabled_) {
+    LOG_DEBUG("btsnoop log is enabled, skip dumping btsnooz log");
+    return;
+  }
+
+  auto last_file_path = get_last_log_path(snooz_log_path_);
+
+  if (os::FileExists(snooz_log_path_)) {
+    if (!os::RenameFile(snooz_log_path_, last_file_path)) {
+      LOG_ERROR(
+          "Unabled to rename existing snooz log from \"%s\" to \"%s\"",
+          snooz_log_path_.c_str(),
+          last_file_path.c_str());
+    }
+  } else {
+    LOG_INFO("Previous log file \"%s\" does not exist, skip renaming", snooz_log_path_.c_str());
+  }
+
+  mode_t prevmask = umask(0);
+  // do not use std::ios::app as we want override the existing file
+  std::ofstream btsnooz_ostream(snooz_log_path_, std::ios::binary | std::ios::out);
+  if (!btsnooz_ostream.good()) {
+    LOG_ALWAYS_FATAL("Unable to open snoop log at \"%s\", error: \"%s\"", snooz_log_path_.c_str(), strerror(errno));
+  }
+  umask(prevmask);
+  if (!btsnooz_ostream.write(reinterpret_cast<const char*>(&kBtSnoopFileHeader), sizeof(FileHeaderType))) {
+    LOG_ALWAYS_FATAL("Unable to write file header to \"%s\", error: \"%s\"", snooz_log_path_.c_str(), strerror(errno));
+  }
+  for (const auto& packet : data) {
+    if (!btsnooz_ostream.write(packet.data(), packet.size())) {
+      LOG_ERROR("Failed to write packet payload for btsnooz, error: \"%s\"", strerror(errno));
+    }
+  }
+  if (!btsnooz_ostream.flush()) {
+    LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
   }
 }
 
@@ -240,7 +366,16 @@ void SnoopLogger::Start() {
 
 void SnoopLogger::Stop() {
   std::lock_guard<std::recursive_mutex> lock(file_mutex_);
+  LOG_DEBUG("Dumping btsnooz log data to %s", snooz_log_path_.c_str());
+  DumpSnoozLogToFile(btsnooz_buffer_.Drain());
+  LOG_DEBUG("Closing btsnoop log data at %s", snoop_log_path_.c_str());
   CloseCurrentSnoopLogFile();
+}
+
+DumpsysDataFinisher SnoopLogger::GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const {
+  LOG_DEBUG("Dumping btsnooz log data to %s", snooz_log_path_.c_str());
+  DumpSnoozLogToFile(btsnooz_buffer_.Pull());
+  return Module::GetDumpsysData(builder);
 }
 
 size_t SnoopLogger::GetMaxPacketsPerFile() {
@@ -284,7 +419,11 @@ std::string SnoopLogger::GetBtSnoopMode() {
 }
 
 const ModuleFactory SnoopLogger::Factory = ModuleFactory([]() {
-  return new SnoopLogger(os::ParameterProvider::SnoopLogFilePath(), GetMaxPacketsPerFile(), GetBtSnoopMode());
+  return new SnoopLogger(
+      os::ParameterProvider::SnoopLogFilePath(),
+      os::ParameterProvider::SnoozLogFilePath(),
+      GetMaxPacketsPerFile(),
+      GetBtSnoopMode());
 });
 
 }  // namespace hal

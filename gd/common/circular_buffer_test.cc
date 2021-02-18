@@ -43,6 +43,28 @@ TEST(CircularBufferTest, simple) {
   ASSERT_STREQ("One", vec[0].entry.c_str());
   ASSERT_STREQ("Two", vec[1].entry.c_str());
   ASSERT_STREQ("Three", vec[2].entry.c_str());
+
+  auto vec2 = buffer.Pull();
+
+  ASSERT_FALSE(vec2.empty());
+}
+
+TEST(CircularBufferTest, simple_drain) {
+  bluetooth::common::TimestampedCircularBuffer<std::string> buffer(10);
+
+  buffer.Push(std::string("One"));
+  buffer.Push(std::string("Two"));
+  buffer.Push(std::string("Three"));
+
+  auto vec = buffer.Drain();
+
+  ASSERT_STREQ("One", vec[0].entry.c_str());
+  ASSERT_STREQ("Two", vec[1].entry.c_str());
+  ASSERT_STREQ("Three", vec[2].entry.c_str());
+
+  auto vec2 = buffer.Pull();
+
+  ASSERT_TRUE(vec2.empty());
 }
 
 TEST(CircularBufferTest, test_timestamps) {
