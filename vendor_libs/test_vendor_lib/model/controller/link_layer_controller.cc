@@ -946,7 +946,7 @@ void LinkLayerController::IncomingIsoConnectionResponsePacket(
   config.acl_connection_handle_ = response.GetRequesterAclHandle();
   config.cis_connection_handle_ = response.GetRequesterCisHandle();
   if (!connections_.HasPendingCisConnection(config.cis_connection_handle_)) {
-    LOG_INFO("Ignoring connection response with unknown CIS handle 0x%0hx",
+    LOG_INFO("Ignoring connection response with unknown CIS handle 0x%04hx",
              config.cis_connection_handle_);
     return;
   }
@@ -2515,9 +2515,11 @@ ErrorCode LinkLayerController::LeCreateCis(
   }
   for (auto& config : cis_config) {
     if (!connections_.HasHandle(config.acl_connection_handle_)) {
+      LOG_INFO("Unknown ACL handle %04x", config.acl_connection_handle_);
       return ErrorCode::UNKNOWN_CONNECTION;
     }
     if (!connections_.HasCisHandle(config.cis_connection_handle_)) {
+      LOG_INFO("Unknown CIS handle %04x", config.cis_connection_handle_);
       return ErrorCode::UNKNOWN_CONNECTION;
     }
   }
@@ -2525,7 +2527,7 @@ ErrorCode LinkLayerController::LeCreateCis(
     connections_.CreatePendingCis(config);
     auto own_address =
         connections_.GetOwnAddress(config.acl_connection_handle_);
-    auto peer_address = connections_.GetAddress(config.cis_connection_handle_);
+    auto peer_address = connections_.GetAddress(config.acl_connection_handle_);
     StreamParameters stream_parameters =
         connections_.GetStreamParameters(config.cis_connection_handle_);
     GroupParameters group_parameters =
@@ -2538,8 +2540,8 @@ ErrorCode LinkLayerController::LeCreateCis(
         group_parameters.framed, group_parameters.max_transport_latency_m_to_s,
         group_parameters.max_transport_latency_s_to_m,
         stream_parameters.stream_id, stream_parameters.max_sdu_m_to_s,
-        stream_parameters.max_sdu_s_to_m, config.acl_connection_handle_,
-        config.cis_connection_handle_));
+        stream_parameters.max_sdu_s_to_m, config.cis_connection_handle_,
+        config.acl_connection_handle_));
   }
   return ErrorCode::SUCCESS;
 }
@@ -2557,7 +2559,7 @@ ErrorCode LinkLayerController::LeAcceptCisRequest(uint16_t cis_handle) {
   SendLeLinkLayerPacket(model::packets::IsoConnectionResponseBuilder::Create(
       connections_.GetOwnAddress(acl_handle).GetAddress(),
       connections_.GetAddress(acl_handle).GetAddress(),
-      static_cast<uint8_t>(ErrorCode::SUCCESS), acl_handle, cis_handle));
+      static_cast<uint8_t>(ErrorCode::SUCCESS), cis_handle, acl_handle));
 
   return ErrorCode::SUCCESS;
 }
