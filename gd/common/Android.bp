@@ -13,6 +13,7 @@ filegroup {
         "blocking_queue_unittest.cc",
         "bidi_queue_unittest.cc",
         "byte_array_test.cc",
+        "circular_buffer_test.cc",
         "observer_registry_test.cc",
         "init_flags_test.cc",
         "list_map_test.cc",
