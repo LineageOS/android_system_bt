@@ -21,6 +21,7 @@
 #include <mutex>
 #include <string>
 
+#include "common/circular_buffer.h"
 #include "hal/hci_hal.h"
 #include "module.h"
 
@@ -85,20 +86,28 @@ class SnoopLogger : public ::bluetooth::Module {
   void ListDependencies(ModuleList* list) override;
   void Start() override;
   void Stop() override;
+  DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const override;
 
   // Visible for testing
-  SnoopLogger(std::string log_path, size_t max_packets_per_file, const std::string& btsnoop_mode);
+  SnoopLogger(
+      std::string snoop_log_path,
+      std::string snooz_log_path,
+      size_t max_packets_per_file,
+      const std::string& btsnoop_mode);
   void CloseCurrentSnoopLogFile();
   void OpenNextSnoopLogFile();
+  void DumpSnoozLogToFile(const std::vector<std::string>& data) const;
 
  private:
-  std::string file_path_;
+  std::string snoop_log_path_;
+  std::string snooz_log_path_;
   std::ofstream btsnoop_ostream_;
   bool is_enabled_ = false;
   bool is_filtered_ = false;
   size_t max_packets_per_file_;
+  common::CircularBuffer<std::string> btsnooz_buffer_;
   size_t packet_counter_ = 0;
-  std::recursive_mutex file_mutex_;
+  mutable std::recursive_mutex file_mutex_;
 };
 
 }  // namespace hal
