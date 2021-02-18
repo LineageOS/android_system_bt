@@ -54,7 +54,7 @@ IsochronousConnectionHandler::SetCigParameters(
                   std::forward_as_tuple(group_parameters, created_streams));
 
   return bluetooth::hci::LeSetCigParametersCompleteBuilder::Create(
-      1, ErrorCode::COMMAND_DISALLOWED, group_parameters.id, handles);
+      1, ErrorCode::SUCCESS, group_parameters.id, handles);
 }
 
 bluetooth::hci::ErrorCode IsochronousConnectionHandler::RemoveCig(
