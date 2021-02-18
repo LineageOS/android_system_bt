@@ -19,6 +19,7 @@
 #include "device/include/controller.h"
 
 #include "gd/att/att_module.h"
+#include "gd/btaa/activity_attribution.h"
 #include "gd/common/init_flags.h"
 #include "gd/hal/hci_hal.h"
 #include "gd/hci/acl_manager.h"
@@ -116,6 +117,9 @@ void Stack::StartEverything() {
   }
   if (common::init_flags::gd_scanning_is_enabled()) {
     modules.add<hci::LeScanningManager>();
+  }
+  if (common::init_flags::btaa_hci_is_enabled()) {
+    modules.add<activity_attribution::ActivityAttribution>();
   }
   if (common::init_flags::gd_core_is_enabled()) {
     modules.add<att::AttModule>();
