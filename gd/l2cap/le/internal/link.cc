@@ -294,6 +294,15 @@ void Link::on_connection_update_complete(SignalId signal_id, hci::ErrorCode erro
   signalling_manager_.SendConnectionParameterUpdateResponse(SignalId(), result);
 }
 
+void Link::OnPendingPacketChange(Cid local_cid, bool has_packet) {
+  if (has_packet) {
+    remaining_packets_to_be_sent_++;
+  } else {
+    remaining_packets_to_be_sent_--;
+  }
+  link_manager_->OnPendingPacketChange(GetDevice(), remaining_packets_to_be_sent_);
+}
+
 }  // namespace internal
 }  // namespace le
 }  // namespace l2cap

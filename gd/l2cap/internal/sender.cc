@@ -61,6 +61,7 @@ Sender::~Sender() {
 }
 
 void Sender::OnPacketSent() {
+  link_->OnPendingPacketChange(channel_id_, false);
   try_register_dequeue();
 }
 
@@ -88,6 +89,7 @@ void Sender::dequeue_callback() {
   if (is_dequeue_registered_.exchange(false)) {
     queue_end_->UnregisterDequeue();
   }
+  link_->OnPendingPacketChange(channel_id_, true);
 }
 
 void Sender::UpdateClassicConfiguration(classic::internal::ChannelConfigurationState config) {

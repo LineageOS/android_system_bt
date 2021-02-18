@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <unordered_map>
 
@@ -199,6 +200,8 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
     return role_;
   }
 
+  void OnPendingPacketChange(Cid local_cid, bool has_packet) override;
+
  private:
   friend class DumpsysHelper;
   void connect_to_pending_dynamic_channels();
@@ -229,6 +232,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   bool used_by_security_module_ = false;
   bool has_requested_authentication_ = false;
   std::list<EncryptionChangeListener> encryption_change_listener_;
+  std::atomic_int remaining_packets_to_be_sent_ = 0;
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
 
