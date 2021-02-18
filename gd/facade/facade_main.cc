@@ -109,6 +109,7 @@ int main(int argc, const char** argv) {
   const std::string arg_rootcanal_port = "--rootcanal-port=";
   const std::string arg_signal_port = "--signal-port=";
   const std::string arg_btsnoop_path = "--btsnoop=";
+  const std::string arg_btsnooz_path = "--btsnooz=";
   const std::string arg_btconfig_path = "--btconfig=";
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
@@ -129,6 +130,10 @@ int main(int argc, const char** argv) {
       ::bluetooth::os::ParameterProvider::OverrideSnoopLogFilePath(btsnoop_path);
       CHECK(::bluetooth::os::SetSystemProperty(
           ::bluetooth::hal::SnoopLogger::kBtSnoopLogModeProperty, ::bluetooth::hal::SnoopLogger::kBtSnoopLogModeFull));
+    }
+    if (arg.find(arg_btsnooz_path) == 0) {
+      auto btsnooz_path = arg.substr(arg_btsnooz_path.size());
+      ::bluetooth::os::ParameterProvider::OverrideSnoozLogFilePath(btsnooz_path);
     }
     if (arg.find(arg_btconfig_path) == 0) {
       auto btconfig_path = arg.substr(arg_btconfig_path.size());

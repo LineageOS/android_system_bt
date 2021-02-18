@@ -31,6 +31,7 @@ namespace {
 std::mutex parameter_mutex;
 std::string config_file_path;
 std::string snoop_log_file_path;
+std::string snooz_log_file_path;
 }  // namespace
 
 // Write to $PWD/bt_stack.conf if $PWD can be found, otherwise, write to $HOME/bt_stack.conf
@@ -64,7 +65,7 @@ std::string ParameterProvider::SnoopLogFilePath() {
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
-    return "bt_config.conf";
+    return "btsnoop_hci.log";
   }
   return std::string(cwd) + "/btsnoop_hci.log";
 }
@@ -72,6 +73,27 @@ std::string ParameterProvider::SnoopLogFilePath() {
 void ParameterProvider::OverrideSnoopLogFilePath(const std::string& path) {
   std::lock_guard<std::mutex> lock(parameter_mutex);
   snoop_log_file_path = path;
+}
+
+// Return the path to the default snooz log file location
+std::string ParameterProvider::SnoozLogFilePath() {
+  {
+    std::lock_guard<std::mutex> lock(parameter_mutex);
+    if (!snooz_log_file_path.empty()) {
+      return snooz_log_file_path;
+    }
+  }
+  char cwd[PATH_MAX] = {};
+  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
+    return "bt_config.conf";
+  }
+  return std::string(cwd) + "/btsnooz_hci.log";
+}
+
+void ParameterProvider::OverrideSnoozLogFilePath(const std::string& path) {
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  snooz_log_file_path = path;
 }
 
 }  // namespace os
