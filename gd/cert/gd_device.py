@@ -169,6 +169,8 @@ class GdDeviceBase(ABC):
                                                      '%s_%s_backing_logs.txt' % (self.type_identifier, self.label))
         if "--btsnoop=" not in " ".join(cmd):
             cmd.append("--btsnoop=%s" % os.path.join(self.log_path_base, '%s_btsnoop_hci.log' % self.label))
+        if "--btsnooz=" not in " ".join(cmd):
+            cmd.append("--btsnooz=%s" % os.path.join(self.log_path_base, '%s_btsnooz_hci.log' % self.label))
         if "--btconfig=" not in " ".join(cmd):
             cmd.append("--btconfig=%s" % os.path.join(self.log_path_base, '%s_bt_config.conf' % self.label))
         self.cmd = cmd
@@ -425,14 +427,19 @@ class GdAndroidDevice(GdDeviceBase):
             logging.error("Error during setup: " + str(error))
 
         try:
+            self.adb.shell("rm /data/misc/bluetooth/logs/btsnooz_hci.log")
+        except AdbCommandError as error:
+            logging.error("Error during setup: " + str(error))
+
+        try:
             self.adb.shell("rm /data/misc/bluedroid/bt_config.conf")
         except AdbCommandError as error:
-            logging.error("Error during cleanup: " + str(error))
+            logging.error("Error during setup: " + str(error))
 
         try:
             self.adb.shell("rm /data/misc/bluedroid/bt_config.bak")
         except AdbCommandError as error:
-            logging.error("Error during cleanup: " + str(error))
+            logging.error("Error during setup: " + str(error))
 
         self.ensure_no_output(self.adb.shell("svc bluetooth disable"))
 

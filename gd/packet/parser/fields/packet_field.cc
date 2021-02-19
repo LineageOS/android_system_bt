@@ -133,6 +133,9 @@ bool PacketField::GenRustNameAndType(std::ostream& s) const {
 
 void PacketField::GenBoundsCheck(std::ostream& s, Size start_offset, Size, std::string context) const {
   Size size = GetSize();
+  if (size.bits() < 8) {
+    return;
+  }
   s << "if bytes.len() < " << start_offset.bytes() + size.bytes() << " {";
   s << " return Err(Error::InvalidLengthError{";
   s << "    obj: \"" << context << "\".to_string(),";

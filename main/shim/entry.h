@@ -36,6 +36,9 @@ namespace bluetooth {
 namespace os {
 class Handler;
 }
+namespace activity_attribution {
+class ActivityAttribution;
+}
 namespace neighbor {
 class ConnectabilityModule;
 class DiscoverabilityModule;
@@ -87,6 +90,7 @@ hci::LeScanningManager* GetScanning();
 bluetooth::security::SecurityModule* GetSecurityModule();
 storage::StorageModule* GetStorage();
 hci::AclManager* GetAclManager();
+activity_attribution::ActivityAttribution* GetActivityAttribution();
 
 }  // namespace shim
 }  // namespace bluetooth

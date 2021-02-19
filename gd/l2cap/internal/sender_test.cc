@@ -21,6 +21,7 @@
 #include <future>
 
 #include "l2cap/internal/channel_impl_mock.h"
+#include "l2cap/internal/ilink_mock.h"
 #include "l2cap/internal/scheduler.h"
 #include "os/handler.h"
 #include "os/queue.h"
@@ -77,7 +78,7 @@ class L2capSenderTest : public ::testing::Test {
     EXPECT_CALL(*mock_channel_, GetQueueDownEnd()).WillRepeatedly(Return(channel_queue_.GetDownEnd()));
     EXPECT_CALL(*mock_channel_, GetCid()).WillRepeatedly(Return(cid_));
     EXPECT_CALL(*mock_channel_, GetRemoteCid()).WillRepeatedly(Return(cid_));
-    sender_ = new Sender(queue_handler_, nullptr, &scheduler_, mock_channel_);
+    sender_ = new Sender(queue_handler_, &link_, &scheduler_, mock_channel_);
   }
 
   void TearDown() override {
@@ -97,6 +98,7 @@ class L2capSenderTest : public ::testing::Test {
   Sender* sender_ = nullptr;
   Cid cid_ = 0x41;
   FakeScheduler scheduler_;
+  testing::MockILink link_;
 };
 
 TEST_F(L2capSenderTest, send_packet) {

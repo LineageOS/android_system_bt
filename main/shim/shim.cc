@@ -97,3 +97,7 @@ bool bluetooth::shim::is_any_gd_enabled() {
 bool bluetooth::shim::is_gd_stack_started_up() {
   return bluetooth::shim::Stack::GetInstance()->IsRunning();
 }
+
+bool bluetooth::shim::is_gd_btaa_enabled() {
+  return bluetooth::common::init_flags::btaa_hci_is_enabled();
+}

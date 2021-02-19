@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <memory>
 
@@ -148,6 +149,8 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
 
   void ReadRemoteVersionInformation();
 
+  void OnPendingPacketChange(Cid local_cid, bool has_packet) override;
+
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
@@ -166,6 +169,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
   uint16_t update_request_interval_max_;
   uint16_t update_request_latency_;
   uint16_t update_request_supervision_timeout_;
+  std::atomic_int remaining_packets_to_be_sent_ = 0;
   DISALLOW_COPY_AND_ASSIGN(Link);
 
   // Received connection update complete from ACL manager. SignalId is bound to a valid number when we need to send a

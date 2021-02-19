@@ -108,6 +108,10 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   // Registerlink callbacks
   void RegisterLinkPropertyListener(os::Handler* handler, LinkPropertyListener* listener);
 
+  // Reported by link to indicate how many pending packets are remaining to be set.
+  // If there is anything outstanding, don't delete link
+  void OnPendingPacketChange(hci::Address remote, int num_packets);
+
  private:
   // Handles requests from LinkSecurityInterface
   friend class LinkSecurityInterfaceImpl;
@@ -135,6 +139,8 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   LinkSecurityInterfaceListener* link_security_interface_listener_ = nullptr;
   LinkPropertyListener* link_property_listener_ = nullptr;
   os::Handler* link_property_callback_handler_ = nullptr;
+  std::unordered_set<hci::Address> disconnected_links_;
+  std::unordered_set<hci::Address> links_with_pending_packets_;
 
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
