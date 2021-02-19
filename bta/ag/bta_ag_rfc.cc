@@ -23,20 +23,13 @@
  *
  ******************************************************************************/
 
+#include <base/bind.h>
 #include <cstring>
 
-#include <base/bind.h>
-
-#include "bt_common.h"
-#include "bta_ag_api.h"
-#include "bta_ag_int.h"
-#include "btm_api.h"
+#include "bta/ag/bta_ag_int.h"
 #include "osi/include/osi.h"
-#include "port_api.h"
-#include "rfcdefs.h"
-#include "stack/btm/btm_sec.h"
-#include "stack/include/btu.h"
-#include "utl.h"
+#include "stack/include/btu.h"  // do_in_main_thread
+#include "stack/include/port_api.h"
 
 /* Event mask for RfCOMM port callback */
 #define BTA_AG_PORT_EV_MASK PORT_EV_RXCHAR
