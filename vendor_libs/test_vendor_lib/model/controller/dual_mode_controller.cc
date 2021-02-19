@@ -2182,7 +2182,7 @@ void DualModeController::LeReadRemoteFeatures(CommandView command) {
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
       OpCode::LE_READ_REMOTE_FEATURES, command_view.GetPayload(), handle);
 
-  auto packet = bluetooth::hci::LeConnectionUpdateStatusBuilder::Create(
+  auto packet = bluetooth::hci::LeReadRemoteFeaturesStatusBuilder::Create(
       status, kNumCommandPackets);
   send_event_(std::move(packet));
 }
