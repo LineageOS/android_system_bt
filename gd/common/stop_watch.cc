@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#define LOG_TAG "BtStopWatch"
+
 #include "common/stop_watch.h"
 
 #include <iomanip>
