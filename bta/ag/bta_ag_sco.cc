@@ -392,29 +392,24 @@ static void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
     p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
   }
 
-  esco_codec_t codec_index = ESCO_CODEC_CVSD;
+  /* Initialize eSCO parameters */
+  enh_esco_params_t params = {};
   /* If WBS included, use CVSD by default, index is 0 for CVSD by
    * initialization. If eSCO codec is mSBC, index is T2 or T1 */
   if (esco_codec == BTA_AG_CODEC_MSBC) {
     if (p_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T2) {
-      codec_index = ESCO_CODEC_MSBC_T2;
+      params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T2);
     } else {
-      codec_index = ESCO_CODEC_MSBC_T1;
+      params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T1);
     }
-  }
-
-  /* Initialize eSCO parameters */
-  enh_esco_params_t params = esco_parameters_for_codec(codec_index);
-  /* For CVSD */
-  if (esco_codec == BTM_SCO_CODEC_CVSD) {
-    /* Use the applicable packet types
-      (3-EV3 not allowed due to errata 2363) */
-    params.packet_types =
-        p_bta_ag_cfg->sco_pkt_types | ESCO_PKT_TYPES_MASK_NO_3_EV3;
-    if ((!(p_scb->features & BTA_AG_FEAT_ESCO)) ||
-        (!(p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO))) {
-      params.max_latency_ms = 10;
-      params.retransmission_effort = ESCO_RETRANSMISSION_POWER;
+  } else {
+    if (p_scb->features & BTA_AG_PEER_FEAT_ESCO_S4 &&
+        (p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO_S4)) {
+      // HFP >=1.7 eSCO
+      params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S4);
+    } else {
+      // HFP <=1.6 eSCO
+      params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S3);
     }
   }
 
@@ -472,14 +467,17 @@ static void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local) {
     if (esco_codec == BTA_AG_CODEC_MSBC) {
       if (p_scb->codec_msbc_settings == BTA_AG_SCO_MSBC_SETTINGS_T2) {
         params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T2);
-      } else
+      } else {
         params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T1);
+      }
     } else {
-      params = esco_parameters_for_codec(ESCO_CODEC_CVSD);
-      if ((!(p_scb->features & BTA_AG_FEAT_ESCO)) ||
-          (!(p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO))) {
-        params.max_latency_ms = 10;
-        params.retransmission_effort = ESCO_RETRANSMISSION_POWER;
+      if (p_scb->features & BTA_AG_PEER_FEAT_ESCO_S4 &&
+          (p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO_S4)) {
+        // HFP >=1.7 eSCO
+        params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S4);
+      } else {
+        // HFP <=1.6 eSCO
+        params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S3);
       }
     }
 
@@ -501,12 +499,18 @@ static void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local) {
     }
     APPL_TRACE_DEBUG("%s: initiated SCO connection", __func__);
   } else {
-    /* Local device accepted SCO connection from peer */
-    params = esco_parameters_for_codec(ESCO_CODEC_CVSD);
-    if ((!(p_scb->features & BTA_AG_FEAT_ESCO)) ||
-        (!(p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO))) {
-      params.max_latency_ms = 10;
-      params.retransmission_effort = ESCO_RETRANSMISSION_POWER;
+    // Local device accepted SCO connection from peer(HF)
+    // Because HF devices usually do not send AT+BAC and +BCS command,
+    // and there is no plan to implement corresponding command handlers,
+    // so we only accept CVSD connection from HF no matter what's
+    // requested.
+    if (p_scb->features & BTA_AG_PEER_FEAT_ESCO_S4 &&
+        (p_scb->peer_features & BTA_AG_PEER_FEAT_ESCO_S4)) {
+      // HFP >=1.7 eSCO
+      params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S4);
+    } else {
+      // HFP <=1.6 eSCO
+      params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S3);
     }
 
     BTM_EScoConnRsp(p_scb->sco_idx, HCI_SUCCESS, &params);
