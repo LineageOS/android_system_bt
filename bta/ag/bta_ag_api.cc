@@ -24,14 +24,15 @@
  *
  ******************************************************************************/
 
-#include "bta_ag_api.h"
 #include <base/bind.h>
+#include <base/location.h>
+#include <cstdint>
 #include <cstring>
-#include "bt_common.h"
-#include "bta_ag_int.h"
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "stack/include/btu.h"
+#include <vector>
+
+#include "bta/ag/bta_ag_int.h"
+#include "bta/include/bta_ag_api.h"
+#include "stack/include/btu.h"  // do_in_main_thread
 
 /*****************************************************************************
  *  Constants
