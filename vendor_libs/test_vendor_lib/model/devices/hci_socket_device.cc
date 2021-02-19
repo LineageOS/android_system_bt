@@ -88,6 +88,11 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_sco);
         HandleSco(packet_copy);
       },
+      [this](const std::vector<uint8_t>& raw_iso) {
+        std::shared_ptr<std::vector<uint8_t>> packet_copy =
+            std::make_shared<std::vector<uint8_t>>(raw_iso);
+        HandleIso(packet_copy);
+      },
       [this]() {
         LOG_INFO("HCI socket device disconnected");
         socket_file_descriptor_ = -1;

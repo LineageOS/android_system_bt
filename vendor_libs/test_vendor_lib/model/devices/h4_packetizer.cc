@@ -52,12 +52,14 @@ size_t H4Packetizer::HciGetPacketLengthForType(PacketType type,
 H4Packetizer::H4Packetizer(int fd, PacketReadCallback command_cb,
                            PacketReadCallback event_cb,
                            PacketReadCallback acl_cb, PacketReadCallback sco_cb,
+                           PacketReadCallback iso_cb,
                            ClientDisconnectCallback disconnect_cb)
     : uart_fd_(fd),
       command_cb_(std::move(command_cb)),
       event_cb_(std::move(event_cb)),
       acl_cb_(std::move(acl_cb)),
       sco_cb_(std::move(sco_cb)),
+      iso_cb_(std::move(iso_cb)),
       disconnect_cb_(std::move(disconnect_cb)) {}
 
 size_t H4Packetizer::Send(uint8_t type, const uint8_t* data, size_t length) {
@@ -89,6 +91,9 @@ void H4Packetizer::OnPacketReady() {
       break;
     case PacketType::EVENT:
       event_cb_(packet_);
+      break;
+    case PacketType::ISO:
+      iso_cb_(packet_);
       break;
     default:
       LOG_ALWAYS_FATAL("Unimplemented packet type %d",
