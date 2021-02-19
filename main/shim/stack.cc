@@ -42,6 +42,7 @@
 #include "gd/storage/storage_module.h"
 
 #include "main/shim/acl_legacy_interface.h"
+#include "main/shim/activity_attribution.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/helpers.h"
 #include "main/shim/l2c_api.h"
@@ -161,6 +162,9 @@ void Stack::StartEverything() {
   if (common::init_flags::gd_l2cap_is_enabled() &&
       !common::init_flags::gd_core_is_enabled()) {
     L2CA_UseLegacySecurityModule();
+  }
+  if (common::init_flags::btaa_hci_is_enabled()) {
+    bluetooth::shim::get_activity_attribution_instance()->Init();
   }
 }
 
