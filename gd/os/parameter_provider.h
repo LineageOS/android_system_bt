@@ -32,6 +32,11 @@ class ParameterProvider {
   static std::string SnoopLogFilePath();
 
   static void OverrideSnoopLogFilePath(const std::string& path);
+
+  // Return the path to the default snooz log file location
+  static std::string SnoozLogFilePath();
+
+  static void OverrideSnoozLogFilePath(const std::string& path);
 };
 
 }  // namespace os

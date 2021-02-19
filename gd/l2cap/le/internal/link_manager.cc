@@ -149,7 +149,11 @@ void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type
   auto* link = GetLink(address_with_type);
   ASSERT_LOG(link != nullptr, "Device %s is disconnected but not in local database",
              address_with_type.ToString().c_str());
-  links_.erase(address_with_type);
+  if (links_with_pending_packets_.count(address_with_type) != 0) {
+    disconnected_links_.emplace(address_with_type);
+  } else {
+    links_.erase(address_with_type);
+  }
 
   if (link_property_callback_handler_ != nullptr) {
     link_property_callback_handler_->CallOn(
@@ -193,6 +197,17 @@ void LinkManager::OnReadRemoteVersionInformationComplete(
       link->SendConnectionRequest(psm_callback.first, std::move(psm_callback.second));
     }
     pending_dynamic_channels_.erase(address_with_type);
+  }
+}
+
+void LinkManager::OnPendingPacketChange(hci::AddressWithType remote, int num_packets) {
+  if (disconnected_links_.count(remote) != 0 && num_packets == 0) {
+    links_.erase(remote);
+    links_with_pending_packets_.erase(remote);
+  } else if (num_packets != 0) {
+    links_with_pending_packets_.emplace(remote);
+  } else {
+    links_with_pending_packets_.erase(remote);
   }
 }
 

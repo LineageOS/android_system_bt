@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "gd/btaa/activity_attribution.h"
 #include "gd/hci/controller.h"
 #include "gd/hci/hci_layer.h"
 #include "gd/hci/le_advertising_manager.h"
@@ -122,6 +123,12 @@ hci::AclManager* GetAclManager() {
   return Stack::GetInstance()
       ->GetStackManager()
       ->GetInstance<hci::AclManager>();
+}
+
+activity_attribution::ActivityAttribution* GetActivityAttribution() {
+  return Stack::GetInstance()
+      ->GetStackManager()
+      ->GetInstance<activity_attribution::ActivityAttribution>();
 }
 
 }  // namespace shim
