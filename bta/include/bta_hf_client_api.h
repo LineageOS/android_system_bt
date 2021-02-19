@@ -27,7 +27,8 @@
 
 #include <cstdint>
 
-#include "bta/include/bta_api.h"
+#include "bta_api.h"
+#include "bta_hfp_api.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
@@ -48,7 +49,7 @@
 #define BTA_HF_CLIENT_PEER_ECC 0x00000080 /* Enhanced Call Control */
 #define BTA_HF_CLIENT_PEER_EXTERR 0x00000100 /* Extended error codes */
 #define BTA_HF_CLIENT_PEER_CODEC 0x00000200  /* Codec Negotiation */
-#define BTA_HF_CLIENT_PEER_S4    0x00000800  /* ESCO S4 link setting */
+#define BTA_HF_CLIENT_PEER_ESCO_S4 0x00000800 /* ESCO S4 link setting */
 
 typedef uint16_t tBTA_HF_CLIENT_PEER_FEAT;
 
@@ -64,7 +65,7 @@ typedef uint16_t tBTA_HF_CLIENT_PEER_FEAT;
 #define BTA_HF_CLIENT_FEAT_ECS 0x00000020   /* Enhanced Call Status */
 #define BTA_HF_CLIENT_FEAT_ECC 0x00000040   /* Enhanced Call Control */
 #define BTA_HF_CLIENT_FEAT_CODEC 0x00000080 /* Codec Negotiation */
-#define BTA_HF_CLIENT_FEAT_S4  0x00000200   /* ESCO S4 link setting */
+#define BTA_HF_CLIENT_FEAT_ESCO_S4 0x00000200 /* ESCO S4 link setting */
 
 /* HFP HF extended call handling - masks not related to any spec */
 #define BTA_HF_CLIENT_CHLD_REL \

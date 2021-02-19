@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include "bta/hf_client/bta_hf_client_sdp.cc"
+#include "bta/include/bta_hf_client_api.h"
 #include "btif/src/btif_hf_client.cc"
 
 static uint16_t gVersion;
@@ -47,13 +48,7 @@ TEST_F(BtaHfClientAddRecordTest, test_hf_client_add_record) {
   uint32_t sdp_handle = 0;
   uint8_t scn = 0;
 
-  osi_property_set("persist.bluetooth.hfpclient.sco_s4_supported", "true");
   bta_hf_client_add_record("Handsfree", scn, features, sdp_handle);
-  EXPECT_EQ(gVersion, 0x0107);
-  sdp_handle++;
-  scn++;
-  osi_property_set("persist.bluetooth.hfpclient.sco_s4_supported", "false");
-  bta_hf_client_add_record("Handsfree", scn, features, sdp_handle);
-  EXPECT_EQ(gVersion, 0x0106);
+  ASSERT_EQ(gVersion, BTA_HFP_VERSION);
 }
 
