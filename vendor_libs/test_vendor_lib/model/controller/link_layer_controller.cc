@@ -68,6 +68,10 @@ ErrorCode LinkLayerController::SendCommandToRemoteByAddress(
   Address local_address = properties_.GetAddress();
 
   switch (opcode) {
+    case (OpCode::LE_READ_REMOTE_FEATURES):
+      SendLinkLayerPacket(model::packets::LeReadRemoteFeaturesBuilder::Create(
+          local_address, remote));
+      break;
     case (OpCode::REMOTE_NAME_REQUEST):
       // LMP features get requested with remote name requests.
       SendLinkLayerPacket(model::packets::ReadRemoteLmpFeaturesBuilder::Create(
@@ -257,6 +261,12 @@ void LinkLayerController::IncomingPacket(
       break;
     case model::packets::PacketType::LE_ENCRYPT_CONNECTION_RESPONSE:
       IncomingLeEncryptConnectionResponse(incoming);
+      break;
+    case (model::packets::PacketType::LE_READ_REMOTE_FEATURES):
+      IncomingLeReadRemoteFeatures(incoming);
+      break;
+    case (model::packets::PacketType::LE_READ_REMOTE_FEATURES_RESPONSE):
+      IncomingLeReadRemoteFeaturesResponse(incoming);
       break;
     case model::packets::PacketType::LE_SCAN:
       // TODO: Check Advertising flags and see if we are scannable.
@@ -1260,6 +1270,41 @@ void LinkLayerController::IncomingLeEncryptConnectionResponse(
     send_event_(bluetooth::hci::EncryptionChangeBuilder::Create(
         status, handle, bluetooth::hci::EncryptionEnabled::ON));
   }
+}
+
+void LinkLayerController::IncomingLeReadRemoteFeatures(
+    model::packets::LinkLayerPacketView incoming) {
+  uint16_t handle =
+      connections_.GetHandleOnlyAddress(incoming.GetSourceAddress());
+  ErrorCode status = ErrorCode::SUCCESS;
+  if (handle == kReservedHandle) {
+    LOG_INFO("@%s: Unknown connection @%s",
+             incoming.GetDestinationAddress().ToString().c_str(),
+             incoming.GetSourceAddress().ToString().c_str());
+  }
+  SendLinkLayerPacket(
+      model::packets::LeReadRemoteFeaturesResponseBuilder::Create(
+          incoming.GetDestinationAddress(), incoming.GetSourceAddress(),
+          properties_.GetLeSupportedFeatures(), static_cast<uint8_t>(status)));
+}
+
+void LinkLayerController::IncomingLeReadRemoteFeaturesResponse(
+    model::packets::LinkLayerPacketView incoming) {
+  uint16_t handle =
+      connections_.GetHandleOnlyAddress(incoming.GetSourceAddress());
+  ErrorCode status = ErrorCode::SUCCESS;
+  auto response =
+      model::packets::LeReadRemoteFeaturesResponseView::Create(incoming);
+  if (handle == kReservedHandle) {
+    LOG_INFO("@%s: Unknown connection @%s",
+             incoming.GetDestinationAddress().ToString().c_str(),
+             incoming.GetSourceAddress().ToString().c_str());
+    status = ErrorCode::UNKNOWN_CONNECTION;
+  } else {
+    status = static_cast<ErrorCode>(response.GetStatus());
+  }
+  send_event_(bluetooth::hci::LeReadRemoteFeaturesCompleteBuilder::Create(
+      status, handle, response.GetFeatures()));
 }
 
 void LinkLayerController::IncomingLeScanPacket(
