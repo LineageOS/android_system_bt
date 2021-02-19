@@ -35,5 +35,8 @@ void ACL_ConfigureLePrivacy(bool is_le_privacy_enabled);
 void ACL_Shutdown();
 void ACL_IgnoreAllLeConnections();
 
+void ACL_ReadConnectionAddress(const RawAddress& pseudo_addr,
+                               RawAddress& conn_addr, uint8_t* p_addr_type);
+
 }  // namespace shim
 }  // namespace bluetooth
