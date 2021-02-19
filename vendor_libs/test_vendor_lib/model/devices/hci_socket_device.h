@@ -55,6 +55,7 @@ class HciSocketDevice : public DualModeController {
                    [](const std::vector<uint8_t>&) {},
                    [](const std::vector<uint8_t>&) {},
                    [](const std::vector<uint8_t>&) {},
+                   [](const std::vector<uint8_t>&) {},
                    [] {}};
 
   std::function<void()> close_callback_;
