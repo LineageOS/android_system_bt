@@ -22,17 +22,15 @@
  *
  ******************************************************************************/
 
-#include <stack/include/bt_types.h>
-#include <string.h>
+#include <string>
+#include <vector>
 
-#include "bta_ag_int.h"
-#include "bta_api.h"
-#include "bta_sys.h"
+#include "bta/ag/bta_ag_int.h"
 #include "main/shim/dumpsys.h"
+#include "osi/include/alarm.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/btm_api.h"
-#include "utl.h"
 
 /*****************************************************************************
  * Constants and types
