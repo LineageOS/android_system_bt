@@ -44,6 +44,9 @@ class ActivityAttributionInterface {
  public:
   virtual ~ActivityAttributionInterface() = default;
 
+  /** Init the interface. */
+  virtual void Init(void) = 0;
+
   /** Register JNI callbacks with the interface. */
   virtual void RegisterCallbacks(ActivityAttributionCallbacks* callbacks) = 0;
 
