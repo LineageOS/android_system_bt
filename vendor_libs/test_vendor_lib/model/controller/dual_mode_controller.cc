@@ -353,6 +353,7 @@ void DualModeController::HandleIso(
     std::shared_ptr<std::vector<uint8_t>> packet) {
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
   auto iso = bluetooth::hci::IsoView::Create(raw_packet);
+  ASSERT(iso.IsValid());
   link_layer_controller_.HandleIso(iso);
 }
 
