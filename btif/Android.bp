@@ -58,6 +58,7 @@ cc_library_static {
         "src/btif_a2dp_control.cc",
         "src/btif_a2dp_sink.cc",
         "src/btif_a2dp_source.cc",
+        "src/btif_activity_attribution.cc",
         "src/btif_av.cc",
         "src/btif_avrcp_audio_track.cc",
         "src/btif_ble_advertiser.cc",
