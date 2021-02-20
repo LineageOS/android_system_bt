@@ -31,20 +31,18 @@ namespace packet {
 template <bool little_endian>
 class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> {
  public:
-  Iterator(std::forward_list<View> data, size_t offset);
+  Iterator(const std::forward_list<View>& data, size_t offset);
   Iterator(const Iterator& itr) = default;
   virtual ~Iterator() = default;
 
   // All addition and subtraction operators are unbounded.
   Iterator operator+(int offset);
   Iterator& operator+=(int offset);
-  Iterator operator++(int);
   Iterator& operator++();
 
   Iterator operator-(int offset);
   int operator-(Iterator& itr);
   Iterator& operator-=(int offset);
-  Iterator operator--(int);
   Iterator& operator--();
 
   Iterator& operator=(const Iterator& itr);
@@ -59,7 +57,6 @@ class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> 
   bool operator>=(const Iterator& itr) const;
 
   uint8_t operator*() const;
-  uint8_t operator->() const;
 
   size_t NumBytesRemaining() const;
 
@@ -74,7 +71,8 @@ class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> 
 
     for (size_t i = 0; i < sizeof(FixedWidthPODType); i++) {
       size_t index = (little_endian ? i : sizeof(FixedWidthPODType) - i - 1);
-      value_ptr[index] = *((*this)++);
+      value_ptr[index] = this->operator*();
+      this->operator++();
     }
     return extracted_value;
   }
@@ -84,7 +82,8 @@ class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> 
     T extracted_value{};
     for (size_t i = 0; i < CustomFieldFixedSizeInterface<T>::length(); i++) {
       size_t index = (little_endian ? i : CustomFieldFixedSizeInterface<T>::length() - i - 1);
-      extracted_value.data()[index] = *((*this)++);
+      extracted_value.data()[index] = this->operator*();
+      this->operator++();
     }
     return extracted_value;
   }
