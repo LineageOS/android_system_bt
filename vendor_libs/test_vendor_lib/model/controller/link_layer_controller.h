@@ -364,6 +364,9 @@ class LinkLayerController {
   void IncomingLeEncryptConnection(model::packets::LinkLayerPacketView packet);
   void IncomingLeEncryptConnectionResponse(
       model::packets::LinkLayerPacketView packet);
+  void IncomingLeReadRemoteFeatures(model::packets::LinkLayerPacketView packet);
+  void IncomingLeReadRemoteFeaturesResponse(
+      model::packets::LinkLayerPacketView packet);
   void IncomingLeScanPacket(model::packets::LinkLayerPacketView packet);
   void IncomingLeScanResponsePacket(model::packets::LinkLayerPacketView packet);
   void IncomingPagePacket(model::packets::LinkLayerPacketView packet);
