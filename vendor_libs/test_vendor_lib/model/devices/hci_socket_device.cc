@@ -108,6 +108,9 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
   RegisterScoChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
     SendHci(PacketType::SCO, packet);
   });
+  RegisterIsoChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
+    SendHci(PacketType::ISO, packet);
+  });
 }
 
 void HciSocketDevice::TimerTick() {

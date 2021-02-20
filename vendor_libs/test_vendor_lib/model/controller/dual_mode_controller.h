@@ -562,8 +562,8 @@ class DualModeController : public Device {
   std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)> send_acl_;
   std::function<void(std::shared_ptr<bluetooth::hci::EventBuilder>)>
       send_event_;
-  std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_sco_;
-  std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_iso_;
+  std::function<void(std::shared_ptr<bluetooth::hci::ScoBuilder>)> send_sco_;
+  std::function<void(std::shared_ptr<bluetooth::hci::IsoBuilder>)> send_iso_;
 
   // Maintains the commands to be registered and used in the HciHandler object.
   // Keys are command opcodes and values are the callbacks to handle each
