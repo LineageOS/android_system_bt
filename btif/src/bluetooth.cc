@@ -50,6 +50,7 @@
 #include "bta/include/bta_hf_client_api.h"
 #include "btif/avrcp/avrcp_service.h"
 #include "btif_a2dp.h"
+#include "btif_activity_attribution.h"
 #include "btif_api.h"
 #include "btif_av.h"
 #include "btif_bqr.h"
@@ -437,7 +438,7 @@ static const void* get_profile_interface(const char* profile_id) {
     return bluetooth::bluetooth_keystore::getBluetoothKeystoreInterface();
 
   if (is_profile(profile_id, BT_ACTIVITY_ATTRIBUTION_ID)) {
-    return NULL;
+    return bluetooth::activity_attribution::get_activity_attribution_instance();
   }
 
   if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_ID))
