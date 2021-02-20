@@ -18,23 +18,16 @@
 
 #define LOG_TAG "bta_ag_cmd"
 
-#include <cctype>
-#include <cstdio>
+#include <cstdint>
 #include <cstring>
 
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bt_types.h"
-#include "bta_ag_api.h"
-#include "bta_ag_at.h"
-#include "bta_ag_int.h"
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "log/log.h"
+#include "bta/ag/bta_ag_at.h"
+#include "bta/ag/bta_ag_int.h"
+#include "bta/include/bta_ag_api.h"
+#include "bta/include/utl.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "port_api.h"
-#include "utl.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "stack/include/port_api.h"
 
 /*****************************************************************************
  *  Constants

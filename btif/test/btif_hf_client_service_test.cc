@@ -1,5 +1,6 @@
 #include <base/logging.h>
 #include <gtest/gtest.h>
+#include "bta_hfp_api.h"
 
 #undef LOG_TAG
 #include "btif/src/btif_hf_client.cc"
@@ -38,10 +39,7 @@ class BtifHfClientTest : public ::testing::Test {
 TEST_F(BtifHfClientTest, test_btif_hf_cleint_service) {
   bool enable = true;
 
-  osi_property_set("persist.bluetooth.hfpclient.sco_s4_supported", "true");
   btif_hf_client_execute_service(enable);
-  EXPECT_TRUE(gFeatures & BTA_HF_CLIENT_FEAT_S4);
-  osi_property_set("persist.bluetooth.hfpclient.sco_s4_supported", "false");
-  btif_hf_client_execute_service(enable);
-  EXPECT_FALSE(gFeatures & BTA_HF_CLIENT_FEAT_S4);
+  ASSERT_EQ((gFeatures & BTA_HF_CLIENT_FEAT_ESCO_S4) > 0,
+            BTA_HFP_VERSION >= HFP_VERSION_1_7);
 }

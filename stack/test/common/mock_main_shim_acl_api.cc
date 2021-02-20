@@ -64,3 +64,8 @@ void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
 void bluetooth::shim::ACL_IgnoreAllLeConnections() {
   mock_function_count_map[__func__]++;
 }
+void bluetooth::shim::ACL_ReadConnectionAddress(const RawAddress& pseudo_addr,
+                                                RawAddress& conn_addr,
+                                                uint8_t* p_addr_type) {
+  mock_function_count_map[__func__]++;
+}

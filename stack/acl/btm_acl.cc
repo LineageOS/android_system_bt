@@ -2319,6 +2319,10 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
     bluetooth::shim::L2CA_ReadConnectionAddr(remote_bda, local_conn_addr,
                                              p_addr_type);
     return;
+  } else if (bluetooth::shim::is_gd_scanning_enabled()) {
+    bluetooth::shim::ACL_ReadConnectionAddress(remote_bda, local_conn_addr,
+                                               p_addr_type);
+    return;
   }
 
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);

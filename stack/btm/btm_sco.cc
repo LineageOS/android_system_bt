@@ -983,10 +983,7 @@ tBTM_STATUS BTM_SetEScoMode(enh_esco_params_t* p_parms) {
         p_def->retransmission_effort);
   } else {
     /* Load defaults for SCO only */
-    *p_def = esco_parameters_for_codec(ESCO_CODEC_CVSD);
-    p_def->packet_types &= BTM_SCO_LINK_ONLY_MASK;
-    p_def->retransmission_effort = ESCO_RETRANSMISSION_OFF;
-    p_def->max_latency_ms = 12;
+    *p_def = esco_parameters_for_codec(SCO_CODEC_CVSD_D1);
     LOG_WARN("eSCO not supported so setting SCO parameters instead");
     LOG_DEBUG(
         "Setting SCO mode parameters txbw:0x%08x rxbw:0x%08x max_lat:0x%04x"

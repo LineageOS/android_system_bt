@@ -570,6 +570,10 @@ class LeShimAclConnection
     // TODO Issue LeReadRemoteFeatures Command
   }
 
+  bluetooth::hci::AddressWithType GetLocalAddressWithType() {
+    return connection_->GetLocalAddress();
+  }
+
   void OnConnectionUpdate(hci::ErrorCode hci_status,
                           uint16_t connection_interval,
                           uint16_t connection_latency,
@@ -1039,6 +1043,19 @@ void shim::legacy::Acl::OnClassicLinkDisconnected(HciHandle handle,
       std::move(std::make_unique<ClassicConnectionDescriptor>(
           remote_address, creation_time, teardown_time, handle,
           is_locally_initiated, reason)));
+}
+
+bluetooth::hci::AddressWithType shim::legacy::Acl::GetConnectionLocalAddress(
+    const RawAddress& remote_bda) {
+  bluetooth::hci::AddressWithType address_with_type;
+  auto remote_address = ToGdAddress(remote_bda);
+  for (auto& [handle, connection] : pimpl_->handle_to_le_connection_map_) {
+    if (connection->GetRemoteAddressWithType().GetAddress() == remote_address) {
+      return connection->GetLocalAddressWithType();
+    }
+  }
+  LOG_WARN("address not found!");
+  return address_with_type;
 }
 
 void shim::legacy::Acl::OnLeLinkDisconnected(HciHandle handle,
