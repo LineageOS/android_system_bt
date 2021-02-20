@@ -113,8 +113,7 @@ typedef struct {
   }
 
   void Init() {
-    def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD);
-    def_esco_parms.max_latency_ms = 12;
+    def_esco_parms = esco_parameters_for_codec(ESCO_CODEC_CVSD_S3);
     sco_route = ESCO_DATA_PATH_PCM;
   }
 

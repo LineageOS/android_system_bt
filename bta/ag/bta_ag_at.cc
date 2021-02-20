@@ -23,13 +23,15 @@
  ******************************************************************************/
 #define LOG_TAG "bta_ag_at"
 
-#include "bta_ag_at.h"
+#include <cstdint>
 
-#include <cstring>
+#include "bt_target.h"  // Must be first to define build configuration:
 
-#include "bt_common.h"
+#include "bta/ag/bta_ag_at.h"
+#include "bta/ag/bta_ag_int.h"
+#include "bta/include/utl.h"
+#include "osi/include/allocator.h"
 #include "osi/include/log.h"
-#include "utl.h"
 
 /*****************************************************************************
  *  Constants

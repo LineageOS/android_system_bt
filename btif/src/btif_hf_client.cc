@@ -1041,8 +1041,10 @@ bt_status_t btif_hf_client_execute_service(bool b_enable) {
   BTIF_TRACE_EVENT("%s: enable: %d", __func__, b_enable);
 
   tBTA_HF_CLIENT_FEAT features = BTIF_HF_CLIENT_FEATURES;
-  if (osi_property_get_bool("persist.bluetooth.hfpclient.sco_s4_supported", false))
-    features |= BTA_HF_CLIENT_FEAT_S4;
+  uint16_t hfp_version = BTA_HFP_VERSION;
+  if (hfp_version >= HFP_VERSION_1_7) {
+    features |= BTA_HF_CLIENT_FEAT_ESCO_S4;
+  }
 
   if (b_enable) {
     /* Enable and register with BTA-HFClient */
