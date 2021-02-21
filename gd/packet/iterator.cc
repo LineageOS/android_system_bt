@@ -22,7 +22,7 @@ namespace bluetooth {
 namespace packet {
 
 template <bool little_endian>
-Iterator<little_endian>::Iterator(std::forward_list<View> data, size_t offset) {
+Iterator<little_endian>::Iterator(const std::forward_list<View>& data, size_t offset) {
   data_ = data;
   index_ = offset;
   begin_ = 0;
@@ -43,13 +43,6 @@ template <bool little_endian>
 Iterator<little_endian>& Iterator<little_endian>::operator+=(int offset) {
   index_ += offset;
   return *this;
-}
-
-template <bool little_endian>
-Iterator<little_endian> Iterator<little_endian>::operator++(int) {
-  auto itr(*this);
-  index_++;
-  return itr;
 }
 
 template <bool little_endian>
@@ -78,14 +71,6 @@ Iterator<little_endian>& Iterator<little_endian>::operator-=(int offset) {
 }
 
 template <bool little_endian>
-Iterator<little_endian> Iterator<little_endian>::operator--(int) {
-  auto itr(*this);
-  if (index_ != 0) index_--;
-
-  return itr;
-}
-
-template <bool little_endian>
 Iterator<little_endian>& Iterator<little_endian>::operator--() {
   if (index_ != 0) index_--;
 
@@ -94,6 +79,7 @@ Iterator<little_endian>& Iterator<little_endian>::operator--() {
 
 template <bool little_endian>
 Iterator<little_endian>& Iterator<little_endian>::operator=(const Iterator<little_endian>& itr) {
+  if (this == &itr) return *this;
   this->data_ = itr.data_;
   this->begin_ = itr.begin_;
   this->end_ = itr.end_;

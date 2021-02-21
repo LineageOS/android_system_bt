@@ -465,7 +465,12 @@ class AsyncManager::AsyncTaskManager {
         if (!running_) break;
         // wait until time for the next task (if any)
         if (task_queue_.size() > 0) {
-          internal_cond_var_.wait_until(guard, (*task_queue_.begin())->time);
+          // Make a copy of the time_point because wait_until takes a reference
+          // to it and may read it after waiting, by which time the task may
+          // have been freed (e.g. via CancelAsyncTask).
+          std::chrono::steady_clock::time_point time =
+              (*task_queue_.begin())->time;
+          internal_cond_var_.wait_until(guard, time);
         } else {
           internal_cond_var_.wait(guard);
         }

@@ -22,10 +22,10 @@
  *
  ******************************************************************************/
 
-#include <string.h>
+#include <cstdint>
 
-#include "bta_ar_api.h"
-#include "bta_ar_int.h"
+#include "bta/ar/bta_ar_int.h"
+#include "bta/sys/bta_sys.h"
 #include "stack/include/avct_api.h"
 #include "stack/include/avrc_api.h"
 
