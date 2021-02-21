@@ -353,6 +353,7 @@ void DualModeController::HandleIso(
     std::shared_ptr<std::vector<uint8_t>> packet) {
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
   auto iso = bluetooth::hci::IsoView::Create(raw_packet);
+  ASSERT(iso.IsValid());
   link_layer_controller_.HandleIso(iso);
 }
 
@@ -1807,18 +1808,12 @@ void DualModeController::LeAddDeviceToConnectList(CommandView command) {
           gd_hci::AclCommandView::Create(command)));
   ASSERT(command_view.IsValid());
 
-  if (link_layer_controller_.LeConnectListFull()) {
-    auto packet =
-        bluetooth::hci::LeAddDeviceToConnectListCompleteBuilder::Create(
-            kNumCommandPackets, ErrorCode::MEMORY_CAPACITY_EXCEEDED);
-    send_event_(std::move(packet));
-    return;
-  }
   uint8_t addr_type = static_cast<uint8_t>(command_view.GetAddressType());
   Address address = command_view.GetAddress();
-  link_layer_controller_.LeConnectListAddDevice(address, addr_type);
+  ErrorCode result =
+      link_layer_controller_.LeConnectListAddDevice(address, addr_type);
   auto packet = bluetooth::hci::LeAddDeviceToConnectListCompleteBuilder::Create(
-      kNumCommandPackets, ErrorCode::SUCCESS);
+      kNumCommandPackets, result);
   send_event_(std::move(packet));
 }
 
@@ -1884,13 +1879,6 @@ void DualModeController::LeAddDeviceToResolvingList(CommandView command) {
       gd_hci::LeSecurityCommandView::Create(command));
   ASSERT(command_view.IsValid());
 
-  if (link_layer_controller_.LeResolvingListFull()) {
-    auto packet =
-        bluetooth::hci::LeAddDeviceToResolvingListCompleteBuilder::Create(
-            kNumCommandPackets, ErrorCode::MEMORY_CAPACITY_EXCEEDED);
-    send_event_(std::move(packet));
-    return;
-  }
   uint8_t addr_type =
       static_cast<uint8_t>(command_view.GetPeerIdentityAddressType());
   Address address = command_view.GetPeerIdentityAddress();
@@ -1899,11 +1887,11 @@ void DualModeController::LeAddDeviceToResolvingList(CommandView command) {
   std::array<uint8_t, LinkLayerController::kIrk_size> localIrk =
       command_view.GetLocalIrk();
 
-  link_layer_controller_.LeResolvingListAddDevice(address, addr_type, peerIrk,
-                                                  localIrk);
+  auto status = link_layer_controller_.LeResolvingListAddDevice(
+      address, addr_type, peerIrk, localIrk);
   auto packet =
       bluetooth::hci::LeAddDeviceToResolvingListCompleteBuilder::Create(
-          kNumCommandPackets, ErrorCode::SUCCESS);
+          kNumCommandPackets, status);
   send_event_(std::move(packet));
 }
 
@@ -2182,7 +2170,7 @@ void DualModeController::LeReadRemoteFeatures(CommandView command) {
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
       OpCode::LE_READ_REMOTE_FEATURES, command_view.GetPayload(), handle);
 
-  auto packet = bluetooth::hci::LeConnectionUpdateStatusBuilder::Create(
+  auto packet = bluetooth::hci::LeReadRemoteFeaturesStatusBuilder::Create(
       status, kNumCommandPackets);
   send_event_(std::move(packet));
 }

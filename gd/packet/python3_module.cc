@@ -94,8 +94,8 @@ PYBIND11_MODULE(bluetooth_packets_python3, m) {
       }))
       .def("GetBytes", [](const PacketView<kLittleEndian> view) {
         std::string result;
-        for (auto it = view.begin(); it != view.end(); it++) {
-          result += *it;
+        for (auto byte : view) {
+          result += byte;
         }
         return py::bytes(result);
       });

@@ -48,6 +48,8 @@ enum PacketType : 8 {
     KEYPRESS_NOTIFICATION = 0x29,
     PIN_REQUEST = 0x2A,
     PIN_RESPONSE = 0x2B,
+    LE_READ_REMOTE_FEATURES = 0x2C,
+    LE_READ_REMOTE_FEATURES_RESPONSE = 0x2D,
 }
 
 packet LinkLayerPacket {
@@ -349,4 +351,12 @@ packet PinResponse : LinkLayerPacket (type = PIN_RESPONSE) {
   _size_(pin_code) : 5, // 0x01 - 0x10
   _reserved_ : 3,
   pin_code : 8[], // string parameter, first octet first
+}
+
+packet LeReadRemoteFeatures : LinkLayerPacket (type = LE_READ_REMOTE_FEATURES) {
+}
+
+packet LeReadRemoteFeaturesResponse : LinkLayerPacket (type = LE_READ_REMOTE_FEATURES_RESPONSE) {
+  features : 64,
+  status : 8,
 }

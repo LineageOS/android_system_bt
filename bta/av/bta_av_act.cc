@@ -25,25 +25,21 @@
 
 #define LOG_TAG "bt_bta_av"
 
-#include "bt_target.h"
+#include <cstdint>
 
-#include <base/logging.h>
-#include <string.h>
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "avdt_api.h"
-#include "avrcp_service.h"
-#include "bta_av_api.h"
-#include "bta_av_int.h"
-#include "l2c_api.h"
-#include "log/log.h"
-#include "osi/include/list.h"
+#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_ar_api.h"
+#include "bta/include/utl.h"
+#include "btif/avrcp/avrcp_service.h"
+#include "osi/include/allocator.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
-#include "utl.h"
-
-#include "bta_ar_api.h"
+#include "stack/include/l2c_api.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants
