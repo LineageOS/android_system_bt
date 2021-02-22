@@ -283,6 +283,11 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   // Testing Commands
   SET_SUPPORTED(READ_LOOPBACK_MODE, ReadLoopbackMode);
   SET_SUPPORTED(WRITE_LOOPBACK_MODE, WriteLoopbackMode);
+
+  SET_SUPPORTED(READ_CLASS_OF_DEVICE, ReadClassOfDevice);
+  SET_SUPPORTED(READ_VOICE_SETTING, ReadVoiceSetting);
+  SET_SUPPORTED(READ_CONNECTION_ACCEPT_TIMEOUT, ReadConnectionAcceptTimeout);
+  SET_SUPPORTED(WRITE_CONNECTION_ACCEPT_TIMEOUT, WriteConnectionAcceptTimeout);
 #undef SET_HANDLER
 #undef SET_SUPPORTED
   properties_.SetSupportedCommands(supported_commands);
@@ -1308,6 +1313,9 @@ void DualModeController::RefreshEncryptionKey(CommandView command) {
 void DualModeController::WriteVoiceSetting(CommandView command) {
   auto command_view = gd_hci::WriteVoiceSettingView::Create(command);
   ASSERT(command_view.IsValid());
+
+  properties_.SetVoiceSetting(command_view.GetVoiceSetting());
+
   auto packet = bluetooth::hci::WriteVoiceSettingCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
@@ -2440,6 +2448,52 @@ void DualModeController::LeLongTermKeyRequestNegativeReply(
   send_event_(
       bluetooth::hci::LeLongTermKeyRequestNegativeReplyCompleteBuilder::Create(
           kNumCommandPackets, status, handle));
+}
+
+void DualModeController::ReadClassOfDevice(CommandView command) {
+  auto command_view = gd_hci::ReadClassOfDeviceView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+
+  auto packet = bluetooth::hci::ReadClassOfDeviceCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, properties_.GetClassOfDevice());
+  send_event_(std::move(packet));
+}
+
+void DualModeController::ReadVoiceSetting(CommandView command) {
+  auto command_view = gd_hci::ReadVoiceSettingView::Create(command);
+  ASSERT(command_view.IsValid());
+
+  auto packet = bluetooth::hci::ReadVoiceSettingCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, properties_.GetVoiceSetting());
+  send_event_(std::move(packet));
+}
+
+void DualModeController::ReadConnectionAcceptTimeout(CommandView command) {
+  auto command_view = gd_hci::ReadConnectionAcceptTimeoutView::Create(
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
+  ASSERT(command_view.IsValid());
+
+  auto packet =
+      bluetooth::hci::ReadConnectionAcceptTimeoutCompleteBuilder::Create(
+          kNumCommandPackets, ErrorCode::SUCCESS,
+          properties_.GetConnectionAcceptTimeout());
+  send_event_(std::move(packet));
+}
+
+void DualModeController::WriteConnectionAcceptTimeout(CommandView command) {
+  auto command_view = gd_hci::WriteConnectionAcceptTimeoutView::Create(
+      gd_hci::ConnectionManagementCommandView::Create(
+          gd_hci::AclCommandView::Create(command)));
+  ASSERT(command_view.IsValid());
+
+  properties_.SetConnectionAcceptTimeout(command_view.GetConnAcceptTimeout());
+
+  auto packet =
+      bluetooth::hci::WriteConnectionAcceptTimeoutCompleteBuilder::Create(
+          kNumCommandPackets, ErrorCode::SUCCESS);
+  send_event_(std::move(packet));
 }
 
 void DualModeController::ReadLoopbackMode(CommandView command) {
