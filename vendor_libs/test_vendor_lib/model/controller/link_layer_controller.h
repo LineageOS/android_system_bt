@@ -113,10 +113,12 @@ class LinkLayerController {
       const std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)>&
           send_acl);
 
-  void RegisterScoChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_sco);
+  void RegisterScoChannel(
+      const std::function<void(std::shared_ptr<bluetooth::hci::ScoBuilder>)>&
+          send_sco);
 
   void RegisterIsoChannel(
-      const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>&
+      const std::function<void(std::shared_ptr<bluetooth::hci::IsoBuilder>)>&
           send_iso);
 
   void RegisterRemoteChannel(
@@ -420,8 +422,8 @@ class LinkLayerController {
   std::function<void(std::shared_ptr<bluetooth::hci::AclBuilder>)> send_acl_;
   std::function<void(std::shared_ptr<bluetooth::hci::EventBuilder>)>
       send_event_;
-  std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_sco_;
-  std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_iso_;
+  std::function<void(std::shared_ptr<bluetooth::hci::ScoBuilder>)> send_sco_;
+  std::function<void(std::shared_ptr<bluetooth::hci::IsoBuilder>)> send_iso_;
 
   // Callback to send packets to remote devices.
   std::function<void(std::shared_ptr<model::packets::LinkLayerPacketBuilder>,
