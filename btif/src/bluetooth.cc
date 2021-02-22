@@ -725,15 +725,16 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr,
 }
 
 void invoke_acl_state_changed_cb(bt_status_t status, RawAddress bd_addr,
-                                 bt_acl_state_t state) {
+                                 bt_acl_state_t state, bt_hci_error_code_t hci_reason) {
   do_in_jni_thread(
       FROM_HERE,
       base::BindOnce(
-          [](bt_status_t status, RawAddress bd_addr, bt_acl_state_t state) {
+          [](bt_status_t status, RawAddress bd_addr, bt_acl_state_t state,
+             bt_hci_error_code_t hci_reason) {
             HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, status, &bd_addr,
-                      state);
+                      state, hci_reason);
           },
-          status, bd_addr, state));
+          status, bd_addr, state, hci_reason));
 }
 
 void invoke_thread_evt_cb(bt_cb_thread_evt event) {

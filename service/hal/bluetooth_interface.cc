@@ -147,16 +147,17 @@ void BondStateChangedCallback(bt_status_t status, RawAddress* remote_bd_addr,
 }
 
 void AclStateChangedCallback(bt_status_t status, RawAddress* remote_bd_addr,
-                             bt_acl_state_t state) {
+                             bt_acl_state_t state, bt_hci_error_code_t hci_reason) {
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
   CHECK(remote_bd_addr);
   VLOG(1) << "Remote device ACL state changed - status: "
           << BtStatusText(status)
           << " - BD_ADDR: " << BtAddrString(remote_bd_addr) << " - state: "
-          << ((state == BT_ACL_STATE_CONNECTED) ? "CONNECTED" : "DISCONNECTED");
+          << ((state == BT_ACL_STATE_CONNECTED) ? "CONNECTED" : "DISCONNECTED")
+          << " - HCI_REASON: " << std::to_string(hci_reason);
   FOR_EACH_BLUETOOTH_OBSERVER(
-      AclStateChangedCallback(status, *remote_bd_addr, state));
+      AclStateChangedCallback(status, *remote_bd_addr, state, hci_reason));
 }
 
 void ThreadEventCallback(bt_cb_thread_evt evt) {
@@ -364,7 +365,7 @@ void BluetoothInterface::Observer::BondStateChangedCallback(
 
 void BluetoothInterface::Observer::AclStateChangedCallback(
     bt_status_t /* status */, const RawAddress& /* remote_bdaddr */,
-    bt_acl_state_t /* state */) {
+    bt_acl_state_t /* state */, bt_hci_error_code_t /* hci_reason */) {
   // Do nothing.
 }
 
