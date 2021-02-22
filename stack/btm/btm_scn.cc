@@ -60,7 +60,7 @@ bool BTM_TryAllocateSCN(uint8_t scn) {
   /* Make sure we don't exceed max port range.
    * Stack reserves scn 1 for HFP, HSP we still do the correct way.
    */
-  if ((scn >= PORT_MAX_RFC_PORTS) || (scn == 1)) return false;
+  if ((scn >= PORT_MAX_RFC_PORTS) || (scn == 1) || (scn == 0)) return false;
 
   /* check if this port is available */
   if (!btm_cb.btm_scn[scn - 1]) {
@@ -82,7 +82,7 @@ bool BTM_TryAllocateSCN(uint8_t scn) {
  ******************************************************************************/
 bool BTM_FreeSCN(uint8_t scn) {
   BTM_TRACE_DEBUG("BTM_FreeSCN ");
-  if (scn <= PORT_MAX_RFC_PORTS) {
+  if (scn <= PORT_MAX_RFC_PORTS && scn > 0) {
     btm_cb.btm_scn[scn - 1] = false;
     return (true);
   } else {
