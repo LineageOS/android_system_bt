@@ -12,6 +12,7 @@ using acl_state_changed_params_t = struct {
   bt_status_t status;
   RawAddress* remote_bd_addr;
   bt_acl_state_t state;
+  bt_hci_error_code_t hci_reason;
 };
 
 using callback_params_t = union {
