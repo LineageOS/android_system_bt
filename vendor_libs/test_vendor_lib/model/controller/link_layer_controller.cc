@@ -852,8 +852,11 @@ void LinkLayerController::IncomingIsoPacket(LinkLayerPacketView incoming) {
     LOG_INFO("Dropping ISO packet to a disconnected handle 0x%hx", cis_handle);
     return;
   }
-  LOG_INFO("ISO packet scheduling is not implemented");
-  // send_iso_(bluetooth::hci::IsoWithTimestampBuilder::Create())
+  send_iso_(bluetooth::hci::IsoBuilder::Create(
+      cis_handle, bluetooth::hci::IsoPacketBoundaryFlag::COMPLETE_SDU,
+      bluetooth::hci::TimeStampFlag::PRESENT,
+      std::make_unique<bluetooth::packet::RawBuilder>(std::vector<uint8_t>(
+          iso.GetPayload().begin(), iso.GetPayload().end()))));
 }
 
 void LinkLayerController::HandleIso(bluetooth::hci::IsoView iso) {
@@ -1585,13 +1588,13 @@ void LinkLayerController::RegisterAclChannel(
 }
 
 void LinkLayerController::RegisterScoChannel(
-    const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>&
+    const std::function<void(std::shared_ptr<bluetooth::hci::ScoBuilder>)>&
         callback) {
   send_sco_ = callback;
 }
 
 void LinkLayerController::RegisterIsoChannel(
-    const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>&
+    const std::function<void(std::shared_ptr<bluetooth::hci::IsoBuilder>)>&
         callback) {
   send_iso_ = callback;
 }
