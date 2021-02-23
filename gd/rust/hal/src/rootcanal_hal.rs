@@ -25,12 +25,9 @@ enum HciPacketType {
     Event = 0x04,
 }
 
-#[derive(FromPrimitive, ToPrimitive)]
-enum HciPacketHeaderSize {
-    Event = 2,
-    Sco = 3,
-    Acl = 4,
-}
+const SIZE_OF_EVENT_HEADER: usize = 2;
+const _SIZE_OF_SCO_HEADER: usize = 3;
+const SIZE_OF_ACL_HEADER: usize = 4;
 
 module! {
     rootcanal_hal_module,
@@ -86,10 +83,10 @@ where
         buffer.resize(H4_HEADER_SIZE, 0);
         reader.read_exact(&mut buffer).await?;
         if buffer[0] == HciPacketType::Event as u8 {
-            buffer.resize(HciPacketHeaderSize::Event as usize, 0);
+            buffer.resize(SIZE_OF_EVENT_HEADER, 0);
             reader.read_exact(&mut buffer).await?;
             let len: usize = buffer[1].into();
-            let mut payload = buffer.split_off(HciPacketHeaderSize::Event as usize);
+            let mut payload = buffer.split_off(SIZE_OF_EVENT_HEADER);
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
@@ -99,10 +96,10 @@ where
                 Err(e) => log::error!("dropping invalid event packet: {}: {:02x}", e, frozen),
             }
         } else if buffer[0] == HciPacketType::Acl as u8 {
-            buffer.resize(HciPacketHeaderSize::Acl as usize, 0);
+            buffer.resize(SIZE_OF_ACL_HEADER, 0);
             reader.read_exact(&mut buffer).await?;
             let len: usize = (buffer[2] as u16 + ((buffer[3] as u16) << 8)).into();
-            let mut payload = buffer.split_off(HciPacketHeaderSize::Acl as usize);
+            let mut payload = buffer.split_off(SIZE_OF_ACL_HEADER);
             payload.resize(len, 0);
             reader.read_exact(&mut payload).await?;
             buffer.unsplit(payload);
