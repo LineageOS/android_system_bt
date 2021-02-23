@@ -103,7 +103,7 @@ void bond_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
 
 /** Bluetooth ACL connection state changed callback */
 void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
-                       bt_acl_state_t state) {
+                       bt_acl_state_t state, bt_hci_error_code_t hci_reason) {
   auto callback_list = interface_api_callback_map_.at(__func__);
   for (auto callback : callback_list) {
     interface_data_t params{
@@ -111,6 +111,7 @@ void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
         .params.acl_state_changed.status = status,
         .params.acl_state_changed.remote_bd_addr = remote_bd_addr,
         .params.acl_state_changed.state = state,
+        .params.acl_state_changed.hci_reason = hci_reason,
     };
     (callback)(params);
   }

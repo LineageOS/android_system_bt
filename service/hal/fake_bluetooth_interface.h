@@ -57,7 +57,8 @@ class FakeBluetoothInterface : public BluetoothInterface {
       const bt_local_le_features_t* features);
   void NotifyAclStateChangedCallback(bt_status_t status,
                                      const RawAddress& remote_bdaddr,
-                                     bt_acl_state_t state);
+                                     bt_acl_state_t state,
+                                     bt_hci_error_code_t hci_reason);
 
   // hal::BluetoothInterface overrides:
   void AddObserver(Observer* observer) override;
