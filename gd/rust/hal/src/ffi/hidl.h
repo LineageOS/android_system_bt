@@ -9,6 +9,7 @@ void stop_hal();
 void send_command(rust::Slice<uint8_t> data);
 void send_acl(rust::Slice<uint8_t> data);
 void send_sco(rust::Slice<uint8_t> data);
+void send_iso(rust::Slice<uint8_t> data);
 
 }  // namespace hal
 }  // namespace bluetooth
