@@ -89,6 +89,15 @@ class TestHciHal : public hal::HciHal {
     outgoing_sco_.push_front(std::move(data));
   }
 
+  void sendIsoData(hal::HciPacket data) override {
+    outgoing_iso_.push_front(std::move(data));
+    if (sent_iso_promise_ != nullptr) {
+      auto promise = std::move(sent_iso_promise_);
+      sent_iso_promise_.reset();
+      promise->set_value();
+    }
+  }
+
   hal::HciHalCallbacks* callbacks = nullptr;
 
   PacketView<kLittleEndian> GetPacketView(hal::HciPacket data) {
@@ -124,6 +133,12 @@ class TestHciHal : public hal::HciHal {
     return packetview;
   }
 
+  std::future<void> GetSentIsoFuture() {
+    ASSERT_LOG(sent_iso_promise_ == nullptr, "Promises promises ... Only one at a time");
+    sent_iso_promise_ = std::make_unique<std::promise<void>>();
+    return sent_iso_promise_->get_future();
+  }
+
   void Start() {}
 
   void Stop() {}
@@ -136,8 +151,10 @@ class TestHciHal : public hal::HciHal {
   std::list<hal::HciPacket> outgoing_commands_;
   std::list<hal::HciPacket> outgoing_acl_;
   std::list<hal::HciPacket> outgoing_sco_;
+  std::list<hal::HciPacket> outgoing_iso_;
   std::unique_ptr<std::promise<void>> sent_command_promise_;
   std::unique_ptr<std::promise<void>> sent_acl_promise_;
+  std::unique_ptr<std::promise<void>> sent_iso_promise_;
 };
 
 const ModuleFactory TestHciHal::Factory = ModuleFactory([]() { return new TestHciHal(); });

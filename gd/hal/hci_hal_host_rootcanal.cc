@@ -140,6 +140,15 @@ class HciHalHostRootcanal : public HciHal {
     write_to_rootcanal_fd(packet);
   }
 
+  void sendIsoData(HciPacket data) override {
+    std::lock_guard<std::mutex> lock(api_mutex_);
+    ASSERT(sock_fd_ != INVALID_FD);
+    std::vector<uint8_t> packet = std::move(data);
+    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ISO);
+    packet.insert(packet.cbegin(), kH4Iso);
+    write_to_rootcanal_fd(packet);
+  }
+
  protected:
   void ListDependencies(ModuleList* list) override {
     list->add<SnoopLogger>();
@@ -325,7 +334,7 @@ class HciHalHostRootcanal : public HciHal {
       ASSERT_LOG(received_size != -1, "Can't receive from socket: %s", strerror(errno));
       ASSERT_LOG(received_size == kHciIsoHeaderSize, "malformed ISO header received");
 
-      uint8_t hci_iso_data_total_length = buf[3];
+      uint16_t hci_iso_data_total_length = ((buf[4] & 0x3f) << 8) + buf[3];
       int payload_size;
       RUN_NO_INTR(payload_size = recv(sock_fd_, buf + kH4HeaderSize + kHciIsoHeaderSize, hci_iso_data_total_length, 0));
       ASSERT_LOG(payload_size != -1, "Can't receive from socket: %s", strerror(errno));
