@@ -24,7 +24,6 @@
 #include "hci/acl_manager.h"
 #include "hci/hci_layer.h"
 #include "iso/iso_module.h"
-#include "l2cap/le/l2cap_le_module.h"
 
 namespace bluetooth {
 namespace iso {

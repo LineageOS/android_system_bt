@@ -25,5 +25,6 @@ filegroup {
 filegroup {
     name: "BluetoothFacade_iso_layer",
     srcs: [
+        "facade.cc",
     ],
 }
