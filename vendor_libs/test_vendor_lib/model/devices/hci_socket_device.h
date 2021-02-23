@@ -22,10 +22,6 @@
 #include "model/controller/dual_mode_controller.h"
 #include "model/devices/h4_packetizer.h"
 
-namespace {
-const std::string kHciSocketDevicePropertiesFile = "/etc/bluetooth/hci_socket_device_controller_properties.json";
-}  // namespace
-
 namespace test_vendor_lib {
 
 class HciSocketDevice : public DualModeController {

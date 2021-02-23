@@ -21,8 +21,6 @@
 #include "hci/address.h"
 #include "os/log.h"
 
-using std::shared_ptr;
-
 namespace test_vendor_lib {
 
 using ::bluetooth::hci::Address;
@@ -216,11 +214,11 @@ AclConnectionHandler::SetCigParameters(
     auto handle = GetUnusedHandle();
     StreamParameters a{.group_id = group_parameters.id,
                        .stream_id = streams[i].cis_id_,
-                       .max_sdu_s_to_m = streams[i].max_sdu_s_to_m_,
                        .max_sdu_m_to_s = streams[i].max_sdu_m_to_s_,
-                       .handle = handle,
+                       .max_sdu_s_to_m = streams[i].max_sdu_s_to_m_,
                        .rtn_m_to_s = streams[i].rtn_m_to_s_,
-                       .rtn_s_to_m = streams[i].rtn_s_to_m_};
+                       .rtn_s_to_m = streams[i].rtn_s_to_m_,
+                       .handle = handle};
     handles.push_back(handle);
     stream_parameters.push_back(std::move(a));
   }
