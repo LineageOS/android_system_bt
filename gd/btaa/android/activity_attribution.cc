@@ -36,9 +36,7 @@ using namespace ndk;
 namespace bluetooth {
 namespace activity_attribution {
 
-const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() {
-  return new ActivityAttribution();
-});
+const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() { return new ActivityAttribution(); });
 
 static const std::string kBtWakelockName("hal_bluetooth_lock");
 
@@ -70,16 +68,14 @@ struct ActivityAttribution::impl {
     bool is_registered = false;
 
     auto control_service =
-        ISuspendControlService::fromBinder(SpAIBinder(
-          AServiceManager_getService("suspend_control")));
+        ISuspendControlService::fromBinder(SpAIBinder(AServiceManager_getService("suspend_control")));
     if (!control_service) {
       LOG_ERROR("Fail to obtain suspend_control");
       return;
     }
 
     Status register_callback_status =
-        control_service->registerCallback(SharedRefBase::make<wakeup_callback>(module),
-                                          &is_registered);
+        control_service->registerCallback(SharedRefBase::make<wakeup_callback>(module), &is_registered);
     if (!is_registered || !register_callback_status.isOk()) {
       LOG_ERROR("Fail to register wakeup callback");
       return;
@@ -93,6 +89,8 @@ struct ActivityAttribution::impl {
     }
   }
 
+  void on_hci_packet(hal::HciPacket packet, hal::SnoopLogger::PacketType type, uint16_t length) {}
+
   void register_callback(ActivityAttributionCallback* callback) {
     callback_ = callback;
   }
@@ -100,8 +98,31 @@ struct ActivityAttribution::impl {
   ActivityAttributionCallback* callback_;
 };
 
-void ActivityAttribution::RegisterActivityAttributionCallback(
-  ActivityAttributionCallback* callback) {
+void ActivityAttribution::Capture(const hal::HciPacket& packet, hal::SnoopLogger::PacketType type) {
+  uint16_t original_length = packet.size();
+  uint16_t truncate_length;
+
+  switch (type) {
+    case hal::SnoopLogger::PacketType::CMD:
+    case hal::SnoopLogger::PacketType::EVT:
+      truncate_length = packet.size();
+      break;
+    case hal::SnoopLogger::PacketType::ACL:
+    case hal::SnoopLogger::PacketType::SCO:
+    case hal::SnoopLogger::PacketType::ISO:
+      truncate_length = 0;
+      break;
+  }
+
+  if (!truncate_length) {
+    return;
+  }
+
+  hal::HciPacket truncate_packet(packet.begin(), packet.begin() + truncate_length);
+  CallOn(pimpl_.get(), &impl::on_hci_packet, truncate_packet, type, original_length);
+}
+
+void ActivityAttribution::RegisterActivityAttributionCallback(ActivityAttributionCallback* callback) {
   CallOn(pimpl_.get(), &impl::register_callback, callback);
 }
 
