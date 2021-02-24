@@ -1532,7 +1532,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       btif_update_remote_version_property(&bd_addr);
 
       invoke_acl_state_changed_cb(BT_STATUS_SUCCESS, bd_addr,
-                                  BT_ACL_STATE_CONNECTED);
+                                  BT_ACL_STATE_CONNECTED, HCI_SUCCESS);
       break;
 
     case BTA_DM_LINK_DOWN_EVT:
@@ -1543,7 +1543,8 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       BTIF_TRACE_DEBUG(
           "BTA_DM_LINK_DOWN_EVT. Sending BT_ACL_STATE_DISCONNECTED");
       invoke_acl_state_changed_cb(BT_STATUS_SUCCESS, bd_addr,
-                                  BT_ACL_STATE_DISCONNECTED);
+                                  BT_ACL_STATE_DISCONNECTED,
+                                  static_cast<bt_hci_error_code_t>(btm_get_acl_disc_reason_code()));
       break;
 
     case BTA_DM_BLE_KEY_EVT:
