@@ -24,4 +24,5 @@ cc_library_static {
     shared_libs: [
         "libprocessgroup",
     ],
+    host_supported: true,
 }
