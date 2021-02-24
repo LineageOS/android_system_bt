@@ -30,7 +30,6 @@ cc_binary {
         "hci_packetizer.cc",
         "h4_protocol.cc",
         "bluetooth_hci.cc",
-        "async_fd_watcher.cc",
         "service.cc",
     ],
     cflags: [
@@ -47,8 +46,29 @@ cc_binary {
         "liblog",
         "libutils",
     ],
+    static_libs: [
+        "async_fd_watcher",
+    ],
     conlyflags: [
         "-std=c99",
     ],
     init_rc: ["android.hardware.bluetooth@1.1-service.btlinux.rc"],
+}
+
+cc_library_static {
+    name: "async_fd_watcher",
+    proprietary: true,
+    srcs: [
+        "async_fd_watcher.cc",
+    ],
+    cflags: [
+        "-Wall",
+        "-Werror",
+    ],
+    shared_libs: [
+        "liblog",
+    ],
+    export_include_dirs: [
+        ".",
+    ],
 }
