@@ -1,5 +1,5 @@
 #
-#  Copyright 2021 Google
+#  Copyright 2021 Google, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -12,20 +12,15 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
-#
 
-source_set("BluetoothCommonSources") {
-  sources = [
-    "init_flags.cc",
-    "stop_watch.cc",
-    "strings.cc",
-  ]
+import("//common-mk/flatbuffer.gni")
 
-  deps = [
-    "//bt/gd/rust/shim:init_flags_bridge_header",
-  ]
+config("bundler_generated_config") {
+  include_dirs = [ "$target_gen_dir" ]
+}
 
-  include_dirs = [ "//bt/gd" ]
+flatbuffer("bundler_generated") {
+  sources = [ "bundler.fbs" ]
 
-  configs += [ "//bt:target_defaults" ]
+  all_dependent_configs = [ ":bundler_generated_config" ]
 }
