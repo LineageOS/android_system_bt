@@ -24,18 +24,15 @@
 
 #define LOG_TAG "bt_bta_gattc"
 
-#include <base/logging.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bta_gattc_int.h"
-#include "bta_sys.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/gatt/bta_gattc_int.h"
 #include "device/include/controller.h"
 #include "gd/common/init_flags.h"
-#include "l2c_api.h"
 #include "types/bt_transport.h"
-#include "utl.h"
+#include "types/raw_address.h"
 
 static uint8_t ble_acceptlist_size() {
   const controller_t* controller = controller_get_interface();

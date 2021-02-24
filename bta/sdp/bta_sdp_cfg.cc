@@ -20,9 +20,10 @@
  *  This file contains compile-time configurable constants for SDP Search
  ******************************************************************************/
 
-#include "bt_common.h"
-#include "bta_api.h"
-#include "bta_sdp_api.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/include/bta_sdp_api.h"
+#include "stack/include/sdp_api.h"
 
 #ifndef BTA_SDP_DB_SIZE
 #define BTA_SDP_DB_SIZE 4500

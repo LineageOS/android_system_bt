@@ -19,15 +19,12 @@
 
 #define LOG_TAG "bt_hf_client"
 
-#include <errno.h>
-#include <stdio.h>
-#include <string.h>
+#include "bt_trace.h"  // Legacy trace logging
 
-#include "bta_hf_client_api.h"
-#include "bta_hf_client_int.h"
+#include "bta/hf_client/bta_hf_client_int.h"
+#include "osi/include/allocator.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "port_api.h"
+#include "stack/include/port_api.h"
 
 /* Uncomment to enable AT traffic dumping */
 /* #define BTA_HF_CLIENT_AT_DUMP 1 */

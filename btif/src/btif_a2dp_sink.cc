@@ -19,26 +19,25 @@
 
 #define LOG_TAG "bt_btif_a2dp_sink"
 
+#include <base/bind.h>
 #include <atomic>
-#include <cstdio>
-#include <cstring>
 #include <mutex>
 #include <string>
 
-#include <base/bind.h>
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "bt_common.h"
-#include "btif_a2dp.h"
-#include "btif_a2dp_sink.h"
-#include "btif_av.h"
-#include "btif_av_co.h"
-#include "btif_avrcp_audio_track.h"
-#include "btif_util.h"
+#include "btif/include/btif_a2dp_sink.h"
+#include "btif/include/btif_av.h"
+#include "btif/include/btif_av_co.h"
+#include "btif/include/btif_avrcp_audio_track.h"
+#include "btif/include/btif_util.h"  // CASE_RETURN_STR
 #include "common/message_loop_thread.h"
 #include "osi/include/alarm.h"
+#include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "stack/include/bt_types.h"
 
 using bluetooth::common::MessageLoopThread;
 using LockGuard = std::lock_guard<std::mutex>;

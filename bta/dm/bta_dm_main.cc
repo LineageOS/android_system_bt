@@ -22,9 +22,9 @@
  *
  ******************************************************************************/
 
-#include "bta_api.h"
-#include "bta_dm_int.h"
-#include "bta_sys.h"
+#include "bt_trace.h"
+#include "bta/dm/bta_dm_int.h"
+#include "stack/include/bt_types.h"
 
 /*****************************************************************************
  * Constants and types

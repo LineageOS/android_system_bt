@@ -22,12 +22,9 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include <string.h>
-
-#include "bt_common.h"
-#include "bta_gatts_int.h"
+#include "bta/gatt/bta_gatts_int.h"
 
 /* GATTS control block */
 tBTA_GATTS_CB bta_gatts_cb;

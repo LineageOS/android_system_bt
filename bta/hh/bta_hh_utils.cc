@@ -15,16 +15,19 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include <string.h>
+#include <string.h>  // memset
+#include <cstring>
 
-#include "bt_target.h"
+#include "bt_target.h"  // Must be first to define build configuration
 #if (BTA_HH_INCLUDED == TRUE)
 
-#include "bta_hh_int.h"
+#include "bt_trace.h"  // Legacy trace logging
+#include "bta/hh/bta_hh_int.h"
 #include "btif/include/btif_storage.h"
 #include "device/include/interop.h"
 #include "osi/include/osi.h"
 #include "stack/include/acl_api.h"
+#include "types/raw_address.h"
 
 /* if SSR max latency is not defined by remote device, set the default value
    as half of the link supervision timeout */

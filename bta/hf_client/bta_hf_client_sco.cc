@@ -16,15 +16,13 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include <string.h>
 
-#include "bt_trace.h"
-#include "bt_utils.h"
-#include "bta_ag_api.h"
-#include "bta_hf_client_api.h"
-#include "bta_hf_client_int.h"
+#include <cstdint>
+
+#include "bta/hf_client/bta_hf_client_int.h"
+#include "bta/include/bta_ag_api.h"
 #include "device/include/esco_parameters.h"
-#include "osi/include/osi.h"
+#include "osi/include/allocator.h"
 #include "stack/include/btm_api.h"
 
 #define BTA_HF_CLIENT_NO_EDR_ESCO                                \

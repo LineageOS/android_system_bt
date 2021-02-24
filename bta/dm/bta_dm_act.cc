@@ -41,6 +41,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
