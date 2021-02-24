@@ -39,6 +39,7 @@ rust_library {
             static_libs: ["libbt_hidl_hal_cxx"],
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "libhidlbase",
                 "libutils",
             ],
@@ -71,6 +72,7 @@ cc_library_static {
     generated_sources: ["libbt_hidl_hal_bridge_code"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
+        "android.hardware.bluetooth@1.1",
         "libhidlbase",
         "libutils",
     ],
