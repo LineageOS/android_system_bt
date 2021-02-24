@@ -221,7 +221,7 @@ BluetoothAudioClientInterface::GetAudioCapabilities(SessionType session_type) {
   }
 
   android::sp<IBluetoothAudioProvidersFactory_2_0> providersFactory =
-      HalVersionManager::GetProviderFactory_2_0();
+      HalVersionManager::GetProvidersFactory_2_0();
 
   auto getProviderCapabilities_cb =
       [&capabilities](const hidl_vec<AudioCapabilities>& audioCapabilities) {
@@ -245,7 +245,7 @@ void BluetoothAudioClientInterface::FetchAudioProvider() {
   }
 
   android::sp<IBluetoothAudioProvidersFactory_2_0> providersFactory =
-      HalVersionManager::GetProviderFactory_2_0();
+      HalVersionManager::GetProvidersFactory_2_0();
   CHECK(providersFactory != nullptr)
       << "IBluetoothAudioProvidersFactory::getService() failed";
 
