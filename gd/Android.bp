@@ -138,6 +138,7 @@ cc_defaults {
             ],
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "android.system.suspend.control-V1-ndk",
                 "libbinder_ndk",
                 "libcutils",
@@ -254,6 +255,7 @@ cc_binary {
         android: {
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "libhidlbase",
                 "libutils",
                 "libcutils",
@@ -301,6 +303,7 @@ cc_test {
             ],
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "libhidlbase",
                 "libutils",
                 "libcutils",
@@ -386,6 +389,7 @@ cc_test {
         android: {
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "libhidlbase",
                 "libutils",
                 "libcutils",
@@ -427,6 +431,7 @@ cc_defaults {
         android: {
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "libcutils",
                 "libhidlbase",
                 "libutils",

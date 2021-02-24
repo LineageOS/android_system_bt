@@ -92,6 +92,11 @@ class HciHal : public ::bluetooth::Module {
   // V4.2, Vol 2, Part 5, Section 5.4.3) to the Bluetooth controller.
   // Packets must be processed in order.
   virtual void sendScoData(HciPacket data) = 0;
+
+  // Send an HCI ISO data packet (as specified in the Bluetooth Specification
+  // V5.2, Vol 4, Part E, Section 5.4.5) to the Bluetooth controller.
+  // Packets must be processed in order.
+  virtual void sendIsoData(HciPacket data) = 0;
 };
 // LINT.ThenChange(fuzz/fuzz_hci_hal.h)
 
