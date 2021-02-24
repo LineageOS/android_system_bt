@@ -22,23 +22,20 @@
  *  Technology (JABWT) as specified by the JSR82 specificiation
  *
  ******************************************************************************/
-#include <base/bind.h>
-#include <base/bind_helpers.h>
-#include <base/logging.h>
-#include <string.h>
 
-#include "bt_common.h"
-#include "bta_api.h"
-#include "bta_jv_api.h"
-#include "bta_jv_int.h"
-#include "bta_sys.h"
-#include "gap_api.h"
-#include "port_api.h"
-#include "sdp_api.h"
-#include "stack/btm/btm_sec.h"
-#include "stack/include/btu.h"
-#include "types/bt_transport.h"
-#include "utl.h"
+#include <base/bind.h>
+#include <base/location.h>
+#include <base/logging.h>
+#include <cstdint>
+#include <memory>
+
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/jv/bta_jv_int.h"
+#include "stack/include/btu.h"  // do_in_main_thread
+#include "stack/include/gap_api.h"
+#include "types/bluetooth/uuid.h"
+#include "types/raw_address.h"
 
 using base::Bind;
 using bluetooth::Uuid;

@@ -18,40 +18,35 @@
 
 #define LOG_TAG "bt_btif_sock_rfcomm"
 
-#include <base/logging.h>
-#include <errno.h>
-#include <features.h>
-#include <pthread.h>
-#include <string.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h>
-
+#include <cstdint>
 #include <mutex>
 
-#include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
-#include <hardware/bluetooth.h>
-#include <hardware/bt_sock.h>
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bta_jv_api.h"
-#include "btif_sock_sdp.h"
-#include "btif_sock_thread.h"
-#include "btif_sock_util.h"
-#include "btif_uid.h"
-#include "btif_util.h"
-#include "btm_api.h"
-#include "common/metrics.h"
-#include "osi/include/list.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "port_api.h"
-
+#include "bta/include/bta_jv_api.h"
 /* The JV interface can have only one user, hence we need to call a few
  * L2CAP functions from this file. */
-#include "btif_sock_l2cap.h"
+#include "btif/include/btif_sock_l2cap.h"
+#include "btif/include/btif_sock_sdp.h"
+#include "btif/include/btif_sock_thread.h"
+#include "btif/include/btif_sock_util.h"
+#include "btif/include/btif_uid.h"
+#include "common/metrics.h"
+#include "include/hardware/bt_sock.h"
+#include "osi/include/allocator.h"
+#include "osi/include/compat.h"
+#include "osi/include/list.h"
+#include "osi/include/log.h"
+#include "osi/include/osi.h"  // INVALID_FD
+#include "stack/include/btm_api.h"
+#include "stack/include/btm_api_types.h"
+#include "stack/include/port_api.h"
+#include "types/bluetooth/uuid.h"
+#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 

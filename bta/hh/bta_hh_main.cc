@@ -22,15 +22,14 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include <string.h>  // memset
+#include <cstdint>
+
+#include "bt_target.h"  // Must be first to define build configuration
 
 #if (BTA_HH_INCLUDED == TRUE)
 
-#include <string.h>
-
-#include "bt_common.h"
-#include "bta_hh_api.h"
-#include "bta_hh_int.h"
+#include "bta/hh/bta_hh_int.h"
 
 /*****************************************************************************
  * Global data

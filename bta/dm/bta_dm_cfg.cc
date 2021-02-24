@@ -23,14 +23,16 @@
  *
  ******************************************************************************/
 
-#include <stddef.h>
+#include <cstdint>
 
-#include "bt_target.h"
-#include "bta_api.h"
-#include "bta_dm_int.h"
-#include "bta_hh_api.h"
-#include "bta_jv_api.h"
-#include "bta_sys.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/dm/bta_dm_int.h"
+#include "bta/include/bta_api.h"
+#include "bta/include/bta_hh_api.h"
+#include "bta/include/bta_jv_api.h"
+#include "bta/sys/bta_sys.h"
+#include "types/raw_address.h"
 
 /* page timeout in 625uS */
 #ifndef BTA_DM_PAGE_TIMEOUT

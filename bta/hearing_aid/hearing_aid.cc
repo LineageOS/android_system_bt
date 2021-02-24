@@ -18,23 +18,29 @@
 
 #include "bta_hearing_aid_api.h"
 
-#include "bta_gatt_api.h"
-#include "bta_gatt_queue.h"
-#include "btm_api.h"
-#include "device/include/controller.h"
-#include "embdrv/g722/g722_enc_dec.h"
-#include "gap_api.h"
-#include "gatt_api.h"
-#include "osi/include/properties.h"
-#include "stack/btm/btm_sec.h"
-#include "stack/include/acl_api.h"
-#include "types/bt_transport.h"
+#define LOG_TAG "bluetooth"
 
 #include <base/bind.h>
-#include <base/logging.h>
-#include <base/strings/string_number_conversions.h>
-#include <hardware/bt_hearing_aid.h>
+#include <base/callback.h>
+#include <base/strings/string_number_conversions.h>  // HexEncode
+#include <cstdint>
 #include <vector>
+
+#include "bta/include/bta_gatt_api.h"
+#include "bta/include/bta_gatt_queue.h"
+#include "bta/include/bta_hearing_aid_api.h"
+#include "device/include/controller.h"
+#include "embdrv/g722/g722_enc_dec.h"
+#include "osi/include/log.h"
+#include "osi/include/properties.h"
+#include "stack/btm/btm_sec.h"
+#include "stack/include/acl_api.h"        // BTM_ReadRSSI
+#include "stack/include/acl_api_types.h"  // tBTM_RSSI_RESULT
+#include "stack/include/gap_api.h"
+#include "stack/include/l2c_api.h"  // L2CAP_MIN_OFFSET
+#include "types/bluetooth/uuid.h"
+#include "types/bt_transport.h"
+#include "types/raw_address.h"
 
 using base::Closure;
 using bluetooth::Uuid;

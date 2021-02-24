@@ -28,47 +28,34 @@
 
 #define LOG_TAG "bt_btif_core"
 
+#include <signal.h>
+#include <sys/types.h>
+
 #include <base/at_exit.h>
 #include <base/bind.h>
-#include <base/run_loop.h>
 #include <base/threading/platform_thread.h>
-#include <base/threading/thread.h>
-#include <ctype.h>
-#include <dirent.h>
-#include <fcntl.h>
-#include <hardware/bluetooth.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <cstdint>
 
-#include "abstract_message_loop.h"
-#include "bt_common.h"
-#include "bt_utils.h"
-#include "bta_api.h"
-#include "bte.h"
-#include "btif_api.h"
-#include "btif_av.h"
-#include "btif_config.h"
-#include "btif_pan.h"
-#include "btif_profile_queue.h"
-#include "btif_sock.h"
-#include "btif_storage.h"
-#include "btif_uid.h"
-#include "btif_util.h"
-#include "btu.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "btif/include/btif_av.h"
+#include "btif/include/btif_common.h"
+#include "btif/include/btif_config.h"
+#include "btif/include/btif_dm.h"
+#include "btif/include/btif_pan.h"
+#include "btif/include/btif_profile_queue.h"
+#include "btif/include/btif_sock.h"
+#include "btif/include/btif_storage.h"
+#include "btif/include/stack_manager.h"
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
-#include "osi/include/fixed_queue.h"
 #include "osi/include/future.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/include/a2dp_api.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_ble_api.h"
-#include "stack_manager.h"
+#include "types/bluetooth/uuid.h"
 
 using base::PlatformThread;
 using bluetooth::Uuid;
