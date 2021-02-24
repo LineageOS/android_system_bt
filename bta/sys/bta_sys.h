@@ -24,13 +24,13 @@
 #ifndef BTA_SYS_H
 #define BTA_SYS_H
 
-#include "bt_common.h"
-#include "bt_target.h"
+#include <base/time/time.h>
+#include <cstdint>
+
+#include "bt_target.h"  // Must be first to define build configuration
+
 #include "osi/include/alarm.h"
 #include "stack/include/hci_error_code.h"
-
-#include <base/logging.h>
-#include <base/threading/thread.h>
 
 /*****************************************************************************
  *  Constants and data types

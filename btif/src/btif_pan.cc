@@ -27,44 +27,28 @@
 
 #define LOG_TAG "bt_btif_pan"
 
+#include <arpa/inet.h>
 #include <base/bind.h>
-#include <base/logging.h>
-#include <ctype.h>
-#include <errno.h>
+#include <base/location.h>
 #include <fcntl.h>
 #include <linux/if_ether.h>
 #include <linux/if_tun.h>
-#include <linux/sockios.h>
 #include <net/if.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/ioctl.h>
 #include <sys/poll.h>
-#include <sys/prctl.h>
-#include <sys/select.h>
-#include <sys/socket.h>
-#include <sys/wait.h>
 #include <unistd.h>
 
-#include <hardware/bluetooth.h>
-#include <hardware/bt_pan.h>
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "bt_common.h"
-#include "bta_api.h"
-#include "bta_pan_api.h"
-#include "btif_common.h"
-#include "btif_pan_internal.h"
-#include "btif_sock_thread.h"
-#include "btif_sock_util.h"
-#include "btif_util.h"
-#include "btm_api.h"
+#include "bta/include/bta_pan_api.h"
+#include "btif/include/btif_common.h"
+#include "btif/include/btif_pan_internal.h"
+#include "btif/include/btif_sock_thread.h"
 #include "device/include/controller.h"
+#include "include/hardware/bt_pan.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
-#include "stack/include/btu.h"
+#include "stack/include/btu.h"  // do_in_main_thread
 #include "stack/include/pan_api.h"
 
 #define FORWARD_IGNORE 1

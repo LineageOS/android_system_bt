@@ -22,15 +22,6 @@
  *
  ******************************************************************************/
 
-#include <stdlib.h>
-
-#include "bta_api.h"
-#include "bta_sdp_api.h"
-#include "bta_sdp_int.h"
-#include "bta_sys.h"
-
-/*****************************************************************************
- * Constants and types
- ****************************************************************************/
+#include "bta/sdp/bta_sdp_int.h"
 
 tBTA_SDP_CB bta_sdp_cb;

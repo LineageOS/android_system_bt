@@ -20,17 +20,16 @@
  *  This file contains action functions for SDP search.
  ******************************************************************************/
 
-#include <hardware/bluetooth.h>
 #include <hardware/bt_sdp.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bt_types.h"
-#include "bta_sdp_api.h"
-#include "bta_sdp_int.h"
-#include "bta_sys.h"
-#include "btif_sock_sdp.h"
+#include "bta/include/bta_sdp_api.h"
+#include "bta/sdp/bta_sdp_int.h"
+#include "btif/include/btif_sock_sdp.h"
 #include "osi/include/allocator.h"
-#include "sdp_api.h"
+#include "stack/include/sdp_api.h"
+#include "types/bluetooth/uuid.h"
+#include "types/raw_address.h"
 
 static void bta_create_mns_sdp_record(bluetooth_sdp_record* record,
                                       tSDP_DISC_REC* p_rec) {

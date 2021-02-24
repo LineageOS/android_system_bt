@@ -23,12 +23,11 @@
  *
  ******************************************************************************/
 
-#include <stddef.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bta_api.h"
-#include "bta_av_int.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/include/bta_av_api.h"
 #include "stack/include/avrc_api.h"
 
 #ifndef BTA_AV_RC_COMP_ID
@@ -117,13 +116,13 @@ const uint8_t bta_av_meta_caps_evt_ids_avrcp13[] = {
 #endif /* BTA_AVK_NUM_RC_EVT_IDS_AVRCP13 */
 
 /* This configuration to be used when we are Src + TG + CT( only for abs vol) */
-const tBTA_AV_CFG bta_av_cfg = {
-    BTA_AV_RC_COMP_ID,     /* AVRCP Company ID */
-    BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
-    BTA_AV_RC_SUPF_TG,     /* AVRCP target categories */
-    6,                     /* AVDTP audio channel max data queue size */
-    false, /* true, to accept AVRC 1.3 group nevigation command */
-    2,     /* company id count in p_meta_co_ids */
+extern const tBTA_AV_CFG bta_av_cfg = {
+    BTA_AV_RC_COMP_ID, /* AVRCP Company ID */
+    BTA_AV_RC_SUPF_CT, /* AVRCP controller categories */
+    BTA_AV_RC_SUPF_TG, /* AVRCP target categories */
+    6,                 /* AVDTP audio channel max data queue size */
+    false,             /* true, to accept AVRC 1.3 group nevigation command */
+    2,                 /* company id count in p_meta_co_ids */
     BTA_AV_NUM_RC_EVT_IDS,    /* event id count in p_meta_evt_ids */
     BTA_AV_RC_PASS_RSP_CODE,  /* the default response code for pass
                                  through commands */
@@ -137,13 +136,13 @@ const tBTA_AV_CFG bta_av_cfg = {
 
 /* This configuration to be used when we are Sink + CT + TG( only for abs vol)
  */
-const tBTA_AV_CFG bta_avk_cfg = {
-    AVRC_CO_METADATA,      /* AVRCP Company ID */
-    BTA_AVK_RC_SUPF_CT,    /* AVRCP controller categories */
-    BTA_AVK_RC_SUPF_TG,    /* AVRCP target categories */
-    6,                     /* AVDTP audio channel max data queue size */
-    false, /* true, to accept AVRC 1.3 group nevigation command */
-    2,     /* company id count in p_meta_co_ids */
+extern const tBTA_AV_CFG bta_avk_cfg = {
+    AVRC_CO_METADATA,   /* AVRCP Company ID */
+    BTA_AVK_RC_SUPF_CT, /* AVRCP controller categories */
+    BTA_AVK_RC_SUPF_TG, /* AVRCP target categories */
+    6,                  /* AVDTP audio channel max data queue size */
+    false,              /* true, to accept AVRC 1.3 group nevigation command */
+    2,                  /* company id count in p_meta_co_ids */
     BTA_AVK_NUM_RC_EVT_IDS,    /* event id count in p_meta_evt_ids */
     BTA_AV_RC_PASS_RSP_CODE,   /* the default response code for pass
                                   through commands */
@@ -156,13 +155,13 @@ const tBTA_AV_CFG bta_avk_cfg = {
 };
 
 /* This configuration to be used when we are using AVRCP1.3 */
-const tBTA_AV_CFG bta_av_cfg_compatibility = {
-    BTA_AV_RC_COMP_ID,     /* AVRCP Company ID */
-    BTA_AV_RC_SUPF_CT,     /* AVRCP controller categories */
-    AVRC_SUPF_TG_CAT1,     /* Only support CAT1 for AVRCP1.3 */
-    6,                     /* AVDTP audio channel max data queue size */
-    false, /* true, to accept AVRC 1.3 group nevigation command */
-    2,     /* company id count in p_meta_co_ids */
+extern const tBTA_AV_CFG bta_av_cfg_compatibility = {
+    BTA_AV_RC_COMP_ID, /* AVRCP Company ID */
+    BTA_AV_RC_SUPF_CT, /* AVRCP controller categories */
+    AVRC_SUPF_TG_CAT1, /* Only support CAT1 for AVRCP1.3 */
+    6,                 /* AVDTP audio channel max data queue size */
+    false,             /* true, to accept AVRC 1.3 group nevigation command */
+    2,                 /* company id count in p_meta_co_ids */
     BTA_AV_NUM_RC_EVT_IDS_AVRCP13,    /* event id count for AVRCP1.3 */
     BTA_AV_RC_PASS_RSP_CODE,          /* the default response code for pass
                                          through commands */
@@ -171,8 +170,8 @@ const tBTA_AV_CFG bta_av_cfg_compatibility = {
     bta_av_meta_caps_evt_ids_avrcp13, /* the the metadata Get Capabilities
                                          response for event id, compatible
                                          with AVRCP1.3 */
-    BTA_AV_RC_CT_NAME, /* Default AVRCP controller name */
-    BTA_AV_RC_TG_NAME  /* Default AVRCP target name */
+    BTA_AV_RC_CT_NAME,                /* Default AVRCP controller name */
+    BTA_AV_RC_TG_NAME                 /* Default AVRCP target name */
 };
 
 const tBTA_AV_CFG* p_bta_av_cfg = NULL;

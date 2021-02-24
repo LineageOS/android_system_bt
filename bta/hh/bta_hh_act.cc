@@ -24,21 +24,21 @@
 
 #define LOG_TAG "bluetooth"
 
-#include "bt_target.h"
-
+// BTA_HH_INCLUDED
+#include "bt_target.h"  // Must be first to define build configuration
 #if (BTA_HH_INCLUDED == TRUE)
 
-#include <string.h>
+#include <cstdint>
+#include <string>
 
+#include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_hh_api.h"
-#include "bta_hh_co.h"
-#include "bta_hh_int.h"
-#include "bta_sys.h"
-#include "btm_api.h"
-#include "l2c_api.h"
-#include "osi/include/osi.h"
+#include "bta/include/bta_hh_co.h"
+#include "bta/sys/bta_sys.h"
+#include "osi/include/log.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/hidh_api.h"
-#include "utl.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

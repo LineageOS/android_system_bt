@@ -23,18 +23,13 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-#include "bt_utils.h"
-#include "bta_api.h"
-#include "bta_dm_api.h"
-#include "bta_hf_client_api.h"
-#include "bta_hf_client_int.h"
-#include "bta_sys.h"
-#include "l2c_api.h"
-#include "osi/include/compat.h"
-#include "osi/include/osi.h"
-#include "port_api.h"
-#include "utl.h"
+#include "bt_trace.h"  // Legacy trace logging
+
+#include "bta/hf_client/bta_hf_client_int.h"
+#include "bta/include/bta_dm_api.h"
+#include "stack/include/l2c_api.h"
+#include "stack/include/port_api.h"
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants

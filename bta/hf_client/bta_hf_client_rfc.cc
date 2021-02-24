@@ -24,15 +24,13 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bt_utils.h"
-#include "bta_api.h"
-#include "bta_hf_client_int.h"
-#include "osi/include/osi.h"
-#include "port_api.h"
-#include "stack/btm/btm_sec.h"
+#include "bta/hf_client/bta_hf_client_int.h"
+#include "osi/include/allocator.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "stack/include/port_api.h"
+#include "stack/include/sdp_api.h"
 
 /*******************************************************************************
  *
