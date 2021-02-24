@@ -24,19 +24,19 @@
  *
  ******************************************************************************/
 
-#include <string.h>
-#include <base/logging.h>
+#include <cstdint>
 
-#include "bt_utils.h"
-#include "bta_api.h"
-#include "bta_hf_client_api.h"
-#include "bta_hf_client_int.h"
-#include "bta_sys.h"
-#include "osi/include/osi.h"
+#include "bta/hf_client/bta_hf_client_int.h"
+#include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_hf_client_api.h"
+#include "bta/sys/bta_sys.h"
+#include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/port_api.h"
+#include "stack/include/sdpdefs.h"
+#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 

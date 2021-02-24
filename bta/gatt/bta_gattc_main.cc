@@ -22,12 +22,11 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include <base/strings/stringprintf.h>
 
-#include <string.h>
+#include "bt_target.h"  // Must be first to define build configuration"
 
-#include "bt_common.h"
-#include "bta_gattc_int.h"
+#include "bta/gatt/bta_gattc_int.h"
 
 using base::StringPrintf;
 

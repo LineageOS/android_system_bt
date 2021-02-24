@@ -22,19 +22,18 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-
-#include <string.h>
-
 #include <base/bind.h>
-#include <base/bind_helpers.h>
-#include <base/callback.h>
-#include "bt_common.h"
-#include "bta_gatt_api.h"
-#include "bta_gattc_int.h"
-#include "bta_sys.h"
+#include <ios>
+#include <list>
+#include <memory>
+#include <vector>
+
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/gatt/bta_gattc_int.h"
 #include "device/include/controller.h"
-#include "stack/include/btu.h"
+#include "stack/include/btu.h"  // do_in_main_thread
+#include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 
 using bluetooth::Uuid;

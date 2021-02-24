@@ -24,26 +24,21 @@
 
 #define LOG_TAG "bt_bta_av"
 
-#include <base/logging.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bt_target.h"
-#include "main/shim/dumpsys.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "osi/include/properties.h"
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "avrcp_service.h"
-#include "bta_av_co.h"
-#include "bta_av_int.h"
+#include "bta/av/bta_av_int.h"
+#include "bta/include/bta_ar_api.h"
+#include "bta/include/utl.h"
+#include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_av_co.h"
 #include "btif/include/btif_config.h"
-#include "l2c_api.h"
-#include "l2cdefs.h"
+#include "main/shim/dumpsys.h"
+#include "osi/include/log.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
-#include "utl.h"
-
-#include "bta_ar_api.h"
 
 /*****************************************************************************
  * Constants and types

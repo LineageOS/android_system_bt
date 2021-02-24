@@ -24,6 +24,9 @@
 #ifndef BTA_SYS_INT_H
 #define BTA_SYS_INT_H
 
+#include <cstdint>
+#include "bta/sys/bta_sys.h"
+
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/

@@ -23,14 +23,13 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include <cstdint>
 
+// BTA_HD_INCLUDED
+#include "bt_target.h"  // Must be first to define build configuration
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
-#include <string.h>
-
-#include "bta_hd_api.h"
-#include "bta_hd_int.h"
+#include "bta/hd/bta_hd_int.h"
 
 /*****************************************************************************
  * Constants and types

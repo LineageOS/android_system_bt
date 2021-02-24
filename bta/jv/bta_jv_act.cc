@@ -21,33 +21,25 @@
  *  This file contains action functions for BTA JV APIs.
  *
  ******************************************************************************/
-#include <arpa/inet.h>
-#include <bluetooth/uuid.h>
-#include <hardware/bluetooth.h>
-#include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
+
+#define LOG_TAG "bluetooth"
+
+#include <cstdint>
 #include <unordered_set>
 
-#include "avct_api.h"
-#include "avdt_api.h"
-#include "bt_common.h"
-#include "bt_types.h"
-#include "bta_api.h"
-#include "bta_jv_api.h"
-#include "bta_jv_co.h"
-#include "bta_jv_int.h"
-#include "bta_sys.h"
-#include "btm_api.h"
-#include "gap_api.h"
-#include "l2c_api.h"
-#include "osi/include/allocator.h"
-#include "port_api.h"
-#include "rfcdefs.h"
-#include "sdp_api.h"
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "osi/include/osi.h"
+#include "bta/include/bta_jv_co.h"
+#include "bta/jv/bta_jv_int.h"
+#include "bta/sys/bta_sys.h"
+#include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
+#include "stack/include/avct_api.h"  // AVCT_PSM
+#include "stack/include/avdt_api.h"  // AVDT_PSM
+#include "stack/include/gap_api.h"
+#include "stack/include/port_api.h"
+#include "types/bluetooth/uuid.h"
+#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 
