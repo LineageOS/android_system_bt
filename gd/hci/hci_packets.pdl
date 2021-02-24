@@ -1314,8 +1314,8 @@ packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (op_code = ENHA
   // Next two items
   // [0x00000000, 0xFFFFFFFE] Bandwidth in octets per second.
   // [0xFFFFFFFF]: Don't care
-  transmit_bandwidth : 32,
-  receive_bandwidth : 32,
+  transmit_bandwidth_octets_per_second : 32,
+  receive_bandwidth_octets_per_second : 32,
   transmit_coding_format : ScoCodingFormat,
   receive_coding_format : ScoCodingFormat,
   // Next two items
@@ -1325,8 +1325,8 @@ packet EnhancedSetupSynchronousConnection : ScoConnectionCommand (op_code = ENHA
   receive_codec_frame_size : 16,
   // Next two items
   // Host to Controller nominal data rate in octets per second.
-  input_bandwidth : 32,
-  output_bandwidth : 32,
+  input_bandwidth_octets_per_second : 32,
+  output_bandwidth_octets_per_second : 32,
   input_coding_format : ScoCodingFormat,
   output_coding_format : ScoCodingFormat,
   // Next two items
