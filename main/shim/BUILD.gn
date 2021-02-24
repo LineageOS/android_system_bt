@@ -1,0 +1,64 @@
+#
+#  Copyright 2021 Google, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+source_set("shim") {
+  sources = [
+    "acl.cc",
+    "acl_api.cc",
+    "acl_legacy_interface.cc",
+    "btm.cc",
+    "btm_api.cc",
+    "config.cc",
+    "controller.cc",
+    "dumpsys.cc",
+    "entry.cc",
+    "hci_layer.cc",
+    "l2c_api.cc",
+    "le_advertising_manager.cc",
+    "le_scanning_manager.cc",
+    "link_policy.cc",
+    "shim.cc",
+    "stack.cc",
+  ]
+
+  include_dirs = [
+    "//bt",
+    "//bt/btif/include",
+    "//bt/gd",
+    "//bt/gd/rust/shim",
+    "//bt/internal_include",
+    "//bt/stack/include",
+    "//bt/types",
+  ]
+
+  deps = [
+    "//bt/gd:dumpsys",
+    "//bt/gd/common:BluetoothCommonSources",
+    "//bt/gd/dumpsys/bundler:bundler_generated",
+    "//bt/gd/hci:BluetoothHciSources",
+    "//bt/gd/os:BluetoothOsSources_linux_generic",
+    "//bt/gd/packet:BluetoothPacketSources",
+    "//bt/gd/rust/shim:hci_bridge_header",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/gd/rust/shim:shim_bridge_header",
+    "//bt/gd/rust/shim:message_loop_thread_bridge_header",
+    "//bt/gd/rust/shim:controller_bridge_header",
+    "//bt/osi",
+    "//bt/stack",
+    "//bt/types",
+  ]
+
+  configs += [ "//bt:target_defaults" ]
+}

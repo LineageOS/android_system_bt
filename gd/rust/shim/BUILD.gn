@@ -16,14 +16,33 @@
 
 import("//common-mk/cxxbridge.gni")
 
+config("rust_shim_config") {
+  include_dirs = [
+    "//bt/gd/rust/shim"
+  ]
+}
+
 cxxbridge_header("shim_bridge_header") {
   sources = [ "src/stack.rs" ]
+  all_dependent_configs = [ ":rust_shim_config" ]
 }
 
 cxxbridge_header("init_flags_bridge_header") {
   sources = [ "src/init_flags.rs" ]
+  all_dependent_configs = [ ":rust_shim_config" ]
 }
 
 cxxbridge_header("hci_bridge_header") {
   sources = [ "src/hci.rs" ]
+  all_dependent_configs = [ ":rust_shim_config" ]
+}
+
+cxxbridge_header("message_loop_thread_bridge_header") {
+  sources = [ "src/message_loop_thread.rs" ]
+  all_dependent_configs = [ ":rust_shim_config" ]
+}
+
+cxxbridge_header("controller_bridge_header") {
+  sources = [ "src/controller.rs" ]
+  all_dependent_configs = [ ":rust_shim_config" ]
 }

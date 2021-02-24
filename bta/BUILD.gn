@@ -117,7 +117,9 @@ static_library("bta") {
   ]
 
   deps = [
+    "//bt/gd/rust/shim:hci_bridge_header",
     "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/gd/rust/shim:message_loop_thread_bridge_header",
   ]
 }
 
