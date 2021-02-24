@@ -55,6 +55,6 @@ interface IBluetoothA2dp {
     oneway void setOptionalCodecsEnabled(in BluetoothDevice device, int value);
     int getDynamicBufferSupport();
     BufferConstraints getBufferConstraints();
-    boolean setBufferMillis(int codec, int size);
+    boolean setBufferLengthMillis(int codec, int size);
     int getPriority(in BluetoothDevice device);
 }
