@@ -24,6 +24,8 @@ using std::vector;
 namespace test_vendor_lib {
 
 bool CarKit::registered_ = DeviceBoutique::Register("car_kit", &CarKit::Create);
+const std::string kCarKitPropertiesFile =
+    "/etc/bluetooth/car_kit_controller_properties.json";
 
 CarKit::CarKit() : Device(kCarKitPropertiesFile) {
   advertising_interval_ms_ = std::chrono::milliseconds(0);
