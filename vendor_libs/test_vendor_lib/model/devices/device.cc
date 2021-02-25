@@ -18,8 +18,6 @@
 
 #include "device.h"
 
-using std::vector;
-
 namespace test_vendor_lib {
 
 std::string Device::ToString() const {
