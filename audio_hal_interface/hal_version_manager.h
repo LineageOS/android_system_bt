@@ -47,27 +47,41 @@ class HalVersionManager {
  public:
   static BluetoothAudioHalVersion GetHalVersion() {
     std::lock_guard<std::mutex> guard(instance_ptr->mutex_);
-    if (instance_ptr->providersFactory_2_1) {
-      return BluetoothAudioHalVersion::VERSION_2_1;
-    } else if (instance_ptr->providersFactory) {
-      return BluetoothAudioHalVersion::VERSION_2_0;
-    }
-    return BluetoothAudioHalVersion::VERSION_UNAVAILABLE;
+    return instance_ptr->hal_version_;
   }
 
   static android::sp<IBluetoothAudioProvidersFactory_2_1>
-  GetProviderFactory_2_1() {
+  GetProvidersFactory_2_1() {
     std::lock_guard<std::mutex> guard(instance_ptr->mutex_);
-    return instance_ptr->providersFactory_2_1;
+    if (instance_ptr->hal_version_ != BluetoothAudioHalVersion::VERSION_2_1) {
+      return nullptr;
+    }
+    android::sp<IBluetoothAudioProvidersFactory_2_1> providers_factory =
+        IBluetoothAudioProvidersFactory_2_1::getService();
+    CHECK(providers_factory)
+        << "V2_1::IBluetoothAudioProvidersFactory::getService() failed";
+
+    LOG(INFO) << "V2_1::IBluetoothAudioProvidersFactory::getService() returned "
+              << providers_factory.get()
+              << (providers_factory->isRemote() ? " (remote)" : " (local)");
+    return providers_factory;
   }
 
   static android::sp<IBluetoothAudioProvidersFactory_2_0>
-  GetProviderFactory_2_0() {
+  GetProvidersFactory_2_0() {
     std::lock_guard<std::mutex> guard(instance_ptr->mutex_);
-    if (instance_ptr->providersFactory_2_1)
-      return instance_ptr->providersFactory_2_1;
+    if (instance_ptr->hal_version_ == BluetoothAudioHalVersion::VERSION_2_1) {
+      return instance_ptr->GetProvidersFactory_2_1();
+    }
+    android::sp<IBluetoothAudioProvidersFactory_2_0> providers_factory =
+        IBluetoothAudioProvidersFactory_2_0::getService();
+    CHECK(providers_factory)
+        << "V2_0::IBluetoothAudioProvidersFactory::getService() failed";
 
-    return instance_ptr->providersFactory;
+    LOG(INFO) << "V2_0::IBluetoothAudioProvidersFactory::getService() returned "
+              << providers_factory.get()
+              << (providers_factory->isRemote() ? " (remote)" : " (local)");
+    return providers_factory;
   }
 
   HalVersionManager() {
@@ -88,14 +102,7 @@ class HalVersionManager {
     }
 
     if (instance_count > 0) {
-      providersFactory_2_1 = IBluetoothAudioProvidersFactory_2_1::getService();
-      CHECK(providersFactory_2_1)
-          << "V2_1::IBluetoothAudioProvidersFactory::getService() failed";
-
-      LOG(INFO)
-          << "V2_1::IBluetoothAudioProvidersFactory::getService() returned "
-          << providersFactory_2_1.get()
-          << (providersFactory_2_1->isRemote() ? " (remote)" : " (local)");
+      hal_version_ = BluetoothAudioHalVersion::VERSION_2_1;
       return;
     }
 
@@ -108,26 +115,19 @@ class HalVersionManager {
     }
 
     if (instance_count > 0) {
-      providersFactory = IBluetoothAudioProvidersFactory_2_0::getService();
-      CHECK(providersFactory)
-          << "V2_0::IBluetoothAudioProvidersFactory::getService() failed";
-
-      LOG(INFO)
-          << "V2_0::IBluetoothAudioProvidersFactory::getService() returned "
-          << providersFactory.get()
-          << (providersFactory->isRemote() ? " (remote)" : " (local)");
+      hal_version_ = BluetoothAudioHalVersion::VERSION_2_0;
       return;
     }
 
-    LOG(INFO) << __func__ << " No supported HAL version";
+    hal_version_ = BluetoothAudioHalVersion::VERSION_UNAVAILABLE;
+    LOG(ERROR) << __func__ << " No supported HAL version";
   }
 
  private:
   static std::unique_ptr<HalVersionManager> instance_ptr;
   std::mutex mutex_;
 
-  android::sp<IBluetoothAudioProvidersFactory_2_0> providersFactory;
-  android::sp<IBluetoothAudioProvidersFactory_2_1> providersFactory_2_1;
+  BluetoothAudioHalVersion hal_version_;
 };
 
 }  // namespace audio

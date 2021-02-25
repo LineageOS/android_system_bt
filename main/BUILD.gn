@@ -69,6 +69,7 @@ shared_library("bluetooth") {
     "//bt/gd/common:BluetoothCommonSources",
     "//bt/hci",
     "//bt/osi",
+    "//bt/main/shim",
     "//bt/packet",
     "//bt/stack",
     "//bt/udrv",

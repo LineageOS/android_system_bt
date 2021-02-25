@@ -123,6 +123,7 @@ fluoride_defaults {
         android: {
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
                 "libhidlbase",
                 "libutils",
                 "libcutils",
