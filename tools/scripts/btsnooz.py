@@ -125,16 +125,16 @@ def decode_snooz_v2(decompressed, last_timestamp_ms):
     first_timestamp_ms = last_timestamp_ms + 0x00dcddb30f2f8000
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHQb', decompressed, offset)
-        offset += 13 + length - 1
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
+        offset += 9 + length - 1
         first_timestamp_ms -= delta_time_ms
 
     # Second pass does the actual writing out to stdout.
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHQb', decompressed, offset)
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
         first_timestamp_ms += delta_time_ms
-        offset += 13
+        offset += 9
         sys.stdout.write(struct.pack('>II', packet_length, length))
         sys.stdout.write(struct.pack('>II', type_to_direction(snooz_type), 0))
         sys.stdout.write(struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))

@@ -90,6 +90,7 @@ config("target_defaults") {
     "-Wno-unused-result",
     "-Wno-unused-variable",
     "-Wno-unused-const-variable",
+    "-Wno-format",
   ]
 
   cflags_cc = [
