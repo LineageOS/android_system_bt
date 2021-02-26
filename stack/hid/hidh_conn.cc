@@ -61,12 +61,18 @@ static void hidh_l2cif_cong_ind(uint16_t l2cap_cid, bool congested);
 static void hidh_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
 
 static const tL2CAP_APPL_INFO hst_reg_info = {
-    hidh_l2cif_connect_ind,    hidh_l2cif_connect_cfm,
-    hidh_l2cif_config_ind,     hidh_l2cif_config_cfm,
-    hidh_l2cif_disconnect_ind, hidh_l2cif_data_ind,
-    hidh_l2cif_cong_ind,       NULL,
-    hidh_on_l2cap_error,       NULL,
-    NULL,                      NULL
+    .pL2CA_ConnectInd_Cb = hidh_l2cif_connect_ind,
+    .pL2CA_ConnectCfm_Cb = hidh_l2cif_connect_cfm,
+    .pL2CA_ConfigInd_Cb = hidh_l2cif_config_ind,
+    .pL2CA_ConfigCfm_Cb = hidh_l2cif_config_cfm,
+    .pL2CA_DisconnectInd_Cb = hidh_l2cif_disconnect_ind,
+    .pL2CA_DataInd_Cb = hidh_l2cif_data_ind,
+    .pL2CA_CongestionStatus_Cb = hidh_l2cif_cong_ind,
+    .pL2CA_TxComplete_Cb = nullptr,
+    .pL2CA_Error_Cb = hidh_on_l2cap_error,
+    .pL2CA_CreditBasedConnectInd_Cb = nullptr,
+    .pL2CA_CreditBasedConnectCfm_Cb = nullptr,
+    .pL2CA_CreditBasedReconfigCompleted_Cb = nullptr,
 };
 static void hidh_try_repage(uint8_t dhandle);
 
