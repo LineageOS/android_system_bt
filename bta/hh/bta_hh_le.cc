@@ -1667,13 +1667,16 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb) {
-  if (p_cb->conn_id != GATT_INVALID_CONN_ID) {
-    BtaGattQueue::Clean(p_cb->conn_id);
-    BTA_GATTC_Close(p_cb->conn_id);
-    /* remove device from background connection if intended to disconnect,
-       do not allow reconnection */
-    bta_hh_le_remove_dev_bg_conn(p_cb);
+  if (p_cb->conn_id == GATT_INVALID_CONN_ID) {
+    LOG_ERROR("Tried to disconnect HID device with invalid id");
+    return;
   }
+
+  BtaGattQueue::Clean(p_cb->conn_id);
+  BTA_GATTC_Close(p_cb->conn_id);
+  /* remove device from background connection if intended to disconnect,
+     do not allow reconnection */
+  bta_hh_le_remove_dev_bg_conn(p_cb);
 }
 
 /*******************************************************************************
