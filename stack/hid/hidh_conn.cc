@@ -129,8 +129,6 @@ tHID_STATUS hidh_conn_reg(void) {
 tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
   tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
 
-  HIDH_TRACE_EVENT("HID-Host disconnect");
-
   if ((p_hcon->ctrl_cid != 0) || (p_hcon->intr_cid != 0)) {
     p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
 
@@ -146,8 +144,7 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
   } else {
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
   }
-
-  return (HID_SUCCESS);
+  return HID_SUCCESS;
 }
 
 /*******************************************************************************
