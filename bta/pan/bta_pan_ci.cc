@@ -224,6 +224,7 @@ void bta_pan_ci_set_pfilters(uint16_t handle, uint16_t num_filters,
   PAN_SetProtocolFilters(handle, num_filters, p_start_array, p_end_array);
 }
 #else
+#include "osi/include/osi.h"  // UNUSED_ATTR
 
 void bta_pan_ci_tx_ready(UNUSED_ATTR uint16_t handle) {}
 
