@@ -32,7 +32,6 @@
 #include "eatt.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
-#include "log/log.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 

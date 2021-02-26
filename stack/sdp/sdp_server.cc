@@ -23,7 +23,6 @@
  *
  ******************************************************************************/
 
-#include <log/log.h>
 #include <string.h>
 
 #include "bt_common.h"
@@ -31,6 +30,7 @@
 
 #include "avrc_defs.h"
 #include "device/include/interop.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "sdp_api.h"
 #include "sdpint.h"
