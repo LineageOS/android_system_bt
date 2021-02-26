@@ -171,6 +171,16 @@ cc_binary_host {
         address: true,
         all_undefined: true,
     },
+    target: {
+        // TODO(b/181290178) remove it when sanitize option is supported by linux_bionic as well
+        linux_bionic: {
+            sanitize: {
+                address: false,
+                cfi: false,
+                all_undefined: false,
+            },
+        },
+    },
 }
 
 genrule {
