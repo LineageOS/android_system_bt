@@ -27,6 +27,7 @@
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hh_co.h"
 #include "device/include/interop.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
@@ -2013,6 +2014,8 @@ uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb,
  ******************************************************************************/
 void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
   if (p_dev_cb->in_bg_conn) {
+    LOG_DEBUG("Removing from background connection device:%s",
+              PRIVATE_ADDRESS(p_dev_cb->addr));
     p_dev_cb->in_bg_conn = false;
 
     BTA_GATTC_CancelOpen(bta_hh_cb.gatt_if, p_dev_cb->addr, false);
