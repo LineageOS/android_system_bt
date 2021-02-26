@@ -1792,6 +1792,14 @@ void DualModeController::LeConnectionCancel(CommandView command) {
   ErrorCode status = link_layer_controller_.SetLeConnect(false);
   send_event_(bluetooth::hci::LeCreateConnectionCancelCompleteBuilder::Create(
       kNumCommandPackets, status));
+
+  send_event_(bluetooth::hci::LeConnectionCompleteBuilder::Create(
+      ErrorCode::UNKNOWN_CONNECTION, kReservedHandle,
+      bluetooth::hci::Role::CENTRAL,
+      bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS,
+      bluetooth::hci::Address(), 1 /* connection_interval */,
+      2 /* connection_latency */, 3 /* supervision_timeout*/,
+      static_cast<bluetooth::hci::ClockAccuracy>(0x00)));
 }
 
 void DualModeController::LeReadConnectListSize(CommandView command) {
