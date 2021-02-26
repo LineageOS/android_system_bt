@@ -34,6 +34,7 @@
 #include "btif/include/btif_storage.h"
 #include "btif/include/btif_util.h"
 #include "include/hardware/bt_hh.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 #include "stack/include/hidh_api.h"
@@ -622,14 +623,17 @@ bt_status_t btif_hh_connect(const RawAddress* bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-
 void btif_hh_disconnect(RawAddress* bd_addr) {
-  btif_hh_device_t* p_dev;
-  p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
-  if (p_dev != NULL) {
-    BTA_HhClose(p_dev->dev_handle);
-  } else
-    BTIF_TRACE_DEBUG("%s-- Error: device not connected:", __func__);
+  CHECK(bd_addr != nullptr);
+  const btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
+  if (p_dev == nullptr) {
+    LOG_DEBUG("Unable to disconnect unknown HID device:%s",
+              PRIVATE_ADDRESS((*bd_addr)));
+    return;
+  }
+  LOG_DEBUG("Disconnect and close request for HID device:%s",
+            PRIVATE_ADDRESS((*bd_addr)));
+  BTA_HhClose(p_dev->dev_handle);
 }
 
 /*******************************************************************************
