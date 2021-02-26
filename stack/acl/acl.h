@@ -112,8 +112,6 @@ inline std::string power_mode_state_text(tBTM_PM_STATE state) {
   }
 }
 
-struct sACL_CONN;
-
 namespace bluetooth {
 namespace shim {
 tBTM_STATUS BTM_SetPowerMode(uint16_t handle, const tBTM_PM_PWR_MD& new_mode);
@@ -169,7 +167,7 @@ struct tBTM_PM_MCB {
   uint16_t handle_;
 };
 
-struct sACL_CONN {
+struct tACL_CONN {
   BD_FEATURES peer_le_features;
   bool peer_le_features_valid;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
@@ -330,8 +328,8 @@ struct sACL_CONN {
                                                          uint16_t handle,
                                                          tHCI_MODE hci_mode,
                                                          uint16_t interval);
-      friend void sACL_CONN::Reset();
-      friend tBTM_PM_MODE sACL_CONN::sPolicy::Mode() const;
+      friend void tACL_CONN::Reset();
+      friend tBTM_PM_MODE tACL_CONN::sPolicy::Mode() const;
     } mode;
 
     hci_role_t Role() const;
@@ -341,8 +339,8 @@ struct sACL_CONN {
      private:
       hci_role_t role_{HCI_ROLE_CENTRAL};
       unsigned role_switch_failed_cnt_{0};
-      friend void sACL_CONN::Reset();
-      friend tBTM_PM_MODE sACL_CONN::sPolicy::Role() const;
+      friend void tACL_CONN::Reset();
+      friend tBTM_PM_MODE tACL_CONN::sPolicy::Role() const;
     } role;
 
     struct {
@@ -358,18 +356,17 @@ struct sACL_CONN {
           tHCI_STATUS status, uint16_t handle,
           uint16_t maximum_transmit_latency, uint16_t maximum_receive_latency,
           uint16_t minimum_remote_timeout, uint16_t minimum_local_timeout);
-      friend void sACL_CONN::Reset();
+      friend void tACL_CONN::Reset();
     } sniff_subrating;
 
     tLINK_POLICY Settings() const { return settings_; }
 
    private:
     tLINK_POLICY settings_{kAllLinkPoliciesEnabled};
-    friend void btm_set_link_policy(sACL_CONN* conn, tLINK_POLICY policy);
-    friend void sACL_CONN::Reset();
+    friend void btm_set_link_policy(tACL_CONN* conn, tLINK_POLICY policy);
+    friend void tACL_CONN::Reset();
   } policy;
 };
-typedef sACL_CONN tACL_CONN;
 
 struct controller_t;
 

@@ -16,11 +16,11 @@
 
 #include "stack/acl/acl.h"
 
-tBTM_PM_MODE sACL_CONN::sPolicy::Mode() const { return this->mode.mode_; }
+tBTM_PM_MODE tACL_CONN::sPolicy::Mode() const { return this->mode.mode_; }
 
-hci_role_t sACL_CONN::sPolicy::Role() const { return this->role.role_; }
+hci_role_t tACL_CONN::sPolicy::Role() const { return this->role.role_; }
 
-void sACL_CONN::Reset() {
+void tACL_CONN::Reset() {
   memset(peer_le_features, 0, sizeof(peer_le_features));
   peer_le_features_valid = false;
   memset(peer_lmp_feature_pages, 0, sizeof(peer_lmp_feature_pages));
