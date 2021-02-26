@@ -194,7 +194,7 @@ static int background_connections_count() {
   return count;
 }
 
-static const tBLE_BD_ADDR convert_to_address_with_type(
+const tBLE_BD_ADDR convert_to_address_with_type(
     const RawAddress& bd_addr, const tBTM_SEC_DEV_REC* p_dev_rec) {
   if (p_dev_rec == nullptr || !p_dev_rec->is_device_type_has_ble()) {
     return {
@@ -424,15 +424,6 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  *
  ******************************************************************************/
 void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
-  if (bluetooth::shim::is_gd_acl_enabled()) {
-    if (!bluetooth::shim::ACL_AcceptLeConnectionFrom(
-            convert_to_address_with_type(bd_addr, btm_find_dev(bd_addr)))) {
-      LOG_ERROR("Unable to add to acceptlist as it is full:%s",
-                PRIVATE_ADDRESS(bd_addr));
-    }
-    return;
-  }
-
   if (!btm_cb.ble_ctr_cb.is_connection_state_connecting()) return;
 
   auto map_it = background_connections.find(bd_addr);
