@@ -29,4 +29,5 @@ cc_library_static {
         "system/bt/internal_include",
         "system/bt/stack/include",
     ],
+    host_supported: true,
 }
