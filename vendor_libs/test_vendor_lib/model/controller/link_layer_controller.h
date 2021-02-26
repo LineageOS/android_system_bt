@@ -237,6 +237,8 @@ class LinkLayerController {
       bluetooth::hci::Enable enable,
       const std::vector<bluetooth::hci::EnabledSet>& enabled_sets);
 
+  bluetooth::hci::OpCode GetLeScanEnable() { return le_scan_enable_; }
+
   void SetLeScanEnable(bluetooth::hci::OpCode enabling_opcode) {
     le_scan_enable_ = enabling_opcode;
   }

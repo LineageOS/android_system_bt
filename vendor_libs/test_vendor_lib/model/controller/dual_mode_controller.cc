@@ -1933,17 +1933,21 @@ void DualModeController::LeSetExtendedScanParameters(CommandView command) {
   ASSERT(command_view.GetScanningPhys() == 1);
   ASSERT(parameters.size() == 1);
 
-  link_layer_controller_.SetLeScanType(
-      static_cast<uint8_t>(parameters[0].le_scan_type_));
-  link_layer_controller_.SetLeScanInterval(parameters[0].le_scan_interval_);
-  link_layer_controller_.SetLeScanWindow(parameters[0].le_scan_window_);
-  link_layer_controller_.SetLeAddressType(command_view.GetOwnAddressType());
-  link_layer_controller_.SetLeScanFilterPolicy(
-      static_cast<uint8_t>(command_view.GetScanningFilterPolicy()));
-  auto packet =
+  auto status = ErrorCode::SUCCESS;
+  if (link_layer_controller_.GetLeScanEnable() == OpCode::NONE) {
+    link_layer_controller_.SetLeScanType(
+        static_cast<uint8_t>(parameters[0].le_scan_type_));
+    link_layer_controller_.SetLeScanInterval(parameters[0].le_scan_interval_);
+    link_layer_controller_.SetLeScanWindow(parameters[0].le_scan_window_);
+    link_layer_controller_.SetLeAddressType(command_view.GetOwnAddressType());
+    link_layer_controller_.SetLeScanFilterPolicy(
+        static_cast<uint8_t>(command_view.GetScanningFilterPolicy()));
+  } else {
+    status = ErrorCode::COMMAND_DISALLOWED;
+  }
+  send_event_(
       bluetooth::hci::LeSetExtendedScanParametersCompleteBuilder::Create(
-          kNumCommandPackets, ErrorCode::SUCCESS);
-  send_event_(std::move(packet));
+          kNumCommandPackets, status));
 }
 
 void DualModeController::LeSetExtendedScanEnable(CommandView command) {
