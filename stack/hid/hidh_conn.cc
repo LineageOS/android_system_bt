@@ -523,24 +523,17 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
 static void hidh_l2cif_disconnect(uint16_t l2cap_cid) {
   L2CA_DisconnectReq(l2cap_cid);
 
-  uint8_t dhandle;
-  tHID_CONN* p_hcon = NULL;
-
   /* Find CCB based on CID */
-  dhandle = find_conn_by_cid(l2cap_cid);
-  if (dhandle < HID_HOST_MAX_DEVICES) p_hcon = &hh_cb.devices[dhandle].conn;
-
-  if (p_hcon == NULL) {
-    HIDH_TRACE_WARNING("HID-Host Rcvd L2CAP disc cfm, unknown CID: 0x%x",
-                       l2cap_cid);
+  const uint8_t dhandle = find_conn_by_cid(l2cap_cid);
+  if (dhandle == HID_HOST_MAX_DEVICES) {
+    LOG_WARN("HID-Host Rcvd L2CAP disc cfm, unknown CID: 0x%x", l2cap_cid);
     return;
   }
 
-  HIDH_TRACE_EVENT("HID-Host Rcvd L2CAP disc cfm, CID: 0x%x", l2cap_cid);
-
-  if (l2cap_cid == p_hcon->ctrl_cid)
+  tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
+  if (l2cap_cid == p_hcon->ctrl_cid) {
     p_hcon->ctrl_cid = 0;
-  else {
+  } else {
     p_hcon->intr_cid = 0;
     if (p_hcon->ctrl_cid) {
       HIDH_TRACE_EVENT("HID-Host Initiating L2CAP Ctrl disconnection");
