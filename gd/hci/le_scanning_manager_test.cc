@@ -246,6 +246,10 @@ class LeScanningManagerTest : public ::testing::Test {
         static_cast<LeScanningManager*>(fake_registry_.GetModuleUnderTest(&LeScanningManager::Factory));
     auto result = config_future.wait_for(std::chrono::duration(std::chrono::milliseconds(1000)));
     ASSERT_EQ(std::future_status::ready, result);
+    auto packet = test_hci_layer_->GetCommand(enable_opcode_);
+    test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(1, ErrorCode::SUCCESS));
+    config_future.wait_for(std::chrono::duration(std::chrono::milliseconds(1000)));
+    ASSERT_EQ(std::future_status::ready, result);
     HandleConfiguration();
     le_scanning_manager->RegisterScanningCallback(&mock_callbacks_);
   }
@@ -314,6 +318,7 @@ class LeScanningManagerTest : public ::testing::Test {
   } mock_callbacks_;
 
   OpCode param_opcode_{OpCode::LE_SET_ADVERTISING_PARAMETERS};
+  OpCode enable_opcode_{OpCode::LE_SET_SCAN_ENABLE};
   bool is_filter_support_ = false;
 };
 
@@ -336,6 +341,7 @@ class LeExtendedScanningManagerTest : public LeScanningManagerTest {
  protected:
   void SetUp() override {
     param_opcode_ = OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS;
+    enable_opcode_ = OpCode::LE_SET_EXTENDED_SCAN_ENABLE;
     LeScanningManagerTest::SetUp();
   }
 
@@ -445,6 +451,11 @@ TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
   le_scanning_manager->Scan(true);
 
   auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
+  test_hci_layer_->GetCommand(OpCode::LE_SET_EXTENDED_SCAN_ENABLE);
+  test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
   test_hci_layer_->GetCommand(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS);
   test_hci_layer_->IncomingEvent(LeSetExtendedScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
