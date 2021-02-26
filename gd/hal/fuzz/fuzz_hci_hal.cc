@@ -33,7 +33,7 @@ void FuzzHciHal::unregisterIncomingPacketCallback() {
 }
 
 void FuzzHciHal::injectArbitrary(FuzzedDataProvider& fdp) {
-  const uint8_t action = fdp.ConsumeIntegralInRange(0, 3);
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 4);
   switch (action) {
     case 1:
       injectAclData(GetArbitraryBytes(&fdp));
@@ -43,6 +43,9 @@ void FuzzHciHal::injectArbitrary(FuzzedDataProvider& fdp) {
       break;
     case 3:
       injectScoData(GetArbitraryBytes(&fdp));
+      break;
+    case 4:
+      injectIsoData(GetArbitraryBytes(&fdp));
       break;
   }
 }
@@ -100,6 +103,15 @@ void FuzzHciHal::injectScoData(std::vector<uint8_t> data) {
   }
 
   callbacks_->scoDataReceived(data);
+}
+
+void FuzzHciHal::injectIsoData(std::vector<uint8_t> data) {
+  hci::IsoView isoPacket = hci::IsoView::FromBytes(data);
+  if (!isoPacket.IsValid()) {
+    return;
+  }
+
+  callbacks_->isoDataReceived(data);
 }
 
 const ModuleFactory FuzzHciHal::Factory = ModuleFactory([]() { return new FuzzHciHal(); });
