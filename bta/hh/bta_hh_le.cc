@@ -18,26 +18,22 @@
 
 #define LOG_TAG "bt_bta_hh"
 
-#include "bta_api.h"
-#include "bta_hh_int.h"
-#include "osi/include/osi.h"
-
-#include <string.h>
-
 #include <base/bind.h>
+#include <base/callback.h>
+#include <cstdint>
+#include <vector>
 
-#include "bta_gatt_api.h"
-#include "bta_gatt_queue.h"
-#include "bta_hh_co.h"
-#include "btm_api.h"
-#include "btm_ble_api.h"
+#include "bta/hh/bta_hh_int.h"
+#include "bta/include/bta_gatt_queue.h"
+#include "bta/include/bta_hh_co.h"
 #include "device/include/interop.h"
 #include "osi/include/log.h"
-#include "srvc_api.h"
+#include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/l2c_api.h"
-#include "types/bt_transport.h"
-#include "utl.h"
+#include "stack/include/srvc_api.h"
+#include "types/bluetooth/uuid.h"
+#include "types/raw_address.h"
 
 using bluetooth::Uuid;
 using std::vector;

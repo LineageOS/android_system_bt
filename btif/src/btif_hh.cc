@@ -27,24 +27,17 @@
 
 #define LOG_TAG "bt_btif_hh"
 
-#include "btif_hh.h"
+#include <cstdint>
 
-#include <base/logging.h>
-#include <errno.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include "bt_common.h"
-#include "bta_api.h"
-#include "btif_common.h"
-#include "btif_storage.h"
-#include "btif_util.h"
-#include "l2c_api.h"
+#include "btif/include/btif_common.h"
+#include "btif/include/btif_hh.h"
+#include "btif/include/btif_storage.h"
+#include "btif/include/btif_util.h"
+#include "include/hardware/bt_hh.h"
+#include "osi/include/allocator.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
 #include "stack/include/hidh_api.h"
+#include "stack/include/l2c_api.h"
 
 #define BTIF_HH_APP_ID_MI 0x01
 #define BTIF_HH_APP_ID_KB 0x02

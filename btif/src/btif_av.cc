@@ -18,41 +18,34 @@
 
 #define LOG_TAG "btif_av"
 
-#include "btif_av.h"
-
 #include <base/bind.h>
-#include <base/logging.h>
 #include <base/strings/stringprintf.h>
-#include <string.h>
-#include <map>
+#include <cstdint>
+#include <future>
+#include <memory>
+#include <string>
+#include <vector>
 
-#include <hardware/bluetooth.h>
-#include <hardware/bt_av.h>
-#include <hardware/bt_rc.h>
-
-#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "audio_hal_interface/a2dp_encoding.h"
-#include "bt_common.h"
-#include "bt_utils.h"
-#include "bta/include/bta_api.h"
+#include "audio_hal_interface/hearing_aid_software_encoding.h"
+#include "bta/av/bta_av_int.h"
+#include "btif/include/btif_a2dp.h"
+#include "btif/include/btif_a2dp_control.h"
+#include "btif/include/btif_a2dp_sink.h"
 #include "btif/include/btif_a2dp_source.h"
+#include "btif/include/btif_av.h"
+#include "btif/include/btif_av_co.h"
 #include "btif/include/btif_common.h"
-#include "btif_a2dp.h"
-#include "btif_a2dp_audio_interface.h"
-#include "btif_a2dp_control.h"
-#include "btif_a2dp_sink.h"
-#include "btif_av_co.h"
-#include "btif_profile_queue.h"
-#include "btif_rc.h"
-#include "btif_util.h"
-#include "btu.h"
+#include "btif/include/btif_profile_queue.h"
+#include "btif/include/btif_rc.h"
+#include "btif/include/btif_util.h"
 #include "common/state_machine.h"
+#include "include/hardware/bt_rc.h"
 #include "main/shim/dumpsys.h"
-#include "osi/include/allocator.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "stack/include/btm_api.h"
+#include "stack/include/btu.h"  // do_in_main_thread
+#include "types/raw_address.h"
 
 /*****************************************************************************
  *  Constants & Macros

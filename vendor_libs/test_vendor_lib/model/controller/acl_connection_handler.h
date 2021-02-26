@@ -78,6 +78,8 @@ class AclConnectionHandler {
 
   bool ConnectCis(uint16_t handle);
 
+  void SetRemoteCisHandle(uint16_t handle, uint16_t remote_handle);
+
   uint16_t GetPendingAclHandle(uint16_t cis_handle) const;
 
   bool RejectCis(uint16_t handle);
@@ -93,6 +95,9 @@ class AclConnectionHandler {
   bool HasCisHandle(uint16_t handle) const;
 
   bool HasConnectedCis(uint16_t handle) const;
+
+  uint16_t GetAclHandleForCisHandle(uint16_t cis_handle) const;
+  uint16_t GetRemoteCisHandleForCisHandle(uint16_t cis_handle) const;
 
   StreamParameters GetStreamParameters(uint16_t handle) const;
   GroupParameters GetGroupParameters(uint8_t id) const;
@@ -111,8 +116,13 @@ class AclConnectionHandler {
   uint16_t GetUnusedHandle();
   uint16_t last_handle_{kReservedHandle - 2};
   IsochronousConnectionHandler isochronous_connection_handler_;
-  std::vector<bluetooth::hci::CreateCisConfig> connected_streams_;
-  std::vector<bluetooth::hci::CreateCisConfig> pending_streams_;
+  struct CisHandles {
+    uint16_t acl_handle_ = kReservedHandle;
+    uint16_t cis_handle_ = kReservedHandle;
+    uint16_t remote_cis_handle_ = kReservedHandle;
+  };
+  std::vector<CisHandles> connected_streams_;
+  std::vector<CisHandles> pending_streams_;
 };
 
 }  // namespace test_vendor_lib

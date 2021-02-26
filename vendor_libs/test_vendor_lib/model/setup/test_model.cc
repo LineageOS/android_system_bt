@@ -41,8 +41,6 @@
 #include "model/devices/hci_socket_device.h"
 #include "model/devices/link_layer_socket_device.h"
 
-using std::vector;
-
 namespace test_vendor_lib {
 
 TestModel::TestModel(

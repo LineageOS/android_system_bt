@@ -23,22 +23,16 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include <cstdint>
 
-#include <base/logging.h>
-#include <string.h>
-#include "bt_common.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
+#include "bta/gatt/bta_gatts_int.h"
 #include "bta/include/bta_api.h"
-#include "bta_gatts_co.h"
-#include "bta_gatts_int.h"
-#include "bta_sys.h"
+#include "bta/include/bta_gatts_co.h"
 #include "btif/include/btif_debug_conn.h"
-#include "btm_ble_api.h"
 #include "osi/include/osi.h"
-#include "types/bt_transport.h"
-#include "utl.h"
-
-using base::StringPrintf;
+#include "stack/include/gatt_api.h"
 
 static void bta_gatts_nv_save_cback(bool is_saved,
                                     tGATTS_HNDL_RANGE* p_hndl_range);

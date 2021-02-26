@@ -18,33 +18,28 @@
 
 #define LOG_TAG "btif_a2dp_audio_interface"
 
-#include "btif_a2dp_audio_interface.h"
-
-#include <mutex>
-
-#include <a2dp_vendor.h>
-#include <a2dp_vendor_ldac_constants.h>
 #include <android/hardware/bluetooth/a2dp/1.0/IBluetoothAudioHost.h>
 #include <android/hardware/bluetooth/a2dp/1.0/IBluetoothAudioOffload.h>
 #include <android/hardware/bluetooth/a2dp/1.0/types.h>
-#include <base/logging.h>
+#include <base/bind.h>
+#include <base/callback.h>
+#include <base/location.h>
 #include <hwbinder/ProcessState.h>
-#include <utils/RefBase.h>
-#include "a2dp_sbc.h"
-#include "bt_common.h"
+#include <mutex>
+
+#include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "bta/av/bta_av_int.h"
-#include "btif_a2dp.h"
-#include "btif_a2dp_control.h"
-#include "btif_a2dp_sink.h"
-#include "btif_a2dp_source.h"
-#include "btif_av.h"
-#include "btif_av_co.h"
-#include "btif_hf.h"
+#include "bta/include/bta_av_api.h"
+#include "btif/include/btif_a2dp_source.h"
+#include "btif/include/btif_av.h"
+#include "btif/include/btif_av_co.h"
+#include "btif/include/btif_hf.h"
 #include "common/metrics.h"
 #include "common/time_util.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "stack/include/btu.h"
+#include "stack/include/a2dp_codec_api.h"
+#include "stack/include/avdt_api.h"
+#include "stack/include/btu.h"  // do_in_main_thread
 
 using bluetooth::common::A2dpSessionMetrics;
 using bluetooth::common::BluetoothMetricsLogger;
