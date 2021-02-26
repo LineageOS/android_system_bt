@@ -36,6 +36,11 @@ from cert.os_utils import make_ports_available
 from cert.os_utils import TerminalColor
 from cert.gd_device import MOBLY_CONTROLLER_CONFIG_NAME as CONTROLLER_CONFIG_NAME
 from facade import rootservice_pb2 as facade_rootservice
+from cert.gd_base_test_lib import setup_class_core
+from cert.gd_base_test_lib import teardown_class_core
+from cert.gd_base_test_lib import setup_test_core
+from cert.gd_base_test_lib import teardown_test_core
+from cert.gd_base_test_lib import dump_crashes_core
 
 
 class GdBaseTestClass(BaseTestClass):
@@ -43,59 +48,37 @@ class GdBaseTestClass(BaseTestClass):
     SUBPROCESS_WAIT_TIMEOUT_SECONDS = 10
 
     def setup_class(self, dut_module, cert_module):
-        self.dut_module = dut_module
-        self.cert_module = cert_module
         self.log_path_base = get_current_context().get_full_output_path()
         self.verbose_mode = bool(self.user_params.get('verbose_mode', False))
         for config in self.controller_configs[CONTROLLER_CONFIG_NAME]:
             config['verbose_mode'] = self.verbose_mode
 
-        # Start root-canal if needed
-        self.rootcanal_running = False
+        self.info = setup_class_core(
+            dut_module=dut_module,
+            cert_module=cert_module,
+            verbose_mode=self.verbose_mode,
+            log_path_base=self.log_path_base,
+            controller_configs=self.controller_configs)
+        self.dut_module = self.info['dut_module']
+        self.cert_module = self.info['cert_module']
+        self.rootcanal_running = self.info['rootcanal_running']
+        self.rootcanal_logpath = self.info['rootcanal_logpath']
+        self.rootcanal_process = self.info['rootcanal_process']
+
         if 'rootcanal' in self.controller_configs:
-            self.rootcanal_running = True
-            # Get root canal binary
-            rootcanal = os.path.join(get_gd_root(), "root-canal")
-            asserts.assert_true(os.path.isfile(rootcanal), "Root canal does not exist at %s" % rootcanal)
+            asserts.assert_true(self.info['rootcanal_exist'],
+                                "Root canal does not exist at %s" % self.info['rootcanal'])
+            asserts.assert_true(self.info['make_rootcanal_ports_available'],
+                                "Failed to make root canal ports available")
 
-            # Get root canal log
-            self.rootcanal_logpath = os.path.join(self.log_path_base, 'rootcanal_logs.txt')
-            # Make sure ports are available
-            rootcanal_config = self.controller_configs['rootcanal']
-            rootcanal_test_port = int(rootcanal_config.get("test_port", "6401"))
-            rootcanal_hci_port = int(rootcanal_config.get("hci_port", "6402"))
-            rootcanal_link_layer_port = int(rootcanal_config.get("link_layer_port", "6403"))
+            self.log.debug("Running %s" % " ".join(self.info['rootcanal_cmd']))
             asserts.assert_true(
-                make_ports_available((rootcanal_test_port, rootcanal_hci_port, rootcanal_link_layer_port)),
-                "Failed to make root canal ports available")
+                self.info['is_rootcanal_process_started'],
+                msg="Cannot start root-canal at " + str(self.info['rootcanal']))
+            asserts.assert_true(self.info['is_subprocess_alive'], msg="root-canal stopped immediately after running")
 
-            # Start root canal process
-            rootcanal_cmd = [
-                rootcanal, str(rootcanal_test_port),
-                str(rootcanal_hci_port),
-                str(rootcanal_link_layer_port)
-            ]
-            self.log.debug("Running %s" % " ".join(rootcanal_cmd))
-            self.rootcanal_process = subprocess.Popen(
-                rootcanal_cmd,
-                cwd=get_gd_root(),
-                env=os.environ.copy(),
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                universal_newlines=True)
-            asserts.assert_true(self.rootcanal_process, msg="Cannot start root-canal at " + str(rootcanal))
-            asserts.assert_true(
-                is_subprocess_alive(self.rootcanal_process), msg="root-canal stopped immediately after running")
-
-            self.rootcanal_logger = AsyncSubprocessLogger(
-                self.rootcanal_process, [self.rootcanal_logpath],
-                log_to_stdout=self.verbose_mode,
-                tag="rootcanal",
-                color=TerminalColor.MAGENTA)
-
-            # Modify the device config to include the correct root-canal port
-            for gd_device_config in self.controller_configs.get("GdDevice"):
-                gd_device_config["rootcanal_port"] = str(rootcanal_hci_port)
+            self.rootcanal_logger = self.info['rootcanal_logger']
+            self.controller_configs = self.info['controller_configs']
 
         # Parse and construct GD device objects
         self.register_controller(importlib.import_module('cert.gd_device'), builtin=True)
@@ -103,38 +86,17 @@ class GdBaseTestClass(BaseTestClass):
         self.cert = self.gd_devices[0]
 
     def teardown_class(self):
-        if self.rootcanal_running:
-            stop_signal = signal.SIGINT
-            self.rootcanal_process.send_signal(stop_signal)
-            try:
-                return_code = self.rootcanal_process.wait(timeout=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
-            except subprocess.TimeoutExpired:
-                logging.error("Failed to interrupt root canal via SIGINT, sending SIGKILL")
-                stop_signal = signal.SIGKILL
-                self.rootcanal_process.kill()
-                try:
-                    return_code = self.rootcanal_process.wait(timeout=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
-                except subprocess.TimeoutExpired:
-                    logging.error("Failed to kill root canal")
-                    return_code = -65536
-            if return_code != 0 and return_code != -stop_signal:
-                logging.error("rootcanal stopped with code: %d" % return_code)
-            self.rootcanal_logger.stop()
+        teardown_class_core(
+            rootcanal_running=self.rootcanal_running,
+            rootcanal_process=self.rootcanal_process,
+            rootcanal_logger=self.rootcanal_logger,
+            subprocess_wait_timeout_seconds=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
 
     def setup_test(self):
-        self.dut.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(self.dut_module),))
-        self.cert.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(self.cert_module),))
-
-        self.dut.wait_channel_ready()
-        self.cert.wait_channel_ready()
+        setup_test_core(dut=self.dut, cert=self.cert, dut_module=self.dut_module, cert_module=self.cert_module)
 
     def teardown_test(self):
-        self.cert.rootservice.StopStack(facade_rootservice.StopStackRequest())
-        self.dut.rootservice.StopStack(facade_rootservice.StopStackRequest())
+        teardown_test_core(cert=self.cert, dut=self.dut)
 
     def __getattribute__(self, name):
         attr = super().__getattribute__(name)
@@ -160,29 +122,12 @@ class GdBaseTestClass(BaseTestClass):
 
     def __dump_crashes(self):
         """
-        :return: formatted stack traces if found, or last few lines of log
+        return: formatted stack traces if found, or last few lines of log
         """
-        dut_crash, dut_log_tail = self.dut.get_crash_snippet_and_log_tail()
-        cert_crash, cert_log_tail = self.cert.get_crash_snippet_and_log_tail()
-        rootcanal_crash = None
-        rootcanal_log_tail = None
-        if self.rootcanal_running and not is_subprocess_alive(self.rootcanal_process):
-            rootcanal_crash, roocanal_log_tail = read_crash_snippet_and_log_tail(self.rootcanal_logpath)
-
-        crash_detail = ""
-        if dut_crash or cert_crash or rootcanal_crash:
-            if rootcanal_crash:
-                crash_detail += "rootcanal crashed:\n\n%s\n\n" % rootcanal_crash
-            if dut_crash:
-                crash_detail += "dut stack crashed:\n\n%s\n\n" % dut_crash
-            if cert_crash:
-                crash_detail += "cert stack crashed:\n\n%s\n\n" % cert_crash
-        else:
-            if rootcanal_log_tail:
-                crash_detail += "rootcanal log tail:\n\n%s\n\n" % rootcanal_log_tail
-            if dut_log_tail:
-                crash_detail += "dut log tail:\n\n%s\n\n" % dut_log_tail
-            if cert_log_tail:
-                crash_detail += "cert log tail:\n\n%s\n\n" % cert_log_tail
-
+        crash_detail = dump_crashes_core(
+            dut=self.dut,
+            cert=self.cert,
+            rootcanal_running=self.rootcanal_running,
+            rootcanal_process=self.rootcanal_process,
+            rootcanal_logpath=self.rootcanal_logpath)
         return crash_detail
