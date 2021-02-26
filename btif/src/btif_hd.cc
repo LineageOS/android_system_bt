@@ -27,24 +27,19 @@
  ***********************************************************************************/
 #define LOG_TAG "BTIF_HD"
 
-#include <errno.h>
-#include <hardware/bluetooth.h>
-#include <hardware/bt_hd.h>
-#include <log/log.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bta_api.h"
-#include "bta_hd_api.h"
-#include "bta_hh_api.h"
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "btif_common.h"
-#include "btif_hd.h"
-#include "btif_storage.h"
-#include "btif_util.h"
+#include "bta/include/bta_hd_api.h"
+#include "btif/include/btif_common.h"
+#include "btif/include/btif_hd.h"
+#include "btif/include/btif_storage.h"
+#include "btif/include/btif_util.h"
+#include "include/hardware/bt_hd.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
+#include "types/raw_address.h"
 
 #define BTIF_HD_APP_NAME_LEN 50
 #define BTIF_HD_APP_DESCRIPTION_LEN 50

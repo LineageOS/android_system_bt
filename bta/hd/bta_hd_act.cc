@@ -23,22 +23,19 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
+#include <cstdint>
+#include <string>
 
+// BTA_HD_INCLUDED
+#include "bt_target.h"  // Must be first to define build configuration
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
-#include <hardware/bluetooth.h>
-#include <hardware/bt_hd.h>
-#include <string.h>
-
-#include "bt_utils.h"
-#include "bta_hd_int.h"
-#include "bta_sys.h"
-#include "btm_api.h"
-
-#include "log/log.h"
-#include "osi/include/osi.h"
+#include "bta/hd/bta_hd_int.h"
+#include "include/hardware/bt_hd.h"
+#include "osi/include/allocator.h"
+#include "osi/include/log.h"
 #include "stack/include/hidd_api.h"
+#include "types/raw_address.h"
 
 static void bta_hd_cback(const RawAddress& bd_addr, uint8_t event,
                          uint32_t data, BT_HDR* pdata);

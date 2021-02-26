@@ -30,7 +30,6 @@ namespace bluetooth {
 namespace root_canal {
 
 using test_vendor_lib::AsyncTaskId;
-using test_vendor_lib::DualModeController;
 using test_vendor_lib::TaskCallback;
 
 void TestEnvironment::initialize(std::promise<void> barrier) {

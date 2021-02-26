@@ -22,17 +22,17 @@
  *
  ******************************************************************************/
 
-#include <stddef.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bta/include/bta_api.h"
-#include "bta/include/utl.h"
+#include "bt_target.h"  // Must be first to define build configuration
+
 #include "bta/sys/bta_sys.h"
 #include "bta/sys/bta_sys_int.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/btm_api.h"
+#include "types/raw_address.h"
 
 /*******************************************************************************
  *
