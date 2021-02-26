@@ -1139,27 +1139,32 @@ bool BTM_SecIsSecurityPending(const RawAddress& bd_addr) {
 static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
                                                tHCI_STATUS reason,
                                                uint16_t conn_handle) {
-  uint8_t old_state = p_dev_rec->sec_state;
-  tBTM_STATUS status = BTM_CMD_STARTED;
-
-  BTM_TRACE_EVENT("btm_sec_send_hci_disconnect:  handle:0x%x, reason=0x%x",
-                  conn_handle, reason);
+  const tSECURITY_STATE old_state =
+      static_cast<tSECURITY_STATE>(p_dev_rec->sec_state);
+  const tBTM_STATUS status = BTM_CMD_STARTED;
 
   /* send HCI_Disconnect on a transport only once */
   switch (old_state) {
     case BTM_SEC_STATE_DISCONNECTING:
-      if (conn_handle == p_dev_rec->hci_handle) return status;
-
+      if (conn_handle == p_dev_rec->hci_handle) {
+        // Already sent classic disconnect
+        return status;
+      }
+      // Prepare to send disconnect on le transport
       p_dev_rec->sec_state = BTM_SEC_STATE_DISCONNECTING_BOTH;
       break;
 
     case BTM_SEC_STATE_DISCONNECTING_BLE:
-      if (conn_handle == p_dev_rec->ble_hci_handle) return status;
-
+      if (conn_handle == p_dev_rec->ble_hci_handle) {
+        // Already sent ble disconnect
+        return status;
+      }
+      // Prepare to send disconnect on classic transport
       p_dev_rec->sec_state = BTM_SEC_STATE_DISCONNECTING_BOTH;
       break;
 
     case BTM_SEC_STATE_DISCONNECTING_BOTH:
+      // Already sent disconnect on both transports
       return status;
 
     default:
@@ -1170,6 +1175,8 @@ static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
       break;
   }
 
+  LOG_DEBUG("Send hci disconnect handle:0x%04x reason:%s", conn_handle,
+            hci_reason_code_text(reason).c_str());
   acl_disconnect_after_role_switch(conn_handle, reason);
 
   return status;
