@@ -77,17 +77,28 @@ pub fn hci_send_command(
 
 pub fn hci_send_acl(hci: &mut Hci, data: &[u8]) {
     match AclPacket::parse(data) {
-        Ok(packet) => hci.rt.block_on(hci.internal.acl_tx.send(packet)).unwrap(),
+        Ok(packet) => {
+            let tx = hci.internal.acl_tx.clone();
+            hci.rt.spawn(async move {
+                tx.send(packet).await.unwrap();
+            });
+        }
         Err(e) => panic!("could not parse acl: {:?} {:02x?}", e, data),
     }
 }
 
 pub fn hci_register_event(hci: &mut Hci, event: u8) {
-    hci.rt.block_on(hci.internal.register_event(event.into()));
+    let mut hci_facade = hci.internal.clone();
+    hci.rt.spawn(async move {
+        hci_facade.register_event(event.into()).await;
+    });
 }
 
 pub fn hci_register_le_event(hci: &mut Hci, subevent: u8) {
-    hci.rt.block_on(hci.internal.register_le_event(subevent.into()));
+    let mut hci_facade = hci.internal.clone();
+    hci.rt.spawn(async move {
+        hci_facade.register_le_event(subevent.into()).await;
+    });
 }
 
 pub fn hci_set_acl_callback(hci: &mut Hci, cb: cxx::UniquePtr<ffi::u8SliceCallback>) {
