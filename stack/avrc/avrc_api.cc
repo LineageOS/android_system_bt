@@ -24,13 +24,12 @@
 #include <base/logging.h>
 #include <string.h>
 
-#include <log/log.h>
-
 #include "avrc_api.h"
 #include "avrc_int.h"
 #include "bt_common.h"
 #include "btu.h"
 #include "osi/include/fixed_queue.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 
