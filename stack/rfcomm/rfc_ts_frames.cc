@@ -26,11 +26,12 @@
 #include "bt_common.h"
 #include "bt_target.h"
 #include "l2c_api.h"
-#include "log/log.h"
 #include "port_api.h"
 #include "port_int.h"
 #include "rfc_int.h"
 #include "rfcdefs.h"
+
+#include "osi/include/log.h"
 
 /*******************************************************************************
  *

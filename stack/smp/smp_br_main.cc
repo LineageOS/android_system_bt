@@ -19,7 +19,8 @@
 #include "bt_target.h"
 
 #include <string.h>
-#include "log/log.h"
+
+#include "osi/include/log.h"
 #include "smp_int.h"
 
 const char* const smp_br_state_name[SMP_BR_STATE_MAX + 1] = {
