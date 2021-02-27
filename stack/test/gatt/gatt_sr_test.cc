@@ -28,6 +28,9 @@
 
 #define MAX_UINT16 ((uint16_t)0xffff)
 
+bool MOCK_bluetooth_shim_is_gd_acl_enabled_ = true;
+std::map<std::string, int> mock_function_count_map;
+
 tGATT_CB gatt_cb;
 
 namespace {

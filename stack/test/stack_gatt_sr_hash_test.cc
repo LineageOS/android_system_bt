@@ -26,6 +26,9 @@ using bluetooth::Uuid;
 
 tGATT_CB gatt_cb;
 
+std::map<std::string, int> mock_function_count_map;
+bool MOCK_bluetooth_shim_is_gd_acl_enabled_ = false;
+
 static void add_item_to_list(std::list<tGATT_SRV_LIST_ELEM>& srv_list_info,
                       tGATT_SVC_DB* db, bool is_primary) {
   srv_list_info.emplace_back();

@@ -26,10 +26,12 @@
 
 #include "bt_target.h"  // Must be first to define build configuration
 
+#include "main/shim/shim.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cdefs.h"
 #include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
@@ -1611,5 +1613,8 @@ uint8_t* gatt_dbg_op_name(uint8_t op_code) {
 bool gatt_auto_connect_dev_remove(tGATT_IF gatt_if, const RawAddress& bd_addr) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   if (p_tcb) gatt_update_app_use_link_flag(gatt_if, p_tcb, false, false);
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    acl_add_to_ignore_auto_connect_after_disconnect(bd_addr);
+  }
   return connection_manager::background_connect_remove(gatt_if, bd_addr);
 }
