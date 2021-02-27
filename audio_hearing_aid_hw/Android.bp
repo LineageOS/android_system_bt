@@ -12,8 +12,6 @@ cc_defaults {
     defaults: ["fluoride_defaults"],
     include_dirs: [
         "system/bt",
-        "system/bt/include",
-        "system/bt/audio_hearing_aid_hw/include",
     ],
 }
 
@@ -31,14 +29,6 @@ cc_library {
         "liblog",
     ],
     static_libs: ["libosi"],
-}
-
-cc_library_static {
-    name: "libaudio-hearing-aid-hw-utils",
-    defaults: ["audio_hearing_aid_hw_defaults"],
-    srcs: [
-        "src/audio_hearing_aid_hw_utils.cc",
-    ],
 }
 
 // Audio A2DP library unit tests for target and host

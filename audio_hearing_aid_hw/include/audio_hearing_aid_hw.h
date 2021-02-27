@@ -144,7 +144,4 @@ extern size_t audio_ha_hw_stream_compute_buffer_size(
     btav_a2dp_codec_bits_per_sample_t codec_bits_per_sample,
     btav_a2dp_codec_channel_mode_t codec_channel_mode);
 
-// Returns a string representation of |event|.
-extern const char* audio_ha_hw_dump_ctrl_event(tHEARING_AID_CTRL_CMD event);
-
 #endif /* AUDIO_HEARING_AID_HW_H */
