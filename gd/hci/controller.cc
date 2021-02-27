@@ -514,7 +514,7 @@ struct Controller::impl {
     uint16_t bit_index = index % 10;                                           \
     bool supported = local_supported_commands_[byte_index] & (1 << bit_index); \
     if (!supported) {                                                          \
-      LOG_WARN("unsupported command opcode: 0x%04x", (uint16_t)OpCode::name);  \
+      LOG_DEBUG("unsupported command opcode: 0x%04x", (uint16_t)OpCode::name); \
     }                                                                          \
     return supported;                                                          \
   }
