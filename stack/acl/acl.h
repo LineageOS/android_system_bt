@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "stack/include/acl_api_types.h"
@@ -409,4 +410,12 @@ struct tACL_CB {
     }
     return cnt;
   }
+
+ private:
+  std::unordered_set<RawAddress> ignore_auto_connect_after_disconnect_set_;
+
+ public:
+  void AddToIgnoreAutoConnectAfterDisconnect(const RawAddress& bd_addr);
+  bool CheckAndClearIgnoreAutoConnectAfterDisconnect(const RawAddress& bd_addr);
+  void ClearAllIgnoreAutoConnectAfterDisconnect();
 };

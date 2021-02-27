@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
+#include <unordered_set>
+
+#include "main/shim/dumpsys.h"
+#include "osi/include/log.h"
 #include "stack/acl/acl.h"
+#include "types/raw_address.h"
 
 tBTM_PM_MODE tACL_CONN::sPolicy::Mode() const { return this->mode.mode_; }
 
@@ -45,4 +50,27 @@ void tACL_CONN::Reset() {
   rs_disc_pending = BTM_SEC_RS_NOT_PENDING;
   switch_role_state_ = BTM_ACL_SWKEY_STATE_IDLE;
   sca = 0;
+}
+
+// When the local device initiates an le ACL disconnect the address
+// should not be re-added to the acceptlist.
+void tACL_CB::AddToIgnoreAutoConnectAfterDisconnect(const RawAddress& bd_addr) {
+  if (!ignore_auto_connect_after_disconnect_set_.insert(bd_addr).second) {
+    LOG_WARN(
+        "Unexpectedly found device address already in ignore auto connect "
+        "device:%s",
+        PRIVATE_ADDRESS(bd_addr));
+  }
+}
+
+// A check and clear mechanism used to determine if the address should be
+// re-added to the acceptlist after an le ACL disconnect is received from a
+// peer.
+bool tACL_CB::CheckAndClearIgnoreAutoConnectAfterDisconnect(
+    const RawAddress& bd_addr) {
+  return (ignore_auto_connect_after_disconnect_set_.erase(bd_addr) > 0);
+}
+
+void tACL_CB::ClearAllIgnoreAutoConnectAfterDisconnect() {
+  ignore_auto_connect_after_disconnect_set_.clear();
 }

@@ -310,3 +310,8 @@ void btm_acl_update_inquiry_status(uint8_t status);
 void ACL_RegisterClient(struct acl_client_callback_s* callbacks);
 void ACL_UnregisterClient(struct acl_client_callback_s* callbacks);
 bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr);
+
+void acl_add_to_ignore_auto_connect_after_disconnect(const RawAddress& bd_addr);
+bool acl_check_and_clear_ignore_auto_connect_after_disconnect(
+    const RawAddress& bd_addr);
+void acl_clear_all_ignore_auto_connect_after_disconnect();
