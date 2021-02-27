@@ -353,6 +353,7 @@ enum OpCode : 16 {
   LE_READ_BUFFER_SIZE_V2 = 0x2060,
   LE_READ_ISO_TX_SYNC = 0X2061,
   LE_SET_CIG_PARAMETERS = 0X2062,
+  LE_SET_CIG_PARAMETERS_TEST = 0x2063,
   LE_CREATE_CIS = 0X2064,
   LE_REMOVE_CIG = 0X2065,
   LE_ACCEPT_CIS_REQUEST = 0X2066,
@@ -613,6 +614,7 @@ enum OpCodeIndex : 16 {
   LE_READ_BUFFER_SIZE_V2 = 415,
   LE_READ_ISO_TX_SYNC = 416,
   LE_SET_CIG_PARAMETERS = 417,
+  LE_SET_CIG_PARAMETERS_TEST = 418,
   LE_CREATE_CIS = 421,
   LE_REMOVE_CIG = 422,
   LE_ACCEPT_CIS_REQUEST = 423,
@@ -3791,13 +3793,9 @@ struct CisParametersConfig {
   _reserved_ : 4,
   max_sdu_s_to_m : 12,
   _reserved_ : 4,
-  phy_m_to_s_1_m : 1,
-  phy_m_to_s_2_m : 1,
-  phy_m_to_s_coded : 1,
+  phy_m_to_s : 3,
   _reserved_ : 5,
-  phy_s_to_m_1_m : 1,
-  phy_s_to_m_2_m : 1,
-  phy_s_to_m_coded : 1,
+  phy_s_to_m : 3,
   _reserved_ : 5,
   rtn_m_to_s : 4,
   _reserved_ : 4,
@@ -3835,6 +3833,40 @@ packet LeSetCigParameters : LeIsoCommand (op_code = LE_SET_CIG_PARAMETERS) {
 }
 
 packet LeSetCigParametersComplete : CommandComplete (command_op_code = LE_SET_CIG_PARAMETERS) {
+  status : ErrorCode,
+  cig_id : 8,
+  _count_(connection_handle) : 8,
+  connection_handle : 16[],
+}
+
+struct LeCisParametersTestConfig {
+  cis_id : 8,
+  nse : 8,
+  max_sdu_m_to_s : 16,
+  max_sdu_s_to_m : 16,
+  max_pdu_m_to_s : 16,
+  max_pdu_s_to_m : 16,
+  phy_m_to_s : 8,
+  phy_s_to_m : 8,
+  bn_m_to_s : 8,
+  bn_s_to_m : 8,
+}
+
+packet LeSetCigParametersTest : LeIsoCommand (op_code = LE_SET_CIG_PARAMETERS_TEST) {
+  cig_id : 8,
+  sdu_interval_m_to_s : 24,
+  sdu_interval_s_to_m : 24,
+  ft_m_to_s : 8,
+  ft_s_to_m : 8,
+  iso_interval : 16,
+  peripherals_clock_accuracy : ClockAccuracy,
+  packing : Packing,
+  framing : Enable,
+  _count_(cis_config) : 8,
+  cis_config : LeCisParametersTestConfig[],
+}
+
+packet LeSetCigParametersTestComplete : CommandComplete (command_op_code = LE_SET_CIG_PARAMETERS_TEST) {
   status : ErrorCode,
   cig_id : 8,
   _count_(connection_handle) : 8,
