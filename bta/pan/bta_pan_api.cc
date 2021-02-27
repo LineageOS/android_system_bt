@@ -164,6 +164,8 @@ void BTA_PanClose(uint16_t handle) {
   bta_sys_sendmsg(p_buf);
 }
 #else
+#include "bta/pan/bta_pan_int.h"
+#include "osi/include/osi.h"  // UNUSED_ATTR
 
 void BTA_PanEnable(UNUSED_ATTR tBTA_PAN_CBACK p_cback) {}
 
