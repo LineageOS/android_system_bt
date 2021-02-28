@@ -30,6 +30,7 @@
 
 #include "bta/pan/bta_pan_int.h"
 #include "osi/include/allocator.h"
+#include "osi/include/compat.h"
 #include "types/raw_address.h"
 
 static const tBTA_SYS_REG bta_pan_reg = {bta_pan_hdl_event, BTA_PanDisable};
