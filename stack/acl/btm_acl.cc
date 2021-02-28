@@ -1237,32 +1237,6 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_IsPhy2mSupported
- *
- * Description      This function is called to check PHY 2M support
- *                  from peer device
- * Returns          True when PHY 2M supported false otherwise
- *
- ******************************************************************************/
-bool BTM_IsPhy2mSupported(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p;
-  BTM_TRACE_DEBUG("BTM_IsPhy2mSupported");
-  p = internal_.btm_bda_to_acl(remote_bda, transport);
-  if (p == (tACL_CONN*)NULL) {
-    BTM_TRACE_DEBUG("BTM_IsPhy2mSupported: no connection");
-    return false;
-  }
-
-  if (!p->peer_le_features_valid) {
-    LOG_WARN(
-        "Checking remote features but remote feature read is "
-        "incomplete");
-  }
-  return HCI_LE_2M_PHY_SUPPORTED(p->peer_le_features);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_RequestPeerSCA
  *
  * Description      This function is called to request sleep clock accuracy
