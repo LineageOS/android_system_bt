@@ -21,23 +21,19 @@
  *  this file contains GATT utility functions
  *
  ******************************************************************************/
-#include "bt_target.h"
-#include "bt_utils.h"
-#include "osi/include/osi.h"
+#include <base/strings/stringprintf.h>
+#include <cstdint>
 
-#include <string.h>
-#include "bt_common.h"
-#include "stdio.h"
+#include "bt_target.h"  // Must be first to define build configuration
 
-#include "connection_manager.h"
-#include "gatt_api.h"
-#include "gatt_int.h"
-#include "gattdefs.h"
-#include "l2cdefs.h"
-#include "sdp_api.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/eatt/eatt.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/gatt/gatt_int.h"
+#include "stack/include/l2cdefs.h"
+#include "stack/include/sdp_api.h"
+#include "types/bluetooth/uuid.h"
+#include "types/raw_address.h"
 
 uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 
