@@ -30,8 +30,9 @@
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
 #include "bta/hd/bta_hd_int.h"
-#include "log/log.h"  // android_errorWriteLog
 #include "osi/include/allocator.h"
+#include "osi/include/compat.h"
+#include "osi/include/log.h"
 
 /*****************************************************************************
  *  Constants

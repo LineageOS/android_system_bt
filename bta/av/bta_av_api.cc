@@ -30,6 +30,7 @@
 
 #include "bta/av/bta_av_int.h"
 #include "osi/include/allocator.h"
+#include "osi/include/compat.h"
 #include "osi/include/log.h"
 
 /*****************************************************************************
