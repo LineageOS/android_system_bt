@@ -101,6 +101,8 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG is null after header inclusion");
     abort();                  \
   } while (false)
 #define android_errorWriteLog(tag, subTag) LOG_ERROR("ERROR tag: 0x%x, sub_tag: %s", tag, subTag)
+#define android_errorWriteWithInfoLog(tag, subTag, uid, data, dataLen) \
+  LOG_ERROR("ERROR tag: 0x%x, sub_tag: %s", tag, subTag)
 #define LOG_EVENT_INT(...)
 
 #endif /* defined(OS_ANDROID) */

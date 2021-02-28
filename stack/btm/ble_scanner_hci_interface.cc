@@ -24,7 +24,8 @@
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
-#include "log/log.h"
+
+#include "osi/include/log.h"
 
 namespace {
 BleScannerHciInterface* instance = nullptr;

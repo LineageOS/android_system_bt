@@ -32,9 +32,30 @@
 #include "udrv/include/uipc.h"
 
 using base::FilePath;
-extern const char* audio_ha_hw_dump_ctrl_event(tHEARING_AID_CTRL_CMD event);
 
 namespace {
+#define CASE_RETURN_STR(const) \
+  case const:                  \
+    return #const;
+
+const char* audio_ha_hw_dump_ctrl_event(tHEARING_AID_CTRL_CMD event) {
+  switch (event) {
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_NONE)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_CHECK_READY)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_START)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_STOP)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_SUSPEND)
+    CASE_RETURN_STR(HEARING_AID_CTRL_GET_INPUT_AUDIO_CONFIG)
+    CASE_RETURN_STR(HEARING_AID_CTRL_GET_OUTPUT_AUDIO_CONFIG)
+    CASE_RETURN_STR(HEARING_AID_CTRL_SET_OUTPUT_AUDIO_CONFIG)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_OFFLOAD_START)
+    default:
+      break;
+  }
+
+  return "UNKNOWN HEARING_AID_CTRL_CMD";
+}
+
 int bit_rate = -1;
 int sample_rate = -1;
 int data_interval_ms = -1;

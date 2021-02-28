@@ -21,7 +21,8 @@
 #include "avrc_defs.h"
 #include "avrc_int.h"
 #include "bt_common.h"
-#include "log/log.h"
+
+#include "osi/include/log.h"
 
 /*****************************************************************************
  *  Global data

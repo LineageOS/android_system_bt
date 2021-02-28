@@ -25,13 +25,13 @@
 #define LOG_TAG "bluetooth"
 
 #include "bt_target.h"
-#include "log/log.h"
 
 #include <string.h>
 #include "btm_ble_api.h"
 #include "common/metrics.h"
 #include "l2c_api.h"
 #include "main/shim/dumpsys.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "smp_int.h"
 

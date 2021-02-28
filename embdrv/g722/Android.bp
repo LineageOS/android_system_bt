@@ -19,4 +19,5 @@ cc_library_static {
         "g722_decode.cc",
         "g722_encode.cc",
     ],
+    host_supported: true,
 }

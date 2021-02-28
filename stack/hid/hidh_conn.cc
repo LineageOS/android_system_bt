@@ -36,7 +36,7 @@
 #include "hidh_int.h"
 
 #include "bta/include/bta_api.h"
-#include "log/log.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"

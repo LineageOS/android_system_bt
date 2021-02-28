@@ -117,9 +117,6 @@ cc_library_static {
         "avrcp-target-service",
         "lib-bt-packets",
     ],
-    whole_static_libs: [
-        "libaudio-hearing-aid-hw-utils",
-    ],
 }
 
 // bta unit tests for target

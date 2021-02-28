@@ -32,7 +32,6 @@
 
 #include "l2c_api.h"
 #include "l2cdefs.h"
-#include "log/log.h"
 
 #include "btm_api.h"
 
@@ -41,6 +40,7 @@
 
 #include "bta/include/bta_api.h"
 #include "device/include/controller.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 
 /******************************************************************************/

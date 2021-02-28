@@ -24,12 +24,12 @@
 #include "bt_target.h"
 #include "osi/include/osi.h"
 
-#include <log/log.h>
 #include <string.h>
 
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
+#include "osi/include/log.h"
 #include "stack/eatt/eatt.h"
 #define GATT_MTU_REQ_MIN_LEN 2
 

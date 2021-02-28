@@ -22,7 +22,6 @@
  *
  ******************************************************************************/
 
-#include <log/log.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -32,6 +31,7 @@
 #include "bt_utils.h"
 #include "btu.h"
 #include "device/include/controller.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 
 using bluetooth::Uuid;

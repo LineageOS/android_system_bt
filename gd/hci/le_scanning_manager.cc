@@ -381,6 +381,9 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     parameter_vector.push_back(phy_scan_parameters);
     uint8_t phys_in_use = 1;
 
+    // The Host shall not issue set scan parameter command when scanning is enabled
+    stop_scan();
+
     if (le_address_manager_->GetAddressPolicy() != LeAddressManager::USE_PUBLIC_ADDRESS) {
       own_address_type_ = OwnAddressType::RANDOM_DEVICE_ADDRESS;
     }

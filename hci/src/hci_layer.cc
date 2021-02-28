@@ -89,8 +89,8 @@ static const uint32_t COMMAND_PENDING_TIMEOUT_MS = 2000;
 static const uint32_t COMMAND_PENDING_MUTEX_ACQUIRE_TIMEOUT_MS = 500;
 static const uint32_t COMMAND_TIMEOUT_RESTART_MS = 5000;
 static const uint32_t ROOT_INFLAMMED_RESTART_MS = 5000;
-static const int HCI_UNKNOWN_COMMAND_TIMED_OUT = 0x00ffffff;
-static const int HCI_STARTUP_TIMED_OUT = 0x00eeeeee;
+[[maybe_unused]] constexpr int HCI_UNKNOWN_COMMAND_TIMED_OUT = 0x00ffffff;
+[[maybe_unused]] constexpr int HCI_STARTUP_TIMED_OUT = 0x00eeeeee;
 
 // Our interface
 static bool interface_created;

@@ -24,7 +24,6 @@
  ******************************************************************************/
 
 #include <base/logging.h>
-#include <log/log.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +36,8 @@
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+
+#include "osi/include/log.h"
 
 /* Flag passed to retransmit_i_frames() when all packets should be retransmitted
  */

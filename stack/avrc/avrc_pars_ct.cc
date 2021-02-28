@@ -22,7 +22,7 @@
 #include "avrc_int.h"
 #include "bt_common.h"
 #include "bt_utils.h"
-#include "log/log.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 
 /*****************************************************************************

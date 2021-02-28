@@ -210,6 +210,7 @@ cc_library_static {
         "libldacBT_enc",
         "libldacBT_abr",
     ],
+    host_supported: true,
 }
 
 // Bluetooth stack unit tests for target
