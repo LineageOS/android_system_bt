@@ -214,10 +214,6 @@ uint16_t btm_get_acl_disc_reason_code(void) {
   mock_function_count_map[__func__]++;
   return 0;
 }
-uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
-  mock_function_count_map[__func__]++;
-  return 0;
-}
 uint8_t BTM_SetTraceLevel(uint8_t new_level) {
   mock_function_count_map[__func__]++;
   return 0;

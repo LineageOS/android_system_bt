@@ -1237,28 +1237,6 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_GetPeerSCA
- *
- * Description      This function is called to get peer sleep clock accuracy
- *
- * Returns          SCA or 0xFF if SCA was never previously requested, request
- *                  is not supported by peer device or ACL does not exist
- *
- ******************************************************************************/
-uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p;
-  p = internal_.btm_bda_to_acl(remote_bda, transport);
-  if (p != (tACL_CONN*)NULL) {
-    return (p->sca);
-  }
-  LOG_WARN("Unable to find active acl");
-
-  /* If here, no BD Addr found */
-  return (0xFF);
-}
-
-/*******************************************************************************
- *
  * Function         btm_rejectlist_role_change_device
  *
  * Description      This function is used to rejectlist the device if the role
