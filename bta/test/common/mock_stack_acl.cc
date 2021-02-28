@@ -245,9 +245,6 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                             tBLE_ADDR_TYPE* p_addr_type) {
   mock_function_count_map[__func__]++;
 }
-void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
-  mock_function_count_map[__func__]++;
-}
 void BTM_acl_after_controller_started(const controller_t* controller) {
   mock_function_count_map[__func__]++;
 }
