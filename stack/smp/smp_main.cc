@@ -20,9 +20,10 @@
 
 #include "bt_target.h"
 
-#include <log/log.h>
 #include <string.h>
 #include "smp_int.h"
+
+#include "osi/include/log.h"
 
 const char* const smp_state_name[] = {
     "SMP_STATE_IDLE",

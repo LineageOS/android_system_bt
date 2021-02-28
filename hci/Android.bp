@@ -55,6 +55,7 @@ cc_library_static {
             ],
         },
     },
+    host_supported: true,
 }
 
 // HCI unit tests for target

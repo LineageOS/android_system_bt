@@ -395,7 +395,7 @@ void PacketDef::GenTestingFromView(std::ostream& s) const {
   FieldList params = GetParamList().GetFieldsWithoutTypes({
       BodyField::kFieldType,
   });
-  for (int i = 0; i < params.size(); i++) {
+  for (std::size_t i = 0; i < params.size(); i++) {
     params[i]->GenBuilderParameterFromView(s);
     if (i != params.size() - 1) {
       s << ", ";
@@ -498,7 +498,7 @@ void PacketDef::GenBuilderCreate(std::ostream& s) const {
   s << "static std::unique_ptr<" << name_ << "Builder> Create(";
 
   auto params = GetParamList();
-  for (int i = 0; i < params.size(); i++) {
+  for (std::size_t i = 0; i < params.size(); i++) {
     params[i]->GenBuilderParameter(s);
     if (i != params.size() - 1) {
       s << ", ";
@@ -514,7 +514,7 @@ void PacketDef::GenBuilderCreate(std::ostream& s) const {
       BodyField::kFieldType,
   });
   // Add the parameters.
-  for (int i = 0; i < params.size(); i++) {
+  for (std::size_t i = 0; i < params.size(); i++) {
     if (params[i]->BuilderParameterMustBeMoved()) {
       s << "std::move(" << params[i]->GetName() << ")";
     } else {
@@ -630,7 +630,7 @@ void PacketDef::GenBuilderParameterChecker(std::ostream& s) const {
 
   // Generate function arguments.
   s << "void CheckParameterValues(";
-  for (int i = 0; i < params_to_validate.size(); i++) {
+  for (std::size_t i = 0; i < params_to_validate.size(); i++) {
     params_to_validate[i]->GenBuilderParameter(s);
     if (i != params_to_validate.size() - 1) {
       s << ", ";
@@ -653,7 +653,7 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
       PayloadField::kFieldType,
       BodyField::kFieldType,
   });
-  for (int i = 0; i < params.size(); i++) {
+  for (std::size_t i = 0; i < params.size(); i++) {
     params[i]->GenBuilderParameter(s);
     if (i != params.size() - 1) {
       s << ", ";
@@ -677,7 +677,7 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 
     // Go through all the fields and replace constrained fields with fixed values
     // when calling the parent constructor.
-    for (int i = 0; i < parent_params.size(); i++) {
+    for (std::size_t i = 0; i < parent_params.size(); i++) {
       const auto& field = parent_params[i];
       const auto& constraint = parent_constraints_.find(field->GetName());
       if (constraint != parent_constraints_.end()) {
@@ -711,7 +711,7 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
   if (parent_ != nullptr && saved_params.size() > 0) {
     s << ",";
   }
-  for (int i = 0; i < saved_params.size(); i++) {
+  for (std::size_t i = 0; i < saved_params.size(); i++) {
     const auto& saved_param_name = saved_params[i]->GetName();
     if (saved_params[i]->BuilderParameterMustBeMoved()) {
       s << saved_param_name << "_(std::move(" << saved_param_name << "))";
@@ -728,7 +728,7 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
 
   if (params_to_validate.size() > 0) {
     s << "CheckParameterValues(";
-    for (int i = 0; i < params_to_validate.size(); i++) {
+    for (std::size_t i = 0; i < params_to_validate.size(); i++) {
       s << params_to_validate[i]->GetName() << "_";
       if (i != params_to_validate.size() - 1) {
         s << ", ";
@@ -834,8 +834,8 @@ bool PacketDef::GenRustStructFieldNameAndType(std::ostream& s) const {
   if (fields.size() == 0) {
     return false;
   }
-  for (int i = 0; i < fields.size(); i++) {
-    fields[i]->GenRustNameAndType(s);
+  for (const auto& field : fields) {
+    field->GenRustNameAndType(s);
     s << ", ";
   }
   return true;
@@ -851,8 +851,8 @@ void PacketDef::GenRustStructFieldNames(std::ostream& s) const {
       PayloadField::kFieldType,
       FixedScalarField::kFieldType,
   });
-  for (int i = 0; i < fields.size(); i++) {
-    s << fields[i]->GetName();
+  for (const auto field : fields) {
+    s << field->GetName();
     s << ", ";
   }
 }
@@ -986,9 +986,9 @@ void PacketDef::GenRustStructImpls(std::ostream& s) const {
   });
 
   if (fields.size() > 0) {
-    for (int i = 0; i < fields.size(); i++) {
-      auto field_type = fields[i]->GetFieldType();
-      s << fields[i]->GetName();
+    for (const auto& field : fields) {
+      auto field_type = field->GetFieldType();
+      s << field->GetName();
       s << ", ";
     }
   }

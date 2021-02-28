@@ -245,8 +245,8 @@ FieldList ParentDef::GetParamList() const {
 
 void ParentDef::GenMembers(std::ostream& s) const {
   // Add the parameter list.
-  for (int i = 0; i < fields_.size(); i++) {
-    if (fields_[i]->GenBuilderMember(s)) {
+  for (const auto& field : fields_) {
+    if (field->GenBuilderMember(s)) {
       s << "_{};";
     }
   }
@@ -463,8 +463,7 @@ void ParentDef::GenInstanceOf(std::ostream& s) const {
     });
 
     // Check if constrained parent fields are set to their correct values.
-    for (int i = 0; i < parent_params.size(); i++) {
-      const auto& field = parent_params[i];
+    for (const auto& field : parent_params) {
       const auto& constraint = parent_constraints_.find(field->GetName());
       if (constraint != parent_constraints_.end()) {
         s << "if (parent." << field->GetName() << "_ != ";
@@ -651,8 +650,7 @@ void ParentDef::GenSizeRetVal(std::ostream& s) const {
       BodyField::kFieldType,
   });
   s << "let ret = 0;";
-  for (int i = 0; i < fields.size(); i++) {
-    auto field = fields[i];
+  for (const auto field : fields) {
     bool is_padding = field->GetFieldType() == PaddingField::kFieldType;
     bool is_vector = field->GetFieldType() == VectorField::kFieldType;
     if (is_padding || is_vector) {

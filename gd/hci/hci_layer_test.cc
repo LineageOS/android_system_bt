@@ -139,6 +139,12 @@ class TestHciHal : public hal::HciHal {
     return sent_iso_promise_->get_future();
   }
 
+  PacketView<kLittleEndian> GetSentIso() {
+    auto packetview = GetPacketView(std::move(outgoing_iso_.front()));
+    outgoing_iso_.pop_front();
+    return packetview;
+  }
+
   void Start() {}
 
   void Stop() {}
@@ -197,6 +203,12 @@ class DependsOnHci : public Module {
     queue_end->RegisterEnqueue(GetHandler(), common::Bind(&DependsOnHci::handle_enqueue, common::Unretained(this)));
   }
 
+  void SendIsoData(std::unique_ptr<IsoBuilder> iso) {
+    outgoing_iso_.push(std::move(iso));
+    auto queue_end = hci_->GetIsoQueueEnd();
+    queue_end->RegisterEnqueue(GetHandler(), common::Bind(&DependsOnHci::handle_enqueue_iso, common::Unretained(this)));
+  }
+
   std::future<void> GetReceivedEventFuture() {
     ASSERT_LOG(event_promise_ == nullptr, "Promises promises ... Only one at a time");
     event_promise_ = std::make_unique<std::promise<void>>();
@@ -227,6 +239,23 @@ class DependsOnHci : public Module {
     return packetview;
   }
 
+  std::future<void> GetReceivedIsoFuture() {
+    ASSERT_LOG(iso_promise_ == nullptr, "Promises promises ... Only one at a time");
+    iso_promise_ = std::make_unique<std::promise<void>>();
+    return iso_promise_->get_future();
+  }
+
+  size_t GetNumReceivedIsoPackets() {
+    return incoming_iso_packets_.size();
+  }
+
+  IsoView GetReceivedIso() {
+    std::lock_guard<std::mutex> lock(list_protector_);
+    IsoView packetview = incoming_iso_packets_.front();
+    incoming_iso_packets_.pop_front();
+    return packetview;
+  }
+
   void Start() {
     hci_ = GetDependency<HciLayer>();
     hci_->RegisterEventHandler(
@@ -235,10 +264,13 @@ class DependsOnHci : public Module {
                                  GetHandler()->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
     hci_->GetAclQueueEnd()->RegisterDequeue(GetHandler(),
                                             common::Bind(&DependsOnHci::handle_acl, common::Unretained(this)));
+    hci_->GetIsoQueueEnd()->RegisterDequeue(
+        GetHandler(), common::Bind(&DependsOnHci::handle_iso, common::Unretained(this)));
   }
 
   void Stop() {
     hci_->GetAclQueueEnd()->UnregisterDequeue();
+    hci_->GetIsoQueueEnd()->UnregisterDequeue();
   }
 
   void ListDependencies(ModuleList* list) {
@@ -253,8 +285,10 @@ class DependsOnHci : public Module {
   const LeSecurityInterface* le_security_interface_;
   std::list<EventView> incoming_events_;
   std::list<AclView> incoming_acl_packets_;
+  std::list<IsoView> incoming_iso_packets_;
   std::unique_ptr<std::promise<void>> event_promise_;
   std::unique_ptr<std::promise<void>> acl_promise_;
+  std::unique_ptr<std::promise<void>> iso_promise_;
   /* This mutex is protecting lists above from being pushed/popped from different threads at same time */
   std::mutex list_protector_;
 
@@ -280,6 +314,17 @@ class DependsOnHci : public Module {
     }
   }
 
+  void handle_iso() {
+    std::lock_guard<std::mutex> lock(list_protector_);
+    auto iso_ptr = hci_->GetIsoQueueEnd()->TryDequeue();
+    incoming_iso_packets_.push_back(*iso_ptr);
+    if (iso_promise_ != nullptr) {
+      auto promise = std::move(iso_promise_);
+      iso_promise_.reset();
+      promise->set_value();
+    }
+  }
+
   std::queue<std::unique_ptr<AclBuilder>> outgoing_acl_;
 
   std::unique_ptr<AclBuilder> handle_enqueue() {
@@ -287,6 +332,15 @@ class DependsOnHci : public Module {
     auto acl = std::move(outgoing_acl_.front());
     outgoing_acl_.pop();
     return acl;
+  }
+
+  std::queue<std::unique_ptr<IsoBuilder>> outgoing_iso_;
+
+  std::unique_ptr<IsoBuilder> handle_enqueue_iso() {
+    hci_->GetIsoQueueEnd()->UnregisterEnqueue();
+    auto iso = std::move(outgoing_iso_.front());
+    outgoing_iso_.pop();
+    return iso;
   }
 };
 
@@ -749,6 +803,63 @@ TEST_F(HciTest, receiveMultipleAclPackets) {
   ASSERT_EQ(bd_addr.length() + sizeof(handle) + sizeof(received_packets), acl_view.GetPayload().size());
   auto itr = acl_view.GetPayload().begin();
   ASSERT_EQ(bd_addr, itr.extract<Address>());
+  ASSERT_EQ(handle, itr.extract<uint16_t>());
+  ASSERT_EQ(received_packets, itr.extract<uint16_t>());
+}
+
+TEST_F(HciTest, receiveMultipleIsoPackets) {
+  uint16_t handle = 0x0001;
+  const uint16_t num_packets = 100;
+  IsoPacketBoundaryFlag packet_boundary_flag = IsoPacketBoundaryFlag::COMPLETE_SDU;
+  TimeStampFlag timestamp_flag = TimeStampFlag::NOT_PRESENT;
+  for (uint16_t i = 0; i < num_packets; i++) {
+    auto iso_payload = std::make_unique<RawBuilder>();
+    iso_payload->AddOctets2(handle);
+    iso_payload->AddOctets2(i);
+    hal->callbacks->isoDataReceived(
+        GetPacketBytes(IsoBuilder::Create(handle, packet_boundary_flag, timestamp_flag, std::move(iso_payload))));
+  }
+  auto incoming_iso_future = upper->GetReceivedIsoFuture();
+  uint16_t received_packets = 0;
+  while (received_packets < num_packets - 1) {
+    size_t num_rcv_packets = upper->GetNumReceivedIsoPackets();
+    if (num_rcv_packets == 0) {
+      auto incoming_iso_status = incoming_iso_future.wait_for(kAclTimeout);
+      // Get the next future.
+      ASSERT_EQ(incoming_iso_status, std::future_status::ready);
+      incoming_iso_future = upper->GetReceivedIsoFuture();
+      num_rcv_packets = upper->GetNumReceivedIsoPackets();
+    }
+    for (size_t i = 0; i < num_rcv_packets; i++) {
+      auto iso_view = upper->GetReceivedIso();
+      ASSERT_TRUE(iso_view.IsValid());
+      ASSERT_EQ(sizeof(handle) + sizeof(received_packets), iso_view.GetPayload().size());
+      auto itr = iso_view.GetPayload().begin();
+      ASSERT_EQ(handle, itr.extract<uint16_t>());
+      ASSERT_EQ(received_packets, itr.extract<uint16_t>());
+      received_packets += 1;
+    }
+  }
+
+  // Check to see if this future was already fulfilled.
+  auto iso_race_status = incoming_iso_future.wait_for(std::chrono::milliseconds(1));
+  if (iso_race_status == std::future_status::ready) {
+    // Get the next future.
+    incoming_iso_future = upper->GetReceivedIsoFuture();
+  }
+
+  // One last packet to make sure they were all sent.  Already got the future.
+  auto iso_payload = std::make_unique<RawBuilder>();
+  iso_payload->AddOctets2(handle);
+  iso_payload->AddOctets2(num_packets);
+  hal->callbacks->isoDataReceived(
+      GetPacketBytes(IsoBuilder::Create(handle, packet_boundary_flag, timestamp_flag, std::move(iso_payload))));
+  auto incoming_iso_status = incoming_iso_future.wait_for(kAclTimeout);
+  ASSERT_EQ(incoming_iso_status, std::future_status::ready);
+  auto iso_view = upper->GetReceivedIso();
+  ASSERT_TRUE(iso_view.IsValid());
+  ASSERT_EQ(sizeof(handle) + sizeof(received_packets), iso_view.GetPayload().size());
+  auto itr = iso_view.GetPayload().begin();
   ASSERT_EQ(handle, itr.extract<uint16_t>());
   ASSERT_EQ(received_packets, itr.extract<uint16_t>());
 }

@@ -267,8 +267,7 @@ void StructDef::GenConstructor(std::ostream& s) const {
     });
 
     // Set constrained parent fields to their correct values.
-    for (int i = 0; i < parent_params.size(); i++) {
-      const auto& field = parent_params[i];
+    for (const auto& field : parent_params) {
       const auto& constraint = parent_constraints_.find(field->GetName());
       if (constraint != parent_constraints_.end()) {
         s << parent_->name_ << "::" << field->GetName() << "_ = ";

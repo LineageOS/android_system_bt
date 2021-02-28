@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#include "audio_hearing_aid_hw.h"
+#include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
 
 #define CASE_RETURN_STR(const) \
   case const:                  \

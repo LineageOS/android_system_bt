@@ -42,7 +42,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/socket_utils/sockets.h"
 
-#include "audio_hearing_aid_hw.h"
+#include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
 
 /*****************************************************************************
  *  Constants & Macros
@@ -68,6 +68,28 @@
     ERROR("### ASSERT : %s line %d %s (%d) ###", __FILE__, __LINE__, msg, \
           val);                                                           \
   }
+
+#define CASE_RETURN_STR(const) \
+  case const:                  \
+    return #const;
+
+static const char* audio_ha_hw_dump_ctrl_event(tHEARING_AID_CTRL_CMD event) {
+  switch (event) {
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_NONE)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_CHECK_READY)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_START)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_STOP)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_SUSPEND)
+    CASE_RETURN_STR(HEARING_AID_CTRL_GET_INPUT_AUDIO_CONFIG)
+    CASE_RETURN_STR(HEARING_AID_CTRL_GET_OUTPUT_AUDIO_CONFIG)
+    CASE_RETURN_STR(HEARING_AID_CTRL_SET_OUTPUT_AUDIO_CONFIG)
+    CASE_RETURN_STR(HEARING_AID_CTRL_CMD_OFFLOAD_START)
+    default:
+      break;
+  }
+
+  return "UNKNOWN HEARING_AID_CTRL_CMD";
+}
 
 /*****************************************************************************
  *  Local type definitions
