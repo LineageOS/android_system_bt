@@ -365,7 +365,7 @@ static void uipc_flush_ch_locked(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id) {
 
     /* read sufficiently large buffer to ensure flush empties socket faster than
        it is getting refilled */
-    read(pfd.fd, &buf, UIPC_FLUSH_BUFFER_SIZE);
+    (void)read(pfd.fd, &buf, UIPC_FLUSH_BUFFER_SIZE);
   }
 }
 
