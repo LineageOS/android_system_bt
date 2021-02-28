@@ -228,13 +228,14 @@ const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
 };
 
 /* bta security callback */
-const tBTM_APPL_INFO bta_security = {&bta_dm_pin_cback,
-                                     &bta_dm_new_link_key_cback,
-                                     &bta_dm_authentication_complete_cback,
-                                     &bta_dm_bond_cancel_complete_cback,
-                                     &bta_dm_sp_cback,
-                                     &bta_dm_ble_smp_cback,
-                                     &bta_dm_ble_id_key_cback};
+const tBTM_APPL_INFO bta_security = {
+    .p_pin_callback = &bta_dm_pin_cback,
+    .p_link_key_callback = &bta_dm_new_link_key_cback,
+    .p_auth_complete_callback = &bta_dm_authentication_complete_cback,
+    .p_bond_cancel_cmpl_callback = &bta_dm_bond_cancel_complete_cback,
+    .p_sp_callback = &bta_dm_sp_cback,
+    .p_le_callback = &bta_dm_ble_smp_cback,
+    .p_le_key_callback = &bta_dm_ble_id_key_cback};
 
 #define MAX_DISC_RAW_DATA_BUF (4096)
 uint8_t g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
