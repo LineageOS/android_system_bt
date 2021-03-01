@@ -23,6 +23,7 @@
 
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "osi/include/allocator.h"
+#include "osi/include/compat.h"
 #include "osi/include/log.h"
 #include "stack/include/port_api.h"
 
