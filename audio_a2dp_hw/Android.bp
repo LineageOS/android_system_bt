@@ -40,6 +40,7 @@ cc_library_static {
     srcs: [
         "src/audio_a2dp_hw_utils.cc",
     ],
+    host_supported: true,
 }
 
 // Audio A2DP library unit tests for target and host

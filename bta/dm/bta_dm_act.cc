@@ -2549,7 +2549,11 @@ void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
         if (((p_bta_dm_rm_cfg[j].app_id == app_id) ||
              (p_bta_dm_rm_cfg[j].app_id == BTA_ALL_APP_ID)) &&
             (p_bta_dm_rm_cfg[j].id == id)) {
-          role = toBTA_PREF_ROLES(p_bta_dm_rm_cfg[j].cfg);
+          ASSERT_LOG(p_bta_dm_rm_cfg[j].cfg <= BTA_PERIPHERAL_ROLE_ONLY,
+                     "Passing illegal preferred role:0x%02x [0x%02x<=>0x%02x]",
+                     p_bta_dm_rm_cfg[j].cfg, BTA_ANY_ROLE,
+                     BTA_PERIPHERAL_ROLE_ONLY);
+          role = static_cast<tBTA_PREF_ROLES>(p_bta_dm_rm_cfg[j].cfg);
           if (role > p_dev->pref_role) p_dev->pref_role = role;
           break;
         }

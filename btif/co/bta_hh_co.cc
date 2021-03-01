@@ -161,6 +161,7 @@ static int uhid_read_event(btif_hh_device_t* p_dev) {
         APPL_TRACE_ERROR("%s: UHID_FEATURE: Invalid report type = %d", __func__,
                          ev.u.feature.rtype);
       break;
+#ifdef OS_ANDROID  // Host kernel does not support UHID_SET_REPORT
     case UHID_SET_REPORT:
       if (ret < (ssize_t)(sizeof(ev.type) + sizeof(ev.u.set_report))) {
           APPL_TRACE_ERROR("%s: Invalid size read from uhid-dev: %zd < %zu",
@@ -184,6 +185,7 @@ static int uhid_read_event(btif_hh_device_t* p_dev) {
             APPL_TRACE_ERROR("%s:UHID_SET_REPORT: Invalid Report type = %d"
                           , __func__, ev.u.set_report.rtype);
         break;
+#endif  // ifdef OS_ANDROID
     default:
       APPL_TRACE_DEBUG("Invalid event from uhid-dev: %u\n", ev.type);
   }
