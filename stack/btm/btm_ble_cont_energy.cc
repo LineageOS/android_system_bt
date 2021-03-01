@@ -68,7 +68,8 @@ static void btm_ble_cont_energy_cmpl_cback(tBTM_VSC_CMPL* p_params) {
 
   if (NULL != ble_energy_info_cb.p_ener_cback)
     ble_energy_info_cb.p_ener_cback(total_tx_time, total_rx_time,
-                                    total_idle_time, total_energy_used, status);
+                                    total_idle_time, total_energy_used,
+                                    static_cast<tHCI_STATUS>(status));
 
   return;
 }

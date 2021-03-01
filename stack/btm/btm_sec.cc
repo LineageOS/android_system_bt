@@ -1053,7 +1053,7 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
                                               p_ref_data, sec_act);
   }
 
-  tBTM_STATUS rc = 0;
+  tBTM_STATUS rc = BTM_SUCCESS;
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   if (!p_dev_rec ||
@@ -1641,7 +1641,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
     BTM_TRACE_DEBUG("%s: p_dev_rec=%p, clearing callback. old p_callback=%p",
                     __func__, p_dev_rec, p_dev_rec->p_callback);
     p_dev_rec->p_callback = NULL;
-    (*p_callback)(&bd_addr, transport, p_dev_rec->p_ref_data, (uint8_t)rc);
+    (*p_callback)(&bd_addr, transport, p_dev_rec->p_ref_data, rc);
   }
 
   return (rc);
@@ -1805,7 +1805,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
     {
       if (p_callback) {
         LOG_DEBUG("Notifying client that security access has been granted");
-        (*p_callback)(&bd_addr, transport, p_ref_data, (uint8_t)rc);
+        (*p_callback)(&bd_addr, transport, p_ref_data, rc);
       }
     }
     return rc;
@@ -1874,7 +1874,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
   if (rc != BTM_CMD_STARTED) {
     if (p_callback) {
       p_dev_rec->p_callback = NULL;
-      (*p_callback)(&bd_addr, transport, p_ref_data, (uint8_t)rc);
+      (*p_callback)(&bd_addr, transport, p_ref_data, rc);
     }
   }
 
@@ -2371,7 +2371,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
 
   /* There is no next procedure or start of procedure failed, notify the waiting
    * layer */
-  btm_sec_dev_rec_cback_event(p_dev_rec, status, false);
+  btm_sec_dev_rec_cback_event(p_dev_rec, btm_status, false);
 }
 
 /*******************************************************************************
@@ -2884,7 +2884,7 @@ void btm_rem_oob_req(uint8_t* p) {
     if ((*btm_cb.api.p_sp_callback)(BTM_SP_RMT_OOB_EVT,
                                     (tBTM_SP_EVT_DATA*)&evt_data) ==
         BTM_NOT_AUTHORIZED) {
-      BTM_RemoteOobDataReply(true, p_bda, c, r);
+      BTM_RemoteOobDataReply(static_cast<tBTM_STATUS>(true), p_bda, c, r);
     }
     return;
   }
@@ -3156,7 +3156,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
   }
 
   /* Authentication succeeded, execute the next security procedure, if any */
-  uint8_t btm_status = btm_sec_execute_procedure(p_dev_rec);
+  tBTM_STATUS btm_status = btm_sec_execute_procedure(p_dev_rec);
 
   /* If there is no next procedure, or procedure failed to start, notify the
    * caller */
@@ -3351,7 +3351,7 @@ static void btm_sec_connect_after_reject_timeout(UNUSED_ATTR void* data) {
 void btm_sec_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  uint8_t res;
+  tBTM_STATUS res;
   bool is_pairing_device = false;
   bool addr_matched;
   uint8_t bit_shift = 0;
@@ -3560,14 +3560,15 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
     p_dev_rec->security_required &= ~BTM_SEC_OUT_AUTHENTICATE;
 
     /* remember flag before it is initialized */
+    bool is_pair_flags_we_started_dd = false;
     if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
-      res = true;
+      is_pair_flags_we_started_dd = true;
     else
-      res = false;
+      is_pair_flags_we_started_dd = false;
 
     btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
 
-    if (res) {
+    if (is_pair_flags_we_started_dd) {
       /* Let l2cap start bond timer */
       l2cu_update_lcb_4_bonding(p_dev_rec->bd_addr, true);
     }
@@ -4704,7 +4705,7 @@ static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec,
                                           uint8_t encr_enable) {
   if (fixed_queue_is_empty(btm_cb.sec_pending_q)) return;
 
-  uint8_t res = encr_enable ? BTM_SUCCESS : BTM_ERR_PROCESSING;
+  const tBTM_STATUS res = encr_enable ? BTM_SUCCESS : BTM_ERR_PROCESSING;
   list_t* list = fixed_queue_get_list(btm_cb.sec_pending_q);
   for (const list_node_t* node = list_begin(list); node != list_end(list);) {
     tBTM_SEC_QUEUE_ENTRY* p_e = (tBTM_SEC_QUEUE_ENTRY*)list_node(node);

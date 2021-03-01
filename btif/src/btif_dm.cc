@@ -215,7 +215,7 @@ static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type);
 static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type);
 
 static void bte_scan_filt_param_cfg_evt(uint8_t action_type, uint8_t avbl_space,
-                                        uint8_t ref_value, uint8_t status);
+                                        uint8_t ref_value, uint8_t btm_status);
 
 static char* btif_get_default_local_name();
 
@@ -1213,8 +1213,11 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
     } break;
 
     case BTA_DM_INQ_CMPL_EVT: {
-      BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_DELETE, 0, nullptr,
-                                 base::Bind(&bte_scan_filt_param_cfg_evt, 0));
+      BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_DELETE,
+                                 static_cast<tBTM_BLE_PF_FILT_INDEX>(0),
+                                 nullptr,
+                                 base::Bind(&bte_scan_filt_param_cfg_evt,
+                                            btm_status_value(BTM_SUCCESS)));
     } break;
     case BTA_DM_DISC_CMPL_EVT: {
       invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
@@ -1233,7 +1236,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
         btgatt_filt_param_setup_t adv_filt_param;
         memset(&adv_filt_param, 0, sizeof(btgatt_filt_param_setup_t));
         BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_DELETE, 0, nullptr,
-                                   base::Bind(&bte_scan_filt_param_cfg_evt, 0));
+                                   base::Bind(&bte_scan_filt_param_cfg_evt,
+                                              btm_status_value(BTM_SUCCESS)));
         invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
       }
     } break;
@@ -1780,12 +1784,13 @@ static void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
 
 /* Scan filter param config event */
 static void bte_scan_filt_param_cfg_evt(uint8_t ref_value, uint8_t avbl_space,
-                                        uint8_t action_type, uint8_t status) {
+                                        uint8_t action_type,
+                                        uint8_t btm_status) {
   /* This event occurs on calling BTA_DmBleCfgFilterCondition internally,
   ** and that is why there is no HAL callback
   */
-  if (BTA_SUCCESS != status) {
-    BTIF_TRACE_ERROR("%s, %d", __func__, status);
+  if (btm_status != btm_status_value(BTM_SUCCESS)) {
+    BTIF_TRACE_ERROR("%s, %d", __func__, btm_status);
   } else {
     BTIF_TRACE_DEBUG("%s", __func__);
   }
@@ -1808,8 +1813,9 @@ void btif_dm_start_discovery(void) {
   BTIF_TRACE_EVENT("%s", __func__);
 
   /* Cleanup anything remaining on index 0 */
-  BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_DELETE, 0, nullptr,
-                             base::Bind(&bte_scan_filt_param_cfg_evt, 0));
+  BTM_BleAdvFilterParamSetup(
+      BTM_BLE_SCAN_COND_DELETE, static_cast<tBTM_BLE_PF_FILT_INDEX>(0), nullptr,
+      base::Bind(&bte_scan_filt_param_cfg_evt, btm_status_value(BTM_SUCCESS)));
 
   auto adv_filt_param = std::make_unique<btgatt_filt_param_setup_t>();
   /* Add an allow-all filter on index 0*/
@@ -1819,9 +1825,10 @@ void btif_dm_start_discovery(void) {
   adv_filt_param->list_logic_type = BTA_DM_BLE_PF_LIST_LOGIC_OR;
   adv_filt_param->rssi_low_thres = LOWEST_RSSI_VALUE;
   adv_filt_param->rssi_high_thres = LOWEST_RSSI_VALUE;
-  BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_ADD, 0,
-                             std::move(adv_filt_param),
-                             base::Bind(&bte_scan_filt_param_cfg_evt, 0));
+  BTM_BleAdvFilterParamSetup(
+      BTM_BLE_SCAN_COND_ADD, static_cast<tBTM_BLE_PF_FILT_INDEX>(0),
+      std::move(adv_filt_param),
+      base::Bind(&bte_scan_filt_param_cfg_evt, btm_status_value(BTM_SUCCESS)));
 
   /* Will be enabled to true once inquiry busy level has been received */
   btif_dm_inquiry_in_progress = false;
