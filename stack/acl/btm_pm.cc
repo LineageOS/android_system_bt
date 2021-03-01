@@ -190,7 +190,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   if (p_cb == nullptr) {
     LOG_WARN("Unable to find power manager for peer: %s",
              PRIVATE_ADDRESS(remote_bda));
-    return false;
+    return BTM_UNKNOWN_ADDR;
   }
   uint16_t handle = p_cb->handle_;
 
