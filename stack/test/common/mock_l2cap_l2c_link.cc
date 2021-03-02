@@ -36,7 +36,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
 }
 tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb) {
   mock_function_count_map[__func__]++;

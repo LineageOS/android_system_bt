@@ -159,38 +159,38 @@ tACL_CONN* acl_get_connection_from_handle(uint16_t handle) {
 tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
                                  uint16_t* p_timeout) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_ReadFailedContactCounter(const RawAddress& remote_bda,
                                          tBTM_CMPL_CB* p_cb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_ReadRSSI(const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
                             tBT_TRANSPORT transport, tBTM_CMPL_CB* p_cb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
                                  uint16_t timeout) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_SwitchRoleToCentral(const RawAddress& remote_bd_addr) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                               tBT_TRANSPORT transport) {

@@ -53,26 +53,26 @@ const RawAddress* BTM_ReadScoBdAddr(uint16_t sco_inx) {
 tBTM_STATUS BTM_ChangeEScoLinkParms(uint16_t sco_inx,
                                     tBTM_CHG_ESCO_PARAMS* p_parms) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
                           uint16_t pkt_types, uint16_t* p_sco_inx,
                           tBTM_SCO_CB* p_conn_cb, tBTM_SCO_CB* p_disc_cb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_RegForEScoEvts(uint16_t sco_inx,
                                tBTM_ESCO_CBACK* p_esco_cback) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS BTM_SetEScoMode(enh_esco_params_t* p_parms) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 uint8_t BTM_GetNumScoLinks(void) {
   mock_function_count_map[__func__]++;
