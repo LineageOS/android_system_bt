@@ -746,7 +746,8 @@ tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda,
                     *settings);
     }
     if ((*settings & HCI_ENABLE_SNIFF_MODE) &&
-        (!HCI_SNIFF_MODE_SUPPORTED(localFeatures))) {
+        ((!HCI_SNIFF_MODE_SUPPORTED(localFeatures)) ||
+         interop_match_addr(INTEROP_DISABLE_SNIFF, &remote_bda))) {
       *settings &= (~HCI_ENABLE_SNIFF_MODE);
       BTM_TRACE_API("BTM_SetLinkPolicy sniff not supported (settings: 0x%04x)",
                     *settings);
