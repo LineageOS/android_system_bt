@@ -132,10 +132,10 @@ uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
   return 0;
 }
-uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
-                           tSMP_EVT_DATA* p_data) {
+tSMP_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
+                               tSMP_EVT_DATA* p_data) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return SMP_SUCCESS;
 }
 void BTM_BleConfirmReply(const RawAddress& bd_addr, uint8_t res) {
   mock_function_count_map[__func__]++;
