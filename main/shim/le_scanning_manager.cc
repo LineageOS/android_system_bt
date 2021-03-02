@@ -29,6 +29,7 @@
 #include "gd/hci/le_scanning_manager.h"
 #include "main/shim/entry.h"
 
+#include "advertise_data_parser.h"
 #include "stack/btm/btm_int_types.h"
 
 extern void btm_ble_process_adv_pkt_cont_for_inquiry(
@@ -36,6 +37,10 @@ extern void btm_ble_process_adv_pkt_cont_for_inquiry(
     uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
     int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int,
     std::vector<uint8_t> advertising_data);
+
+extern void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
+                                                 BD_NAME bd_name,
+                                                 tBT_DEVICE_TYPE dev_type);
 
 class BleScannerInterfaceImpl : public BleScannerInterface,
                                 public bluetooth::hci::ScanningCallback {
@@ -63,6 +68,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
   void Scan(bool start) {
     LOG(INFO) << __func__ << " in shim layer";
     bluetooth::shim::GetScanning()->Scan(start);
+    init_address_cache();
   }
 
   /** Setup scan filter params */
@@ -212,6 +218,12 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
 
     do_in_jni_thread(
         FROM_HERE,
+        base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
+                       base::Unretained(this), raw_address, address_type,
+                       advertising_data));
+
+    do_in_jni_thread(
+        FROM_HERE,
         base::BindOnce(&ScanningCallbacks::OnScanResult,
                        base::Unretained(scanning_callbacks_), event_type,
                        address_type, raw_address, primary_phy, secondary_phy,
@@ -313,6 +325,68 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
         apcf_command.data_mask.begin(), apcf_command.data_mask.end());
     return true;
   }
+
+  void handle_remote_properties(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
+                                std::vector<uint8_t> advertising_data) {
+    if (find_address_cache(bd_addr)) {
+      return;
+    }
+
+    uint8_t remote_name_len;
+    const uint8_t* p_eir_remote_name = AdvertiseDataParser::GetFieldByType(
+        advertising_data, BTM_EIR_COMPLETE_LOCAL_NAME_TYPE, &remote_name_len);
+
+    if (p_eir_remote_name == NULL) {
+      p_eir_remote_name = AdvertiseDataParser::GetFieldByType(
+          advertising_data, BT_EIR_SHORTENED_LOCAL_NAME_TYPE, &remote_name_len);
+    }
+
+    if ((addr_type != BLE_ADDR_RANDOM) || (p_eir_remote_name)) {
+      add_address_cache(bd_addr);
+
+      if (p_eir_remote_name) {
+        if (remote_name_len > BD_NAME_LEN + 1 ||
+            (remote_name_len == BD_NAME_LEN + 1 &&
+             p_eir_remote_name[BD_NAME_LEN] != '\0')) {
+          LOG_INFO("%s dropping invalid packet - device name too long: %d",
+                   __func__, remote_name_len);
+          return;
+        }
+
+        bt_bdname_t bdname;
+        memcpy(bdname.name, p_eir_remote_name, remote_name_len);
+        if (remote_name_len < BD_NAME_LEN + 1)
+          bdname.name[remote_name_len] = '\0';
+
+        btif_dm_update_ble_remote_properties(bd_addr, bdname.name, 0x00);
+      }
+    }
+  }
+
+  void add_address_cache(const RawAddress& p_bda) {
+    // Remove the oldest entries
+    while (remote_bdaddr_cache_.size() >= remote_bdaddr_cache_max_size_) {
+      const RawAddress& raw_address = remote_bdaddr_cache_ordered_.front();
+      remote_bdaddr_cache_.erase(raw_address);
+      remote_bdaddr_cache_ordered_.pop();
+    }
+    remote_bdaddr_cache_.insert(p_bda);
+    remote_bdaddr_cache_ordered_.push(p_bda);
+  }
+
+  bool find_address_cache(const RawAddress& p_bda) {
+    return (remote_bdaddr_cache_.find(p_bda) != remote_bdaddr_cache_.end());
+  }
+
+  void init_address_cache(void) {
+    remote_bdaddr_cache_.clear();
+    remote_bdaddr_cache_ordered_ = {};
+  }
+
+  // all access to this variable should be done on the jni thread
+  std::set<RawAddress> remote_bdaddr_cache_;
+  std::queue<RawAddress> remote_bdaddr_cache_ordered_;
+  const size_t remote_bdaddr_cache_max_size_ = 1024;
 };
 
 BleScannerInterfaceImpl* bt_le_scanner_instance = nullptr;
