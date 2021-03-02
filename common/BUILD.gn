@@ -34,8 +34,8 @@ static_library("common") {
   ]
 
   deps = [
+    "//bt:libbt-platform-protos-lite",
     "//bt/gd/rust/shim:init_flags_bridge_header",
-    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
   ]
 
   configs += [ "//bt:target_defaults" ]

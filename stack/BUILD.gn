@@ -220,8 +220,8 @@ source_set("stack") {
   deps = [
     ":crypto_toolbox",
     ":nonstandard_codecs",
+    "//bt:libbt-platform-protos-lite",
     "//bt/gd/rust/shim:init_flags_bridge_header",
-    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
     "//bt/types",
     "//bt/types",
   ]

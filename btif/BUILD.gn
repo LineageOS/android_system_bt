@@ -114,10 +114,10 @@ static_library("btif") {
   ]
 
   deps = [
+    "//bt:libbt-platform-protos-lite",
     "//bt/common",
     "//bt/gd/rust/shim:init_flags_bridge_header",
     "//bt/profile/avrcp:profile_avrcp",
-    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
   ]
 
   configs += [

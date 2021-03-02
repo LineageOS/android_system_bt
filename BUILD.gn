@@ -128,6 +128,12 @@ config("target_defaults") {
   configs = [ ":external_libchrome" ]
 }
 
+group("libbt-platform-protos-lite") {
+  deps = [
+    "//external/proto_logging/stats/enums/bluetooth:libbt-platform-protos-lite",
+  ]
+}
+
 # Configurations to use as dependencies for GN build
 config("external_gtest") {
   configs = [
