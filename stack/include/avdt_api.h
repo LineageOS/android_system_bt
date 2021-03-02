@@ -31,7 +31,6 @@
 
 #include "bt_target.h"
 #include "bt_types.h"
-#include "osi/include/log.h"
 
 /*****************************************************************************
  *  Constants
@@ -52,25 +51,6 @@ typedef enum : uint16_t {
   AVDT_BUSY = 4,         /* A procedure is already in progress */
   AVDT_WRITE_FAIL = 5,   /* Write failed */
 } tAVDT_RESULT;
-
-inline tAVDT_RESULT ToAvdtResult(uint16_t result) {
-  ASSERT_LOG(result <= AVDT_WRITE_FAIL, "Unable to convert illegal result:%hu",
-             result);
-  return static_cast<tAVDT_RESULT>(result);
-}
-
-inline std::string avdt_result_text(const tAVDT_RESULT& result) {
-  switch (result) {
-    CASE_RETURN_TEXT(AVDT_SUCCESS);
-    CASE_RETURN_TEXT(AVDT_BAD_PARAMS);
-    CASE_RETURN_TEXT(AVDT_NO_RESOURCES);
-    CASE_RETURN_TEXT(AVDT_BAD_HANDLE);
-    CASE_RETURN_TEXT(AVDT_BUSY);
-    CASE_RETURN_TEXT(AVDT_WRITE_FAIL);
-    default:
-      return base::StringPrintf("UNKNOWN[%hu]", result);
-  }
-}
 
 /* The index to access the codec type in codec_info[]. */
 #define AVDT_CODEC_TYPE_INDEX 2

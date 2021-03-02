@@ -26,6 +26,7 @@
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "main/shim/shim.h"
+#include "osi/include/log.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"

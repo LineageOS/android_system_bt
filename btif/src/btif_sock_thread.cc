@@ -47,6 +47,7 @@
 #include <unistd.h>
 
 #include <mutex>
+#include <optional>
 #include <string>
 
 #include "bta_api.h"
@@ -76,22 +77,22 @@
 #define CMD_REMOVE_FD 4
 #define CMD_USER_PRIVATE 5
 
-typedef struct {
+struct poll_slot_t {
   struct pollfd pfd;
   uint32_t user_id;
   int type;
   int flags;
-} poll_slot_t;
-typedef struct {
+};
+struct thread_slot_t {
   int cmd_fdr, cmd_fdw;
   int poll_count;
   poll_slot_t ps[MAX_POLL];
   int psi[MAX_POLL];  // index of poll slot
-  pthread_t thread_id;
+  std::optional<pthread_t> thread_id;
   btsock_signaled_cb callback;
   btsock_cmd_cb cmd_callback;
   int used;
-} thread_slot_t;
+};
 static thread_slot_t ts[MAX_THREAD];
 
 static void* sock_poll_thread(void* arg);
@@ -156,7 +157,7 @@ void btsock_thread_init() {
     for (h = 0; h < MAX_THREAD; h++) {
       ts[h].cmd_fdr = ts[h].cmd_fdw = -1;
       ts[h].used = 0;
-      ts[h].thread_id = -1;
+      ts[h].thread_id = std::nullopt;
       ts[h].poll_count = 0;
       ts[h].callback = NULL;
       ts[h].cmd_callback = NULL;
@@ -223,7 +224,7 @@ int btsock_thread_add_fd(int h, int fd, int type, int flags, uint32_t user_id) {
   }
   if (flags & SOCK_THREAD_ADD_FD_SYNC) {
     // must executed in socket poll thread
-    if (ts[h].thread_id == pthread_self()) {
+    if (ts[h].thread_id.value() == pthread_self()) {
       // cleanup one-time flags
       flags &= ~SOCK_THREAD_ADD_FD_SYNC;
       add_poll(h, fd, type, flags, user_id);
@@ -321,9 +322,9 @@ int btsock_thread_exit(int h) {
   OSI_NO_INTR(ret = send(ts[h].cmd_fdw, &cmd, sizeof(cmd), 0));
 
   if (ret == sizeof(cmd)) {
-    if (ts[h].thread_id != -1) {
-      pthread_join(ts[h].thread_id, 0);
-      ts[h].thread_id = -1;
+    if (ts[h].thread_id != std::nullopt) {
+      pthread_join(ts[h].thread_id.value(), 0);
+      ts[h].thread_id = std::nullopt;
     }
     free_thread_slot(h);
     return true;
@@ -333,7 +334,7 @@ int btsock_thread_exit(int h) {
 static void init_poll(int h) {
   int i;
   ts[h].poll_count = 0;
-  ts[h].thread_id = -1;
+  ts[h].thread_id = std::nullopt;
   ts[h].callback = NULL;
   ts[h].cmd_callback = NULL;
   for (i = 0; i < MAX_POLL; i++) {
