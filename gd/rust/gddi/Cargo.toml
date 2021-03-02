@@ -13,31 +13,19 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import("//common-mk/cxxbridge.gni")
+[package]
+name = "gddi"
+version = "0.0.1"
+edition = "2018"
 
-rust_library("libbt_common") {
-  crate_name = "bt_common"
+[dependencies]
+gddi_macros = { path = "macros" }
 
-  sources = [ "src/lib.rs" ]
+tokio = { version = "*", features = ['bytes', 'net', 'sync'] }
+quote = "*"
+syn = { version = "*", features = ['default', 'full'] }
 
-  configs = [
-    "//bt/gd/rust/shim:rust_libs",
-    "//bt/gd:rust_defaults",
-  ]
-}
+[lib]
+path = "src/lib.rs"
+crate-type = ["rlib"]
 
-cxxbridge_cc("libbt_common_sys_prop_bridge_code") {
-  sources = [ "src/sys_prop.rs" ]
-
-  configs = [ "//bt/gd:gd_defaults" ]
-}
-
-static_library("libbt_common_sys_prop_cxx") {
-  sources = [ "src/ffi/sys_props.cc" ]
-
-  include_dirs = [ "src/ffi" ]
-
-  deps = [ ":libbt_common_sys_prop_bridge_code" ]
-
-  configs += [ "//bt/gd:gd_defaults" ]
-}

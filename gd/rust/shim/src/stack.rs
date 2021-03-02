@@ -21,6 +21,9 @@ lazy_static! {
 #[cxx::bridge(namespace = bluetooth::shim::rust)]
 mod ffi {
     extern "Rust" {
+        // TODO(abps) - https://github.com/dtolnay/cxx/issues/496
+        // Externing non-local types results in E0117 errors and that breaks
+        // building with CXX > 1.0.
         type Stack;
         type Hci;
         type Controller;

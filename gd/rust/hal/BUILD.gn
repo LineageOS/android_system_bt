@@ -13,31 +13,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-import("//common-mk/cxxbridge.gni")
+rust_library("libbt_hal") {
+  crate_name = "bt_hal"
 
-rust_library("libbt_common") {
-  crate_name = "bt_common"
-
-  sources = [ "src/lib.rs" ]
+  sources = [
+    "src/lib.rs"
+  ]
 
   configs = [
     "//bt/gd/rust/shim:rust_libs",
     "//bt/gd:rust_defaults",
   ]
-}
-
-cxxbridge_cc("libbt_common_sys_prop_bridge_code") {
-  sources = [ "src/sys_prop.rs" ]
-
-  configs = [ "//bt/gd:gd_defaults" ]
-}
-
-static_library("libbt_common_sys_prop_cxx") {
-  sources = [ "src/ffi/sys_props.cc" ]
-
-  include_dirs = [ "src/ffi" ]
-
-  deps = [ ":libbt_common_sys_prop_bridge_code" ]
-
-  configs += [ "//bt/gd:gd_defaults" ]
 }
