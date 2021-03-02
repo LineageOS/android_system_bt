@@ -13,19 +13,81 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import("//bt/gd/dumpsys/bundler/bundler.gni")
+import("//bt/gd/packet/parser/packetgen.gni")
 import("//common-mk/flatbuffer.gni")
 
-config("dumpsys_config") {
-  include_dirs = [
-    "$target_gen_dir",
-    "$target_gen_dir/common",
-    "$target_gen_dir/hci",
-    "$target_gen_dir/l2cap/classic",
-    "$target_gen_dir/shim",
+config("gd_defaults") {
+  cflags_cc = [
+    "-DGOOGLE_PROTOBUF_NO_RTTI",
+    "-Wno-unused-parameter",
+    "-Wno-unused-result",
+    "-Wno-tautological-overlap-compare",
+  ]
+
+  defines = [
+    "OS_LINUX_GENERIC",
+    "OS_GENERIC",
+  ]
+
+  libs = [
+    "ssl",
+    "crypto",
+  ]
+
+  include_dirs = [ "//bt/gd" ]
+  configs = [ "//bt:target_defaults" ]
+}
+
+config("rust_defaults") {
+  # Empty for now
+}
+
+group("gd_default_deps") {
+  deps = [
+    "//bt/gd:BluetoothGeneratedDumpsysDataSchema_h",
+    "//bt/gd:BluetoothGeneratedPackets_h",
+    "//bt/gd/dumpsys:BluetoothGeneratedDumpsysBundledSchema_h",
+    "//bt/gd/rust/shim:init_flags_bridge_header",
   ]
 }
 
-flatbuffer("dumpsys") {
+static_library("libbluetooth_gd") {
+  sources = [
+    "module.cc",
+    "stack_manager.cc",
+  ]
+
+  include_dirs = [ "." ]
+  configs += [ ":gd_defaults" ]
+  deps = [
+    "//bt/gd:BluetoothGeneratedPackets_h",
+    "//bt/gd/att:BluetoothAttSources",
+    "//bt/gd/common:BluetoothCommonSources",
+    "//bt/gd/crypto_toolbox:BluetoothCryptoToolboxSources",
+    "//bt/gd/dumpsys:BluetoothDumpsysSources",
+    "//bt/gd/hal:BluetoothHalSources",
+    "//bt/gd/hal:BluetoothHalSources_hci_rootcanal",
+    "//bt/gd/l2cap:BluetoothL2capSources",
+    "//bt/gd/neighbor:BluetoothNeighborSources",
+    "//bt/gd/rust/shim:libbluetooth_rust_interop",
+    "//bt/gd/security:BluetoothSecuritySources",
+    "//bt/gd/shim:BluetoothShimSources",
+    "//bt/gd/storage:BluetoothStorageSources",
+  ]
+}
+
+flatbuffer("BluetoothGeneratedDumpsysDataSchema_h") {
+  sources = [
+    "common/init_flags.fbs",
+    "dumpsys_data.fbs",
+    "hci/hci_acl_manager.fbs",
+    "l2cap/classic/l2cap_classic_module.fbs",
+    "shim/dumpsys.fbs",
+  ]
+}
+
+bt_flatc_binary_schema("BluetoothGeneratedDumpsysBinarySchema_bfbs") {
   sources = [
     "common/init_flags.fbs",
     "dumpsys_data.fbs",
@@ -34,5 +96,35 @@ flatbuffer("dumpsys") {
     "shim/dumpsys.fbs",
   ]
 
-  all_dependent_configs = [ ":dumpsys_config" ]
+  include_dir = "bt/gd"
+}
+
+packetgen_py("BluetoothGeneratedPackets_python3_cc") {
+  sources = [
+    "hci/hci_packets.pdl",
+    "l2cap/l2cap_packets.pdl",
+    "security/smp_packets.pdl",
+  ]
+
+  include = "bt/gd"
+  source_root = "../.."
+  shards = 10
+}
+
+packetgen_headers("BluetoothGeneratedPackets_h") {
+  sources = [
+    "hci/hci_packets.pdl",
+    "l2cap/l2cap_packets.pdl",
+    "security/smp_packets.pdl",
+  ]
+
+  include = "bt/gd"
+  source_root = "../.."
+}
+
+packetgen_rust("BluetoothGeneratedPackets_rust") {
+  sources = [ "hci/hci_packets.pdl" ]
+
+  include = "bt/gd"
+  source_root = "../.."
 }

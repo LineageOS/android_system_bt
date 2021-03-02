@@ -23,7 +23,6 @@ cc_defaults {
         },
         host: {
             cflags: [
-                "-DOS_LINUX",
                 "-DOS_LINUX_GENERIC",
             ],
         },

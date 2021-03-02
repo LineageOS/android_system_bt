@@ -1,3 +1,4 @@
+#
 #  Copyright 2021 Google, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,26 +13,26 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-source_set("BluetoothOsSources_linux") {
-  sources = [
-    "linux/parameter_provider.cc",
-    "linux/system_properties.cc",
-  ]
+rust("libbt_common") {
+  crate_name = "bt_common"
 
-  configs += [ "//bt/gd:gd_defaults" ]
+  sources = [ "src/lib.rs" ]
+
+  configs += [ "//bt/gd:gd_rust_defaults" ]
 }
 
-source_set("BluetoothOsSources_linux_generic") {
-  sources = [
-    "linux_generic/alarm.cc",
-    "linux_generic/files.cc",
-    "linux_generic/handler.cc",
-    "linux_generic/reactive_semaphore.cc",
-    "linux_generic/reactor.cc",
-    "linux_generic/repeating_alarm.cc",
-    "linux_generic/thread.cc",
-  ]
+cxxbridge_cc("libbt_common_sys_prop_bridge_code") {
+  sources = [ "src/sys_prop.rs" ]
+
+  configs = [ "//bt/gd:gd_defaults" ]
+}
+
+static_library("libbt_common_sys_prop_cxx") {
+  sources = [ "src/ffi/sys_props.cc" ]
+
+  include_dirs = [ "src/ffi" ]
+
+  deps = [ ":libbt_common_sys_prop_bridge_code" ]
 
   configs += [ "//bt/gd:gd_defaults" ]
-  deps = [ ":BluetoothOsSources_linux" ]
 }

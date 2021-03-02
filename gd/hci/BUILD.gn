@@ -34,10 +34,7 @@ source_set("BluetoothHciSources") {
 
   include_dirs = [ "//bt/gd" ]
 
-  deps = [
-    "//bt/gd:dumpsys",
-    "//bt/gd/rust/shim:init_flags_bridge_header",
-  ]
+  deps = [ "//bt/gd:gd_default_deps" ]
 
   configs += [ "//bt:target_defaults" ]
 }

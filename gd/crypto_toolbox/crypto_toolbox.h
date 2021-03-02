@@ -17,6 +17,8 @@
 #pragma once
 
 #include <array>
+#include <cstdint>
+#include <cstring>
 
 namespace bluetooth {
 namespace crypto_toolbox {

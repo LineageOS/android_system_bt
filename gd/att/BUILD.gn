@@ -1,3 +1,4 @@
+#
 #  Copyright 2021 Google, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,27 +12,11 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+#
 
-source_set("BluetoothOsSources_linux") {
-  sources = [
-    "linux/parameter_provider.cc",
-    "linux/system_properties.cc",
-  ]
+source_set("BluetoothAttSources") {
+  sources = [ "att_module.cc" ]
 
   configs += [ "//bt/gd:gd_defaults" ]
-}
-
-source_set("BluetoothOsSources_linux_generic") {
-  sources = [
-    "linux_generic/alarm.cc",
-    "linux_generic/files.cc",
-    "linux_generic/handler.cc",
-    "linux_generic/reactive_semaphore.cc",
-    "linux_generic/reactor.cc",
-    "linux_generic/repeating_alarm.cc",
-    "linux_generic/thread.cc",
-  ]
-
-  configs += [ "//bt/gd:gd_defaults" ]
-  deps = [ ":BluetoothOsSources_linux" ]
+  deps = [ "//bt/gd:gd_default_deps" ]
 }

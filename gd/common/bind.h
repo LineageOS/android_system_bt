@@ -23,7 +23,6 @@ namespace common {
 
 using base::Bind;
 using base::BindOnce;
-using base::ConstRef;
 using base::IgnoreResult;
 using base::MakeUnboundRunType;
 using base::Owned;
