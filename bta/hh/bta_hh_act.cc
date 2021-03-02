@@ -35,6 +35,7 @@
 #include "bta/include/bta_hh_api.h"
 #include "bta/include/bta_hh_co.h"
 #include "bta/sys/bta_sys.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/hidh_api.h"
@@ -478,29 +479,31 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
-  tBTA_HH_CBDATA disc_dat;
-  tHID_STATUS status;
+  CHECK(p_cb != nullptr);
 
-  if (p_cb->is_le_device)
+  if (p_cb->is_le_device) {
+    LOG_DEBUG("Host initiating close to le device:%s",
+              PRIVATE_ADDRESS(p_cb->addr));
     bta_hh_le_api_disc_act(p_cb);
-  else
-  {
+  } else {
     /* found an active connection */
-    disc_dat.handle =
-        p_data ? (uint8_t)p_data->hdr.layer_specific : p_cb->hid_handle;
-    disc_dat.status = BTA_HH_ERR;
-
-    status = HID_HostCloseDev(disc_dat.handle);
-
-    if (status) {
-      tBTA_HH bta_hh;
-      bta_hh.dev_status = disc_dat;
+    const uint8_t hid_handle =
+        (p_data != nullptr) ? static_cast<uint8_t>(p_data->hdr.layer_specific)
+                            : p_cb->hid_handle;
+    LOG_DEBUG("Host initiating close to classic device:%s",
+              PRIVATE_ADDRESS(p_cb->addr));
+    tHID_STATUS status = HID_HostCloseDev(hid_handle);
+    if (status != HID_SUCCESS) {
+      LOG_WARN("Failed closing classic device:%s status:%s",
+               PRIVATE_ADDRESS(p_cb->addr), hid_status_text(status).c_str());
+      tBTA_HH bta_hh = {
+          .dev_status = {.status = BTA_HH_ERR, .handle = hid_handle},
+      };
       (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
     }
   }
-
-  return;
 }
+
 /*******************************************************************************
  *
  * Function         bta_hh_open_cmpl_act
