@@ -20,22 +20,35 @@ cc_library_static {
         "system/bt/stack/include",
         "system/bt/gd/rust/shim",
     ],
-    srcs: [
-        "a2dp_encoding.cc",
-        "client_interface.cc",
-        "codec_status.cc",
-        "hearing_aid_software_encoding.cc",
-    ],
     shared_libs: [
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
-        "libfmq",
         "libhidlbase",
     ],
     static_libs: [
         "libosi",
         "libbt-common",
     ],
+    target: {
+        android: {
+            shared_libs: [
+                "libfmq",
+            ],
+            srcs: [
+                "a2dp_encoding.cc",
+                "client_interface.cc",
+                "codec_status.cc",
+                "hearing_aid_software_encoding.cc",
+            ],
+        },
+        host: {
+            srcs: [
+                "a2dp_encoding_host.cc",
+                "hearing_aid_software_encoding_host.cc",
+            ],
+        },
+    },
+    host_supported: true,
     cflags: [
         "-DBUILDCFG",
     ],
