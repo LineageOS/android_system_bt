@@ -91,199 +91,198 @@ DualModeController::DualModeController(const std::string& properties_filename, u
         DualModeController::SendLinkLayerPacket(packet, phy_type);
       });
 
-#define SET_HANDLER(opcode, method)                          \
-  active_hci_commands_[opcode] = [this](CommandView param) { \
-    method(std::move(param));                                \
+  std::array<uint8_t, 64> supported_commands;
+  for (size_t i = 0; i < 64; i++) {
+    supported_commands[i] = 0;
+  }
+
+#define SET_HANDLER(name, method)                                  \
+  active_hci_commands_[OpCode::name] = [this](CommandView param) { \
+    method(std::move(param));                                      \
   };
-  SET_HANDLER(OpCode::RESET, Reset);
-  SET_HANDLER(OpCode::READ_BUFFER_SIZE, ReadBufferSize);
-  SET_HANDLER(OpCode::HOST_BUFFER_SIZE, HostBufferSize);
-  SET_HANDLER(OpCode::SNIFF_SUBRATING, SniffSubrating);
-  SET_HANDLER(OpCode::READ_ENCRYPTION_KEY_SIZE, ReadEncryptionKeySize);
-  SET_HANDLER(OpCode::READ_LOCAL_VERSION_INFORMATION,
-              ReadLocalVersionInformation);
-  SET_HANDLER(OpCode::READ_BD_ADDR, ReadBdAddr);
-  SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_COMMANDS,
-              ReadLocalSupportedCommands);
-  SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_FEATURES,
-              ReadLocalSupportedFeatures);
-  SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_CODECS_V1, ReadLocalSupportedCodecs);
-  SET_HANDLER(OpCode::READ_LOCAL_EXTENDED_FEATURES, ReadLocalExtendedFeatures);
-  SET_HANDLER(OpCode::READ_REMOTE_EXTENDED_FEATURES,
-              ReadRemoteExtendedFeatures);
-  SET_HANDLER(OpCode::SWITCH_ROLE, SwitchRole);
-  SET_HANDLER(OpCode::READ_REMOTE_SUPPORTED_FEATURES,
-              ReadRemoteSupportedFeatures);
-  SET_HANDLER(OpCode::READ_CLOCK_OFFSET, ReadClockOffset);
-  SET_HANDLER(OpCode::IO_CAPABILITY_REQUEST_REPLY, IoCapabilityRequestReply);
-  SET_HANDLER(OpCode::USER_CONFIRMATION_REQUEST_REPLY,
-              UserConfirmationRequestReply);
-  SET_HANDLER(OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY,
-              UserConfirmationRequestNegativeReply);
-  SET_HANDLER(OpCode::USER_PASSKEY_REQUEST_REPLY, UserPasskeyRequestReply);
-  SET_HANDLER(OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY,
-              UserPasskeyRequestNegativeReply);
-  SET_HANDLER(OpCode::PIN_CODE_REQUEST_REPLY, PinCodeRequestReply);
-  SET_HANDLER(OpCode::PIN_CODE_REQUEST_NEGATIVE_REPLY,
-              PinCodeRequestNegativeReply);
-  SET_HANDLER(OpCode::REMOTE_OOB_DATA_REQUEST_REPLY, RemoteOobDataRequestReply);
-  SET_HANDLER(OpCode::REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY,
-              RemoteOobDataRequestNegativeReply);
-  SET_HANDLER(OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY,
-              IoCapabilityRequestNegativeReply);
-  SET_HANDLER(OpCode::REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY,
-              RemoteOobExtendedDataRequestReply);
-  SET_HANDLER(OpCode::READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL,
-              ReadInquiryResponseTransmitPowerLevel);
-  SET_HANDLER(OpCode::SEND_KEYPRESS_NOTIFICATION, SendKeypressNotification);
-  SET_HANDLER(OpCode::READ_LOCAL_OOB_DATA, ReadLocalOobData);
-  SET_HANDLER(OpCode::READ_LOCAL_OOB_EXTENDED_DATA, ReadLocalOobExtendedData);
-  SET_HANDLER(OpCode::WRITE_SIMPLE_PAIRING_MODE, WriteSimplePairingMode);
-  SET_HANDLER(OpCode::WRITE_LE_HOST_SUPPORT, WriteLeHostSupport);
-  SET_HANDLER(OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT,
-              WriteSecureConnectionsHostSupport);
-  SET_HANDLER(OpCode::SET_EVENT_MASK, SetEventMask);
-  SET_HANDLER(OpCode::READ_INQUIRY_MODE, ReadInquiryMode);
-  SET_HANDLER(OpCode::WRITE_INQUIRY_MODE, WriteInquiryMode);
-  SET_HANDLER(OpCode::READ_PAGE_SCAN_TYPE, ReadPageScanType);
-  SET_HANDLER(OpCode::WRITE_PAGE_SCAN_TYPE, WritePageScanType);
-  SET_HANDLER(OpCode::WRITE_INQUIRY_SCAN_TYPE, WriteInquiryScanType);
-  SET_HANDLER(OpCode::READ_INQUIRY_SCAN_TYPE, ReadInquiryScanType);
-  SET_HANDLER(OpCode::AUTHENTICATION_REQUESTED, AuthenticationRequested);
-  SET_HANDLER(OpCode::SET_CONNECTION_ENCRYPTION, SetConnectionEncryption);
-  SET_HANDLER(OpCode::CHANGE_CONNECTION_LINK_KEY, ChangeConnectionLinkKey);
-  SET_HANDLER(OpCode::CENTRAL_LINK_KEY, CentralLinkKey);
-  SET_HANDLER(OpCode::WRITE_AUTHENTICATION_ENABLE, WriteAuthenticationEnable);
-  SET_HANDLER(OpCode::READ_AUTHENTICATION_ENABLE, ReadAuthenticationEnable);
-  SET_HANDLER(OpCode::WRITE_CLASS_OF_DEVICE, WriteClassOfDevice);
-  SET_HANDLER(OpCode::READ_PAGE_TIMEOUT, ReadPageTimeout);
-  SET_HANDLER(OpCode::WRITE_PAGE_TIMEOUT, WritePageTimeout);
-  SET_HANDLER(OpCode::WRITE_LINK_SUPERVISION_TIMEOUT,
-              WriteLinkSupervisionTimeout);
-  SET_HANDLER(OpCode::HOLD_MODE, HoldMode);
-  SET_HANDLER(OpCode::SNIFF_MODE, SniffMode);
-  SET_HANDLER(OpCode::EXIT_SNIFF_MODE, ExitSniffMode);
-  SET_HANDLER(OpCode::QOS_SETUP, QosSetup);
-  SET_HANDLER(OpCode::READ_DEFAULT_LINK_POLICY_SETTINGS,
-              ReadDefaultLinkPolicySettings);
-  SET_HANDLER(OpCode::WRITE_DEFAULT_LINK_POLICY_SETTINGS,
-              WriteDefaultLinkPolicySettings);
-  SET_HANDLER(OpCode::FLOW_SPECIFICATION, FlowSpecification);
-  SET_HANDLER(OpCode::WRITE_LINK_POLICY_SETTINGS, WriteLinkPolicySettings);
-  SET_HANDLER(OpCode::CHANGE_CONNECTION_PACKET_TYPE,
-              ChangeConnectionPacketType);
-  SET_HANDLER(OpCode::WRITE_LOCAL_NAME, WriteLocalName);
-  SET_HANDLER(OpCode::READ_LOCAL_NAME, ReadLocalName);
-  SET_HANDLER(OpCode::WRITE_EXTENDED_INQUIRY_RESPONSE,
-              WriteExtendedInquiryResponse);
-  SET_HANDLER(OpCode::REFRESH_ENCRYPTION_KEY, RefreshEncryptionKey);
-  SET_HANDLER(OpCode::WRITE_VOICE_SETTING, WriteVoiceSetting);
-  SET_HANDLER(OpCode::READ_NUMBER_OF_SUPPORTED_IAC, ReadNumberOfSupportedIac);
-  SET_HANDLER(OpCode::READ_CURRENT_IAC_LAP, ReadCurrentIacLap);
-  SET_HANDLER(OpCode::WRITE_CURRENT_IAC_LAP, WriteCurrentIacLap);
-  SET_HANDLER(OpCode::READ_PAGE_SCAN_ACTIVITY, ReadPageScanActivity);
-  SET_HANDLER(OpCode::WRITE_PAGE_SCAN_ACTIVITY, WritePageScanActivity);
-  SET_HANDLER(OpCode::READ_INQUIRY_SCAN_ACTIVITY, ReadInquiryScanActivity);
-  SET_HANDLER(OpCode::WRITE_INQUIRY_SCAN_ACTIVITY, WriteInquiryScanActivity);
-  SET_HANDLER(OpCode::READ_SCAN_ENABLE, ReadScanEnable);
-  SET_HANDLER(OpCode::WRITE_SCAN_ENABLE, WriteScanEnable);
-  SET_HANDLER(OpCode::SET_EVENT_FILTER, SetEventFilter);
-  SET_HANDLER(OpCode::INQUIRY, Inquiry);
-  SET_HANDLER(OpCode::INQUIRY_CANCEL, InquiryCancel);
-  SET_HANDLER(OpCode::ACCEPT_CONNECTION_REQUEST, AcceptConnectionRequest);
-  SET_HANDLER(OpCode::REJECT_CONNECTION_REQUEST, RejectConnectionRequest);
-  SET_HANDLER(OpCode::LINK_KEY_REQUEST_REPLY, LinkKeyRequestReply);
-  SET_HANDLER(OpCode::LINK_KEY_REQUEST_NEGATIVE_REPLY,
-              LinkKeyRequestNegativeReply);
-  SET_HANDLER(OpCode::DELETE_STORED_LINK_KEY, DeleteStoredLinkKey);
-  SET_HANDLER(OpCode::REMOTE_NAME_REQUEST, RemoteNameRequest);
-  SET_HANDLER(OpCode::LE_SET_EVENT_MASK, LeSetEventMask);
-  SET_HANDLER(OpCode::LE_READ_BUFFER_SIZE_V1, LeReadBufferSize);
-  SET_HANDLER(OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES,
-              LeReadLocalSupportedFeatures);
-  SET_HANDLER(OpCode::LE_SET_RANDOM_ADDRESS, LeSetRandomAddress);
-  SET_HANDLER(OpCode::LE_SET_ADVERTISING_PARAMETERS,
-              LeSetAdvertisingParameters);
-  SET_HANDLER(OpCode::LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER,
-              LeReadAdvertisingPhysicalChannelTxPower);
-  SET_HANDLER(OpCode::LE_SET_ADVERTISING_DATA, LeSetAdvertisingData);
-  SET_HANDLER(OpCode::LE_SET_SCAN_RESPONSE_DATA, LeSetScanResponseData);
-  SET_HANDLER(OpCode::LE_SET_ADVERTISING_ENABLE, LeSetAdvertisingEnable);
-  SET_HANDLER(OpCode::LE_SET_SCAN_PARAMETERS, LeSetScanParameters);
-  SET_HANDLER(OpCode::LE_SET_SCAN_ENABLE, LeSetScanEnable);
-  SET_HANDLER(OpCode::LE_CREATE_CONNECTION, LeCreateConnection);
-  SET_HANDLER(OpCode::CREATE_CONNECTION, CreateConnection);
-  SET_HANDLER(OpCode::CREATE_CONNECTION_CANCEL, CreateConnectionCancel);
-  SET_HANDLER(OpCode::DISCONNECT, Disconnect);
-  SET_HANDLER(OpCode::LE_CREATE_CONNECTION_CANCEL, LeConnectionCancel);
-  SET_HANDLER(OpCode::LE_READ_CONNECT_LIST_SIZE, LeReadConnectListSize);
-  SET_HANDLER(OpCode::LE_CLEAR_CONNECT_LIST, LeClearConnectList);
-  SET_HANDLER(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST, LeAddDeviceToConnectList);
-  SET_HANDLER(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST,
-              LeRemoveDeviceFromConnectList);
-  SET_HANDLER(OpCode::LE_RAND, LeRand);
-  SET_HANDLER(OpCode::LE_READ_SUPPORTED_STATES, LeReadSupportedStates);
-  SET_HANDLER(OpCode::LE_GET_VENDOR_CAPABILITIES, LeVendorCap);
-  SET_HANDLER(OpCode::LE_MULTI_ADVT, LeVendorMultiAdv);
-  SET_HANDLER(OpCode::LE_ADV_FILTER, LeAdvertisingFilter);
-  SET_HANDLER(OpCode::LE_ENERGY_INFO, LeEnergyInfo);
-  SET_HANDLER(OpCode::LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS,
-              LeSetExtendedAdvertisingRandomAddress);
-  SET_HANDLER(OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS,
-              LeSetExtendedAdvertisingParameters);
-  SET_HANDLER(OpCode::LE_SET_EXTENDED_ADVERTISING_DATA,
-              LeSetExtendedAdvertisingData);
-  SET_HANDLER(OpCode::LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE,
-              LeSetExtendedAdvertisingScanResponse);
-  SET_HANDLER(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE,
-              LeSetExtendedAdvertisingEnable);
-  SET_HANDLER(OpCode::LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH,
-              LeReadMaximumAdvertisingDataLength);
-  SET_HANDLER(OpCode::LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS,
-              LeReadNumberOfSupportedAdvertisingSets);
-  SET_HANDLER(OpCode::LE_REMOVE_ADVERTISING_SET, LeRemoveAdvertisingSet);
-  SET_HANDLER(OpCode::LE_CLEAR_ADVERTISING_SETS, LeClearAdvertisingSets);
-  SET_HANDLER(OpCode::LE_READ_REMOTE_FEATURES, LeReadRemoteFeatures);
-  SET_HANDLER(OpCode::READ_REMOTE_VERSION_INFORMATION,
-              ReadRemoteVersionInformation);
-  SET_HANDLER(OpCode::LE_CONNECTION_UPDATE, LeConnectionUpdate);
-  SET_HANDLER(OpCode::LE_START_ENCRYPTION, LeStartEncryption);
-  SET_HANDLER(OpCode::LE_LONG_TERM_KEY_REQUEST_REPLY,
-              LeLongTermKeyRequestReply);
-  SET_HANDLER(OpCode::LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY,
-              LeLongTermKeyRequestNegativeReply);
-  SET_HANDLER(OpCode::LE_ADD_DEVICE_TO_RESOLVING_LIST,
-              LeAddDeviceToResolvingList);
-  SET_HANDLER(OpCode::LE_REMOVE_DEVICE_FROM_RESOLVING_LIST,
-              LeRemoveDeviceFromResolvingList);
-  SET_HANDLER(OpCode::LE_CLEAR_RESOLVING_LIST, LeClearResolvingList);
-  SET_HANDLER(OpCode::LE_READ_RESOLVING_LIST_SIZE, LeReadResolvingListSize);
-  SET_HANDLER(OpCode::LE_READ_MAXIMUM_DATA_LENGTH, LeReadMaximumDataLength);
-  SET_HANDLER(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS,
-              LeSetExtendedScanParameters);
-  SET_HANDLER(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, LeSetExtendedScanEnable);
-  SET_HANDLER(OpCode::LE_EXTENDED_CREATE_CONNECTION,
-              LeExtendedCreateConnection);
-  SET_HANDLER(OpCode::LE_SET_PRIVACY_MODE, LeSetPrivacyMode);
-  SET_HANDLER(OpCode::LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH, LeReadSuggestedDefaultDataLength);
+
+#define SET_SUPPORTED(name, method)                                        \
+  SET_HANDLER(name, method);                                               \
+  {                                                                        \
+    uint16_t index = (uint16_t)bluetooth::hci::OpCodeIndex::name;          \
+    uint16_t byte_index = index / 10;                                      \
+    uint8_t bit = 1 << (index % 10);                                       \
+    supported_commands[byte_index] = supported_commands[byte_index] | bit; \
+  }
+
+  SET_SUPPORTED(RESET, Reset);
+  SET_SUPPORTED(READ_BUFFER_SIZE, ReadBufferSize);
+  SET_SUPPORTED(HOST_BUFFER_SIZE, HostBufferSize);
+  SET_SUPPORTED(SNIFF_SUBRATING, SniffSubrating);
+  SET_SUPPORTED(READ_ENCRYPTION_KEY_SIZE, ReadEncryptionKeySize);
+  SET_SUPPORTED(READ_LOCAL_VERSION_INFORMATION, ReadLocalVersionInformation);
+  SET_SUPPORTED(READ_BD_ADDR, ReadBdAddr);
+  SET_HANDLER(READ_LOCAL_SUPPORTED_COMMANDS, ReadLocalSupportedCommands);
+  SET_SUPPORTED(READ_LOCAL_SUPPORTED_FEATURES, ReadLocalSupportedFeatures);
+  SET_SUPPORTED(READ_LOCAL_SUPPORTED_CODECS_V1, ReadLocalSupportedCodecs);
+  SET_SUPPORTED(READ_LOCAL_EXTENDED_FEATURES, ReadLocalExtendedFeatures);
+  SET_SUPPORTED(READ_REMOTE_EXTENDED_FEATURES, ReadRemoteExtendedFeatures);
+  SET_SUPPORTED(SWITCH_ROLE, SwitchRole);
+  SET_SUPPORTED(READ_REMOTE_SUPPORTED_FEATURES, ReadRemoteSupportedFeatures);
+  SET_SUPPORTED(READ_CLOCK_OFFSET, ReadClockOffset);
+  SET_SUPPORTED(IO_CAPABILITY_REQUEST_REPLY, IoCapabilityRequestReply);
+  SET_SUPPORTED(USER_CONFIRMATION_REQUEST_REPLY, UserConfirmationRequestReply);
+  SET_SUPPORTED(USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY,
+                UserConfirmationRequestNegativeReply);
+  SET_SUPPORTED(USER_PASSKEY_REQUEST_REPLY, UserPasskeyRequestReply);
+  SET_SUPPORTED(USER_PASSKEY_REQUEST_NEGATIVE_REPLY,
+                UserPasskeyRequestNegativeReply);
+  SET_SUPPORTED(PIN_CODE_REQUEST_REPLY, PinCodeRequestReply);
+  SET_SUPPORTED(PIN_CODE_REQUEST_NEGATIVE_REPLY, PinCodeRequestNegativeReply);
+  SET_SUPPORTED(REMOTE_OOB_DATA_REQUEST_REPLY, RemoteOobDataRequestReply);
+  SET_SUPPORTED(REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY,
+                RemoteOobDataRequestNegativeReply);
+  SET_SUPPORTED(IO_CAPABILITY_REQUEST_NEGATIVE_REPLY,
+                IoCapabilityRequestNegativeReply);
+  SET_SUPPORTED(REMOTE_OOB_EXTENDED_DATA_REQUEST_REPLY,
+                RemoteOobExtendedDataRequestReply);
+  SET_SUPPORTED(READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL,
+                ReadInquiryResponseTransmitPowerLevel);
+  SET_SUPPORTED(SEND_KEYPRESS_NOTIFICATION, SendKeypressNotification);
+  SET_SUPPORTED(READ_LOCAL_OOB_DATA, ReadLocalOobData);
+  SET_SUPPORTED(READ_LOCAL_OOB_EXTENDED_DATA, ReadLocalOobExtendedData);
+  SET_SUPPORTED(WRITE_SIMPLE_PAIRING_MODE, WriteSimplePairingMode);
+  SET_SUPPORTED(WRITE_LE_HOST_SUPPORT, WriteLeHostSupport);
+  SET_SUPPORTED(WRITE_SECURE_CONNECTIONS_HOST_SUPPORT,
+                WriteSecureConnectionsHostSupport);
+  SET_SUPPORTED(SET_EVENT_MASK, SetEventMask);
+  SET_SUPPORTED(READ_INQUIRY_MODE, ReadInquiryMode);
+  SET_SUPPORTED(WRITE_INQUIRY_MODE, WriteInquiryMode);
+  SET_SUPPORTED(READ_PAGE_SCAN_TYPE, ReadPageScanType);
+  SET_SUPPORTED(WRITE_PAGE_SCAN_TYPE, WritePageScanType);
+  SET_SUPPORTED(WRITE_INQUIRY_SCAN_TYPE, WriteInquiryScanType);
+  SET_SUPPORTED(READ_INQUIRY_SCAN_TYPE, ReadInquiryScanType);
+  SET_SUPPORTED(AUTHENTICATION_REQUESTED, AuthenticationRequested);
+  SET_SUPPORTED(SET_CONNECTION_ENCRYPTION, SetConnectionEncryption);
+  SET_SUPPORTED(CHANGE_CONNECTION_LINK_KEY, ChangeConnectionLinkKey);
+  SET_SUPPORTED(CENTRAL_LINK_KEY, CentralLinkKey);
+  SET_SUPPORTED(WRITE_AUTHENTICATION_ENABLE, WriteAuthenticationEnable);
+  SET_SUPPORTED(READ_AUTHENTICATION_ENABLE, ReadAuthenticationEnable);
+  SET_SUPPORTED(WRITE_CLASS_OF_DEVICE, WriteClassOfDevice);
+  SET_SUPPORTED(READ_PAGE_TIMEOUT, ReadPageTimeout);
+  SET_SUPPORTED(WRITE_PAGE_TIMEOUT, WritePageTimeout);
+  SET_SUPPORTED(WRITE_LINK_SUPERVISION_TIMEOUT, WriteLinkSupervisionTimeout);
+  SET_SUPPORTED(HOLD_MODE, HoldMode);
+  SET_SUPPORTED(SNIFF_MODE, SniffMode);
+  SET_SUPPORTED(EXIT_SNIFF_MODE, ExitSniffMode);
+  SET_SUPPORTED(QOS_SETUP, QosSetup);
+  SET_SUPPORTED(READ_DEFAULT_LINK_POLICY_SETTINGS,
+                ReadDefaultLinkPolicySettings);
+  SET_SUPPORTED(WRITE_DEFAULT_LINK_POLICY_SETTINGS,
+                WriteDefaultLinkPolicySettings);
+  SET_SUPPORTED(FLOW_SPECIFICATION, FlowSpecification);
+  SET_SUPPORTED(WRITE_LINK_POLICY_SETTINGS, WriteLinkPolicySettings);
+  SET_SUPPORTED(CHANGE_CONNECTION_PACKET_TYPE, ChangeConnectionPacketType);
+  SET_SUPPORTED(WRITE_LOCAL_NAME, WriteLocalName);
+  SET_SUPPORTED(READ_LOCAL_NAME, ReadLocalName);
+  SET_SUPPORTED(WRITE_EXTENDED_INQUIRY_RESPONSE, WriteExtendedInquiryResponse);
+  SET_SUPPORTED(REFRESH_ENCRYPTION_KEY, RefreshEncryptionKey);
+  SET_SUPPORTED(WRITE_VOICE_SETTING, WriteVoiceSetting);
+  SET_SUPPORTED(READ_NUMBER_OF_SUPPORTED_IAC, ReadNumberOfSupportedIac);
+  SET_SUPPORTED(READ_CURRENT_IAC_LAP, ReadCurrentIacLap);
+  SET_SUPPORTED(WRITE_CURRENT_IAC_LAP, WriteCurrentIacLap);
+  SET_SUPPORTED(READ_PAGE_SCAN_ACTIVITY, ReadPageScanActivity);
+  SET_SUPPORTED(WRITE_PAGE_SCAN_ACTIVITY, WritePageScanActivity);
+  SET_SUPPORTED(READ_INQUIRY_SCAN_ACTIVITY, ReadInquiryScanActivity);
+  SET_SUPPORTED(WRITE_INQUIRY_SCAN_ACTIVITY, WriteInquiryScanActivity);
+  SET_SUPPORTED(READ_SCAN_ENABLE, ReadScanEnable);
+  SET_SUPPORTED(WRITE_SCAN_ENABLE, WriteScanEnable);
+  SET_SUPPORTED(SET_EVENT_FILTER, SetEventFilter);
+  SET_SUPPORTED(INQUIRY, Inquiry);
+  SET_SUPPORTED(INQUIRY_CANCEL, InquiryCancel);
+  SET_SUPPORTED(ACCEPT_CONNECTION_REQUEST, AcceptConnectionRequest);
+  SET_SUPPORTED(REJECT_CONNECTION_REQUEST, RejectConnectionRequest);
+  SET_SUPPORTED(LINK_KEY_REQUEST_REPLY, LinkKeyRequestReply);
+  SET_SUPPORTED(LINK_KEY_REQUEST_NEGATIVE_REPLY, LinkKeyRequestNegativeReply);
+  SET_SUPPORTED(DELETE_STORED_LINK_KEY, DeleteStoredLinkKey);
+  SET_SUPPORTED(REMOTE_NAME_REQUEST, RemoteNameRequest);
+  SET_SUPPORTED(LE_SET_EVENT_MASK, LeSetEventMask);
+  SET_SUPPORTED(LE_READ_BUFFER_SIZE_V1, LeReadBufferSize);
+  SET_SUPPORTED(LE_READ_LOCAL_SUPPORTED_FEATURES, LeReadLocalSupportedFeatures);
+  SET_SUPPORTED(LE_SET_RANDOM_ADDRESS, LeSetRandomAddress);
+  SET_SUPPORTED(LE_SET_ADVERTISING_PARAMETERS, LeSetAdvertisingParameters);
+  SET_SUPPORTED(LE_READ_ADVERTISING_PHYSICAL_CHANNEL_TX_POWER,
+                LeReadAdvertisingPhysicalChannelTxPower);
+  SET_SUPPORTED(LE_SET_ADVERTISING_DATA, LeSetAdvertisingData);
+  SET_SUPPORTED(LE_SET_SCAN_RESPONSE_DATA, LeSetScanResponseData);
+  SET_SUPPORTED(LE_SET_ADVERTISING_ENABLE, LeSetAdvertisingEnable);
+  SET_SUPPORTED(LE_SET_SCAN_PARAMETERS, LeSetScanParameters);
+  SET_SUPPORTED(LE_SET_SCAN_ENABLE, LeSetScanEnable);
+  SET_SUPPORTED(LE_CREATE_CONNECTION, LeCreateConnection);
+  SET_SUPPORTED(CREATE_CONNECTION, CreateConnection);
+  SET_SUPPORTED(CREATE_CONNECTION_CANCEL, CreateConnectionCancel);
+  SET_SUPPORTED(DISCONNECT, Disconnect);
+  SET_SUPPORTED(LE_CREATE_CONNECTION_CANCEL, LeConnectionCancel);
+  SET_SUPPORTED(LE_READ_CONNECT_LIST_SIZE, LeReadConnectListSize);
+  SET_SUPPORTED(LE_CLEAR_CONNECT_LIST, LeClearConnectList);
+  SET_SUPPORTED(LE_ADD_DEVICE_TO_CONNECT_LIST, LeAddDeviceToConnectList);
+  SET_SUPPORTED(LE_REMOVE_DEVICE_FROM_CONNECT_LIST,
+                LeRemoveDeviceFromConnectList);
+  SET_SUPPORTED(LE_RAND, LeRand);
+  SET_SUPPORTED(LE_READ_SUPPORTED_STATES, LeReadSupportedStates);
+  SET_HANDLER(LE_GET_VENDOR_CAPABILITIES, LeVendorCap);
+  SET_HANDLER(LE_MULTI_ADVT, LeVendorMultiAdv);
+  SET_HANDLER(LE_ADV_FILTER, LeAdvertisingFilter);
+  SET_HANDLER(LE_ENERGY_INFO, LeEnergyInfo);
+  SET_SUPPORTED(LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS,
+                LeSetExtendedAdvertisingRandomAddress);
+  SET_SUPPORTED(LE_SET_EXTENDED_ADVERTISING_PARAMETERS,
+                LeSetExtendedAdvertisingParameters);
+  SET_SUPPORTED(LE_SET_EXTENDED_ADVERTISING_DATA, LeSetExtendedAdvertisingData);
+  SET_SUPPORTED(LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE,
+                LeSetExtendedAdvertisingScanResponse);
+  SET_SUPPORTED(LE_SET_EXTENDED_ADVERTISING_ENABLE,
+                LeSetExtendedAdvertisingEnable);
+  SET_SUPPORTED(LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH,
+                LeReadMaximumAdvertisingDataLength);
+  SET_SUPPORTED(LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS,
+                LeReadNumberOfSupportedAdvertisingSets);
+  SET_SUPPORTED(LE_REMOVE_ADVERTISING_SET, LeRemoveAdvertisingSet);
+  SET_SUPPORTED(LE_CLEAR_ADVERTISING_SETS, LeClearAdvertisingSets);
+  SET_SUPPORTED(LE_READ_REMOTE_FEATURES, LeReadRemoteFeatures);
+  SET_SUPPORTED(READ_REMOTE_VERSION_INFORMATION, ReadRemoteVersionInformation);
+  SET_SUPPORTED(LE_CONNECTION_UPDATE, LeConnectionUpdate);
+  SET_SUPPORTED(LE_START_ENCRYPTION, LeStartEncryption);
+  SET_SUPPORTED(LE_LONG_TERM_KEY_REQUEST_REPLY, LeLongTermKeyRequestReply);
+  SET_SUPPORTED(LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY,
+                LeLongTermKeyRequestNegativeReply);
+  SET_SUPPORTED(LE_ADD_DEVICE_TO_RESOLVING_LIST, LeAddDeviceToResolvingList);
+  SET_SUPPORTED(LE_REMOVE_DEVICE_FROM_RESOLVING_LIST,
+                LeRemoveDeviceFromResolvingList);
+  SET_SUPPORTED(LE_CLEAR_RESOLVING_LIST, LeClearResolvingList);
+  SET_SUPPORTED(LE_READ_RESOLVING_LIST_SIZE, LeReadResolvingListSize);
+  SET_SUPPORTED(LE_READ_MAXIMUM_DATA_LENGTH, LeReadMaximumDataLength);
+  SET_SUPPORTED(LE_SET_EXTENDED_SCAN_PARAMETERS, LeSetExtendedScanParameters);
+  SET_SUPPORTED(LE_SET_EXTENDED_SCAN_ENABLE, LeSetExtendedScanEnable);
+  SET_SUPPORTED(LE_EXTENDED_CREATE_CONNECTION, LeExtendedCreateConnection);
+  SET_SUPPORTED(LE_SET_PRIVACY_MODE, LeSetPrivacyMode);
+  SET_SUPPORTED(LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH,
+                LeReadSuggestedDefaultDataLength);
   // ISO Commands
-  SET_HANDLER(OpCode::LE_READ_ISO_TX_SYNC, LeReadIsoTxSync);
-  SET_HANDLER(OpCode::LE_SET_CIG_PARAMETERS, LeSetCigParameters);
-  SET_HANDLER(OpCode::LE_CREATE_CIS, LeCreateCis);
-  SET_HANDLER(OpCode::LE_REMOVE_CIG, LeRemoveCig);
-  SET_HANDLER(OpCode::LE_ACCEPT_CIS_REQUEST, LeAcceptCisRequest);
-  SET_HANDLER(OpCode::LE_REJECT_CIS_REQUEST, LeRejectCisRequest);
-  SET_HANDLER(OpCode::LE_CREATE_BIG, LeCreateBig);
-  SET_HANDLER(OpCode::LE_TERMINATE_BIG, LeTerminateBig);
-  SET_HANDLER(OpCode::LE_BIG_CREATE_SYNC, LeBigCreateSync);
-  SET_HANDLER(OpCode::LE_BIG_TERMINATE_SYNC, LeBigTerminateSync);
-  SET_HANDLER(OpCode::LE_REQUEST_PEER_SCA, LeRequestPeerSca);
-  SET_HANDLER(OpCode::LE_SETUP_ISO_DATA_PATH, LeSetupIsoDataPath);
-  SET_HANDLER(OpCode::LE_REMOVE_ISO_DATA_PATH, LeRemoveIsoDataPath);
+  SET_SUPPORTED(LE_READ_ISO_TX_SYNC, LeReadIsoTxSync);
+  SET_SUPPORTED(LE_SET_CIG_PARAMETERS, LeSetCigParameters);
+  SET_SUPPORTED(LE_CREATE_CIS, LeCreateCis);
+  SET_SUPPORTED(LE_REMOVE_CIG, LeRemoveCig);
+  SET_SUPPORTED(LE_ACCEPT_CIS_REQUEST, LeAcceptCisRequest);
+  SET_SUPPORTED(LE_REJECT_CIS_REQUEST, LeRejectCisRequest);
+  SET_SUPPORTED(LE_CREATE_BIG, LeCreateBig);
+  SET_SUPPORTED(LE_TERMINATE_BIG, LeTerminateBig);
+  SET_SUPPORTED(LE_BIG_CREATE_SYNC, LeBigCreateSync);
+  SET_SUPPORTED(LE_BIG_TERMINATE_SYNC, LeBigTerminateSync);
+  SET_SUPPORTED(LE_REQUEST_PEER_SCA, LeRequestPeerSca);
+  SET_SUPPORTED(LE_SETUP_ISO_DATA_PATH, LeSetupIsoDataPath);
+  SET_SUPPORTED(LE_REMOVE_ISO_DATA_PATH, LeRemoveIsoDataPath);
   // Testing Commands
-  SET_HANDLER(OpCode::READ_LOOPBACK_MODE, ReadLoopbackMode);
-  SET_HANDLER(OpCode::WRITE_LOOPBACK_MODE, WriteLoopbackMode);
+  SET_SUPPORTED(READ_LOOPBACK_MODE, ReadLoopbackMode);
+  SET_SUPPORTED(WRITE_LOOPBACK_MODE, WriteLoopbackMode);
 #undef SET_HANDLER
+#undef SET_SUPPORTED
+  properties_.SetSupportedCommands(supported_commands);
 }
 
 void DualModeController::SniffSubrating(CommandView command) {
