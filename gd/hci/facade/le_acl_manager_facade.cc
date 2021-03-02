@@ -195,10 +195,6 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     return connection->second.pending_acl_data_.RunLoop(context, writer);
   }
 
-  static inline uint16_t to_handle(uint32_t current_request) {
-    return (current_request + 0x10) % 0xe00;
-  }
-
   static inline std::string builder_to_string(std::unique_ptr<BasePacketBuilder> builder) {
     std::vector<uint8_t> bytes;
     BitInserter bit_inserter(bytes);
@@ -222,7 +218,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto addr = address_with_type.GetAddress();
     std::shared_ptr<LeAclConnection> shared_connection = std::move(connection);
-    uint16_t handle = to_handle(current_connection_request_);
+    uint16_t handle = shared_connection->GetHandle();
     acl_connections_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(handle),
