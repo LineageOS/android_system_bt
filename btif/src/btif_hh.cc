@@ -34,20 +34,15 @@
 #include "btif/include/btif_storage.h"
 #include "btif/include/btif_util.h"
 #include "include/hardware/bt_hh.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 #include "stack/include/hidh_api.h"
 #include "stack/include/l2c_api.h"
 
-#define BTIF_HH_APP_ID_MI 0x01
-#define BTIF_HH_APP_ID_KB 0x02
-
 #define COD_HID_KEYBOARD 0x0540
 #define COD_HID_POINTING 0x0580
 #define COD_HID_COMBO 0x05C0
-
-#define KEYSTATE_FILEPATH \
-  "/data/misc/bluedroid/bt_hh_ks"  // keep this in sync with HID host jni
 
 #define HID_REPORT_CAPSLOCK 0x39
 #define HID_REPORT_NUMLOCK 0x53
@@ -60,11 +55,9 @@
 #define LOGITECH_KB_MX5500_VENDOR_ID 0x046D
 #define LOGITECH_KB_MX5500_PRODUCT_ID 0xB30B
 
-extern const int BT_UID;
-extern const int BT_GID;
 static int btif_hh_keylockstates = 0;  // The current key state of each key
 
-#define BTIF_HH_ID_1 0
+// TODO This is duplicated in header file with different value
 #define BTIF_HH_DEV_DISCONNECTED 3
 
 #define BTIF_TIMEOUT_VUP_MS (3 * 1000)
@@ -119,29 +112,19 @@ static tHID_KB_LIST hid_kb_numlock_on_list[] = {{LOGITECH_KB_MX5500_PRODUCT_ID,
 /*******************************************************************************
  *  Externs
  ******************************************************************************/
+extern bool check_cod(const RawAddress* remote_bdaddr, uint32_t cod);
+extern bool check_cod_hid(const RawAddress* remote_bdaddr);
 extern void bta_hh_co_destroy(int fd);
-extern void bta_hh_co_write(int fd, uint8_t* rpt, uint16_t len);
-extern bt_status_t btif_dm_remove_bond(const RawAddress* bd_addr);
 extern void bta_hh_co_send_hid_info(btif_hh_device_t* p_dev,
                                     const char* dev_name, uint16_t vendor_id,
                                     uint16_t product_id, uint16_t version,
                                     uint8_t ctry_code, int dscp_len,
                                     uint8_t* p_dscp);
-extern bool check_cod(const RawAddress* remote_bdaddr, uint32_t cod);
-extern bool check_cod_hid(const RawAddress* remote_bdaddr);
-extern int scru_ascii_2_hex(char* p_ascii, int len, uint8_t* p_hex);
+extern void bta_hh_co_write(int fd, uint8_t* rpt, uint16_t len);
+extern void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data);
 extern void btif_dm_hh_open_failed(RawAddress* bdaddr);
 extern void btif_hd_service_registration();
-
-/*****************************************************************************
- *  Local Function prototypes
- ****************************************************************************/
-static void set_keylockstate(int keymask, bool isSet);
-static void toggle_os_keylockstates(int fd, int changedkeystates);
-static void sync_lockstate_on_connect(btif_hh_device_t* p_dev);
-// static void hh_update_keyboard_lockstates(btif_hh_device_t *p_dev);
-void btif_hh_timer_timeout(void* data);
-void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data);
+extern void btif_hh_timer_timeout(void* data);
 
 /*******************************************************************************
  *  Functions
@@ -622,14 +605,17 @@ bt_status_t btif_hh_connect(const RawAddress* bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-
 void btif_hh_disconnect(RawAddress* bd_addr) {
-  btif_hh_device_t* p_dev;
-  p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
-  if (p_dev != NULL) {
-    BTA_HhClose(p_dev->dev_handle);
-  } else
-    BTIF_TRACE_DEBUG("%s-- Error: device not connected:", __func__);
+  CHECK(bd_addr != nullptr);
+  const btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
+  if (p_dev == nullptr) {
+    LOG_DEBUG("Unable to disconnect unknown HID device:%s",
+              PRIVATE_ADDRESS((*bd_addr)));
+    return;
+  }
+  LOG_DEBUG("Disconnect and close request for HID device:%s",
+            PRIVATE_ADDRESS((*bd_addr)));
+  BTA_HhClose(p_dev->dev_handle);
 }
 
 /*******************************************************************************
