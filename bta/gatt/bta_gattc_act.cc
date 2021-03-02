@@ -275,12 +275,16 @@ void bta_gattc_process_api_open(tBTA_GATTC_DATA* p_msg) {
 
 /** process connect API request */
 void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
+  CHECK(p_msg != nullptr);
+
   uint16_t event = ((BT_HDR*)p_msg)->event;
 
   if (!p_msg->api_cancel_conn.is_direct) {
+    LOG_DEBUG("Cancel GATT client background connection");
     bta_gattc_cancel_bk_conn(&p_msg->api_cancel_conn);
     return;
   }
+  LOG_DEBUG("Cancel GATT client direct connection");
 
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_cif(
       p_msg->api_cancel_conn.client_if, p_msg->api_cancel_conn.remote_bda,

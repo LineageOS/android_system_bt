@@ -2497,10 +2497,17 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
   if (bd_addr != nullptr) {
     const RawAddress bda(*bd_addr);
     if (bluetooth::shim::is_gd_acl_enabled()) {
-      if (!bluetooth::shim::ACL_AcceptLeConnectionFrom(
-              convert_to_address_with_type(bda, btm_find_dev(bda)))) {
-        LOG_ERROR("Unable to add to acceptlist as it is full:%s",
-                  PRIVATE_ADDRESS(bda));
+      if (acl_check_and_clear_ignore_auto_connect_after_disconnect(bda)) {
+        LOG_DEBUG(
+            "Local disconnect initiated so skipping re-add to acceptlist "
+            "device:%s",
+            PRIVATE_ADDRESS(bda));
+      } else {
+        if (!bluetooth::shim::ACL_AcceptLeConnectionFrom(
+                convert_to_address_with_type(bda, btm_find_dev(bda)))) {
+          LOG_ERROR("Unable to add to acceptlist as it is full:%s",
+                    PRIVATE_ADDRESS(bda));
+        }
       }
     } else {
       btm_ble_bgconn_cancel_if_disconnected(bda);
