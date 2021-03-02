@@ -18,7 +18,14 @@ config("libbluetooth_config") {
   include_dirs = [ "../include" ]
 }
 
-shared_library("bluetooth") {
+# Configure libbluetooth as either dynamic or static library
+if (defined(use.bt_dynlib) && use.bt_dynlib) {
+  lib_type = "shared_library"
+} else {
+  lib_type = "static_library"
+}
+
+target(lib_type, "bluetooth") {
   # HAL layer
   sources = [ "//bt/btif/src/bluetooth.cc" ]
 

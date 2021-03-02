@@ -31,6 +31,7 @@ using base::StringPrintf;
 
 #define BLUETOOTH_LIBRARY_NAME "libbluetooth.so"
 
+#if !defined(STATIC_LIBBLUETOOTH)
 int hal_util_load_bt_library(const bt_interface_t** interface) {
   const char* sym = BLUETOOTH_INTERFACE_STRING;
   bt_interface_t* itf = nullptr;
@@ -65,3 +66,12 @@ error:
 
   return -EINVAL;
 }
+#else
+extern bt_interface_t bluetoothInterface;
+
+int hal_util_load_bt_library(const bt_interface_t** interface) {
+  *interface = &bluetoothInterface;
+
+  return 0;
+}
+#endif

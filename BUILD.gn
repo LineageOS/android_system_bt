@@ -114,6 +114,13 @@ config("target_defaults") {
     "FALLTHROUGH_INTENDED=[[clang::fallthrough]]",
   ]
 
+  # If not configured as a dynamic library, default to static library
+  if (!(defined(use.bt_dynlib) && use.bt_dynlib)) {
+    defines = [
+      "STATIC_LIBBLUETOOTH",
+    ]
+  }
+
   if (!(defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs)) {
     defines += [ "EXCLUDE_NONSTANDARD_CODECS" ]
   }
