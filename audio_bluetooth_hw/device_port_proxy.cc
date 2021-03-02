@@ -37,7 +37,8 @@ using ::android::bluetooth::audio::BluetoothAudioSessionControl_2_1;
 using ::android::hardware::bluetooth::audio::V2_0::BitsPerSample;
 using ::android::hardware::bluetooth::audio::V2_0::ChannelMode;
 using ::android::hardware::bluetooth::audio::V2_0::PcmParameters;
-using ::android::hardware::bluetooth::audio::V2_0::SampleRate;
+using SampleRate = ::android::hardware::bluetooth::audio::V2_0::SampleRate;
+using SampleRate_2_1 = ::android::hardware::bluetooth::audio::V2_1::SampleRate;
 using BluetoothAudioStatus =
     ::android::hardware::bluetooth::audio::V2_0::Status;
 using ControlResultCallback = std::function<void(
@@ -46,29 +47,33 @@ using SessionChangedCallback = std::function<void(uint16_t cookie)>;
 
 namespace {
 
-unsigned int SampleRateToAudioFormat(SampleRate sample_rate) {
+unsigned int SampleRateToAudioFormat(SampleRate_2_1 sample_rate) {
   switch (sample_rate) {
-    case SampleRate::RATE_16000:
+    case SampleRate_2_1::RATE_8000:
+      return 8000;
+    case SampleRate_2_1::RATE_16000:
       return 16000;
-    case SampleRate::RATE_24000:
+    case SampleRate_2_1::RATE_24000:
       return 24000;
-    case SampleRate::RATE_44100:
+    case SampleRate_2_1::RATE_32000:
+      return 32000;
+    case SampleRate_2_1::RATE_44100:
       return 44100;
-    case SampleRate::RATE_48000:
+    case SampleRate_2_1::RATE_48000:
       return 48000;
-    case SampleRate::RATE_88200:
+    case SampleRate_2_1::RATE_88200:
       return 88200;
-    case SampleRate::RATE_96000:
+    case SampleRate_2_1::RATE_96000:
       return 96000;
-    case SampleRate::RATE_176400:
+    case SampleRate_2_1::RATE_176400:
       return 176400;
-    case SampleRate::RATE_192000:
+    case SampleRate_2_1::RATE_192000:
       return 192000;
     default:
       return kBluetoothDefaultSampleRate;
   }
 }
-audio_channel_mask_t ChannelModeToAudioFormat(ChannelMode channel_mode) {
+audio_channel_mask_t OutputChannelModeToAudioFormat(ChannelMode channel_mode) {
   switch (channel_mode) {
     case ChannelMode::MONO:
       return AUDIO_CHANNEL_OUT_MONO;
@@ -76,6 +81,17 @@ audio_channel_mask_t ChannelModeToAudioFormat(ChannelMode channel_mode) {
       return AUDIO_CHANNEL_OUT_STEREO;
     default:
       return kBluetoothDefaultOutputChannelModeMask;
+  }
+}
+
+audio_channel_mask_t InputChannelModeToAudioFormat(ChannelMode channel_mode) {
+  switch (channel_mode) {
+    case ChannelMode::MONO:
+      return AUDIO_CHANNEL_IN_MONO;
+    case ChannelMode::STEREO:
+      return AUDIO_CHANNEL_IN_STEREO;
+    default:
+      return kBluetoothDefaultInputChannelModeMask;
   }
 }
 
@@ -97,12 +113,12 @@ constexpr unsigned int kMaxWaitingTimeMs = 4500;
 
 }  // namespace
 
-BluetoothAudioPortOut::BluetoothAudioPortOut()
-    : state_(BluetoothStreamState::DISABLED),
-      session_type_(SessionType_2_1::UNKNOWN),
-      cookie_(android::bluetooth::audio::kObserversCookieUndefined) {}
+BluetoothAudioPort::BluetoothAudioPort()
+    : cookie_(android::bluetooth::audio::kObserversCookieUndefined),
+      state_(BluetoothStreamState::DISABLED),
+      session_type_(SessionType_2_1::UNKNOWN) {}
 
-bool BluetoothAudioPortOut::SetUp(audio_devices_t devices) {
+bool BluetoothAudioPort::SetUp(audio_devices_t devices) {
   if (!init_session_type(devices)) return false;
 
   state_ = BluetoothStreamState::STANDBY;
@@ -110,7 +126,7 @@ bool BluetoothAudioPortOut::SetUp(audio_devices_t devices) {
   auto control_result_cb = [port = this](uint16_t cookie, bool start_resp,
                                          const BluetoothAudioStatus& status) {
     if (!port->in_use()) {
-      LOG(ERROR) << "control_result_cb: BluetoothAudioPortOut is not in use";
+      LOG(ERROR) << "control_result_cb: BluetoothAudioPort is not in use";
       return;
     }
     if (port->cookie_ != cookie) {
@@ -122,7 +138,7 @@ bool BluetoothAudioPortOut::SetUp(audio_devices_t devices) {
   };
   auto session_changed_cb = [port = this](uint16_t cookie) {
     if (!port->in_use()) {
-      LOG(ERROR) << "session_changed_cb: BluetoothAudioPortOut is not in use";
+      LOG(ERROR) << "session_changed_cb: BluetoothAudioPort is not in use";
       return;
     }
     if (port->cookie_ != cookie) {
@@ -142,7 +158,7 @@ bool BluetoothAudioPortOut::SetUp(audio_devices_t devices) {
   return (cookie_ != android::bluetooth::audio::kObserversCookieUndefined);
 }
 
-bool BluetoothAudioPortOut::init_session_type(audio_devices_t device) {
+bool BluetoothAudioPort::init_session_type(audio_devices_t device) {
   switch (device) {
     case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP:
     case AUDIO_DEVICE_OUT_BLUETOOTH_A2DP_HEADPHONES:
@@ -169,7 +185,7 @@ bool BluetoothAudioPortOut::init_session_type(audio_devices_t device) {
   return true;
 }
 
-void BluetoothAudioPortOut::TearDown() {
+void BluetoothAudioPort::TearDown() {
   if (!in_use()) {
     LOG(ERROR) << __func__ << ": session_type=" << toString(session_type_)
                << ", cookie=" << StringPrintf("%#hx", cookie_) << " unknown monitor";
@@ -182,10 +198,10 @@ void BluetoothAudioPortOut::TearDown() {
   cookie_ = android::bluetooth::audio::kObserversCookieUndefined;
 }
 
-void BluetoothAudioPortOut::ControlResultHandler(
+void BluetoothAudioPort::ControlResultHandler(
     const BluetoothAudioStatus& status) {
   if (!in_use()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudioPortOut is not in use";
+    LOG(ERROR) << __func__ << ": BluetoothAudioPortis not in use";
     return;
   }
   std::unique_lock<std::mutex> port_lock(cv_mutex_);
@@ -228,9 +244,9 @@ void BluetoothAudioPortOut::ControlResultHandler(
   internal_cv_.notify_all();
 }
 
-void BluetoothAudioPortOut::SessionChangedHandler() {
+void BluetoothAudioPort::SessionChangedHandler() {
   if (!in_use()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudioPortOut is not in use";
+    LOG(ERROR) << __func__ << ": BluetoothAudioPort is not in use";
     return;
   }
   std::unique_lock<std::mutex> port_lock(cv_mutex_);
@@ -246,7 +262,7 @@ void BluetoothAudioPortOut::SessionChangedHandler() {
   internal_cv_.notify_all();
 }
 
-bool BluetoothAudioPortOut::in_use() const {
+bool BluetoothAudioPort::in_use() const {
   return (cookie_ != android::bluetooth::audio::kObserversCookieUndefined);
 }
 
@@ -259,32 +275,75 @@ bool BluetoothAudioPortOut::LoadAudioConfig(audio_config_t* audio_cfg) const {
     return false;
   }
 
-  const AudioConfiguration& hal_audio_cfg =
-      BluetoothAudioSessionControl_2_1::GetAudioConfig(session_type_);
+  const ::android::hardware::bluetooth::audio::V2_1::AudioConfiguration&
+      hal_audio_cfg =
+          BluetoothAudioSessionControl_2_1::GetAudioConfig(session_type_);
   if (hal_audio_cfg.getDiscriminator() !=
-      AudioConfiguration::hidl_discriminator::pcmConfig) {
+      ::android::hardware::bluetooth::audio::V2_1::AudioConfiguration::
+          hidl_discriminator::pcmConfig) {
     audio_cfg->sample_rate = kBluetoothDefaultSampleRate;
     audio_cfg->channel_mask = kBluetoothDefaultOutputChannelModeMask;
     audio_cfg->format = kBluetoothDefaultAudioFormatBitsPerSample;
     return false;
   }
-  const PcmParameters& pcm_cfg = hal_audio_cfg.pcmConfig();
+  const ::android::hardware::bluetooth::audio::V2_1::PcmParameters& pcm_cfg =
+      hal_audio_cfg.pcmConfig();
   LOG(VERBOSE) << __func__ << ": session_type=" << toString(session_type_)
                << ", cookie=" << StringPrintf("%#hx", cookie_) << ", state=" << state_ << ", PcmConfig=["
                << toString(pcm_cfg) << "]";
-  if (pcm_cfg.sampleRate == SampleRate::RATE_UNKNOWN ||
+  if (pcm_cfg.sampleRate == SampleRate_2_1::RATE_UNKNOWN ||
       pcm_cfg.channelMode == ChannelMode::UNKNOWN ||
       pcm_cfg.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
     return false;
   }
   audio_cfg->sample_rate = SampleRateToAudioFormat(pcm_cfg.sampleRate);
   audio_cfg->channel_mask =
-      (is_stereo_to_mono_ ? AUDIO_CHANNEL_OUT_STEREO : ChannelModeToAudioFormat(pcm_cfg.channelMode));
+      (is_stereo_to_mono_
+           ? AUDIO_CHANNEL_OUT_STEREO
+           : OutputChannelModeToAudioFormat(pcm_cfg.channelMode));
   audio_cfg->format = BitsPerSampleToAudioFormat(pcm_cfg.bitsPerSample);
   return true;
 }
 
-bool BluetoothAudioPortOut::CondwaitState(BluetoothStreamState state) {
+bool BluetoothAudioPortIn::LoadAudioConfig(audio_config_t* audio_cfg) const {
+  if (!in_use()) {
+    LOG(ERROR) << __func__ << ": BluetoothAudioPortIn is not in use";
+    audio_cfg->sample_rate = kBluetoothDefaultSampleRate;
+    audio_cfg->channel_mask = kBluetoothDefaultInputChannelModeMask;
+    audio_cfg->format = kBluetoothDefaultAudioFormatBitsPerSample;
+    return false;
+  }
+
+  const ::android::hardware::bluetooth::audio::V2_1::AudioConfiguration&
+      hal_audio_cfg =
+          BluetoothAudioSessionControl_2_1::GetAudioConfig(session_type_);
+  if (hal_audio_cfg.getDiscriminator() !=
+      ::android::hardware::bluetooth::audio::V2_1::AudioConfiguration::
+          hidl_discriminator::pcmConfig) {
+    audio_cfg->sample_rate = kBluetoothDefaultSampleRate;
+    audio_cfg->channel_mask = kBluetoothDefaultInputChannelModeMask;
+    audio_cfg->format = kBluetoothDefaultAudioFormatBitsPerSample;
+    return false;
+  }
+  const ::android::hardware::bluetooth::audio::V2_1::PcmParameters& pcm_cfg =
+      hal_audio_cfg.pcmConfig();
+  LOG(VERBOSE) << __func__ << ": session_type=" << toString(session_type_)
+               << ", cookie=" << StringPrintf("%#hx", cookie_)
+               << ", state=" << state_ << ", PcmConfig=[" << toString(pcm_cfg)
+               << "]";
+  if (pcm_cfg.sampleRate == SampleRate_2_1::RATE_UNKNOWN ||
+      pcm_cfg.channelMode == ChannelMode::UNKNOWN ||
+      pcm_cfg.bitsPerSample == BitsPerSample::BITS_UNKNOWN) {
+    return false;
+  }
+
+  audio_cfg->sample_rate = SampleRateToAudioFormat(pcm_cfg.sampleRate);
+  audio_cfg->channel_mask = InputChannelModeToAudioFormat(pcm_cfg.channelMode);
+  audio_cfg->format = BitsPerSampleToAudioFormat(pcm_cfg.bitsPerSample);
+  return true;
+}
+
+bool BluetoothAudioPort::CondwaitState(BluetoothStreamState state) {
   bool retval;
   std::unique_lock<std::mutex> port_lock(cv_mutex_);
   switch (state) {
@@ -313,9 +372,9 @@ bool BluetoothAudioPortOut::CondwaitState(BluetoothStreamState state) {
   return retval;  // false if any failure like timeout
 }
 
-bool BluetoothAudioPortOut::Start() {
+bool BluetoothAudioPort::Start() {
   if (!in_use()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudioPortOut is not in use";
+    LOG(ERROR) << __func__ << ": BluetoothAudioPort is not in use";
     return false;
   }
 
@@ -344,9 +403,9 @@ bool BluetoothAudioPortOut::Start() {
   return retval;  // false if any failure like timeout
 }
 
-bool BluetoothAudioPortOut::Suspend() {
+bool BluetoothAudioPort::Suspend() {
   if (!in_use()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudioPortOut is not in use";
+    LOG(ERROR) << __func__ << ": BluetoothAudioPort is not in use";
     return false;
   }
 
@@ -374,9 +433,9 @@ bool BluetoothAudioPortOut::Suspend() {
   return retval;  // false if any failure like timeout
 }
 
-void BluetoothAudioPortOut::Stop() {
+void BluetoothAudioPort::Stop() {
   if (!in_use()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudioPortOut is not in use";
+    LOG(ERROR) << __func__ << ": BluetoothAudioPort is not in use";
     return;
   }
   LOG(INFO) << __func__ << ": session_type=" << toString(session_type_) << ", cookie=" << StringPrintf("%#hx", cookie_)
@@ -406,11 +465,17 @@ size_t BluetoothAudioPortOut::WriteData(const void* buffer, size_t bytes) const 
          2;
 }
 
-bool BluetoothAudioPortOut::GetPresentationPosition(uint64_t* delay_ns,
-                                                    uint64_t* bytes,
-                                                    timespec* timestamp) const {
+size_t BluetoothAudioPortIn::ReadData(void* buffer, size_t bytes) const {
+  if (!in_use()) return 0;
+  return BluetoothAudioSessionControl_2_1::InReadPcmData(session_type_, buffer,
+                                                         bytes);
+}
+
+bool BluetoothAudioPort::GetPresentationPosition(uint64_t* delay_ns,
+                                                 uint64_t* bytes,
+                                                 timespec* timestamp) const {
   if (!in_use()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudioPortOut is not in use";
+    LOG(ERROR) << __func__ << ": BluetoothAudioPort is not in use";
     return false;
   }
   bool retval = BluetoothAudioSessionControl_2_1::GetPresentationPosition(
@@ -423,10 +488,10 @@ bool BluetoothAudioPortOut::GetPresentationPosition(uint64_t* delay_ns,
   return retval;
 }
 
-void BluetoothAudioPortOut::UpdateMetadata(
+void BluetoothAudioPort::UpdateMetadata(
     const source_metadata* source_metadata) const {
   if (!in_use()) {
-    LOG(ERROR) << __func__ << ": BluetoothAudioPortOut is not in use";
+    LOG(ERROR) << __func__ << ": BluetoothAudioPort is not in use";
     return;
   }
   LOG(DEBUG) << __func__ << ": session_type=" << toString(session_type_) << ", cookie=" << StringPrintf("%#hx", cookie_)
@@ -436,9 +501,9 @@ void BluetoothAudioPortOut::UpdateMetadata(
                                                          source_metadata);
 }
 
-BluetoothStreamState BluetoothAudioPortOut::GetState() const { return state_; }
+BluetoothStreamState BluetoothAudioPort::GetState() const { return state_; }
 
-void BluetoothAudioPortOut::SetState(BluetoothStreamState state) {
+void BluetoothAudioPort::SetState(BluetoothStreamState state) {
   state_ = state;
 }
 

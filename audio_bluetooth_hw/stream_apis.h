@@ -31,6 +31,8 @@ constexpr unsigned int kBluetoothDefaultInputBufferMs = 20;
 constexpr unsigned int kBluetoothDefaultOutputBufferMs = 10;
 constexpr audio_channel_mask_t kBluetoothDefaultOutputChannelModeMask =
     AUDIO_CHANNEL_OUT_STEREO;
+constexpr audio_channel_mask_t kBluetoothDefaultInputChannelModeMask =
+    AUDIO_CHANNEL_IN_MONO;
 
 enum class BluetoothStreamState : uint8_t {
   DISABLED = 0,  // This stream is closing or set param "suspend=true"

@@ -81,7 +81,7 @@ class PyLeAclManager(Closable):
     def close(self):
         safeClose(self.incoming_connection_event_stream)
         for v in self.outgoing_connection_event_streams.values():
-            safeClose(v)
+            safeClose(v[0])
         for connection in self.active_connections:
             safeClose(connection)
 
@@ -98,10 +98,16 @@ class PyLeAclManager(Closable):
         self.listen_for_incoming_connections()
         return self.complete_incoming_connection()
 
+    def cancel_connection(self, token):
+        assertThat(token in self.outgoing_connection_event_streams).isTrue()
+        pair = self.outgoing_connection_event_streams.pop(token)
+        safeClose(pair[0])
+        self.le_acl_manager.CancelConnection(pair[1])
+
     def initiate_connection(self, remote_addr):
         assertThat(self.next_token in self.outgoing_connection_event_streams).isFalse()
         self.outgoing_connection_event_streams[self.next_token] = EventStream(
-            self.le_acl_manager.CreateConnection(remote_addr))
+            self.le_acl_manager.CreateConnection(remote_addr)), remote_addr
         token = self.next_token
         self.next_token += 1
         return token
@@ -128,5 +134,5 @@ class PyLeAclManager(Closable):
 
     def complete_outgoing_connection(self, token):
         assertThat(self.outgoing_connection_event_streams[token]).isNotNone()
-        event_stream = self.outgoing_connection_event_streams.pop(token)
+        event_stream = self.outgoing_connection_event_streams.pop(token)[0]
         return self.complete_connection(event_stream)
