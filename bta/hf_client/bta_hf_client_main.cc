@@ -297,8 +297,13 @@ void bta_hf_client_cb_init(tBTA_HF_CLIENT_CB* client_cb, uint16_t handle) {
   // Free any memory we need to explicity release
   alarm_free(client_cb->collision_timer);
 
+  // release unique pointers
+  client_cb->enabled_hf_indicators.clear();
+  client_cb->peer_hf_indicators.clear();
+
   // Memset the rest of the block
-  memset(client_cb, 0, sizeof(tBTA_HF_CLIENT_CB));
+  // memset(client_cb, 0, sizeof(tBTA_HF_CLIENT_CB));
+  *client_cb = {};
 
   // Re allocate any variables required
   client_cb->collision_timer = alarm_new("bta_hf_client.scb_collision_timer");
@@ -834,6 +839,9 @@ void bta_hf_client_slc_seq(tBTA_HF_CLIENT_CB* client_cb, bool error) {
       if (client_cb->peer_features & BTA_HF_CLIENT_PEER_FEAT_3WAY &&
           bta_hf_client_cb_arr.features & BTA_HF_CLIENT_FEAT_3WAY) {
         bta_hf_client_send_at_chld(client_cb, '?', 0);
+      } else if (bta_hf_client_cb_arr.features & BTA_HF_CLIENT_FEAT_HF_IND &&
+                 client_cb->peer_features & BTA_HF_CLIENT_PEER_HF_IND) {
+        bta_hf_client_send_at_bind(client_cb, 0);
       } else {
         tBTA_HF_CLIENT_DATA msg;
         msg.hdr.layer_specific = client_cb->handle;
@@ -842,13 +850,32 @@ void bta_hf_client_slc_seq(tBTA_HF_CLIENT_CB* client_cb, bool error) {
       }
       break;
 
-    case BTA_HF_CLIENT_AT_CHLD: {
+    case BTA_HF_CLIENT_AT_CHLD:
+      if (bta_hf_client_cb_arr.features & BTA_HF_CLIENT_FEAT_HF_IND &&
+          client_cb->peer_features & BTA_HF_CLIENT_PEER_HF_IND) {
+        bta_hf_client_send_at_bind(client_cb, 0);
+      } else {
+        tBTA_HF_CLIENT_DATA msg;
+        msg.hdr.layer_specific = client_cb->handle;
+        bta_hf_client_svc_conn_open(&msg);
+        send_post_slc_cmd(client_cb);
+      }
+      break;
+
+    case BTA_HF_CLIENT_AT_BIND_SET_IND:
+      bta_hf_client_send_at_bind(client_cb, 1);
+      break;
+
+    case BTA_HF_CLIENT_AT_BIND_READ_SUPPORTED_IND:
+      bta_hf_client_send_at_bind(client_cb, 2);
+      break;
+
+    case BTA_HF_CLIENT_AT_BIND_READ_ENABLED_IND:
       tBTA_HF_CLIENT_DATA msg;
       msg.hdr.layer_specific = client_cb->handle;
       bta_hf_client_svc_conn_open(&msg);
       send_post_slc_cmd(client_cb);
       break;
-    }
 
     default: {
       /* If happen there is a bug in SLC creation procedure... */

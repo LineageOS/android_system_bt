@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 #include <cstdint>
+#include <unordered_set>
 
 #include "bta/hf_client/bta_hf_client_at.h"
 #include "bta/include/bta_hf_client_api.h"
@@ -98,6 +99,10 @@ enum {
   BTA_HF_CLIENT_AT_CNUM,
   BTA_HF_CLIENT_AT_NREC,
   BTA_HF_CLIENT_AT_BINP,
+  BTA_HF_CLIENT_AT_BIND_SET_IND,
+  BTA_HF_CLIENT_AT_BIND_READ_SUPPORTED_IND,
+  BTA_HF_CLIENT_AT_BIND_READ_ENABLED_IND,
+  BTA_HF_CLIENT_AT_BIEV,
   BTA_HF_CLIENT_AT_VENDOR_SPECIFIC,
 };
 
@@ -177,10 +182,14 @@ typedef struct {
   tBTM_SCO_CODEC_TYPE negotiated_codec; /* negotiated codec */
   bool svc_conn;      /* set to true when service level connection is up */
   bool send_at_reply; /* set to true to notify framework about AT results */
-  tBTA_HF_CLIENT_AT_CB at_cb;           /* AT Parser control block */
-  uint8_t state;                        /* state machine state */
-  bool is_allocated; /* if the control block is already allocated */
-  alarm_t* collision_timer;             /* Collision timer */
+  tBTA_HF_CLIENT_AT_CB at_cb; /* AT Parser control block */
+  uint8_t state;              /* state machine state */
+  bool is_allocated;          /* if the control block is already allocated */
+  alarm_t* collision_timer;   /* Collision timer */
+  std::unordered_set<int>
+      peer_hf_indicators; /* peer supported hf indicator indices (HFP1.7) */
+  std::unordered_set<int>
+      enabled_hf_indicators; /* enabled hf indicator indices (HFP1.7) */
 } tBTA_HF_CLIENT_CB;
 
 typedef struct {
@@ -267,6 +276,9 @@ extern void bta_hf_client_send_at_cmer(tBTA_HF_CLIENT_CB* client_cb,
                                        bool activate);
 extern void bta_hf_client_send_at_chld(tBTA_HF_CLIENT_CB* client_cb, char cmd,
                                        uint32_t idx);
+extern void bta_hf_client_send_at_bind(tBTA_HF_CLIENT_CB* client_cb, int step);
+extern void bta_hf_client_send_at_biev(tBTA_HF_CLIENT_CB* client_cb, int ind_id,
+                                       int value);
 extern void bta_hf_client_send_at_clip(tBTA_HF_CLIENT_CB* client_cb,
                                        bool activate);
 extern void bta_hf_client_send_at_ccwa(tBTA_HF_CLIENT_CB* client_cb,
