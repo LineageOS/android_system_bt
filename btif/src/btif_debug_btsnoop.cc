@@ -35,12 +35,6 @@
 static const size_t BTSNOOP_MEM_BUFFER_SIZE = (256 * 1024);
 #endif
 
-// Block size for copying buffers (for compression/encoding etc.)
-static const size_t BLOCK_SIZE = 16384;
-
-// Maximum line length in bugreport (should be multiple of 4 for base64 output)
-static const uint8_t MAX_LINE_LENGTH = 128;
-
 static std::mutex buffer_mutex;
 static ringbuffer_t* buffer = NULL;
 static uint64_t last_timestamp_ms = 0;
@@ -134,6 +128,18 @@ static size_t btsnoop_calculate_packet_length(uint16_t type,
   }
 }
 
+void btif_debug_btsnoop_init(void) {
+  if (buffer == NULL) buffer = ringbuffer_init(BTSNOOP_MEM_BUFFER_SIZE);
+  btsnoop_mem_set_callback(btsnoop_cb);
+}
+
+#ifndef OS_ANDROID
+void btif_debug_btsnoop_dump(int fd) {}
+#else
+
+// Block size for copying buffers (for compression/encoding etc.)
+static constexpr size_t BLOCK_SIZE = 16384;
+
 static bool btsnoop_compress(ringbuffer_t* rb_dst, ringbuffer_t* rb_src) {
   CHECK(rb_dst != NULL);
   CHECK(rb_src != NULL);
@@ -175,11 +181,6 @@ static bool btsnoop_compress(ringbuffer_t* rb_dst, ringbuffer_t* rb_src) {
   return rc;
 }
 
-void btif_debug_btsnoop_init(void) {
-  if (buffer == NULL) buffer = ringbuffer_init(BTSNOOP_MEM_BUFFER_SIZE);
-  btsnoop_mem_set_callback(btsnoop_cb);
-}
-
 void btif_debug_btsnoop_dump(int fd) {
   ringbuffer_t* ringbuffer = ringbuffer_init(BTSNOOP_MEM_BUFFER_SIZE);
   if (ringbuffer == NULL) {
@@ -219,6 +220,9 @@ void btif_debug_btsnoop_dump(int fd) {
 
   while (ringbuffer_size(ringbuffer) > 0) {
     size_t read = ringbuffer_pop(ringbuffer, b64_in, 3);
+    // Maximum line length in bugreport (should be multiple of 4 for base64
+    // output)
+    constexpr uint8_t MAX_LINE_LENGTH = 128;
     if (line_length >= MAX_LINE_LENGTH) {
       dprintf(fd, "\n");
       line_length = 0;
@@ -232,3 +236,4 @@ void btif_debug_btsnoop_dump(int fd) {
 error:
   ringbuffer_free(ringbuffer);
 }
+#endif
