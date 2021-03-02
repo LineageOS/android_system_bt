@@ -66,10 +66,10 @@ DeviceProperties::DeviceProperties(const std::string& file_name)
   supported_codecs_ = {0};  // Only SBC is supported.
   vendor_specific_codecs_ = {};
 
-  for (int i = 0; i < 35; i++) supported_commands_.push_back(0xff);
+  for (int i = 0; i < 35; i++) supported_commands_[i] = 0xff;
   // Mark HCI_LE_Transmitter_Test[v2] and newer commands as unsupported
-  // TODO: Implement a better mapping.
-  for (int i = 35; i < 64; i++) supported_commands_.push_back(0x00);
+  // Use SetSupportedComands() to change what's supported.
+  for (int i = 35; i < 64; i++) supported_commands_[i] = 0x00;
 
   le_supported_features_ = 0x1f;
   le_supported_states_ = 0x3ffffffffff;
