@@ -69,8 +69,9 @@ class HalVersionManager {
 
   static android::sp<IBluetoothAudioProvidersFactory_2_0>
   GetProvidersFactory_2_0() {
-    std::lock_guard<std::mutex> guard(instance_ptr->mutex_);
+    std::unique_lock<std::mutex> guard(instance_ptr->mutex_);
     if (instance_ptr->hal_version_ == BluetoothAudioHalVersion::VERSION_2_1) {
+      guard.unlock();
       return instance_ptr->GetProvidersFactory_2_1();
     }
     android::sp<IBluetoothAudioProvidersFactory_2_0> providers_factory =
@@ -81,6 +82,7 @@ class HalVersionManager {
     LOG(INFO) << "V2_0::IBluetoothAudioProvidersFactory::getService() returned "
               << providers_factory.get()
               << (providers_factory->isRemote() ? " (remote)" : " (local)");
+    guard.unlock();
     return providers_factory;
   }
 
