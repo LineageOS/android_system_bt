@@ -14,38 +14,24 @@
 #  limitations under the License.
 
 import("//bt/gd/dumpsys/bundler/bundler.gni")
-import("//common-mk/flatbuffer.gni")
 
-bt_flatc_binary_schema("BluetoothGeneratedBundlerSchema_h_bfbs") {
-  sources = [ "bundler.fbs" ]
-  include_dir = "bt/gd"
-  gen_header = true
-}
-
-#
-# The remaining rules are for building on the host
-#
-
-config("bundler_defaults") {
-  cflags = [ "-fPIC" ]
-
-  cflags_cc = [
-    "-std=c++17",
-    "-Wno-unused-parameter",
-    "-Wno-unused-variable",
-    "-Wno-poison-system-directories",
-  ]
-}
-
-executable("bluetooth_flatbuffer_bundler") {
+source_set("BluetoothDumpsysSources") {
   sources = [
-    "bundler.cc",
-    "main.cc",
+    "filter.cc",
+    "init_flags.cc",
+    "internal/filter_internal.cc",
+    "reflection_schema.cc",
   ]
 
-  libs = [ "flatbuffers" ]
+  cflags_cc = [ "-Wno-enum-compare-switch" ]
 
-  deps = [ ":BluetoothGeneratedBundlerSchema_h_bfbs" ]
+  configs += [ "//bt/gd:gd_defaults" ]
+  deps = [ "//bt/gd:gd_default_deps" ]
+}
 
-  configs += [ ":bundler_defaults" ]
+bt_flatc_bundler("BluetoothGeneratedDumpsysBundledSchema_h") {
+  root_name = "bluetooth.DumpsysData"
+  filename = "generated_dumpsys_bundled_schema"
+  namespace = "bluetooth::dumpsys"
+  deps = [ "//bt/gd:BluetoothGeneratedDumpsysBinarySchema_bfbs" ]
 }
