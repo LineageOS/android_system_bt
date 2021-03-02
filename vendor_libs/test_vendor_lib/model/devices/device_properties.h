@@ -41,8 +41,12 @@ class DeviceProperties {
   const std::vector<uint8_t>& GetVersionInformation() const;
 
   // Specification Version 4.2, Volume 2, Part E, Section 7.4.2
-  const std::vector<uint8_t>& GetSupportedCommands() const {
+  const std::array<uint8_t, 64>& GetSupportedCommands() const {
     return supported_commands_;
+  }
+
+  void SetSupportedCommands(const std::array<uint8_t, 64>& commands) {
+    supported_commands_ = commands;
   }
 
   // Specification Version 4.2, Volume 2, Part E, Section 7.4.3
@@ -358,7 +362,7 @@ class DeviceProperties {
   uint8_t authentication_enable_{};
   std::vector<uint8_t> supported_codecs_;
   std::vector<uint32_t> vendor_specific_codecs_;
-  std::vector<uint8_t> supported_commands_;
+  std::array<uint8_t, 64> supported_commands_;
   std::vector<uint64_t> extended_features_{{0x875b3fd8fe8ffeff, 0x04}};
   ClassOfDevice class_of_device_{{0, 0, 0}};
   std::vector<uint8_t> extended_inquiry_data_;
