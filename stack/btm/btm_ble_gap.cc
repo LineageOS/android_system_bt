@@ -63,6 +63,8 @@ extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
 extern void btm_ble_batchscan_init(void);
 extern void btm_ble_adv_filter_init(void);
 extern void btm_clear_all_pending_le_entry(void);
+extern const tBLE_BD_ADDR convert_to_address_with_type(
+    const RawAddress& bd_addr, const tBTM_SEC_DEV_REC* p_dev_rec);
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
 #define MIN_ADV_LENGTH 2
@@ -2493,7 +2495,16 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
   /* in case of disconnected, we must cancel bgconn and restart
      in order to add back device to acceptlist in order to reconnect */
   if (bd_addr != nullptr) {
-    btm_ble_bgconn_cancel_if_disconnected(*bd_addr);
+    const RawAddress bda(*bd_addr);
+    if (bluetooth::shim::is_gd_acl_enabled()) {
+      if (!bluetooth::shim::ACL_AcceptLeConnectionFrom(
+              convert_to_address_with_type(bda, btm_find_dev(bda)))) {
+        LOG_ERROR("Unable to add to acceptlist as it is full:%s",
+                  PRIVATE_ADDRESS(bda));
+      }
+    } else {
+      btm_ble_bgconn_cancel_if_disconnected(bda);
+    }
   }
 
   /* when no connection is attempted, and controller is not rejecting last
