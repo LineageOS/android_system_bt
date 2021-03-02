@@ -25,6 +25,7 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/utl.h"
+#include "osi/include/compat.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/port_api.h"

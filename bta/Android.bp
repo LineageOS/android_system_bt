@@ -117,6 +117,7 @@ cc_library_static {
         "avrcp-target-service",
         "lib-bt-packets",
     ],
+    host_supported: true,
 }
 
 // bta unit tests for target

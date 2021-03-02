@@ -28,6 +28,7 @@
 #include "bta/ag/bta_ag_int.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/alarm.h"
+#include "osi/include/compat.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/btm_api.h"
