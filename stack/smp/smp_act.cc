@@ -132,6 +132,7 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         break;
 
       default:
+        LOG_ERROR("Unexpected event:%hhu", p_cb->cb_evt);
         break;
     }
 
@@ -218,6 +219,9 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
           smp_br_state_machine_event(p_cb, SMP_BR_KEYS_RSP_EVT, NULL);
           break;
+
+        default:
+          LOG_ERROR("Unexpected event: %hhu", p_cb->cb_evt);
       }
     }
   }
@@ -429,7 +433,7 @@ void smp_proc_sec_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
   SMP_TRACE_DEBUG("%s: auth_req=0x%x", __func__, auth_req);
 
-  p_cb->cb_evt = 0;
+  p_cb->cb_evt = SMP_EVT_NONE;
 
   btm_ble_link_sec_check(p_cb->pairing_bda, auth_req, &sec_req_act);
 

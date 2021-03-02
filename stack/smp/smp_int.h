@@ -237,7 +237,7 @@ typedef struct {
   uint8_t status;
   uint8_t role;
   uint16_t flags;
-  uint8_t cb_evt;
+  tSMP_EVT cb_evt;
   tSMP_SEC_LEVEL sec_level;
   bool connect_initialized;
   Octet16 confirm;

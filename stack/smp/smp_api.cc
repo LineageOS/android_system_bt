@@ -316,7 +316,7 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
 
     /* clear the SMP_SEC_REQUEST_EVT event after get grant */
     /* avoid generating duplicate pair request */
-    smp_cb.cb_evt = 0;
+    smp_cb.cb_evt = SMP_EVT_NONE;
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = res;
     smp_br_state_machine_event(&smp_cb, SMP_BR_API_SEC_GRANT_EVT,
@@ -329,7 +329,7 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
     return;
   /* clear the SMP_SEC_REQUEST_EVT event after get grant */
   /* avoid generate duplicate pair request */
-  smp_cb.cb_evt = 0;
+  smp_cb.cb_evt = SMP_EVT_NONE;
   tSMP_INT_DATA smp_int_data;
   smp_int_data.status = res;
   smp_sm_event(&smp_cb, SMP_API_SEC_GRANT_EVT, &smp_int_data);
