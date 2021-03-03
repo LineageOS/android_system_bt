@@ -1139,27 +1139,32 @@ bool BTM_SecIsSecurityPending(const RawAddress& bd_addr) {
 static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
                                                tHCI_STATUS reason,
                                                uint16_t conn_handle) {
-  uint8_t old_state = p_dev_rec->sec_state;
-  tBTM_STATUS status = BTM_CMD_STARTED;
-
-  BTM_TRACE_EVENT("btm_sec_send_hci_disconnect:  handle:0x%x, reason=0x%x",
-                  conn_handle, reason);
+  const tSECURITY_STATE old_state =
+      static_cast<tSECURITY_STATE>(p_dev_rec->sec_state);
+  const tBTM_STATUS status = BTM_CMD_STARTED;
 
   /* send HCI_Disconnect on a transport only once */
   switch (old_state) {
     case BTM_SEC_STATE_DISCONNECTING:
-      if (conn_handle == p_dev_rec->hci_handle) return status;
-
+      if (conn_handle == p_dev_rec->hci_handle) {
+        // Already sent classic disconnect
+        return status;
+      }
+      // Prepare to send disconnect on le transport
       p_dev_rec->sec_state = BTM_SEC_STATE_DISCONNECTING_BOTH;
       break;
 
     case BTM_SEC_STATE_DISCONNECTING_BLE:
-      if (conn_handle == p_dev_rec->ble_hci_handle) return status;
-
+      if (conn_handle == p_dev_rec->ble_hci_handle) {
+        // Already sent ble disconnect
+        return status;
+      }
+      // Prepare to send disconnect on classic transport
       p_dev_rec->sec_state = BTM_SEC_STATE_DISCONNECTING_BOTH;
       break;
 
     case BTM_SEC_STATE_DISCONNECTING_BOTH:
+      // Already sent disconnect on both transports
       return status;
 
     default:
@@ -1170,6 +1175,8 @@ static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
       break;
   }
 
+  LOG_DEBUG("Send hci disconnect handle:0x%04x reason:%s", conn_handle,
+            hci_reason_code_text(reason).c_str());
   acl_disconnect_after_role_switch(conn_handle, reason);
 
   return status;
@@ -3623,10 +3630,7 @@ tBTM_STATUS btm_sec_disconnect(uint16_t handle, tHCI_STATUS reason) {
   return (btm_sec_send_hci_disconnect(p_dev_rec, reason, handle));
 }
 
-void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
-  uint8_t old_pairing_flags = btm_cb.pairing_flags;
-  tHCI_STATUS result = HCI_ERR_AUTH_FAILURE;
-
+void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason) {
   if ((reason != HCI_ERR_CONN_CAUSE_LOCAL_HOST) &&
       (reason != HCI_ERR_PEER_USER)) {
     LOG_WARN("Got uncommon disconnection reason:%s handle:0x%04x",
@@ -3636,12 +3640,12 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
   btm_acl_resubmit_page();
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  if (!p_dev_rec) {
+  if (p_dev_rec == nullptr) {
     LOG_WARN("Got disconnect for unknown device record handle:0x%04x", handle);
     return;
   }
 
-  tBT_TRANSPORT transport =
+  const tBT_TRANSPORT transport =
       (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
 
   /* clear unused flags */
@@ -3649,39 +3653,42 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
 
   /* If we are in the process of bonding we need to tell client that auth failed
    */
+  const uint8_t old_pairing_flags = btm_cb.pairing_flags;
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_cb.pairing_bda == p_dev_rec->bd_addr)) {
     LOG_DEBUG("Disconnected while pairing process active handle:0x%04x",
               handle);
     btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
     p_dev_rec->sec_flags &= ~BTM_SEC_LINK_KEY_KNOWN;
-    if (btm_cb.api.p_auth_complete_callback) {
-      /* If the disconnection reason is REPEATED_ATTEMPTS,
-         send this error message to complete callback function
-         to display the error message of Repeated attempts.
-         All others, send HCI_ERR_AUTH_FAILURE. */
-      if (reason == HCI_ERR_REPEATED_ATTEMPTS) {
-        result = HCI_ERR_REPEATED_ATTEMPTS;
-      } else if (old_pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
-        result = HCI_ERR_HOST_REJECT_SECURITY;
-      }
-      NotifyBondingChange(*p_dev_rec, result);
 
+    /* If the disconnection reason is REPEATED_ATTEMPTS,
+       send this error message to complete callback function
+       to display the error message of Repeated attempts.
+       All others, send HCI_ERR_AUTH_FAILURE. */
+    tHCI_STATUS status = HCI_ERR_AUTH_FAILURE;
+    if (reason == HCI_ERR_REPEATED_ATTEMPTS) {
+      status = HCI_ERR_REPEATED_ATTEMPTS;
+    } else if (old_pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
+      status = HCI_ERR_HOST_REJECT_SECURITY;
+    }
+    NotifyBondingChange(*p_dev_rec, status);
+
+    p_dev_rec = btm_find_dev_by_handle(handle);
+    if (p_dev_rec == nullptr) {
       // |btm_cb.api.p_auth_complete_callback| may cause |p_dev_rec| to be
       // deallocated.
-      p_dev_rec = btm_find_dev_by_handle(handle);
-      if (!p_dev_rec) {
-        return;
-      }
+      LOG_WARN("Device record was deallocated after user callback");
+      return;
     }
   }
 
-  VLOG(2) << __func__ << " bd_addr: " << p_dev_rec->bd_addr
-          << " name: " << p_dev_rec->sec_bd_name
-          << " state: " << btm_pair_state_descr(btm_cb.pairing_state)
-          << " reason: " << reason << " sec_req: " << std::hex
-          << p_dev_rec->security_required;
+  LOG_DEBUG(
+      "Disconnection complete device:%s name:%s state:%s reason:%s sec_req:%x",
+      PRIVATE_ADDRESS(p_dev_rec->bd_addr), p_dev_rec->sec_bd_name,
+      btm_pair_state_descr(btm_cb.pairing_state),
+      hci_reason_code_text(reason).c_str(), p_dev_rec->security_required);
 
+  // TODO Should this be gated by the transport check below ?
   btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, &p_dev_rec->bd_addr,
                                 HCI_SUCCESS);
   /* see sec_flags processing in btm_acl_removed */
@@ -3727,6 +3734,8 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
   }
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
+    LOG_DEBUG("Waiting for other transport to disconnect current:%s",
+              BtTransportText(transport).c_str());
     p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE)
                                ? BTM_SEC_STATE_DISCONNECTING
                                : BTM_SEC_STATE_DISCONNECTING_BLE;
@@ -3735,17 +3744,16 @@ void btm_sec_disconnected(uint16_t handle, tHCI_STATUS reason) {
   p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
   p_dev_rec->security_required = BTM_SEC_NONE;
 
-  tBTM_SEC_CALLBACK* p_callback = p_dev_rec->p_callback;
-
-  /* if security is pending, send callback to clean up the security state */
-  if (p_callback) {
-    BTM_TRACE_DEBUG("%s: clearing callback. p_dev_rec=%p, p_callback=%p",
-                    __func__, p_dev_rec, p_dev_rec->p_callback);
-    p_dev_rec->p_callback =
-        NULL; /* when the peer device time out the authentication before
-                 we do, this call back must be reset here */
+  if (p_dev_rec->p_callback != nullptr) {
+    tBTM_SEC_CALLBACK* p_callback = p_dev_rec->p_callback;
+    /* when the peer device time out the authentication before
+       we do, this call back must be reset here */
+    p_dev_rec->p_callback = nullptr;
     (*p_callback)(&p_dev_rec->bd_addr, transport, p_dev_rec->p_ref_data,
                   BTM_ERR_PROCESSING);
+    LOG_DEBUG("Cleaned up pending security state device:%s transport:%s",
+              PRIVATE_ADDRESS(p_dev_rec->bd_addr),
+              BtTransportText(transport).c_str());
   }
 }
 

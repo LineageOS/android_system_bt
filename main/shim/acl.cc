@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 
+#include "device/include/controller.h"
 #include "gd/common/bidi_queue.h"
 #include "gd/common/bind.h"
 #include "gd/common/strings.h"
@@ -765,6 +766,8 @@ struct shim::legacy::Acl::impl {
     for (auto& entry : history) {
       LOG_DEBUG("%s", entry.c_str());
     }
+    LOG_DEBUG("Shadow le accept list  size:%hhu",
+              controller_get_interface()->get_ble_acceptlist_size());
     const auto acceptlist = shadow_acceptlist_.GetCopy();
     for (auto& entry : acceptlist) {
       LOG_DEBUG("acceptlist:%s", entry.ToString().c_str());
@@ -778,6 +781,8 @@ struct shim::legacy::Acl::impl {
     for (auto& entry : history) {
       LOG_DUMPSYS(fd, "%s", entry.c_str());
     }
+    LOG_DUMPSYS(fd, "Shadow le accept list  size:%hhu",
+                controller_get_interface()->get_ble_acceptlist_size());
     unsigned cnt = 0;
     auto acceptlist = shadow_acceptlist_.GetCopy();
     for (auto& entry : acceptlist) {

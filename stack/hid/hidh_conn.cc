@@ -61,12 +61,18 @@ static void hidh_l2cif_cong_ind(uint16_t l2cap_cid, bool congested);
 static void hidh_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
 
 static const tL2CAP_APPL_INFO hst_reg_info = {
-    hidh_l2cif_connect_ind,    hidh_l2cif_connect_cfm,
-    hidh_l2cif_config_ind,     hidh_l2cif_config_cfm,
-    hidh_l2cif_disconnect_ind, hidh_l2cif_data_ind,
-    hidh_l2cif_cong_ind,       NULL,
-    hidh_on_l2cap_error,       NULL,
-    NULL,                      NULL
+    .pL2CA_ConnectInd_Cb = hidh_l2cif_connect_ind,
+    .pL2CA_ConnectCfm_Cb = hidh_l2cif_connect_cfm,
+    .pL2CA_ConfigInd_Cb = hidh_l2cif_config_ind,
+    .pL2CA_ConfigCfm_Cb = hidh_l2cif_config_cfm,
+    .pL2CA_DisconnectInd_Cb = hidh_l2cif_disconnect_ind,
+    .pL2CA_DataInd_Cb = hidh_l2cif_data_ind,
+    .pL2CA_CongestionStatus_Cb = hidh_l2cif_cong_ind,
+    .pL2CA_TxComplete_Cb = nullptr,
+    .pL2CA_Error_Cb = hidh_on_l2cap_error,
+    .pL2CA_CreditBasedConnectInd_Cb = nullptr,
+    .pL2CA_CreditBasedConnectCfm_Cb = nullptr,
+    .pL2CA_CreditBasedReconfigCompleted_Cb = nullptr,
 };
 static void hidh_try_repage(uint8_t dhandle);
 
@@ -123,8 +129,6 @@ tHID_STATUS hidh_conn_reg(void) {
 tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
   tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
 
-  HIDH_TRACE_EVENT("HID-Host disconnect");
-
   if ((p_hcon->ctrl_cid != 0) || (p_hcon->intr_cid != 0)) {
     p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
 
@@ -140,8 +144,7 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
   } else {
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
   }
-
-  return (HID_SUCCESS);
+  return HID_SUCCESS;
 }
 
 /*******************************************************************************
@@ -517,24 +520,17 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
 static void hidh_l2cif_disconnect(uint16_t l2cap_cid) {
   L2CA_DisconnectReq(l2cap_cid);
 
-  uint8_t dhandle;
-  tHID_CONN* p_hcon = NULL;
-
   /* Find CCB based on CID */
-  dhandle = find_conn_by_cid(l2cap_cid);
-  if (dhandle < HID_HOST_MAX_DEVICES) p_hcon = &hh_cb.devices[dhandle].conn;
-
-  if (p_hcon == NULL) {
-    HIDH_TRACE_WARNING("HID-Host Rcvd L2CAP disc cfm, unknown CID: 0x%x",
-                       l2cap_cid);
+  const uint8_t dhandle = find_conn_by_cid(l2cap_cid);
+  if (dhandle == HID_HOST_MAX_DEVICES) {
+    LOG_WARN("HID-Host Rcvd L2CAP disc cfm, unknown CID: 0x%x", l2cap_cid);
     return;
   }
 
-  HIDH_TRACE_EVENT("HID-Host Rcvd L2CAP disc cfm, CID: 0x%x", l2cap_cid);
-
-  if (l2cap_cid == p_hcon->ctrl_cid)
+  tHID_CONN* p_hcon = &hh_cb.devices[dhandle].conn;
+  if (l2cap_cid == p_hcon->ctrl_cid) {
     p_hcon->ctrl_cid = 0;
-  else {
+  } else {
     p_hcon->intr_cid = 0;
     if (p_hcon->ctrl_cid) {
       HIDH_TRACE_EVENT("HID-Host Initiating L2CAP Ctrl disconnection");

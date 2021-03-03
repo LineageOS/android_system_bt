@@ -49,6 +49,7 @@
 #define BTA_HF_CLIENT_PEER_ECC 0x00000080 /* Enhanced Call Control */
 #define BTA_HF_CLIENT_PEER_EXTERR 0x00000100 /* Extended error codes */
 #define BTA_HF_CLIENT_PEER_CODEC 0x00000200  /* Codec Negotiation */
+#define BTA_HF_CLIENT_PEER_HF_IND 0x00000400 /* HF Indicators */
 #define BTA_HF_CLIENT_PEER_ESCO_S4 0x00000800 /* ESCO S4 link setting */
 
 typedef uint16_t tBTA_HF_CLIENT_PEER_FEAT;
@@ -65,6 +66,7 @@ typedef uint16_t tBTA_HF_CLIENT_PEER_FEAT;
 #define BTA_HF_CLIENT_FEAT_ECS 0x00000020   /* Enhanced Call Status */
 #define BTA_HF_CLIENT_FEAT_ECC 0x00000040   /* Enhanced Call Control */
 #define BTA_HF_CLIENT_FEAT_CODEC 0x00000080 /* Codec Negotiation */
+#define BTA_HF_CLIENT_FEAT_HF_IND 0x00000100  /* HF Indicators */
 #define BTA_HF_CLIENT_FEAT_ESCO_S4 0x00000200 /* ESCO S4 link setting */
 
 /* HFP HF extended call handling - masks not related to any spec */
@@ -169,6 +171,7 @@ typedef uint8_t tBTA_HF_CLIENT_IND_TYPE;
 #define BTA_HF_CLIENT_AT_CMD_BLDN 14
 #define BTA_HF_CLIENT_AT_CMD_NREC 15
 #define BTA_HF_CLIENT_AT_CMD_VENDOR_SPECIFIC_CMD 16
+#define BTA_HF_CLIENT_AT_CMD_BIEV 17
 
 typedef uint8_t tBTA_HF_CLIENT_AT_CMD_TYPE;
 

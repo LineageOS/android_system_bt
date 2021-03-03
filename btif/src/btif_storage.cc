@@ -35,7 +35,6 @@
 #include <alloca.h>
 #include <base/logging.h>
 #include <ctype.h>
-#include <log/log.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

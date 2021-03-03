@@ -2335,8 +2335,8 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
   }
 
   BTIF_TRACE_DEBUG("%s: read OOB data from %s", __func__, path);
-  fread(p_c->data(), 1, OCTET16_LEN, fp);
-  fread(p_r->data(), 1, OCTET16_LEN, fp);
+  (void)fread(p_c->data(), 1, OCTET16_LEN, fp);
+  (void)fread(p_r->data(), 1, OCTET16_LEN, fp);
   fclose(fp);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);

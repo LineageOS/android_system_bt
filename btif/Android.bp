@@ -60,7 +60,6 @@ cc_library_static {
         "src/btif_a2dp_source.cc",
         "src/btif_activity_attribution.cc",
         "src/btif_av.cc",
-        "src/btif_avrcp_audio_track.cc",
         "src/btif_ble_advertiser.cc",
         "src/btif_ble_scanner.cc",
         "src/btif_bqr.cc",
@@ -101,32 +100,42 @@ cc_library_static {
         "src/btif_keystore.cc",
         "src/stack_manager.cc",
     ],
-    header_libs: [
-        "libmedia_headers",
-    ],
     shared_libs: [
         "android.hardware.bluetooth.a2dp@1.0",
         "android.hardware.bluetooth.audio@2.0",
         "android.hardware.bluetooth.audio@2.1",
-        "libaaudio",
         "libcrypto",
         "libcutils",
-        "libfmq",
         "libhidlbase",
         "liblog",
         "libtinyxml2",
         "libutils",
         "libz",
     ],
+    target: {
+        android: {
+            shared_libs: [
+                "libaaudio",
+                "libfmq",
+            ],
+            whole_static_libs: [
+                "libbt-audio-hal-interface",
+            ],
+            srcs: ["src/btif_avrcp_audio_track.cc"],
+        },
+        host: {
+            srcs: ["src/btif_avrcp_audio_track_linux.cc"],
+        },
+    },
     whole_static_libs: [
         "avrcp-target-service",
         "lib-bt-packets",
         "libaudio-a2dp-hw-utils",
-        "libbt-audio-hal-interface",
     ],
     cflags: [
         "-DBUILDCFG",
     ],
+    host_supported: true,
 }
 
 // btif unit tests for target

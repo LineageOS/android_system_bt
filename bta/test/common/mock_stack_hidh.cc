@@ -37,42 +37,42 @@ extern std::map<std::string, int> mock_function_count_map;
 tHID_STATUS HID_HostAddDev(const RawAddress& addr, uint16_t attr_mask,
                            uint8_t* handle) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 tHID_STATUS HID_HostDeregister(void) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr,
                                  tSDP_DISCOVERY_DB* p_db, uint32_t db_len,
                                  tHID_HOST_SDP_CALLBACK* sdp_cback) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 tHID_STATUS HID_HostOpenDev(uint8_t dev_handle) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 tHID_STATUS HID_HostRegister(tHID_HOST_DEV_CALLBACK* dev_cback) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 tHID_STATUS HID_HostRemoveDev(uint8_t dev_handle) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 tHID_STATUS HID_HostWriteDev(uint8_t dev_handle, uint8_t t_type, uint8_t param,
                              uint16_t data, uint8_t report_id, BT_HDR* pbuf) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 uint8_t HID_HostSetTraceLevel(uint8_t new_level) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HID_SUCCESS;
 }
 void HID_HostInit(void) { mock_function_count_map[__func__]++; }
 void hidh_get_str_attr(tSDP_DISC_REC* p_rec, uint16_t attr_id, uint16_t max_len,
