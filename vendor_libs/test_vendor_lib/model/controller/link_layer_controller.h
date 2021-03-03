@@ -41,6 +41,9 @@ class LinkLayerController {
   ErrorCode SendCommandToRemoteByAddress(
       OpCode opcode, bluetooth::packet::PacketView<true> args,
       const Address& remote);
+  ErrorCode SendLeCommandToRemoteByAddress(
+      OpCode opcode, bluetooth::packet::PacketView<true> args,
+      const Address& remote, const Address& local);
   ErrorCode SendCommandToRemoteByHandle(
       OpCode opcode, bluetooth::packet::PacketView<true> args, uint16_t handle);
   ErrorCode SendScoToRemote(bluetooth::hci::ScoView sco_packet);
