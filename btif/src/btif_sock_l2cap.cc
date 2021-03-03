@@ -726,6 +726,7 @@ static void on_l2cap_data_ind(tBTA_JV* evt, uint32_t id) {
                << ": unable to push data to socket - closing  fixed channel";
       BTA_JvL2capCloseLE(sock->handle);
       btsock_l2cap_free_l(sock);
+      return;
     }
 
   } else {
@@ -744,6 +745,7 @@ static void on_l2cap_data_ind(tBTA_JV* evt, uint32_t id) {
                    << ": unable to push data to socket - closing channel";
           BTA_JvL2capClose(sock->handle);
           btsock_l2cap_free_l(sock);
+          return;
         }
       }
     }
