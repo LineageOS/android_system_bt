@@ -62,16 +62,29 @@ void LinkLayerController::SendLinkLayerPacket(
   });
 }
 
+ErrorCode LinkLayerController::SendLeCommandToRemoteByAddress(
+    OpCode opcode, bluetooth::packet::PacketView<true> args,
+    const Address& remote, const Address& local) {
+  switch (opcode) {
+    case (OpCode::LE_READ_REMOTE_FEATURES):
+      SendLinkLayerPacket(
+          model::packets::LeReadRemoteFeaturesBuilder::Create(local, remote));
+      break;
+    default:
+      LOG_INFO("Dropping unhandled command 0x%04x",
+               static_cast<uint16_t>(opcode));
+      return ErrorCode::UNKNOWN_HCI_COMMAND;
+  }
+
+  return ErrorCode::SUCCESS;
+}
+
 ErrorCode LinkLayerController::SendCommandToRemoteByAddress(
     OpCode opcode, bluetooth::packet::PacketView<true> args,
     const Address& remote) {
   Address local_address = properties_.GetAddress();
 
   switch (opcode) {
-    case (OpCode::LE_READ_REMOTE_FEATURES):
-      SendLinkLayerPacket(model::packets::LeReadRemoteFeaturesBuilder::Create(
-          local_address, remote));
-      break;
     case (OpCode::REMOTE_NAME_REQUEST):
       // LMP features get requested with remote name requests.
       SendLinkLayerPacket(model::packets::ReadRemoteLmpFeaturesBuilder::Create(
@@ -111,12 +124,19 @@ ErrorCode LinkLayerController::SendCommandToRemoteByAddress(
 
 ErrorCode LinkLayerController::SendCommandToRemoteByHandle(
     OpCode opcode, bluetooth::packet::PacketView<true> args, uint16_t handle) {
-  // TODO: Handle LE connections
   if (!connections_.HasHandle(handle)) {
     return ErrorCode::UNKNOWN_CONNECTION;
   }
-  return SendCommandToRemoteByAddress(
-      opcode, args, connections_.GetAddress(handle).GetAddress());
+
+  switch (opcode) {
+    case (OpCode::LE_READ_REMOTE_FEATURES):
+      return SendLeCommandToRemoteByAddress(
+          opcode, args, connections_.GetAddress(handle).GetAddress(),
+          connections_.GetOwnAddress(handle).GetAddress());
+    default:
+      return SendCommandToRemoteByAddress(
+          opcode, args, connections_.GetAddress(handle).GetAddress());
+  }
 }
 
 ErrorCode LinkLayerController::SendAclToRemote(
@@ -1334,7 +1354,7 @@ void LinkLayerController::IncomingLeReadRemoteFeatures(
       connections_.GetHandleOnlyAddress(incoming.GetSourceAddress());
   ErrorCode status = ErrorCode::SUCCESS;
   if (handle == kReservedHandle) {
-    LOG_INFO("@%s: Unknown connection @%s",
+    LOG_WARN("@%s: Unknown connection @%s",
              incoming.GetDestinationAddress().ToString().c_str(),
              incoming.GetSourceAddress().ToString().c_str());
   }
@@ -1351,6 +1371,7 @@ void LinkLayerController::IncomingLeReadRemoteFeaturesResponse(
   ErrorCode status = ErrorCode::SUCCESS;
   auto response =
       model::packets::LeReadRemoteFeaturesResponseView::Create(incoming);
+  ASSERT(response.IsValid());
   if (handle == kReservedHandle) {
     LOG_INFO("@%s: Unknown connection @%s",
              incoming.GetDestinationAddress().ToString().c_str(),
