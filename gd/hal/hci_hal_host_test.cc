@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hal/hci_hal_host_rootcanal.h"
+#include "hal/hci_hal_host.h"
 
 #include <fcntl.h>
 #include <gtest/gtest.h>
