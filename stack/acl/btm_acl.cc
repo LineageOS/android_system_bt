@@ -2867,3 +2867,17 @@ bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr) {
 
   return HCI_LMP_TRANSPNT_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
 }
+
+void acl_add_to_ignore_auto_connect_after_disconnect(
+    const RawAddress& bd_addr) {
+  btm_cb.acl_cb_.AddToIgnoreAutoConnectAfterDisconnect(bd_addr);
+}
+
+bool acl_check_and_clear_ignore_auto_connect_after_disconnect(
+    const RawAddress& bd_addr) {
+  return btm_cb.acl_cb_.CheckAndClearIgnoreAutoConnectAfterDisconnect(bd_addr);
+}
+
+void acl_clear_all_ignore_auto_connect_after_disconnect() {
+  btm_cb.acl_cb_.ClearAllIgnoreAutoConnectAfterDisconnect();
+}

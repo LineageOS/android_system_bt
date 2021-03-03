@@ -95,15 +95,27 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG is null after header inclusion");
 #define LOG_WARN(...) LOGWRAPPER(__VA_ARGS__)
 #endif /* FUZZ_TARGET */
 #define LOG_ERROR(...) LOGWRAPPER(__VA_ARGS__)
+
+#ifndef LOG_ALWAYS_FATAL
 #define LOG_ALWAYS_FATAL(...) \
   do {                        \
     LOGWRAPPER(__VA_ARGS__);  \
     abort();                  \
   } while (false)
+#endif
+
+#ifndef android_errorWriteLog
 #define android_errorWriteLog(tag, subTag) LOG_ERROR("ERROR tag: 0x%x, sub_tag: %s", tag, subTag)
+#endif
+
+#ifndef android_errorWriteWithInfoLog
 #define android_errorWriteWithInfoLog(tag, subTag, uid, data, dataLen) \
   LOG_ERROR("ERROR tag: 0x%x, sub_tag: %s", tag, subTag)
+#endif
+
+#ifndef LOG_EVENT_INT
 #define LOG_EVENT_INT(...)
+#endif
 
 #endif /* defined(OS_ANDROID) */
 

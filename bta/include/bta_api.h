@@ -135,6 +135,10 @@ inline tBTA_PREF_ROLES toBTA_PREF_ROLES(uint8_t role) {
   return static_cast<tBTA_PREF_ROLES>(role);
 }
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
 inline std::string preferred_role_text(const tBTA_PREF_ROLES& role) {
   switch (role) {
     CASE_RETURN_TEXT(BTA_ANY_ROLE);
@@ -145,6 +149,7 @@ inline std::string preferred_role_text(const tBTA_PREF_ROLES& role) {
       return std::string("UNKNOWN:%hhu", role);
   }
 }
+#undef CASE_RETURN_TEXT
 
 enum {
 

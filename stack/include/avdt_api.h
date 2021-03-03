@@ -59,6 +59,10 @@ inline tAVDT_RESULT ToAvdtResult(uint16_t result) {
   return static_cast<tAVDT_RESULT>(result);
 }
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
 inline std::string avdt_result_text(const tAVDT_RESULT& result) {
   switch (result) {
     CASE_RETURN_TEXT(AVDT_SUCCESS);
@@ -71,6 +75,7 @@ inline std::string avdt_result_text(const tAVDT_RESULT& result) {
       return base::StringPrintf("UNKNOWN[%hu]", result);
   }
 }
+#undef CASE_RETURN_TEXT
 
 /* The index to access the codec type in codec_info[]. */
 #define AVDT_CODEC_TYPE_INDEX 2

@@ -39,10 +39,8 @@ tBTA_HH_CB bta_hh_cb;
 /*****************************************************************************
  * Static functions
  ****************************************************************************/
-#if (BTA_HH_DEBUG == TRUE)
 static const char* bta_hh_evt_code(tBTA_HH_INT_EVT evt_code);
 static const char* bta_hh_state_code(tBTA_HH_STATE state_code);
-#endif
 
 static void bta_hh_better_state_machine(tBTA_HH_DEV_CB* p_cb, uint16_t event,
                                         tBTA_HH_DATA* p_data) {
@@ -190,10 +188,8 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
                        tBTA_HH_DATA* p_data) {
   tBTA_HH cback_data;
   tBTA_HH_EVT cback_event = 0;
-#if (BTA_HH_DEBUG == TRUE)
   tBTA_HH_STATE in_state;
   uint16_t debug_event = event;
-#endif
 
   memset(&cback_data, 0, sizeof(tBTA_HH));
 
@@ -271,12 +267,10 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
   }
   /* corresponding CB is found, go to state machine */
   else {
-#if (BTA_HH_DEBUG == TRUE)
     in_state = p_cb->state;
     APPL_TRACE_EVENT("bta_hh_sm_execute: State 0x%02x [%s], Event [%s]",
                      in_state, bta_hh_state_code(in_state),
                      bta_hh_evt_code(debug_event));
-#endif
 
     if ((p_cb->state == BTA_HH_NULL_ST) || (p_cb->state >= BTA_HH_INVALID_ST)) {
       APPL_TRACE_ERROR(
@@ -287,14 +281,12 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
 
     bta_hh_better_state_machine(p_cb, event, p_data);
 
-#if (BTA_HH_DEBUG == TRUE)
     if (in_state != p_cb->state) {
       APPL_TRACE_DEBUG("HH State Change: [%s] -> [%s] after Event [%s]",
                        bta_hh_state_code(in_state),
                        bta_hh_state_code(p_cb->state),
                        bta_hh_evt_code(debug_event));
     }
-#endif
   }
 
   return;
@@ -360,10 +352,8 @@ bool bta_hh_hdl_event(BT_HDR* p_msg) {
 
       if (index != BTA_HH_IDX_INVALID) p_cb = &bta_hh_cb.kdev[index];
 
-#if (BTA_HH_DEBUG == TRUE)
       APPL_TRACE_DEBUG("bta_hh_hdl_event:: handle = %d dev_cb[%d] ",
                        p_msg->layer_specific, index);
-#endif
       bta_hh_sm_execute(p_cb, p_msg->event, (tBTA_HH_DATA*)p_msg);
   }
   return (true);
@@ -372,7 +362,6 @@ bool bta_hh_hdl_event(BT_HDR* p_msg) {
 /*****************************************************************************
  *  Debug Functions
  ****************************************************************************/
-#if (BTA_HH_DEBUG == TRUE)
 /*******************************************************************************
  *
  * Function         bta_hh_evt_code
@@ -452,7 +441,5 @@ static const char* bta_hh_state_code(tBTA_HH_STATE state_code) {
       return "unknown HID Host state";
   }
 }
-
-#endif /* Debug Functions */
 
 #endif /* BTA_HH_INCLUDED */

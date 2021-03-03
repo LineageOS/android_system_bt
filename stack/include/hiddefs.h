@@ -25,12 +25,14 @@
 #ifndef HIDDEFS_H
 #define HIDDEFS_H
 
+#include <string>
+
 #include "sdp_api.h"
 /*
  * tHID_STATUS: HID result codes, returned by HID and device and host functions.
 */
-enum {
-  HID_SUCCESS,
+typedef enum : uint8_t {
+  HID_SUCCESS = 0,
   HID_ERR_NOT_REGISTERED,
   HID_ERR_ALREADY_REGISTERED,
   HID_ERR_NO_RESOURCES,
@@ -51,9 +53,38 @@ enum {
   HID_ERR_GATT,
 
   HID_ERR_INVALID = 0xFF
-};
+} tHID_STATUS;
 
-typedef uint8_t tHID_STATUS;
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
+inline std::string hid_status_text(const tHID_STATUS& status) {
+  switch (status) {
+    CASE_RETURN_TEXT(HID_SUCCESS);
+    CASE_RETURN_TEXT(HID_ERR_NOT_REGISTERED);
+    CASE_RETURN_TEXT(HID_ERR_ALREADY_REGISTERED);
+    CASE_RETURN_TEXT(HID_ERR_NO_RESOURCES);
+    CASE_RETURN_TEXT(HID_ERR_NO_CONNECTION);
+    CASE_RETURN_TEXT(HID_ERR_INVALID_PARAM);
+    CASE_RETURN_TEXT(HID_ERR_UNSUPPORTED);
+    CASE_RETURN_TEXT(HID_ERR_UNKNOWN_COMMAND);
+    CASE_RETURN_TEXT(HID_ERR_CONGESTED);
+    CASE_RETURN_TEXT(HID_ERR_CONN_IN_PROCESS);
+    CASE_RETURN_TEXT(HID_ERR_ALREADY_CONN);
+    CASE_RETURN_TEXT(HID_ERR_DISCONNECTING);
+    CASE_RETURN_TEXT(HID_ERR_SET_CONNABLE_FAIL);
+    CASE_RETURN_TEXT(HID_ERR_HOST_UNKNOWN);
+    CASE_RETURN_TEXT(HID_ERR_L2CAP_FAILED);
+    CASE_RETURN_TEXT(HID_ERR_AUTH_FAILED);
+    CASE_RETURN_TEXT(HID_ERR_SDP_BUSY);
+    CASE_RETURN_TEXT(HID_ERR_GATT);
+    CASE_RETURN_TEXT(HID_ERR_INVALID);
+    default:
+      return std::string("UNKNOWN[%hhu]", status);
+  }
+}
+#undef CASE_RETURN_TEXT
 
 #define HID_L2CAP_CONN_FAIL \
   (0x0100)                          /* Connection Attempt was made but failed */
