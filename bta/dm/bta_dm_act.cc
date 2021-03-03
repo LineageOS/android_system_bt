@@ -1056,20 +1056,17 @@ void bta_dm_disc_rmt_name(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
-  tSDP_DISC_REC* p_sdp_rec = NULL;
-  tBTA_DM_MSG* p_msg;
-  bool scn_found = false;
-  uint16_t service = 0xFFFF;
-  tSDP_PROTOCOL_ELEM pe;
-
-  std::vector<Uuid> uuid_list;
-
   if ((p_data->sdp_event.sdp_result == SDP_SUCCESS) ||
       (p_data->sdp_event.sdp_result == SDP_NO_RECS_MATCH) ||
       (p_data->sdp_event.sdp_result == SDP_DB_FULL)) {
     APPL_TRACE_DEBUG("sdp_result::0x%x", p_data->sdp_event.sdp_result);
+    tSDP_DISC_REC* p_sdp_rec = NULL;
+    bool scn_found = false;
+    tSDP_PROTOCOL_ELEM pe;
+    std::vector<Uuid> uuid_list;
+
     do {
-      p_sdp_rec = NULL;
+      uint16_t service = 0xffff;
       if (bta_dm_search_cb.service_index == (BTA_USER_SERVICE_ID + 1)) {
         if (p_sdp_rec && SDP_FindProtocolListElemInRec(
                              p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
@@ -1176,7 +1173,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
             &bta_dm_service_search_remname_cback);
       }
 
-      p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
+      tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
       p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
       p_msg->disc_result.result.disc_res.result = BTA_SUCCESS;
       p_msg->disc_result.result.disc_res.num_uuids = uuid_list.size();
@@ -1212,6 +1209,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
 
       // Piggy back the SCN over result field
       if (scn_found) {
+        // TODO This is an enum, not a value.  Please fix
         p_msg->disc_result.result.disc_res.result =
             (3 + bta_dm_search_cb.peer_scn);
         p_msg->disc_result.result.disc_res.services |= BTA_USER_SERVICE_MASK;
@@ -1241,7 +1239,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
     }
 
-    p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
+    tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
     p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
     p_msg->disc_result.result.disc_res.result = BTA_FAILURE;
     p_msg->disc_result.result.disc_res.services =
