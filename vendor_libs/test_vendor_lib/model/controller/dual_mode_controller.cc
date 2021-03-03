@@ -101,13 +101,15 @@ DualModeController::DualModeController(const std::string& properties_filename, u
     method(std::move(param));                                      \
   };
 
-#define SET_SUPPORTED(name, method)                                        \
-  SET_HANDLER(name, method);                                               \
-  {                                                                        \
-    uint16_t index = (uint16_t)bluetooth::hci::OpCodeIndex::name;          \
-    uint16_t byte_index = index / 10;                                      \
-    uint8_t bit = 1 << (index % 10);                                       \
-    supported_commands[byte_index] = supported_commands[byte_index] | bit; \
+#define SET_SUPPORTED(name, method)                                          \
+  SET_HANDLER(name, method);                                                 \
+  {                                                                          \
+    uint16_t index = (uint16_t)bluetooth::hci::OpCodeIndex::name;            \
+    uint16_t byte_index = index / 10;                                        \
+    uint8_t bit = 1 << (index % 10);                                         \
+    if (byte_index < 36) {                                                   \
+      supported_commands[byte_index] = supported_commands[byte_index] | bit; \
+    }                                                                        \
   }
 
   SET_SUPPORTED(RESET, Reset);
@@ -257,6 +259,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_SUPPORTED(LE_CLEAR_RESOLVING_LIST, LeClearResolvingList);
   SET_SUPPORTED(LE_READ_RESOLVING_LIST_SIZE, LeReadResolvingListSize);
   SET_SUPPORTED(LE_READ_MAXIMUM_DATA_LENGTH, LeReadMaximumDataLength);
+
   SET_SUPPORTED(LE_SET_EXTENDED_SCAN_PARAMETERS, LeSetExtendedScanParameters);
   SET_SUPPORTED(LE_SET_EXTENDED_SCAN_ENABLE, LeSetExtendedScanEnable);
   SET_SUPPORTED(LE_EXTENDED_CREATE_CONNECTION, LeExtendedCreateConnection);
