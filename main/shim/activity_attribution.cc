@@ -17,7 +17,7 @@
 #define LOG_TAG "bt_shim_activity_attribution"
 #include "activity_attribution.h"
 
-#include "btif_common.h"
+#include "btif/include/btif_common.h"
 #include "gd/btaa/activity_attribution.h"
 #include "helpers.h"
 #include "main/shim/entry.h"

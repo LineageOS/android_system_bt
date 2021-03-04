@@ -24,7 +24,7 @@
 #include <stdio.h>
 #include <unordered_set>
 
-#include "btif_common.h"
+#include "btif/include/btif_common.h"
 #include "gd/hci/address.h"
 #include "gd/hci/le_scanning_manager.h"
 #include "main/shim/entry.h"
