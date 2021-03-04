@@ -245,3 +245,25 @@ void ECC_PointMult_Bin_NAF(Point* q, Point* p, uint32_t* n,
   multiprecision_mersenns_mult_mod(q->z, q->z, minus_p.x, keyLength);
   multiprecision_mersenns_mult_mod(q->y, q->y, q->z, keyLength);
 }
+
+bool ECC_ValidatePoint(const Point& pt) {
+  const size_t kl = KEY_LENGTH_DWORDS_P256;
+  p_256_init_curve(kl);
+
+  // Ensure y^2 = x^3 + a*x + b (mod p); a = -3
+
+  // y^2 mod p
+  uint32_t y2_mod[kl] = {0};
+  multiprecision_mersenns_squa_mod(y2_mod, (uint32_t*)pt.y, kl);
+
+  // Right hand side calculation
+  uint32_t rhs[kl] = {0};
+  multiprecision_mersenns_squa_mod(rhs, (uint32_t*)pt.x, kl);
+  uint32_t three[kl] = {0};
+  three[0] = 3;
+  multiprecision_sub_mod(rhs, rhs, three, kl);
+  multiprecision_mersenns_mult_mod(rhs, rhs, (uint32_t*)pt.x, kl);
+  multiprecision_add_mod(rhs, rhs, curve_p256.b, kl);
+
+  return multiprecision_compare(rhs, y2_mod, kl) == 0;
+}
