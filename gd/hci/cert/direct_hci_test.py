@@ -63,6 +63,7 @@ from bluetooth_packets_python3.hci_packets import BroadcastFlag
 from bluetooth_packets_python3.hci_packets import ConnectListAddressType
 from bluetooth_packets_python3.hci_packets import LeAddDeviceToConnectListBuilder
 from bluetooth_packets_python3.hci_packets import LeSetRandomAddressBuilder
+from bluetooth_packets_python3.hci_packets import LeReadRemoteFeaturesBuilder
 from bluetooth_packets_python3.hci_packets import WritePageTimeoutBuilder
 from bluetooth_packets_python3.hci_packets import ReadBdAddrBuilder
 from bluetooth_packets_python3.hci_packets import CreateConnectionBuilder
@@ -204,7 +205,8 @@ class DirectHciTest(GdBaseTestClass):
 
     def test_le_connection_dut_advertises(self):
         self.dut_hci.register_for_le_events(SubeventCode.CONNECTION_COMPLETE, SubeventCode.ADVERTISING_SET_TERMINATED,
-                                            SubeventCode.ENHANCED_CONNECTION_COMPLETE)
+                                            SubeventCode.ENHANCED_CONNECTION_COMPLETE,
+                                            SubeventCode.READ_REMOTE_FEATURES_COMPLETE)
         # Cert Connects
         self.cert_hal.send_hci_command(LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
         phy_scan_params = DirectHciTest._create_phy_scan_params()
@@ -219,6 +221,11 @@ class DirectHciTest(GdBaseTestClass):
         advertisement.start()
 
         (dut_handle, cert_handle) = self._verify_le_connection_complete()
+
+        self.dut_hci.send_command(LeReadRemoteFeaturesBuilder(dut_handle))
+        assertThat(self.dut_hci.get_le_event_stream()).emits(
+            lambda packet: packet.payload[0] == int(EventCode.LE_META_EVENT) and packet.payload[2] == int(SubeventCode.READ_REMOTE_FEATURES_COMPLETE)
+        )
 
         # Send ACL Data
         self.enqueue_acl_data(dut_handle, PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
