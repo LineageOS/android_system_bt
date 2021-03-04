@@ -262,7 +262,10 @@ class ShimAclConnection {
   }
 
   virtual ~ShimAclConnection() {
-    ASSERT_LOG(queue_.empty(), "Shim ACL queue still has outgoing packets");
+    if (!queue_.empty())
+      LOG_ERROR(
+          "ACL cleaned up with non-empty queue handle:0x%04x stranded_pkts:%zu",
+          handle_, queue_.size());
     ASSERT_LOG(is_disconnected_,
                "Shim Acl was not properly disconnected handle:0x%04x", handle_);
   }
@@ -291,7 +294,8 @@ class ShimAclConnection {
     preamble.push_back(LowByte(length));
     preamble.push_back(HighByte(length));
     BT_HDR* p_buf = MakeLegacyBtHdrPacket(std::move(packet), preamble);
-    ASSERT_LOG(p_buf != nullptr, "Unable to allocate BT_HDR legacy packet");
+    ASSERT_LOG(p_buf != nullptr,
+               "Unable to allocate BT_HDR legacy packet handle:%04x", handle_);
     TRY_POSTING_ON_MAIN(send_data_upwards_, p_buf);
   }
 
@@ -317,10 +321,15 @@ class ShimAclConnection {
   }
 
   void Disconnect() {
-    ASSERT_LOG(!is_disconnected_, "Cannot disconnect multiple times");
+    ASSERT_LOG(!is_disconnected_,
+               "Cannot disconnect ACL multiple times handle:%04x", handle_);
     is_disconnected_ = true;
     UnregisterEnqueue();
     queue_up_end_->UnregisterDequeue();
+    if (!queue_.empty())
+      LOG_WARN(
+          "ACL disconnect with non-empty queue handle:%04x stranded_pkts::%zu",
+          handle_, queue_.size());
   }
 
   virtual void ReadRemoteControllerInformation() = 0;
@@ -336,7 +345,8 @@ class ShimAclConnection {
 
   void RegisterEnqueue() {
     ASSERT_LOG(!is_disconnected_,
-               "Unable to send data over disconnected channel");
+               "Unable to send data over disconnected channel handle:%04x",
+               handle_);
     if (is_enqueue_registered_) return;
     is_enqueue_registered_ = true;
     queue_up_end_->RegisterEnqueue(
