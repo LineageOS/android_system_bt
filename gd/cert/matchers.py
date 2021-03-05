@@ -716,3 +716,14 @@ class SecurityMatchers(object):
     @staticmethod
     def HelperMsg(type, address=None):
         return lambda event: True if event.message_type == type and (address == None or address == event.peer) else False
+
+
+class IsoMatchers(object):
+
+    @staticmethod
+    def Data(payload):
+        return lambda packet: packet.payload == payload
+
+    @staticmethod
+    def PacketPayloadWithMatchingCisHandle(cis_handle):
+        return lambda packet: None if cis_handle != packet.handle else packet

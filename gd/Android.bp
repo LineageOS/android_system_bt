@@ -220,6 +220,7 @@ cc_binary {
         ":BluetoothFacade_hci_layer",
         ":BluetoothFacade_l2cap_layer",
         ":BluetoothFacade_neighbor",
+        ":BluetoothFacade_iso_layer",
         ":BluetoothFacade_security_layer",
         ":BluetoothFacade_shim_layer",
     ],
@@ -652,6 +653,7 @@ filegroup {
         "hci/facade/le_advertising_manager_facade.proto",
         "hci/facade/le_initiator_address_facade.proto",
         "hci/facade/le_scanning_manager_facade.proto",
+        "iso/facade.proto",
         "neighbor/facade/facade.proto",
         "l2cap/classic/facade.proto",
         "l2cap/le/facade.proto",
@@ -691,6 +693,8 @@ genrule {
         "hci/facade/le_initiator_address_facade.pb.h",
         "hci/facade/le_scanning_manager_facade.grpc.pb.h",
         "hci/facade/le_scanning_manager_facade.pb.h",
+        "iso/facade.grpc.pb.h",
+        "iso/facade.pb.h",
         "l2cap/classic/facade.grpc.pb.h",
         "l2cap/classic/facade.pb.h",
         "l2cap/le/facade.grpc.pb.h",
@@ -735,6 +739,8 @@ genrule {
         "hci/facade/le_initiator_address_facade.pb.cc",
         "hci/facade/le_scanning_manager_facade.grpc.pb.cc",
         "hci/facade/le_scanning_manager_facade.pb.cc",
+        "iso/facade.grpc.pb.cc",
+        "iso/facade.pb.cc",
         "l2cap/classic/facade.grpc.pb.cc",
         "l2cap/classic/facade.pb.cc",
         "l2cap/le/facade.grpc.pb.cc",
@@ -763,6 +769,7 @@ genrule {
         "touch $(genDir)/files/hal/__init__.py && " +
         "touch $(genDir)/files/hci/__init__.py && " +
         "touch $(genDir)/files/hci/facade/__init__.py && " +
+        "touch $(genDir)/files/iso/__init__.py && " +
         "touch $(genDir)/files/l2cap/classic/__init__.py && " +
         "touch $(genDir)/files/l2cap/le/__init__.py && " +
         "touch $(genDir)/files/neighbor/facade/__init__.py && " +
