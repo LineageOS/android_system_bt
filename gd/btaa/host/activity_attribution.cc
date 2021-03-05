@@ -36,5 +36,7 @@ void ActivityAttribution::Start() {}
 
 void ActivityAttribution::Stop() {}
 
+const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() { return new ActivityAttribution(); });
+
 }  // namespace activity_attribution
 }  // namespace bluetooth
