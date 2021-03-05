@@ -194,7 +194,7 @@ AddressWithType LeAddressManager::GetAnotherAddress() {
 }
 
 void LeAddressManager::pause_registered_clients() {
-  for (auto client : registered_clients_) {
+  for (auto& client : registered_clients_) {
     if (client.second != ClientState::PAUSED && client.second != ClientState::WAITING_FOR_PAUSE) {
       client.second = ClientState::WAITING_FOR_PAUSE;
       client.first->OnPause();
@@ -229,7 +229,7 @@ void LeAddressManager::resume_registered_clients() {
     return;
   }
 
-  for (auto client : registered_clients_) {
+  for (auto& client : registered_clients_) {
     client.second = ClientState::WAITING_FOR_RESUME;
     client.first->OnResume();
   }
