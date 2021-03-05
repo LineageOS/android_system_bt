@@ -187,6 +187,10 @@ void hal_service_died() {
     }
     return;
   }
+  // The Bluetooth hal suddenly died and no root inflammation packet received.
+  // Record it with "Default" code.
+  bluetooth::common::LogBluetoothHalCrashReason(
+      RawAddress::kEmpty, 0x00 /*Default*/, 0x00 /*Default*/);
   abort();
 }
 
@@ -591,9 +595,14 @@ bool hci_is_root_inflammation_event_received() {
 }
 
 void handle_root_inflammation_event() {
-  LOG(ERROR) << __func__
-             << ": Root inflammation event! setting timer to restart.";
-  // TODO(ugoyu) Report to bluetooth metrics here
+  LOG(ERROR)
+      << __func__
+      << ": Root inflammation event! setting timer to restart. error_code: "
+      << loghex(root_inflamed_error_code)
+      << " vendor _error_code: " << loghex(root_inflamed_vendor_error_code);
+  bluetooth::common::LogBluetoothHalCrashReason(
+      RawAddress::kEmpty, root_inflamed_error_code,
+      root_inflamed_vendor_error_code);
   {
     // Try to stop hci command and startup timers
     std::unique_lock<std::recursive_timed_mutex> lock(
