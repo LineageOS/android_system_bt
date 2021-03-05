@@ -634,9 +634,10 @@ static void avrc_msg_cback(uint8_t handle, uint8_t label, uint8_t cr,
   tAVRC_MSG_VENDOR* p_msg = &msg.vendor;
 
   if (cr == AVCT_CMD && (p_pkt->layer_specific & AVCT_DATA_CTRL &&
-                         AVRC_PACKET_LEN < sizeof(p_pkt->len))) {
-    /* Ignore the invalid AV/C command frame */
-    p_drop_msg = "dropped - too long AV/C cmd frame size";
+                         p_pkt->len > AVRC_PACKET_LEN)) {
+    android_errorWriteLog(0x534e4554, "177611958");
+    AVRC_TRACE_WARNING("%s: Command length %d too long: must be at most %d",
+                       __func__, p_pkt->len, AVRC_PACKET_LEN);
     osi_free(p_pkt);
     return;
   }
