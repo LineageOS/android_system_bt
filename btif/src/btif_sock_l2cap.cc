@@ -624,6 +624,7 @@ static void on_l2cap_data_ind(tBTA_JV* evt, uint32_t id) {
                  sock->id);
         BTA_JvL2capClose(sock->handle);
         btsock_l2cap_free_l(sock);
+        return;
       }
     }
   }
