@@ -58,6 +58,7 @@ static void SetMockBteInterface(MockBteInterface* interface) {
 
 void bte_main_hci_send(BT_HDR* p_msg, uint16_t event) {
   bte::bte_interface->HciSend(p_msg, event);
+  osi_free(p_msg);
 }
 
 namespace {
