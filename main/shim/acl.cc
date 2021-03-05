@@ -927,6 +927,7 @@ shim::legacy::Acl::Acl(os::Handler* handler,
                        const acl_interface_t& acl_interface,
                        uint8_t max_acceptlist_size)
     : handler_(handler), acl_interface_(acl_interface) {
+  ASSERT(handler_ != nullptr);
   ValidateAclInterface(acl_interface_);
   pimpl_ = std::make_unique<Acl::impl>(max_acceptlist_size);
   GetAclManager()->RegisterCallbacks(this, handler_);
@@ -935,7 +936,8 @@ shim::legacy::Acl::Acl(os::Handler* handler,
       handler->BindOn(this, &Acl::on_incoming_acl_credits));
   shim::RegisterDumpsysFunction(static_cast<void*>(this),
                                 [this](int fd) { Dump(fd); });
-  Stack::GetInstance()->GetBtm()->Register_HACK_SetScoDisconnectCallback(
+
+  GetAclManager()->HACK_SetScoDisconnectCallback(
       [this](uint16_t handle, uint8_t reason) {
         TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_disconnected,
                             handle, static_cast<tHCI_REASON>(reason));
