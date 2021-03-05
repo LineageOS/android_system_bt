@@ -781,7 +781,8 @@ bool btm_sec_is_a_bonded_dev(const RawAddress& bda);
  ******************************************************************************/
 void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
                                bool sc_supported,
-                               bool hci_role_switch_supported);
+                               bool hci_role_switch_supported,
+                               bool br_edr_supported, bool le_supported);
 
 // Return DEV_CLASS (uint8_t[3]) of bda. If record doesn't exist, create one.
 const uint8_t* btm_get_dev_class(const RawAddress& bda);
