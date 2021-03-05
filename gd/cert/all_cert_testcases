@@ -16,3 +16,4 @@ LeSecurityTest
 L2capPerformanceTest
 SecurityTest
 ShimTest
+LeIsoTest
