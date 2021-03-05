@@ -2844,6 +2844,12 @@ static void rc_notification_interim_timout(uint8_t label,
   cntxt.label = label;
   cntxt.rc_addr = p_dev->rc_addr;
 
+  /* Device disconnections clear the event list but can't free the timer */
+  if (p_dev == NULL || p_dev->rc_supported_event_list) {
+    BTIF_TRACE_WARNING("%s: timeout for null device or event list", __func__);
+    return;
+  }
+
   list_foreach(p_dev->rc_supported_event_list,
                iterate_supported_event_list_for_timeout, &cntxt);
   /* Timeout happened for interim response for the registered event,
