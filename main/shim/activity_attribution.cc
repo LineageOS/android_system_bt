@@ -65,3 +65,7 @@ ActivityAttributionInterface*
 bluetooth::shim::get_activity_attribution_instance() {
   return ActivityAttributionInterfaceImpl::GetInstance();
 }
+
+void bluetooth::shim::init_activity_attribution() {
+  bluetooth::shim::get_activity_attribution_instance()->Init();
+}
