@@ -118,9 +118,6 @@ cc_library_static {
                 "libaaudio",
                 "libfmq",
             ],
-            whole_static_libs: [
-                "libbt-audio-hal-interface",
-            ],
             srcs: ["src/btif_avrcp_audio_track.cc"],
         },
         host: {
@@ -130,6 +127,7 @@ cc_library_static {
     whole_static_libs: [
         "avrcp-target-service",
         "lib-bt-packets",
+        "libbt-audio-hal-interface",
         "libaudio-a2dp-hw-utils",
     ],
     cflags: [
