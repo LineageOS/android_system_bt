@@ -2838,6 +2838,12 @@ bool iterate_supported_event_list_for_timeout(void* data, void* cb_data) {
  **************************************************************************/
 static void rc_notification_interim_timout(uint8_t label,
                                            btif_rc_device_cb_t* p_dev) {
+  /* Device disconnections clear the event list but can't free the timer */
+  if (p_dev == NULL || p_dev->rc_supported_event_list) {
+    BTIF_TRACE_WARNING("%s: timeout for null device or event list", __func__);
+    return;
+  }
+
   list_node_t* node;
   rc_context_t cntxt;
   memset(&cntxt, 0, sizeof(rc_context_t));
