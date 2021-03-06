@@ -41,7 +41,7 @@
  *
  ******************************************************************************/
 void bta_av_ci_src_data_ready(tBTA_AV_CHNL chnl) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->layer_specific = chnl;
   p_buf->event = BTA_AV_CI_SRC_DATA_READY_EVT;

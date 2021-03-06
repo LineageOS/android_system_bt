@@ -281,7 +281,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle,
 void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason) {
   mock_function_count_map[__func__]++;
 }
-void acl_link_segments_xmitted(BT_HDR* p_msg) {
+void acl_link_segments_xmitted(BT_HDR_RIGID* p_msg) {
   mock_function_count_map[__func__]++;
 }
 void acl_packets_completed(uint16_t handle, uint16_t credits) {
@@ -294,7 +294,9 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
 void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
   mock_function_count_map[__func__]++;
 }
-void acl_rcv_acl_data(BT_HDR* p_msg) { mock_function_count_map[__func__]++; }
+void acl_rcv_acl_data(BT_HDR_RIGID* p_msg) {
+  mock_function_count_map[__func__]++;
+}
 void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
   mock_function_count_map[__func__]++;
 }

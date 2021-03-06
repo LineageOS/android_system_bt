@@ -61,7 +61,7 @@ void BTA_GATTS_Disable(void) {
     return;
   }
 
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
   p_buf->event = BTA_GATTS_API_DISABLE_EVT;
   bta_sys_sendmsg(p_buf);
   bta_sys_deregister(BTA_ID_GATTS);
@@ -193,7 +193,7 @@ extern void BTA_GATTS_AddService(tGATT_IF server_if,
  *
  ******************************************************************************/
 void BTA_GATTS_DeleteService(uint16_t service_id) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_GATTS_API_DEL_SRVC_EVT;
   p_buf->layer_specific = service_id;
@@ -213,7 +213,7 @@ void BTA_GATTS_DeleteService(uint16_t service_id) {
  *
  ******************************************************************************/
 void BTA_GATTS_StopService(uint16_t service_id) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_GATTS_API_STOP_SRVC_EVT;
   p_buf->layer_specific = service_id;
@@ -355,7 +355,7 @@ void BTA_GATTS_CancelOpen(tGATT_IF server_if, const RawAddress& remote_bda,
  *
  ******************************************************************************/
 void BTA_GATTS_Close(uint16_t conn_id) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_GATTS_API_CLOSE_EVT;
   p_buf->layer_specific = conn_id;

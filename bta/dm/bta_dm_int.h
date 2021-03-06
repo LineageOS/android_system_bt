@@ -71,14 +71,14 @@ enum {
 
 /* data type for BTA_DM_API_SEARCH_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
 } tBTA_DM_API_SEARCH;
 
 /* data type for BTA_DM_API_DISCOVER_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress bd_addr;
   tBTA_DM_SEARCH_CBACK* p_cback;
   tBT_TRANSPORT transport;
@@ -92,7 +92,7 @@ typedef struct {
 } tBTA_DM_API_PIN_REPLY;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress bd_addr;
   tBTM_IO_CAP io_cap;
   tBTM_OOB_DATA oob_data;
@@ -108,25 +108,25 @@ typedef struct {
 
 /* data type for BTA_DM_REMT_NAME_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_DM_SEARCH result;
 } tBTA_DM_REM_NAME;
 
 /* data type for tBTA_DM_DISC_RESULT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_DM_SEARCH result;
 } tBTA_DM_DISC_RESULT;
 
 /* data type for BTA_DM_INQUIRY_CMPL_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t num;
 } tBTA_DM_INQUIRY_CMPL;
 
 /* data type for BTA_DM_SDP_RESULT_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint16_t sdp_result;
 } tBTA_DM_SDP_RESULT;
 
@@ -142,14 +142,14 @@ typedef struct {
 } tBTA_DM_API_ADD_DEVICE;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bool enable;
 } tBTA_DM_API_BLE_FEATURE;
 
 /* union of all data types */
 typedef union {
   /* GKI event buffer header */
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
 
   tBTA_DM_API_SEARCH search;
 
@@ -468,7 +468,7 @@ extern tBTA_DM_SEARCH_CB bta_dm_search_cb;
 /* DI control block */
 extern tBTA_DM_DI_CB bta_dm_di_cb;
 
-extern bool bta_dm_search_sm_execute(BT_HDR* p_msg);
+extern bool bta_dm_search_sm_execute(BT_HDR_RIGID* p_msg);
 extern void bta_dm_search_sm_disable(void);
 
 extern void bta_dm_enable(tBTA_DM_SEC_CBACK*);
