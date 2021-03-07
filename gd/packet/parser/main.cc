@@ -82,7 +82,7 @@ bool parse_declarations_one_file(const std::filesystem::path& input_file, Declar
   // Set endianess before returning
   for (auto& s : declarations->type_defs_queue_) {
     if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
-      auto* struct_def = dynamic_cast<StructDef*>(s.second);
+      auto* struct_def = static_cast<StructDef*>(s.second);
       struct_def->SetEndianness(declarations->is_little_endian);
     }
   }

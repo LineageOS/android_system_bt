@@ -20,7 +20,7 @@ StructParserGenerator::StructParserGenerator(const Declarations& decls) {
   is_little_endian = decls.is_little_endian;
   for (const auto& s : decls.type_defs_queue_) {
     if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
-      const auto* struct_def = dynamic_cast<const StructDef*>(s.second);
+      const auto* struct_def = static_cast<const StructDef*>(s.second);
       variable_struct_fields_.emplace_back(struct_def);
     }
   }
