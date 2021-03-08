@@ -537,14 +537,15 @@ typedef struct {
    * The |start_restricted| flag inits the adapter in restricted mode. In
    * restricted mode, bonds that are created are marked as restricted in the
    * config file. These devices are deleted upon leaving restricted mode.
-   * The |is_niap_mode| flag inits the adapter in NIAP mode.
-   * The |config_compare_result| flag show the config checksum check result if
-   * is in NIAP mode.
-   * The |init_flags| are config flags that cannot change during run.
-   * The |is_atv| flag indicates whether the local device is an Android TV
+   * The |is_common_criteria_mode| flag inits the adapter in commom criteria
+   * mode. The |config_compare_result| flag show the config checksum check
+   * result if is in common criteria mode. The |init_flags| are config flags
+   * that cannot change during run. The |is_atv| flag indicates whether the
+   * local device is an Android TV
    */
-  int (*init)(bt_callbacks_t* callbacks, bool guest_mode, bool is_niap_mode,
-              int config_compare_result, const char** init_flags, bool is_atv);
+  int (*init)(bt_callbacks_t* callbacks, bool guest_mode,
+              bool is_common_criteria_mode, int config_compare_result,
+              const char** init_flags, bool is_atv);
 
   /** Enable Bluetooth. */
   int (*enable)();

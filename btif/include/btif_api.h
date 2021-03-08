@@ -92,24 +92,23 @@ bool is_restricted_mode(void);
 
 /*******************************************************************************
  *
- * Function         is_niap_mode_
+ * Function         is_common_criteria_mode
  *
- * Description      Checks if BT was enabled in single user mode. In this
- *                  mode, use of keystore for key attestation of LTK is limitee
- *                  to this mode defined by UserManager.
+ * Description      Check if BT is enabled in common criteria mode. In this
+ *                  mode, will use the LTK from the keystore to authenticate.
  *
  * Returns          bool
  *
  ******************************************************************************/
-bool is_niap_mode(void);
+bool is_common_criteria_mode(void);
 
 /*******************************************************************************
  *
- * Function         get_niap_config_compare_result
+ * Function         get_common_criteria_config_compare_result
  *
- * Description      Get the niap config compare result for confirming the config
- *                  checksum compare result. When the niap mode doesn't enable,
- *                  it should be all pass (0b11).
+ * Description      Get the common criteria config compare result for confirming
+ *                  the config checksum compare result. When the common criteria
+ *                  mode doesn't enable, it should be all pass (0b11).
  *                  Bit define:
  *                    CONFIG_FILE_COMPARE_PASS = 0b01
  *                    CONFIG_BACKUP_COMPARE_PASS = 0b10
@@ -117,7 +116,7 @@ bool is_niap_mode(void);
  * Returns          int
  *
  ******************************************************************************/
-int get_niap_config_compare_result(void);
+int get_common_criteria_config_compare_result(void);
 
 /*******************************************************************************
  *
