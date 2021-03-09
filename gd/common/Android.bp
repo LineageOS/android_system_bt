@@ -11,6 +11,7 @@ filegroup {
     name: "BluetoothCommonSources",
     srcs: [
         "init_flags.cc",
+        "metric_id_manager.cc",
         "strings.cc",
         "stop_watch.cc",
     ],
@@ -27,6 +28,7 @@ filegroup {
         "init_flags_test.cc",
         "list_map_test.cc",
         "lru_cache_test.cc",
+        "metric_id_manager_unittest.cc",
         "multi_priority_queue_test.cc",
         "numbers_test.cc",
         "strings_test.cc",
