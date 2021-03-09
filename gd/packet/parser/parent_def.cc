@@ -55,6 +55,10 @@ void ParentDef::AddParentConstraint(std::string field_name, std::variant<int64_t
   parent_constraints_.insert(std::pair(field_name, value));
 }
 
+void ParentDef::AddTestCase(std::string packet_bytes) {
+  test_cases_.insert(std::move(packet_bytes));
+}
+
 // Assign all size fields to their corresponding variable length fields.
 // Will crash if
 //  - there aren't any fields that don't match up to a field.
