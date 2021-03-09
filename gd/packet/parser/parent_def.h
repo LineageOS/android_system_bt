@@ -17,6 +17,7 @@
 #pragma once
 
 #include <map>
+#include <set>
 #include <variant>
 
 #include "enum_def.h"
@@ -32,6 +33,8 @@ class ParentDef : public TypeDef {
   ParentDef(std::string name, FieldList fields, ParentDef* parent);
 
   void AddParentConstraint(std::string field_name, std::variant<int64_t, std::string> value);
+
+  void AddTestCase(std::string packet_bytes);
 
   // Assign all size fields to their corresponding variable length fields.
   // Will crash if
@@ -83,6 +86,7 @@ class ParentDef : public TypeDef {
 
   std::vector<ParentDef*> children_;
 
+  std::set<std::string> test_cases_;
   std::map<std::string, std::variant<int64_t, std::string>> parent_constraints_;
   bool is_little_endian_;
 
