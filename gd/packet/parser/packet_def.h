@@ -79,5 +79,7 @@ class PacketDef : public ParentDef {
 
   void GenRustBuilderStructImpls(std::ostream& s) const;
 
+  void GenRustBuilderTest(std::ostream& s) const;
+
   void GenRustDef(std::ostream& s) const;
 };

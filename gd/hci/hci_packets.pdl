@@ -1601,8 +1601,17 @@ packet SetEventMaskComplete : CommandComplete (command_op_code = SET_EVENT_MASK)
 packet Reset : Command (op_code = RESET) {
 }
 
+test Reset {
+  "\x03\x0c\x00",
+}
+
 packet ResetComplete : CommandComplete (command_op_code = RESET) {
   status : ErrorCode,
+}
+
+test ResetComplete {
+  "\x0e\x04\x01\x03\x0c\x00",
+  "\x0e\x04\x01\x03\x0c\x01", // unknown command
 }
 
 enum FilterType : 8 {
