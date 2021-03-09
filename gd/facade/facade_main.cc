@@ -35,7 +35,7 @@
 
 #include "common/init_flags.h"
 #include "facade/grpc_root_server.h"
-#include "hal/hci_hal_host_rootcanal.h"
+#include "hal/hci_hal_host.h"
 #include "hal/snoop_logger.h"
 #include "os/log.h"
 #include "os/parameter_provider.h"
