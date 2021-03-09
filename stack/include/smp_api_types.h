@@ -44,6 +44,7 @@ typedef enum : uint8_t {
 } tSMP_OPCODE;
 
 /* SMP event type */
+#define SMP_EVT_NONE 0           /* Default no event */
 #define SMP_IO_CAP_REQ_EVT 1     /* IO capability request event */
 #define SMP_SEC_REQUEST_EVT 2    /* SMP pairing request */
 #define SMP_PASSKEY_NOTIF_EVT 3  /* passkey notification event */

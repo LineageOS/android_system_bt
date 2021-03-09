@@ -114,7 +114,7 @@ extern bool SMP_PairCancel(const RawAddress& bd_addr);
  * Returns          None
  *
  ******************************************************************************/
-extern void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res);
+extern void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res);
 
 /*******************************************************************************
  *

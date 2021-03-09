@@ -50,24 +50,7 @@
 #define GATT_SEC_ENC_PENDING 6     /* wait for link encryption pending */
 typedef uint8_t tGATT_SEC_ACTION;
 
-#define GATT_ATTR_OP_SPT_MTU (0x00000001 << 0)
-#define GATT_ATTR_OP_SPT_FIND_INFO (0x00000001 << 1)
-#define GATT_ATTR_OP_SPT_FIND_BY_TYPE (0x00000001 << 2)
-#define GATT_ATTR_OP_SPT_READ_BY_TYPE (0x00000001 << 3)
-#define GATT_ATTR_OP_SPT_READ (0x00000001 << 4)
-#define GATT_ATTR_OP_SPT_MULT_READ (0x00000001 << 5)
-#define GATT_ATTR_OP_SPT_READ_BLOB (0x00000001 << 6)
-#define GATT_ATTR_OP_SPT_READ_BY_GRP_TYPE (0x00000001 << 7)
-#define GATT_ATTR_OP_SPT_WRITE (0x00000001 << 8)
-#define GATT_ATTR_OP_SPT_WRITE_CMD (0x00000001 << 9)
-#define GATT_ATTR_OP_SPT_PREP_WRITE (0x00000001 << 10)
-#define GATT_ATTR_OP_SPT_EXE_WRITE (0x00000001 << 11)
-#define GATT_ATTR_OP_SPT_HDL_VALUE_CONF (0x00000001 << 12)
-#define GATT_ATTR_OP_SP_SIGN_WRITE (0x00000001 << 13)
-
 #define GATT_INDEX_INVALID 0xff
-
-#define GATT_PENDING_REQ_NONE 0
 
 #define GATT_WRITE_CMD_MASK 0xc0 /*0x1100-0000*/
 #define GATT_AUTH_SIGN_MASK 0x80 /*0x1000-0000*/
@@ -79,16 +62,6 @@ typedef uint8_t tGATT_SEC_ACTION;
 #define GATT_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
 #define GATT_WAIT_FOR_DISC_RSP_TIMEOUT_MS (5 * 1000)
 #define GATT_REQ_RETRY_LIMIT 2
-
-/* characteristic descriptor type */
-#define GATT_DESCR_EXT_DSCPTOR 1  /* Characteristic Extended Properties */
-#define GATT_DESCR_USER_DSCPTOR 2 /* Characteristic User Description    */
-#define GATT_DESCR_CLT_CONFIG 3   /* Client Characteristic Configuration */
-#define GATT_DESCR_SVR_CONFIG 4   /* Server Characteristic Configuration */
-#define GATT_DESCR_PRES_FORMAT 5  /* Characteristic Presentation Format */
-#define GATT_DESCR_AGGR_FORMAT 6  /* Characteristic Aggregate Format */
-#define GATT_DESCR_VALID_RANGE 7  /* Characteristic Valid Range */
-#define GATT_DESCR_UNKNOWN 0xff
 
 #define GATT_SEC_FLAG_LKEY_UNAUTHED BTM_SEC_FLAG_LKEY_KNOWN
 #define GATT_SEC_FLAG_LKEY_AUTHED BTM_SEC_FLAG_LKEY_AUTHED

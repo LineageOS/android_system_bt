@@ -30,10 +30,10 @@
 #include "gd/storage/storage_module.h"
 #include "main/shim/entry.h"
 
-#include "ble_advertiser.h"
-#include "btif_common.h"
-#include "btm_api.h"
-#include "btu.h"
+#include "btif/include/btif_common.h"
+#include "stack/include/ble_advertiser.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btu.h"
 
 using bluetooth::hci::Address;
 using bluetooth::hci::AddressType;

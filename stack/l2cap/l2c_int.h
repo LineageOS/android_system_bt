@@ -737,9 +737,9 @@ extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
 extern void l2c_link_adjust_allocation(void);
 
 extern void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
-                              void* p_ref_data, uint8_t status);
+                              void* p_ref_data, tBTM_STATUS status);
 extern void l2c_link_sec_comp2(const RawAddress& p_bda, tBT_TRANSPORT trasnport,
-                               void* p_ref_data, uint8_t status);
+                               void* p_ref_data, tBTM_STATUS status);
 extern void l2c_link_adjust_chnl_allocation(void);
 
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)

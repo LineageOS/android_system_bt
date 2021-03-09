@@ -92,7 +92,6 @@ typedef struct {
   uint8_t t_type;
   uint8_t param;
   uint8_t rpt_id;
-  uint8_t srvc_id;
   uint16_t data;
   BT_HDR* p_data;
 } tBTA_HH_CMD_DATA;
