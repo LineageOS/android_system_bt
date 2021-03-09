@@ -547,6 +547,22 @@ rust_library {
     ],
 }
 
+rust_test_host {
+    name: "libbt_packets_test",
+    defaults: ["gd_rust_defaults"],
+    srcs: ["rust/packets/lib.rs", ":BluetoothGeneratedPackets_rust"],
+    test_suites: ["general-tests"],
+    edition: "2018",
+    proc_macros: ["libnum_derive"],
+    rustlibs: [
+        "libbytes",
+        "libnum_traits",
+        "libthiserror",
+        "libbt_hci_custom_types",
+        "liblog_rust",
+    ],
+}
+
 // Generates binary schema data to be bundled and source file generated
 genrule {
     name: "BluetoothGeneratedDumpsysBinarySchema_bfbs",
