@@ -22,9 +22,9 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothHalSources_hci_rootcanal",
+    name: "BluetoothHalSources_hci_host",
     srcs: [
-        "hci_hal_host_rootcanal.cc",
+        "hci_hal_host.cc",
     ],
 }
 
@@ -36,9 +36,9 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothHalTestSources_hci_rootcanal",
+    name: "BluetoothHalTestSources_hci_host",
     srcs: [
-        "hci_hal_host_rootcanal_test.cc",
+        "hci_hal_host_test.cc",
     ],
 }
 
