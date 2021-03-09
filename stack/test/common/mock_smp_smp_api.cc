@@ -50,11 +50,11 @@ bool SMP_Register(tSMP_CALLBACK* p_cback) {
 }
 tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return SMP_SUCCESS;
 }
 tSMP_STATUS SMP_Pair(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return SMP_SUCCESS;
 }
 uint8_t SMP_SetTraceLevel(uint8_t new_level) {
   mock_function_count_map[__func__]++;
@@ -75,6 +75,6 @@ void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
 void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
   mock_function_count_map[__func__]++;
 }
-void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
+void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
   mock_function_count_map[__func__]++;
 }

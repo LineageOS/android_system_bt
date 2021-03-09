@@ -164,7 +164,7 @@ void Stack::StartEverything() {
     L2CA_UseLegacySecurityModule();
   }
   if (common::init_flags::btaa_hci_is_enabled()) {
-    bluetooth::shim::get_activity_attribution_instance()->Init();
+    bluetooth::shim::init_activity_attribution();
   }
 }
 

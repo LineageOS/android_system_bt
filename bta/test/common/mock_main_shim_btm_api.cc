@@ -148,48 +148,48 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
                                             tBTM_INQ_RESULTS_CB* p_results_cb,
                                             tBTM_CMPL_CB* p_cmpl_cb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_CancelRemoteDeviceName(void) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_ClearInqDb(const RawAddress* p_bda) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(
     const RawAddress& raw_address, tBTM_CMPL_CB* callback,
     tBT_TRANSPORT transport) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
                                          tBLE_ADDR_TYPE addr_type,
                                          tBT_TRANSPORT transport,
                                          int device_type) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
                                                    uint16_t window,
                                                    uint16_t interval) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_SetDeviceClass(DEV_CLASS dev_class) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
                                                     uint16_t window,
                                                     uint16_t interval) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_SetEncryption(const RawAddress& bd_addr,
                                                tBT_TRANSPORT transport,
@@ -197,27 +197,27 @@ tBTM_STATUS bluetooth::shim::BTM_SetEncryption(const RawAddress& bd_addr,
                                                void* p_ref_data,
                                                tBTM_BLE_SEC_ACT sec_act) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t inquiry_mode) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                                               tBTM_CMPL_CB* p_cmpl_cb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::BTM_WriteEIR(BT_HDR* p_buff) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 tBTM_STATUS bluetooth::shim::btm_sec_mx_access_request(
     const RawAddress& bd_addr, bool is_originator,
     uint16_t security_requirement, tBTM_SEC_CALLBACK* p_callback,
     void* p_ref_data) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTM_SUCCESS;
 }
 uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                                                tBT_TRANSPORT transport) {

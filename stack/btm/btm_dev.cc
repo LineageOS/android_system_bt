@@ -172,7 +172,7 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
  *                  remove device.
  *
  ******************************************************************************/
-extern void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
+void BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec == NULL) return;
 

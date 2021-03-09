@@ -893,6 +893,8 @@ void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
     return;
   }
 
+  const RawAddress bd_addr(p_sco->esco.data.bd_addr);
+
   p_sco->state = SCO_ST_UNUSED;
   p_sco->hci_handle = HCI_INVALID_HANDLE;
   p_sco->rem_bd_known = false;
@@ -900,6 +902,9 @@ void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
   (*p_sco->p_disc_cb)(btm_cb.sco_cb.get_index(p_sco));
   LOG_DEBUG("Disconnected SCO link handle:%hu reason:%s", hci_handle,
             hci_reason_code_text(reason).c_str());
+  BTM_LogHistory(kBtmLogTag, bd_addr, "Disconnected",
+                 base::StringPrintf("handle:0x%04x reason:%s", hci_handle,
+                                    hci_reason_code_text(reason).c_str()));
 }
 
 /*******************************************************************************

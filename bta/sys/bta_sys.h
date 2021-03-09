@@ -45,6 +45,11 @@ typedef bool(tBTA_SYS_EVT_HDLR)(BT_HDR* p_msg);
 /* disable function type */
 typedef void(tBTA_SYS_DISABLE)(void);
 
+template <typename T, typename U>
+inline const T* Specialize(U* u) {
+  return const_cast<const T*>(reinterpret_cast<T*>(u));
+}
+
 #ifndef BTA_DM_NUM_JV_ID
 #define BTA_DM_NUM_JV_ID 2
 #endif
