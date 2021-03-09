@@ -371,6 +371,7 @@ cc_test {
         unit_test: true,
     },
     srcs: [
+        "hci/address.cc",
         ":BluetoothCommonSources",
         ":BluetoothPacketSources",
         ":BluetoothPacketParserTestPacketTestSources",
