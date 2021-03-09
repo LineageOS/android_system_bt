@@ -1404,7 +1404,7 @@ void l2cble_send_peer_disc_req(tL2C_CCB* p_ccb) {
  *
  ******************************************************************************/
 void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
-                     void* p_ref_data, uint8_t status) {
+                     void* p_ref_data, tBTM_STATUS status) {
   const RawAddress& p_bda = *bda;
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_LE);
   tL2CAP_SEC_DATA* p_buf = NULL;

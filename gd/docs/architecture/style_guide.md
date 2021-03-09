@@ -113,10 +113,10 @@ Root directory under Android tree:
     *   hci_hal_android_hidl.cc: implementation of hci_hal.h using Android HIDL
     *   hci_hal_android_hidl_test.cc: unit tests for the Android HIDL
         implementation
-    *   hci_hal_host_rootcanal.cc: implementation of hci_hal.h using root-canal
-        emulator
-    *   hci_hal_host_rootcanal_test.cc: unit tests for the root-canal emulator
-        implementation
+    *   hci_hal_host.cc: implementation of hci_hal.h using root-canal
+        emulator or linux Bluetooth HCI socket
+    *   hci_hal_host_test.cc: unit tests for the socket based HAL (root-canal)
+        emulator implementation
     *   facade.proto: gRPC automation interface definition for this layer
     *   facade.h/cc: an implementation of the above gRPC interface for the GD
         stack

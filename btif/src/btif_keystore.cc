@@ -18,6 +18,7 @@
 
 #include <btif_common.h>
 #include <btif_keystore.h>
+#include "btif_storage.h"
 
 #include <base/bind.h>
 #include <base/location.h>
@@ -43,6 +44,9 @@ class BluetoothKeystoreInterfaceImpl
   void init(BluetoothKeystoreCallbacks* callbacks) override {
     VLOG(2) << __func__;
     this->callbacks = callbacks;
+    // Get bonded devices number to get all bonded devices key.
+    do_in_jni_thread(
+        FROM_HERE, base::Bind([]() { btif_storage_get_num_bonded_devices(); }));
   }
 
   void set_encrypt_key_or_remove_key(std::string prefix,

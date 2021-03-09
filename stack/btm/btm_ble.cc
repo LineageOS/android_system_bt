@@ -1723,10 +1723,10 @@ void btm_ble_connected_from_address_with_type(
  *  Description     This function is the SMP callback handler.
  *
  *****************************************************************************/
-uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
-                           tSMP_EVT_DATA* p_data) {
+tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
+                               tSMP_EVT_DATA* p_data) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  uint8_t res = 0;
+  tBTM_STATUS res = BTM_SUCCESS;
 
   BTM_TRACE_DEBUG("btm_proc_smp_cback event = %d", event);
 
@@ -1845,7 +1845,7 @@ uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
     BTM_TRACE_ERROR("btm_proc_smp_cback received for unknown device");
   }
 
-  return 0;
+  return BTM_SUCCESS;
 }
 
 /*******************************************************************************

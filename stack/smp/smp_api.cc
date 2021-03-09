@@ -70,8 +70,8 @@ void SMP_Init(void) {
   p_256_init_curve();
 
   /* Initialize failure case for certification */
-  smp_cb.cert_failure =
-      stack_config_get_interface()->get_pts_smp_failure_case();
+  smp_cb.cert_failure = static_cast<tSMP_STATUS>(
+      stack_config_get_interface()->get_pts_smp_failure_case());
   if (smp_cb.cert_failure)
     SMP_TRACE_ERROR("%s PTS FAILURE MODE IN EFFECT (CASE %d)", __func__,
                     smp_cb.cert_failure);
@@ -264,7 +264,7 @@ bool SMP_PairCancel(const RawAddress& bd_addr) {
  * Returns          None
  *
  ******************************************************************************/
-void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
+void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
   LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
       << "Legacy SMP API should not be invoked when GD Security is used";
 
@@ -316,7 +316,7 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
 
     /* clear the SMP_SEC_REQUEST_EVT event after get grant */
     /* avoid generating duplicate pair request */
-    smp_cb.cb_evt = 0;
+    smp_cb.cb_evt = SMP_EVT_NONE;
     tSMP_INT_DATA smp_int_data;
     smp_int_data.status = res;
     smp_br_state_machine_event(&smp_cb, SMP_BR_API_SEC_GRANT_EVT,
@@ -329,7 +329,7 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
     return;
   /* clear the SMP_SEC_REQUEST_EVT event after get grant */
   /* avoid generate duplicate pair request */
-  smp_cb.cb_evt = 0;
+  smp_cb.cb_evt = SMP_EVT_NONE;
   tSMP_INT_DATA smp_int_data;
   smp_int_data.status = res;
   smp_sm_event(&smp_cb, SMP_API_SEC_GRANT_EVT, &smp_int_data);

@@ -126,7 +126,7 @@ cc_defaults {
         host: {
             srcs: [
                 ":BluetoothBtaaSources_host",
-                ":BluetoothHalSources_hci_rootcanal",
+                ":BluetoothHalSources_hci_host",
                 ":BluetoothOsSources_host",
             ],
         },
@@ -295,7 +295,7 @@ cc_test {
         },
         host: {
             srcs: [
-                ":BluetoothHalTestSources_hci_rootcanal",
+                ":BluetoothHalTestSources_hci_host",
                 ":BluetoothOsTestSources_host",
             ],
         },
