@@ -82,7 +82,7 @@ using HACK_ScoDisconnectCallback = std::function<void(uint16_t, uint8_t)>;
 namespace bluetooth {
 namespace shim {
 
-using BtmStatus = enum : uint16_t {
+using BtmStatus = enum : uint8_t {
   BTM_SUCCESS = 0,              /* Command succeeded                 */
   BTM_CMD_STARTED = 1,          /* Command started OK.               */
   BTM_BUSY = 2,                 /* Device busy with another command  */
