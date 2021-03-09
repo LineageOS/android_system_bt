@@ -93,9 +93,12 @@ static std::unique_ptr<config_t> btif_config_open(const char* filename);
 
 // Key attestation
 static bool config_checksum_pass(int check_bit) {
-  return ((get_niap_config_compare_result() & check_bit) == check_bit);
+  return ((get_common_criteria_config_compare_result() & check_bit) ==
+          check_bit);
 }
-static bool btif_is_niap_mode() { return is_bluetooth_uid() && is_niap_mode(); }
+static bool btif_is_common_criteria_mode() {
+  return is_bluetooth_uid() && is_common_criteria_mode();
+}
 static bool btif_in_encrypt_key_name_list(std::string key);
 
 static const int CONFIG_FILE_COMPARE_PASS = 1;
@@ -555,7 +558,7 @@ bool btif_config_get_bin(const std::string& section, const std::string& key,
     sscanf(ptr, "%02hhx", &value[*length]);
   }
 
-  if (btif_is_niap_mode()) {
+  if (btif_is_common_criteria_mode()) {
     if (!value_str_from_config->empty() && in_encrypt_key_name_list &&
         !is_key_encrypted) {
       get_bluetooth_keystore_interface()->set_encrypt_key_or_remove_key(
@@ -608,7 +611,7 @@ bool btif_config_set_bin(const std::string& section, const std::string& key,
   }
 
   std::string value_str;
-  if ((length > 0) && btif_is_niap_mode() &&
+  if ((length > 0) && btif_is_common_criteria_mode() &&
       btif_in_encrypt_key_name_list(key)) {
     get_bluetooth_keystore_interface()->set_encrypt_key_or_remove_key(
         section + "-" + key, str);
@@ -652,7 +655,7 @@ bool btif_config_remove(const std::string& section, const std::string& key) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::RemoveProperty(section, key);
   }
-  if (is_niap_mode() && btif_in_encrypt_key_name_list(key)) {
+  if (is_common_criteria_mode() && btif_in_encrypt_key_name_list(key)) {
     get_bluetooth_keystore_interface()->set_encrypt_key_or_remove_key(
         section + "-" + key, "");
   }
@@ -718,7 +721,7 @@ static void btif_config_write(UNUSED_ATTR uint16_t event,
   std::unique_lock<std::recursive_mutex> lock(config_lock);
   rename(CONFIG_FILE_PATH, CONFIG_BACKUP_PATH);
   config_save(btif_config_cache.PersistentSectionCopy(), CONFIG_FILE_PATH);
-  if (btif_is_niap_mode()) {
+  if (btif_is_common_criteria_mode()) {
     get_bluetooth_keystore_interface()->set_encrypt_key_or_remove_key(
         CONFIG_FILE_PREFIX, CONFIG_FILE_HASH);
   }

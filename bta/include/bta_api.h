@@ -336,15 +336,6 @@ typedef struct {
   tBTM_AUTH_REQ rmt_io_caps;  /* IO Capabilities of remote device */
 } tBTA_DM_SP_CFM_REQ;
 
-enum {
-  BTA_SP_KEY_STARTED, /* passkey entry started */
-  BTA_SP_KEY_ENTERED, /* passkey digit entered */
-  BTA_SP_KEY_ERASED,  /* passkey digit erased */
-  BTA_SP_KEY_CLEARED, /* passkey cleared */
-  BTA_SP_KEY_COMPLT   /* passkey entry completed */
-};
-typedef uint8_t tBTA_SP_KEY_TYPE;
-
 /* Structure associated with BTA_DM_SP_KEY_NOTIF_EVT */
 typedef struct {
   /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in

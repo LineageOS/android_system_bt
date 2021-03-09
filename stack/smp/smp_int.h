@@ -193,7 +193,7 @@ typedef struct {
 typedef union {
   uint8_t* p_data; /* uint8_t type data pointer */
   tSMP_KEY key;
-  uint8_t status;
+  tSMP_STATUS status;
   uint32_t passkey;
   tSMP_OOB_DATA_TYPE req_oob_type;
 } tSMP_INT_DATA;
@@ -234,10 +234,10 @@ typedef struct {
   bool smp_over_br;
   tSMP_BR_STATE br_state; /* if SMP over BR/ERD has priority over SMP */
   uint8_t failure;
-  uint8_t status;
+  tSMP_STATUS status;
   uint8_t role;
   uint16_t flags;
-  uint8_t cb_evt;
+  tSMP_EVT cb_evt;
   tSMP_SEC_LEVEL sec_level;
   bool connect_initialized;
   Octet16 confirm;
@@ -296,7 +296,7 @@ typedef struct {
   uint8_t rcvd_cmd_len;
   uint16_t total_tx_unacked;
   bool wait_for_authorization_complete;
-  uint8_t cert_failure; /*failure case for certification */
+  tSMP_STATUS cert_failure; /*failure case for certification */
   alarm_t* delayed_auth_timer_ent;
 } tSMP_CB;
 

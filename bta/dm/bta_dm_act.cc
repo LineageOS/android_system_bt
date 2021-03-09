@@ -228,13 +228,14 @@ const uint16_t bta_service_id_to_uuid_lkup_tbl[BTA_MAX_SERVICE_ID] = {
 };
 
 /* bta security callback */
-const tBTM_APPL_INFO bta_security = {&bta_dm_pin_cback,
-                                     &bta_dm_new_link_key_cback,
-                                     &bta_dm_authentication_complete_cback,
-                                     &bta_dm_bond_cancel_complete_cback,
-                                     &bta_dm_sp_cback,
-                                     &bta_dm_ble_smp_cback,
-                                     &bta_dm_ble_id_key_cback};
+const tBTM_APPL_INFO bta_security = {
+    .p_pin_callback = &bta_dm_pin_cback,
+    .p_link_key_callback = &bta_dm_new_link_key_cback,
+    .p_auth_complete_callback = &bta_dm_authentication_complete_cback,
+    .p_bond_cancel_cmpl_callback = &bta_dm_bond_cancel_complete_cback,
+    .p_sp_callback = &bta_dm_sp_cback,
+    .p_le_callback = &bta_dm_ble_smp_cback,
+    .p_le_key_callback = &bta_dm_ble_id_key_cback};
 
 #define MAX_DISC_RAW_DATA_BUF (4096)
 uint8_t g_disc_raw_data_buf[MAX_DISC_RAW_DATA_BUF];
@@ -1055,20 +1056,17 @@ void bta_dm_disc_rmt_name(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
-  tSDP_DISC_REC* p_sdp_rec = NULL;
-  tBTA_DM_MSG* p_msg;
-  bool scn_found = false;
-  uint16_t service = 0xFFFF;
-  tSDP_PROTOCOL_ELEM pe;
-
-  std::vector<Uuid> uuid_list;
-
   if ((p_data->sdp_event.sdp_result == SDP_SUCCESS) ||
       (p_data->sdp_event.sdp_result == SDP_NO_RECS_MATCH) ||
       (p_data->sdp_event.sdp_result == SDP_DB_FULL)) {
     APPL_TRACE_DEBUG("sdp_result::0x%x", p_data->sdp_event.sdp_result);
+    tSDP_DISC_REC* p_sdp_rec = NULL;
+    bool scn_found = false;
+    tSDP_PROTOCOL_ELEM pe;
+    std::vector<Uuid> uuid_list;
+
     do {
-      p_sdp_rec = NULL;
+      uint16_t service = 0xffff;
       if (bta_dm_search_cb.service_index == (BTA_USER_SERVICE_ID + 1)) {
         if (p_sdp_rec && SDP_FindProtocolListElemInRec(
                              p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
@@ -1175,7 +1173,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
             &bta_dm_service_search_remname_cback);
       }
 
-      p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
+      tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
       p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
       p_msg->disc_result.result.disc_res.result = BTA_SUCCESS;
       p_msg->disc_result.result.disc_res.num_uuids = uuid_list.size();
@@ -1211,6 +1209,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
 
       // Piggy back the SCN over result field
       if (scn_found) {
+        // TODO This is an enum, not a value.  Please fix
         p_msg->disc_result.result.disc_res.result =
             (3 + bta_dm_search_cb.peer_scn);
         p_msg->disc_result.result.disc_res.services |= BTA_USER_SERVICE_MASK;
@@ -1240,7 +1239,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
     }
 
-    p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
+    tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
     p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
     p_msg->disc_result.result.disc_res.result = BTA_FAILURE;
     p_msg->disc_result.result.disc_res.services =

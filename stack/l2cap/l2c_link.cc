@@ -265,21 +265,22 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
  ******************************************************************************/
 void l2c_link_sec_comp(const RawAddress* p_bda,
                        UNUSED_ATTR tBT_TRANSPORT transport, void* p_ref_data,
-                       uint8_t status) {
+                       tBTM_STATUS status) {
   l2c_link_sec_comp2(*p_bda, transport, p_ref_data, status);
 }
 
 void l2c_link_sec_comp2(const RawAddress& p_bda,
                         UNUSED_ATTR tBT_TRANSPORT transport, void* p_ref_data,
-                        uint8_t status) {
+                        tBTM_STATUS status) {
   tL2C_CONN_INFO ci;
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tL2C_CCB* p_next_ccb;
   uint8_t event;
 
-  LOG_DEBUG("status=%d, BD_ADDR=%s, transport=%d", status,
-            p_bda.ToString().c_str(), transport);
+  LOG_DEBUG("btm_status=%s, BD_ADDR=%s, transport=%s",
+            btm_status_text(status).c_str(), PRIVATE_ADDRESS(p_bda),
+            BtTransportText(transport).c_str());
 
   if (status == BTM_SUCCESS_NO_SECURITY) {
     status = BTM_SUCCESS;

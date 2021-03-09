@@ -312,8 +312,8 @@ struct tACL_CONN {
 
   void Reset();
 
-  struct sPolicy {
-    tBTM_PM_MODE Mode() const;
+  struct tPolicy {
+    tBTM_PM_MODE Mode() const { return this->mode.mode_; }
     struct {
       bool IsPending() const { return pending_ != BTM_PM_MD_UNKNOWN; }
       tBTM_PM_MODE Pending() const { return pending_; }
@@ -330,10 +330,10 @@ struct tACL_CONN {
                                                          tHCI_MODE hci_mode,
                                                          uint16_t interval);
       friend void tACL_CONN::Reset();
-      friend tBTM_PM_MODE tACL_CONN::sPolicy::Mode() const;
+      friend tBTM_PM_MODE tACL_CONN::tPolicy::Mode() const;
     } mode;
 
-    hci_role_t Role() const;
+    hci_role_t Role() const { return this->role.role_; }
     struct {
       unsigned RoleSwitchFailedCount() const { return role_switch_failed_cnt_; }
 
@@ -341,7 +341,7 @@ struct tACL_CONN {
       hci_role_t role_{HCI_ROLE_CENTRAL};
       unsigned role_switch_failed_cnt_{0};
       friend void tACL_CONN::Reset();
-      friend tBTM_PM_MODE tACL_CONN::sPolicy::Role() const;
+      friend tBTM_PM_MODE tACL_CONN::tPolicy::Role() const;
     } role;
 
     struct {

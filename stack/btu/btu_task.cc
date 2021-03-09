@@ -29,6 +29,7 @@
 #include "btif/include/btif_common.h"
 #include "btm_iso_api.h"
 #include "common/message_loop_thread.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btu.h"
@@ -104,6 +105,13 @@ bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
+}
+
+static void do_post_on_bt_main(BtMainClosure closure) { closure(); }
+
+void post_on_bt_main(BtMainClosure closure) {
+  ASSERT(do_in_main_thread(FROM_HERE,
+                           base::Bind(do_post_on_bt_main, std::move(closure))));
 }
 
 void main_thread_start_up() {
