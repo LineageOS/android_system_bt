@@ -345,7 +345,7 @@ typedef uint8_t tGATT_IF;
 
 typedef void(tBTM_BLE_SCAN_THRESHOLD_CBACK)(tBTM_BLE_REF_VALUE ref_value);
 using tBTM_BLE_SCAN_REP_CBACK =
-    base::Callback<void(uint8_t /* status */, uint8_t /* report_format */,
+    base::Callback<void(tBTM_STATUS /* status */, uint8_t /* report_format */,
                         uint8_t /* num_reports */, std::vector<uint8_t>)>;
 
 #ifndef BTM_BLE_BATCH_SCAN_MAX

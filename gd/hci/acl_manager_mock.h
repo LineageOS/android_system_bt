@@ -82,6 +82,9 @@ class MockAclManager : public AclManager {
        std::chrono::milliseconds minimum_rotation_time,
        std::chrono::milliseconds maximum_rotation_time),
       (override));
+
+  // PRIVATE TO SHIM
+  MOCK_METHOD(void, HACK_SetScoDisconnectCallback, (std::function<void(uint16_t /* handle */, uint8_t /* reason */)>));
 };
 
 }  // namespace testing

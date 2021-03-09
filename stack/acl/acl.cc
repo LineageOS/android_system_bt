@@ -21,10 +21,6 @@
 #include "stack/acl/acl.h"
 #include "types/raw_address.h"
 
-tBTM_PM_MODE tACL_CONN::sPolicy::Mode() const { return this->mode.mode_; }
-
-hci_role_t tACL_CONN::sPolicy::Role() const { return this->role.role_; }
-
 void tACL_CONN::Reset() {
   memset(peer_le_features, 0, sizeof(peer_le_features));
   peer_le_features_valid = false;

@@ -62,9 +62,11 @@ typedef enum : uint8_t {
   HCI_ERR_CONN_FAILED_ESTABLISHMENT = 0x3E,  // GATT_CONN_FAIL_ESTABLISH
   HCI_ERR_LIMIT_REACHED = 0x43,              // stack/btm/btm_ble_multi_adv.cc
 
-  HCI_ERR_MAX_ERR = 0x43,  // TODO remove. randomly used
+  _HCI_ERR_MAX_ERR = 0x43,
   HCI_ERR_UNDEFINED = 0xff,
 } tHCI_ERROR_CODE;
+
+#define HCI_ERR_MAX_ERR _HCI_ERR_MAX_ERR  // HACK for now for SMP
 
 inline std::string hci_error_code_text(const tHCI_ERROR_CODE& error_code) {
   switch (error_code) {
@@ -156,4 +158,20 @@ inline std::string hci_status_code_text(const tHCI_STATUS& status_code) {
 using tHCI_REASON = tHCI_ERROR_CODE;
 inline std::string hci_reason_code_text(const tHCI_REASON& reason_code) {
   return hci_error_code_text(reason_code);
+}
+
+// Conversion from raw packet value
+inline tHCI_ERROR_CODE to_hci_error_code(const uint8_t& error_code) {
+  if (error_code > _HCI_ERR_MAX_ERR) return HCI_ERR_UNDEFINED;
+  return static_cast<tHCI_ERROR_CODE>(error_code);
+}
+
+inline tHCI_STATUS to_hci_status_code(const uint8_t& status_code) {
+  if (status_code > _HCI_ERR_MAX_ERR) return HCI_ERR_UNDEFINED;
+  return static_cast<tHCI_STATUS>(status_code);
+}
+
+inline tHCI_REASON to_hci_reason_code(const uint8_t& reason_code) {
+  if (reason_code > _HCI_ERR_MAX_ERR) return HCI_ERR_UNDEFINED;
+  return static_cast<tHCI_REASON>(reason_code);
 }
