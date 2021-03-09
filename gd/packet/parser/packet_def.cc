@@ -16,6 +16,7 @@
 
 #include "packet_def.h"
 
+#include <iomanip>
 #include <list>
 #include <set>
 
@@ -1217,12 +1218,73 @@ void PacketDef::GenRustBuilderStructImpls(std::ostream& s) const {
   s << "}\n";
 
   s << "}\n";
-  lineage = GetAncestors();
-  for (auto it = lineage.begin(); it != lineage.end(); it++) {
-    auto def = *it;
-    s << "impl Into<" << def->name_ << "Packet> for " << name_ << "Builder {";
-    s << " fn into(self) -> " << def->name_ << "Packet { self.build().into() }";
+  for (const auto ancestor : GetAncestors()) {
+    s << "impl Into<" << ancestor->name_ << "Packet> for " << name_ << "Builder {";
+    s << " fn into(self) -> " << ancestor->name_ << "Packet { self.build().into() }";
     s << "}\n";
+  }
+}
+
+void PacketDef::GenRustBuilderTest(std::ostream& s) const {
+  auto lineage = GetAncestors();
+  lineage.push_back(this);
+  if (!lineage.empty() && !test_cases_.empty()) {
+    s << "macro_rules! " << util::CamelCaseToUnderScore(name_) << "_builder_tests { ";
+    s << "($($name:ident: $byte_string:expr,)*) => {";
+    s << "$(";
+    s << "\n#[test]\n";
+    s << "pub fn $name() { ";
+    s << "let raw_bytes = $byte_string;";
+    for (size_t i = 0; i < lineage.size(); i++) {
+      s << "/* (" << i << ") */\n";
+      if (i == 0) {
+        s << "match " << lineage[i]->name_ << "Packet::parse(raw_bytes) {";
+        s << "Ok(" << util::CamelCaseToUnderScore(lineage[i]->name_) << "_packet) => {";
+        s << "match " << util::CamelCaseToUnderScore(lineage[i]->name_) << "_packet.specialize() {";
+      } else if (i != lineage.size() - 1) {
+        s << lineage[i - 1]->name_ << "Child::" << lineage[i]->name_ << "(";
+        s << util::CamelCaseToUnderScore(lineage[i]->name_) << "_packet) => {";
+        s << "match " << util::CamelCaseToUnderScore(lineage[i]->name_) << "_packet.specialize() {";
+      } else {
+        s << lineage[i - 1]->name_ << "Child::" << lineage[i]->name_ << "(packet) => {";
+        s << "let rebuilder = " << lineage[i]->name_ << "Builder {";
+        FieldList params = GetParamList().GetFieldsWithoutTypes({
+            BodyField::kFieldType,
+        });
+        for (const auto param : params) {
+          s << param->GetName() << " : packet." << util::CamelCaseToUnderScore(param->GetGetterFunctionName()) << "(),";
+        }
+        s << "};";
+        s << "let rebuilder_base : " << lineage[0]->name_ << "Packet = rebuilder.into();";
+        s << "let rebuilder_bytes : &[u8] = &rebuilder_base.to_bytes();";
+        s << "assert_eq!(rebuilder_bytes, raw_bytes);";
+        s << "}";
+      }
+    }
+    for (size_t i = 1; i < lineage.size(); i++) {
+      s << "_ => {";
+      s << "println!(\"Couldn't parse " << util::CamelCaseToUnderScore(lineage[lineage.size() - i]->name_);
+      s << "{:02x?}\", " << util::CamelCaseToUnderScore(lineage[lineage.size() - i - 1]->name_) << "_packet); ";
+      s << "}}}";
+    }
+
+    s << ",";
+    s << "Err(e) => panic!(\"could not parse " << lineage[0]->name_ << ": {:?} {:02x?}\", e, raw_bytes),";
+    s << "}";
+    s << "}";
+    s << ")*";
+    s << "}";
+    s << "}";
+
+    s << util::CamelCaseToUnderScore(name_) << "_builder_tests! { ";
+    int number = 0;
+    for (const auto& test_case : test_cases_) {
+      s << util::CamelCaseToUnderScore(name_) << "_builder_test_";
+      s << std::setfill('0') << std::setw(2) << number++ << ": ";
+      s << "b\"" << test_case << "\",";
+    }
+    s << "}";
+    s << "\n";
   }
 }
 
@@ -1232,4 +1294,5 @@ void PacketDef::GenRustDef(std::ostream& s) const {
   GenRustStructImpls(s);
   GenRustAccessStructImpls(s);
   GenRustBuilderStructImpls(s);
+  GenRustBuilderTest(s);
 }
