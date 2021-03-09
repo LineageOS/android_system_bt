@@ -127,15 +127,7 @@ void HciSocketDevice::SendHci(
     return;
   }
   uint8_t type = static_cast<uint8_t>(packet_type);
-  int bytes_written;
-  bytes_written = write(socket_file_descriptor_, &type, sizeof(type));
-  if (bytes_written != sizeof(type)) {
-    LOG_WARN("bytes_written %d != sizeof(type)", bytes_written);
-  }
-  bytes_written = write(socket_file_descriptor_, packet->data(), packet->size());
-  if (static_cast<size_t>(bytes_written) != packet->size()) {
-    LOG_WARN("bytes_written %d != packet->size", bytes_written);
-  }
+  h4_.Send(type, packet->data(), packet->size());
 }
 
 void HciSocketDevice::RegisterCloseCallback(std::function<void()> close_callback) {
