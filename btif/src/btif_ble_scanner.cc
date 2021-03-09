@@ -96,7 +96,7 @@ void bta_batch_scan_threshold_cb(tBTM_BLE_REF_VALUE ref_value) {
   SCAN_CBACK_IN_JNI(batchscan_threshold_cb, ref_value);
 }
 
-void bta_batch_scan_reports_cb(int client_id, tBTA_STATUS status,
+void bta_batch_scan_reports_cb(int client_id, tBTM_STATUS status,
                                uint8_t report_format, uint8_t num_records,
                                std::vector<uint8_t> data) {
   SCAN_CBACK_IN_JNI(batchscan_reports_cb, client_id, status, report_format,
@@ -324,9 +324,10 @@ class BleScannerInterfaceImpl : public BleScannerInterface {
   }
 
   void BatchscanReadReports(int client_if, int scan_mode) override {
-    do_in_main_thread(FROM_HERE,
-                      base::Bind(&BTM_BleReadScanReports, (uint8_t)scan_mode,
-                                 Bind(bta_batch_scan_reports_cb, client_if)));
+    do_in_main_thread(
+        FROM_HERE,
+        base::Bind(&BTM_BleReadScanReports, (tBLE_SCAN_MODE)scan_mode,
+                   Bind(bta_batch_scan_reports_cb, client_if)));
   }
 
   void StartSync(uint8_t sid, RawAddress address, uint16_t skip,

@@ -91,6 +91,16 @@ typedef struct {
   uint8_t data[];
 } BT_HDR;
 
+typedef struct {
+  uint16_t event;
+  uint16_t len;
+  uint16_t offset;
+  uint16_t layer_specific;
+  // Note: Removal of flexible array member with no specified size.
+  // This struct may be embedded in any position within other structs
+  // and will not trigger various flexible member compilation issues.
+} BT_HDR_RIGID;
+
 #define BT_HDR_SIZE (sizeof(BT_HDR))
 
 enum {

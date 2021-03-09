@@ -619,13 +619,13 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
  * Returns          void
  *
  ******************************************************************************/
-extern void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB* p_cmn_vsc_cb) {
+void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB* p_cmn_vsc_cb) {
   if (NULL != p_cmn_vsc_cb) {
     *p_cmn_vsc_cb = btm_cb.cmn_ble_vsc_cb;
   }
 }
 
-extern void BTM_BleGetDynamicAudioBuffer(
+void BTM_BleGetDynamicAudioBuffer(
     tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB p_dynamic_audio_buffer_cb[]) {
   BTM_TRACE_DEBUG("BTM_BleGetDynamicAudioBuffer");
 
@@ -649,8 +649,7 @@ extern void BTM_BleGetDynamicAudioBuffer(
  *
  ******************************************************************************/
 #if (BLE_VND_INCLUDED == TRUE)
-extern void BTM_BleReadControllerFeatures(
-    tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
+void BTM_BleReadControllerFeatures(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {
   if (btm_cb.cmn_ble_vsc_cb.values_read) return;
 
   BTM_TRACE_DEBUG("BTM_BleReadControllerFeatures");
@@ -660,7 +659,7 @@ extern void BTM_BleReadControllerFeatures(
                             btm_ble_vendor_capability_vsc_cmpl_cback);
 }
 #else
-extern void BTM_BleReadControllerFeatures(
+void BTM_BleReadControllerFeatures(
     UNUSED_ATTR tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback) {}
 #endif
 
@@ -725,7 +724,7 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
  * Returns          Max multi adv instance count
  *
  ******************************************************************************/
-extern uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
+uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount();
   }

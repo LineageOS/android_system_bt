@@ -27,6 +27,7 @@
 
 #include "l2c_api.h"
 #include "port_int.h"
+#include "stack/include/btm_status.h"
 
 #include <unordered_map>
 
@@ -322,7 +323,7 @@ extern void rfc_check_mcb_active(tRFC_MCB* p_mcb);
 extern void rfc_port_closed(tPORT* p_port);
 extern void rfc_sec_check_complete(const RawAddress* bd_addr,
                                    tBT_TRANSPORT transport, void* p_ref_data,
-                                   uint8_t res);
+                                   tBTM_STATUS res);
 extern void rfc_inc_credit(tPORT* p_port, uint8_t credit);
 extern void rfc_dec_credit(tPORT* p_port);
 extern void rfc_check_send_cmd(tRFC_MCB* p_mcb, BT_HDR* p_buf);

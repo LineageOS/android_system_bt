@@ -23,24 +23,18 @@
  *
  ******************************************************************************/
 
-#include <cstring>
-
 #include <base/bind.h>
+#include <base/location.h>
 
-#include "bt_common.h"
-#include "bta_ag_api.h"
-#include "bta_ag_int.h"
-#include "bta_api.h"
-#include "bta_sys.h"
-#include "btif_config.h"
-#include "btm_api.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "sdp_api.h"
-#include "stack/btm/btm_sec.h"
-#include "stack/include/btu.h"
+#include "bt_target.h"  // Legacy stack config
+#include "bt_trace.h"   // Legacy trace logging
+
+#include "bta/ag/bta_ag_int.h"
+#include "btif/include/btif_config.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btu.h"  // do_in_main_thread
 #include "stack/include/port_api.h"
-#include "utl.h"
+#include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
 

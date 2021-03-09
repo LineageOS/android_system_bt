@@ -79,20 +79,20 @@ class BleScannerInterface {
   virtual ~BleScannerInterface() = default;
 
   using RegisterCallback =
-      base::Callback<void(uint8_t /* scanner_id */, uint8_t /* status */)>;
+      base::Callback<void(uint8_t /* scanner_id */, uint8_t /* btm_status */)>;
 
-  using Callback = base::Callback<void(uint8_t /* status */)>;
+  using Callback = base::Callback<void(uint8_t /* btm_status */)>;
 
   using EnableCallback =
-      base::Callback<void(uint8_t /* action */, uint8_t /* status */)>;
+      base::Callback<void(uint8_t /* action */, uint8_t /* btm_status */)>;
 
   using FilterParamSetupCallback =
       base::Callback<void(uint8_t /* avbl_space */, uint8_t /* action_type */,
-                          uint8_t /* status */)>;
+                          uint8_t /* btm_status */)>;
 
   using FilterConfigCallback =
       base::Callback<void(uint8_t /* filt_type */, uint8_t /* avbl_space */,
-                          uint8_t /* action */, uint8_t /* status */)>;
+                          uint8_t /* action */, uint8_t /* btm_status */)>;
 
   /** Registers a scanner with the stack */
   virtual void RegisterScanner(const bluetooth::Uuid& app_uuid,

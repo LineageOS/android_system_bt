@@ -1010,31 +1010,40 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
  ******************************************************************************/
 bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
   uint8_t role;
-  bool is_ok = true;
-
-  if (BTM_GetRole(p_scb->PeerAddress(), &role) == BTM_SUCCESS) {
-    LOG_INFO(
-        "%s: peer %s bta_handle:0x%x role:%d conn_audio:0x%x bits:%d "
-        "features:0x%x",
-        __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, role,
-        bta_av_cb.conn_audio, bits, bta_av_cb.features);
-    if (HCI_ROLE_CENTRAL != role &&
-        (A2DP_BitsSet(bta_av_cb.conn_audio) > bits)) {
-      tBTM_STATUS status = BTM_SwitchRoleToCentral(p_scb->PeerAddress());
-      if (status != BTM_CMD_STARTED) {
-        /* can not switch role on SCB - start the timer on SCB */
-        LOG_ERROR(
-            "%s: peer %s BTM_SwitchRoleToCentral(HCI_ROLE_CENTRAL) error: %d",
-            __func__, p_scb->PeerAddress().ToString().c_str(), status);
-      }
-      if (status != BTM_MODE_UNSUPPORTED && status != BTM_DEV_RESTRICT_LISTED) {
-        is_ok = false;
-        p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RES_START;
-      }
-    }
+  if (BTM_GetRole(p_scb->PeerAddress(), &role) != BTM_SUCCESS) {
+    LOG_WARN("Unable to find link role for device:%s",
+             PRIVATE_ADDRESS(p_scb->PeerAddress()));
+    return true;
   }
 
-  return is_ok;
+  if (role != HCI_ROLE_CENTRAL && (A2DP_BitsSet(bta_av_cb.conn_audio) > bits)) {
+    LOG_INFO(
+        "Switch link role to central peer:%s bta_handle:0x%x current_role:%s"
+        " conn_audio:0x%x bits:%d features:0x%x",
+        PRIVATE_ADDRESS(p_scb->PeerAddress()), p_scb->hndl,
+        RoleText(role).c_str(), bta_av_cb.conn_audio, bits, bta_av_cb.features);
+    const tBTM_STATUS status = BTM_SwitchRoleToCentral(p_scb->PeerAddress());
+    switch (status) {
+      case BTM_CMD_STARTED:
+        break;
+      case BTM_MODE_UNSUPPORTED:
+      case BTM_DEV_RESTRICT_LISTED:
+        // Role switch can never happen, but indicate to caller
+        // a result such that a timer will not start to repeatedly
+        // try something not possible.
+        LOG_ERROR("Link can never role switch to central device:%s",
+                  PRIVATE_ADDRESS(p_scb->PeerAddress()));
+        break;
+      default:
+        /* can not switch role on SCB - start the timer on SCB */
+        p_scb->wait |= BTA_AV_WAIT_ROLE_SW_RES_START;
+        LOG_ERROR("Unable to switch role to central device:%s error:%s",
+                  PRIVATE_ADDRESS(p_scb->PeerAddress()),
+                  btm_status_text(status).c_str());
+        return false;
+    }
+  }
+  return true;
 }
 
 /*******************************************************************************
