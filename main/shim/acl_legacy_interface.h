@@ -37,7 +37,7 @@ typedef struct {
 
 typedef struct {
   void (*on_connected)(const tBLE_BD_ADDR& address_with_type, uint16_t handle,
-                       uint8_t role, uint16_t conn_interval,
+                       tHCI_ROLE role, uint16_t conn_interval,
                        uint16_t conn_latency, uint16_t conn_timeout,
                        const RawAddress& local_rpa, const RawAddress& peer_rpa,
                        uint8_t peer_addr_type);
@@ -95,8 +95,8 @@ typedef struct {
   void (*on_read_rssi_complete)(uint8_t rssi);
   void (*on_read_transmit_power_level_complete)(uint8_t transmit_power_level);
   void (*on_role_change)(tHCI_STATUS status, const RawAddress& bd_addr,
-                         uint8_t new_role);
-  void (*on_role_discovery_complete)(uint8_t current_role);
+                         tHCI_ROLE new_role);
+  void (*on_role_discovery_complete)(tHCI_ROLE current_role);
 } acl_classic_link_interface_t;
 
 typedef struct {

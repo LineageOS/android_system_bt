@@ -1107,7 +1107,7 @@ bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
  *                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
  *
  ******************************************************************************/
-tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
+tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role);
 
 /*******************************************************************************
  *

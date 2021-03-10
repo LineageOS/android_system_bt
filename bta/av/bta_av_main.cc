@@ -815,7 +815,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
                                 const RawAddress& peer_addr) {
   int i;
   tBTA_AV_SCB* p_scb = NULL;
-  uint8_t cur_role;
+  tHCI_ROLE cur_role;
   uint8_t peer_idx = 0;
 
   APPL_TRACE_DEBUG(
@@ -1009,7 +1009,7 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
  *
  ******************************************************************************/
 bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
-  uint8_t role;
+  tHCI_ROLE role;
   if (BTM_GetRole(p_scb->PeerAddress(), &role) != BTM_SUCCESS) {
     LOG_WARN("Unable to find link role for device:%s",
              PRIVATE_ADDRESS(p_scb->PeerAddress()));

@@ -452,7 +452,7 @@ bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable);
  * Returns          link role.
  *
  ******************************************************************************/
-uint8_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
+hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr);
 
 /**
  * Check whether an ACL or LE link to the remote device is established
