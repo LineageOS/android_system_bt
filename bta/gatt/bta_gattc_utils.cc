@@ -32,6 +32,7 @@
 #include "device/include/controller.h"
 #include "gd/common/init_flags.h"
 #include "types/bt_transport.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 static uint8_t ble_acceptlist_size() {

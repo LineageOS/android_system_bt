@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "stack/include/l2c_api.h"
+#include "types/hci_role.h"
 
 namespace bluetooth {
 namespace shim {

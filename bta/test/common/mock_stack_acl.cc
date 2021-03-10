@@ -29,6 +29,7 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "stack/include/acl_api.h"
 #include "stack/include/hci_error_code.h"
 #include "types/bt_transport.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 #ifndef UNUSED_ATTR

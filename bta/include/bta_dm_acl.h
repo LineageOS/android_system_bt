@@ -20,8 +20,8 @@
 
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/hcidefs.h"
 #include "types/bt_transport.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport);
