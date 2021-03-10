@@ -371,6 +371,7 @@ cc_test {
         unit_test: true,
     },
     srcs: [
+        "hci/address.cc",
         ":BluetoothCommonSources",
         ":BluetoothPacketSources",
         ":BluetoothPacketParserTestPacketTestSources",
@@ -537,6 +538,22 @@ rust_library {
     srcs: ["rust/packets/lib.rs", ":BluetoothGeneratedPackets_rust"],
     edition: "2018",
     host_supported: true,
+    proc_macros: ["libnum_derive"],
+    rustlibs: [
+        "libbytes",
+        "libnum_traits",
+        "libthiserror",
+        "libbt_hci_custom_types",
+        "liblog_rust",
+    ],
+}
+
+rust_test_host {
+    name: "libbt_packets_test",
+    defaults: ["gd_rust_defaults"],
+    srcs: ["rust/packets/lib.rs", ":BluetoothGeneratedPackets_rust"],
+    test_suites: ["general-tests"],
+    edition: "2018",
     proc_macros: ["libnum_derive"],
     rustlibs: [
         "libbytes",
