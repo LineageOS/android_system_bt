@@ -1828,9 +1828,10 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
       STREAM_TO_UINT16(handle, p);
 
       STREAM_TO_UINT16(result.failed_contact_counter, p);
-      LOG_DEBUG("Failed contact counter complete: counter %u, hci status:%s",
-                result.failed_contact_counter,
-                RoleText(result.hci_status).c_str());
+      LOG_DEBUG(
+          "Failed contact counter complete: counter %u, hci status:%s",
+          result.failed_contact_counter,
+          hci_status_code_text(to_hci_status_code(result.hci_status)).c_str());
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
