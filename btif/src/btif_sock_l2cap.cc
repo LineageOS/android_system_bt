@@ -22,10 +22,10 @@
 #include <cstring>
 
 #include "bta/include/bta_jv_api.h"
+#include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_sock_thread.h"
 #include "btif/include/btif_sock_util.h"
 #include "btif/include/btif_uid.h"
-#include "common/metrics.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/log.h"
@@ -202,7 +202,7 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
     return;
 
   // Whenever a socket is freed, the connection must be dropped
-  bluetooth::common::LogSocketConnectionState(
+  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTED, sock->tx_bytes,
       sock->rx_bytes, sock->app_uid, sock->channel,
@@ -384,7 +384,7 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
 
   sock->handle = p_start->handle;
 
-  bluetooth::common::LogSocketConnectionState(
+  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       android::bluetooth::SocketConnectionstateEnum::
           SOCKET_CONNECTION_STATE_LISTENING,
@@ -447,7 +447,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   accept_rs->id = sock->id;
   sock->id = new_listen_id;
 
-  bluetooth::common::LogSocketConnectionState(
+  log_socket_connection_state(
       accept_rs->addr, accept_rs->id,
       accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
@@ -487,7 +487,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
     return;
   }
 
-  bluetooth::common::LogSocketConnectionState(
+  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
       sock->app_uid, sock->channel,
@@ -539,7 +539,7 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
     return;
   }
 
-  bluetooth::common::LogSocketConnectionState(
+  log_socket_connection_state(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0,
       sock->app_uid, sock->channel,

@@ -57,11 +57,11 @@
 #include "btif_hd.h"
 #include "btif_hf.h"
 #include "btif_hh.h"
+#include "btif_metrics_logging.h"
 #include "btif_sdp.h"
 #include "btif_storage.h"
 #include "btif_util.h"
 #include "btu.h"
-#include "common/metric_id_allocator.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
@@ -76,7 +76,6 @@
 #include "stack_config.h"
 
 using bluetooth::Uuid;
-using bluetooth::common::MetricIdAllocator;
 /******************************************************************************
  *  Constants & Macros
  *****************************************************************************/
@@ -445,10 +444,10 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
       state, pairing_cb.state, pairing_cb.sdp_attempts);
 
   if (state == BT_BOND_STATE_NONE) {
-    MetricIdAllocator::GetInstance().ForgetDevice(bd_addr);
+    forget_device_from_metric_id_allocator(bd_addr);
   } else if (state == BT_BOND_STATE_BONDED) {
-    MetricIdAllocator::GetInstance().AllocateId(bd_addr);
-    if (!MetricIdAllocator::GetInstance().SaveDevice(bd_addr)) {
+    allocate_metric_id_from_metric_id_allocator(bd_addr);
+    if (!save_metric_id_from_metric_id_allocator(bd_addr)) {
       LOG(FATAL) << __func__ << ": Fail to save metric id for device "
                  << bd_addr;
     }

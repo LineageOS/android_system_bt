@@ -60,6 +60,7 @@
 #include "btif_debug_conn.h"
 #include "btif_hf.h"
 #include "btif_keystore.h"
+#include "btif_metrics_logging.h"
 #include "btif_storage.h"
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
@@ -547,8 +548,7 @@ static std::string obfuscate_address(const RawAddress& address) {
 }
 
 static int get_metric_id(const RawAddress& address) {
-  return bluetooth::common::MetricIdAllocator::GetInstance().AllocateId(
-      address);
+  return allocate_metric_id_from_metric_id_allocator(address);
 }
 
 static int set_dynamic_audio_buffer_size(int codec, int size) {
