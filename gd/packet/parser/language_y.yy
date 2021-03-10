@@ -46,6 +46,9 @@
 
   StructDef* struct_definition_value;
 
+  std::set<std::string*>* test_cases_t;
+  std::string* test_case_t;
+
   std::map<std::string, std::variant<int64_t, std::string>>* constraint_list_t;
   std::pair<std::string, std::variant<int64_t, std::string>>* constraint_t;
 }
@@ -70,6 +73,7 @@
 %token CHECKSUM "checksum"
 %token CHECKSUM_START "checksum_start"
 %token PADDING "padding"
+%token TEST "test"
 
 %type<enum_definition> enum_definition
 %type<enumeration_values> enumeration_list
@@ -91,6 +95,10 @@
 %type<packet_field_type> array_field_definition;
 
 %type<struct_definition_value> struct_definition;
+
+%type<test_cases_t> test_definition;
+%type<test_cases_t> test_case_list;
+%type<test_case_t> test_case;
 
 %type<constraint_list_t> constraint_list;
 %type<constraint_t> constraint;
@@ -140,6 +148,10 @@ declaration
   | custom_field_definition
     {
       // All actions are handled in custom_field_definition
+    }
+  | test_definition
+    {
+      // All actions are handled in test_definition
     }
 
 enum_definition
@@ -209,6 +221,44 @@ custom_field_definition
       decls->AddTypeDef(*$2, new CustomFieldDef(*$2, *$3));
       delete $2;
       delete $3;
+    }
+
+test_definition
+  : TEST IDENTIFIER '{' test_case_list ',' '}'
+    {
+      auto&& packet_name = *$2;
+      DEBUG() << "Test Declared: name=" << *$2 << "\n";
+      auto packet = decls->GetPacketDef(packet_name);
+      if (packet == nullptr) {
+        ERRORLOC(LOC) << "Could not find packet " << packet_name << "\n";
+      }
+
+      for (const auto& t : *$4) {
+        packet->AddTestCase(*t);
+      }
+      delete $2;
+      delete $4;
+    }
+
+test_case_list
+  : test_case
+    {
+      DEBUG() << "Test case with comma\n";
+      $$ = new std::set<std::string*>();
+      $$->insert($1);
+    }
+  | test_case_list ',' test_case
+    {
+      DEBUG() << "Test case with list\n";
+      $$ = $1;
+      $$->insert($3);
+    }
+
+test_case
+  : STRING
+    {
+      DEBUG() << "Test Case: name=" << *$1 << "\n";
+      $$ = $1;
     }
 
 struct_definition
@@ -340,7 +390,7 @@ packet_definition
       auto parent_packet = decls->GetPacketDef(parent_packet_name);
       if (parent_packet == nullptr) {
         ERRORLOC(LOC) << "Could not find packet " << parent_packet_name
-                  << " used as parent for " << packet_name;
+                  << " used as parent for " << packet_name << "\n";
       }
 
       auto packet_definition = new PacketDef(std::move(packet_name), std::move(field_definition_list), parent_packet);
