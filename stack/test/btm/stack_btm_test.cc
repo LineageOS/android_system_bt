@@ -29,6 +29,8 @@
 #include "stack/include/btm_client_interface.h"
 #include "types/raw_address.h"
 
+extern tBTM_CB btm_cb;
+
 bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 
 const hci_packet_factory_t* hci_packet_factory_get_interface() {
@@ -125,6 +127,15 @@ TEST_F(StackBtmTest, NoInformClientOnConnectionFail) {
   btm_acl_connected(bda, 2, HCI_ERR_NO_CONNECTION, false);
   ASSERT_EQ(static_cast<size_t>(0),
             mock_function_count_map.count("BTA_dm_acl_up"));
+
+  get_btm_client_interface().lifecycle.btm_free();
+}
+
+TEST_F(StackBtmTest, default_packet_type) {
+  get_btm_client_interface().lifecycle.btm_init();
+
+  btm_cb.acl_cb_.SetDefaultPacketTypeMask(0x4321);
+  ASSERT_EQ(0x4321, btm_cb.acl_cb_.DefaultPacketTypes());
 
   get_btm_client_interface().lifecycle.btm_free();
 }
