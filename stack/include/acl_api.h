@@ -181,7 +181,6 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
 uint16_t BTM_GetNumAclLinks(void);
 
 void btm_set_packet_types_from_address(const RawAddress& bda,
-                                       tBT_TRANSPORT transport,
                                        uint16_t pkt_types);
 
 #define BLE_RESOLVE_ADDR_MASK 0xc0
