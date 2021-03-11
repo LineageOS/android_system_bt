@@ -2210,7 +2210,11 @@ packet ReadExtendedInquiryResponseComplete : CommandComplete (command_op_code = 
 packet WriteExtendedInquiryResponse : Command (op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
   fec_required : FecRequired,
   extended_inquiry_response : GapData[],
-  _padding_[244], // Zero padding to be 240 octets (GapData[]) + 2 (opcode) + 1 (size) + 1 (FecRequired)
+  _padding_[240], // Zero padding GapData[] to be 240 octets
+}
+
+test WriteExtendedInquiryResponse {
+  "\x52\x0c\xf1\x01\x0b\x09\x50\x69\x78\x65\x6c\x20\x33\x20\x58\x4c\x19\x03\x05\x11\x0a\x11\x0c\x11\x0e\x11\x12\x11\x15\x11\x16\x11\x1f\x11\x2d\x11\x2f\x11\x00\x12\x32\x11\x01\x05\x81\x07\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
 }
 
 packet WriteExtendedInquiryResponseComplete : CommandComplete (command_op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
@@ -2779,7 +2783,7 @@ packet LeReadAdvertisingPhysicalChannelTxPowerComplete : CommandComplete (comman
 packet LeSetAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[35], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
 }
 
 packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_ADVERTISING_DATA) {
@@ -2789,7 +2793,7 @@ packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_
 packet LeSetScanResponseData : LeAdvertisingCommand (op_code = LE_SET_SCAN_RESPONSE_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[35], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
 }
 
 packet LeSetScanResponseDataComplete : CommandComplete (command_op_code = LE_SET_SCAN_RESPONSE_DATA) {
@@ -4151,6 +4155,7 @@ packet LeGetVendorCapabilitiesComplete : CommandComplete (command_op_code = LE_G
   base_vendor_capabilities : BaseVendorCapabilities,
   _payload_,
 }
+
 packet LeGetVendorCapabilitiesComplete095 : LeGetVendorCapabilitiesComplete {
   version_supported: 16,
   total_num_of_advt_tracked: 16,
@@ -4158,6 +4163,7 @@ packet LeGetVendorCapabilitiesComplete095 : LeGetVendorCapabilitiesComplete {
   debug_logging_supported: 8,
   _payload_,
 }
+
 packet LeGetVendorCapabilitiesComplete096 : LeGetVendorCapabilitiesComplete095 {
   le_address_generation_offloading_support: 8,
   _payload_,
@@ -4206,7 +4212,7 @@ packet LeMultiAdvtParamComplete : LeMultiAdvtComplete (sub_cmd = SET_PARAM) {
 packet LeMultiAdvtSetData : LeMultiAdvt (sub_cmd = SET_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[36], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size + 1 set
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
   advertising_instance : 8,
 }
 
@@ -4216,7 +4222,7 @@ packet LeMultiAdvtSetDataComplete : LeMultiAdvtComplete (sub_cmd = SET_DATA) {
 packet LeMultiAdvtSetScanResp : LeMultiAdvt (sub_cmd = SET_SCAN_RESP) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[36], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size + 1 set
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
   advertising_instance : 8,
 }
 
@@ -4887,9 +4893,9 @@ packet ExtendedInquiryResult : Event (event_code = EXTENDED_INQUIRY_RESULT) {
   rssi : 8,
   extended_inquiry_response : GapData[],
   // Extended inquiry Result is always 255 bytes long
-  // padded with zeroes as necessary
+  // padded GapData with zeroes as necessary
   // Refer to BLUETOOTH CORE SPECIFICATION Version 5.2 | Vol 3, Part C Section 8 on page 1340
-  _padding_[255],
+  _padding_[240],
 }
 
 packet EncryptionKeyRefreshComplete : Event (event_code = ENCRYPTION_KEY_REFRESH_COMPLETE) {
