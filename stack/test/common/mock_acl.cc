@@ -26,7 +26,6 @@ extern std::map<std::string, int> mock_function_count_map;
 
 #define LOG_TAG "bt_shim"
 #include "gd/common/init_flags.h"
-#include "gd/os/log.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "types/raw_address.h"

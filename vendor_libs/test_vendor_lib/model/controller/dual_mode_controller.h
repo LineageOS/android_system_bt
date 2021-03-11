@@ -543,6 +543,12 @@ class DualModeController : public Device {
   void LeAdvertisingFilter(CommandView args);
   void LeExtendedScanParams(CommandView args);
 
+  // Required commands for handshaking with hci driver
+  void ReadClassOfDevice(CommandView args);
+  void ReadVoiceSetting(CommandView args);
+  void ReadConnectionAcceptTimeout(CommandView args);
+  void WriteConnectionAcceptTimeout(CommandView args);
+
   void SetTimerPeriod(std::chrono::milliseconds new_period);
   void StartTimer();
   void StopTimer();

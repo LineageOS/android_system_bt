@@ -109,6 +109,20 @@ class DeviceProperties {
 
   uint8_t GetEncryptionKeySize() const { return encryption_key_size_; }
 
+  uint16_t GetVoiceSetting() const { return voice_setting_; }
+
+  void SetVoiceSetting(uint16_t voice_setting) {
+    voice_setting_ = voice_setting;
+  }
+
+  uint16_t GetConnectionAcceptTimeout() const {
+    return connection_accept_timeout_;
+  }
+
+  void SetConnectionAcceptTimeout(uint16_t connection_accept_timeout) {
+    connection_accept_timeout_ = connection_accept_timeout;
+  }
+
   uint16_t GetTotalNumAclDataPackets() const {
     return num_acl_data_packets_;
   }
@@ -371,6 +385,8 @@ class DeviceProperties {
   uint8_t page_scan_repetition_mode_{};
   uint16_t clock_offset_{};
   uint8_t encryption_key_size_{10};
+  uint16_t voice_setting_{0x0060};
+  uint16_t connection_accept_timeout_{0x7d00};
 
   // Low Energy
   uint16_t le_data_packet_length_;
