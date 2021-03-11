@@ -1,6 +1,7 @@
 #pragma once
 
 #include "base/callback.h"
+#include "base/threading/sequenced_task_runner_handle.h"
 #include "rust/cxx.h"
 
 namespace bluetooth {
@@ -53,7 +54,8 @@ class OnceClosure {
   }
 
   void Run() const {
-    std::move(*closure_).Run();
+    base::SequencedTaskRunnerHandle::Get()->PostTask(
+        FROM_HERE, std::move(*closure_));
     delete closure_;
     ((OnceClosure*)this)->closure_ = nullptr;
   }
