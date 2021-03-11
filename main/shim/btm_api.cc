@@ -456,7 +456,7 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
       }
       if (*bta_callbacks_->p_auth_complete_callback) {
         (*bta_callbacks_->p_auth_complete_callback)(
-            bluetooth::ToRawAddress(device.GetAddress()), 0, name, BTM_SUCCESS);
+            bluetooth::ToRawAddress(device.GetAddress()), 0, name, HCI_SUCCESS);
       }
     }
     MetricIdAllocator::GetInstance().AllocateId(
@@ -489,7 +489,7 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
     if (bta_callbacks_->p_auth_complete_callback) {
       (*bta_callbacks_->p_auth_complete_callback)(
           bluetooth::ToRawAddress(device.GetAddress()), 0, name,
-          BTM_NOT_AUTHORIZED);
+          HCI_ERR_AUTH_FAILURE);
     }
   }
 
