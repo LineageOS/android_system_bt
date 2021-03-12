@@ -16,8 +16,10 @@
 
 #pragma once
 
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
+
 #include "src/init_flags.rs.h"
 
 namespace bluetooth {
