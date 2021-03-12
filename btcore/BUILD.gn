@@ -19,8 +19,8 @@ static_library("btcore") {
     "src/device_class.cc",
     "src/hal_util.cc",
     "src/module.cc",
-    "src/property.cc",
     "src/osi_module.cc",
+    "src/property.cc",
   ]
 
   include_dirs = [
@@ -28,9 +28,7 @@ static_library("btcore") {
     "//bt",
   ]
 
-  configs += [
-    "//bt:target_defaults",
-  ]
+  configs += [ "//bt:target_defaults" ]
 
   deps = [
     "//bt/gd/rust/shim:init_flags_bridge_header",
@@ -41,9 +39,9 @@ static_library("btcore") {
 if (use.test) {
   executable("net_test_btcore") {
     sources = [
+      "//bt/osi/test/AllocationTestHarness.cc",
       "test/device_class_test.cc",
       "test/property_test.cc",
-      "//bt/osi/test/AllocationTestHarness.cc",
     ]
 
     include_dirs = [

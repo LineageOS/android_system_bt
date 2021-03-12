@@ -19,4 +19,7 @@ static_library("g722") {
     "g722_decode.cc",
     "g722_encode.cc",
   ]
+
+  defines = [ "G722_SUPPORT_MALLOC" ]
+  configs += [ "//bt:target_defaults" ]
 }

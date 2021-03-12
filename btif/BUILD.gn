@@ -16,18 +16,36 @@
 
 static_library("btif") {
   sources = [
+    # TODO(abps) - Do we need this?
     "//bt/audio_a2dp_hw/src/audio_a2dp_hw_utils.cc",
     "//bt/audio_hearing_aid_hw/src/audio_hearing_aid_hw_utils.cc",
+
+    # AVRCP Target Service
     "avrcp/avrcp_service.cc",
+    "co/bta_av_co.cc",
+
+    # Callouts
+    "co/bta_dm_co.cc",
+    "co/bta_gatts_co.cc",
+    "co/bta_hh_co.cc",
+    "co/bta_pan_co.cc",
+
+    # HAL layer
+    "src/bluetooth.cc",
+
+    # BTIF implementation
     "src/btif_a2dp.cc",
+
+    # "TODO(abps) - Move this abstraction elsewhere
+    # "src/btif_a2dp_audio_interface.cc",
     "src/btif_a2dp_audio_interface_linux.cc",
     "src/btif_a2dp_control.cc",
     "src/btif_a2dp_sink.cc",
-    # "src/btif_a2dp_source.cc",
+    "src/btif_a2dp_source.cc",
     "src/btif_av.cc",
 
-    #TODO(jpawlowski): heavily depends on Android,
-    #   "src/btif_avrcp_audio_track.cc",
+    # TODO(abps) - Move this abstraction elsewhere
+    # "src/btif_avrcp_audio_track.cc",
     "src/btif_avrcp_audio_track_linux.cc",
     "src/btif_ble_advertiser.cc",
     "src/btif_ble_scanner.cc",
@@ -70,15 +88,6 @@ static_library("btif") {
     "src/stack_manager.cc",
   ]
 
-  # BTIF callouts
-  sources += [
-    "co/bta_av_co.cc",
-    "co/bta_dm_co.cc",
-    "co/bta_gatts_co.cc",
-    "co/bta_hh_co.cc",
-    "co/bta_pan_co.cc",
-  ]
-
   include_dirs = [
     "include",
     "//bt/",
@@ -105,10 +114,10 @@ static_library("btif") {
   ]
 
   deps = [
+    "//bt:libbt-platform-protos-lite",
     "//bt/common",
     "//bt/gd/rust/shim:init_flags_bridge_header",
     "//bt/profile/avrcp:profile_avrcp",
-    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
   ]
 
   configs += [
