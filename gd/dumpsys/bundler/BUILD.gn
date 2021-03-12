@@ -13,14 +13,39 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
+import("//bt/gd/dumpsys/bundler/bundler.gni")
 import("//common-mk/flatbuffer.gni")
 
-config("bundler_generated_config") {
-  include_dirs = [ "$target_gen_dir" ]
+bt_flatc_binary_schema("BluetoothGeneratedBundlerSchema_h_bfbs") {
+  sources = [ "bundler.fbs" ]
+  include_dir = "bt/gd"
+  gen_header = true
 }
 
-flatbuffer("bundler_generated") {
-  sources = [ "bundler.fbs" ]
+#
+# The remaining rules are for building on the host
+#
 
-  all_dependent_configs = [ ":bundler_generated_config" ]
+config("bundler_defaults") {
+  cflags = [ "-fPIC" ]
+
+  cflags_cc = [
+    "-std=c++17",
+    "-Wno-unused-parameter",
+    "-Wno-unused-variable",
+    "-Wno-poison-system-directories",
+  ]
+}
+
+executable("bluetooth_flatbuffer_bundler") {
+  sources = [
+    "bundler.cc",
+    "main.cc",
+  ]
+
+  libs = [ "flatbuffers" ]
+
+  deps = [ ":BluetoothGeneratedBundlerSchema_h_bfbs" ]
+
+  configs += [ ":bundler_defaults" ]
 }
