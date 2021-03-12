@@ -30,8 +30,16 @@ namespace root_canal {
 
 class TestEnvironment {
  public:
-  TestEnvironment(uint16_t test_port, uint16_t hci_server_port, uint16_t link_server_port)
-      : test_port_(test_port), hci_server_port_(hci_server_port), link_server_port_(link_server_port) {}
+  TestEnvironment(uint16_t test_port, uint16_t hci_server_port,
+                  uint16_t link_server_port,
+                  const std::string& controller_properties_file = "",
+                  const std::string& default_commands_file = "")
+      : test_port_(test_port),
+        hci_server_port_(hci_server_port),
+        link_server_port_(link_server_port),
+        default_commands_file_(default_commands_file),
+        controller_(std::make_shared<test_vendor_lib::DualModeController>(
+            controller_properties_file)) {}
 
   void initialize(std::promise<void> barrier);
 
@@ -41,6 +49,7 @@ class TestEnvironment {
   uint16_t test_port_;
   uint16_t hci_server_port_;
   uint16_t link_server_port_;
+  std::string default_commands_file_;
   std::promise<void> barrier_;
 
   test_vendor_lib::AsyncManager async_manager_;

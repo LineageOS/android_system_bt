@@ -166,6 +166,7 @@ cc_binary_host {
         "libscriptedbeaconpayload-protos-lite",
         "libbt-rootcanal",
         "breakpad_client",
+        "libgflags",
     ],
     sanitize: {
         address: true,
