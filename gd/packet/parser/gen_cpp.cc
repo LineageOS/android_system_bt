@@ -147,7 +147,7 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
 
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
-      const auto* enum_def = dynamic_cast<const EnumDef*>(e.second);
+      const auto* enum_def = static_cast<const EnumDef*>(e.second);
       EnumGen gen(*enum_def);
       gen.GenDefinition(out_file);
       out_file << "\n\n";
@@ -155,7 +155,7 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
   }
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
-      const auto* enum_def = dynamic_cast<const EnumDef*>(e.second);
+      const auto* enum_def = static_cast<const EnumDef*>(e.second);
       EnumGen gen(*enum_def);
       gen.GenLogging(out_file);
       out_file << "\n\n";
@@ -163,7 +163,7 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
   }
   for (const auto& ch : decls.type_defs_queue_) {
     if (ch.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
-      const auto* checksum_def = dynamic_cast<const ChecksumDef*>(ch.second);
+      const auto* checksum_def = static_cast<const ChecksumDef*>(ch.second);
       checksum_def->GenChecksumCheck(out_file);
     }
   }
@@ -172,10 +172,10 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
   for (const auto& c : decls.type_defs_queue_) {
     if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM) {
       if (c.second->size_ == -1 /* Variable Size */) {
-        const auto* custom_field_def = dynamic_cast<const CustomFieldDef*>(c.second);
+        const auto* custom_field_def = static_cast<const CustomFieldDef*>(c.second);
         custom_field_def->GenCustomFieldCheck(out_file, decls.is_little_endian);
       } else {  // fixed size
-        const auto* custom_field_def = dynamic_cast<const CustomFieldDef*>(c.second);
+        const auto* custom_field_def = static_cast<const CustomFieldDef*>(c.second);
         custom_field_def->GenFixedSizeCustomFieldCheck(out_file);
       }
     }
@@ -184,7 +184,7 @@ using ::bluetooth::packet::parser::ChecksumTypeChecker;
 
   for (auto& s : decls.type_defs_queue_) {
     if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
-      const auto* struct_def = dynamic_cast<const StructDef*>(s.second);
+      const auto* struct_def = static_cast<const StructDef*>(s.second);
       struct_def->GenDefinition(out_file);
       out_file << "\n";
     }
@@ -293,7 +293,7 @@ bool generate_pybind11_sources_one_file(
 
     for (const auto& c : decls.type_defs_queue_) {
       if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM) {
-        const auto* custom_def = dynamic_cast<const CustomFieldDef*>(c.second);
+        const auto* custom_def = static_cast<const CustomFieldDef*>(c.second);
         custom_def->GenPyBind11Include(out_file);
       }
     }
@@ -306,7 +306,7 @@ bool generate_pybind11_sources_one_file(
     for (const auto& c : decls.type_defs_queue_) {
       if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
           c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
-        const auto* custom_def = dynamic_cast<const CustomFieldDef*>(c.second);
+        const auto* custom_def = static_cast<const CustomFieldDef*>(c.second);
         custom_def->GenUsing(out_file);
       }
     }
@@ -344,7 +344,7 @@ bool generate_pybind11_sources_one_file(
 
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
-      const auto* enum_def = dynamic_cast<const EnumDef*>(e.second);
+      const auto* enum_def = static_cast<const EnumDef*>(e.second);
       EnumGen gen(*enum_def);
       auto& out_file = get_out_file(symbol_count, symbol_total, &out_file_shards);
       gen.GenDefinitionPybind11(out_file);
@@ -355,7 +355,7 @@ bool generate_pybind11_sources_one_file(
 
   for (const auto& s : decls.type_defs_queue_) {
     if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
-      const auto* struct_def = dynamic_cast<const StructDef*>(s.second);
+      const auto* struct_def = static_cast<const StructDef*>(s.second);
       auto& out_file = get_out_file(symbol_count, symbol_total, &out_file_shards);
       struct_def->GenDefinitionPybind11(out_file);
       out_file << "\n";

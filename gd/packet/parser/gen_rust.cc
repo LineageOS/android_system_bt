@@ -126,7 +126,7 @@ bool generate_rust_source_one_file(
     EnumDef* opcode_index = nullptr;
     for (const auto& e : decls.type_defs_queue_) {
       if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
-        auto* enum_def = dynamic_cast<EnumDef*>(e.second);
+        auto* enum_def = static_cast<EnumDef*>(e.second);
         if (enum_def->name_ == "OpCode") {
           opcode = enum_def;
         } else if (enum_def->name_ == "OpCodeIndex") {
@@ -143,7 +143,7 @@ bool generate_rust_source_one_file(
 
   for (const auto& e : decls.type_defs_queue_) {
     if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
-      const auto* enum_def = dynamic_cast<const EnumDef*>(e.second);
+      const auto* enum_def = static_cast<const EnumDef*>(e.second);
       EnumGen gen(*enum_def);
       gen.GenRustDef(out_file);
       out_file << "\n\n";
@@ -152,7 +152,7 @@ bool generate_rust_source_one_file(
 
   for (auto& s : decls.type_defs_queue_) {
     if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
-      const auto* struct_def = dynamic_cast<const StructDef*>(s.second);
+      const auto* struct_def = static_cast<const StructDef*>(s.second);
       struct_def->GenRustDef(out_file);
       out_file << "\n\n";
     }
