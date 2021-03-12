@@ -822,13 +822,13 @@ enum ErrorCode: 8 {
 
 // Events that are defined with their respective commands
 
-packet CommandComplete : Event (event_code = COMMAND_COMPLETE){
+packet CommandComplete : Event (event_code = COMMAND_COMPLETE) {
   num_hci_command_packets : 8,
   command_op_code : OpCode,
   _payload_,
 }
 
-packet CommandStatus : Event (event_code = COMMAND_STATUS){
+packet CommandStatus : Event (event_code = COMMAND_STATUS) {
   status : ErrorCode, // SUCCESS means PENDING
   num_hci_command_packets : 8,
   command_op_code : OpCode,
@@ -836,7 +836,7 @@ packet CommandStatus : Event (event_code = COMMAND_STATUS){
 }
 
   // Credits
-packet NoCommandComplete : CommandComplete (command_op_code = NONE){
+packet NoCommandComplete : CommandComplete (command_op_code = NONE) {
 }
 
 struct Lap { // Lower Address Part
@@ -4553,7 +4553,7 @@ packet ControllerBqrComplete : CommandComplete (command_op_code = CONTROLLER_BQR
 
 // HCI Event Packets
 
-packet InquiryComplete : Event (event_code = INQUIRY_COMPLETE){
+packet InquiryComplete : Event (event_code = INQUIRY_COMPLETE) {
   status : ErrorCode,
 }
 
@@ -4567,7 +4567,7 @@ struct InquiryResult {
   _reserved_ : 1,
 }
 
-packet InquiryResult : Event (event_code = INQUIRY_RESULT){
+packet InquiryResult : Event (event_code = INQUIRY_RESULT) {
   _count_(inquiry_results) : 8,
   inquiry_results : InquiryResult[],
 }
@@ -4577,7 +4577,7 @@ enum LinkType : 8 {
   ACL = 0x01,
 }
 
-packet ConnectionComplete : Event (event_code = CONNECTION_COMPLETE){
+packet ConnectionComplete : Event (event_code = CONNECTION_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4592,26 +4592,26 @@ enum ConnectionRequestLinkType : 8 {
   ESCO = 0x02,
 }
 
-packet ConnectionRequest : Event (event_code = CONNECTION_REQUEST){
+packet ConnectionRequest : Event (event_code = CONNECTION_REQUEST) {
   bd_addr : Address,
   class_of_device : ClassOfDevice,
   link_type : ConnectionRequestLinkType,
 }
 
-packet DisconnectionComplete : Event (event_code = DISCONNECTION_COMPLETE){
+packet DisconnectionComplete : Event (event_code = DISCONNECTION_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
   reason : ErrorCode,
 }
 
-packet AuthenticationComplete : Event (event_code = AUTHENTICATION_COMPLETE){
+packet AuthenticationComplete : Event (event_code = AUTHENTICATION_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
 }
 
-packet RemoteNameRequestComplete : Event (event_code = REMOTE_NAME_REQUEST_COMPLETE){
+packet RemoteNameRequestComplete : Event (event_code = REMOTE_NAME_REQUEST_COMPLETE) {
   status : ErrorCode,
   bd_addr : Address,
   remote_name : 8[248], // UTF-8 encoded user-friendly descriptive name
@@ -4623,34 +4623,34 @@ enum EncryptionEnabled : 8 {
   BR_EDR_AES_CCM = 0x02,
 }
 
-packet EncryptionChange : Event (event_code = ENCRYPTION_CHANGE){
+packet EncryptionChange : Event (event_code = ENCRYPTION_CHANGE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
   encryption_enabled : EncryptionEnabled,
 }
 
-packet ChangeConnectionLinkKeyComplete : Event (event_code = CHANGE_CONNECTION_LINK_KEY_COMPLETE){
+packet ChangeConnectionLinkKeyComplete : Event (event_code = CHANGE_CONNECTION_LINK_KEY_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
 }
 
-packet CentralLinkKeyComplete : Event (event_code = CENTRAL_LINK_KEY_COMPLETE){
+packet CentralLinkKeyComplete : Event (event_code = CENTRAL_LINK_KEY_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
   key_flag : KeyFlag,
 }
 
-packet ReadRemoteSupportedFeaturesComplete : Event (event_code = READ_REMOTE_SUPPORTED_FEATURES_COMPLETE){
+packet ReadRemoteSupportedFeaturesComplete : Event (event_code = READ_REMOTE_SUPPORTED_FEATURES_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
   lmp_features : 64,
 }
 
-packet ReadRemoteVersionInformationComplete : Event (event_code = READ_REMOTE_VERSION_INFORMATION_COMPLETE){
+packet ReadRemoteVersionInformationComplete : Event (event_code = READ_REMOTE_VERSION_INFORMATION_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4659,7 +4659,7 @@ packet ReadRemoteVersionInformationComplete : Event (event_code = READ_REMOTE_VE
   sub_version : 16,
 }
 
-packet QosSetupComplete : Event (event_code = QOS_SETUP_COMPLETE){
+packet QosSetupComplete : Event (event_code = QOS_SETUP_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4673,22 +4673,22 @@ packet QosSetupComplete : Event (event_code = QOS_SETUP_COMPLETE){
 
 // Command Complete and Command Status Events are implemented above Commands.
 
-packet HardwareError : Event (event_code = HARDWARE_ERROR){
+packet HardwareError : Event (event_code = HARDWARE_ERROR) {
   hardware_code : 8,
 }
 
-packet FlushOccurred : Event (event_code = FLUSH_OCCURRED){
+packet FlushOccurred : Event (event_code = FLUSH_OCCURRED) {
   connection_handle : 12,
   _reserved_ : 4,
 }
 
-packet RoleChange : Event (event_code = ROLE_CHANGE){
+packet RoleChange : Event (event_code = ROLE_CHANGE) {
   status : ErrorCode,
   bd_addr : Address,
   new_role : Role,
 }
 
-packet NumberOfCompletedPackets : Event (event_code = NUMBER_OF_COMPLETED_PACKETS){
+packet NumberOfCompletedPackets : Event (event_code = NUMBER_OF_COMPLETED_PACKETS) {
   _count_(completed_packets) : 8,
   completed_packets : CompletedPackets[],
 }
@@ -4699,7 +4699,7 @@ enum Mode : 8 {
   SNIFF = 0x02,
 }
 
-packet ModeChange : Event (event_code = MODE_CHANGE){
+packet ModeChange : Event (event_code = MODE_CHANGE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4713,16 +4713,16 @@ struct ZeroKeyAndAddress {
   _fixed_ = 0 : 64,
 }
 
-packet ReturnLinkKeys : Event (event_code = RETURN_LINK_KEYS){
+packet ReturnLinkKeys : Event (event_code = RETURN_LINK_KEYS) {
   _count_(keys) : 8,
   keys : ZeroKeyAndAddress[],
 }
 
-packet PinCodeRequest : Event (event_code = PIN_CODE_REQUEST){
+packet PinCodeRequest : Event (event_code = PIN_CODE_REQUEST) {
   bd_addr : Address,
 }
 
-packet LinkKeyRequest : Event (event_code = LINK_KEY_REQUEST){
+packet LinkKeyRequest : Event (event_code = LINK_KEY_REQUEST) {
   bd_addr : Address,
 }
 
@@ -4736,27 +4736,27 @@ enum KeyType : 8 {
   AUTHENTICATED_P256 = 0x08,
 }
 
-packet LinkKeyNotification : Event (event_code = LINK_KEY_NOTIFICATION){
+packet LinkKeyNotification : Event (event_code = LINK_KEY_NOTIFICATION) {
   bd_addr : Address,
   link_key : 8[16],
   key_type : KeyType,
 }
 
-packet LoopbackCommand : Event (event_code = LOOPBACK_COMMAND){
+packet LoopbackCommand : Event (event_code = LOOPBACK_COMMAND) {
   _payload_, // Command packet, truncated if it was longer than 252 bytes
 }
 
-packet DataBufferOverflow : Event (event_code = DATA_BUFFER_OVERFLOW){
+packet DataBufferOverflow : Event (event_code = DATA_BUFFER_OVERFLOW) {
   link_type : LinkType,
 }
 
-packet MaxSlotsChange : Event (event_code = MAX_SLOTS_CHANGE){
+packet MaxSlotsChange : Event (event_code = MAX_SLOTS_CHANGE) {
   connection_handle : 12,
   _reserved_ : 4,
   lmp_max_slots : 8,
 }
 
-packet ReadClockOffsetComplete : Event (event_code = READ_CLOCK_OFFSET_COMPLETE){
+packet ReadClockOffsetComplete : Event (event_code = READ_CLOCK_OFFSET_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4764,24 +4764,24 @@ packet ReadClockOffsetComplete : Event (event_code = READ_CLOCK_OFFSET_COMPLETE)
   _reserved_ : 1,
 }
 
-packet ConnectionPacketTypeChanged : Event (event_code = CONNECTION_PACKET_TYPE_CHANGED){
+packet ConnectionPacketTypeChanged : Event (event_code = CONNECTION_PACKET_TYPE_CHANGED) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
   packet_type : 16,
 }
 
-packet QosViolation : Event (event_code = QOS_VIOLATION){
+packet QosViolation : Event (event_code = QOS_VIOLATION) {
   connection_handle : 12,
   _reserved_ : 4,
 }
 
-packet PageScanRepetitionModeChange : Event (event_code = PAGE_SCAN_REPETITION_MODE_CHANGE){
+packet PageScanRepetitionModeChange : Event (event_code = PAGE_SCAN_REPETITION_MODE_CHANGE) {
   bd_addr : Address,
   page_scan_repetition_mode : PageScanRepetitionMode,
 }
 
-packet FlowSpecificationComplete : Event (event_code = FLOW_SPECIFICATION_COMPLETE){
+packet FlowSpecificationComplete : Event (event_code = FLOW_SPECIFICATION_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4804,12 +4804,12 @@ struct InquiryResultWithRssi {
   rssi : 8,
 }
 
-packet InquiryResultWithRssi : Event (event_code = INQUIRY_RESULT_WITH_RSSI){
+packet InquiryResultWithRssi : Event (event_code = INQUIRY_RESULT_WITH_RSSI) {
   _count_(inquiry_results) : 8,
   inquiry_results : InquiryResultWithRssi[],
 }
 
-packet ReadRemoteExtendedFeaturesComplete : Event (event_code = READ_REMOTE_EXTENDED_FEATURES_COMPLETE){
+packet ReadRemoteExtendedFeaturesComplete : Event (event_code = READ_REMOTE_EXTENDED_FEATURES_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4830,7 +4830,7 @@ enum ScoAirMode : 8 {
   TRANSPARENT = 0x03,
 }
 
-packet SynchronousConnectionComplete : Event (event_code = SYNCHRONOUS_CONNECTION_COMPLETE){
+packet SynchronousConnectionComplete : Event (event_code = SYNCHRONOUS_CONNECTION_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
    _reserved_ : 4,
@@ -4851,7 +4851,7 @@ packet SynchronousConnectionComplete : Event (event_code = SYNCHRONOUS_CONNECTIO
   air_mode : ScoAirMode,
 }
 
-packet SynchronousConnectionChanged : Event (event_code = SYNCHRONOUS_CONNECTION_CHANGED){
+packet SynchronousConnectionChanged : Event (event_code = SYNCHRONOUS_CONNECTION_CHANGED) {
   status : ErrorCode,
   connection_handle : 12,
    _reserved_ : 4,
@@ -4866,7 +4866,7 @@ packet SynchronousConnectionChanged : Event (event_code = SYNCHRONOUS_CONNECTION
   tx_packet_length : 16,
 }
 
-packet SniffSubratingEvent : Event (event_code = SNIFF_SUBRATING){
+packet SniffSubratingEvent : Event (event_code = SNIFF_SUBRATING) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -4892,43 +4892,43 @@ packet ExtendedInquiryResult : Event (event_code = EXTENDED_INQUIRY_RESULT) {
   _padding_[255],
 }
 
-packet EncryptionKeyRefreshComplete : Event (event_code = ENCRYPTION_KEY_REFRESH_COMPLETE){
+packet EncryptionKeyRefreshComplete : Event (event_code = ENCRYPTION_KEY_REFRESH_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
 }
 
-packet IoCapabilityRequest : Event (event_code = IO_CAPABILITY_REQUEST){
+packet IoCapabilityRequest : Event (event_code = IO_CAPABILITY_REQUEST) {
   bd_addr : Address,
 }
 
-packet IoCapabilityResponse : Event (event_code = IO_CAPABILITY_RESPONSE){
+packet IoCapabilityResponse : Event (event_code = IO_CAPABILITY_RESPONSE) {
   bd_addr : Address,
   io_capability : IoCapability,
   oob_data_present : OobDataPresent,
   authentication_requirements : AuthenticationRequirements,
 }
 
-packet UserConfirmationRequest : Event (event_code = USER_CONFIRMATION_REQUEST){
+packet UserConfirmationRequest : Event (event_code = USER_CONFIRMATION_REQUEST) {
   bd_addr : Address,
   numeric_value : 20, // 0x00000-0xF423F (000000 - 999999)
   _reserved_ : 12,
 }
 
-packet UserPasskeyRequest : Event (event_code = USER_PASSKEY_REQUEST){
+packet UserPasskeyRequest : Event (event_code = USER_PASSKEY_REQUEST) {
   bd_addr : Address,
 }
 
-packet RemoteOobDataRequest : Event (event_code = REMOTE_OOB_DATA_REQUEST){
+packet RemoteOobDataRequest : Event (event_code = REMOTE_OOB_DATA_REQUEST) {
   bd_addr : Address,
 }
 
-packet SimplePairingComplete : Event (event_code = SIMPLE_PAIRING_COMPLETE){
+packet SimplePairingComplete : Event (event_code = SIMPLE_PAIRING_COMPLETE) {
   status : ErrorCode,
   bd_addr : Address,
 }
 
-packet LinkSupervisionTimeoutChanged : Event (event_code = LINK_SUPERVISION_TIMEOUT_CHANGED){
+packet LinkSupervisionTimeoutChanged : Event (event_code = LINK_SUPERVISION_TIMEOUT_CHANGED) {
   connection_handle : 12,
   _reserved_ : 4,
   link_supervision_timeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
@@ -4938,32 +4938,32 @@ enum FlushablePacketType : 8 {
   AUTOMATICALLY_FLUSHABLE_ONLY = 0,
 }
 
-packet EnhancedFlush : Command (op_code = ENHANCED_FLUSH){
+packet EnhancedFlush : Command (op_code = ENHANCED_FLUSH) {
   connection_handle : 12,
   _reserved_ : 4,
   packet_type : FlushablePacketType,
 }
 
-packet EnhancedFlushStatus : CommandStatus (command_op_code = ENHANCED_FLUSH){
+packet EnhancedFlushStatus : CommandStatus (command_op_code = ENHANCED_FLUSH) {
 }
 
-packet EnhancedFlushComplete : Event (event_code = ENHANCED_FLUSH_COMPLETE){
+packet EnhancedFlushComplete : Event (event_code = ENHANCED_FLUSH_COMPLETE) {
   connection_handle : 12,
   _reserved_ : 4,
 }
 
-packet UserPasskeyNotification : Event (event_code = USER_PASSKEY_NOTIFICATION){
+packet UserPasskeyNotification : Event (event_code = USER_PASSKEY_NOTIFICATION) {
   bd_addr : Address,
   passkey : 20, // 0x00000-0xF423F (000000 - 999999)
   _reserved_ : 12,
 }
 
-packet KeypressNotification : Event (event_code = KEYPRESS_NOTIFICATION){
+packet KeypressNotification : Event (event_code = KEYPRESS_NOTIFICATION) {
   bd_addr : Address,
   notification_type : KeypressNotificationType,
 }
 
-packet RemoteHostSupportedFeaturesNotification : Event (event_code = REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION){
+packet RemoteHostSupportedFeaturesNotification : Event (event_code = REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION) {
   bd_addr : Address,
   host_supported_features : 64,
 }
