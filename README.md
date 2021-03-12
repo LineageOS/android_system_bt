@@ -5,8 +5,29 @@ Just build AOSP - Fluoride is there by default.
 
 ## Building and running on Linux
 
-Instructions for Ubuntu, tested on 14.04 with Clang 3.5.0 and 16.10 with Clang
- 3.8.0
+Instructions for a Debian based distribution:
+* Debian Bullseye or newer
+* Ubuntu 20.10 or newer
+* Clang-11 or Clang-12
+* Flex 2.6.x
+* Bison 3.x.x (tested with 3.0.x, 3.2.x and 3.7.x)
+
+You'll want to download some pre-requisite packages as well. If you're currently
+configured for AOSP development, you should have all required packages.
+Otherwise, you can use the following apt-get list:
+
+```sh
+sudo apt-get install repo git-core gnupg flex bison gperf build-essential \
+  zip curl zlib1g-dev gcc-multilib g++-multilib \
+  x11proto-core-dev libx11-dev lib32z-dev libncurses5 \
+  libgl1-mesa-dev libxml2-utils xsltproc unzip liblz4-tool libssl-dev \
+  libc++-dev libevent-dev \
+  flatbuffers-compiler libflatbuffers1 \
+  openssl openssl-dev
+```
+
+You will also need a recent-ish version of Rust and Cargo. Please follow the
+instructions on [Rustup](https://rustup.rs/) to install a recent version.
 
 ### Download source
 
@@ -16,96 +37,74 @@ cd ~/fluoride
 git clone https://android.googlesource.com/platform/system/bt
 ```
 
-Install dependencies (require sudo access):
+Install dependencies (require sudo access). This adds some Ubuntu dependencies
+and also installs GN (which is the build tool we're using).
 
 ```sh
 cd ~/fluoride/bt
 build/install_deps.sh
 ```
 
-Then fetch third party dependencies:
+The following third-party dependencies are necessary but currently unavailable
+via a package manager. You may have to build these from source and install them
+to your local environment.
 
+TODO(abhishekpandit) - Provide a pre-packaged option for these or proper build
+instructions from source.
+
+* libchrome
+* modp_b64
+* tinyxml2
+
+### Stage your build environment
+
+For host build, we depend on a few other repositories:
+* [Platform2](https://chromium.googlesource.com/chromiumos/platform2/)
+* [Rust crates](https://chromium.googlesource.com/chromiumos/third_party/rust_crates/)
+* [Proto logging](https://android.googlesource.com/platform/frameworks/proto_logging/)
+
+Clone these all somewhere and create your staging environment.
 ```sh
-cd ~/fluoride/bt
-mkdir third_party
-cd third_party
-git clone https://github.com/google/googletest.git
-git clone https://android.googlesource.com/platform/external/aac
-git clone https://android.googlesource.com/platform/external/libchrome
-git clone https://android.googlesource.com/platform/external/libldac
-git clone https://android.googlesource.com/platform/external/modp_b64
-git clone https://android.googlesource.com/platform/external/tinyxml2
-```
-
-And third party dependencies of third party dependencies:
-
-```sh
-cd fluoride/bt/third_party/libchrome/base/third_party
-mkdir valgrind
-cd valgrind
-curl https://chromium.googlesource.com/chromium/src/base/+/master/third_party/valgrind/valgrind.h?format=TEXT | base64 -d > valgrind.h
-curl https://chromium.googlesource.com/chromium/src/base/+/master/third_party/valgrind/memcheck.h?format=TEXT | base64 -d > memcheck.h
-```
-
-NOTE: If system/bt is checked out under AOSP, then create symbolic links instead
-of downloading sources
-
-```
-cd system/bt
-mkdir third_party
-cd third_party
-ln -s ../../../external/aac aac
-ln -s ../../../external/libchrome libchrome
-ln -s ../../../external/libldac libldac
-ln -s ../../../external/modp_b64 modp_b64
-ln -s ../../../external/tinyxml2 tinyxml2
-ln -s ../../../external/googletest googletest
-```
-
-### Generate your build files
-
-```sh
-cd ~/fluoride/bt
-gn gen out/Default
+export STAGING_DIR=path/to/your/staging/dir
+mkdir ${STAGING_DIR}
+mkdir -p ${STAGING_DIR}/external
+ln -s $(readlink -f ${PLATFORM2_DIR}/common-mk) ${STAGING_DIR}/common-mk
+ln -s $(readlink -f ${PLATFORM2_DIR}/.gn) ${STAGING_DIR}/.gn
+ln -s $(readlink -f ${RUST_CRATE_DIR}) ${STAGING_DIR}/external/rust
+ln -s $(readlink -f ${PROTO_LOG_DIR}) ${STAGING_DIR}/external/proto_logging
 ```
 
 ### Build
 
+We provide a build script to automate building assuming you've staged your build
+environment already as above.
+
+
 ```sh
-cd ~/fluoride/bt
-ninja -C out/Default all
+./build.py --output ${OUTPUT_DIR} --platform-dir ${STAGING_DIR} --clang
 ```
 
-This will build all targets (the shared library, executables, tests, etc) and
- put them in out/Default. To build an individual target, replace "all" with the
- target of your choice, e.g. ```ninja -C out/Default net_test_osi```.
+This will build all targets to the output directory you've given. You can also
+build each stage separately (if you want to iterate on something specific):
+
+* prepare - Generate the GN rules
+* tools - Generate host tools
+* rust - Build the rust portion of the build
+* main - Build all the C/C++ code
+* test - Build all targets and run the tests
+* clean - Clean the output directory
+
+You can choose to run only a specific stage by passing an arg via `--target`.
+
+Currently, Rust builds are a separate stage that uses Cargo to build. See
+[gd/rust/README.md](gd/rust/README.md) for more information.
 
 ### Run
 
+By default on Linux, we statically link libbluetooth so you can just run the
+binary directly:
+
 ```sh
 cd ~/fluoride/bt/out/Default
-LD_LIBRARY_PATH=./ ./bluetoothtbd -create-ipc-socket=fluoride
+./bluetoothtbd -create-ipc-socket=fluoride
 ```
-
-### Eclipse IDE Support
-
-1. Follows the Chromium project
- [Eclipse Setup Instructions](https://chromium.googlesource.com/chromium/src.git/+/master/docs/linux/eclipse_dev.md)
- until "Optional: Building inside Eclipse" section (don't do that section, we
- will set it up differently)
-
-2. Generate Eclipse settings:
-
-  ```sh
-  cd system/bt
-  gn gen --ide=eclipse out/Default
-  ```
-
-3. In Eclipse, do File->Import->C/C++->C/C++ Project Settings, choose the XML
- location under system/bt/out/Default
-
-4. Right click on the project. Go to Preferences->C/C++ Build->Builder Settings.
- Uncheck "Use default build command", but instead using "ninja -C out/Default"
-
-5. Goto Behaviour tab, change clean command to "-t clean"
-

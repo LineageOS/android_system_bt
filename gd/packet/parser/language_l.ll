@@ -7,6 +7,14 @@
 #include "declarations.h"
 #include "language_y.h"
 
+#ifndef YYSTYPE
+#define YYSTYPE yy::parser::semantic_type
+#endif
+
+#ifndef YYLTYPE
+#define YYLTYPE yy::parser::location_type
+#endif
+
 using token = yy::parser::token;
 
 #define YY_USER_ACTION yylloc->step(); yylloc->columns(yyleng);

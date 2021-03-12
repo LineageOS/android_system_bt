@@ -23,7 +23,7 @@ config("service_config") {
     "//bt/service/common",
   ]
 
-  configs = ["//bt:target_defaults"]
+  configs = [ "//bt:target_defaults" ]
 }
 
 source_set("service_daemon_src") {
@@ -45,18 +45,18 @@ source_set("service_daemon_src") {
     "ipc/ipc_manager.cc",
     "logging_helpers.cc",
     "low_energy_advertiser.cc",
-    "low_energy_scanner.cc",
     "low_energy_client.cc",
+    "low_energy_scanner.cc",
     "settings.cc",
   ]
 
   deps = [
-    "//bt/types",
-    "//bt/osi",
     "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/osi",
+    "//bt/types",
   ]
 
-  configs += [":service_config"]
+  configs += [ ":service_config" ]
 }
 
 source_set("service_linux_src") {
@@ -66,12 +66,12 @@ source_set("service_linux_src") {
   ]
 
   deps = [
-    "//bt/types",
-    "//bt/osi",
     "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/osi",
+    "//bt/types",
   ]
 
-  configs += [":service_config"]
+  configs += [ ":service_config" ]
 }
 
 source_set("service") {
@@ -98,23 +98,21 @@ source_set("service") {
   deps = [
     ":service_daemon_src",
     ":service_linux_src",
-    "//bt/types",
-    "//bt/osi",
     "//bt/gd/rust/shim:init_flags_bridge_header",
+    "//bt/osi",
+    "//bt/types",
   ]
-
 
   configs += [ ":service_config" ]
 }
 
 executable("bluetoothtbd") {
-  sources = [
-    "main.cc",
-  ]
+  sources = [ "main.cc" ]
 
   deps = [
     ":service",
     "//bt/btcore",
+    "//bt/main:bluetooth",
   ]
 
   configs += [ ":service_config" ]
@@ -123,6 +121,8 @@ executable("bluetoothtbd") {
     "dl",
     "pthread",
     "rt",
+    "ssl",
+    "crypto",
   ]
 }
 
@@ -149,9 +149,7 @@ if (use.test) {
   }
 
   executable("bluetoothtbd_test") {
-    sources = [
-      "test/main.cc"
-    ]
+    sources = [ "test/main.cc" ]
 
     deps = [
       ":service_base_test_src",
@@ -161,7 +159,7 @@ if (use.test) {
 
     configs += [
       "//bt:external_gmock_main",
-      ":service_config"
+      ":service_config",
     ]
   }
 }

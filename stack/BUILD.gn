@@ -32,6 +32,7 @@ source_set("nonstandard_codecs") {
       "a2dp/a2dp_aac.cc",
       "a2dp/a2dp_aac_decoder.cc",
       "a2dp/a2dp_aac_encoder.cc",
+      "a2dp/a2dp_vendor.cc",
       "a2dp/a2dp_vendor_aptx.cc",
       "a2dp/a2dp_vendor_aptx_encoder.cc",
       "a2dp/a2dp_vendor_aptx_hd.cc",
@@ -51,9 +52,7 @@ source_set("nonstandard_codecs") {
       "//bt/utils/include",
     ]
 
-    deps = [
-      "//bt/gd/rust/shim:init_flags_bridge_header",
-    ]
+    deps = [ "//bt/gd/rust/shim:init_flags_bridge_header" ]
 
     configs += [
       "//bt:target_defaults",
@@ -71,7 +70,8 @@ source_set("stack") {
     "a2dp/a2dp_sbc_decoder.cc",
     "a2dp/a2dp_sbc_encoder.cc",
     "a2dp/a2dp_sbc_up_sample.cc",
-    "a2dp/a2dp_vendor.cc",
+    "acl/acl.cc",
+    "acl/ble_acl.cc",
     "acl/btm_acl.cc",
     "acl/btm_ble_connection_establishment.cc",
     "acl/btm_pm.cc",
@@ -112,11 +112,13 @@ source_set("stack") {
     "btm/btm_ble_gap.cc",
     "btm/btm_ble_multi_adv.cc",
     "btm/btm_ble_privacy.cc",
+    "btm/btm_client_interface.cc",
     "btm/btm_dev.cc",
     "btm/btm_devctl.cc",
     "btm/btm_inq.cc",
     "btm/btm_iso.cc",
     "btm/btm_main.cc",
+    "btm/btm_scn.cc",
     "btm/btm_sco.cc",
     "btm/btm_sec.cc",
     "btu/btu_hcif.cc",
@@ -133,6 +135,7 @@ source_set("stack") {
     "gatt/gatt_db.cc",
     "gatt/gatt_main.cc",
     "gatt/gatt_sr.cc",
+    "gatt/gatt_sr_hash.cc",
     "gatt/gatt_utils.cc",
     "hcic/hciblecmds.cc",
     "hcic/hcicmds.cc",
@@ -217,9 +220,9 @@ source_set("stack") {
   deps = [
     ":crypto_toolbox",
     ":nonstandard_codecs",
-    "//bt/types",
+    "//bt:libbt-platform-protos-lite",
     "//bt/gd/rust/shim:init_flags_bridge_header",
-    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
+    "//bt/types",
     "//bt/types",
   ]
 
@@ -245,8 +248,8 @@ if (use.test) {
     ]
 
     deps = [
-      "//bt/osi",
       "//bt/common",
+      "//bt/osi",
     ]
 
     configs += [

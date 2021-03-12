@@ -1,0 +1,45 @@
+#
+#  Copyright 2021 Google, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License");
+#  you may not use this file except in compliance with the License.
+#  You may obtain a copy of the License at:
+#
+#  http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+#  limitations under the License.
+
+[package]
+name = "bt_hci"
+version = "0.0.1"
+edition = "2018"
+
+[dependencies]
+# bt deps
+bt_common = { path = "../common" }
+bt_hci_custom_types = { path = "custom_types" }
+bt_hal = { path = "../hal" }
+bt_facade_helpers = { path = "../facade" }
+bt_facade_proto = { path = "../facade_proto" }
+bt_packets = { path = "../packets" }
+gddi = { path = "../gddi" }
+
+# external deps
+bytes = "*"
+futures = "*"
+grpcio = "*"
+log = "*"
+num-traits = "*"
+protobuf = "*"
+thiserror = "*"
+tokio = { version = "*", features = ['bytes', 'net'] }
+
+# macro deps
+num-derive = "*"
+
+[lib]
+crate-type = ["rlib"]
