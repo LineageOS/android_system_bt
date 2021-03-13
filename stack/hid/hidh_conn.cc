@@ -452,7 +452,7 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
 static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   uint8_t dhandle;
   tHID_CONN* p_hcon = NULL;
-  uint16_t disc_res = HCI_SUCCESS;
+  tHCI_REASON disc_res = HCI_SUCCESS;
   uint16_t hid_close_evt_reason;
 
   /* Find CCB based on CID */
