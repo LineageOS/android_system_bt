@@ -391,8 +391,10 @@ packet SizedParent {
 }
 
 packet OneLengthTypeValueStructPadded : SizedParent {
+  valid_bytes : 8,
   one_array : LengthTypeValueStruct[],
-  _padding_[40],
+  _padding_[30],
+  after_padding : 8,
 }
 
 packet ByteSizedFields {
