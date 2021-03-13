@@ -552,9 +552,11 @@ class AdapterImpl : public Adapter, public hal::BluetoothInterface::Observer {
         }
         case BT_PROPERTY_BDNAME: {
           bt_bdname_t* hal_name = reinterpret_cast<bt_bdname_t*>(property->val);
-          std::string name = reinterpret_cast<char*>(hal_name->name);
-          LOG(INFO) << "Adapter name changed: " << name;
-          name_.Set(name);
+          if (hal_name) {
+            std::string name = reinterpret_cast<char*>(hal_name->name);
+            LOG(INFO) << "Adapter name changed: " << name;
+            name_.Set(name);
+          }
           break;
         }
         case BT_PROPERTY_LOCAL_LE_FEATURES: {

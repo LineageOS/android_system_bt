@@ -17,10 +17,11 @@
 static_library("common") {
   sources = [
     "address_obfuscator.cc",
-    "once_timer.cc",
     "message_loop_thread.cc",
     "metric_id_allocator.cc",
     "metrics_linux.cc",
+    "once_timer.cc",
+    "os_utils.cc",
     "repeating_timer.cc",
     "time_util.cc",
   ]
@@ -33,13 +34,11 @@ static_library("common") {
   ]
 
   deps = [
+    "//bt:libbt-platform-protos-lite",
     "//bt/gd/rust/shim:init_flags_bridge_header",
-    "//bt/third_party/proto_logging/stats:libbt-platform-protos",
   ]
 
-  configs += [
-    "//bt:target_defaults",
-  ]
+  configs += [ "//bt:target_defaults" ]
 }
 
 if (use.test) {
@@ -55,9 +54,7 @@ if (use.test) {
       "//bt/common",
     ]
 
-    deps = [
-      "//bt/common",
-    ]
+    deps = [ "//bt/common" ]
 
     configs += [
       "//bt:external_gtest_main",

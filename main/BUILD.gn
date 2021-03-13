@@ -18,7 +18,14 @@ config("libbluetooth_config") {
   include_dirs = [ "../include" ]
 }
 
-shared_library("bluetooth") {
+# Configure libbluetooth as either dynamic or static library
+if (defined(use.bt_dynlib) && use.bt_dynlib) {
+  lib_type = "shared_library"
+} else {
+  lib_type = "static_library"
+}
+
+target(lib_type, "bluetooth") {
   # HAL layer
   sources = [ "//bt/btif/src/bluetooth.cc" ]
 
@@ -60,16 +67,17 @@ shared_library("bluetooth") {
   ]
 
   deps = [
+    "//bt/audio_hal_interface",
     "//bt/bta",
     "//bt/btcore",
     "//bt/btif",
     "//bt/device",
     "//bt/embdrv/g722",
     "//bt/embdrv/sbc",
-    "//bt/gd/common:BluetoothCommonSources",
+    "//bt/gd:libbluetooth_gd",
     "//bt/hci",
+    "//bt/main/shim:LibBluetoothShimSources",
     "//bt/osi",
-    "//bt/main/shim",
     "//bt/packet",
     "//bt/stack",
     "//bt/udrv",
@@ -79,6 +87,7 @@ shared_library("bluetooth") {
   configs += [
     "//bt:target_defaults",
     "//bt:external_tinyxml2",
+    "//bt:external_flatbuffers",
   ]
 
   cflags_c = [
@@ -92,5 +101,8 @@ shared_library("bluetooth") {
     "resolv",
     "rt",
     "z",
+    "bt_shim_ffi",
   ]
+
+  lib_dirs = [ "${root_out_dir}/rust" ]
 }

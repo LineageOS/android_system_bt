@@ -27,10 +27,17 @@
 #include "btif/include/btif_common.h"
 #include "gd/hci/address.h"
 #include "gd/hci/le_scanning_manager.h"
+#include "gd/storage/device.h"
+#include "gd/storage/le_device.h"
+#include "gd/storage/storage_module.h"
 #include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 
 #include "advertise_data_parser.h"
 #include "stack/btm/btm_int_types.h"
+
+using bluetooth::ToRawAddress;
+using bluetooth::ToGdAddress;
 
 extern void btm_ble_process_adv_pkt_cont_for_inquiry(
     uint16_t event_type, uint8_t address_type, const RawAddress& raw_address,
@@ -213,8 +220,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                     int8_t tx_power, int8_t rssi,
                     uint16_t periodic_advertising_interval,
                     std::vector<uint8_t> advertising_data) {
-    RawAddress raw_address;
-    RawAddress::FromString(address.ToString(), raw_address);
+    RawAddress raw_address = ToRawAddress(address);
 
     do_in_jni_thread(
         FROM_HERE,
@@ -262,9 +268,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
       ApcfCommand apcf_command) {
     advertising_packet_content_filter_command.filter_type =
         static_cast<bluetooth::hci::ApcfFilterType>(apcf_command.type);
-    bluetooth::hci::Address address;
-    bluetooth::hci::Address::FromString(apcf_command.address.ToString(),
-                                        address);
+    bluetooth::hci::Address address = ToGdAddress(apcf_command.address);
     advertising_packet_content_filter_command.address = address;
     advertising_packet_content_filter_command.application_address_type =
         static_cast<bluetooth::hci::ApcfApplicationAddressType>(
@@ -328,8 +332,19 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
 
   void handle_remote_properties(RawAddress bd_addr, tBLE_ADDR_TYPE addr_type,
                                 std::vector<uint8_t> advertising_data) {
-    if (find_address_cache(bd_addr)) {
+    // skip anonymous advertisment
+    if (addr_type == BLE_ADDR_ANONYMOUS) {
       return;
+    }
+
+    auto device_type = bluetooth::hci::DeviceType::LE;
+    uint8_t flag_len;
+    const uint8_t* p_flag = AdvertiseDataParser::GetFieldByType(
+        advertising_data, BTM_BLE_AD_TYPE_FLAG, &flag_len);
+    if (p_flag != NULL && flag_len != 0) {
+      if ((BTM_BLE_BREDR_NOT_SPT & *p_flag) == 0) {
+        device_type = bluetooth::hci::DeviceType::DUAL;
+      }
     }
 
     uint8_t remote_name_len;
@@ -341,26 +356,47 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
           advertising_data, BT_EIR_SHORTENED_LOCAL_NAME_TYPE, &remote_name_len);
     }
 
+    // update device name
     if ((addr_type != BLE_ADDR_RANDOM) || (p_eir_remote_name)) {
-      add_address_cache(bd_addr);
+      if (!find_address_cache(bd_addr)) {
+        add_address_cache(bd_addr);
 
-      if (p_eir_remote_name) {
-        if (remote_name_len > BD_NAME_LEN + 1 ||
-            (remote_name_len == BD_NAME_LEN + 1 &&
-             p_eir_remote_name[BD_NAME_LEN] != '\0')) {
-          LOG_INFO("%s dropping invalid packet - device name too long: %d",
-                   __func__, remote_name_len);
-          return;
+        if (p_eir_remote_name) {
+          if (remote_name_len > BD_NAME_LEN + 1 ||
+              (remote_name_len == BD_NAME_LEN + 1 &&
+               p_eir_remote_name[BD_NAME_LEN] != '\0')) {
+            LOG_INFO("%s dropping invalid packet - device name too long: %d",
+                     __func__, remote_name_len);
+            return;
+          }
+
+          bt_bdname_t bdname;
+          memcpy(bdname.name, p_eir_remote_name, remote_name_len);
+          if (remote_name_len < BD_NAME_LEN + 1)
+            bdname.name[remote_name_len] = '\0';
+
+          btif_dm_update_ble_remote_properties(bd_addr, bdname.name,
+                                               device_type);
         }
-
-        bt_bdname_t bdname;
-        memcpy(bdname.name, p_eir_remote_name, remote_name_len);
-        if (remote_name_len < BD_NAME_LEN + 1)
-          bdname.name[remote_name_len] = '\0';
-
-        btif_dm_update_ble_remote_properties(bd_addr, bdname.name, 0x00);
       }
     }
+
+    auto* storage_module = bluetooth::shim::GetStorage();
+    bluetooth::hci::Address address = ToGdAddress(bd_addr);
+
+    // update device type
+    auto mutation = storage_module->Modify();
+    bluetooth::storage::Device device =
+        storage_module->GetDeviceByLegacyKey(address);
+    mutation.Add(device.SetDeviceType(device_type));
+    mutation.Commit();
+
+    // update address type
+    auto mutation2 = storage_module->Modify();
+    bluetooth::storage::LeDevice le_device = device.Le();
+    mutation2.Add(
+        le_device.SetAddressType((bluetooth::hci::AddressType)addr_type));
+    mutation2.Commit();
   }
 
   void add_address_cache(const RawAddress& p_bda) {
