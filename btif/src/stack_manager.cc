@@ -21,6 +21,10 @@
 #include "stack_manager.h"
 
 #include <hardware/bluetooth.h>
+#if defined(STATIC_LIBBLUETOOTH)
+#include <cstdlib>
+#include <cstring>
+#endif
 
 #include "btcore/include/module.h"
 #include "btcore/include/osi_module.h"
@@ -137,6 +141,58 @@ static bool get_stack_is_running() { return stack_is_running; }
 
 // Internal functions
 
+#ifdef STATIC_LIBBLUETOOTH
+extern const module_t bt_utils_module;
+extern const module_t bte_logmsg_module;
+extern const module_t btif_config_module;
+extern const module_t btsnoop_module;
+extern const module_t bt_utils_module;
+extern const module_t controller_module;
+extern const module_t gd_idle_module;
+extern const module_t gd_shim_module;
+extern const module_t hci_module;
+extern const module_t interop_module;
+extern const module_t osi_module;
+extern const module_t stack_config_module;
+
+struct module_lookup {
+  const char* name;
+  const module_t* module;
+};
+
+const struct module_lookup module_table[] = {
+    {BTE_LOGMSG_MODULE, &bte_logmsg_module},
+    {BTIF_CONFIG_MODULE, &btif_config_module},
+    {BTSNOOP_MODULE, &btsnoop_module},
+    {BT_UTILS_MODULE, &bt_utils_module},
+    {CONTROLLER_MODULE, &controller_module},
+    {GD_IDLE_MODULE, &gd_idle_module},
+    {GD_SHIM_MODULE, &gd_shim_module},
+    {HCI_MODULE, &hci_module},
+    {INTEROP_MODULE, &interop_module},
+    {OSI_MODULE, &osi_module},
+    {STACK_CONFIG_MODULE, &stack_config_module},
+    {NULL, NULL},
+};
+
+inline const module_t* get_local_module(const char* name) {
+  size_t len = strlen(name);
+
+  for (const struct module_lookup* l = module_table; l->module; l++) {
+    if (strncmp(l->name, name, len) == 0) {
+      return l->module;
+    }
+  }
+
+  abort();
+  return nullptr;
+}
+#else
+inline const module_t* get_local_module(const char* name) {
+  return get_module(name);
+}
+#endif
+
 // Synchronous function to initialize the stack
 static void event_init_stack(void* context) {
   semaphore_t* semaphore = (semaphore_t*)context;
@@ -148,17 +204,17 @@ static void event_init_stack(void* context) {
   } else {
     module_management_start();
 
-    module_init(get_module(OSI_MODULE));
-    module_init(get_module(BT_UTILS_MODULE));
+    module_init(get_local_module(OSI_MODULE));
+    module_init(get_local_module(BT_UTILS_MODULE));
     if (bluetooth::shim::is_any_gd_enabled()) {
-      module_start_up(get_module(GD_IDLE_MODULE));
+      module_start_up(get_local_module(GD_IDLE_MODULE));
     }
-    module_init(get_module(BTIF_CONFIG_MODULE));
+    module_init(get_local_module(BTIF_CONFIG_MODULE));
     btif_init_bluetooth();
 
-    module_init(get_module(INTEROP_MODULE));
+    module_init(get_local_module(INTEROP_MODULE));
     bte_main_init();
-    module_init(get_module(STACK_CONFIG_MODULE));
+    module_init(get_local_module(STACK_CONFIG_MODULE));
 
     // stack init is synchronous, so no waiting necessary here
     stack_is_initialized = true;
@@ -193,13 +249,13 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
 
   if (bluetooth::shim::is_any_gd_enabled()) {
     LOG_INFO("%s Gd shim module enabled", __func__);
-    module_shut_down(get_module(GD_IDLE_MODULE));
-    module_start_up(get_module(GD_SHIM_MODULE));
-    module_start_up(get_module(BTIF_CONFIG_MODULE));
+    module_shut_down(get_local_module(GD_IDLE_MODULE));
+    module_start_up(get_local_module(GD_SHIM_MODULE));
+    module_start_up(get_local_module(BTIF_CONFIG_MODULE));
   } else {
-    module_start_up(get_module(BTIF_CONFIG_MODULE));
-    module_start_up(get_module(BTSNOOP_MODULE));
-    module_start_up(get_module(HCI_MODULE));
+    module_start_up(get_local_module(BTIF_CONFIG_MODULE));
+    module_start_up(get_local_module(BTSNOOP_MODULE));
+    module_start_up(get_local_module(HCI_MODULE));
   }
 
   get_btm_client_interface().lifecycle.btm_init();
@@ -225,7 +281,7 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
 
   bta_sys_init();
   bta_ar_init();
-  module_init(get_module(BTE_LOGMSG_MODULE));
+  module_init(get_local_module(BTE_LOGMSG_MODULE));
 
   main_thread_start_up();
 
@@ -236,9 +292,9 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   bta_set_forward_hw_failures(true);
   btm_acl_device_down();
   if (bluetooth::shim::is_gd_controller_enabled()) {
-    CHECK(module_start_up(get_module(GD_CONTROLLER_MODULE)));
+    CHECK(module_start_up(get_local_module(GD_CONTROLLER_MODULE)));
   } else {
-    CHECK(module_start_up(get_module(CONTROLLER_MODULE)));
+    CHECK(module_start_up(get_local_module(CONTROLLER_MODULE)));
   }
   BTM_reset_complete();
 
@@ -284,13 +340,13 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   bta_set_forward_hw_failures(false);
   BTA_dm_on_hw_off();
 
-  module_shut_down(get_module(BTIF_CONFIG_MODULE));
+  module_shut_down(get_local_module(BTIF_CONFIG_MODULE));
 
   future_await(local_hack_future);
 
   main_thread_shut_down();
 
-  module_clean_up(get_module(BTE_LOGMSG_MODULE));
+  module_clean_up(get_local_module(BTE_LOGMSG_MODULE));
 
   gatt_free();
   l2c_free();
@@ -300,16 +356,17 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
 
   if (bluetooth::shim::is_any_gd_enabled()) {
     LOG_INFO("%s Gd shim module disabled", __func__);
-    module_shut_down(get_module(GD_SHIM_MODULE));
-    module_start_up(get_module(GD_IDLE_MODULE));
+    module_shut_down(get_local_module(GD_SHIM_MODULE));
+    module_start_up(get_local_module(GD_IDLE_MODULE));
   } else {
-    module_shut_down(get_module(HCI_MODULE));
-    module_shut_down(get_module(BTSNOOP_MODULE));
+    module_shut_down(get_local_module(HCI_MODULE));
+    module_shut_down(get_local_module(BTSNOOP_MODULE));
   }
 
-  module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
-                                                    // puts it in a restartable
-                                                    // state
+  module_shut_down(
+      get_local_module(CONTROLLER_MODULE));  // Doesn't do any work, just
+                                             // puts it in a restartable
+                                             // state
 
   hack_future = future_new();
   do_in_jni_thread(FROM_HERE, base::Bind(event_signal_stack_down, nullptr));
@@ -339,13 +396,13 @@ static void event_clean_up_stack(void* context) {
 
   btif_cleanup_bluetooth();
 
-  module_clean_up(get_module(STACK_CONFIG_MODULE));
-  module_clean_up(get_module(INTEROP_MODULE));
+  module_clean_up(get_local_module(STACK_CONFIG_MODULE));
+  module_clean_up(get_local_module(INTEROP_MODULE));
 
-  module_clean_up(get_module(BTIF_CONFIG_MODULE));
-  module_clean_up(get_module(BT_UTILS_MODULE));
-  module_clean_up(get_module(OSI_MODULE));
-  module_shut_down(get_module(GD_IDLE_MODULE));
+  module_clean_up(get_local_module(BTIF_CONFIG_MODULE));
+  module_clean_up(get_local_module(BT_UTILS_MODULE));
+  module_clean_up(get_local_module(OSI_MODULE));
+  module_shut_down(get_local_module(GD_IDLE_MODULE));
   module_management_stop();
   LOG_INFO("%s finished", __func__);
 

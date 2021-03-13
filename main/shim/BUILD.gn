@@ -12,8 +12,9 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+#
 
-source_set("shim") {
+source_set("LibBluetoothShimSources") {
   sources = [
     "acl.cc",
     "acl_api.cc",
@@ -44,17 +45,14 @@ source_set("shim") {
   ]
 
   deps = [
-    "//bt/gd:dumpsys",
+    "//bt/gd:BluetoothGeneratedDumpsysDataSchema_h",
+    "//bt/gd:BluetoothGeneratedPackets_h",
     "//bt/gd/common:BluetoothCommonSources",
-    "//bt/gd/dumpsys/bundler:bundler_generated",
+    "//bt/gd/dumpsys/bundler:BluetoothGeneratedBundlerSchema_h_bfbs",
     "//bt/gd/hci:BluetoothHciSources",
     "//bt/gd/os:BluetoothOsSources_linux_generic",
     "//bt/gd/packet:BluetoothPacketSources",
-    "//bt/gd/rust/shim:hci_bridge_header",
-    "//bt/gd/rust/shim:init_flags_bridge_header",
-    "//bt/gd/rust/shim:shim_bridge_header",
-    "//bt/gd/rust/shim:message_loop_thread_bridge_header",
-    "//bt/gd/rust/shim:controller_bridge_header",
+    "//bt/gd/rust/shim:libbluetooth_rust_interop",
     "//bt/osi",
     "//bt/stack",
     "//bt/types",

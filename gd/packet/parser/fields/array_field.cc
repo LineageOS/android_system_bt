@@ -96,7 +96,7 @@ void ArrayField::GenExtractor(std::ostream& s, int num_leading_bits, bool for_st
   if (element_field_->BuilderParameterMustBeMoved()) {
     s << element_field_->GetDataType() << " " << element_field_->GetName() << "_ptr;";
   } else {
-    s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = ret_it;";
+    s << "auto " << element_field_->GetName() << "_ptr = ret_it;";
   }
   element_field_->GenExtractor(s, num_leading_bits, for_struct);
   if (element_field_->BuilderParameterMustBeMoved()) {

@@ -1,7 +1,7 @@
 #!/bin/bash
 CLANG_PACKAGE=clang
 GNSHA1_URL="https://chromium.googlesource.com/chromium/buildtools/\
-+/central/linux64/gn.sha1?format=TEXT"
+  +/central/linux64/gn.sha1?format=TEXT"
 
 # Check if clang is already installed on current system
 clang_path=`which clang`
@@ -20,7 +20,7 @@ fi
 
 if [ ! -z "$CLANG_PACKAGE" ]; then
   # Try to find clang from a known list
-  for clang_version in 3.9 3.8 3.7 3.6 3.5
+  for clang_version in 12.0 11.0
   do
     clang_path=`which clang-$clang_version`
     if [ -f "$clang_path" ]; then
@@ -34,24 +34,24 @@ fi
 if [ ! -z "$CLANG_PACKAGE" ]; then
   echo "clang not found on current system, installing"
   if [ -f /etc/lsb-release ]; then
-	  # Ubuntu
-	  ubuntu_version=$(lsb_release --release --short)
-	  IFS="." read -ra ubuntu_version_array <<< "$ubuntu_version"
-	  ubuntu_version_major=${ubuntu_version_array[0]}
-	  ubuntu_version_minor=${ubuntu_version_array[1]}
-	  if [ $ubuntu_version_major -lt 15 ]; then
-	    echo "Choose clang-3.8 for Ubuntu 14 and below"
-	    CLANG_PACKAGE=clang-3.8
-	  fi
+    # Ubuntu
+    ubuntu_version=$(lsb_release --release --short)
+    IFS="." read -ra ubuntu_version_array <<< "$ubuntu_version"
+    ubuntu_version_major=${ubuntu_version_array[0]}
+    ubuntu_version_minor=${ubuntu_version_array[1]}
+    if [ $ubuntu_version_major -lt 15 ]; then
+      echo "Choose clang-3.8 for Ubuntu 14 and below"
+      CLANG_PACKAGE=clang-3.8
+    fi
   fi
 fi
 
 sudo apt-get -y install $CLANG_PACKAGE libevent-dev libc++-dev libc++abi-dev \
-                        ninja-build
-gn_path=`which gn`
-if [ -z $gn_path ]; then
-  gnsha1=$(curl $GNSHA1_URL | base64 -d)
-  wget -O gn http://storage.googleapis.com/chromium-gn/$gnsha1
-  chmod a+x ./gn
-  sudo mv ./gn /usr/bin/
-fi
+  ninja-build
+  gn_path=`which gn`
+  if [ -z $gn_path ]; then
+    gnsha1=$(curl $GNSHA1_URL | base64 -d)
+    wget -O gn http://storage.googleapis.com/chromium-gn/$gnsha1
+    chmod a+x ./gn
+    sudo mv ./gn /usr/bin/
+  fi

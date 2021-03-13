@@ -19,6 +19,7 @@
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
 #include <queue>
 #include <regex>
@@ -82,7 +83,7 @@ bool parse_declarations_one_file(const std::filesystem::path& input_file, Declar
   // Set endianess before returning
   for (auto& s : declarations->type_defs_queue_) {
     if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
-      auto* struct_def = dynamic_cast<StructDef*>(s.second);
+      auto* struct_def = static_cast<StructDef*>(s.second);
       struct_def->SetEndianness(declarations->is_little_endian);
     }
   }
@@ -102,39 +103,74 @@ extern "C" const char* __asan_default_options() {
   return "detect_leaks=0";
 }
 
+void usage(const char* prog) {
+  auto& ofs = std::cerr;
+
+  ofs << "Usage: " << prog << " [OPTIONS] file1 file2..." << std::endl;
+
+  ofs << std::setw(24) << "--out= ";
+  ofs << "Root directory for generated output (relative to cwd)." << std::endl;
+
+  ofs << std::setw(24) << "--include= ";
+  ofs << "Generate namespaces relative to this path per file." << std::endl;
+
+  ofs << std::setw(24) << "--root_namespace= ";
+  ofs << "Change root namespace (default = bluetooth)." << std::endl;
+
+  ofs << std::setw(24) << "--source_root= ";
+  ofs << "Root path to the source directory. Find input files relative to this." << std::endl;
+
+  ofs << std::setw(24) << "--num_shards= ";
+  ofs << "Number of shards per output pybind11 cc file." << std::endl;
+}
+
 int main(int argc, const char** argv) {
   std::filesystem::path out_dir;
   std::filesystem::path include_dir;
+  std::filesystem::path cwd = std::filesystem::current_path();
+  std::filesystem::path source_root = cwd;
   std::string root_namespace = "bluetooth";
   // Number of shards per output pybind11 cc file
   size_t num_shards = 1;
   bool generate_rust = false;
   std::queue<std::filesystem::path> input_files;
+
   const std::string arg_out = "--out=";
   const std::string arg_include = "--include=";
   const std::string arg_namespace = "--root_namespace=";
   const std::string arg_num_shards = "--num_shards=";
   const std::string arg_rust = "--rust";
+  const std::string arg_source_root = "--source_root=";
+
+  // Parse the source root first (if it exists) since it will be used for other
+  // paths.
+  for (int i = 1; i < argc; i++) {
+    std::string arg = argv[i];
+    if (arg.find(arg_source_root) == 0) {
+      source_root = std::filesystem::path(arg.substr(arg_source_root.size()));
+    }
+  }
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
     if (arg.find(arg_out) == 0) {
-      out_dir = std::filesystem::current_path() / std::filesystem::path(arg.substr(arg_out.size()));
+      out_dir = cwd / std::filesystem::path(arg.substr(arg_out.size()));
     } else if (arg.find(arg_include) == 0) {
-      include_dir = std::filesystem::current_path() / std::filesystem::path(arg.substr(arg_include.size()));
+      include_dir = source_root / std::filesystem::path(arg.substr(arg_include.size()));
     } else if (arg.find(arg_namespace) == 0) {
       root_namespace = arg.substr(arg_namespace.size());
     } else if (arg.find(arg_num_shards) == 0) {
       num_shards = std::stoul(arg.substr(arg_num_shards.size()));
     } else if (arg.find(arg_rust) == 0) {
       generate_rust = true;
+    } else if (arg.find(arg_source_root) == 0) {
+      // Do nothing (just don't treat it as input_files)
     } else {
-      input_files.emplace(std::filesystem::current_path() / std::filesystem::path(arg));
+      input_files.emplace(source_root / std::filesystem::path(arg));
     }
   }
   if (out_dir == std::filesystem::path() || include_dir == std::filesystem::path() || num_shards == 0) {
-    std::cerr << "Usage: bt-packetgen --out=OUT --include=INCLUDE --root_namespace=NAMESPACE --num_shards=NUM_SHARDS "
-              << "input_files..." << std::endl;
+    usage(argv[0]);
     return 1;
   }
 

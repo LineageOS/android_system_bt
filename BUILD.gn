@@ -21,14 +21,10 @@
 # file to your new one or GN won't know about it.
 
 group("all") {
-  deps = [
-    ":bluetooth",
-  ]
+  deps = [ ":bluetooth" ]
 
   if (use.test) {
-    deps += [
-      ":bluetooth_tests"
-    ]
+    deps += [ ":bluetooth_tests" ]
   }
 }
 
@@ -43,13 +39,23 @@ group("bluetooth") {
 if (use.test) {
   group("bluetooth_tests") {
     deps = [
-      "//bt/common:bluetooth_test_common",
-      "//bt/service:bluetoothtbd_test",
-      "//bt/profile/avrcp:net_test_avrcp",
       "//bt/btcore:net_test_btcore",
-      "//bt/types:net_test_types",
+      "//bt/common:bluetooth_test_common",
+      "//bt/profile/avrcp:net_test_avrcp",
+      "//bt/service:bluetoothtbd_test",
       "//bt/stack:net_test_btm_iso",
+      "//bt/types:net_test_types",
+
       #"//bt/packet:net_test_btpackets",
+    ]
+  }
+}
+
+if (host_cpu == target_cpu && host_os == target_os) {
+  group("tools") {
+    deps = [
+      "//bt/gd/dumpsys/bundler:bluetooth_flatbuffer_bundler",
+      "//bt/gd/packet/parser:bluetooth_packetgen",
     ]
   }
 }
@@ -57,10 +63,10 @@ if (use.test) {
 if (defined(use.android) && use.android) {
   group("android_bluetooth_tests") {
     deps = [
-      "//bt/test/suite:net_test_bluetooth",
+      "//bt/device:net_test_device",
       "//bt/hci:net_test_hci",
       "//bt/osi:net_test_osi",
-      "//bt/device:net_test_device",
+      "//bt/test/suite:net_test_bluetooth",
     ]
   }
 }
@@ -71,11 +77,13 @@ config("target_defaults") {
     "//bt/linux_include",
     "//bt/types",
     "//bt/include",
+
+    # For flatbuffer generated headers
+    "${root_gen_dir}/bt/gd/",
+    "${root_gen_dir}/bt/gd/dumpsys/bundler",
   ]
 
   cflags = [
-    "-DEXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
-    "-DFALLTHROUGH_INTENDED=[[clang::fallthrough]]",
     "-fPIC",
     "-Wno-non-c-typedef-for-linkage",
     "-Wno-unreachable-code-return",
@@ -91,19 +99,38 @@ config("target_defaults") {
     "-Wno-unused-variable",
     "-Wno-unused-const-variable",
     "-Wno-format",
+    "-Wno-pessimizing-move",
+    "-Wno-unknown-warning-option",
+    "-Wno-final-dtor-non-final-class",
   ]
 
-  cflags_cc = [
-    "-std=c++17",
-  ]
+  cflags_cc = [ "-std=c++17" ]
 
   defines = [
     "HAS_NO_BDROID_BUILDCFG",
     "OS_GENERIC",
+    "OS_LINUX_GENERIC",
+    "EXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
+    "FALLTHROUGH_INTENDED=[[clang::fallthrough]]",
   ]
 
-  configs = [
-    ":external_libchrome",
+  # If not configured as a dynamic library, default to static library
+  if (!(defined(use.bt_dynlib) && use.bt_dynlib)) {
+    defines = [
+      "STATIC_LIBBLUETOOTH",
+    ]
+  }
+
+  if (!(defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs)) {
+    defines += [ "EXCLUDE_NONSTANDARD_CODECS" ]
+  }
+
+  configs = [ ":external_libchrome" ]
+}
+
+group("libbt-platform-protos-lite") {
+  deps = [
+    "//external/proto_logging/stats/enums/bluetooth:libbt-platform-protos-lite",
   ]
 }
 
@@ -133,6 +160,12 @@ config("external_modp_b64") {
 
 config("external_tinyxml2") {
   configs = [ ":pkg_tinyxml2" ]
+}
+
+config("external_flatbuffers") {
+  lib_dirs = [ "${libdir}" ]
+
+  libs = [ "flatbuffers" ]
 }
 
 # Package configurations to extract dependencies from env
@@ -184,10 +217,10 @@ if (defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs) {
   }
 
   pkg_config("pkg_libldacBT_enc") {
-    pkg_deps = [ "ldacBT-enc", ]
+    pkg_deps = [ "ldacBT-enc" ]
   }
 
   pkg_config("pkg_libldacBT_abr") {
-    pkg_deps = [ "ldacBT-abr", ]
+    pkg_deps = [ "ldacBT-abr" ]
   }
 }
