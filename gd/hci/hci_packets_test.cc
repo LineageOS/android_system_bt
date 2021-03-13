@@ -632,18 +632,19 @@ TEST(HciPacketsTest, testLeMultiAdvSetAdvertisingDataBuilderLength) {
   gap_data.data_ = std::vector<uint8_t>({'A', ' ', 'g', 'o', 'o', 'd', ' ', 'n', 'a', 'm', 'e'});
   uint8_t set = 3;
   auto builder = LeMultiAdvtSetDataBuilder::Create({gap_data}, set);
-  ASSERT_EQ(2 /*opcode*/ + 1 /* parameter size */ + 1 /* data_length */ + 31 /* data */ + 1 /* set */, builder->size());
 
   auto packet_bytes = std::make_shared<std::vector<uint8_t>>();
   packet_bytes->reserve(builder->size());
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
-  auto command_view = LeMultiAdvtView::Create(
-      LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes))));
+  auto command_view = LeMultiAdvtSetDataView::Create(LeMultiAdvtView::Create(
+      LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes)))));
   ASSERT_TRUE(command_view.IsValid());
-  EXPECT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
   auto view = LeMultiAdvtSetDataView::Create(command_view);
   ASSERT_TRUE(view.IsValid());
+  ASSERT_TRUE(view.GetAdvertisingData().size() > 0);
+  ASSERT_EQ(view.GetAdvertisingData()[0].data_, gap_data.data_);
+  ASSERT_EQ(view.GetAdvertisingInstance(), 3);
 }
 
 TEST(HciPacketsTest, testLeMultiAdvSetScanResponseDataBuilderLength) {
@@ -652,18 +653,18 @@ TEST(HciPacketsTest, testLeMultiAdvSetScanResponseDataBuilderLength) {
   gap_data.data_ = std::vector<uint8_t>({'A', ' ', 'g', 'o', 'o', 'd', ' ', 'n', 'a', 'm', 'e'});
   uint8_t set = 3;
   auto builder = LeMultiAdvtSetScanRespBuilder::Create({gap_data}, set);
-  EXPECT_EQ(2 /*opcode*/ + 1 /* parameter size */ + 1 /*data_length */ + 31 /* data */ + 1 /* set */, builder->size());
 
   auto packet_bytes = std::make_shared<std::vector<uint8_t>>();
   packet_bytes->reserve(builder->size());
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
-  auto command_view = LeMultiAdvtView::Create(
-      LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes))));
+  auto command_view = LeMultiAdvtSetScanRespView::Create(LeMultiAdvtView::Create(
+      LeAdvertisingCommandView::Create(CommandView::Create(PacketView<kLittleEndian>(packet_bytes)))));
   ASSERT_TRUE(command_view.IsValid());
-  ASSERT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
   auto view = LeMultiAdvtSetScanRespView::Create(command_view);
   ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(view.GetAdvertisingData()[0].data_, gap_data.data_);
+  ASSERT_EQ(view.GetAdvertisingInstance(), 3);
 }
 
 std::vector<uint8_t> controller_bqr = {0x5e, 0xfd, 0x07, 0x00, 0x1f, 0x00, 0x07, 0x00, 0x88, 0x13};
