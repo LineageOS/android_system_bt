@@ -123,6 +123,17 @@ struct HciLayer::impl {
   }
 
   void on_command_status(EventView event) {
+    CommandStatusView response_view = CommandStatusView::Create(event);
+    ASSERT(response_view.IsValid());
+    OpCode op_code = response_view.GetCommandOpCode();
+    ErrorCode status = response_view.GetStatus();
+    if (status != ErrorCode::SUCCESS) {
+      LOG_ERROR(
+          "Received UNEXPECTED command status:%s opcode:0x%02hx (%s)",
+          ErrorCodeText(status).c_str(),
+          op_code,
+          OpCodeText(op_code).c_str());
+    }
     handle_command_response<CommandStatusView>(event, "status");
   }
 
