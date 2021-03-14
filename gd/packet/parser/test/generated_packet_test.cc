@@ -1764,29 +1764,29 @@ TEST(GeneratedPacketTest, testOneLengthTypeValueStruct) {
   }
 }
 
-vector<uint8_t> one_length_type_value_struct_padded_20{
-    0x27,  // _size_(payload),
-    // _size_(value):16 type value
-    0x04, 0x00, 0x01, 'o', 'n', 'e',                             // ONE
-    0x04, 0x00, 0x02, 't', 'w', 'o',                             // TWO
-    0x06, 0x00, 0x03, 't', 'h', 'r', 'e', 'e',                   // THREE
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,        // padding to 30
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // padding to 40
+vector<uint8_t> one_length_type_value_struct_padded_10{
+    0x20,                                                        // _size_(payload),
+    0x14,                                                        // valid bytes
+    0x04, 0x00, 0x01, 'o',  'n',  'e',                           // ONE
+    0x04, 0x00, 0x02, 't',  'w',  'o',                           // TWO
+    0x06, 0x00, 0x03, 't',  'h',  'r',  'e',  'e',               // THREE
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // padding to 30
+    0x20,                                                        // after padding
 };
 
-vector<uint8_t> one_length_type_value_struct_padded_28{
-    0x27,  // _size_(payload),
-    // _size_(value):16 type value
-    0x04, 0x00, 0x01, 'o', 'n', 'e',                             // ONE
-    0x04, 0x00, 0x02, 't', 'w', 'o',                             // TWO
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,                    // padding to 20
+vector<uint8_t> one_length_type_value_struct_padded_18{
+    0x20,                                                        // _size_(payload),
+    0x0C,                                                        // valid bytes
+    0x04, 0x00, 0x01, 'o',  'n',  'e',                           // ONE
+    0x04, 0x00, 0x02, 't',  'w',  'o',                           // TWO
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,              // padding to 20
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // padding to 30
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // padding to 40
+    0x20,                                                        // after padding
 };
 
 // TODO: Revisit LTV parsing.  Right now, the padding bytes are parsed
-// DEFINE_AND_INSTANTIATE_OneLengthTypeValueStructPaddedReflectionTest(one_length_type_value_struct_padded_20,
-// one_length_type_value_struct_padded_28);
+// DEFINE_AND_INSTANTIATE_OneLengthTypeValueStructPaddedReflectionTest(one_length_type_value_struct_padded_10,
+//                                                                     one_length_type_value_struct_padded_18);
 
 TEST(GeneratedPacketTest, testOneLengthTypeValueStructPaddedGeneration) {
   std::vector<LengthTypeValueStruct> ltv_vector;
@@ -1805,17 +1805,18 @@ TEST(GeneratedPacketTest, testOneLengthTypeValueStructPaddedGeneration) {
       'o',
   };
   ltv_vector.push_back(ltv);
+  uint8_t after_padding = 0x20;
 
-  auto packet = OneLengthTypeValueStructPaddedBuilder::Create(ltv_vector);
-  ASSERT_EQ(one_length_type_value_struct_padded_28.size(), packet->size());
+  auto packet = OneLengthTypeValueStructPaddedBuilder::Create(12, ltv_vector, after_padding);
+  ASSERT_EQ(one_length_type_value_struct_padded_18.size(), packet->size());
 
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter it(*packet_bytes);
   packet->Serialize(it);
 
-  ASSERT_EQ(one_length_type_value_struct_padded_28.size(), packet_bytes->size());
-  for (size_t i = 0; i < one_length_type_value_struct_padded_28.size(); i++) {
-    ASSERT_EQ(one_length_type_value_struct_padded_28[i], packet_bytes->at(i));
+  ASSERT_EQ(one_length_type_value_struct_padded_18.size(), packet_bytes->size());
+  for (size_t i = 0; i < one_length_type_value_struct_padded_18.size(); i++) {
+    ASSERT_EQ(one_length_type_value_struct_padded_18[i], packet_bytes->at(i));
   }
 
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
@@ -1823,11 +1824,12 @@ TEST(GeneratedPacketTest, testOneLengthTypeValueStructPaddedGeneration) {
   ASSERT_TRUE(view.IsValid());
   auto an_array = view.GetOneArray();
   // TODO: Revisit LTV parsing.  Right now, the padding bytes are parsed
-  // ASSERT_EQ(ltv_vector.size(), an_array.size());
+  ASSERT_LE(ltv_vector.size(), an_array.size());
   for (size_t i = 0; i < ltv_vector.size(); i++) {
     ASSERT_EQ(ltv_vector[i].type_, an_array[i].type_);
     ASSERT_EQ(ltv_vector[i].value_, an_array[i].value_);
   }
+  ASSERT_EQ(after_padding, view.GetAfterPadding());
 }
 
 vector<uint8_t> byte_sized{
