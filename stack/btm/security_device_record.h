@@ -424,10 +424,10 @@ struct tBTM_SEC_DEV_REC {
 
   std::string ToString() const {
     return base::StringPrintf(
-        "%s %6s name:\"%s\" supports_SC:%s cod:%s remote_info%s",
+        "%s %6s SecureConn:%s cod:%s remote_info:%s sm4:0x%02x name:\"%s\"",
         PRIVATE_ADDRESS(bd_addr), DeviceTypeText(device_type).c_str(),
-        sec_bd_name, logbool(remote_supports_secure_connections).c_str(),
+        logbool(remote_supports_secure_connections).c_str(),
         class_of_device_text(dev_class).c_str(),
-        remote_version_info.ToString().c_str());
+        remote_version_info.ToString().c_str(), sm4, sec_bd_name);
   }
 };
