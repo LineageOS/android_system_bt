@@ -499,21 +499,23 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
                    base::StringPrintf("le local initiated"));
 
   } else {
-    /* found an active connection */
     const uint8_t hid_handle =
         (p_data != nullptr) ? static_cast<uint8_t>(p_data->hdr.layer_specific)
                             : p_cb->hid_handle;
-    LOG_DEBUG("Host initiating close to classic device:%s",
-              PRIVATE_ADDRESS(p_cb->addr));
     tHID_STATUS status = HID_HostCloseDev(hid_handle);
     if (status != HID_SUCCESS) {
       LOG_WARN("Failed closing classic device:%s status:%s",
                PRIVATE_ADDRESS(p_cb->addr), hid_status_text(status).c_str());
-      tBTA_HH bta_hh = {
-          .dev_status = {.status = BTA_HH_ERR, .handle = hid_handle},
-      };
-      (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
+    } else {
+      LOG_DEBUG("Host initiated close to classic device:%s",
+                PRIVATE_ADDRESS(p_cb->addr));
     }
+    tBTA_HH bta_hh = {
+        .dev_status = {.status =
+                           (status == HID_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR,
+                       .handle = hid_handle},
+    };
+    (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
     BTM_LogHistory(kBtmLogTag, p_cb->addr, "Closed",
                    base::StringPrintf("classic local reason %s",
                                       hid_status_text(status).c_str()));
