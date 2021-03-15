@@ -18,6 +18,7 @@
 
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "stack/include/hci_error_code.h"
 
 /****************************************
  *  Security Manager Callback Functions
@@ -63,7 +64,8 @@ typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc,
  */
 typedef void(tBTM_AUTH_COMPLETE_CALLBACK)(const RawAddress& bd_addr,
                                           DEV_CLASS dev_class,
-                                          tBTM_BD_NAME bd_name, int result);
+                                          tBTM_BD_NAME bd_name,
+                                          tHCI_REASON reason);
 
 struct tBTM_APPL_INFO {
   tBTM_PIN_CALLBACK* p_pin_callback{nullptr};
