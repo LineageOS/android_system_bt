@@ -341,7 +341,7 @@ struct tACL_CONN {
       hci_role_t role_{HCI_ROLE_CENTRAL};
       unsigned role_switch_failed_cnt_{0};
       friend void tACL_CONN::Reset();
-      friend tBTM_PM_MODE tACL_CONN::tPolicy::Role() const;
+      friend hci_role_t tACL_CONN::tPolicy::Role() const;
     } role;
 
     struct {
