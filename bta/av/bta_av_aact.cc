@@ -2991,7 +2991,7 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
   if (param->param_len) {
     APPL_TRACE_DEBUG("%s: param_len = %d status = %d", __func__,
                      param->param_len, param->p_param_buf[0]);
-    value.status = param->p_param_buf[0];
+    value.status = static_cast<tBTA_AV_STATUS>(param->p_param_buf[0]);
   }
   if (value.status == 0) {
     sub_opcode = param->p_param_buf[1];

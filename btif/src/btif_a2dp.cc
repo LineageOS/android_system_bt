@@ -61,7 +61,8 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr, tBTA_AV_START* p_av_start
       bluetooth::audio::a2dp::ack_stream_started(status);
     } else if (btif_av_is_a2dp_offload_enabled()) {
       // TODO: BluetoothA2dp@1.0 is deprecated
-      btif_a2dp_audio_on_started(status);
+      btif_a2dp_audio_on_started(
+          (status == A2DP_CTRL_ACK_SUCCESS) ? BTA_AV_SUCCESS : BTA_AV_FAIL_SDP);
     } else {
       btif_a2dp_command_ack(status);
     }
