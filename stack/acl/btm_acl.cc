@@ -400,8 +400,9 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   /* if BR/EDR do something more */
   if (transport == BT_TRANSPORT_BR_EDR) {
     btsnd_hcic_read_rmt_clk_offset(hci_handle);
-    if (!bluetooth::shim::is_gd_l2cap_enabled()) {
-      // GD L2cap reads this automatically
+    if (!bluetooth::shim::is_gd_l2cap_enabled() &&
+        !bluetooth::shim::is_gd_acl_enabled()) {
+      // GD L2cap and GD Acl read this automatically
       btsnd_hcic_rmt_ver_req(hci_handle);
     }
   }
