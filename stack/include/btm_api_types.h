@@ -606,9 +606,9 @@ typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc,
  *              BD Name of remote
  *
 */
-typedef uint8_t(tBTM_AUTH_COMPLETE_CALLBACK)(const RawAddress& bd_addr,
-                                             DEV_CLASS dev_class,
-                                             tBTM_BD_NAME bd_name, int result);
+typedef void(tBTM_AUTH_COMPLETE_CALLBACK)(const RawAddress& bd_addr,
+                                          DEV_CLASS dev_class,
+                                          tBTM_BD_NAME bd_name, int result);
 
 enum {
   BTM_SP_IO_REQ_EVT,    /* received IO_CAPABILITY_REQUEST event */

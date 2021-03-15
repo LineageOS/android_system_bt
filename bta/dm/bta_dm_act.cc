@@ -74,10 +74,9 @@ static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
 static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
                                          DEV_CLASS dev_class, BD_NAME bd_name,
                                          const LinkKey& key, uint8_t key_type);
-static uint8_t bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
-                                                    DEV_CLASS dev_class,
-                                                    BD_NAME bd_name,
-                                                    int result);
+static void bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
+                                                 DEV_CLASS dev_class,
+                                                 BD_NAME bd_name, int result);
 static void bta_dm_local_name_cback(void* p_name);
 static void bta_dm_check_av();
 
@@ -2058,7 +2057,7 @@ static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_authentication_complete_cback(
+static void bta_dm_authentication_complete_cback(
     const RawAddress& bd_addr, UNUSED_ATTR DEV_CLASS dev_class, BD_NAME bd_name,
     int result) {
   tBTA_DM_SEC sec_event;
@@ -2086,8 +2085,6 @@ static uint8_t bta_dm_authentication_complete_cback(
       bta_dm_remove_sec_dev_entry(bd_addr);
     }
   }
-
-  return BTM_SUCCESS;
 }
 
 /*******************************************************************************
