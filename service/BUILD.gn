@@ -76,7 +76,7 @@ source_set("service_linux_src") {
   configs += [ ":service_config" ]
 }
 
-source_set("service") {
+static_library("service") {
   sources = [
     "common/bluetooth/a2dp_codec_config.cc",
     "common/bluetooth/adapter_state.cc",
@@ -124,6 +124,10 @@ executable("bluetoothtbd") {
     "bt_shim_ffi",
     "ssl",
     "crypto",
+  ]
+
+  lib_dirs = [
+    "${root_out_dir}/rust"
   ]
 }
 

@@ -21,7 +21,7 @@ edition = "2018"
 [dependencies]
 # BT dependencies
 bt_common = { path = "../common" }
-bt_facade_helpers = { path = "../facade" }
+bt_facade_helpers = { path = "../facade/helpers" }
 bt_facade_proto = { path = "../facade_proto" }
 bt_packets = { path = "../packets" }
 gddi = { path = "../gddi" }
