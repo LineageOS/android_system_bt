@@ -1,3 +1,6 @@
 buildtools
 out
-third_party
+third_party/
+target/
+Cargo.lock
+tags
