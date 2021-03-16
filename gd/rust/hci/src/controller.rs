@@ -321,7 +321,8 @@ supported_le_features! {
     synchronized_receiver => 31
 }
 
-fn null_terminated_to_string(slice: &[u8]) -> String {
+/// Convert a null terminated C string into a Rust String
+pub fn null_terminated_to_string(slice: &[u8]) -> String {
     let temp = std::str::from_utf8(slice).unwrap();
     temp[0..temp.find('\0').unwrap()].to_string()
 }
