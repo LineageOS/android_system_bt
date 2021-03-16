@@ -62,7 +62,7 @@ static uint16_t a2dp_attr_list[] = {
  * Returns          Nothing.
  *
  *****************************************************************************/
-static void a2dp_sdp_cback(uint16_t status) {
+static void a2dp_sdp_cback(tSDP_STATUS status) {
   tSDP_DISC_REC* p_rec = NULL;
   tSDP_DISC_ATTR* p_attr;
   bool found = false;
