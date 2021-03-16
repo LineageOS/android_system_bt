@@ -78,7 +78,7 @@ bool l2cble_create_conn(tL2C_LCB* p_lcb) {
 }
 hci_role_t L2CA_GetBleConnRole(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return HCI_ROLE_CENTRAL;
 }
 tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
                                            uint16_t psm, bool is_originator,

@@ -1186,8 +1186,8 @@ void shim::legacy::Acl::OnLeConnectSuccess(
 
   TRY_POSTING_ON_MAIN(
       acl_interface_.connection.le.on_connected, legacy_address_with_type,
-      handle, static_cast<uint8_t>(connection_role), conn_interval,
-      conn_latency, conn_timeout, local_rpa, peer_rpa, peer_addr_type);
+      handle, ToLegacyRole(connection_role), conn_interval, conn_latency,
+      conn_timeout, local_rpa, peer_rpa, peer_addr_type);
 
   LOG_DEBUG("Connection successful le remote:%s handle:%hu initiator:%s",
             PRIVATE_ADDRESS(address_with_type), handle,

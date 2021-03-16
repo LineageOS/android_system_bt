@@ -1797,12 +1797,11 @@ void bta_av_conn_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  uint8_t cur_role;
-
   LOG_INFO(
-      "A2dp stream start peer:%s sco_occupied:%s role:%s started:%s wait:0x%x",
+      "A2dp stream start peer:%s sco_occupied:%s av_role:0x%x started:%s "
+      "wait:0x%x",
       PRIVATE_ADDRESS(p_scb->PeerAddress()),
-      logbool(bta_av_cb.sco_occupied).c_str(), RoleText(p_scb->role).c_str(),
+      logbool(bta_av_cb.sco_occupied).c_str(), p_scb->role,
       logbool(p_scb->started).c_str(), p_scb->wait);
   if (bta_av_cb.sco_occupied) {
     LOG_WARN("A2dp stream start failed");
@@ -1813,6 +1812,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* disallow role switch during streaming, only if we are the central role
    * i.e. allow role switch, if we are peripheral.
    * It would not hurt us, if the peer device wants us to be central */
+  tHCI_ROLE cur_role;
   if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_CENTRAL)) {
     BTM_block_role_switch_for(p_scb->PeerAddress());
@@ -2183,7 +2183,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool suspend = false;
   uint8_t new_role = p_scb->role;
   BT_HDR hdr;
-  uint8_t cur_role;
+  tHCI_ROLE cur_role;
   uint8_t local_tsep = p_scb->seps[p_scb->sep_idx].tsep;
 
   LOG_INFO("%s: peer %s bta_handle:0x%x wait:0x%x role:0x%x local_tsep:%d",
