@@ -703,6 +703,7 @@ enum : uint8_t {
   HCI_ROLE_UNKNOWN = 0xff,
 };
 typedef uint8_t hci_role_t;
+typedef hci_role_t tHCI_ROLE;
 inline std::string RoleText(hci_role_t role) {
   switch (role) {
     case HCI_ROLE_CENTRAL:
@@ -712,6 +713,16 @@ inline std::string RoleText(hci_role_t role) {
     default:
       return std::string("unknown");
   }
+}
+const auto hci_role_text = RoleText;
+
+inline tHCI_ROLE to_hci_role(const uint8_t& role) {
+  if (role == 0)
+    return HCI_ROLE_CENTRAL;
+  else if (role == 1)
+    return HCI_ROLE_PERIPHERAL;
+  else
+    return HCI_ROLE_UNKNOWN;
 }
 
 /* HCI mode defenitions */

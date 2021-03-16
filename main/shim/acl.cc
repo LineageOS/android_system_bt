@@ -71,7 +71,6 @@ using PageNumber = uint8_t;
 using CreationTime = std::chrono::time_point<std::chrono::system_clock>;
 using TeardownTime = std::chrono::time_point<std::chrono::system_clock>;
 
-constexpr PageNumber kRemoteExtendedFeaturesPageZero = 0;
 constexpr char kBtmLogTag[] = "ACL";
 
 using SendDataUpwards = void (*const)(BT_HDR*);
@@ -379,7 +378,7 @@ class ClassicShimAclConnection
 
   void ReadRemoteControllerInformation() override {
     connection_->ReadRemoteVersionInformation();
-    connection_->ReadRemoteExtendedFeatures(kRemoteExtendedFeaturesPageZero);
+    connection_->ReadRemoteSupportedFeatures();
   }
 
   void OnConnectionPacketTypeChanged(uint16_t packet_type) override {
@@ -515,6 +514,13 @@ class ClassicShimAclConnection
                                             uint64_t features) override {
     TRY_POSTING_ON_MAIN(interface_.on_read_remote_extended_features_complete,
                         handle_, page_number, max_page_number, features);
+
+    // Supported features aliases to extended features page 0
+    if (page_number == 0 && !(features & ((uint64_t(1) << 63)))) {
+      LOG_DEBUG("Device does not support extended features");
+      return;
+    }
+
     if (page_number != max_page_number)
       connection_->ReadRemoteExtendedFeatures(page_number + 1);
   }
