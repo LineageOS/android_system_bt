@@ -148,7 +148,7 @@ typedef struct {
 typedef struct {
   RawAddress remote_bd_addr; /* Remote BD addr involved with the switch */
   tHCI_STATUS hci_status;    /* HCI status returned with the event */
-  uint8_t role;              /* HCI_ROLE_CENTRAL or HCI_ROLE_PERIPHERAL */
+  tHCI_ROLE role;            /* HCI_ROLE_CENTRAL or HCI_ROLE_PERIPHERAL */
 } tBTM_ROLE_SWITCH_CMPL;
 
 struct tBTM_PM_MCB {
@@ -227,7 +227,7 @@ struct tACL_CONN {
 
  public:
   bool is_encrypted = false;
-  uint8_t link_role;
+  tHCI_ROLE link_role;
   uint8_t switch_role_failed_attempts;
 
   struct {

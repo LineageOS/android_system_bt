@@ -31,6 +31,7 @@
 
 #include "osi/include/alarm.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/hcidefs.h"
 
 /*****************************************************************************
  *  Constants and data types
@@ -238,7 +239,7 @@ extern void bta_sys_chg_ssr_config(uint8_t id, uint8_t app_id,
 
 extern void bta_sys_role_chg_register(tBTA_SYS_CONN_CBACK* p_cback);
 extern void bta_sys_notify_role_chg(const RawAddress& peer_addr,
-                                    uint8_t new_role, tHCI_STATUS hci_status);
+                                    tHCI_ROLE new_role, tHCI_STATUS hci_status);
 extern void bta_sys_collision_register(uint8_t bta_id,
                                        tBTA_SYS_CONN_CBACK* p_cback);
 extern void bta_sys_notify_collision(const RawAddress& peer_addr);

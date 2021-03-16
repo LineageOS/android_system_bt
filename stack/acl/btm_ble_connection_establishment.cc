@@ -146,7 +146,7 @@ bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
 void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
                            bool enhanced) {
   RawAddress local_rpa, peer_rpa;
-  uint8_t role, status;
+  uint8_t raw_role, status;
   tBLE_ADDR_TYPE bda_type;
   uint16_t handle;
   RawAddress bda;
@@ -154,7 +154,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT8(role, p);
+  STREAM_TO_UINT8(raw_role, p);
   STREAM_TO_UINT8(bda_type, p);
   STREAM_TO_BDADDR(bda, p);
   if (enhanced) {
@@ -182,6 +182,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
         android::bluetooth::hci::STATUS_UNKNOWN);
 
     tBLE_BD_ADDR address_with_type{.bda = bda, .type = bda_type};
+    tHCI_ROLE role = to_hci_role(raw_role);
     if (enhanced) {
       acl_ble_enhanced_connection_complete(
           address_with_type, handle, role, is_in_security_db, conn_interval,

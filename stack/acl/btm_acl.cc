@@ -83,7 +83,7 @@ struct StackAclBtmAcl {
   void btm_read_remote_features(uint16_t handle);
   void btm_set_default_link_policy(tLINK_POLICY settings);
   void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
-                            uint8_t new_role);
+                            tHCI_ROLE new_role);
   void hci_start_role_switch_to_central(tACL_CONN& p_acl);
   void set_default_packet_types_supported(uint16_t packet_types_supported) {
     btm_cb.acl_cb_.btm_acl_pkt_types_supported = packet_types_supported;
@@ -154,7 +154,7 @@ void NotifyAclLinkDown(tACL_CONN& p_acl) {
   }
 }
 
-void NotifyAclRoleSwitchComplete(const RawAddress& bda, uint8_t new_role,
+void NotifyAclRoleSwitchComplete(const RawAddress& bda, tHCI_ROLE new_role,
                                  tHCI_STATUS hci_status) {
   BTA_dm_report_role_change(bda, new_role, hci_status);
 }
@@ -354,8 +354,7 @@ tACL_CONN* StackAclBtmAcl::acl_allocate_connection() {
 }
 
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
-                     uint8_t link_role, tBT_TRANSPORT transport) {
-
+                     tHCI_ROLE link_role, tBT_TRANSPORT transport) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
   if (p_acl != (tACL_CONN*)NULL) {
     p_acl->hci_handle = hci_handle;
@@ -481,7 +480,7 @@ void btm_acl_update_inquiry_status(uint8_t status) {
   BTIF_dm_report_inquiry_status_change(status);
 }
 
-tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
+tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role) {
   if (p_role == nullptr) {
     return BTM_ILLEGAL_VALUE;
   }
@@ -1299,7 +1298,7 @@ void btm_rejectlist_role_change_device(const RawAddress& bd_addr,
  ******************************************************************************/
 void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
                                           const RawAddress& bd_addr,
-                                          uint8_t new_role) {
+                                          tHCI_ROLE new_role) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
@@ -1357,7 +1356,7 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
 }
 
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
-                          uint8_t new_role) {
+                          tHCI_ROLE new_role) {
   if (hci_status == HCI_SUCCESS) {
     l2c_link_role_changed(&bd_addr, new_role, hci_status);
   } else {
