@@ -74,10 +74,10 @@ static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
 static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
                                          DEV_CLASS dev_class, BD_NAME bd_name,
                                          const LinkKey& key, uint8_t key_type);
-static uint8_t bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
-                                                    DEV_CLASS dev_class,
-                                                    BD_NAME bd_name,
-                                                    int result);
+static void bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
+                                                 DEV_CLASS dev_class,
+                                                 BD_NAME bd_name,
+                                                 tHCI_REASON result);
 static void bta_dm_local_name_cback(void* p_name);
 static void bta_dm_check_av();
 
@@ -2058,36 +2058,44 @@ static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_authentication_complete_cback(
+static void bta_dm_authentication_complete_cback(
     const RawAddress& bd_addr, UNUSED_ATTR DEV_CLASS dev_class, BD_NAME bd_name,
-    int result) {
-  tBTA_DM_SEC sec_event;
+    tHCI_REASON reason) {
+  if (reason != HCI_SUCCESS) {
+    if (bta_dm_cb.p_sec_cback) {
+      // Build out the security event data structure
+      tBTA_DM_SEC sec_event = {
+          .auth_cmpl =
+              {
+                  .bd_addr = bd_addr,
+              },
+      };
+      memcpy(sec_event.auth_cmpl.bd_name, bd_name, BD_NAME_LEN);
+      sec_event.auth_cmpl.bd_name[BD_NAME_LEN] = 0;
 
-  if (result != BTM_SUCCESS) {
-    memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
-    sec_event.auth_cmpl.bd_addr = bd_addr;
+      // Report the BR link key based on the BR/EDR address and type
+      BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type,
+                      &sec_event.auth_cmpl.addr_type);
+      sec_event.auth_cmpl.fail_reason = reason;
 
-    memcpy(sec_event.auth_cmpl.bd_name, bd_name, BD_NAME_LEN);
-    sec_event.auth_cmpl.bd_name[BD_NAME_LEN] = 0;
-
-    // Report the BR link key based on the BR/EDR address and type
-    BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type,
-                    &sec_event.auth_cmpl.addr_type);
-    sec_event.auth_cmpl.fail_reason = (uint8_t)result;
-
-    if (bta_dm_cb.p_sec_cback)
       bta_dm_cb.p_sec_cback(BTA_DM_AUTH_CMPL_EVT, &sec_event);
+    }
 
-    if (result == HCI_ERR_AUTH_FAILURE || result == HCI_ERR_KEY_MISSING ||
-        result == HCI_ERR_HOST_REJECT_SECURITY ||
-        result == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE) {
-      APPL_TRACE_WARNING("%s deleting %s - result: 0x%02x", __func__,
-                         bd_addr.ToString().c_str(), result);
-      bta_dm_remove_sec_dev_entry(bd_addr);
+    switch (reason) {
+      case HCI_ERR_AUTH_FAILURE:
+      case HCI_ERR_KEY_MISSING:
+      case HCI_ERR_HOST_REJECT_SECURITY:
+      case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
+        LOG_WARN(
+            "Deleting device record as authentication failed entry:%s "
+            "reason:%s",
+            PRIVATE_ADDRESS(bd_addr), hci_reason_code_text(reason).c_str());
+        break;
+
+      default:
+        break;
     }
   }
-
-  return BTM_SUCCESS;
 }
 
 /*******************************************************************************
@@ -3455,9 +3463,11 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       else
         sec_event.auth_cmpl.bd_name[0] = 0;
 
-      if (p_data->complt.reason != 0) {
+      if (p_data->complt.reason != HCI_SUCCESS) {
+        // TODO This is not a proper use of this type
         sec_event.auth_cmpl.fail_reason =
-            BTA_DM_AUTH_CONVERT_SMP_CODE(((uint8_t)p_data->complt.reason));
+            static_cast<tHCI_STATUS>(BTA_DM_AUTH_CONVERT_SMP_CODE(
+                (static_cast<uint8_t>(p_data->complt.reason))));
 
         if (btm_sec_is_a_bonded_dev(bda) &&
             p_data->complt.reason == SMP_CONN_TOUT) {

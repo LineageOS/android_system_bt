@@ -103,18 +103,18 @@ typedef struct {
   uint16_t hci_len;
 } __attribute__((packed)) acl_header_t;
 
-#define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS 3
+constexpr uint8_t BTM_MAX_SW_ROLE_FAILED_ATTEMPTS = 3;
 
 /* Define masks for supported and exception 2.0 ACL packet types
  */
-#define BTM_ACL_SUPPORTED_PKTS_MASK                                           \
-  (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM3 | \
-   HCI_PKT_TYPES_MASK_DH3 | HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5)
+constexpr uint16_t BTM_ACL_SUPPORTED_PKTS_MASK =
+    (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM3 |
+     HCI_PKT_TYPES_MASK_DH3 | HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5);
 
-#define BTM_ACL_EXCEPTION_PKTS_MASK                            \
-  (HCI_PKT_TYPES_MASK_NO_2_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH1 | \
-   HCI_PKT_TYPES_MASK_NO_2_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH3 | \
-   HCI_PKT_TYPES_MASK_NO_2_DH5 | HCI_PKT_TYPES_MASK_NO_3_DH5)
+constexpr uint16_t BTM_ACL_EXCEPTION_PKTS_MASK =
+    (HCI_PKT_TYPES_MASK_NO_2_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH1 |
+     HCI_PKT_TYPES_MASK_NO_2_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
+     HCI_PKT_TYPES_MASK_NO_2_DH5 | HCI_PKT_TYPES_MASK_NO_3_DH5);
 
 inline bool IsEprAvailable(const tACL_CONN& p_acl) {
   if (!p_acl.peer_lmp_feature_valid[0]) {
@@ -400,8 +400,9 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   /* if BR/EDR do something more */
   if (transport == BT_TRANSPORT_BR_EDR) {
     btsnd_hcic_read_rmt_clk_offset(hci_handle);
-    if (!bluetooth::shim::is_gd_l2cap_enabled()) {
-      // GD L2cap reads this automatically
+    if (!bluetooth::shim::is_gd_l2cap_enabled() &&
+        !bluetooth::shim::is_gd_acl_enabled()) {
+      // GD L2cap and GD Acl read this automatically
       btsnd_hcic_rmt_ver_req(hci_handle);
     }
   }
@@ -1828,9 +1829,10 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
       STREAM_TO_UINT16(handle, p);
 
       STREAM_TO_UINT16(result.failed_contact_counter, p);
-      LOG_DEBUG("Failed contact counter complete: counter %u, hci status:%s",
-                result.failed_contact_counter,
-                RoleText(result.hci_status).c_str());
+      LOG_DEBUG(
+          "Failed contact counter complete: counter %u, hci status:%s",
+          result.failed_contact_counter,
+          hci_status_code_text(to_hci_status_code(result.hci_status)).c_str());
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {

@@ -34,6 +34,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "stack/include/hci_error_code.h"
 #include "stack/include/sdp_api.h"
 #include "types/ble_address_with_type.h"
 #include "types/bluetooth/uuid.h"
@@ -291,7 +292,8 @@ typedef struct {
   LinkKey key;         /* Link key associated with peer device. */
   uint8_t key_type;    /* The type of Link Key */
   bool success;        /* true of authentication succeeded, false if failed. */
-  uint8_t fail_reason; /* The HCI reason/error code for when success=false */
+  tHCI_REASON
+      fail_reason; /* The HCI reason/error code for when success=false */
   tBLE_ADDR_TYPE addr_type; /* Peer device address type */
   tBT_DEVICE_TYPE dev_type;
 } tBTA_DM_AUTH_CMPL;

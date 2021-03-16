@@ -564,52 +564,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * trusted services
  ******************************************************************************/
 
-/****************************************
- *  Security Manager Callback Functions
- ****************************************/
-/* Authorize device for service.  Parameters are
- *              Service Id (NULL - unknown service or unused
- *                                 [BTM_SEC_SERVICE_NAME_LEN set to 0])
-*/
-typedef uint8_t(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
-
-/* Get PIN for the connection.  Parameters are
- *              BD Address of remote
- *              Device Class of remote
- *              BD Name of remote
- *              Flag indicating the minimum pin code length to be 16 digits
-*/
-typedef uint8_t(tBTM_PIN_CALLBACK)(const RawAddress& bd_addr,
-                                   DEV_CLASS dev_class, tBTM_BD_NAME bd_name,
-                                   bool min_16_digit);
-
-/* New Link Key for the connection.  Parameters are
- *              BD Address of remote
- *              Link Key
- *              Key Type: Combination, Local Unit, or Remote Unit
-*/
-typedef uint8_t(tBTM_LINK_KEY_CALLBACK)(const RawAddress& bd_addr,
-                                        DEV_CLASS dev_class,
-                                        tBTM_BD_NAME bd_name,
-                                        const LinkKey& key, uint8_t key_type);
-
-/* Remote Name Resolved.  Parameters are
- *              BD Address of remote
- *              BD Name of remote
-*/
-typedef void(tBTM_RMT_NAME_CALLBACK)(const RawAddress& bd_addr, DEV_CLASS dc,
-                                     tBTM_BD_NAME bd_name);
-
-/* Authentication complete for the connection.  Parameters are
- *              BD Address of remote
- *              Device Class of remote
- *              BD Name of remote
- *
-*/
-typedef uint8_t(tBTM_AUTH_COMPLETE_CALLBACK)(const RawAddress& bd_addr,
-                                             DEV_CLASS dev_class,
-                                             tBTM_BD_NAME bd_name, int result);
-
 enum {
   BTM_SP_IO_REQ_EVT,    /* received IO_CAPABILITY_REQUEST event */
   BTM_SP_IO_RSP_EVT,    /* received IO_CAPABILITY_RESPONSE event */
@@ -689,7 +643,14 @@ typedef enum : uint8_t {
 
 typedef uint8_t tBTM_AUTH_REQ;
 
-enum { BTM_OOB_NONE, BTM_OOB_PRESENT, BTM_OOB_UNKNOWN };
+enum {
+  BTM_OOB_NONE,
+  BTM_OOB_PRESENT_192,
+  BTM_OOB_PRESENT_256,
+  BTM_OOB_PRESENT_192_AND_256,
+  BTM_OOB_UNKNOWN
+};
+
 typedef uint8_t tBTM_OOB_DATA;
 
 /* data type for BTM_SP_IO_REQ_EVT */
