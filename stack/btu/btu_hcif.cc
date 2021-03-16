@@ -1552,7 +1552,7 @@ static void btu_hcif_role_change_evt(uint8_t* p) {
   STREAM_TO_UINT8(role, p);
 
   btm_rejectlist_role_change_device(bda, status);
-  btm_acl_role_changed(static_cast<tHCI_STATUS>(status), bda, role);
+  btm_acl_role_changed(to_hci_status_code(status), bda, to_hci_role(role));
 }
 
 /*******************************************************************************
