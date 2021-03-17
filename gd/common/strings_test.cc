@@ -37,6 +37,15 @@ using bluetooth::common::ToHexString;
 using bluetooth::common::ToString;
 using bluetooth::common::Uint64FromString;
 
+TEST(StringsTest, to_hex_string_from_number) {
+  ASSERT_EQ(ToHexString(0), "0x00000000");
+  ASSERT_EQ(ToHexString(3), "0x00000003");
+  ASSERT_EQ(ToHexString(25), "0x00000019");
+  ASSERT_EQ(ToHexString(-25), "-0x00000019");
+  ASSERT_EQ(ToHexString(1L + INT_MAX), "0x0000000080000000");
+  ASSERT_EQ(ToHexString('a'), "0x61");
+}
+
 TEST(StringsTest, trim_string_test) {
   ASSERT_EQ(StringTrim("  aa bb"), "aa bb");
   ASSERT_EQ(StringTrim("aa bb "), "aa bb");
