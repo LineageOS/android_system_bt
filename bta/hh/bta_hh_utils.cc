@@ -165,7 +165,7 @@ void bta_hh_update_di_info(tBTA_HH_DEV_CB* p_cb, uint16_t vendor_id,
  ******************************************************************************/
 void bta_hh_add_device_to_list(tBTA_HH_DEV_CB* p_cb, uint8_t handle,
                                uint16_t attr_mask,
-                               tHID_DEV_DSCP_INFO* p_dscp_info,
+                               const tHID_DEV_DSCP_INFO* p_dscp_info,
                                uint8_t sub_class, uint16_t ssr_max_latency,
                                uint16_t ssr_min_tout, uint8_t app_id) {
 #if (BTA_HH_DEBUG == TRUE)
