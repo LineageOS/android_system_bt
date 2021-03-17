@@ -94,7 +94,7 @@ bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle);
  *                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
  *
  ******************************************************************************/
-tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
+tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role);
 
 /*******************************************************************************
  *
@@ -284,7 +284,7 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address);
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
-                     uint8_t link_role, tBT_TRANSPORT transport);
+                     tHCI_ROLE link_role, tBT_TRANSPORT transport);
 
 void btm_acl_removed(uint16_t handle);
 

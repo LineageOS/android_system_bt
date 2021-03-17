@@ -124,8 +124,8 @@ inline BT_HDR* MakeLegacyBtHdrPacket(
   return buffer;
 }
 
-inline uint8_t ToLegacyRole(hci::Role role) {
-  return static_cast<uint8_t>(role);
+inline tHCI_ROLE ToLegacyRole(hci::Role role) {
+  return to_hci_role(static_cast<uint8_t>(role));
 }
 
 inline hci::Role ToHciRole(hci_role_t role) {

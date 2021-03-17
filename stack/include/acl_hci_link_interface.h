@@ -38,7 +38,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 void btm_acl_paging(BT_HDR* p, const RawAddress& dest);
 void btm_acl_resubmit_page(void);
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
-                          uint8_t new_role);
+                          tHCI_ROLE new_role);
 void btm_rejectlist_role_change_device(const RawAddress& bd_addr,
                                        uint8_t hci_status);
 void btm_pm_proc_cmd_status(tHCI_STATUS status);
