@@ -318,7 +318,7 @@ tGATT_STATUS gatts_db_read_attr_value_by_type(
         (type.As16Bit() == GATT_UUID_GAP_DEVICE_NAME)) {
       if ((flag & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_FLAG_ENCRYPTED)) ==
           BTM_SEC_LINK_KEY_KNOWN) {
-        uint8_t role = HCI_ROLE_UNKNOWN;
+        tHCI_ROLE role = HCI_ROLE_UNKNOWN;
         BTM_GetRole(tcb.peer_bda, &role);
         if (role == HCI_ROLE_CENTRAL) {
           btm_ble_set_encryption(tcb.peer_bda, BTM_BLE_SEC_ENCRYPT,

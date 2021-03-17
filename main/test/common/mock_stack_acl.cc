@@ -161,7 +161,7 @@ tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
   mock_function_count_map[__func__]++;
   return BTM_SUCCESS;
 }
-tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
+tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, tHCI_ROLE* p_role) {
   mock_function_count_map[__func__]++;
   return BTM_SUCCESS;
 }
@@ -306,7 +306,7 @@ void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc) {
   mock_function_count_map[__func__]++;
 }
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
-                     uint8_t link_role, tBT_TRANSPORT transport) {
+                     tHCI_ROLE link_role, tBT_TRANSPORT transport) {
   mock_function_count_map[__func__]++;
 }
 void btm_acl_device_down(void) { mock_function_count_map[__func__]++; }
@@ -331,7 +331,7 @@ void btm_acl_removed(uint16_t handle) { mock_function_count_map[__func__]++; }
 void btm_acl_reset_paging(void) { mock_function_count_map[__func__]++; }
 void btm_acl_resubmit_page(void) { mock_function_count_map[__func__]++; }
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
-                          uint8_t new_role) {
+                          tHCI_ROLE new_role) {
   mock_function_count_map[__func__]++;
 }
 void btm_acl_set_paging(bool value) { mock_function_count_map[__func__]++; }

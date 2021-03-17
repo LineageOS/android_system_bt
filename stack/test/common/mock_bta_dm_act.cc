@@ -43,7 +43,7 @@ void BTA_dm_notify_remote_features_complete(const RawAddress bd_addr) {
 
 void BTA_dm_on_hw_off() { mock_function_count_map[__func__]++; }
 void BTA_dm_on_hw_on() { mock_function_count_map[__func__]++; }
-void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
+void BTA_dm_report_role_change(const RawAddress bd_addr, tHCI_ROLE new_role,
                                tHCI_STATUS hci_status) {
   mock_function_count_map[__func__]++;
 }
