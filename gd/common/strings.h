@@ -33,6 +33,17 @@
 namespace bluetooth {
 namespace common {
 
+// Convert number into a hex string prefixed with 0x
+template <typename T>
+std::string ToHexString(T x) {
+  if (x < 0) {
+    return "-" + ToHexString(-x);
+  }
+  std::stringstream tmp;
+  tmp << "0x" << std::internal << std::hex << std::setfill('0') << std::setw(sizeof(T) * 2) << (unsigned int)x;
+  return tmp.str();
+}
+
 // Convert value into a hex decimal formatted string in lower case, prefixed with 0s
 template <class InputIt>
 std::string ToHexString(InputIt first, InputIt last) {
