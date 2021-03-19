@@ -290,7 +290,7 @@ cc_test {
     ],
     host_supported: true,
     test_options: {
-        unit_test: true,
+        unit_test: false,
     },
     target: {
         linux: {
