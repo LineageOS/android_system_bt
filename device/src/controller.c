@@ -468,7 +468,6 @@ static uint16_t get_acl_packet_size_ble(void) {
 
 static uint16_t get_ble_suggested_default_data_length(void) {
   assert(readable);
-  assert(ble_supported);
   return ble_suggested_default_data_length;
 }
 
@@ -491,7 +490,6 @@ static uint8_t get_ble_white_list_size(void) {
 
 static uint8_t get_ble_resolving_list_max_size(void) {
   assert(readable);
-  assert(ble_supported);
   return ble_resolving_list_max_size;
 }
 

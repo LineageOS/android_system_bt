@@ -249,7 +249,8 @@ static int free_sdp_slot(int id) {
  */
 static const sdp_slot_t* start_create_sdp(int id) {
     sdp_slot_t* sdp_slot;
-    if(id >= MAX_SDP_SLOTS) {
+    if(id < 0 || id >= MAX_SDP_SLOTS) {
+        android_errorWriteLog(0x534e4554, "37502513");
         APPL_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
         return NULL;
     }
