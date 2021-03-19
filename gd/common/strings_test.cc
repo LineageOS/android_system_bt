@@ -37,12 +37,44 @@ using bluetooth::common::ToHexString;
 using bluetooth::common::ToString;
 using bluetooth::common::Uint64FromString;
 
+static inline bool is_arch32() {
+  return sizeof(long) == 4;
+}
+static inline bool is_arch64() {
+  return sizeof(long) == 8;
+}
+
 TEST(StringsTest, to_hex_string_from_number) {
   ASSERT_EQ(ToHexString(0), "0x00000000");
   ASSERT_EQ(ToHexString(3), "0x00000003");
   ASSERT_EQ(ToHexString(25), "0x00000019");
   ASSERT_EQ(ToHexString(-25), "-0x00000019");
-  ASSERT_EQ(ToHexString(1L + INT_MAX), "0x0000000080000000");
+  ASSERT_EQ(ToHexString(INT_MIN + 1), "-0x7fffffff");
+  ASSERT_EQ(ToHexString(INT_MAX), "0x7fffffff");
+  ASSERT_EQ(ToHexString(INT_MIN), "INT_MIN");
+  if (is_arch32()) {
+    ASSERT_EQ(ToHexString(1 + INT_MAX), "INT_MIN");
+    ASSERT_EQ(ToHexString(2 + INT_MAX), "-0x7fffffff");  // Rolled over
+    ASSERT_EQ(ToHexString(-1 - INT_MIN), "0x7fffffff");  // Rolled over
+    ASSERT_EQ(ToHexString(LONG_MAX), "0x7fffffff");
+    ASSERT_EQ(ToHexString(LONG_MAX - 1L), "0x7ffffffe");
+    ASSERT_EQ(ToHexString(LONG_MIN), "LONG_MIN");
+    ASSERT_EQ(ToHexString(LONG_MIN + 1L), "-0x7fffffff");
+  } else if (is_arch64()) {
+    ASSERT_EQ(ToHexString((signed long)INT_MIN), "-0x0000000080000000");
+    ASSERT_EQ(ToHexString(1 + INT_MAX), "INT_MIN");      // Rolled over
+    ASSERT_EQ(ToHexString(2 + INT_MAX), "-0x7fffffff");  // Rolled over
+    ASSERT_EQ(ToHexString(1L + INT_MAX), "0x0000000080000000");
+    ASSERT_EQ(ToHexString(2L + INT_MAX), "0x0000000080000001");
+    ASSERT_EQ(ToHexString(-1L + INT_MIN), "-0x0000000080000001");
+    ASSERT_EQ(ToHexString(LONG_MAX), "0x7fffffffffffffff");
+    ASSERT_EQ(ToHexString(LONG_MAX - 1L), "0x7ffffffffffffffe");
+    ASSERT_EQ(ToHexString(LONG_MIN), "LONG_MIN");
+    ASSERT_EQ(ToHexString(LONG_MIN + 1L), "-0x7fffffffffffffff");
+  } else {
+    LOG_ERROR("Unknown architecture");
+    ASSERT_TRUE(false);
+  }
   ASSERT_EQ(ToHexString('a'), "0x61");
 }
 
