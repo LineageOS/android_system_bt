@@ -2431,6 +2431,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
   /* assume that the local IO capability does not change
    * loc_io_caps is initialized with the default value */
   evt_data.io_cap = btm_cb.devcb.loc_io_caps;
+  // TODO(optedoblivion): Inject OOB_DATA_PRESENT Flag
   evt_data.oob_data = BTM_OOB_NONE;
   evt_data.auth_req = BTM_AUTH_SP_NO;
 
@@ -3963,6 +3964,7 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
       break;
 
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS:
+      // TODO(optedoblivion): Inject OOB_DATA_PRESENT Flag
       btsnd_hcic_io_cap_req_reply(p_cb->pairing_bda, btm_cb.devcb.loc_io_caps,
                                   BTM_OOB_NONE, auth_req);
       btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
