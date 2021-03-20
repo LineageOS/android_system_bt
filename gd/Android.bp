@@ -377,7 +377,6 @@ cc_test {
     },
     srcs: [
         "hci/address.cc",
-        ":BluetoothCommonSources",
         ":BluetoothPacketSources",
         ":BluetoothPacketParserTestPacketTestSources",
     ],
@@ -389,7 +388,6 @@ cc_test {
         cfi: true,
     },
     static_libs: [
-        "libbluetooth_rust_interop",
         "libchrome",
         "libbt-platform-protos-lite",
     ],
