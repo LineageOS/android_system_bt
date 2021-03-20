@@ -455,6 +455,26 @@ void PacketDef::GenTestDefine(std::ostream& s) const {
   s << "}";
   s << "INSTANTIATE_TEST_SUITE_P(" << name_ << "_reflection, ";
   s << name_ << "ReflectionTest, testing::Values(__VA_ARGS__))";
+  int i = 0;
+  for (const auto& bytes : test_cases_) {
+    s << "\nuint8_t " << name_ << "_test_bytes_" << i << "[] = \"" << bytes << "\";";
+    s << "std::vector<uint8_t> " << name_ << "_test_vec_" << i << "(";
+    s << name_ << "_test_bytes_" << i << ",";
+    s << name_ << "_test_bytes_" << i << " + sizeof(";
+    s << name_ << "_test_bytes_" << i << ") - 1);";
+    i++;
+  }
+  if (!test_cases_.empty()) {
+    i = 0;
+    s << "\nDEFINE_AND_INSTANTIATE_" << name_ << "ReflectionTest(";
+    for (auto bytes : test_cases_) {
+      if (i > 0) {
+        s << ",";
+      }
+      s << name_ << "_test_vec_" << i++;
+    }
+    s << ");";
+  }
   s << "\n#endif";
 }
 
