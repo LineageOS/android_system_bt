@@ -30,11 +30,6 @@ static_assert(LOG_TAG != nullptr, "LOG_TAG should never be NULL");
 
 #include <log/log.h>
 
-#ifndef OSI_INCLUDE_LOG_H
-// Do not use GD include path if included from legacy OSI layer
-#include "common/init_flags.h"
-#endif
-
 #ifdef FUZZ_TARGET
 #define LOG_VERBOSE(...)
 #define LOG_DEBUG(...)
