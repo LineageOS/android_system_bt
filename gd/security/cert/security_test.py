@@ -540,3 +540,8 @@ class SecurityTest(GdBaseTestClass):
 
         self.dut_security.wait_for_disconnect_event()
         self.cert_security.wait_for_disconnect_event()
+
+    def test_make_sure_oob_data_different(self):
+        oob_data = self.dut_security.get_oob_data_from_controller(OobDataPresent.P192_PRESENT)
+        oob_data2 = self.dut_security.get_oob_data_from_controller(OobDataPresent.P192_PRESENT)
+        assertThat(oob_data).isNotEqualTo(oob_data2)

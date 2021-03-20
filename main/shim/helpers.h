@@ -17,6 +17,7 @@
 
 #include "hci/address_with_type.h"
 
+#include "gd/common/init_flags.h"
 #include "gd/packet/raw_builder.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"

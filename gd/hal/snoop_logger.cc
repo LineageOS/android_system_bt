@@ -25,6 +25,7 @@
 #include <sstream>
 
 #include "common/circular_buffer.h"
+#include "common/init_flags.h"
 #include "common/strings.h"
 #include "os/files.h"
 #include "os/log.h"
