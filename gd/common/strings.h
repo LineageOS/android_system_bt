@@ -37,10 +37,23 @@ namespace common {
 template <typename T>
 std::string ToHexString(T x) {
   if (x < 0) {
+    if (x == INT_MIN) return "INT_MIN";
     return "-" + ToHexString(-x);
   }
   std::stringstream tmp;
-  tmp << "0x" << std::internal << std::hex << std::setfill('0') << std::setw(sizeof(T) * 2) << (unsigned int)x;
+  tmp << "0x" << std::internal << std::hex << std::setfill('0') << std::setw(sizeof(T) * 2) << (unsigned long)x;
+  return tmp.str();
+}
+
+template <>
+inline std::string ToHexString<signed long>(signed long x) {
+  if (x < 0) {
+    if (x == LONG_MIN) return "LONG_MIN";
+    return "-" + ToHexString<signed long>(-x);
+  }
+  std::stringstream tmp;
+  tmp << "0x" << std::internal << std::hex << std::setfill('0') << std::setw(sizeof(signed long) * 2)
+      << (unsigned long)x;
   return tmp.str();
 }
 
