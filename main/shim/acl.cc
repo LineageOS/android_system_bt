@@ -703,6 +703,27 @@ struct shim::legacy::Acl::impl {
     promise.set_value();
   }
 
+  void FinalShutdown(std::promise<void> promise) {
+    if (!handle_to_classic_connection_map_.empty()) {
+      LOG_INFO("Freeing all classic connections count:%zu",
+               handle_to_classic_connection_map_.size());
+      for (auto& connection : handle_to_classic_connection_map_) {
+        connection.second->Shutdown();
+      }
+      handle_to_classic_connection_map_.clear();
+    }
+
+    if (!handle_to_le_connection_map_.empty()) {
+      LOG_INFO("Freeing all le connections count:%zu",
+               handle_to_le_connection_map_.size());
+      for (auto& connection : handle_to_le_connection_map_) {
+        connection.second->Shutdown();
+      }
+    }
+
+    promise.set_value();
+  }
+
   void HoldMode(HciHandle handle, uint16_t max_interval,
                 uint16_t min_interval) {
     ASSERT_LOG(IsClassicAcl(handle), "handle %d is not a classic connection",
@@ -1327,6 +1348,23 @@ void shim::legacy::Acl::Shutdown() {
   } else {
     LOG_INFO("All ACL connections have been previously closed");
   }
+}
+
+void shim::legacy::Acl::FinalShutdown() {
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  GetAclManager()->UnregisterCallbacks(this, std::move(promise));
+  future.wait();
+
+  promise = std::promise<void>();
+  future = promise.get_future();
+  GetAclManager()->UnregisterLeCallbacks(this, std::move(promise));
+  future.wait();
+
+  promise = std::promise<void>();
+  future = promise.get_future();
+  handler_->CallOn(pimpl_.get(), &Acl::impl::FinalShutdown, std::move(promise));
+  future.wait();
 }
 
 void shim::legacy::Acl::ClearAcceptList() {
