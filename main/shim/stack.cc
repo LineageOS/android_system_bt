@@ -193,6 +193,7 @@ void Stack::Stop() {
   if (!common::init_flags::gd_core_is_enabled()) {
     bluetooth::shim::hci_on_shutting_down();
   }
+  acl_->FinalShutdown();
   delete acl_;
   acl_ = nullptr;
 
