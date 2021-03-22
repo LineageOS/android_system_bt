@@ -17,7 +17,6 @@
 #pragma once
 
 #include <functional>
-#include <future>
 #include <memory>
 
 #include "common/bidi_queue.h"
@@ -66,11 +65,9 @@ public:
  // Should register only once when user module starts.
  // Generates OnConnectSuccess when an incoming connection is established.
  virtual void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks, os::Handler* handler);
- virtual void UnregisterCallbacks(acl_manager::ConnectionCallbacks* callbacks, std::promise<void> promise);
 
  // Should register only once when user module starts.
  virtual void RegisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks, os::Handler* handler);
- virtual void UnregisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks, std::promise<void> promise);
 
  // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
  virtual void CreateConnection(Address address);
