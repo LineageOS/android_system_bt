@@ -899,6 +899,7 @@ rust_protobuf {
     crate_name: "bt_facade_proto",
     protos: ["facade/common.proto"],
     grpc_protos: [
+        "hci/facade/controller_facade.proto",
         "hci/facade/hci_facade.proto",
         "hal/hal_facade.proto",
         "facade/rootservice.proto",
