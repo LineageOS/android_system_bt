@@ -28,7 +28,6 @@
 #include "bt_types.h"
 #include "bt_utils.h"
 #include "btm_ble_api.h"
-#include "common/metrics.h"
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "l2c_api.h"
@@ -36,6 +35,7 @@
 #include "smp_int.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/stack_metrics_logging.h"
 
 #define SMP_PAIRING_REQ_SIZE 7
 #define SMP_CONFIRM_CMD_SIZE (OCTET16_LEN + 1)
@@ -321,8 +321,7 @@ void smp_log_metrics(const RawAddress& bd_addr, bool is_outgoing,
   android::bluetooth::DirectionEnum direction =
       is_outgoing ? android::bluetooth::DirectionEnum::DIRECTION_OUTGOING
                   : android::bluetooth::DirectionEnum::DIRECTION_INCOMING;
-  bluetooth::common::LogSmpPairingEvent(bd_addr, cmd, direction,
-                                        failure_reason);
+  log_smp_pairing_event(bd_addr, cmd, direction, failure_reason);
 }
 
 /*******************************************************************************
