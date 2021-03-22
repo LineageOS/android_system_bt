@@ -159,6 +159,8 @@ void TestEnvironment::SetUpTestChannel() {
   test_channel_.SetTimerPeriod({"5"});
   test_channel_.StartTimer({});
 
+  test_channel_.FromFile(default_commands_file_);
+
   if (socket_fd == -1) {
     LOG_ERROR("Test channel SetUp(%d) failed.", test_port_);
     return;
