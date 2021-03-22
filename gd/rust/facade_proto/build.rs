@@ -85,6 +85,7 @@ fn main() {
     //
     let grpc_proto_input_files = [
         proto_root.join("hci/facade/hci_facade.proto"),
+        proto_root.join("hci/facade/controller_facade.proto"),
         proto_root.join("hal/hal_facade.proto"),
         proto_root.join("facade/rootservice.proto"),
     ];
