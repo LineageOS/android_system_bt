@@ -45,6 +45,7 @@ async fn async_main(rt: Arc<Runtime>, mut sigint: mpsc::UnboundedReceiver<()>) {
         )
         .arg(Arg::with_name("rootcanal-port").long("rootcanal-port").takes_value(true))
         .arg(Arg::with_name("btsnoop").long("btsnoop").takes_value(true))
+        .arg(Arg::with_name("btsnooz").long("btsnooz").takes_value(true))
         .arg(Arg::with_name("btconfig").long("btconfig").takes_value(true))
         .get_matches();
 
