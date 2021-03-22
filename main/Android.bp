@@ -229,6 +229,8 @@ cc_test {
         "shim/le_advertising_manager.cc",
         "shim/le_scanning_manager.cc",
         "shim/link_policy.cc",
+        "shim/metric_id_api.cc",
+        "shim/metrics_api.cc",
         "shim/shim.cc",
         "shim/stack.cc",
         "test/common/mock_acl_ble.cc",

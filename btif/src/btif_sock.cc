@@ -29,6 +29,7 @@
 #include "bta_api.h"
 #include "btif_common.h"
 #include "btif_config.h"
+#include "btif_metrics_logging.h"
 #include "btif_sock_l2cap.h"
 #include "btif_sock_rfc.h"
 #include "btif_sock_sco.h"
@@ -36,7 +37,6 @@
 #include "btif_sock_thread.h"
 #include "btif_uid.h"
 #include "btif_util.h"
-#include "common/metrics.h"
 #include "device/include/controller.h"
 #include "osi/include/thread.h"
 
@@ -138,11 +138,11 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
   bt_status_t status = BT_STATUS_FAIL;
   int original_channel = channel;
 
-  bluetooth::common::LogSocketConnectionState(
-      RawAddress::kEmpty, 0, type,
-      android::bluetooth::SocketConnectionstateEnum::
-          SOCKET_CONNECTION_STATE_LISTENING,
-      0, 0, app_uid, channel, android::bluetooth::SOCKET_ROLE_LISTEN);
+  log_socket_connection_state(RawAddress::kEmpty, 0, type,
+                              android::bluetooth::SocketConnectionstateEnum::
+                                  SOCKET_CONNECTION_STATE_LISTENING,
+                              0, 0, app_uid, channel,
+                              android::bluetooth::SOCKET_ROLE_LISTEN);
   switch (type) {
     case BTSOCK_RFCOMM:
       status = btsock_rfc_listen(service_name, service_uuid, channel, sock_fd,
@@ -179,11 +179,11 @@ static bt_status_t btsock_listen(btsock_type_t type, const char* service_name,
       break;
   }
   if (status != BT_STATUS_SUCCESS) {
-    bluetooth::common::LogSocketConnectionState(
-        RawAddress::kEmpty, 0, type,
-        android::bluetooth::SocketConnectionstateEnum::
-            SOCKET_CONNECTION_STATE_DISCONNECTED,
-        0, 0, app_uid, channel, android::bluetooth::SOCKET_ROLE_LISTEN);
+    log_socket_connection_state(RawAddress::kEmpty, 0, type,
+                                android::bluetooth::SocketConnectionstateEnum::
+                                    SOCKET_CONNECTION_STATE_DISCONNECTED,
+                                0, 0, app_uid, channel,
+                                android::bluetooth::SOCKET_ROLE_LISTEN);
   }
   return status;
 }
@@ -197,11 +197,11 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
   *sock_fd = INVALID_FD;
   bt_status_t status = BT_STATUS_FAIL;
 
-  bluetooth::common::LogSocketConnectionState(
-      *bd_addr, 0, type,
-      android::bluetooth::SocketConnectionstateEnum::
-          SOCKET_CONNECTION_STATE_CONNECTING,
-      0, 0, app_uid, channel, android::bluetooth::SOCKET_ROLE_CONNECTION);
+  log_socket_connection_state(*bd_addr, 0, type,
+                              android::bluetooth::SocketConnectionstateEnum::
+                                  SOCKET_CONNECTION_STATE_CONNECTING,
+                              0, 0, app_uid, channel,
+                              android::bluetooth::SOCKET_ROLE_CONNECTION);
   switch (type) {
     case BTSOCK_RFCOMM:
       status =
@@ -241,11 +241,11 @@ static bt_status_t btsock_connect(const RawAddress* bd_addr, btsock_type_t type,
       break;
   }
   if (status != BT_STATUS_SUCCESS) {
-    bluetooth::common::LogSocketConnectionState(
-        *bd_addr, 0, type,
-        android::bluetooth::SocketConnectionstateEnum::
-            SOCKET_CONNECTION_STATE_DISCONNECTED,
-        0, 0, app_uid, channel, android::bluetooth::SOCKET_ROLE_CONNECTION);
+    log_socket_connection_state(*bd_addr, 0, type,
+                                android::bluetooth::SocketConnectionstateEnum::
+                                    SOCKET_CONNECTION_STATE_DISCONNECTED,
+                                0, 0, app_uid, channel,
+                                android::bluetooth::SOCKET_ROLE_CONNECTION);
   }
   return status;
 }
