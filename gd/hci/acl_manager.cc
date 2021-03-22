@@ -17,7 +17,6 @@
 #include "hci/acl_manager.h"
 
 #include <atomic>
-#include <future>
 #include <set>
 
 #include "common/bidi_queue.h"
@@ -132,15 +131,6 @@ void AclManager::RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* 
                                       common::Unretained(handler)));
 }
 
-void AclManager::UnregisterCallbacks(ConnectionCallbacks* callbacks, std::promise<void> promise) {
-  ASSERT(callbacks != nullptr);
-  CallOn(
-      pimpl_->classic_impl_,
-      &classic_impl::handle_unregister_callbacks,
-      common::Unretained(callbacks),
-      std::move(promise));
-}
-
 void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
   ASSERT(callbacks != nullptr && handler != nullptr);
   CallOn(
@@ -148,11 +138,6 @@ void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handl
       &le_impl::handle_register_le_callbacks,
       common::Unretained(callbacks),
       common::Unretained(handler));
-}
-
-void AclManager::UnregisterLeCallbacks(LeConnectionCallbacks* callbacks, std::promise<void> promise) {
-  ASSERT(callbacks != nullptr);
-  CallOn(pimpl_->le_impl_, &le_impl::handle_unregister_le_callbacks, common::Unretained(callbacks), std::move(promise));
 }
 
 void AclManager::CreateConnection(Address address) {
