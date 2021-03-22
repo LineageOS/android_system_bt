@@ -70,6 +70,7 @@ static_library("btif") {
     "src/btif_hh.cc",
     "src/btif_keystore.cc",
     "src/btif_le_audio.cc",
+    "src/btif_metrics_logging.cc",
     "src/btif_pan.cc",
     "src/btif_profile_queue.cc",
     "src/btif_rc.cc",

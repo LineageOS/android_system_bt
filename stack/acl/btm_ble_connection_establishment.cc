@@ -34,6 +34,7 @@
 #include "stack/include/ble_hci_link_interface.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
+#include "stack/include/stack_metrics_logging.h"
 
 extern tBTM_CB btm_cb;
 
@@ -175,7 +176,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
     bool is_in_security_db = maybe_resolve_address(&bda, &bda_type);
 
     // Log for the HCI success case after maybe resolving Bluetooth address
-    bluetooth::common::LogLinkLayerConnectionEvent(
+    log_link_layer_connection_event(
         &bda, handle, android::bluetooth::DIRECTION_UNKNOWN,
         android::bluetooth::LINK_TYPE_ACL, android::bluetooth::hci::CMD_UNKNOWN,
         android::bluetooth::hci::EVT_BLE_META, hci_ble_event, status,
@@ -194,7 +195,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
                                   conn_latency, conn_timeout);
     }
   } else {
-    bluetooth::common::LogLinkLayerConnectionEvent(
+    log_link_layer_connection_event(
         &bda, handle, android::bluetooth::DIRECTION_UNKNOWN,
         android::bluetooth::LINK_TYPE_ACL, android::bluetooth::hci::CMD_UNKNOWN,
         android::bluetooth::hci::EVT_BLE_META, hci_ble_event, status,
@@ -220,7 +221,7 @@ void btm_ble_create_conn_cancel_complete(uint8_t* p) {
   STREAM_TO_UINT8(status, p);
   if (status != HCI_SUCCESS) {
     // Only log errors to prevent log spam due to acceptlist connections
-    bluetooth::common::LogLinkLayerConnectionEvent(
+    log_link_layer_connection_event(
         nullptr, bluetooth::common::kUnknownConnectionHandle,
         android::bluetooth::DIRECTION_OUTGOING,
         android::bluetooth::LINK_TYPE_ACL,
