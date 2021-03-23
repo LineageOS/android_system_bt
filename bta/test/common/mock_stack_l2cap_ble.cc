@@ -26,6 +26,7 @@
 extern std::map<std::string, int> mock_function_count_map;
 
 #include "stack/l2cap/l2c_int.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 #ifndef UNUSED_ATTR

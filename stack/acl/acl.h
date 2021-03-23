@@ -27,6 +27,7 @@
 #include "stack/include/hcidefs.h"
 #include "stack/include/hcimsgs.h"
 #include "types/bt_transport.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 enum btm_acl_encrypt_state_t {
