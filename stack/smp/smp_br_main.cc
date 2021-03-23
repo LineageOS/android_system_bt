@@ -22,6 +22,7 @@
 
 #include "osi/include/log.h"
 #include "smp_int.h"
+#include "types/hci_role.h"
 
 const char* const smp_br_state_name[SMP_BR_STATE_MAX + 1] = {
     "SMP_BR_STATE_IDLE", "SMP_BR_STATE_WAIT_APP_RSP",

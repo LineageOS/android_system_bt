@@ -20,6 +20,7 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
 #include "types/bt_transport.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 struct acl_client_callback_s {

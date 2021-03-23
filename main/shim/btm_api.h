@@ -21,6 +21,7 @@
 #include "stack/include/acl_api_types.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
+#include "types/hci_role.h"
 
 namespace bluetooth {
 namespace shim {

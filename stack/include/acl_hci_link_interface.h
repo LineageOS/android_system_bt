@@ -22,6 +22,8 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
+#include "types/hci_role.h"
+#include "types/raw_address.h"
 
 // This header contains functions for HCIF-Acl Management to invoke
 //

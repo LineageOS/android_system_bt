@@ -31,6 +31,7 @@
 #include "hcidefs.h"
 #include "l2cdefs.h"
 #include "types/bt_transport.h"
+#include "types/hci_role.h"
 
 /*****************************************************************************
  *  Constants

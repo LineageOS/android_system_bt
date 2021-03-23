@@ -32,6 +32,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/btm_api.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 /*******************************************************************************
