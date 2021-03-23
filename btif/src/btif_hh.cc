@@ -1242,8 +1242,12 @@ static bt_status_t connect(RawAddress* bd_addr) {
     btif_transfer_context(btif_hh_handle_evt, BTIF_HH_CONNECT_REQ_EVT,
                           (char*)bd_addr, sizeof(RawAddress), NULL);
     return BT_STATUS_SUCCESS;
-  } else
+  } else if ((btif_hh_cb.pending_conn_address == *bd_addr) &&
+       (btif_hh_cb.status == BTIF_HH_DEV_CONNECTING)) {
+    LOG(INFO) << __func__ << ": already connecting " << *bd_addr;
     return BT_STATUS_BUSY;
+  }
+  return BT_STATUS_FAIL;
 }
 
 /*******************************************************************************
