@@ -24,6 +24,7 @@
 
 #include "base/files/file_util.h"
 #include "base/json/json_reader.h"
+#include "base/strings/string_split.h"
 #include "base/values.h"
 
 #include "os/log.h"
@@ -93,6 +94,26 @@ void TestCommandHandler::HandleCommand(const std::string& name, const vector<std
     return;
   }
   active_commands_[name](args);
+}
+
+void TestCommandHandler::FromFile(const std::string& file_name) {
+  if (file_name.size() == 0) {
+    return;
+  }
+
+  std::string commands_raw;
+  if (!base::ReadFileToString(base::FilePath(file_name), &commands_raw)) {
+    LOG_ERROR("Error reading commands from file.");
+    return;
+  }
+
+  base::StringPairs command_pairs;
+  base::SplitStringIntoKeyValuePairs(commands_raw, ' ', '\n', &command_pairs);
+  for (const std::pair<std::string, std::string>& p : command_pairs) {
+    auto params = base::SplitString(p.second, " ", base::TRIM_WHITESPACE,
+                                    base::SPLIT_WANT_NONEMPTY);
+    HandleCommand(p.first, params);
+  }
 }
 
 void TestCommandHandler::RegisterSendResponse(const std::function<void(const std::string&)> callback) {

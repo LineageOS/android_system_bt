@@ -1,0 +1,5 @@
+prebuilt_etc_host {
+    name: "controller_properties.json",
+    src: "controller_properties.json",
+    sub_dir: "rootcanal/data",
+}

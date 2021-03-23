@@ -23,9 +23,16 @@
 #include <backtrace/Backtrace.h>
 #include <backtrace/backtrace_constants.h>
 
+#include <gflags/gflags.h>
+
 #include "os/log.h"
 
 using ::android::bluetooth::root_canal::TestEnvironment;
+
+DEFINE_string(controller_properties_file, "",
+              "controller_properties.json file path");
+DEFINE_string(default_commands_file, "",
+              "commands file which root-canal runs it as default");
 
 constexpr uint16_t kTestPort = 6401;
 constexpr uint16_t kHciServerPort = 6402;
@@ -74,6 +81,8 @@ int main(int argc, char** argv) {
                                        true, -1);
   eh.set_crash_handler(crash_callback);
 
+  gflags::ParseCommandLineFlags(&argc, &argv, true);
+
   LOG_INFO("main");
   uint16_t test_port = kTestPort;
   uint16_t hci_server_port = kHciServerPort;
@@ -103,7 +112,9 @@ int main(int argc, char** argv) {
     }
   }
 
-  TestEnvironment root_canal(test_port, hci_server_port, link_server_port);
+  TestEnvironment root_canal(test_port, hci_server_port, link_server_port,
+                             FLAGS_controller_properties_file,
+                             FLAGS_default_commands_file);
   std::promise<void> barrier;
   std::future<void> barrier_future = barrier.get_future();
   root_canal.initialize(std::move(barrier));
