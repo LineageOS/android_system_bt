@@ -3576,8 +3576,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
   /* For now there are a some devices that do not like sending */
   /* commands events and data at the same time. */
   /* Set the packet types to the default allowed by the device */
-  btm_set_packet_types_from_address(bda, BT_TRANSPORT_BR_EDR,
-                                    acl_get_supported_packet_types());
+  btm_set_packet_types_from_address(bda, acl_get_supported_packet_types());
 
   /* Initialize security flags.  We need to do that because some            */
   /* authorization complete could have come after the connection is dropped */
