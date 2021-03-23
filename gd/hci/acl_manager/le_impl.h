@@ -151,6 +151,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       remove_device_from_connect_list(remote_address);
     }
 
+    if (le_client_handler_ == nullptr) {
+      LOG_ERROR("No callbacks to call");
+      return;
+    }
+
     if (status != ErrorCode::SUCCESS) {
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
@@ -203,6 +208,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       canceled_connections_.erase(remote_address);
       ready_to_unregister = true;
       remove_device_from_connect_list(remote_address);
+    }
+
+    if (le_client_handler_ == nullptr) {
+      LOG_ERROR("No callbacks to call");
+      return;
     }
 
     if (status != ErrorCode::SUCCESS) {
@@ -411,6 +421,10 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       canceled_connections_.insert(address_with_type);
       return;
     }
+    if (le_client_callbacks_ == nullptr) {
+      LOG_ERROR("No callbacks to call");
+      return;
+    }
 
     uint16_t le_scan_interval = 0x0060;
     uint16_t le_scan_window = 0x0030;
@@ -421,7 +435,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     uint16_t conn_interval_max = 0x0028;
     uint16_t conn_latency = 0x0000;
     uint16_t supervision_timeout = 0x001f4;
-    ASSERT(le_client_callbacks_ != nullptr);
     ASSERT(check_connection_parameters(conn_interval_min, conn_interval_max, conn_latency, supervision_timeout));
 
     connecting_le_.insert(address_with_type);
@@ -541,6 +554,13 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     ASSERT(le_client_handler_ == nullptr);
     le_client_callbacks_ = callbacks;
     le_client_handler_ = handler;
+  }
+
+  void handle_unregister_le_callbacks(LeConnectionCallbacks* callbacks, std::promise<void> promise) {
+    ASSERT_LOG(le_client_callbacks_ == callbacks, "Registered le callback entity is different then unregister request");
+    le_client_callbacks_ = nullptr;
+    le_client_handler_ = nullptr;
+    promise.set_value();
   }
 
   bool check_connection_parameters(
