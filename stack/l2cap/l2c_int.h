@@ -40,6 +40,7 @@
 #include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
 #include "stack/include/hci_error_code.h"
+#include "types/hci_role.h"
 
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
 

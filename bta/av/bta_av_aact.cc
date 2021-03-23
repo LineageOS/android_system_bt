@@ -50,6 +50,7 @@
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/l2c_api.h"
+#include "types/hci_role.h"
 
 namespace {
 

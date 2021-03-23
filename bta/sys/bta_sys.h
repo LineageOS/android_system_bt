@@ -31,7 +31,7 @@
 
 #include "osi/include/alarm.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/hcidefs.h"
+#include "types/hci_role.h"
 
 /*****************************************************************************
  *  Constants and data types
