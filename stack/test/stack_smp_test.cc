@@ -25,6 +25,7 @@
 #include "stack/include/smp_api.h"
 #include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
+#include "types/hci_role.h"
 
 /*
  * This test verifies various key distribution methods in SMP works using the

@@ -2,6 +2,8 @@
 
 /// HCI controller info
 pub mod controller;
+/// Controller facade service
+pub mod controller_facade;
 /// HCI errors
 pub mod error;
 /// HCI layer facade service
@@ -35,6 +37,7 @@ module! {
     hci_module,
     submodules {
         facade::facade_module,
+        controller_facade::controller_facade_module,
         controller::controller_module,
     },
     providers {

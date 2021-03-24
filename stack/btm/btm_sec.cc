@@ -48,6 +48,7 @@
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/l2cap_security_interface.h"
+#include "stack/include/stack_metrics_logging.h"
 #include "stack/smp/smp_int.h"
 
 namespace {
@@ -1967,7 +1968,7 @@ void btm_create_conn_cancel_complete(uint8_t* p) {
   STREAM_TO_BDADDR(bd_addr, p);
   BTM_TRACE_EVENT("btm_create_conn_cancel_complete(): in State: %s  status:%d",
                   btm_pair_state_descr(btm_cb.pairing_state), status);
-  bluetooth::common::LogLinkLayerConnectionEvent(
+  log_link_layer_connection_event(
       &bd_addr, bluetooth::common::kUnknownConnectionHandle,
       android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL,
       android::bluetooth::hci::CMD_CREATE_CONNECTION_CANCEL,

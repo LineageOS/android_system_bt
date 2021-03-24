@@ -617,7 +617,8 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
      * disconnected */
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
       auto& peer_device = bta_dm_cb.device_list.peer_device[i];
-      if (peer_device.peer_bdaddr == other_address) {
+      if (peer_device.peer_bdaddr == other_address &&
+          peer_device.transport == other_transport) {
         peer_device.conn_state = BTA_DM_UNPAIRING;
 
         /* Make sure device is not in acceptlist before we disconnect */

@@ -30,6 +30,8 @@ source_set("LibBluetoothShimSources") {
     "le_advertising_manager.cc",
     "le_scanning_manager.cc",
     "link_policy.cc",
+    "metric_id_api.cc",
+    "metrics_api.cc",
     "shim.cc",
     "stack.cc",
   ]

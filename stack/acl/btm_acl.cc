@@ -63,6 +63,7 @@
 #include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/sco_hci_link_interface.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 void gatt_find_in_device_record(const RawAddress& bd_addr,
