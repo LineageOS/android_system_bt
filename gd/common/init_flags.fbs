@@ -11,6 +11,7 @@ table InitFlagsData {
     gd_hci_enabled:bool;
     gd_controller_enabled:bool;
     gd_core_enabled:bool;
+    btaa_hci_log_enabled:bool;
 }
 
 root_type InitFlagsData;
