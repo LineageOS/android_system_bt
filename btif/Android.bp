@@ -82,6 +82,7 @@ cc_library_static {
         "src/btif_hh.cc",
         "src/btif_hd.cc",
         "src/btif_le_audio.cc",
+        "src/btif_metrics_logging.cc",
         "src/btif_pan.cc",
         "src/btif_profile_queue.cc",
         "src/btif_rc.cc",

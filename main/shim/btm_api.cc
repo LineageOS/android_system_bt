@@ -32,6 +32,7 @@
 #include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
 #include "main/shim/helpers.h"
+#include "main/shim/metric_id_api.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
 #include "stack/btm/btm_int_types.h"
@@ -459,10 +460,20 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
             bluetooth::ToRawAddress(device.GetAddress()), 0, name, HCI_SUCCESS);
       }
     }
-    MetricIdAllocator::GetInstance().AllocateId(
-        bluetooth::ToRawAddress(device.GetAddress()));
-    if (!MetricIdAllocator::GetInstance().SaveDevice(
-            bluetooth::ToRawAddress(device.GetAddress()))) {
+    bool is_gd_enabled = bluetooth::shim::is_any_gd_enabled();
+    if (is_gd_enabled) {
+      bluetooth::shim::AllocateIdFromMetricIdAllocator(
+          bluetooth::ToRawAddress(device.GetAddress()));
+    } else {
+      MetricIdAllocator::GetInstance().AllocateId(
+          bluetooth::ToRawAddress(device.GetAddress()));
+    }
+    bool is_saving_successful =
+        is_gd_enabled ? bluetooth::shim::SaveDeviceOnMetricIdAllocator(
+                            bluetooth::ToRawAddress(device.GetAddress()))
+                      : MetricIdAllocator::GetInstance().SaveDevice(
+                            bluetooth::ToRawAddress(device.GetAddress()));
+    if (!is_saving_successful) {
       LOG(FATAL) << __func__ << ": Fail to save metric id for device "
                  << bluetooth::ToRawAddress(device.GetAddress());
     }
@@ -472,8 +483,13 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
     if (bta_callbacks_->p_bond_cancel_cmpl_callback) {
       (*bta_callbacks_->p_bond_cancel_cmpl_callback)(BTM_SUCCESS);
     }
-    MetricIdAllocator::GetInstance().ForgetDevice(
-        bluetooth::ToRawAddress(device.GetAddress()));
+    if (bluetooth::shim::is_any_gd_enabled()) {
+      bluetooth::shim::ForgetDeviceFromMetricIdAllocator(
+          bluetooth::ToRawAddress(device.GetAddress()));
+    } else {
+      MetricIdAllocator::GetInstance().ForgetDevice(
+          bluetooth::ToRawAddress(device.GetAddress()));
+    }
   }
 
   void OnDeviceBondFailed(bluetooth::hci::AddressWithType device,

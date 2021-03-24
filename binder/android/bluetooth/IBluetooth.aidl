@@ -81,7 +81,7 @@ interface IBluetooth
     int getRemoteType(in BluetoothDevice device);
     @UnsupportedAppUsage
     String getRemoteAlias(in BluetoothDevice device);
-    boolean setRemoteAlias(in BluetoothDevice device, in String name);
+    boolean setRemoteAlias(in BluetoothDevice device, in String name, in String callingPackage);
     int getRemoteClass(in BluetoothDevice device);
     ParcelUuid[] getRemoteUuids(in BluetoothDevice device);
     @UnsupportedAppUsage

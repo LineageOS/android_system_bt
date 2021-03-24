@@ -34,13 +34,15 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "stack/include/bt_types.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
+#include "types/ble_address_with_type.h"
+#include "types/hci_role.h"
 
 #ifndef UNUSED_ATTR
 #define UNUSED_ATTR
 #endif
 
 void acl_ble_connection_complete(const tBLE_BD_ADDR& address_with_type,
-                                 uint16_t handle, uint8_t role, bool match,
+                                 uint16_t handle, tHCI_ROLE role, bool match,
                                  uint16_t conn_interval, uint16_t conn_latency,
                                  uint16_t conn_timeout) {
   mock_function_count_map[__func__]++;

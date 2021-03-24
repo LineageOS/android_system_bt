@@ -35,7 +35,7 @@
 #include "sdp_api.h"
 #include "sdpint.h"
 
-#include "common/metrics.h"
+#include "stack/include/stack_metrics_logging.h"
 
 using bluetooth::Uuid;
 static const uint8_t sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -166,16 +166,15 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
     }
     // Log the existence of a profile role
     // This can be different from Bluetooth Profile Descriptor List
-    bluetooth::common::LogSdpAttribute(bda, service_uuid, 0, 0, nullptr);
+    log_sdp_attribute(bda, service_uuid, 0, 0, nullptr);
     // Log profile version from Bluetooth Profile Descriptor List
     auto uuid_version_array = sdpu_find_profile_version(p_rec);
     for (const auto& uuid_version_pair : uuid_version_array) {
       uint16_t profile_uuid = uuid_version_pair.first;
       uint16_t version = uuid_version_pair.second;
       auto version_array = to_little_endian_array(version);
-      bluetooth::common::LogSdpAttribute(
-          bda, profile_uuid, ATTR_ID_BT_PROFILE_DESC_LIST, version_array.size(),
-          version_array.data());
+      log_sdp_attribute(bda, profile_uuid, ATTR_ID_BT_PROFILE_DESC_LIST,
+                        version_array.size(), version_array.data());
     }
     // Log protocol version from Protocol Descriptor List
     uint16_t protocol_uuid = 0;
@@ -201,9 +200,8 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
         if (protocol_elements.num_params >= 1) {
           uint16_t version = protocol_elements.params[0];
           auto version_array = to_little_endian_array(version);
-          bluetooth::common::LogSdpAttribute(
-              bda, protocol_uuid, ATTR_ID_PROTOCOL_DESC_LIST,
-              version_array.size(), version_array.data());
+          log_sdp_attribute(bda, protocol_uuid, ATTR_ID_PROTOCOL_DESC_LIST,
+                            version_array.size(), version_array.data());
         }
       }
     }
@@ -223,9 +221,8 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
         }
         uint16_t supported_features = p_attr->attr_value.v.u16;
         auto version_array = to_little_endian_array(supported_features);
-        bluetooth::common::LogSdpAttribute(
-            bda, service_uuid, ATTR_ID_SUPPORTED_FEATURES, version_array.size(),
-            version_array.data());
+        log_sdp_attribute(bda, service_uuid, ATTR_ID_SUPPORTED_FEATURES,
+                          version_array.size(), version_array.data());
         break;
       }
       case UUID_SERVCLASS_MESSAGE_NOTIFICATION:
@@ -237,9 +234,8 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
         }
         uint32_t map_supported_features = p_attr->attr_value.v.u32;
         auto features_array = to_little_endian_array(map_supported_features);
-        bluetooth::common::LogSdpAttribute(
-            bda, service_uuid, ATTR_ID_MAP_SUPPORTED_FEATURES,
-            features_array.size(), features_array.data());
+        log_sdp_attribute(bda, service_uuid, ATTR_ID_MAP_SUPPORTED_FEATURES,
+                          features_array.size(), features_array.data());
         break;
       }
       case UUID_SERVCLASS_PBAP_PCE:
@@ -251,9 +247,8 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
         }
         uint32_t pbap_supported_features = p_attr->attr_value.v.u32;
         auto features_array = to_little_endian_array(pbap_supported_features);
-        bluetooth::common::LogSdpAttribute(
-            bda, service_uuid, ATTR_ID_PBAP_SUPPORTED_FEATURES,
-            features_array.size(), features_array.data());
+        log_sdp_attribute(bda, service_uuid, ATTR_ID_PBAP_SUPPORTED_FEATURES,
+                          features_array.size(), features_array.data());
         break;
       }
     }
@@ -266,13 +261,13 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
     tSDP_DI_GET_RECORD di_record = {};
     if (SDP_GetDiRecord(1, &di_record, p_db) == SDP_SUCCESS) {
       auto version_array = to_little_endian_array(di_record.spec_id);
-      bluetooth::common::LogSdpAttribute(
-          bda, UUID_SERVCLASS_PNP_INFORMATION, ATTR_ID_SPECIFICATION_ID,
-          version_array.size(), version_array.data());
+      log_sdp_attribute(bda, UUID_SERVCLASS_PNP_INFORMATION,
+                        ATTR_ID_SPECIFICATION_ID, version_array.size(),
+                        version_array.data());
       std::stringstream ss;
       // [N - native]::SDP::[DIP - Device ID Profile]
       ss << "N:SDP::DIP::" << loghex(di_record.rec.vendor_id_source);
-      bluetooth::common::LogManufacturerInfo(
+      log_manufacturer_info(
           bda, android::bluetooth::DeviceInfoSrcEnum::DEVICE_INFO_INTERNAL,
           ss.str(), loghex(di_record.rec.vendor), loghex(di_record.rec.product),
           loghex(di_record.rec.version), "");
