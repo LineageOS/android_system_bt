@@ -115,14 +115,12 @@ std::optional<ClassOfDevice> ClassOfDevice::FromUint32Legacy(uint32_t cod_int) {
 }
 
 std::optional<ClassOfDevice> ClassOfDevice::FromLegacyConfigString(const std::string& str) {
-  auto num_64bit = common::Uint64FromString(str);
-  if (!num_64bit) {
+  char* ptr = nullptr;
+  auto num = std::strtoull(str.data(), &ptr, 10);
+  if (num > 0xffffff) {
     return std::nullopt;
   }
-  if (!common::IsNumberInNumericLimits<uint32_t>(*num_64bit)) {
-    return std::nullopt;
-  }
-  return FromUint32Legacy(static_cast<uint32_t>(*num_64bit));
+  return FromUint32Legacy(static_cast<uint32_t>(num));
 }
 
 uint32_t ClassOfDevice::ToUint32Legacy() const {
