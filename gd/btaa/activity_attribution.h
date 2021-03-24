@@ -25,12 +25,23 @@ namespace activity_attribution {
 
 enum class Activity : uint8_t { UNKNOWN = 0, ADVERTISE, CONNECT, CONTROL, SCAN, HFP, VENDOR };
 
+struct BtaaAggregationEntry {
+  hci::Address address;
+  Activity activity;
+  uint16_t wakeup_count;
+  uint32_t byte_count;
+  uint32_t wakelock_duration;
+};
+
 class ActivityAttributionCallback {
  public:
   virtual ~ActivityAttributionCallback() = default;
 
-  // Callback when Blutooth woke up the system
+  // Callback when Bluetooth woke up the system
   virtual void OnWakeup(const Activity activity, const hci::Address& address) = 0;
+
+  // Callback when Bluetooth activity logs are ready to be moved
+  virtual void OnActivityLogsReady(const std::vector<BtaaAggregationEntry> logs) = 0;
 };
 
 class ActivityAttribution : public bluetooth::Module {
