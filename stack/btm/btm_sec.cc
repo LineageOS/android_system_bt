@@ -1448,6 +1448,12 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec,
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
     const RawAddress& bd_addr, uint16_t security_required, bool is_originator,
     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
+  LOG_DEBUG(
+      "Checking l2cap access requirements peer:%s security:0x%x "
+      "is_initiator:%s",
+      PRIVATE_ADDRESS(bd_addr), security_required,
+      logbool(is_originator).c_str());
+
   tBTM_STATUS rc = BTM_SUCCESS;
   bool chk_acp_auth_done = false;
   /* should check PSM range in LE connection oriented L2CAP connection */
