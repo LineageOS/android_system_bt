@@ -20,6 +20,7 @@
 
 #include <base/bind.h>
 #include <base/strings/stringprintf.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/a2dp/enums.pb.h>
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -39,7 +40,10 @@
 #include "btif/include/btif_profile_queue.h"
 #include "btif/include/btif_rc.h"
 #include "btif/include/btif_util.h"
+#include "btif_metrics_logging.h"
+#include "common/metrics.h"
 #include "common/state_machine.h"
+#include "hardware/bt_av.h"
 #include "include/hardware/bt_rc.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/properties.h"
@@ -2411,6 +2415,26 @@ static void btif_report_audio_state(const RawAddress& peer_address,
                      base::Bind(btif_av_sink.Callbacks()->audio_state_cb,
                                 peer_address, state));
   }
+
+  using android::bluetooth::a2dp::AudioCodingModeEnum;
+  using android::bluetooth::a2dp::PlaybackStateEnum;
+  PlaybackStateEnum playback_state = PlaybackStateEnum::PLAYBACK_STATE_UNKNOWN;
+  switch (state) {
+    case BTAV_AUDIO_STATE_STARTED:
+      playback_state = PlaybackStateEnum::PLAYBACK_STATE_PLAYING;
+      break;
+    case BTAV_AUDIO_STATE_STOPPED:
+      playback_state = PlaybackStateEnum::PLAYBACK_STATE_NOT_PLAYING;
+      break;
+    default:
+      break;
+  }
+  AudioCodingModeEnum audio_coding_mode =
+      btif_av_is_a2dp_offload_running()
+          ? AudioCodingModeEnum::AUDIO_CODING_MODE_HARDWARE
+          : AudioCodingModeEnum::AUDIO_CODING_MODE_SOFTWARE;
+
+  log_a2dp_playback_event(peer_address, playback_state, audio_coding_mode);
 }
 
 void btif_av_report_source_codec_state(

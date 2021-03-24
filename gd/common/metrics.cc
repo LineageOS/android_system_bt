@@ -157,6 +157,24 @@ void LogMetricA2dpAudioOverrunEvent(
   }
 }
 
+void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int audio_coding_mode) {
+  int metric_id = 0;
+  if (!address.IsEmpty()) {
+    metric_id = MetricIdManager::GetInstance().AllocateId(address);
+  }
+
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_A2DP_PLAYBACK_STATE_CHANGED, byteField, playback_state, audio_coding_mode, metric_id);
+  if (ret < 0) {
+    LOG_WARN(
+        "Failed to log for %s, playback_state %d, audio_coding_mode %d,error %d",
+        address.ToString().c_str(),
+        playback_state,
+        audio_coding_mode,
+        ret);
+  }
+}
+
 void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t cmd_status, int8_t rssi) {
   int metric_id = 0;
   if (!address.IsEmpty()) {
