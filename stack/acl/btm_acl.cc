@@ -1401,22 +1401,14 @@ tBTM_STATUS StackAclBtmAcl::btm_set_packet_types(tACL_CONN* p,
 }
 
 void btm_set_packet_types_from_address(const RawAddress& bd_addr,
-                                       tBT_TRANSPORT transport,
                                        uint16_t pkt_types) {
-  if (transport == BT_TRANSPORT_LE) {
-    LOG_WARN("Unable to set packet types on le transport");
-    return;
-  }
-  tACL_CONN* p_acl_cb = internal_.btm_bda_to_acl(bd_addr, transport);
-  if (p_acl_cb == nullptr) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl");
     return;
   }
-  if (p_acl_cb->is_transport_ble()) {
-    LOG_DEBUG("Unable to set packet types on provided le acl");
-    return;
-  }
-  tBTM_STATUS status = internal_.btm_set_packet_types(p_acl_cb, pkt_types);
+
+  tBTM_STATUS status = internal_.btm_set_packet_types(p_acl, pkt_types);
   if (status != BTM_CMD_STARTED) {
     LOG_ERROR("Unable to set packet types from address");
   }

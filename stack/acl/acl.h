@@ -375,6 +375,10 @@ struct controller_t;
 /****************************************************
  **      ACL Management API
  ****************************************************/
+constexpr uint16_t kDefaultPacketTypeMask =
+    HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH3 |
+    HCI_PKT_TYPES_MASK_DM3 | HCI_PKT_TYPES_MASK_DH5 | HCI_PKT_TYPES_MASK_DM5;
+
 struct tACL_CB {
  private:
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
@@ -388,13 +392,15 @@ struct tACL_CB {
 
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
-  uint16_t btm_acl_pkt_types_supported =
-      HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1 + HCI_PKT_TYPES_MASK_DH3 +
-      HCI_PKT_TYPES_MASK_DM3 + HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5;
+  uint16_t btm_acl_pkt_types_supported = kDefaultPacketTypeMask;
   uint16_t btm_def_link_policy;
   tHCI_STATUS acl_disc_reason = HCI_ERR_UNDEFINED;
 
  public:
+  void SetDefaultPacketTypeMask(uint16_t packet_type_mask) {
+    btm_acl_pkt_types_supported = packet_type_mask;
+  }
+
   tHCI_STATUS get_disconnect_reason() const { return acl_disc_reason; }
   void set_disconnect_reason(tHCI_STATUS reason) { acl_disc_reason = reason; }
   uint16_t DefaultPacketTypes() const { return btm_acl_pkt_types_supported; }
