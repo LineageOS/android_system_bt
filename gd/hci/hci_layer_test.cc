@@ -17,6 +17,7 @@
 #include "hci/hci_layer.h"
 
 #include <gtest/gtest.h>
+
 #include <list>
 #include <memory>
 
@@ -35,7 +36,20 @@ using std::vector;
 
 namespace {
 vector<uint8_t> information_request = {
-    0xfe, 0x2e, 0x0a, 0x00, 0x06, 0x00, 0x01, 0x00, 0x0a, 0x02, 0x02, 0x00, 0x02, 0x00,
+    0xfe,
+    0x2e,
+    0x0a,
+    0x00,
+    0x06,
+    0x00,
+    0x01,
+    0x00,
+    0x0a,
+    0x02,
+    0x02,
+    0x00,
+    0x02,
+    0x00,
 };
 // 0x00, 0x01, 0x02, 0x03, ...
 vector<uint8_t> counting_bytes;
@@ -170,13 +184,13 @@ class DependsOnHci : public Module {
   DependsOnHci() : Module() {}
 
   void SendHciCommandExpectingStatus(std::unique_ptr<CommandBuilder> command) {
-    hci_->EnqueueCommand(std::move(command),
-                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandStatusView>));
+    hci_->EnqueueCommand(
+        std::move(command), GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandStatusView>));
   }
 
   void SendHciCommandExpectingComplete(std::unique_ptr<CommandBuilder> command) {
-    hci_->EnqueueCommand(std::move(command),
-                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
+    hci_->EnqueueCommand(
+        std::move(command), GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
 
   void SendSecurityCommandExpectingComplete(std::unique_ptr<SecurityCommandBuilder> command) {
@@ -184,8 +198,8 @@ class DependsOnHci : public Module {
       security_interface_ =
           hci_->GetSecurityInterface(GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventView>));
     }
-    hci_->EnqueueCommand(std::move(command),
-                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
+    hci_->EnqueueCommand(
+        std::move(command), GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
 
   void SendLeSecurityCommandExpectingComplete(std::unique_ptr<LeSecurityCommandBuilder> command) {
@@ -193,8 +207,8 @@ class DependsOnHci : public Module {
       le_security_interface_ =
           hci_->GetLeSecurityInterface(GetHandler()->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
     }
-    hci_->EnqueueCommand(std::move(command),
-                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
+    hci_->EnqueueCommand(
+        std::move(command), GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
 
   void SendAclData(std::unique_ptr<AclBuilder> acl) {
@@ -256,14 +270,23 @@ class DependsOnHci : public Module {
     return packetview;
   }
 
+  void RegisterVendorSpecificEvent(VseSubeventCode event) {
+    hci_->RegisterVendorSpecificEventHandler(
+        event, GetHandler()->BindOn(this, &DependsOnHci::handle_event<VendorSpecificEventView>));
+  }
+
+  void UnregisterVendorSpecificEvent(VseSubeventCode event) {
+    hci_->UnregisterVendorSpecificEventHandler(event);
+  }
+
   void Start() {
     hci_ = GetDependency<HciLayer>();
     hci_->RegisterEventHandler(
         EventCode::CONNECTION_COMPLETE, GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventView>));
-    hci_->RegisterLeEventHandler(SubeventCode::CONNECTION_COMPLETE,
-                                 GetHandler()->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
-    hci_->GetAclQueueEnd()->RegisterDequeue(GetHandler(),
-                                            common::Bind(&DependsOnHci::handle_acl, common::Unretained(this)));
+    hci_->RegisterLeEventHandler(
+        SubeventCode::CONNECTION_COMPLETE, GetHandler()->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
+    hci_->GetAclQueueEnd()->RegisterDequeue(
+        GetHandler(), common::Bind(&DependsOnHci::handle_acl, common::Unretained(this)));
     hci_->GetIsoQueueEnd()->RegisterDequeue(
         GetHandler(), common::Bind(&DependsOnHci::handle_iso, common::Unretained(this)));
   }
@@ -434,6 +457,92 @@ TEST_F(HciTest, leMetaEvent) {
 
   auto event = upper->GetReceivedEvent();
   ASSERT_TRUE(LeConnectionCompleteView::Create(LeMetaEventView::Create(EventView::Create(event))).IsValid());
+}
+
+TEST_F(HciTest, vendorSpecificEventRegistration) {
+  auto event_future = upper->GetReceivedEventFuture();
+
+  upper->RegisterVendorSpecificEvent(VseSubeventCode::BQR_EVENT);
+
+  // Send a vendor specific event
+  hal->callbacks->hciEventReceived(GetPacketBytes(BqrLinkQualityEventBuilder::Create(
+      QualityReportId::A2DP_AUDIO_CHOPPY,
+      BqrPacketType::TYPE_2DH1,
+      /* handle */ 0x123,
+      Role::CENTRAL,
+      /* TX_Power_Level */ 0x05,
+      /* RSSI */ 65,
+      /* SNR */ 30,
+      /* Unused_AFH_Channel_Count */ 0,
+      /* AFH_Select_Unideal_Channel_Count */ 0,
+      /* LSTO */ 12,
+      /* Connection_Piconet_Clock */ 42,
+      /* Retransmission_Count */ 1,
+      /* No_RX_Count */ 1,
+      /* NAK_Count */ 1,
+      /* Last_TX_ACK_Timestamp */ 123456,
+      /* Flow_Off_Count */ 78910,
+      /* Last_Flow_On_Timestamp */ 123457,
+      /* Buffer_Overflow_Bytes */ 42,
+      /* Buffer_Underflow_Bytes */ 24,
+      /* Vendor Specific Parameter */ std::make_unique<RawBuilder>())));
+
+  // Wait for the event
+  auto event_status = event_future.wait_for(kTimeout);
+  ASSERT_EQ(event_status, std::future_status::ready);
+
+  auto event = upper->GetReceivedEvent();
+  ASSERT_TRUE(
+      BqrLinkQualityEventView::Create(BqrEventView::Create(VendorSpecificEventView::Create(EventView::Create(event))))
+          .IsValid());
+
+  // Now test if we can unregister the vendor specific event handler
+  event_future = upper->GetReceivedEventFuture();
+
+  upper->UnregisterVendorSpecificEvent(VseSubeventCode::BQR_EVENT);
+
+  hal->callbacks->hciEventReceived(GetPacketBytes(BqrLinkQualityEventBuilder::Create(
+      QualityReportId::A2DP_AUDIO_CHOPPY,
+      BqrPacketType::TYPE_2DH1,
+      /* handle */ 0x123,
+      Role::CENTRAL,
+      /* TX_Power_Level */ 0x05,
+      /* RSSI */ 65,
+      /* SNR */ 30,
+      /* Unused_AFH_Channel_Count */ 0,
+      /* AFH_Select_Unideal_Channel_Count */ 0,
+      /* LSTO */ 12,
+      /* Connection_Piconet_Clock */ 42,
+      /* Retransmission_Count */ 1,
+      /* No_RX_Count */ 1,
+      /* NAK_Count */ 1,
+      /* Last_TX_ACK_Timestamp */ 123456,
+      /* Flow_Off_Count */ 78910,
+      /* Last_Flow_On_Timestamp */ 123457,
+      /* Buffer_Overflow_Bytes */ 42,
+      /* Buffer_Underflow_Bytes */ 24,
+      /* Vendor Specific Parameter */ std::make_unique<RawBuilder>())));
+
+  // Wait for unregistered event should timeout
+  event_status = event_future.wait_for(kTimeout);
+  ASSERT_NE(event_status, std::future_status::ready);
+}
+
+TEST_F(HciTest, vendorSpecificEventUnknown) {
+  auto event_future = upper->GetReceivedEventFuture();
+
+  upper->RegisterVendorSpecificEvent(VseSubeventCode::BQR_EVENT);
+
+  // Send a vendor specific event
+  // Make sure 0xFE is not used for any VSE, if not change this value to an unused one
+  auto raw_builder = std::make_unique<RawBuilder>();
+  raw_builder->AddOctets1(42);
+  hal->callbacks->hciEventReceived(
+      GetPacketBytes(VendorSpecificEventBuilder::Create(static_cast<VseSubeventCode>(0xFE), std::move(raw_builder))));
+
+  // Wait for the event should timeout
+  auto event_status = event_future.wait_for(kTimeout);
+  ASSERT_NE(event_status, std::future_status::ready);
 }
 
 TEST_F(HciTest, noOpCredits) {
