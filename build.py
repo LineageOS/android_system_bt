@@ -288,7 +288,8 @@ class HostBuild():
             self._gn_default_output(),
         ]
 
-        print('DEBUG: PKG_CONFIG_PATH is', self.env['PKG_CONFIG_PATH'])
+        if 'PKG_CONFIG_PATH' in self.env:
+            print('DEBUG: PKG_CONFIG_PATH is', self.env['PKG_CONFIG_PATH'])
 
         self.run_command('configure', gn_args)
 
