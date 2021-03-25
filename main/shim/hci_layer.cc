@@ -161,6 +161,19 @@ bool is_valid_subevent_code(uint8_t subevent_code_raw) {
   }
 }
 
+bool is_valid_vendor_specific_event(uint8_t vse_code_raw) {
+  auto vse_code = static_cast<bluetooth::hci::VseSubeventCode>(vse_code_raw);
+  switch (vse_code) {
+    case bluetooth::hci::VseSubeventCode::BQR_EVENT:
+    case bluetooth::hci::VseSubeventCode::BLE_THRESHOLD:
+    case bluetooth::hci::VseSubeventCode::BLE_TRACKING:
+    case bluetooth::hci::VseSubeventCode::DEBUG_INFO:
+      return true;
+    default:
+      return false;
+  }
+}
+
 static bool event_already_registered_in_hci_layer(
     bluetooth::hci::EventCode event_code) {
   switch (event_code) {
@@ -341,6 +354,16 @@ static void subevent_callback(
                                                      &le_meta_event_view));
 }
 
+static void vendor_specific_event_callback(
+    bluetooth::hci::VendorSpecificEventView vendor_specific_event_view) {
+  if (!send_data_upwards) {
+    return;
+  }
+  send_data_upwards.Run(
+      FROM_HERE,
+      WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &vendor_specific_event_view));
+}
+
 void OnTransmitPacketCommandComplete(command_complete_cb complete_callback,
                                      void* context,
                                      bluetooth::hci::CommandCompleteView view) {
@@ -428,6 +451,13 @@ static void register_le_event(bluetooth::hci::SubeventCode subevent_code) {
   auto handler = bluetooth::shim::GetGdShimHandler();
   bluetooth::shim::GetHciLayer()->RegisterLeEventHandler(
       subevent_code, handler->Bind(subevent_callback));
+}
+
+static void register_vendor_specific_event(
+    bluetooth::hci::VseSubeventCode vse_code) {
+  auto handler = bluetooth::shim::GetGdShimHandler();
+  bluetooth::shim::GetHciLayer()->RegisterVendorSpecificEventHandler(
+      vse_code, handler->Bind(vendor_specific_event_callback));
 }
 
 static void acl_data_callback() {
@@ -756,6 +786,19 @@ void bluetooth::shim::hci_on_reset_complete() {
       ::rust::register_le_event(subevent_code);
     } else {
       cpp::register_le_event(subevent_code);
+    }
+  }
+
+  for (uint8_t vse_code_raw = 0; vse_code_raw < 0xFF; vse_code_raw++) {
+    if (!is_valid_vendor_specific_event(vse_code_raw)) {
+      continue;
+    }
+    auto vse_code = static_cast<bluetooth::hci::VseSubeventCode>(vse_code_raw);
+    if (bluetooth::common::init_flags::gd_rust_is_enabled()) {
+      // TODO(b/183057550): Need Rust HCI implementation for VSE
+      // ::rust::register_vendor_specific_event(vse_code_raw);
+    } else {
+      cpp::register_vendor_specific_event(vse_code);
     }
   }
 
