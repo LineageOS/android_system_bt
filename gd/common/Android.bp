@@ -8,16 +8,6 @@ package {
 }
 
 filegroup {
-    name: "BluetoothCommonSourcesForRootCanal",
-    srcs: [
-        "init_flags.cc",
-        "metric_id_manager.cc",
-        "strings.cc",
-        "stop_watch.cc",
-    ],
-}
-
-filegroup {
     name: "BluetoothCommonSources",
     srcs: [
         "init_flags.cc",
