@@ -50,7 +50,6 @@ cc_library_static {
         "model/setup/test_model.cc",
         ":BluetoothPacketSources",
         ":BluetoothHciClassSources",
-        ":BluetoothCommonSourcesForRootCanal",
     ],
     cflags: [
         "-fvisibility=hidden",
