@@ -318,9 +318,11 @@ class HostBuild():
         replace-with = "systembt"
         local-registry = "/nonexistent"
         """
-        contents = template.format(self.platform_dir)
-        with open(os.path.join(self.env['CARGO_HOME'], 'config'), 'w') as f:
-            f.write(contents)
+
+        if self.args.vendored_rust:
+            contents = template.format(self.platform_dir)
+            with open(os.path.join(self.env['CARGO_HOME'], 'config'), 'w') as f:
+                f.write(contents)
 
     def _rust_build(self):
         """ Run `cargo build` from platform2/bt directory.
@@ -349,6 +351,10 @@ class HostBuild():
         """ Build rust artifacts in an already prepared environment.
         """
         self._rust_build()
+        rust_dir = os.path.join(self._gn_default_output(), 'rust')
+        if os.path.exists(rust_dir):
+            shutil.rmtree(rust_dir)
+        shutil.copytree(os.path.join(self.output_dir, 'debug'), rust_dir)
 
     def _target_main(self):
         """ Build the main GN artifacts in an already prepared environment.
@@ -407,6 +413,7 @@ if __name__ == '__main__':
     parser.add_argument('--libdir', help='Libdir - default = usr/lib64', default='usr/lib64')
     parser.add_argument('--use-board', help='Use a built x86 board for dependencies. Provide path.')
     parser.add_argument('--jobs', help='Number of jobs to run', default=0, type=int)
+    parser.add_argument('--vendored-rust', help='Use vendored rust crates', default=False, action="store_true")
     parser.add_argument('--verbose', help='Verbose logs for build.')
 
     args = parser.parse_args()
