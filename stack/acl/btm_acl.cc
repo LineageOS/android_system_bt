@@ -1238,6 +1238,25 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
+ * Function         BTM_RequestPeerSCA
+ *
+ * Description      This function is called to request sleep clock accuracy
+ *                  from peer device
+ *
+ ******************************************************************************/
+void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
+  tACL_CONN* p;
+  p = internal_.btm_bda_to_acl(remote_bda, transport);
+  if (p == (tACL_CONN*)NULL) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+
+  btsnd_hcic_req_peer_sca(p->hci_handle);
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_GetPeerSCA
  *
  * Description      This function is called to get peer sleep clock accuracy
