@@ -545,6 +545,26 @@ TEST_F(HciTest, vendorSpecificEventUnknown) {
   ASSERT_NE(event_status, std::future_status::ready);
 }
 
+TEST_F(HciTest, hciTimeOut) {
+  auto event_future = upper->GetReceivedEventFuture();
+  auto reset_command_future = hal->GetSentCommandFuture();
+  upper->SendHciCommandExpectingComplete(ResetBuilder::Create());
+  auto reset_command_sent_status = reset_command_future.wait_for(kTimeout);
+  ASSERT_EQ(reset_command_sent_status, std::future_status::ready);
+  auto reset = hal->GetSentCommand();
+  ASSERT_TRUE(reset.IsValid());
+  ASSERT_EQ(reset.GetOpCode(), OpCode::RESET);
+
+  auto debug_command_future = hal->GetSentCommandFuture();
+  auto event_status = event_future.wait_for(HciLayer::kHciTimeoutMs);
+  ASSERT_NE(event_status, std::future_status::ready);
+  auto debug_command_sent_status = debug_command_future.wait_for(kTimeout);
+  ASSERT_EQ(debug_command_sent_status, std::future_status::ready);
+  auto debug = hal->GetSentCommand();
+  ASSERT_TRUE(debug.IsValid());
+  ASSERT_EQ(debug.GetOpCode(), OpCode::CONTROLLER_DEBUG_INFO);
+}
+
 TEST_F(HciTest, noOpCredits) {
   ASSERT_EQ(0, hal->GetNumSentCommands());
 
