@@ -48,7 +48,7 @@ rust_ffi_static {
     proc_macros: [
         "libpaste",
     ],
-    static_libs: [
+    whole_static_libs: [
         "libbt_callbacks_cxx",
     ],
 }
