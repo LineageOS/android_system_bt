@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-#include <mutex>
-
 #include "gd/common/metrics.h"
 #include "gd/hci/address.h"
 #include "main/shim/helpers.h"
 #include "main/shim/metrics_api.h"
-#include "main/shim/shim.h"
 #include "types/raw_address.h"
 
 using bluetooth::hci::Address;
@@ -32,10 +29,13 @@ void LogMetricLinkLayerConnectionEvent(
     android::bluetooth::DirectionEnum direction, uint16_t link_type,
     uint32_t hci_cmd, uint16_t hci_event, uint16_t hci_ble_event,
     uint16_t cmd_status, uint16_t reason_code) {
-  Address address = bluetooth::ToGdAddress(*raw_address);
+  Address address = Address::kEmpty;
+  if (raw_address != nullptr) {
+    address = bluetooth::ToGdAddress(*raw_address);
+  }
   bluetooth::common::LogMetricLinkLayerConnectionEvent(
-      &address, connection_handle, direction, link_type, hci_cmd, hci_event,
-      hci_ble_event, cmd_status, reason_code);
+      raw_address == nullptr ? nullptr : &address, connection_handle, direction,
+      link_type, hci_cmd, hci_event, hci_ble_event, cmd_status, reason_code);
 }
 
 void LogMetricA2dpAudioUnderrunEvent(const RawAddress& raw_address,

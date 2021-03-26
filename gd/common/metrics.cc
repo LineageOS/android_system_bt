@@ -71,7 +71,7 @@ void LogMetricLinkLayerConnectionEvent(
         ToHexString(hci_cmd).c_str(),
         ToHexString(hci_event).c_str(),
         ToHexString(hci_ble_event).c_str(),
-        address->ToString().c_str(),
+        address ? address->ToString().c_str() : "(NULL)",
         connection_handle,
         ToHexString(link_type).c_str(),
         ret);
