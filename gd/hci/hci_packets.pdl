@@ -4772,11 +4772,10 @@ packet LeExtendedScanParamsComplete : CommandComplete (command_op_code = LE_EXTE
 }
 
 packet ControllerDebugInfo : VendorCommand (op_code = CONTROLLER_DEBUG_INFO) {
-  _payload_,  // placeholder (unimplemented)
 }
 
 packet ControllerDebugInfoComplete : CommandComplete (command_op_code = CONTROLLER_DEBUG_INFO) {
-  _payload_,  // placeholder (unimplemented)
+  status : ErrorCode,
 }
 
 packet ControllerA2DPOpcode : VendorCommand (op_code = CONTROLLER_A2DP_OPCODE) {
