@@ -66,6 +66,11 @@ bool BTM_IsBleConnection(uint16_t hci_handle) {
   mock_function_count_map[__func__]++;
   return false;
 }
+bool BTM_IsPhy2mSupported(const RawAddress& remote_bda,
+                          tBT_TRANSPORT transport) {
+  mock_function_count_map[__func__]++;
+  return false;
+}
 bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
                                   RawAddress& conn_addr,
                                   tBLE_ADDR_TYPE* p_addr_type) {
