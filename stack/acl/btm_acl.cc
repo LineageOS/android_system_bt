@@ -1206,7 +1206,7 @@ uint16_t BTM_GetNumAclLinks(void) {
  * Returns          true if connection is up, else false.
  *
  ******************************************************************************/
-uint16_t btm_get_acl_disc_reason_code(void) {
+tHCI_REASON btm_get_acl_disc_reason_code(void) {
   return btm_cb.acl_cb_.get_disconnect_reason();
 }
 
