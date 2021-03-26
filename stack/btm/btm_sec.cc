@@ -1489,8 +1489,8 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
   /* we will process one after another */
   if ((p_dev_rec->p_callback) ||
       (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)) {
-    BTM_TRACE_EVENT("security_flags:x%x, sec_flags:x%x", security_required,
-                    p_dev_rec->sec_flags);
+    LOG_DEBUG("security_flags:x%x, sec_flags:x%x", security_required,
+              p_dev_rec->sec_flags);
     rc = BTM_CMD_STARTED;
     if ((btm_cb.security_mode == BTM_SEC_MODE_SERVICE) ||
         (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
