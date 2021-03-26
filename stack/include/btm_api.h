@@ -752,6 +752,19 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
+ * Function         BTM_GetPeerSCA
+ *
+ * Description      This function is called to get peer sleep clock accuracy
+ *
+ * Returns          SCA or 0xFF if SCA was never previously requested, request
+ *                  is not supported by peer device or ACL does not exist
+ *
+ ******************************************************************************/
+extern uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda,
+                              tBT_TRANSPORT transport);
+
+/*******************************************************************************
+ *
  * Function         BTM_DeleteStoredLinkKey
  *
  * Description      This function is called to delete link key for the specified
