@@ -18,7 +18,9 @@
 #ifndef BTA_HH_API_H
 #define BTA_HH_API_H
 
+#include <base/strings/stringprintf.h>
 #include <cstdint>
+#include <string>
 
 #include "bta/include/bta_api.h"
 #include "stack/include/hiddefs.h"
@@ -220,6 +222,11 @@ typedef struct {
 
   uint8_t flag;
   tBTA_HH_DEV_DESCR descriptor;
+
+  std::string ToString() const {
+    return base::StringPrintf("%04x::%04x::%04x", vendor_id, product_id,
+                              version);
+  }
 } tBTA_HH_DEV_DSCP_INFO;
 
 /* callback event data for BTA_HH_OPEN_EVT */
