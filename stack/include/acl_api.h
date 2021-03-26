@@ -298,7 +298,7 @@ void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 
 uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 
-uint16_t btm_get_acl_disc_reason_code(void);
+tHCI_REASON btm_get_acl_disc_reason_code(void);
 
 extern tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr,
                                   tBT_TRANSPORT transport);
