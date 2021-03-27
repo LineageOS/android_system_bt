@@ -26,7 +26,7 @@ rust_library {
             rustlibs: [
                 "libandroid_logger",
             ],
-            static_libs: ["libbt_common_sys_prop_cxx"],
+            whole_static_libs: ["libbt_common_sys_prop_cxx"],
             shared_libs: [
                 "libcutils",
             ],
@@ -79,5 +79,4 @@ cc_library_static {
     shared_libs: [
         "libcutils",
     ],
-    whole_static_libs: ["libcxxbridge05"],
 }

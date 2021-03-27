@@ -306,7 +306,7 @@ class ShimAclConnection {
 
   void Shutdown() {
     Disconnect();
-    LOG_INFO("Shutdown ACL connection handle:0x%04x", handle_);
+    LOG_INFO("Shutdown and disconnect ACL connection handle:0x%04x", handle_);
   }
 
  protected:
@@ -700,6 +700,27 @@ struct shim::legacy::Acl::impl {
       connection.second->Shutdown();
     }
     handle_to_le_connection_map_.clear();
+    promise.set_value();
+  }
+
+  void FinalShutdown(std::promise<void> promise) {
+    if (!handle_to_classic_connection_map_.empty()) {
+      for (auto& connection : handle_to_classic_connection_map_) {
+        connection.second->Shutdown();
+      }
+      handle_to_classic_connection_map_.clear();
+      LOG_INFO("Cleared all classic connections count:%zu",
+               handle_to_classic_connection_map_.size());
+    }
+
+    if (!handle_to_le_connection_map_.empty()) {
+      for (auto& connection : handle_to_le_connection_map_) {
+        connection.second->Shutdown();
+      }
+      handle_to_le_connection_map_.clear();
+      LOG_INFO("Cleared all le connections count:%zu",
+               handle_to_le_connection_map_.size());
+    }
     promise.set_value();
   }
 
@@ -1327,6 +1348,26 @@ void shim::legacy::Acl::Shutdown() {
   } else {
     LOG_INFO("All ACL connections have been previously closed");
   }
+}
+
+void shim::legacy::Acl::FinalShutdown() {
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  GetAclManager()->UnregisterCallbacks(this, std::move(promise));
+  future.wait();
+  LOG_DEBUG("Unregistered classic callbacks from gd acl manager");
+
+  promise = std::promise<void>();
+  future = promise.get_future();
+  GetAclManager()->UnregisterLeCallbacks(this, std::move(promise));
+  future.wait();
+  LOG_DEBUG("Unregistered le callbacks from gd acl manager");
+
+  promise = std::promise<void>();
+  future = promise.get_future();
+  handler_->CallOn(pimpl_.get(), &Acl::impl::FinalShutdown, std::move(promise));
+  future.wait();
+  LOG_INFO("Unregistered and cleared any orphaned ACL connections");
 }
 
 void shim::legacy::Acl::ClearAcceptList() {
