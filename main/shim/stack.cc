@@ -193,8 +193,13 @@ void Stack::Stop() {
   if (!common::init_flags::gd_core_is_enabled()) {
     bluetooth::shim::hci_on_shutting_down();
   }
-  delete acl_;
-  acl_ = nullptr;
+
+  // Make sure gd acl flag is enabled and we started it up
+  if (common::init_flags::gd_acl_is_enabled() && acl_ != nullptr) {
+    acl_->FinalShutdown();
+    delete acl_;
+    acl_ = nullptr;
+  }
 
   ASSERT_LOG(is_running_, "%s Gd stack not running", __func__);
   is_running_ = false;

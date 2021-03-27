@@ -275,7 +275,6 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
 
   void on_read_remote_supported_features_status(CommandStatusView view) {
     ASSERT_LOG(view.IsValid(), "Bad status packet!");
-    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
   }
 
   void on_read_remote_extended_features_status(CommandStatusView view) {
