@@ -541,8 +541,8 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec) {
                              (uint8_t*)rec->hdr.service_name);
 
   /* Add in the Bluetooth Profile Descriptor List */
-  status &= SDP_AddProfileDescriptorList(sdp_handle, service,
-                                         rec->hdr.profile_version);
+  status &= SDP_AddProfileDescriptorList(
+      sdp_handle, UUID_SERVCLASS_PHONE_ACCESS, rec->hdr.profile_version);
 
   /* Make the service browseable */
   status &=
