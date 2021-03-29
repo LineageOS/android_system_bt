@@ -66,6 +66,11 @@ bool BTM_IsBleConnection(uint16_t hci_handle) {
   mock_function_count_map[__func__]++;
   return false;
 }
+bool BTM_IsPhy2mSupported(const RawAddress& remote_bda,
+                          tBT_TRANSPORT transport) {
+  mock_function_count_map[__func__]++;
+  return false;
+}
 bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
                                   RawAddress& conn_addr,
                                   tBLE_ADDR_TYPE* p_addr_type) {
@@ -215,6 +220,10 @@ tHCI_REASON btm_get_acl_disc_reason_code(void) {
   mock_function_count_map[__func__]++;
   return HCI_SUCCESS;
 }
+uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
+  mock_function_count_map[__func__]++;
+  return 0;
+}
 uint8_t BTM_SetTraceLevel(uint8_t new_level) {
   mock_function_count_map[__func__]++;
   return 0;
@@ -240,6 +249,9 @@ void ACL_UnregisterClient(struct acl_client_callback_s* callbacks) {
 void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                             RawAddress& local_conn_addr,
                             tBLE_ADDR_TYPE* p_addr_type) {
+  mock_function_count_map[__func__]++;
+}
+void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
   mock_function_count_map[__func__]++;
 }
 void BTM_acl_after_controller_started(const controller_t* controller) {
