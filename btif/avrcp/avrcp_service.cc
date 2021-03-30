@@ -36,20 +36,8 @@ namespace avrcp {
 AvrcpService* AvrcpService::instance_ = nullptr;
 AvrcpService::ServiceInterfaceImpl* AvrcpService::service_interface_ = nullptr;
 
-std::mutex jni_mutex_;
-btbase::AbstractMessageLoop* jni_message_loop_ = nullptr;
-base::CancelableTaskTracker task_tracker_;
-
 void do_in_avrcp_jni(const base::Closure& task) {
-  std::lock_guard<std::mutex> lock(jni_mutex_);
-
-  if (jni_message_loop_ == nullptr) {
-    LOG(WARNING) << __func__ << ": jni_message_loop_ is null";
-    return;
-  }
-
-  task_tracker_.PostTask(jni_message_loop_->task_runner().get(), FROM_HERE,
-                         task);
+  do_in_jni_thread(FROM_HERE, task);
 }
 
 class A2dpInterfaceImpl : public A2dpInterface {
@@ -466,11 +454,6 @@ void AvrcpService::ServiceInterfaceImpl::Init(
   CHECK(instance_ == nullptr);
   instance_ = new AvrcpService();
 
-  {
-    std::lock_guard<std::mutex> jni_lock(jni_mutex_);
-    jni_message_loop_ = get_jni_message_loop();
-  }
-
   do_in_main_thread(FROM_HERE,
                     base::Bind(&AvrcpService::Init, base::Unretained(instance_),
                                media_interface, volume_interface));
@@ -521,12 +504,6 @@ bool AvrcpService::ServiceInterfaceImpl::Cleanup() {
   std::lock_guard<std::mutex> lock(service_interface_lock_);
 
   if (instance_ == nullptr) return false;
-
-  {
-    std::lock_guard<std::mutex> jni_lock(jni_mutex_);
-    task_tracker_.TryCancelAll();
-    jni_message_loop_ = nullptr;
-  }
 
   do_in_main_thread(FROM_HERE,
                     base::Bind(&AvrcpService::Cleanup, base::Owned(instance_)));

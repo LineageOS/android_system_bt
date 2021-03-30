@@ -54,8 +54,7 @@ class OnceClosure {
   }
 
   void Run() const {
-    base::SequencedTaskRunnerHandle::Get()->PostTask(
-        FROM_HERE, std::move(*closure_));
+    std::move(*closure_).Run();
     delete closure_;
     ((OnceClosure*)this)->closure_ = nullptr;
   }
