@@ -100,13 +100,16 @@ class EattTest : public testing::Test {
     ASSERT_TRUE(test_tcb.eatt == num_of_accepted_connections);
   }
 
+  void DisconnectEattByPeer(void) {
+    for (uint16_t cid : connected_cids_)
+      l2cap_app_info_.pL2CA_DisconnectInd_Cb(cid, true);
+    ASSERT_TRUE(test_tcb.eatt == 0);
+  }
+
   void DisconnectEattDevice(void) {
     EXPECT_CALL(l2cap_interface_, DisconnectRequest(_))
         .Times(connected_cids_.size());
     eatt_instance_->Disconnect(test_address);
-
-    for (uint16_t cid : connected_cids_)
-      l2cap_app_info_.pL2CA_DisconnectInd_Cb(cid, true);
 
     ASSERT_TRUE(test_tcb.eatt == 0);
   }
@@ -206,14 +209,14 @@ TEST_F(EattTest, ConnectFailedSlaveOnTheLink) {
 }
 
 TEST_F(EattTest, DisonnectByPeerSucceed) {
-  ConnectDeviceEattSupported(1);
+  ConnectDeviceEattSupported(2);
 
   uint16_t cid = connected_cids_[0];
   EattChannel* channel =
       eatt_instance_->FindEattChannelByCid(test_address, cid);
   ASSERT_TRUE(channel->state_ == EattChannelState::EATT_CHANNEL_OPENED);
 
-  l2cap_app_info_.pL2CA_DisconnectInd_Cb(cid, true);
+  DisconnectEattByPeer();
 
   channel = eatt_instance_->FindEattChannelByCid(test_address, cid);
   ASSERT_TRUE(channel == nullptr);

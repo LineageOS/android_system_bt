@@ -588,8 +588,13 @@ struct eatt_impl {
     while (iter != eatt_dev->eatt_channels.end()) {
       uint16_t cid = iter->first;
       disconnect_channel(cid);
-      iter++;
+      /* When initiating disconnection, stack will not notify us that it is
+       * done. We need to assume success
+       */
+      iter = eatt_dev->eatt_channels.erase(iter);
     }
+    eatt_dev->eatt_tcb_->eatt = 0;
+    eatt_dev->eatt_tcb_ = nullptr;
   }
 
   void connect(const RawAddress& bd_addr) {
