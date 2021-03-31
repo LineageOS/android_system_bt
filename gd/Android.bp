@@ -145,9 +145,6 @@ cc_defaults {
                 "libutils",
                 "libstatslog",
             ],
-            static_libs: [
-                "libbt-platform-protos-lite",
-            ],
         },
     },
     srcs: [
@@ -179,7 +176,6 @@ cc_defaults {
         "libflatbuffers-cpp",
         "libgrpc++",
         "libgrpc_wrap",
-        "libstatslog",
     ],
     static_libs: [
         "libbluetooth-protos",
@@ -267,6 +263,7 @@ cc_binary {
                 "libhidlbase",
                 "libutils",
                 "libcutils",
+                "libstatslog",
             ],
         },
         host: {
@@ -317,6 +314,7 @@ cc_test {
                 "libhidlbase",
                 "libutils",
                 "libcutils",
+                "libstatslog",
             ],
         },
     },
@@ -389,12 +387,10 @@ cc_test {
     },
     static_libs: [
         "libchrome",
-        "libbt-platform-protos-lite",
     ],
     shared_libs: [
         "libgrpc++",
         "libgrpc_wrap",
-        "libstatslog",
     ],
     target: {
         android: {
@@ -448,6 +444,7 @@ cc_defaults {
                 "libcutils",
                 "libhidlbase",
                 "libutils",
+                "libstatslog",
             ],
         },
     },
