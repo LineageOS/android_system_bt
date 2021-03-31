@@ -418,15 +418,18 @@ BluetoothAudioSinkClientInterface::BluetoothAudioSinkClientInterface(
                                         this, message_loop),
                                     sink},
       sink_(sink) {
+  if (HalVersionManager::GetHalVersion() ==
+      BluetoothAudioHalVersion::VERSION_UNAVAILABLE) {
+    return;
+  }
+
   if ((HalVersionManager::GetHalVersion() ==
        BluetoothAudioHalVersion::VERSION_2_1) &&
       (sink_->GetSessionType_2_1() != SessionType_2_1::UNKNOWN)) {
     FetchAudioProvider_2_1();
-
     return;
   }
-
-  if (sink_->GetSessionType() != SessionType::UNKNOWN) FetchAudioProvider();
+  FetchAudioProvider();
 }
 
 BluetoothAudioSinkClientInterface::~BluetoothAudioSinkClientInterface() {
@@ -453,13 +456,18 @@ BluetoothAudioSourceClientInterface::BluetoothAudioSourceClientInterface(
                                         this, message_loop),
                                     source},
       source_(source) {
+  if (HalVersionManager::GetHalVersion() ==
+      BluetoothAudioHalVersion::VERSION_UNAVAILABLE) {
+    return;
+  }
+
   if ((HalVersionManager::GetHalVersion() ==
        BluetoothAudioHalVersion::VERSION_2_1) &&
       (source_->GetSessionType_2_1() != SessionType_2_1::UNKNOWN)) {
     FetchAudioProvider_2_1();
+    return;
   }
-
-  if (source_->GetSessionType() != SessionType::UNKNOWN) FetchAudioProvider();
+  FetchAudioProvider();
 }
 
 BluetoothAudioSourceClientInterface::~BluetoothAudioSourceClientInterface() {
