@@ -226,7 +226,8 @@ bt_callbacks_t bt_callbacks = {
     nullptr, /* dut_mode_recv_cb */
     nullptr, /* le_test_mode_cb */
     nullptr, /* energy_info_cb */
-    LinkQualityReportCallback
+    LinkQualityReportCallback,
+    nullptr /* generate_local_oob_data_cb */
 };
 
 bt_os_callouts_t bt_os_callouts = {sizeof(bt_os_callouts_t),
