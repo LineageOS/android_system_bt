@@ -180,11 +180,7 @@ void iso_data_received(BT_HDR* packet) {
 
 void hal_service_died() {
   if (abort_timer.IsScheduled()) {
-    if (root_inflamed_vendor_error_code != 0 || root_inflamed_error_code != 0) {
-      hci_root_inflamed_abort();
-    } else {
-      hci_timeout_abort();
-    }
+    hci_timeout_abort();
     return;
   }
   // The Bluetooth hal suddenly died and no root inflammation packet received.
@@ -470,6 +466,11 @@ static void fragmenter_transmit_finished(BT_HDR* packet,
 
 // Abort.  The chip has had time to write any debugging information.
 static void hci_timeout_abort(void) {
+  if (root_inflamed_vendor_error_code != 0 || root_inflamed_error_code != 0) {
+    hci_root_inflamed_abort();
+    return;
+  }
+
   LOG_ERROR("%s restarting the Bluetooth process.", __func__);
   hci_close_firmware_log_file(hci_firmware_log_fd);
 
