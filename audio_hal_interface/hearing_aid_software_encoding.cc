@@ -33,14 +33,15 @@ using ::bluetooth::audio::ChannelMode;
 using ::bluetooth::audio::PcmParameters;
 using ::bluetooth::audio::SampleRate;
 using ::bluetooth::audio::SessionType;
+using ::bluetooth::audio::SessionType_2_1;
 using ::bluetooth::audio::hearing_aid::StreamCallbacks;
 
 // Transport implementation for Hearing Aids
 class HearingAidTransport
-    : public bluetooth::audio::IBluetoothTransportInstance {
+    : public bluetooth::audio::IBluetoothSinkTransportInstance {
  public:
   HearingAidTransport(StreamCallbacks stream_cb)
-      : IBluetoothTransportInstance(
+      : IBluetoothSinkTransportInstance(
             SessionType::HEARING_AID_SOFTWARE_ENCODING_DATAPATH, {}),
         stream_cb_(std::move(stream_cb)),
         remote_delay_report_ms_(0),
@@ -142,7 +143,7 @@ bool HearingAidGetSelectedHalPcmConfig(PcmParameters* hal_pcm_config) {
 // Sink instance of Hearing Aids to provide call-in APIs for Bluetooth Audio Hal
 HearingAidTransport* hearing_aid_sink = nullptr;
 // Common interface to call-out into Bluetooth Audio Hal
-bluetooth::audio::BluetoothAudioClientInterface*
+bluetooth::audio::BluetoothAudioSinkClientInterface*
     hearing_aid_hal_clientinterface = nullptr;
 bool btaudio_hearing_aid_disabled = false;
 bool is_configured = false;
@@ -178,8 +179,8 @@ bool init(StreamCallbacks stream_cb,
 
   hearing_aid_sink = new HearingAidTransport(std::move(stream_cb));
   hearing_aid_hal_clientinterface =
-      new bluetooth::audio::BluetoothAudioClientInterface(hearing_aid_sink,
-                                                          message_loop);
+      new bluetooth::audio::BluetoothAudioSinkClientInterface(hearing_aid_sink,
+                                                              message_loop);
   if (!hearing_aid_hal_clientinterface->IsValid()) {
     LOG(WARNING) << __func__ << ": BluetoothAudio HAL for Hearing Aid is invalid?!";
     delete hearing_aid_hal_clientinterface;

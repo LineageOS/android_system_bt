@@ -39,11 +39,19 @@ using ::android::hardware::bluetooth::audio::V2_0::SbcNumSubbands;
 using ::android::hardware::bluetooth::audio::V2_0::SbcParameters;
 
 using ::bluetooth::audio::AudioCapabilities;
+using ::bluetooth::audio::AudioCapabilities_2_1;
 using ::bluetooth::audio::AudioConfiguration;
+using ::bluetooth::audio::AudioConfiguration_2_1;
 using ::bluetooth::audio::BluetoothAudioClientInterface;
+using ::bluetooth::audio::BluetoothAudioSinkClientInterface;
+using ::bluetooth::audio::BluetoothAudioSourceClientInterface;
 using ::bluetooth::audio::BluetoothAudioStatus;
 using ::bluetooth::audio::PcmParameters;
+using ::bluetooth::audio::PcmParameters_2_1;
+using ::bluetooth::audio::SampleRate;
+using ::bluetooth::audio::SampleRate_2_1;
 using ::bluetooth::audio::SessionType;
+using ::bluetooth::audio::SessionType_2_1;
 using ::bluetooth::audio::codec::A2dpCodecToHalBitsPerSample;
 using ::bluetooth::audio::codec::A2dpCodecToHalChannelMode;
 using ::bluetooth::audio::codec::A2dpCodecToHalSampleRate;
@@ -51,7 +59,6 @@ using ::bluetooth::audio::codec::BitsPerSample;
 using ::bluetooth::audio::codec::ChannelMode;
 using ::bluetooth::audio::codec::CodecConfiguration;
 using ::bluetooth::audio::codec::IsCodecOffloadingEnabled;
-using ::bluetooth::audio::codec::SampleRate;
 using ::bluetooth::audio::codec::UpdateOffloadingCapabilities;
 using ::testing::Test;
 
@@ -112,13 +119,17 @@ constexpr btav_a2dp_codec_index_t codec_indexes[] = {
     BTAV_A2DP_CODEC_INDEX_SINK_AAC,    BTAV_A2DP_CODEC_INDEX_SINK_LDAC};
 constexpr uint16_t kPeerMtus[5] = {660, 663, 883, 1005, 1500};
 
-class TestTransport : public bluetooth::audio::IBluetoothTransportInstance {
+class TestSinkTransport
+    : public bluetooth::audio::IBluetoothSinkTransportInstance {
  private:
   static constexpr uint64_t kRemoteDelayReportMs = 200;
 
  public:
-  TestTransport(SessionType session_type)
-      : bluetooth::audio::IBluetoothTransportInstance(session_type, {}){};
+  TestSinkTransport(SessionType session_type)
+      : bluetooth::audio::IBluetoothSinkTransportInstance(session_type, {}){};
+  TestSinkTransport(SessionType_2_1 session_type_2_1)
+      : bluetooth::audio::IBluetoothSinkTransportInstance(session_type_2_1,
+                                                          {}){};
   bluetooth::audio::BluetoothAudioCtrlAck StartRequest() override {
     return bluetooth::audio::BluetoothAudioCtrlAck::SUCCESS_FINISHED;
   }
@@ -146,25 +157,70 @@ class TestTransport : public bluetooth::audio::IBluetoothTransportInstance {
   void LogBytesRead(size_t bytes_readed __unused) override{};
 };
 
+class TestSourceTransport
+    : public bluetooth::audio::IBluetoothSourceTransportInstance {
+ private:
+  static constexpr uint64_t kRemoteDelayReportMs = 200;
+
+ public:
+  TestSourceTransport(SessionType session_type)
+      : bluetooth::audio::IBluetoothSourceTransportInstance(session_type, {}){};
+  TestSourceTransport(SessionType_2_1 session_type_2_1)
+      : bluetooth::audio::IBluetoothSourceTransportInstance(session_type_2_1,
+                                                            {}){};
+  bluetooth::audio::BluetoothAudioCtrlAck StartRequest() override {
+    return bluetooth::audio::BluetoothAudioCtrlAck::SUCCESS_FINISHED;
+  }
+  bluetooth::audio::BluetoothAudioCtrlAck SuspendRequest() override {
+    return bluetooth::audio::BluetoothAudioCtrlAck::SUCCESS_FINISHED;
+  }
+  void StopRequest() override {}
+  bool GetPresentationPosition(uint64_t* remote_delay_report_ns,
+                               uint64_t* total_bytes_written,
+                               timespec* data_position) override {
+    if (remote_delay_report_ns) {
+      *remote_delay_report_ns = kRemoteDelayReportMs * 1000000;
+    }
+    if (total_bytes_written) {
+      *total_bytes_written = 0;
+    }
+    if (data_position) {
+      clock_gettime(CLOCK_MONOTONIC, data_position);
+    }
+    return true;
+  }
+  void MetadataChanged(
+      const source_metadata_t& source_metadata __unused) override {}
+  void ResetPresentationPosition() override{};
+  void LogBytesWritten(size_t bytes_written __unused) override{};
+};
+
 class BluetoothAudioClientInterfaceTest : public Test {
  protected:
-  TestTransport* test_transport_ = nullptr;
-  BluetoothAudioClientInterface* clientif_ = nullptr;
+  TestSinkTransport* test_sink_transport_ = nullptr;
+  TestSourceTransport* test_source_transport_ = nullptr;
+  BluetoothAudioSinkClientInterface* clientif_sink_ = nullptr;
+  BluetoothAudioSourceClientInterface* clientif_source_ = nullptr;
 
   static constexpr int kClientIfReturnSuccess = 0;
 
   void SetUp() override {}
 
   void TearDown() override {
-    if (clientif_ != nullptr) delete clientif_;
-    clientif_ = nullptr;
-    if (test_transport_ != nullptr) delete test_transport_;
-    test_transport_ = nullptr;
+    if (clientif_sink_ != nullptr) delete clientif_sink_;
+    clientif_sink_ = nullptr;
+    if (test_sink_transport_ != nullptr) delete test_sink_transport_;
+    test_sink_transport_ = nullptr;
+
+    if (clientif_source_ != nullptr) delete clientif_source_;
+    clientif_source_ = nullptr;
+    if (test_source_transport_ != nullptr) delete test_source_transport_;
+    test_source_transport_ = nullptr;
   }
 
   bool IsSoftwarePcmParametersSupported(const PcmParameters& pcm_config) {
     const std::vector<AudioCapabilities>& capabilities =
-        clientif_->GetAudioCapabilities();
+        clientif_sink_->GetAudioCapabilities();
     PcmParameters pcm_capabilities = capabilities[0].pcmCapabilities();
     bool is_pcm_config_valid =
         (pcm_config.sampleRate != SampleRate::RATE_UNKNOWN &&
@@ -177,9 +233,19 @@ class BluetoothAudioClientInterfaceTest : public Test {
     return (is_pcm_config_valid && is_pcm_config_supported);
   }
 
+  bool IsSinkSoftwarePcmParameters_2_1_Supported(
+      const PcmParameters_2_1& pcm_config) {
+    return IsSoftwarePcmParameters_2_1_Supported(pcm_config, clientif_sink_);
+  }
+
+  bool IsSourceSoftwarePcmParameters_2_1_Supported(
+      const PcmParameters_2_1& pcm_config) {
+    return IsSoftwarePcmParameters_2_1_Supported(pcm_config, clientif_source_);
+  }
+
   bool IsCodecOffloadingSupported(const CodecConfiguration& codec_config) {
     CodecCapabilities codec_capability = {};
-    for (auto audio_capability : clientif_->GetAudioCapabilities()) {
+    for (auto audio_capability : clientif_sink_->GetAudioCapabilities()) {
       if (audio_capability.codecCapabilities().codecType ==
           codec_config.codecType) {
         codec_capability = audio_capability.codecCapabilities();
@@ -248,6 +314,25 @@ class BluetoothAudioClientInterfaceTest : public Test {
         return false;
     }
   }
+
+ private:
+  bool IsSoftwarePcmParameters_2_1_Supported(
+      const PcmParameters_2_1& pcm_config,
+      const BluetoothAudioClientInterface* clientif_) {
+    const std::vector<AudioCapabilities_2_1>& capabilities =
+        clientif_->GetAudioCapabilities_2_1();
+    PcmParameters_2_1 pcm_capabilities = capabilities[0].pcmCapabilities();
+    bool is_pcm_config_valid =
+        (pcm_config.sampleRate != SampleRate_2_1::RATE_UNKNOWN &&
+         pcm_config.bitsPerSample != BitsPerSample::BITS_UNKNOWN &&
+         pcm_config.channelMode != ChannelMode::UNKNOWN &&
+         pcm_config.dataIntervalUs != 0);
+    bool is_pcm_config_supported =
+        (pcm_config.sampleRate & pcm_capabilities.sampleRate &&
+         pcm_config.bitsPerSample & pcm_capabilities.bitsPerSample &&
+         pcm_config.channelMode & pcm_capabilities.channelMode);
+    return (is_pcm_config_valid && is_pcm_config_supported);
+  }
 };
 
 }  // namespace
@@ -261,11 +346,11 @@ TEST_F(BluetoothAudioClientInterfaceTest, A2dpCodecToHalPcmConfig) {
           bits_per_sample_pair.btav_bits_per_sample_;
       for (auto channel_mode_pair : kChannelModePairs) {
         a2dp_codec_config.channel_mode = channel_mode_pair.btav_channel_mode_;
-        EXPECT_EQ(A2dpCodecToHalSampleRate(a2dp_codec_config),
+        ASSERT_EQ(A2dpCodecToHalSampleRate(a2dp_codec_config),
                   sample_rate_pair.hal_sample_rate_);
-        EXPECT_EQ(A2dpCodecToHalBitsPerSample(a2dp_codec_config),
+        ASSERT_EQ(A2dpCodecToHalBitsPerSample(a2dp_codec_config),
                   bits_per_sample_pair.hal_bits_per_sample_);
-        EXPECT_EQ(A2dpCodecToHalChannelMode(a2dp_codec_config),
+        ASSERT_EQ(A2dpCodecToHalChannelMode(a2dp_codec_config),
                   channel_mode_pair.hal_channel_mode_);
       }  // ChannelMode
     }    // BitsPerSampple
@@ -273,9 +358,10 @@ TEST_F(BluetoothAudioClientInterfaceTest, A2dpCodecToHalPcmConfig) {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, StartAndEndA2dpSoftwareSession) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   PcmParameters pcm_config = {};
   for (auto sample_rate_pair : kSampleRatePairs) {
@@ -285,13 +371,13 @@ TEST_F(BluetoothAudioClientInterfaceTest, StartAndEndA2dpSoftwareSession) {
       for (auto channel_mode_pair : kChannelModePairs) {
         pcm_config.channelMode = channel_mode_pair.hal_channel_mode_;
         audio_config.pcmConfig(pcm_config);
-        clientif_->UpdateAudioConfig(audio_config);
+        clientif_sink_->UpdateAudioConfig(audio_config);
         if (IsSoftwarePcmParametersSupported(pcm_config)) {
-          EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+          ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
         } else {
-          EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+          ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
         }
-        EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+        ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
       }  // ChannelMode
     }    // BitsPerSampple
   }      // SampleRate
@@ -372,9 +458,10 @@ std::vector<CodecConfiguration> SbcCodecConfigurationsGenerator() {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, A2dpSbcCodecOffloadingState) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   auto sbc_codec_configs = SbcCodecConfigurationsGenerator();
   for (auto codec_offloading_preference :
        CodecOffloadingPreferenceGenerator(BTAV_A2DP_CODEC_INDEX_SOURCE_SBC)) {
@@ -391,19 +478,20 @@ TEST_F(BluetoothAudioClientInterfaceTest, A2dpSbcCodecOffloadingState) {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, StartAndEndA2dpOffloadSbcSession) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   for (CodecConfiguration codec_config : SbcCodecConfigurationsGenerator()) {
     audio_config.codecConfig(codec_config);
-    clientif_->UpdateAudioConfig(audio_config);
+    clientif_sink_->UpdateAudioConfig(audio_config);
     if (IsCodecOffloadingSupported(codec_config)) {
-      EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     } else {
-      EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     }
-    EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+    ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
   }
 }
 
@@ -444,9 +532,10 @@ std::vector<CodecConfiguration> AacCodecConfigurationsGenerator() {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, A2dpAacCodecOffloadingState) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   auto aac_codec_configs = AacCodecConfigurationsGenerator();
   for (auto codec_offloading_preference :
        CodecOffloadingPreferenceGenerator(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC)) {
@@ -463,19 +552,20 @@ TEST_F(BluetoothAudioClientInterfaceTest, A2dpAacCodecOffloadingState) {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, StartAndEndA2dpOffloadAacSession) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   for (CodecConfiguration codec_config : AacCodecConfigurationsGenerator()) {
     audio_config.codecConfig(codec_config);
-    clientif_->UpdateAudioConfig(audio_config);
+    clientif_sink_->UpdateAudioConfig(audio_config);
     if (IsCodecOffloadingSupported(codec_config)) {
-      EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     } else {
-      EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     }
-    EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+    ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
   }
 }
 
@@ -513,9 +603,10 @@ std::vector<CodecConfiguration> LdacCodecConfigurationsGenerator() {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, A2dpLdacCodecOffloadingState) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   auto ldac_codec_configs = LdacCodecConfigurationsGenerator();
   for (auto codec_offloading_preference :
        CodecOffloadingPreferenceGenerator(BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC)) {
@@ -532,19 +623,20 @@ TEST_F(BluetoothAudioClientInterfaceTest, A2dpLdacCodecOffloadingState) {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, StartAndEndA2dpOffloadLdacSession) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   for (CodecConfiguration codec_config : LdacCodecConfigurationsGenerator()) {
     audio_config.codecConfig(codec_config);
-    clientif_->UpdateAudioConfig(audio_config);
+    clientif_sink_->UpdateAudioConfig(audio_config);
     if (IsCodecOffloadingSupported(codec_config)) {
-      EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     } else {
-      EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     }
-    EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+    ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
   }
 }
 
@@ -577,9 +669,10 @@ std::vector<CodecConfiguration> AptxCodecConfigurationsGenerator(
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, A2dpAptxCodecOffloadingState) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   auto aptx_codec_configs = AptxCodecConfigurationsGenerator(CodecType::APTX);
   for (auto codec_offloading_preference :
        CodecOffloadingPreferenceGenerator(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX)) {
@@ -596,27 +689,29 @@ TEST_F(BluetoothAudioClientInterfaceTest, A2dpAptxCodecOffloadingState) {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, StartAndEndA2dpOffloadAptxSession) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   for (CodecConfiguration codec_config :
        AptxCodecConfigurationsGenerator(CodecType::APTX)) {
     audio_config.codecConfig(codec_config);
-    clientif_->UpdateAudioConfig(audio_config);
+    clientif_sink_->UpdateAudioConfig(audio_config);
     if (IsCodecOffloadingSupported(codec_config)) {
-      EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     } else {
-      EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     }
-    EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+    ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
   }
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, A2dpAptxHdCodecOffloadingState) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   auto aptx_hd_codec_configs =
       AptxCodecConfigurationsGenerator(CodecType::APTX_HD);
   for (auto codec_offloading_preference : CodecOffloadingPreferenceGenerator(
@@ -634,28 +729,30 @@ TEST_F(BluetoothAudioClientInterfaceTest, A2dpAptxHdCodecOffloadingState) {
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest, StartAndEndA2dpOffloadAptxHdSession) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   for (CodecConfiguration codec_config :
        AptxCodecConfigurationsGenerator(CodecType::APTX_HD)) {
     audio_config.codecConfig(codec_config);
-    clientif_->UpdateAudioConfig(audio_config);
+    clientif_sink_->UpdateAudioConfig(audio_config);
     if (IsCodecOffloadingSupported(codec_config)) {
-      EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     } else {
-      EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+      ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
     }
-    EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+    ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
   }
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest,
        StartAndEndA2dpOffloadUnknownSession) {
-  test_transport_ =
-      new TestTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ =
+      new TestSinkTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   CodecConfiguration codec_config = {};
   codec_config.codecType = CodecType::UNKNOWN;
@@ -664,20 +761,21 @@ TEST_F(BluetoothAudioClientInterfaceTest,
   codec_config.encodedAudioBitrate = 328000;
   codec_config.config = {};
   audio_config.codecConfig(codec_config);
-  clientif_->UpdateAudioConfig(audio_config);
+  clientif_sink_->UpdateAudioConfig(audio_config);
   if (IsCodecOffloadingSupported(codec_config)) {
-    EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+    ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
   } else {
-    EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+    ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
   }
-  EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+  ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
 }
 
 TEST_F(BluetoothAudioClientInterfaceTest,
        StartAndEndHearingAidSoftwareSession) {
-  test_transport_ =
-      new TestTransport(SessionType::HEARING_AID_SOFTWARE_ENCODING_DATAPATH);
-  clientif_ = new BluetoothAudioClientInterface(test_transport_, nullptr);
+  test_sink_transport_ = new TestSinkTransport(
+      SessionType::HEARING_AID_SOFTWARE_ENCODING_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
   AudioConfiguration audio_config = {};
   PcmParameters pcm_config = {};
   for (auto sample_rate_pair : kSampleRatePairs) {
@@ -687,13 +785,13 @@ TEST_F(BluetoothAudioClientInterfaceTest,
       for (auto channel_mode_pair : kChannelModePairs) {
         pcm_config.channelMode = channel_mode_pair.hal_channel_mode_;
         audio_config.pcmConfig(pcm_config);
-        clientif_->UpdateAudioConfig(audio_config);
+        clientif_sink_->UpdateAudioConfig(audio_config);
         if (IsSoftwarePcmParametersSupported(pcm_config)) {
-          EXPECT_EQ(clientif_->StartSession(), kClientIfReturnSuccess);
+          ASSERT_EQ(clientif_sink_->StartSession(), kClientIfReturnSuccess);
         } else {
-          EXPECT_NE(clientif_->StartSession(), kClientIfReturnSuccess);
+          ASSERT_NE(clientif_sink_->StartSession(), kClientIfReturnSuccess);
         }
-        EXPECT_EQ(clientif_->EndSession(), kClientIfReturnSuccess);
+        ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
       }  // ChannelMode
     }    // BitsPerSampple
   }      // SampleRate
