@@ -205,14 +205,27 @@ void RoundRobinScheduler::incoming_acl_credits(uint16_t handle, uint16_t credits
     LOG_INFO("Dropping %hx received credits to unknown connection 0x%0hx", credits, handle);
     return;
   }
-  acl_queue_handler->second.number_of_sent_packets_ -= credits;
+
+  if (acl_queue_handler->second.number_of_sent_packets_ >= credits) {
+    acl_queue_handler->second.number_of_sent_packets_ -= credits;
+  } else {
+    LOG_WARN("receive more credits than we sent");
+    acl_queue_handler->second.number_of_sent_packets_ = 0;
+  }
+
   if (acl_queue_handler->second.connection_type_ == ConnectionType::CLASSIC) {
     acl_packet_credits_ += credits;
+    if (acl_packet_credits_ > max_acl_packet_credits_) {
+      acl_packet_credits_ = max_acl_packet_credits_;
+      LOG_WARN("acl packet credits overflow due to receive %hx credits", credits);
+    }
   } else {
     le_acl_packet_credits_ += credits;
+    if (le_acl_packet_credits_ > le_max_acl_packet_credits_) {
+      le_acl_packet_credits_ = le_max_acl_packet_credits_;
+      LOG_WARN("le acl packet credits overflow due to receive %hx credits", credits);
+    }
   }
-  ASSERT(acl_packet_credits_ <= max_acl_packet_credits_);
-  ASSERT(le_acl_packet_credits_ <= le_max_acl_packet_credits_);
   if (acl_packet_credits_ == credits || le_acl_packet_credits_ == credits) {
     start_round_robin();
   }
