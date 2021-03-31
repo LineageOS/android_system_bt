@@ -62,6 +62,7 @@ void btif_dm_load_local_oob(void);
 void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r);
 bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
                           Octet16* p_r);
+void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport);
 #endif /* BTIF_DM_OOB_TEST */
 
 /*callout for reading SMP properties from Text file*/

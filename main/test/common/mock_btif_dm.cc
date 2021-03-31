@@ -168,6 +168,6 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
   return false;
 }
 
-void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
+void btif_dm_proc_loc_oob(const Octet16& c, const Octet16& r) {
   mock_function_count_map[__func__]++;
 }

@@ -319,6 +319,14 @@ static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
   return BT_STATUS_SUCCESS;
 }
 
+static int generate_local_oob_data(tBT_TRANSPORT transport) {
+  LOG_INFO("%s", __func__);
+  if (!interface_ready()) return BT_STATUS_NOT_READY;
+
+  return do_in_main_thread(
+      FROM_HERE, base::BindOnce(btif_dm_generate_local_oob_data, transport));
+}
+
 static int cancel_bond(const RawAddress* bd_addr) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
@@ -595,7 +603,7 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     obfuscate_address,
     get_metric_id,
     set_dynamic_audio_buffer_size,
-};
+    generate_local_oob_data};
 
 // callback reporting helpers
 
@@ -719,6 +727,36 @@ void invoke_ssp_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
                                    &bd_name, cod, pairing_variant, pass_key);
                        },
                        bd_addr, bd_name, cod, pairing_variant, pass_key));
+}
+
+void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
+                                Octet16 r) {
+  LOG_INFO("%s", __func__);
+  bt_oob_data_t oob_data;
+  // Each value (for C and R) is 16 octets in length
+  bool c_empty = true;
+  for (int i = 0; i < 16; i++) {
+    // C cannot be all 0s, if so then we want to fail
+    if (c[i] != 0) c_empty = false;
+    oob_data.c[i] = c[i];
+    // R is optional and may be empty
+    oob_data.r[i] = r[i];
+  }
+  oob_data.is_valid = valid && !c_empty;
+  // The oob_data_length is 2 octects in length.  The value includes the length
+  // of itself. 16 + 16 + 2 = 34 Data 0x0022 Little Endian order 0x2200
+  oob_data.oob_data_length[0] = 0;
+  oob_data.oob_data_length[1] = 34;
+  bt_status_t status = do_in_jni_thread(
+      FROM_HERE, base::BindOnce(
+                     [](tBT_TRANSPORT t, bt_oob_data_t oob_data) {
+                       HAL_CBACK(bt_hal_cbacks, generate_local_oob_data_cb, t,
+                                 oob_data);
+                     },
+                     t, oob_data));
+  if (status != BT_STATUS_SUCCESS) {
+    LOG_ERROR("%s: Failed to call callback!", __func__);
+  }
 }
 
 void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr,
