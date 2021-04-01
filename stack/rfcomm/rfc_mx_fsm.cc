@@ -73,9 +73,10 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result);
 void rfc_mx_sm_execute(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
   CHECK(p_mcb != nullptr) << __func__ << ": NULL mcb for event " << event;
 
-  LOG_DEBUG("RFCOMM peer:%s event:%s state:%s", PRIVATE_ADDRESS(p_mcb->bd_addr),
-            rfcomm_mx_state_text(static_cast<tRFC_MX_STATE>(event)).c_str(),
-            std::to_string(p_mcb->state).c_str());
+  LOG_DEBUG(
+      "RFCOMM peer:%s event:%d state:%s", PRIVATE_ADDRESS(p_mcb->bd_addr),
+      event,
+      rfcomm_mx_state_text(static_cast<tRFC_MX_STATE>(p_mcb->state)).c_str());
 
   switch (p_mcb->state) {
     case RFC_MX_STATE_IDLE:
