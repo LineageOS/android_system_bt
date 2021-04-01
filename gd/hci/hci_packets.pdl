@@ -2494,6 +2494,7 @@ enum HciVersion : 8 {
   V_4_2 = 0x08,
   V_5_0 = 0x09,
   V_5_1 = 0x0a,
+  V_5_2 = 0x0b,
 }
 
 enum LmpVersion : 8 {
@@ -2508,6 +2509,7 @@ enum LmpVersion : 8 {
   V_4_2 = 0x08,
   V_5_0 = 0x09,
   V_5_1 = 0x0a,
+  V_5_2 = 0x0b,
 }
 
 struct LocalVersionInformation {
