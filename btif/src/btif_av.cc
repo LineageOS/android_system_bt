@@ -27,7 +27,6 @@
 #include <vector>
 
 #include "audio_hal_interface/a2dp_encoding.h"
-#include "audio_hal_interface/hearing_aid_software_encoding.h"
 #include "bta/av/bta_av_int.h"
 #include "btif/include/btif_a2dp.h"
 #include "btif/include/btif_a2dp_control.h"
@@ -2457,18 +2456,23 @@ static void btif_av_report_sink_audio_config_state(
 static void btif_av_query_mandatory_codec_priority(
     const RawAddress& peer_address) {
   auto query_priority = [](const RawAddress& peer_address) {
-    auto apply_priority = [](const RawAddress& peer_address, bool preferred) {
-      BtifAvPeer* peer = btif_av_source_find_peer(peer_address);
-      if (peer == nullptr) {
-        BTIF_TRACE_WARNING(
-            "btif_av_query_mandatory_codec_priority: peer is null");
-        return;
-      }
-      peer->SetMandatoryCodecPreferred(preferred);
-    };
-    bool preferred =
-        btif_av_source.Callbacks()->mandatory_codec_preferred_cb(peer_address);
+    if (!btif_av_source.Enabled()) {
+      LOG_WARN("BTIF AV Source is not enabled");
+      return;
+    }
+    btav_source_callbacks_t* callbacks = btif_av_source.Callbacks();
+    bool preferred = callbacks != nullptr &&
+                     callbacks->mandatory_codec_preferred_cb(peer_address);
     if (preferred) {
+      auto apply_priority = [](const RawAddress& peer_address, bool preferred) {
+        BtifAvPeer* peer = btif_av_find_peer(peer_address);
+        if (peer == nullptr) {
+          BTIF_TRACE_WARNING(
+              "btif_av_query_mandatory_codec_priority: peer is null");
+          return;
+        }
+        peer->SetMandatoryCodecPreferred(preferred);
+      };
       do_in_main_thread(
           FROM_HERE, base::BindOnce(apply_priority, peer_address, preferred));
     }
