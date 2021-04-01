@@ -92,6 +92,10 @@ void RoundRobinScheduler::start_round_robin() {
     send_next_fragment();
     return;
   }
+  if (acl_queue_handlers_.empty()) {
+    LOG_INFO("No any acl connection");
+    return;
+  }
 
   if (acl_queue_handlers_.size() == 1 || starting_point_ == acl_queue_handlers_.end()) {
     starting_point_ = acl_queue_handlers_.begin();
