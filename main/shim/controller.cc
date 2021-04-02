@@ -91,6 +91,16 @@ static future_t* start_up(void) {
     data_.le_supported_states =
         bluetooth::shim::GetController()->GetLeSupportedStates();
 
+    auto local_version_info =
+        bluetooth::shim::GetController()->GetLocalVersionInformation();
+    data_.bt_version.hci_version =
+        static_cast<uint8_t>(local_version_info.hci_version_);
+    data_.bt_version.hci_revision = local_version_info.hci_revision_;
+    data_.bt_version.lmp_version =
+        static_cast<uint8_t>(local_version_info.lmp_version_);
+    data_.bt_version.lmp_subversion = local_version_info.lmp_subversion_;
+    data_.bt_version.manufacturer = local_version_info.manufacturer_name_;
+
     LOG_INFO("Mac address:%s", string_address.c_str());
   }
 
