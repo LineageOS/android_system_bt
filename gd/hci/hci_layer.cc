@@ -87,14 +87,17 @@ class CommandQueueEntry {
 struct HciLayer::impl {
   impl(hal::HciHal* hal, HciLayer& module) : hal_(hal), module_(module) {
     hci_timeout_alarm_ = new Alarm(module.GetHandler());
-    hci_abort_alarm_ = new Alarm(module.GetHandler());
   }
 
   ~impl() {
     incoming_acl_buffer_.Clear();
     incoming_iso_buffer_.Clear();
-    delete hci_timeout_alarm_;
-    delete hci_abort_alarm_;
+    if (hci_timeout_alarm_ != nullptr) {
+      delete hci_timeout_alarm_;
+    }
+    if (hci_abort_alarm_ != nullptr) {
+      delete hci_abort_alarm_;
+    }
     command_queue_.clear();
   }
 
@@ -165,12 +168,15 @@ struct HciLayer::impl {
     command_queue_.front().GetCallback<TResponse>()->Invoke(move(response_view));
     command_queue_.pop_front();
     waiting_command_ = OpCode::NONE;
-    hci_timeout_alarm_->Cancel();
-    send_next_command();
+    if (hci_timeout_alarm_ != nullptr) {
+      hci_timeout_alarm_->Cancel();
+      send_next_command();
+    }
   }
 
   void on_hci_timeout(OpCode op_code) {
     LOG_ERROR("Timed out waiting for 0x%02hx (%s)", op_code, OpCodeText(op_code).c_str());
+    // TODO: LogMetricHciTimeoutEvent(static_cast<uint32_t>(op_code));
 
     LOG_ERROR("Flushing %zd waiting commands", command_queue_.size());
     // Clear any waiting commands (there is an abort coming anyway)
@@ -180,8 +186,17 @@ struct HciLayer::impl {
     enqueue_command(
         ControllerDebugInfoBuilder::Create(), module_.GetHandler()->BindOnce(&fail_if_reset_complete_not_success));
     // Don't time out for this one;
-    hci_timeout_alarm_->Cancel();
-    hci_abort_alarm_->Schedule(BindOnce(&abort_after_time_out, op_code), kHciTimeoutRestartMs);
+    if (hci_timeout_alarm_ != nullptr) {
+      hci_timeout_alarm_->Cancel();
+      delete hci_timeout_alarm_;
+      hci_timeout_alarm_ = nullptr;
+    }
+    if (hci_abort_alarm_ == nullptr) {
+      hci_abort_alarm_ = new Alarm(module_.GetHandler());
+      hci_abort_alarm_->Schedule(BindOnce(&abort_after_time_out, op_code), kHciTimeoutRestartMs);
+    } else {
+      LOG_WARN("Unable to schedul abort timer");
+    }
   }
 
   void send_next_command() {
@@ -204,7 +219,11 @@ struct HciLayer::impl {
     OpCode op_code = cmd_view.GetOpCode();
     waiting_command_ = op_code;
     command_credits_ = 0;  // Only allow one outstanding command
-    hci_timeout_alarm_->Schedule(BindOnce(&impl::on_hci_timeout, common::Unretained(this), op_code), kHciTimeoutMs);
+    if (hci_timeout_alarm_ != nullptr) {
+      hci_timeout_alarm_->Schedule(BindOnce(&impl::on_hci_timeout, common::Unretained(this), op_code), kHciTimeoutMs);
+    } else {
+      LOG_WARN("%s sent without an hci-timeout timer", OpCodeText(op_code).c_str());
+    }
   }
 
   void register_event(EventCode event, ContextualCallback<void(EventView)> handler) {
@@ -245,9 +264,38 @@ struct HciLayer::impl {
     subevent_handlers_.erase(subevent_handlers_.find(event));
   }
 
+  static void abort_after_root_inflammation(uint8_t vse_error) {
+    ASSERT_LOG(false, "Root inflammation with reason 0x%02hhx", vse_error);
+  }
+
+  void handle_root_inflammation(uint8_t vse_error_reason) {
+    // Add Logging for crash reason
+    if (hci_timeout_alarm_ != nullptr) {
+      hci_timeout_alarm_->Cancel();
+      delete hci_timeout_alarm_;
+      hci_timeout_alarm_ = nullptr;
+    }
+    LOG_ERROR("Received a Root Inflammation Event, scheduling an abort");
+    if (hci_abort_alarm_ == nullptr) {
+      hci_abort_alarm_ = new Alarm(module_.GetHandler());
+      hci_abort_alarm_->Schedule(BindOnce(&abort_after_root_inflammation, vse_error_reason), kHciTimeoutRestartMs);
+    } else {
+      LOG_WARN("Abort timer already scheduled");
+    }
+  }
+
   void on_hci_event(EventView event) {
     ASSERT(event.IsValid());
     EventCode event_code = event.GetEventCode();
+    // Root Inflamation is a special case, since it aborts here
+    if (event_code == EventCode::VENDOR_SPECIFIC) {
+      auto inflammation = BqrRootInflammationEventView::Create(
+          BqrLinkQualityEventView::Create(BqrEventView::Create(VendorSpecificEventView::Create(event))));
+      if (inflammation.IsValid()) {
+        handle_root_inflammation(inflammation.GetVendorSpecificErrorCode());
+        return;
+      }
+    }
     ASSERT_LOG(
         event_handlers_.find(event_code) != event_handlers_.end(),
         "Unhandled event of type 0x%02hhx (%s)",
@@ -488,7 +536,6 @@ void HciLayer::Start() {
   auto drop_packet = handler->BindOn(impl_, &impl::drop);
   RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);
   RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, drop_packet);
-  RegisterEventHandler(EventCode::VENDOR_SPECIFIC, drop_packet);
 
   EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
   hal->registerIncomingPacketCallback(hal_callbacks_);
