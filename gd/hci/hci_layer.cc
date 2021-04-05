@@ -245,20 +245,6 @@ struct HciLayer::impl {
     subevent_handlers_.erase(subevent_handlers_.find(event));
   }
 
-  void register_vendor_specific_event(
-      VseSubeventCode vse_subevent_code, ContextualCallback<void(VendorSpecificEventView)> event_handler) {
-    ASSERT_LOG(
-        vendor_specific_event_handlers_.count(vse_subevent_code) == 0,
-        "Can not register a second handler for %02hhx (%s)",
-        vse_subevent_code,
-        VseSubeventCodeText(vse_subevent_code).c_str());
-    vendor_specific_event_handlers_[vse_subevent_code] = event_handler;
-  }
-
-  void unregister_vendor_specific_event(VseSubeventCode vse_subevent_code) {
-    vendor_specific_event_handlers_.erase(vendor_specific_event_handlers_.find(vse_subevent_code));
-  }
-
   void on_hci_event(EventView event) {
     ASSERT(event.IsValid());
     EventCode event_code = event.GetEventCode();
@@ -282,20 +268,6 @@ struct HciLayer::impl {
     subevent_handlers_[subevent_code].Invoke(meta_event_view);
   }
 
-  void on_vendor_specific_event(EventView event) {
-    VendorSpecificEventView vendor_specific_event_view = VendorSpecificEventView::Create(event);
-    ASSERT(vendor_specific_event_view.IsValid());
-    VseSubeventCode vse_subevent_code = vendor_specific_event_view.GetSubeventCode();
-    if (vendor_specific_event_handlers_.find(vse_subevent_code) == vendor_specific_event_handlers_.end()) {
-      LOG_ERROR(
-          "Unhandled vendor specific event of type 0x%02hhx (%s)",
-          vse_subevent_code,
-          VseSubeventCodeText(vse_subevent_code).c_str());
-      return;
-    }
-    vendor_specific_event_handlers_[vse_subevent_code].Invoke(vendor_specific_event_view);
-  }
-
   hal::HciHal* hal_;
   HciLayer& module_;
 
@@ -304,7 +276,6 @@ struct HciLayer::impl {
 
   std::map<EventCode, ContextualCallback<void(EventView)>> event_handlers_;
   std::map<SubeventCode, ContextualCallback<void(LeMetaEventView)>> subevent_handlers_;
-  std::map<VseSubeventCode, ContextualCallback<void(VendorSpecificEventView)>> vendor_specific_event_handlers_;
   OpCode waiting_command_{OpCode::NONE};
   uint8_t command_credits_{1};  // Send reset first
   Alarm* hci_timeout_alarm_{nullptr};
@@ -389,15 +360,6 @@ void HciLayer::RegisterLeEventHandler(SubeventCode event, ContextualCallback<voi
 
 void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
   CallOn(impl_, &impl::unregister_le_event, event);
-}
-
-void HciLayer::RegisterVendorSpecificEventHandler(
-    VseSubeventCode vse_subevent_code, common::ContextualCallback<void(VendorSpecificEventView)> event_handler) {
-  CallOn(impl_, &impl::register_vendor_specific_event, vse_subevent_code, event_handler);
-}
-
-void HciLayer::UnregisterVendorSpecificEventHandler(VseSubeventCode vse_subevent_code) {
-  CallOn(impl_, &impl::unregister_vendor_specific_event, vse_subevent_code);
 }
 
 void HciLayer::on_disconnection_complete(EventView event_view) {
@@ -526,7 +488,7 @@ void HciLayer::Start() {
   auto drop_packet = handler->BindOn(impl_, &impl::drop);
   RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);
   RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, drop_packet);
-  RegisterEventHandler(EventCode::VENDOR_SPECIFIC, handler->BindOn(impl_, &impl::on_vendor_specific_event));
+  RegisterEventHandler(EventCode::VENDOR_SPECIFIC, drop_packet);
 
   EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
   hal->registerIncomingPacketCallback(hal_callbacks_);
