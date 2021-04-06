@@ -716,6 +716,7 @@ cc_test {
         "test/btm/stack_btm_test.cc",
         "test/common/mock_bta_dm_act.cc",
         "test/common/mock_bta_sys_conn.cc",
+        "test/common/mock_btif_bqr.cc",
         "test/common/mock_btif_dm.cc",
         "test/common/mock_btif_storage.cc",
         "test/common/mock_btu_hcif.cc",
