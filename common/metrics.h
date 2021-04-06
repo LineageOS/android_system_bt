@@ -360,6 +360,16 @@ void LogA2dpAudioOverrunEvent(const RawAddress& address,
                               int num_dropped_encoded_bytes);
 
 /**
+ * Log A2DP playback state changed event
+ *
+ * @param address A2DP device associated with this event
+ * @param playback_state audio playback state
+ * @param audio_coding_mode audio codec encoding mode
+ */
+void LogA2dpPlaybackEvent(const RawAddress& address, int playback_state,
+                          int audio_coding_mode);
+
+/**
  * Log read RSSI result
  *
  * @param address device associated with this event
