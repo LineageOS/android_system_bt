@@ -308,7 +308,7 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
             BE_STREAM_TO_UINT16(player->name.str_len, p);
             min_len += player->name.str_len;
             if (pkt_len < min_len) goto browse_length_error;
-            player->name.p_str = (uint8_t*)osi_malloc(
+            player->name.p_str = (uint8_t*)osi_calloc(
                 (player->name.str_len + 1) * sizeof(uint8_t));
             BE_STREAM_TO_ARRAY(p, player->name.p_str, player->name.str_len);
             AVRC_TRACE_DEBUG(
@@ -336,7 +336,7 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
             BE_STREAM_TO_UINT16(folder->name.str_len, p);
             min_len += folder->name.str_len;
             if (pkt_len < min_len) goto browse_length_error;
-            folder->name.p_str = (uint8_t*)osi_malloc(
+            folder->name.p_str = (uint8_t*)osi_calloc(
                 (folder->name.str_len + 1) * sizeof(uint8_t));
             BE_STREAM_TO_ARRAY(p, folder->name.p_str, folder->name.str_len);
             AVRC_TRACE_DEBUG("%s type %d playable %d cs %d name len %d",
@@ -488,7 +488,7 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
         AVRC_TRACE_DEBUG("%s AVRC_PDU_SET_BROWSED_PLAYER item: %d len: %d",
                          __func__, i, folder_name->str_len);
         folder_name->p_str =
-            (uint8_t*)osi_malloc((folder_name->str_len + 1) * sizeof(uint8_t));
+            (uint8_t*)osi_calloc((folder_name->str_len + 1) * sizeof(uint8_t));
         BE_STREAM_TO_ARRAY(p, folder_name->p_str, folder_name->str_len);
       }
       break;

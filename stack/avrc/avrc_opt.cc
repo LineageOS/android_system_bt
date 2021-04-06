@@ -51,7 +51,7 @@ static BT_HDR* avrc_vendor_msg(tAVRC_MSG_VENDOR* p_msg) {
   CHECK(p_msg != NULL);
 
   CHECK(AVRC_META_CMD_BUF_SIZE > (AVRC_MIN_CMD_LEN + p_msg->vendor_len));
-  p_cmd = (BT_HDR*)osi_malloc(AVRC_META_CMD_BUF_SIZE);
+  p_cmd = (BT_HDR*)osi_calloc(AVRC_META_CMD_BUF_SIZE);
 
   p_cmd->offset = AVCT_MSG_OFFSET;
   p_data = (uint8_t*)(p_cmd + 1) + p_cmd->offset;
@@ -91,7 +91,7 @@ static BT_HDR* avrc_vendor_msg(tAVRC_MSG_VENDOR* p_msg) {
  *
  *****************************************************************************/
 uint16_t AVRC_UnitCmd(uint8_t handle, uint8_t label) {
-  BT_HDR* p_cmd = (BT_HDR*)osi_malloc(AVRC_CMD_BUF_SIZE);
+  BT_HDR* p_cmd = (BT_HDR*)osi_calloc(AVRC_CMD_BUF_SIZE);
   uint8_t* p_data;
 
   p_cmd->offset = AVCT_MSG_OFFSET;
@@ -134,7 +134,7 @@ uint16_t AVRC_UnitCmd(uint8_t handle, uint8_t label) {
  *
  *****************************************************************************/
 uint16_t AVRC_SubCmd(uint8_t handle, uint8_t label, uint8_t page) {
-  BT_HDR* p_cmd = (BT_HDR*)osi_malloc(AVRC_CMD_BUF_SIZE);
+  BT_HDR* p_cmd = (BT_HDR*)osi_calloc(AVRC_CMD_BUF_SIZE);
   uint8_t* p_data;
 
   p_cmd->offset = AVCT_MSG_OFFSET;
