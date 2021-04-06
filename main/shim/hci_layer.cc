@@ -54,8 +54,7 @@ static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 static const packet_fragmenter_t* packet_fragmenter;
 
 namespace {
-bool is_valid_event_code(uint8_t event_code_raw) {
-  auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
+bool is_valid_event_code(bluetooth::hci::EventCode event_code) {
   switch (event_code) {
     case bluetooth::hci::EventCode::INQUIRY_COMPLETE:
     case bluetooth::hci::EventCode::INQUIRY_RESULT:
@@ -116,9 +115,7 @@ bool is_valid_event_code(uint8_t event_code_raw) {
   return false;
 };
 
-bool is_valid_subevent_code(uint8_t subevent_code_raw) {
-  auto subevent_code =
-      static_cast<bluetooth::hci::SubeventCode>(subevent_code_raw);
+bool is_valid_subevent_code(bluetooth::hci::SubeventCode subevent_code) {
   switch (subevent_code) {
     case bluetooth::hci::SubeventCode::CONNECTION_COMPLETE:
     case bluetooth::hci::SubeventCode::CONNECTION_UPDATE_COMPLETE:
@@ -472,11 +469,12 @@ static void on_shutting_down() {
         !bluetooth::shim::is_gd_l2cap_enabled()) {
       hci_queue_end->UnregisterDequeue();
     }
-    for (uint8_t event_code_raw = 0; event_code_raw < 0xFF; event_code_raw++) {
-      if (!is_valid_event_code(event_code_raw)) {
+    for (uint16_t event_code_raw = 0; event_code_raw < 0x100;
+         event_code_raw++) {
+      auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
+      if (!is_valid_event_code(event_code)) {
         continue;
       }
-      auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
       if (event_already_registered_in_hci_layer(event_code)) {
         continue;
       } else if (event_already_registered_in_le_advertising_manager(
@@ -715,11 +713,11 @@ void bluetooth::shim::hci_on_reset_complete() {
     ::rust::hci_on_reset_complete();
   }
 
-  for (uint8_t event_code_raw = 0; event_code_raw < 0xFF; event_code_raw++) {
-    if (!is_valid_event_code(event_code_raw)) {
+  for (uint16_t event_code_raw = 0; event_code_raw < 0x100; event_code_raw++) {
+    auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
+    if (!is_valid_event_code(event_code)) {
       continue;
     }
-    auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
     if (event_already_registered_in_acl_layer(event_code)) {
       continue;
     } else if (event_already_registered_in_controller_layer(event_code)) {
@@ -739,13 +737,13 @@ void bluetooth::shim::hci_on_reset_complete() {
     }
   }
 
-  for (uint8_t subevent_code_raw = 0; subevent_code_raw < 0xFF;
+  for (uint16_t subevent_code_raw = 0; subevent_code_raw < 0x100;
        subevent_code_raw++) {
-    if (!is_valid_subevent_code(subevent_code_raw)) {
-      continue;
-    }
     auto subevent_code =
         static_cast<bluetooth::hci::SubeventCode>(subevent_code_raw);
+    if (!is_valid_subevent_code(subevent_code)) {
+      continue;
+    }
     if (subevent_already_registered_in_le_hci_layer(subevent_code)) {
       continue;
     }
