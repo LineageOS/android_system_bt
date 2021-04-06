@@ -4674,6 +4674,13 @@ void btm_sec_pin_code_request(const RawAddress& p_bda) {
   VLOG(2) << __func__ << " BDA: " << p_bda
           << " state: " << btm_pair_state_descr(btm_cb.pairing_state);
 
+  RawAddress local_bd_addr = *controller_get_interface()->get_address();
+  if (p_bda == local_bd_addr) {
+    android_errorWriteLog(0x534e4554, "174626251");
+    btsnd_hcic_pin_code_neg_reply(p_bda);
+    return;
+  }
+
   if (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) {
     if ((p_bda == btm_cb.pairing_bda) &&
         (btm_cb.pairing_state == BTM_PAIR_STATE_WAIT_AUTH_COMPLETE)) {
