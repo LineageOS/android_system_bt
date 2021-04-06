@@ -52,6 +52,17 @@ void log_a2dp_audio_overrun_event(const RawAddress& address,
   }
 }
 
+void log_a2dp_playback_event(const RawAddress& address, int playback_state,
+                             int audio_coding_mode) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
+    bluetooth::shim::LogMetricA2dpPlaybackEvent(address, playback_state,
+                                                audio_coding_mode);
+  } else {
+    bluetooth::common::LogA2dpPlaybackEvent(address, playback_state,
+                                            audio_coding_mode);
+  }
+}
+
 void log_read_rssi_result(const RawAddress& address, uint16_t handle,
                           uint32_t cmd_status, int8_t rssi) {
   if (bluetooth::shim::is_any_gd_enabled()) {

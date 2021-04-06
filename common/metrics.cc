@@ -678,6 +678,29 @@ void LogA2dpAudioOverrunEvent(const RawAddress& address,
   }
 }
 
+void LogA2dpPlaybackEvent(const RawAddress& address, int playback_state,
+                          int audio_coding_mode) {
+  std::string obfuscated_id;
+  int metric_id = 0;
+  if (!address.IsEmpty()) {
+    obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
+  }
+  // nullptr and size 0 represent missing value for obfuscated_id
+  android::util::BytesField bytes_field(
+      address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
+      address.IsEmpty() ? 0 : obfuscated_id.size());
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_A2DP_PLAYBACK_STATE_CHANGED, bytes_field,
+      playback_state, audio_coding_mode, metric_id);
+  if (ret < 0) {
+    LOG(WARNING) << __func__ << ": failed to log for " << address
+                 << ", playback_state " << playback_state
+                 << ", audio_coding_mode " << audio_coding_mode << ", error "
+                 << ret;
+  }
+}
+
 void LogReadRssiResult(const RawAddress& address, uint16_t handle,
                        uint32_t cmd_status, int8_t rssi) {
   std::string obfuscated_id;

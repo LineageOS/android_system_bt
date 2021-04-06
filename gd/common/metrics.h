@@ -112,6 +112,15 @@ void LogMetricA2dpAudioOverrunEvent(
     int num_dropped_encoded_bytes);
 
 /**
+ * Log A2DP audio playback state changed event
+ *
+ * @param address A2DP device associated with this event
+ * @param playback_state A2DP audio playback state, on/off
+ * @param audio_coding_mode A2DP audio codec encoding mode, hw/sw
+ */
+void LogMetricA2dpPlaybackEvent(const hci::Address& address, int playback_state, int audio_coding_mode);
+
+/**
  * Log read RSSI result
  *
  * @param address device associated with this event
