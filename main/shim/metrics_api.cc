@@ -57,6 +57,13 @@ void LogMetricA2dpAudioOverrunEvent(const RawAddress& raw_address,
       num_dropped_encoded_frames, num_dropped_encoded_bytes);
 }
 
+void LogMetricA2dpPlaybackEvent(const RawAddress& raw_address,
+                                int playback_state, int audio_coding_mode) {
+  Address address = bluetooth::ToGdAddress(raw_address);
+  bluetooth::common::LogMetricA2dpPlaybackEvent(address, playback_state,
+                                                audio_coding_mode);
+}
+
 void LogMetricReadRssiResult(const RawAddress& raw_address, uint16_t handle,
                              uint32_t cmd_status, int8_t rssi) {
   Address address = bluetooth::ToGdAddress(raw_address);
