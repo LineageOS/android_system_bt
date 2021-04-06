@@ -28,6 +28,7 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
+#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 #ifndef UNUSED_ATTR
@@ -109,6 +110,14 @@ void btm_sco_connected(tHCI_STATUS hci_status, const RawAddress& bda,
   mock_function_count_map[__func__]++;
 }
 void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
+  mock_function_count_map[__func__]++;
+}
+void btm_sco_on_esco_connect_request(
+    const RawAddress bda, const bluetooth::types::ClassOfDevice cod) {
+  mock_function_count_map[__func__]++;
+}
+void btm_sco_on_sco_connect_request(const RawAddress bda,
+                                    const bluetooth::types::ClassOfDevice cod) {
   mock_function_count_map[__func__]++;
 }
 void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
