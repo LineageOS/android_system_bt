@@ -39,6 +39,8 @@
 #include "gd/hci/acl_manager/connection_management_callbacks.h"
 #include "gd/hci/acl_manager/le_acl_connection.h"
 #include "gd/hci/acl_manager/le_connection_management_callbacks.h"
+#include "gd/hci/address.h"
+#include "gd/hci/class_of_device.h"
 #include "gd/hci/controller.h"
 #include "gd/os/handler.h"
 #include "gd/os/queue.h"
@@ -1171,6 +1173,20 @@ void shim::legacy::Acl::OnConnectFail(hci::Address address,
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection failed",
                  base::StringPrintf("classic reason:%s",
                                     hci::ErrorCodeText(reason).c_str()));
+}
+
+void shim::legacy::Acl::HACK_OnEscoConnectRequest(hci::Address address,
+                                                  hci::ClassOfDevice cod) {
+  const RawAddress bd_addr = ToRawAddress(address);
+  LOG_ERROR("Remote ESCO connect request unsupported remote:%s",
+            PRIVATE_ADDRESS(bd_addr));
+}
+
+void shim::legacy::Acl::HACK_OnScoConnectRequest(hci::Address address,
+                                                 hci::ClassOfDevice cod) {
+  const RawAddress bd_addr = ToRawAddress(address);
+  LOG_ERROR("Remote SCO connect request unsupported remote:%s",
+            PRIVATE_ADDRESS(bd_addr));
 }
 
 void shim::legacy::Acl::OnLeConnectSuccess(

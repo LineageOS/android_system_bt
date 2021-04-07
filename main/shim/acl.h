@@ -23,6 +23,7 @@
 #include "gd/hci/acl_manager/le_connection_callbacks.h"
 #include "gd/hci/address.h"
 #include "gd/hci/address_with_type.h"
+#include "gd/hci/class_of_device.h"
 #include "gd/os/handler.h"
 #include "gd/packet/raw_builder.h"
 #include "main/shim/acl_legacy_interface.h"
@@ -47,6 +48,10 @@ class Acl : public hci::acl_manager::ConnectionCallbacks,
   void OnConnectSuccess(
       std::unique_ptr<hci::acl_manager::ClassicAclConnection>) override;
   void OnConnectFail(hci::Address, hci::ErrorCode reason) override;
+
+  void HACK_OnEscoConnectRequest(hci::Address, hci::ClassOfDevice) override;
+  void HACK_OnScoConnectRequest(hci::Address, hci::ClassOfDevice) override;
+
   void OnClassicLinkDisconnected(uint16_t handle, hci::ErrorCode reason);
 
   // hci::acl_manager::LeConnectionCallbacks
