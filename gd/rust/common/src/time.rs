@@ -2,8 +2,6 @@
 ///Tokio's time
 use nix::sys::time::TimeSpec;
 use nix::sys::timerfd::{ClockId, Expiration, TimerFd, TimerFlags, TimerSetTimeFlags};
-use nix::unistd::close;
-use std::os::unix::io::AsRawFd;
 use std::time::Duration;
 use tokio::io::unix::AsyncFd;
 
@@ -16,18 +14,14 @@ impl Alarm {
     /// Construct a new alarm
     pub fn new() -> Self {
         let timer = TimerFd::new(get_clock(), TimerFlags::empty()).unwrap();
-        Self {
-            fd: AsyncFd::new(timer).unwrap(),
-        }
+        Self { fd: AsyncFd::new(timer).unwrap() }
     }
 
     /// Reset the alarm to duration, starting from now
     pub fn reset(&mut self, duration: Duration) {
-        self.fd.get_ref()
-            .set(
-                Expiration::OneShot(TimeSpec::from(duration)),
-                TimerSetTimeFlags::empty(),
-            )
+        self.fd
+            .get_ref()
+            .set(Expiration::OneShot(TimeSpec::from(duration)), TimerSetTimeFlags::empty())
             .unwrap();
     }
 
@@ -50,25 +44,12 @@ impl Default for Alarm {
     }
 }
 
-impl Drop for Alarm {
-    fn drop(&mut self) {
-        close(self.fd.as_raw_fd()).unwrap();
-    }
-}
-
 /// Similar to tokio's interval, except the first tick does *not* complete immediately
 pub fn interval(period: Duration) -> Interval {
     let timer = TimerFd::new(get_clock(), TimerFlags::empty()).unwrap();
-    timer
-        .set(
-            Expiration::Interval(TimeSpec::from(period)),
-            TimerSetTimeFlags::empty(),
-        )
-        .unwrap();
+    timer.set(Expiration::Interval(TimeSpec::from(period)), TimerSetTimeFlags::empty()).unwrap();
 
-    Interval {
-        fd: AsyncFd::new(timer).unwrap(),
-    }
+    Interval { fd: AsyncFd::new(timer).unwrap() }
 }
 
 /// Future returned by interval()
@@ -82,12 +63,6 @@ impl Interval {
         drop(self.fd.readable().await.unwrap());
         // Will not block, since we have confirmed it is readable
         self.fd.get_ref().wait().unwrap();
-    }
-}
-
-impl Drop for Interval {
-    fn drop(&mut self) {
-        close(self.fd.as_raw_fd()).unwrap();
     }
 }
 
