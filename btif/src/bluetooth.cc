@@ -40,6 +40,7 @@
 #include <hardware/bt_rc.h>
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
+#include <hardware/bt_vc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -84,6 +85,7 @@
 
 using bluetooth::hearing_aid::HearingAidInterface;
 using bluetooth::le_audio::LeAudioClientInterface;
+using bluetooth::vc::VolumeControlInterface;
 
 /*******************************************************************************
  *  Static variables
@@ -127,6 +129,8 @@ extern const btsdp_interface_t* btif_sdp_get_interface();
 extern HearingAidInterface* btif_hearing_aid_get_interface();
 /* LeAudio testi client */
 extern LeAudioClientInterface* btif_le_audio_get_interface();
+/* Volume Control client */
+extern VolumeControlInterface* btif_volume_control_get_interface();
 
 /*******************************************************************************
  *  Functions
@@ -453,6 +457,9 @@ static const void* get_profile_interface(const char* profile_id) {
 
   if (is_profile(profile_id, BT_PROFILE_LE_AUDIO_ID))
     return btif_le_audio_get_interface();
+
+  if (is_profile(profile_id, BT_PROFILE_VC_ID))
+    return btif_volume_control_get_interface();
 
   return NULL;
 }
