@@ -101,7 +101,7 @@ void btm_sco_chk_pend_rolechange(uint16_t hci_handle) {
 void btm_sco_chk_pend_unpark(tHCI_STATUS hci_status, uint16_t hci_handle) {
   mock_function_count_map[__func__]++;
 }
-void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
+void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
                       uint8_t link_type) {
   mock_function_count_map[__func__]++;
 }
@@ -113,11 +113,11 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
   mock_function_count_map[__func__]++;
 }
 void btm_sco_on_esco_connect_request(
-    const RawAddress bda, const bluetooth::types::ClassOfDevice cod) {
+    const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod) {
   mock_function_count_map[__func__]++;
 }
-void btm_sco_on_sco_connect_request(const RawAddress bda,
-                                    const bluetooth::types::ClassOfDevice cod) {
+void btm_sco_on_sco_connect_request(
+    const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod) {
   mock_function_count_map[__func__]++;
 }
 void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
