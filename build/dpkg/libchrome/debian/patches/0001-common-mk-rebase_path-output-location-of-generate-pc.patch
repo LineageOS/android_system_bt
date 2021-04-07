@@ -1,0 +1,36 @@
+From 04fa5e1ade08696b5a2cc3b65bf0fd26c43251c7 Mon Sep 17 00:00:00 2001
+From: Sonny Sasaka <sonnysasaka@chromium.org>
+Date: Fri, 19 Mar 2021 11:17:43 -0700
+Subject: [PATCH] common-mk: rebase_path output location of generate-pc.py
+
+Without rebase_path, the generate-pc.py would be called like
+`generate-pc.py --output //out/Release` if the output is inside the
+source directory and this gn path isn't recognized as a generic
+filesystem path.
+
+BUG=b:183216216
+TEST=with modp_b64, call
+$ gn gen out/Release --args=...
+$ ninja
+
+Change-Id: Ic9d9b3d01d52d483e3d81ca2e8d514b47900f5bb
+---
+ common-mk/pkg_config.gni | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/common-mk/pkg_config.gni b/common-mk/pkg_config.gni
+index 24e2cf1401..b2c58845d4 100644
+--- a/common-mk/pkg_config.gni
++++ b/common-mk/pkg_config.gni
+@@ -84,7 +84,7 @@ template("generate_pkg_config") {
+     outputs = [ "${target_out_dir}/${output_name}.pc" ]
+ 
+     script = "//common-mk/generate-pc.py"
+-    args = [ "--output" ] + outputs + [ "--name=" + name ]
++    args = [ "--output" ] + rebase_path(outputs) + [ "--name=" + name ]
+     if (defined(description)) {
+       args += [ "--description=" + description ]
+     }
+-- 
+2.29.2
+
