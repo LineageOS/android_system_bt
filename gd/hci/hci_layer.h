@@ -67,11 +67,6 @@ class HciLayer : public Module, public CommandInterface<CommandBuilder> {
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
 
-  virtual void RegisterVendorSpecificEventHandler(
-      VseSubeventCode vse_subevent_code, common::ContextualCallback<void(VendorSpecificEventView)> event_handler);
-
-  virtual void UnregisterVendorSpecificEventHandler(VseSubeventCode vse_subevent_code);
-
   virtual SecurityInterface* GetSecurityInterface(common::ContextualCallback<void(EventView)> event_handler);
 
   virtual LeSecurityInterface* GetLeSecurityInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
