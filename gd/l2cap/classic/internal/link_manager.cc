@@ -18,6 +18,7 @@
 
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/address.h"
+#include "hci/class_of_device.h"
 #include "l2cap/classic/internal/link.h"
 #include "l2cap/internal/scheduler_fifo.h"
 #include "os/log.h"
@@ -311,6 +312,14 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
   }
   // Remove entry in pending link list
   pending_links_.erase(pending_link);
+}
+
+void LinkManager::HACK_OnEscoConnectRequest(hci::Address device, hci::ClassOfDevice cod) {
+  LOG_ERROR("Remote ESCO connect request unimplemented");
+}
+
+void LinkManager::HACK_OnScoConnectRequest(hci::Address device, hci::ClassOfDevice cod) {
+  LOG_ERROR("Remote SCO connect request unimplemented");
 }
 
 void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
