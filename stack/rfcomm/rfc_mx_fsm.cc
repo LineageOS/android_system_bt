@@ -73,7 +73,7 @@ static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result);
 void rfc_mx_sm_execute(tRFC_MCB* p_mcb, uint16_t event, void* p_data) {
   CHECK(p_mcb != nullptr) << __func__ << ": NULL mcb for event " << event;
 
-  LOG_DEBUG(
+  LOG_INFO(
       "RFCOMM peer:%s event:%d state:%s", PRIVATE_ADDRESS(p_mcb->bd_addr),
       event,
       rfcomm_mx_state_text(static_cast<tRFC_MX_STATE>(p_mcb->state)).c_str());
@@ -563,36 +563,41 @@ void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
   if (p_mcb == nullptr) return;
 
   if (result == L2CAP_CONN_OTHER_ERROR) {
-    RFCOMM_TRACE_DEBUG(
-        "RFCOMM_ConnectCnf retry as acceptor on pending LCID(0x%x)",
-        p_mcb->pending_lcid);
+    /* if peer rejects our connect request but peer's connect request is pending
+     */
+    if (p_mcb->pending_lcid) {
+      RFCOMM_TRACE_DEBUG(
+          "RFCOMM_ConnectCnf retry as acceptor on pending LCID(0x%x)",
+          p_mcb->pending_lcid);
 
-    /* remove mcb from mapping table */
-    rfc_save_lcid_mcb(NULL, p_mcb->lcid);
+      /* remove mcb from mapping table */
+      rfc_save_lcid_mcb(NULL, p_mcb->lcid);
 
-    p_mcb->lcid = p_mcb->pending_lcid;
-    p_mcb->is_initiator = false;
-    p_mcb->state = RFC_MX_STATE_IDLE;
+      p_mcb->lcid = p_mcb->pending_lcid;
+      p_mcb->is_initiator = false;
+      p_mcb->state = RFC_MX_STATE_IDLE;
 
-    /* store mcb into mapping table */
-    rfc_save_lcid_mcb(p_mcb, p_mcb->lcid);
+      /* store mcb into mapping table */
+      rfc_save_lcid_mcb(p_mcb, p_mcb->lcid);
 
-    /* update direction bit */
-    for (int i = 0; i < RFCOMM_MAX_DLCI; i += 2) {
-      uint8_t handle = p_mcb->port_handles[i];
-      if (handle != 0) {
-        p_mcb->port_handles[i] = 0;
-        p_mcb->port_handles[i + 1] = handle;
-        rfc_cb.port.port[handle - 1].dlci += 1;
-        RFCOMM_TRACE_DEBUG("RFCOMM MX, port_handle=%d, DLCI[%d->%d]", handle, i,
-                           rfc_cb.port.port[handle - 1].dlci);
+      /* update direction bit */
+      for (int i = 0; i < RFCOMM_MAX_DLCI; i += 2) {
+        uint8_t handle = p_mcb->port_handles[i];
+        if (handle != 0) {
+          p_mcb->port_handles[i] = 0;
+          p_mcb->port_handles[i + 1] = handle;
+          rfc_cb.port.port[handle - 1].dlci += 1;
+          RFCOMM_TRACE_DEBUG("RFCOMM MX, port_handle=%d, DLCI[%d->%d]", handle,
+                             i, rfc_cb.port.port[handle - 1].dlci);
+        }
       }
+      rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, nullptr);
+      return;
     }
 
-    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_IND, nullptr);
-  }
-
-  if (result == L2CAP_CFG_FAILED_NO_REASON) {
+    p_mcb->lcid = lcid;
+    rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_CONN_CNF, &result);
+  } else if (result == L2CAP_CFG_FAILED_NO_REASON) {
     LOG(ERROR) << __func__ << ": failed to configure L2CAP for "
                << p_mcb->bd_addr;
     if (p_mcb->is_initiator) {
