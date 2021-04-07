@@ -588,7 +588,7 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS dev_class,
+void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
                       uint8_t link_type) {
   tSCO_CB* p_sco = &btm_cb.sco_cb;
   tSCO_CONN* p = &p_sco->sco_db[0];
@@ -877,14 +877,14 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
 }
 
 void btm_sco_on_esco_connect_request(
-    const RawAddress bda, const bluetooth::types::ClassOfDevice cod) {
+    const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod) {
   LOG_DEBUG("Remote ESCO connect request remote:%s cod:%s",
             PRIVATE_ADDRESS(bda), cod.ToString().c_str());
   btm_sco_conn_req(bda, cod.cod, BTM_LINK_TYPE_ESCO);
 }
 
-void btm_sco_on_sco_connect_request(const RawAddress bda,
-                                    const bluetooth::types::ClassOfDevice cod) {
+void btm_sco_on_sco_connect_request(
+    const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod) {
   LOG_DEBUG("Remote SCO connect request remote:%s cod:%s", PRIVATE_ADDRESS(bda),
             cod.ToString().c_str());
   btm_sco_conn_req(bda, cod.cod, BTM_LINK_TYPE_SCO);

@@ -50,8 +50,10 @@ typedef struct {
 } acl_le_connection_interface_t;
 
 typedef struct {
-  void (*on_esco_connect_request)(const RawAddress, const types::ClassOfDevice);
-  void (*on_sco_connect_request)(const RawAddress, const types::ClassOfDevice);
+  void (*on_esco_connect_request)(const RawAddress&,
+                                  const types::ClassOfDevice&);
+  void (*on_sco_connect_request)(const RawAddress&,
+                                 const types::ClassOfDevice&);
   void (*on_disconnected)(uint16_t handle, tHCI_REASON reason);
 } acl_sco_connection_interface_t;
 

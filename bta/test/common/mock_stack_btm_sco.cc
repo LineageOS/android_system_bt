@@ -100,7 +100,7 @@ void btm_sco_chk_pend_rolechange(uint16_t hci_handle) {
 void btm_sco_chk_pend_unpark(tHCI_STATUS hci_status, uint16_t hci_handle) {
   mock_function_count_map[__func__]++;
 }
-void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
+void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
                       uint8_t link_type) {
   mock_function_count_map[__func__]++;
 }
