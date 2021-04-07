@@ -1178,15 +1178,26 @@ void shim::legacy::Acl::OnConnectFail(hci::Address address,
 void shim::legacy::Acl::HACK_OnEscoConnectRequest(hci::Address address,
                                                   hci::ClassOfDevice cod) {
   const RawAddress bd_addr = ToRawAddress(address);
-  LOG_ERROR("Remote ESCO connect request unsupported remote:%s",
-            PRIVATE_ADDRESS(bd_addr));
+  types::ClassOfDevice legacy_cod;
+  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
+
+  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_esco_connect_request,
+                      bd_addr, legacy_cod);
+  LOG_DEBUG("Received ESCO connect request remote:%s",
+            PRIVATE_ADDRESS(address));
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "ESCO Connection request");
 }
 
 void shim::legacy::Acl::HACK_OnScoConnectRequest(hci::Address address,
                                                  hci::ClassOfDevice cod) {
   const RawAddress bd_addr = ToRawAddress(address);
-  LOG_ERROR("Remote SCO connect request unsupported remote:%s",
-            PRIVATE_ADDRESS(bd_addr));
+  types::ClassOfDevice legacy_cod;
+  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
+
+  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_sco_connect_request,
+                      bd_addr, legacy_cod);
+  LOG_DEBUG("Received SCO connect request remote:%s", PRIVATE_ADDRESS(address));
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "SCO Connection request");
 }
 
 void shim::legacy::Acl::OnLeConnectSuccess(
