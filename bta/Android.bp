@@ -80,6 +80,8 @@ cc_library_static {
         "gatt/bta_gatts_utils.cc",
         "gatt/database.cc",
         "gatt/database_builder.cc",
+        "vc/device.cc",
+        "vc/vc.cc",
         "hearing_aid/hearing_aid.cc",
         "hearing_aid/hearing_aid_audio_source.cc",
         "hf_client/bta_hf_client_act.cc",
@@ -254,4 +256,47 @@ cc_test {
         "libosi",
     ],
     cflags: ["-DBUILDCFG"],
+}
+
+
+// bta unit tests for host
+// ========================================================
+cc_test {
+    name: "bluetooth_vc_test",
+    test_suites: ["device-tests"],
+    defaults: [
+        "fluoride_bta_defaults",
+        "clang_coverage_bin",
+    ],
+    host_supported: true,
+    include_dirs: [
+        "system/bt",
+        "system/bt/bta/include",
+        "system/bt/bta/test/common",
+        "system/bt/stack/include",
+    ],
+    srcs : [
+        "gatt/database.cc",
+        "gatt/database_builder.cc",
+        "test/common/bta_gatt_api_mock.cc",
+        "test/common/bta_gatt_queue_mock.cc",
+        "test/common/btm_api_mock.cc",
+        "vc/devices_test.cc",
+        "vc/device.cc",
+        "vc/vc.cc",
+        "vc/vc_test.cc",
+    ],
+    shared_libs: [
+        "libprotobuf-cpp-lite",
+        "libcrypto",
+    ],
+    static_libs : [
+        "crypto_toolbox_for_tests",
+        "libgmock",
+        "libbt-common",
+        "libbt-protos-lite",
+    ],
+    sanitize: {
+        cfi: false,
+    },
 }
