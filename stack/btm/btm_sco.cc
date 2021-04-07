@@ -38,6 +38,8 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcimsgs.h"
+#include "types/class_of_device.h"
+#include "types/raw_address.h"
 
 extern tBTM_CB btm_cb;
 
@@ -872,6 +874,18 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
     }
   }
   return false;
+}
+
+void btm_sco_on_esco_connect_request(
+    const RawAddress bda, const bluetooth::types::ClassOfDevice cod) {
+  LOG_ERROR("Remote ESCO connect request unimplemented remote:%s",
+            PRIVATE_ADDRESS(bda));
+}
+
+void btm_sco_on_sco_connect_request(const RawAddress bda,
+                                    const bluetooth::types::ClassOfDevice cod) {
+  LOG_ERROR("Remote SCO connect request unimplemented remote:%s",
+            PRIVATE_ADDRESS(bda));
 }
 
 void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
