@@ -75,6 +75,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
 
       BE_STREAM_TO_UINT8(p_result->reg_notif.event_id, p);
       BE_STREAM_TO_UINT32(p_result->reg_notif.param, p);
+
+      if (p_result->reg_notif.event_id == 0 ||
+          p_result->reg_notif.event_id > AVRC_NUM_NOTIF_EVENTS) {
+        android_errorWriteLog(0x534e4554, "181860042");
+        status = AVRC_STS_BAD_PARAM;
+      }
       break;
     default:
       status = AVRC_STS_BAD_CMD;
