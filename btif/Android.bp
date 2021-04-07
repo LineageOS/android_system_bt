@@ -76,6 +76,7 @@ cc_library_static {
         "src/btif_gatt_server.cc",
         "src/btif_gatt_test.cc",
         "src/btif_gatt_util.cc",
+        "src/btif_vc.cc",
         "src/btif_hearing_aid.cc",
         "src/btif_hf.cc",
         "src/btif_hf_client.cc",
