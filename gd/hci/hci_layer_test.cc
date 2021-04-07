@@ -17,7 +17,6 @@
 #include "hci/hci_layer.h"
 
 #include <gtest/gtest.h>
-
 #include <list>
 #include <memory>
 
@@ -270,15 +269,6 @@ class DependsOnHci : public Module {
     return packetview;
   }
 
-  void RegisterVendorSpecificEvent(VseSubeventCode event) {
-    hci_->RegisterVendorSpecificEventHandler(
-        event, GetHandler()->BindOn(this, &DependsOnHci::handle_event<VendorSpecificEventView>));
-  }
-
-  void UnregisterVendorSpecificEvent(VseSubeventCode event) {
-    hci_->UnregisterVendorSpecificEventHandler(event);
-  }
-
   void Start() {
     hci_ = GetDependency<HciLayer>();
     hci_->RegisterEventHandler(
@@ -457,92 +447,6 @@ TEST_F(HciTest, leMetaEvent) {
 
   auto event = upper->GetReceivedEvent();
   ASSERT_TRUE(LeConnectionCompleteView::Create(LeMetaEventView::Create(EventView::Create(event))).IsValid());
-}
-
-TEST_F(HciTest, vendorSpecificEventRegistration) {
-  auto event_future = upper->GetReceivedEventFuture();
-
-  upper->RegisterVendorSpecificEvent(VseSubeventCode::BQR_EVENT);
-
-  // Send a vendor specific event
-  hal->callbacks->hciEventReceived(GetPacketBytes(BqrLinkQualityEventBuilder::Create(
-      QualityReportId::A2DP_AUDIO_CHOPPY,
-      BqrPacketType::TYPE_2DH1,
-      /* handle */ 0x123,
-      Role::CENTRAL,
-      /* TX_Power_Level */ 0x05,
-      /* RSSI */ 65,
-      /* SNR */ 30,
-      /* Unused_AFH_Channel_Count */ 0,
-      /* AFH_Select_Unideal_Channel_Count */ 0,
-      /* LSTO */ 12,
-      /* Connection_Piconet_Clock */ 42,
-      /* Retransmission_Count */ 1,
-      /* No_RX_Count */ 1,
-      /* NAK_Count */ 1,
-      /* Last_TX_ACK_Timestamp */ 123456,
-      /* Flow_Off_Count */ 78910,
-      /* Last_Flow_On_Timestamp */ 123457,
-      /* Buffer_Overflow_Bytes */ 42,
-      /* Buffer_Underflow_Bytes */ 24,
-      /* Vendor Specific Parameter */ std::make_unique<RawBuilder>())));
-
-  // Wait for the event
-  auto event_status = event_future.wait_for(kTimeout);
-  ASSERT_EQ(event_status, std::future_status::ready);
-
-  auto event = upper->GetReceivedEvent();
-  ASSERT_TRUE(
-      BqrLinkQualityEventView::Create(BqrEventView::Create(VendorSpecificEventView::Create(EventView::Create(event))))
-          .IsValid());
-
-  // Now test if we can unregister the vendor specific event handler
-  event_future = upper->GetReceivedEventFuture();
-
-  upper->UnregisterVendorSpecificEvent(VseSubeventCode::BQR_EVENT);
-
-  hal->callbacks->hciEventReceived(GetPacketBytes(BqrLinkQualityEventBuilder::Create(
-      QualityReportId::A2DP_AUDIO_CHOPPY,
-      BqrPacketType::TYPE_2DH1,
-      /* handle */ 0x123,
-      Role::CENTRAL,
-      /* TX_Power_Level */ 0x05,
-      /* RSSI */ 65,
-      /* SNR */ 30,
-      /* Unused_AFH_Channel_Count */ 0,
-      /* AFH_Select_Unideal_Channel_Count */ 0,
-      /* LSTO */ 12,
-      /* Connection_Piconet_Clock */ 42,
-      /* Retransmission_Count */ 1,
-      /* No_RX_Count */ 1,
-      /* NAK_Count */ 1,
-      /* Last_TX_ACK_Timestamp */ 123456,
-      /* Flow_Off_Count */ 78910,
-      /* Last_Flow_On_Timestamp */ 123457,
-      /* Buffer_Overflow_Bytes */ 42,
-      /* Buffer_Underflow_Bytes */ 24,
-      /* Vendor Specific Parameter */ std::make_unique<RawBuilder>())));
-
-  // Wait for unregistered event should timeout
-  event_status = event_future.wait_for(kTimeout);
-  ASSERT_NE(event_status, std::future_status::ready);
-}
-
-TEST_F(HciTest, vendorSpecificEventUnknown) {
-  auto event_future = upper->GetReceivedEventFuture();
-
-  upper->RegisterVendorSpecificEvent(VseSubeventCode::BQR_EVENT);
-
-  // Send a vendor specific event
-  // Make sure 0xFE is not used for any VSE, if not change this value to an unused one
-  auto raw_builder = std::make_unique<RawBuilder>();
-  raw_builder->AddOctets1(42);
-  hal->callbacks->hciEventReceived(
-      GetPacketBytes(VendorSpecificEventBuilder::Create(static_cast<VseSubeventCode>(0xFE), std::move(raw_builder))));
-
-  // Wait for the event should timeout
-  auto event_status = event_future.wait_for(kTimeout);
-  ASSERT_NE(event_status, std::future_status::ready);
 }
 
 TEST_F(HciTest, hciTimeOut) {
