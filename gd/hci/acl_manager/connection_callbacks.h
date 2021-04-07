@@ -19,6 +19,7 @@
 #include <memory>
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/address.h"
+#include "hci/class_of_device.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
 
@@ -33,6 +34,9 @@ class ConnectionCallbacks {
   virtual void OnConnectSuccess(std::unique_ptr<ClassicAclConnection>) = 0;
   // Invoked when controller sends Connection Complete event with non-Success error code
   virtual void OnConnectFail(Address, ErrorCode reason) = 0;
+
+  virtual void HACK_OnEscoConnectRequest(Address, ClassOfDevice) = 0;
+  virtual void HACK_OnScoConnectRequest(Address, ClassOfDevice) = 0;
 };
 
 }  // namespace acl_manager
