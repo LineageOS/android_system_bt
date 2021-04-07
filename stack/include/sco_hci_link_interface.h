@@ -31,7 +31,7 @@ extern void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
 extern bool btm_is_sco_active(uint16_t handle);
 extern void btm_sco_chk_pend_unpark(tHCI_STATUS hci_status,
                                     uint16_t hci_handle);
-extern void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
+extern void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS dev_class,
                              uint8_t link_type);
 extern void btm_sco_connected(tHCI_STATUS hci_status, const RawAddress& bda,
                               uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data);

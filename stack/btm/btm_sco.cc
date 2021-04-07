@@ -588,7 +588,7 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
+void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS dev_class,
                       uint8_t link_type) {
   tSCO_CB* p_sco = &btm_cb.sco_cb;
   tSCO_CONN* p = &p_sco->sco_db[0];
