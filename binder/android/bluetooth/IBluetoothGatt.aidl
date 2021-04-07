@@ -27,6 +27,7 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.bluetooth.le.ScanSettings;
 import android.bluetooth.le.ResultStorageDescriptor;
+import android.content.AttributionSource;
 import android.os.ParcelUuid;
 import android.os.WorkSource;
 
@@ -46,10 +47,10 @@ interface IBluetoothGatt {
     void registerScanner(in IScannerCallback callback, in WorkSource workSource);
     void unregisterScanner(in int scannerId);
     void startScan(in int scannerId, in ScanSettings settings, in List<ScanFilter> filters,
-                   in List scanStorages, in String callingPackage, String callingFeatureId);
+                   in List scanStorages, in AttributionSource attributionSource);
     void startScanForIntent(in PendingIntent intent, in ScanSettings settings, in List<ScanFilter> filters,
-                            in String callingPackage, String callingFeatureId);
-    void stopScanForIntent(in PendingIntent intent, in String callingPackage);
+                            in AttributionSource attributionSource);
+    void stopScanForIntent(in PendingIntent intent);
     void stopScan(in int scannerId);
     void flushPendingBatchResults(in int scannerId);
 
