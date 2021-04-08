@@ -6,10 +6,10 @@ namespace hal {
 
 void start_hal();
 void stop_hal();
-void send_command(rust::Slice<uint8_t> data);
-void send_acl(rust::Slice<uint8_t> data);
-void send_sco(rust::Slice<uint8_t> data);
-void send_iso(rust::Slice<uint8_t> data);
+void send_command(rust::Slice<const uint8_t> data);
+void send_acl(rust::Slice<const uint8_t> data);
+void send_sco(rust::Slice<const uint8_t> data);
+void send_iso(rust::Slice<const uint8_t> data);
 
 }  // namespace hal
 }  // namespace bluetooth

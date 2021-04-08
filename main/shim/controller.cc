@@ -26,7 +26,7 @@
 #include "osi/include/log.h"
 
 #include "hci/controller.h"
-#include "src/controller.rs.h"
+#include "src/bridge.rs.h"
 
 using ::bluetooth::common::init_flags::gd_rust_is_enabled;
 using ::bluetooth::shim::GetController;
