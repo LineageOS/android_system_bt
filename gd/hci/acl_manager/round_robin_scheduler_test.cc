@@ -370,6 +370,46 @@ TEST_F(RoundRobinSchedulerTest, send_fragments_without_interval) {
   round_robin_scheduler_->Unregister(le_handle);
 }
 
+TEST_F(RoundRobinSchedulerTest, receive_le_credit_when_next_fragment_is_classic) {
+  uint16_t handle = 0x01;
+  uint16_t le_handle = 0x02;
+  auto connection_queue = std::make_shared<AclConnection::Queue>(20);
+  auto le_connection_queue = std::make_shared<AclConnection::Queue>(20);
+
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, connection_queue);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle, le_connection_queue);
+
+  SetPacketFuture(controller_->le_max_acl_packet_credits_ + controller_->max_acl_packet_credits_);
+  AclConnection::QueueUpEnd* queue_up_end = connection_queue->GetUpEnd();
+  AclConnection::QueueUpEnd* le_queue_up_end = le_connection_queue->GetUpEnd();
+  std::vector<uint8_t> huge_packet(2000);
+  std::vector<uint8_t> packet = {0x01, 0x02, 0x03};
+  std::vector<uint8_t> le_packet = {0x04, 0x05, 0x06};
+
+  // Make le_acl_packet_credits_ = 0;
+  for (uint16_t i = 0; i < controller_->le_max_acl_packet_credits_; i++) {
+    EnqueueAclUpEnd(le_queue_up_end, le_packet);
+  }
+
+  // Make acl_packet_credits_ = 0 and remain 1 acl fragment in fragments_to_send_
+  for (uint16_t i = 0; i < controller_->max_acl_packet_credits_ - 1; i++) {
+    EnqueueAclUpEnd(queue_up_end, packet);
+  }
+  EnqueueAclUpEnd(queue_up_end, huge_packet);
+
+  packet_future_->wait();
+
+  // Trigger start_round_robin
+  controller_->SendCompletedAclPacketsCallback(0x02, 1);
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+
+  ASSERT_EQ(round_robin_scheduler_->GetCredits(), 0);
+  ASSERT_EQ(round_robin_scheduler_->GetLeCredits(), 1);
+
+  round_robin_scheduler_->Unregister(handle);
+  round_robin_scheduler_->Unregister(le_handle);
+}
+
 }  // namespace acl_manager
 }  // namespace hci
 }  // namespace bluetooth
