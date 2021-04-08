@@ -136,7 +136,7 @@ class ConnectionHandler {
   using SdpCallback = base::Callback<void(uint16_t status, uint16_t version,
                                           uint16_t features)>;
   virtual bool SdpLookup(const RawAddress& bdaddr, SdpCallback cb);
-  void SdpCb(const RawAddress& bdaddr, SdpCallback cb,
+  void SdpCb(RawAddress bdaddr, SdpCallback cb,
              tSDP_DISCOVERY_DB* disc_db, uint16_t status);
 
   virtual bool AvrcpConnect(bool initiator, const RawAddress& bdaddr);
