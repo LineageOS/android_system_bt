@@ -2,6 +2,7 @@
 #[macro_use]
 extern crate lazy_static;
 
+mod bridge;
 mod controller;
 mod hci;
 mod init_flags;

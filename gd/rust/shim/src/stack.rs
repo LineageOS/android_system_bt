@@ -3,9 +3,25 @@
 use crate::controller::Controller;
 use crate::hci::Hci;
 use bt_common::init_flags;
-use bt_main::Stack;
+use bt_hci::ControllerExports;
+use std::ops::{Deref, DerefMut};
 use std::sync::Arc;
 use tokio::runtime::{Builder, Runtime};
+
+pub struct Stack(bt_main::Stack);
+
+impl Deref for Stack {
+    type Target = bt_main::Stack;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Stack {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
 
 lazy_static! {
     pub static ref RUNTIME: Arc<Runtime> = Arc::new(
@@ -18,34 +34,15 @@ lazy_static! {
     );
 }
 
-#[cxx::bridge(namespace = bluetooth::shim::rust)]
-mod ffi {
-    extern "Rust" {
-        // TODO(abps) - https://github.com/dtolnay/cxx/issues/496
-        // Externing non-local types results in E0117 errors and that breaks
-        // building with CXX > 1.0.
-        type Stack;
-        type Hci;
-        type Controller;
-
-        fn stack_create() -> Box<Stack>;
-        fn stack_start(stack: &mut Stack);
-        fn stack_stop(stack: &mut Stack);
-
-        fn get_hci(stack: &mut Stack) -> Box<Hci>;
-        fn get_controller(stack: &mut Stack) -> Box<Controller>;
-    }
-}
-
 pub fn stack_create() -> Box<Stack> {
     assert!(init_flags::gd_rust_is_enabled());
 
     let local_rt = RUNTIME.clone();
     RUNTIME.block_on(async move {
-        let stack = Stack::new(local_rt).await;
+        let stack = bt_main::Stack::new(local_rt).await;
         stack.use_default_snoop().await;
 
-        Box::new(stack)
+        Box::new(Stack(stack))
     })
 }
 
@@ -73,5 +70,5 @@ pub fn get_controller(stack: &mut Stack) -> Box<Controller> {
     assert!(init_flags::gd_rust_is_enabled());
     assert!(init_flags::gd_controller_is_enabled());
 
-    Box::new(stack.get_blocking::<Controller>())
+    Box::new(Controller(stack.get_blocking::<Arc<ControllerExports>>()))
 }

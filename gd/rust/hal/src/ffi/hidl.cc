@@ -99,22 +99,22 @@ void stop_hal() {
   trampoline_ = nullptr;
 }
 
-void send_command(rust::Slice<uint8_t> data) {
+void send_command(rust::Slice<const uint8_t> data) {
   ASSERT(bt_hci_ != nullptr);
   bt_hci_->sendHciCommand(hidl_vec<uint8_t>(data.data(), data.data() + data.length()));
 }
 
-void send_acl(rust::Slice<uint8_t> data) {
+void send_acl(rust::Slice<const uint8_t> data) {
   ASSERT(bt_hci_ != nullptr);
   bt_hci_->sendAclData(hidl_vec<uint8_t>(data.data(), data.data() + data.length()));
 }
 
-void send_sco(rust::Slice<uint8_t> data) {
+void send_sco(rust::Slice<const uint8_t> data) {
   ASSERT(bt_hci_ != nullptr);
   bt_hci_->sendScoData(hidl_vec<uint8_t>(data.data(), data.data() + data.length()));
 }
 
-void send_iso(rust::Slice<uint8_t> data) {
+void send_iso(rust::Slice<const uint8_t> data) {
   if (bt_hci_1_1_ == nullptr) {
     LOG_ERROR("ISO is not supported in HAL v1.0");
     return;

@@ -1,13 +1,18 @@
 //! System properties on Android
 
 #[cfg(target_os = "android")]
-#[cxx::bridge(namespace = bluetooth::common::sys_prop)]
-mod ffi {
-    extern "C" {
-        include!("src/ffi/sys_prop.h");
-        fn get(name: &str) -> String;
+mod wrap {
+    #[cxx::bridge(namespace = bluetooth::common::sys_prop)]
+    pub mod ffi {
+        unsafe extern "C++" {
+            include!("src/ffi/sys_prop.h");
+            fn get(name: &str) -> String;
+        }
     }
 }
+
+#[cfg(target_os = "android")]
+use wrap::ffi;
 
 /// Gets the value of a system property on Android
 #[cfg(target_os = "android")]
@@ -43,7 +48,7 @@ pub fn get_bool(name: &str) -> Option<bool> {
         match value.as_str() {
             "0" | "n" | "no" | "false" | "off" => Some(false),
             "1" | "y" | "yes" | "true" | "on" => Some(true),
-            _ => None
+            _ => None,
         }
     } else {
         None
