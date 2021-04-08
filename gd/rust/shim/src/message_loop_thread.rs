@@ -9,7 +9,7 @@ use tokio::sync::mpsc::{unbounded_channel, UnboundedSender};
 
 #[cxx::bridge(namespace = bluetooth::shim::rust)]
 mod ffi {
-    extern "C" {
+    unsafe extern "C++" {
         include!("callbacks/callbacks.h");
 
         type OnceClosure;

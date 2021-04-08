@@ -27,7 +27,7 @@
 #include "gd/os/thread.h"
 #include "gd/os/utils.h"
 #include "gd/stack_manager.h"
-#include "src/stack.rs.h"
+#include "src/bridge.rs.h"
 
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {

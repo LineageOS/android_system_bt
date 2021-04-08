@@ -1,36 +1,11 @@
 //! Hci shim
 
+use crate::bridge::ffi;
 use bt_facade_helpers::U8SliceRunnable;
 use bt_hci::facade::HciFacadeService;
 use bt_packets::hci::{AclPacket, CommandPacket, Packet};
 use std::sync::Arc;
 use tokio::runtime::Runtime;
-
-#[cxx::bridge(namespace = bluetooth::shim::rust)]
-mod ffi {
-    extern "C" {
-        include!("callbacks/callbacks.h");
-
-        type u8SliceCallback;
-        fn Run(self: &u8SliceCallback, data: &[u8]);
-
-        type u8SliceOnceCallback;
-        fn Run(self: &u8SliceOnceCallback, data: &[u8]);
-    }
-
-    extern "Rust" {
-        type Hci;
-
-        fn hci_set_acl_callback(hci: &mut Hci, callback: UniquePtr<u8SliceCallback>);
-        fn hci_set_evt_callback(hci: &mut Hci, callback: UniquePtr<u8SliceCallback>);
-        fn hci_set_le_evt_callback(hci: &mut Hci, callback: UniquePtr<u8SliceCallback>);
-
-        fn hci_send_command(hci: &mut Hci, data: &[u8], callback: UniquePtr<u8SliceOnceCallback>);
-        fn hci_send_acl(hci: &mut Hci, data: &[u8]);
-        fn hci_register_event(hci: &mut Hci, event: u8);
-        fn hci_register_le_event(hci: &mut Hci, subevent: u8);
-    }
-}
 
 // we take ownership when we get the callbacks
 unsafe impl Send for ffi::u8SliceCallback {}
