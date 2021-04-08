@@ -59,23 +59,17 @@ cc_library_static {
     generated_headers: [
         "libbt_init_flags_bridge_header",
         "libbt_shim_bridge_header",
-        "libbt_hci_bridge_header",
-        "libbt_controller_bridge_header",
         "libbt_message_loop_thread_bridge_header",
         "cxx-bridge-header",
     ],
     generated_sources: [
         "libbt_init_flags_bridge_code",
         "libbt_shim_bridge_code",
-        "libbt_hci_bridge_code",
-        "libbt_controller_bridge_code",
         "libbt_message_loop_thread_bridge_code",
     ],
     export_generated_headers: [
         "libbt_init_flags_bridge_header",
         "libbt_shim_bridge_header",
-        "libbt_hci_bridge_header",
-        "libbt_controller_bridge_header",
         "libbt_message_loop_thread_bridge_header",
         "cxx-bridge-header",
     ],
@@ -102,7 +96,7 @@ cc_library_static {
     defaults: ["gd_ffi_defaults"],
     header_libs: ["libbt_callbacks_cxx_headers"],
     srcs: ["callbacks/callbacks.cc"],
-    generated_headers: ["libbt_hci_bridge_header", "cxx-bridge-header"],
+    generated_headers: ["libbt_shim_bridge_header", "cxx-bridge-header"],
     shared_libs: [
         "libchrome",
     ],
@@ -119,16 +113,16 @@ genrule {
     name: "libbt_shim_bridge_header",
     tools: ["cxxbridge"],
     cmd: "$(location cxxbridge) $(in) --header > $(out)",
-    srcs: ["src/stack.rs"],
-    out: ["src/stack.rs.h"],
+    srcs: ["src/bridge.rs"],
+    out: ["src/bridge.rs.h"],
 }
 
 genrule {
     name: "libbt_shim_bridge_code",
     tools: ["cxxbridge"],
     cmd: "$(location cxxbridge) $(in) >> $(out)",
-    srcs: ["src/stack.rs"],
-    out: ["stack.cc"],
+    srcs: ["src/bridge.rs"],
+    out: ["bridge.cc"],
 }
 
 genrule {
@@ -148,22 +142,6 @@ genrule {
 }
 
 genrule {
-    name: "libbt_hci_bridge_header",
-    tools: ["cxxbridge"],
-    cmd: "$(location cxxbridge) $(in) --header > $(out)",
-    srcs: ["src/hci.rs"],
-    out: ["src/hci.rs.h"],
-}
-
-genrule {
-    name: "libbt_hci_bridge_code",
-    tools: ["cxxbridge"],
-    cmd: "$(location cxxbridge) $(in) >> $(out)",
-    srcs: ["src/hci.rs"],
-    out: ["hci.cc"],
-}
-
-genrule {
     name: "libbt_message_loop_thread_bridge_header",
     tools: ["cxxbridge"],
     cmd: "$(location cxxbridge) $(in) --header > $(out)",
@@ -177,20 +155,4 @@ genrule {
     cmd: "$(location cxxbridge) $(in) >> $(out)",
     srcs: ["src/message_loop_thread.rs"],
     out: ["message_loop_thread.cc"],
-}
-
-genrule {
-    name: "libbt_controller_bridge_header",
-    tools: ["cxxbridge"],
-    cmd: "$(location cxxbridge) $(in) --header > $(out)",
-    srcs: ["src/controller.rs"],
-    out: ["src/controller.rs.h"],
-}
-
-genrule {
-    name: "libbt_controller_bridge_code",
-    tools: ["cxxbridge"],
-    cmd: "$(location cxxbridge) $(in) >> $(out)",
-    srcs: ["src/controller.rs"],
-    out: ["controller.cc"],
 }
