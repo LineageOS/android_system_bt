@@ -28,6 +28,7 @@ cc_library_static {
         "os_utils.cc",
         "repeating_timer.cc",
         "time_util.cc",
+        "stop_watch_legacy.cc",
     ],
     shared_libs: [
         "libcrypto",

@@ -20,20 +20,24 @@
 
 #include "hci_layer.h"
 
+#include <iomanip>
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#include <base/location.h>
-#include <base/logging.h>
-#include "buffer_allocator.h"
-#include "osi/include/log.h"
 
 #include <android/hardware/bluetooth/1.0/IBluetoothHci.h>
 #include <android/hardware/bluetooth/1.0/IBluetoothHciCallbacks.h>
 #include <android/hardware/bluetooth/1.0/types.h>
 #include <android/hardware/bluetooth/1.1/IBluetoothHci.h>
 #include <android/hardware/bluetooth/1.1/IBluetoothHciCallbacks.h>
+
+#include <base/location.h>
+#include <base/logging.h>
+
+#include "buffer_allocator.h"
+#include "common/stop_watch_legacy.h"
+#include "osi/include/log.h"
 
 #define LOG_PATH "/data/misc/bluetooth/logs/firmware_events.log"
 #define LAST_LOG_PATH "/data/misc/bluetooth/logs/firmware_events.log.last"
@@ -44,6 +48,7 @@ using ::android::hardware::Return;
 using ::android::hardware::Void;
 using ::android::hardware::bluetooth::V1_0::HciPacket;
 using ::android::hardware::bluetooth::V1_0::Status;
+using ::bluetooth::common::StopWatchLegacy;
 
 using namespace ::android::hardware::bluetooth;
 
@@ -58,10 +63,27 @@ extern bool hci_is_root_inflammation_event_received();
 android::sp<V1_0::IBluetoothHci> btHci;
 android::sp<V1_1::IBluetoothHci> btHci_1_1;
 
+std::string GetTimerText(std::string func_name, const hidl_vec<uint8_t>& vec) {
+  std::stringstream ss;
+  const unsigned char* vec_char =
+      reinterpret_cast<const unsigned char*>(vec.data());
+  int length = 5;
+  if ((int)vec.size() < 5) {
+    length = vec.size();
+  }
+  for (int i = 0; i < length; i++) {
+    ss << std::setw(2) << std::setfill('0') << std::hex << (int)vec_char[i];
+  }
+  std::string text = func_name + ": len " + std::to_string(vec.size()) +
+                     ", 1st 5 bytes '" + ss.str() + "'";
+  return text;
+}
+
 class BluetoothHciDeathRecipient : public hidl_death_recipient {
  public:
   virtual void serviceDied(uint64_t /*cookie*/, const android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
     LOG_ERROR("Bluetooth HAL service died!");
+    StopWatchLegacy::DumpStopWatchLog();
     hal_service_died();
   }
 };
@@ -102,24 +124,28 @@ class BluetoothHciCallbacks : public V1_1::IBluetoothHciCallbacks {
   }
 
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& event) override {
+    StopWatchLegacy(GetTimerText(__func__, event));
     BT_HDR* packet = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, event);
     hci_event_received(FROM_HERE, packet);
     return Void();
   }
 
   Return<void> aclDataReceived(const hidl_vec<uint8_t>& data) override {
+    StopWatchLegacy(GetTimerText(__func__, data));
     BT_HDR* packet = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_ACL, data);
     acl_event_received(packet);
     return Void();
   }
 
   Return<void> scoDataReceived(const hidl_vec<uint8_t>& data) override {
+    StopWatchLegacy(GetTimerText(__func__, data));
     BT_HDR* packet = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_SCO, data);
     sco_data_received(packet);
     return Void();
   }
 
   Return<void> isoDataReceived(const hidl_vec<uint8_t>& data) override {
+    StopWatchLegacy(GetTimerText(__func__, data));
     BT_HDR* packet = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_ISO, data);
     iso_data_received(packet);
     return Void();
