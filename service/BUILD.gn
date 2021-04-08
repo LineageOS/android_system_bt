@@ -121,6 +121,7 @@ executable("bluetoothtbd") {
     "dl",
     "pthread",
     "rt",
+    "bt_shim_ffi",
     "ssl",
     "crypto",
   ]
