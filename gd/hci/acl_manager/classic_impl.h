@@ -166,6 +166,22 @@ struct classic_impl : public security::ISecurityManagerListener {
       this->reject_connection(RejectConnectionRequestBuilder::Create(address, reason));
       return;
     }
+
+    switch (request.GetLinkType()) {
+      case ConnectionRequestLinkType::SCO:
+        client_handler_->CallOn(
+            client_callbacks_, &ConnectionCallbacks::HACK_OnScoConnectRequest, address, request.GetClassOfDevice());
+        return;
+
+      case ConnectionRequestLinkType::ACL:
+        break;
+
+      case ConnectionRequestLinkType::ESCO:
+        client_handler_->CallOn(
+            client_callbacks_, &ConnectionCallbacks::HACK_OnEscoConnectRequest, address, request.GetClassOfDevice());
+        return;
+    }
+
     incoming_connecting_address_ = address;
     if (is_classic_link_already_connected(address)) {
       auto reason = RejectConnectionReason::UNACCEPTABLE_BD_ADDR;

@@ -39,6 +39,8 @@
 #include "gd/hci/acl_manager/connection_management_callbacks.h"
 #include "gd/hci/acl_manager/le_acl_connection.h"
 #include "gd/hci/acl_manager/le_connection_management_callbacks.h"
+#include "gd/hci/address.h"
+#include "gd/hci/class_of_device.h"
 #include "gd/hci/controller.h"
 #include "gd/os/handler.h"
 #include "gd/os/queue.h"
@@ -1171,6 +1173,31 @@ void shim::legacy::Acl::OnConnectFail(hci::Address address,
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Connection failed",
                  base::StringPrintf("classic reason:%s",
                                     hci::ErrorCodeText(reason).c_str()));
+}
+
+void shim::legacy::Acl::HACK_OnEscoConnectRequest(hci::Address address,
+                                                  hci::ClassOfDevice cod) {
+  const RawAddress bd_addr = ToRawAddress(address);
+  types::ClassOfDevice legacy_cod;
+  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
+
+  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_esco_connect_request,
+                      bd_addr, legacy_cod);
+  LOG_DEBUG("Received ESCO connect request remote:%s",
+            PRIVATE_ADDRESS(address));
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "ESCO Connection request");
+}
+
+void shim::legacy::Acl::HACK_OnScoConnectRequest(hci::Address address,
+                                                 hci::ClassOfDevice cod) {
+  const RawAddress bd_addr = ToRawAddress(address);
+  types::ClassOfDevice legacy_cod;
+  types::ClassOfDevice::FromString(cod.ToLegacyConfigString(), legacy_cod);
+
+  TRY_POSTING_ON_MAIN(acl_interface_.connection.sco.on_sco_connect_request,
+                      bd_addr, legacy_cod);
+  LOG_DEBUG("Received SCO connect request remote:%s", PRIVATE_ADDRESS(address));
+  BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "SCO Connection request");
 }
 
 void shim::legacy::Acl::OnLeConnectSuccess(

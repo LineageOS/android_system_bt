@@ -21,6 +21,7 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
 #include "types/ble_address_with_type.h"
+#include "types/class_of_device.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
@@ -49,6 +50,10 @@ typedef struct {
 } acl_le_connection_interface_t;
 
 typedef struct {
+  void (*on_esco_connect_request)(const RawAddress&,
+                                  const types::ClassOfDevice&);
+  void (*on_sco_connect_request)(const RawAddress&,
+                                 const types::ClassOfDevice&);
   void (*on_disconnected)(uint16_t handle, tHCI_REASON reason);
 } acl_sco_connection_interface_t;
 
