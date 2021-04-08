@@ -340,6 +340,7 @@ function venv_common {
     $(echo "${CERT_TEST_VENV}/bin/python" "${CERT_TEST_VENV}/acts/setup.py" --quiet build --force)
     if [[ $? -ne 0 ]] ; then
         echo "Error building GD Python libraries"
+        echo -e "${YELLOW}NOTE:${NOCOLOR} To build external libraries the first time, please add --clean option."
         exit 1
     fi
 
