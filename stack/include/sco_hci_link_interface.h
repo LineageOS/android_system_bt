@@ -20,6 +20,7 @@
 #include <cstdint>
 
 #include "stack/include/hci_error_code.h"
+#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 struct tBTM_ESCO_DATA;
@@ -30,10 +31,14 @@ extern void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
 extern bool btm_is_sco_active(uint16_t handle);
 extern void btm_sco_chk_pend_unpark(tHCI_STATUS hci_status,
                                     uint16_t hci_handle);
-extern void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
+extern void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
                              uint8_t link_type);
 extern void btm_sco_connected(tHCI_STATUS hci_status, const RawAddress& bda,
                               uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data);
 extern bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason);
 
 void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason);
+void btm_sco_on_esco_connect_request(const RawAddress&,
+                                     const bluetooth::types::ClassOfDevice&);
+void btm_sco_on_sco_connect_request(const RawAddress&,
+                                    const bluetooth::types::ClassOfDevice&);

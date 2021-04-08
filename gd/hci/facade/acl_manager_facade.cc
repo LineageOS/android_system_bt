@@ -23,6 +23,8 @@
 #include "common/bind.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/acl_manager.h"
+#include "hci/address.h"
+#include "hci/class_of_device.h"
 #include "hci/facade/acl_manager_facade.grpc.pb.h"
 #include "hci/facade/acl_manager_facade.pb.h"
 #include "hci/hci_packets.h"
@@ -365,6 +367,14 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     fail.set_payload(builder_to_string(std::move(builder)));
     per_connection_events_[current_connection_request_]->OnIncomingEvent(fail);
     current_connection_request_++;
+  }
+
+  void HACK_OnEscoConnectRequest(Address address, ClassOfDevice cod) override {
+    LOG_ERROR("Remote ESCO connect request unimplemented");
+  }
+
+  void HACK_OnScoConnectRequest(Address address, ClassOfDevice cod) override {
+    LOG_ERROR("Remote SCO connect request unimplemented");
   }
 
   class Connection : public ConnectionManagementCallbacks {
