@@ -18,23 +18,16 @@ import("//common-mk/cxxbridge.gni")
 
 config("rust_shim_config") {
   include_dirs = [ "//bt/gd/rust/shim" ]
-
-  ldflags = [
-    # Opaque types in rust shim cause duplicate definitions of layout. Use the
-    # first defined symbol instead of aborting.
-    # i.e. T::layout::size() and T::layout::align()
-    "-Wl,--allow-multiple-definition",
-  ]
 }
 
 cxxbridge_header("shim_bridge_header") {
-  sources = [ "src/stack.rs" ]
+  sources = [ "src/bridge.rs" ]
   all_dependent_configs = [ ":rust_shim_config" ]
   deps = [ ":cxxlibheader" ]
 }
 
 cxxbridge_cc("shim_bridge_code") {
-  sources = [ "src/stack.rs" ]
+  sources = [ "src/bridge.rs" ]
   deps = [ ":shim_bridge_header" ]
   configs = [ "//bt/gd:gd_defaults" ]
 }
@@ -51,18 +44,6 @@ cxxbridge_cc("init_flags_bridge_code") {
   configs = [ "//bt/gd:gd_defaults" ]
 }
 
-cxxbridge_header("hci_bridge_header") {
-  sources = [ "src/hci.rs" ]
-  all_dependent_configs = [ ":rust_shim_config" ]
-  deps = [ ":cxxlibheader" ]
-}
-
-cxxbridge_cc("hci_bridge_code") {
-  sources = [ "src/hci.rs" ]
-  deps = [ ":hci_bridge_header" ]
-  configs = [ "//bt/gd:gd_defaults" ]
-}
-
 cxxbridge_header("message_loop_thread_bridge_header") {
   sources = [ "src/message_loop_thread.rs" ]
   all_dependent_configs = [ ":rust_shim_config" ]
@@ -75,27 +56,13 @@ cxxbridge_cc("message_loop_thread_bridge_code") {
   configs = [ "//bt/gd:gd_defaults" ]
 }
 
-cxxbridge_header("controller_bridge_header") {
-  sources = [ "src/controller.rs" ]
-  all_dependent_configs = [ ":rust_shim_config" ]
-  deps = [ ":cxxlibheader" ]
-}
-
-cxxbridge_cc("controller_bridge_code") {
-  sources = [ "src/controller.rs" ]
-  deps = [ ":controller_bridge_header" ]
-  configs = [ "//bt/gd:gd_defaults" ]
-}
-
 cxxbridge_libheader("cxxlibheader") {
   deps = []
 }
 
 static_library("libbluetooth_rust_interop") {
   deps = [
-    ":controller_bridge_code",
     ":cxxlibheader",
-    ":hci_bridge_code",
     ":init_flags_bridge_code",
     ":message_loop_thread_bridge_code",
     ":shim_bridge_code",
