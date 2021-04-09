@@ -22,6 +22,7 @@
  TODO: We should have random number management in separate file, and we
        should honour all the random number requirements from the spec!!
 **********************************************************************************************************************/
+#include <string.h>
 #include <chrono>
 #include <cstdlib>
 

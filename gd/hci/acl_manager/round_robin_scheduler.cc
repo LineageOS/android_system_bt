@@ -89,6 +89,13 @@ void RoundRobinScheduler::start_round_robin() {
     return;
   }
   if (!fragments_to_send_.empty()) {
+    auto connection_type = fragments_to_send_.front().first;
+    bool classic_buffer_full = acl_packet_credits_ == 0 && connection_type == ConnectionType::CLASSIC;
+    bool le_buffer_full = le_acl_packet_credits_ == 0 && connection_type == ConnectionType::LE;
+    if (classic_buffer_full || le_buffer_full) {
+      LOG_WARN("Buffer of connection_type %d is full", connection_type);
+      return;
+    }
     send_next_fragment();
     return;
   }
@@ -217,20 +224,27 @@ void RoundRobinScheduler::incoming_acl_credits(uint16_t handle, uint16_t credits
     acl_queue_handler->second.number_of_sent_packets_ = 0;
   }
 
+  bool credit_was_zero = false;
   if (acl_queue_handler->second.connection_type_ == ConnectionType::CLASSIC) {
+    if (acl_packet_credits_ == 0) {
+      credit_was_zero = true;
+    }
     acl_packet_credits_ += credits;
     if (acl_packet_credits_ > max_acl_packet_credits_) {
       acl_packet_credits_ = max_acl_packet_credits_;
       LOG_WARN("acl packet credits overflow due to receive %hx credits", credits);
     }
   } else {
+    if (le_acl_packet_credits_ == 0) {
+      credit_was_zero = true;
+    }
     le_acl_packet_credits_ += credits;
     if (le_acl_packet_credits_ > le_max_acl_packet_credits_) {
       le_acl_packet_credits_ = le_max_acl_packet_credits_;
       LOG_WARN("le acl packet credits overflow due to receive %hx credits", credits);
     }
   }
-  if (acl_packet_credits_ == credits || le_acl_packet_credits_ == credits) {
+  if (credit_was_zero) {
     start_round_robin();
   }
 }

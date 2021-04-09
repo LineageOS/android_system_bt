@@ -14,8 +14,8 @@
 #  limitations under the License.
 #
 
-import("//common-mk/bison.gni")
-import("//common-mk/flex.gni")
+import("flex.gni")
+import("bison.gni")
 
 config("pktgen_configs") {
   include_dirs = [ "//bt/gd/packet/parser" ]
