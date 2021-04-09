@@ -69,11 +69,8 @@ class BluetoothAudioPort {
   // Called by Audio framework / HAL to stop the stream
   void Stop();
 
-  // The audio data path to the Bluetooth stack (Software encoding)
-  size_t WriteData(const void* buffer, size_t bytes) const;
-
   // Called by the Audio framework / HAL to fetch informaiton about audio frames
-  // presented to an external sink.
+  // presented to an external sink, or frames presented fror an internal sink
   bool GetPresentationPosition(uint64_t* delay_ns, uint64_t* bytes,
                                timespec* timestamp) const;
 
