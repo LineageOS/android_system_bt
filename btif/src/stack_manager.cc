@@ -197,10 +197,10 @@ inline const module_t* get_local_module(const char* name) {
 static void event_init_stack(void* context) {
   semaphore_t* semaphore = (semaphore_t*)context;
 
-  LOG_INFO("%s is initializing the stack", __func__);
+  LOG_INFO("is initializing the stack");
 
   if (stack_is_initialized) {
-    LOG_INFO("%s found the stack already in initialized state", __func__);
+    LOG_INFO("found the stack already in initialized state");
   } else {
     module_management_start();
 
@@ -220,7 +220,7 @@ static void event_init_stack(void* context) {
     stack_is_initialized = true;
   }
 
-  LOG_INFO("%s finished", __func__);
+  LOG_INFO("finished");
 
   if (semaphore) semaphore_post(semaphore);
 }
