@@ -24,6 +24,7 @@ namespace common {
 
 class StopWatch {
  public:
+  static void DumpStopWatchLog(void);
   StopWatch(std::string text);
   ~StopWatch();
 
@@ -31,6 +32,7 @@ class StopWatch {
   std::string text_;
   std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
   std::string start_timestamp_;
+  void RecordLog(std::string log);
 };
 
 }  // namespace common
