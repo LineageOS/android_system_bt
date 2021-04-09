@@ -22,7 +22,7 @@
 #include "flatbuffers/flatbuffers.h"
 
 bool LoadBinarySchema(const char* filename, std::string* binary_schema);
-bool VerifyBinarySchema(const std::vector<const uint8_t>& raw_schema);
+bool VerifyBinarySchema(const std::vector<uint8_t>& raw_schema);
 bool CreateBinarySchemaBundle(
     flatbuffers::FlatBufferBuilder* builder,
     const std::vector<std::string>& filenames,
@@ -48,10 +48,10 @@ TEST_F(BundlerTest, LoadBinarySchema) {
 TEST_F(BundlerTest, VerifyBinarySchema) {
   std::string string_schema;
   ASSERT_TRUE(LoadBinarySchema("test.bfbs", &string_schema));
-  std::vector<const uint8_t> raw_schema(string_schema.begin(), string_schema.end());
+  std::vector<uint8_t> raw_schema(string_schema.begin(), string_schema.end());
   ASSERT_TRUE(VerifyBinarySchema(raw_schema));
 
-  std::vector<const uint8_t> bogus_raw_schema(string_schema.begin() + 1, string_schema.end());
+  std::vector<uint8_t> bogus_raw_schema(string_schema.begin() + 1, string_schema.end());
   ASSERT_FALSE(VerifyBinarySchema(bogus_raw_schema));
 }
 

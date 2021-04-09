@@ -57,7 +57,7 @@ bool LoadBinarySchema(const char* filename, std::string* binary_schema) {
  *
  * @return: True if operation successful, false otherwise.
  */
-bool VerifyBinarySchema(const std::vector<const uint8_t>& raw_schema) {
+bool VerifyBinarySchema(const std::vector<uint8_t>& raw_schema) {
   flatbuffers::Verifier verifier(raw_schema.data(), raw_schema.size());
   if (!reflection::VerifySchemaBuffer(verifier)) {
     return false;
@@ -89,7 +89,7 @@ bool CreateBinarySchemaBundle(
       fprintf(stderr, "Unable to load binary schema from filename:%s\n", filename.c_str());
       return false;
     }
-    std::vector<const uint8_t> raw_schema(string_schema.begin(), string_schema.end());
+    std::vector<uint8_t> raw_schema(string_schema.begin(), string_schema.end());
     if (!VerifyBinarySchema(raw_schema)) {
       fprintf(stderr, "Failed verification on binary schema filename:%s\n", filename.c_str());
       return false;
