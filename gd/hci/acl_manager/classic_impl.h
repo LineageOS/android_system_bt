@@ -240,6 +240,11 @@ struct classic_impl : public security::ISecurityManagerListener {
       outgoing_connecting_address_ = Address::kEmpty;
     } else {
       locally_initiated = false;
+      if (incoming_connecting_address_ != address && status == ErrorCode::UNKNOWN_CONNECTION) {
+        LOG_WARN("No matching connection to %s (%s)", address.ToString().c_str(), ErrorCodeText(status).c_str());
+        LOG_WARN("Firmware error after RemoteNameRequestCancel?");
+        return;
+      }
       ASSERT_LOG(incoming_connecting_address_ == address, "No prior connection request for %s",
                  address.ToString().c_str());
       incoming_connecting_address_ = Address::kEmpty;
