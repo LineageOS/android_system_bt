@@ -68,6 +68,7 @@ class VolumeControlDevice {
         volume(0),
         change_counter(0),
         mute(false),
+        flags(0),
         connection_id(GATT_INVALID_CONN_ID),
         volume_state_handle(0),
         volume_state_ccc_handle(0),
