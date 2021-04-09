@@ -137,6 +137,7 @@ extern VolumeControlInterface* btif_volume_control_get_interface();
  ******************************************************************************/
 
 static bool interface_ready(void) { return bt_hal_cbacks != NULL; }
+void set_hal_cbacks(bt_callbacks_t* callbacks) { bt_hal_cbacks = callbacks; }
 
 static bool is_profile(const char* p1, const char* p2) {
   CHECK(p1);
@@ -167,7 +168,8 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted,
   allocation_tracker_init();
 #endif
 
-  bt_hal_cbacks = callbacks;
+  set_hal_cbacks(callbacks);
+
   restricted_mode = start_restricted;
   common_criteria_mode = is_common_criteria_mode;
   common_criteria_config_compare_result = config_compare_result;
