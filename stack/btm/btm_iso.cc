@@ -128,9 +128,15 @@ void IsoManager::HandleHciEvent(uint8_t sub_code, uint8_t* params,
     pimpl_->iso_impl_->on_iso_event(sub_code, params, length);
 }
 
-void IsoManager::Start() { pimpl_->Start(); }
+void IsoManager::Start() {
+  if (!pimpl_->IsRunning())
+    pimpl_->Start();
+}
 
-void IsoManager::Stop() { pimpl_->Stop(); }
+void IsoManager::Stop() {
+  if (pimpl_->IsRunning())
+    pimpl_->Stop();
+}
 
 IsoManager::~IsoManager() = default;
 
