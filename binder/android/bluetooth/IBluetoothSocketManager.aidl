@@ -27,7 +27,10 @@ import android.os.ParcelFileDescriptor;
  */
 interface IBluetoothSocketManager
 {
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     @nullable ParcelFileDescriptor connectSocket(in BluetoothDevice device, int type, in @nullable ParcelUuid uuid, int port, int flag);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     @nullable ParcelFileDescriptor createSocketChannel(int type, in @nullable String serviceName, in @nullable ParcelUuid uuid, int port, int flag);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void requestMaximumTxDataLength(in BluetoothDevice device);
 }
