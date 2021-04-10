@@ -61,9 +61,19 @@ VALID_TARGETS = [
     'tools',  # Build the host tools (i.e. packetgen)
     'rust',  # Build only the rust components + copy artifacts to output dir
     'main',  # Build the main C++ codebase
-    'test',  # Build and run the unit tests
+    'test',  # Run the unit tests
     'clean',  # Clean up output directory
     'all',  # All targets except test and clean
+]
+
+HOST_TESTS = [
+    'bluetooth_test_common',
+    'bluetoothtbd_test',
+    'net_test_avrcp',
+    'net_test_btcore',
+    'net_test_types',
+    'net_test_btm_iso',
+    'net_test_btpackets',
 ]
 
 
@@ -110,6 +120,7 @@ class HostBuild():
         self.jobs = self.args.jobs
         if not self.jobs:
             self.jobs = multiprocessing.cpu_count()
+            print("Number of jobs = {}".format(self.jobs))
 
         # Normalize all directories
         self.output_dir = os.path.abspath(self.args.output)
@@ -123,7 +134,13 @@ class HostBuild():
         if hasattr(self.args, 'target') and self.args.target:
             self.target = self.args.target
 
-        self.use = UseFlags(self.args.use if self.args.use else [])
+        target_use = self.args.use if self.args.use else []
+
+        # Unless set, always build test code
+        if not self.args.notest:
+            target_use.append('test')
+
+        self.use = UseFlags(target_use)
 
         # Validate platform directory
         assert os.path.isdir(self.platform_dir), 'Platform dir does not exist'
@@ -136,6 +153,18 @@ class HostBuild():
         self.libbase_ver = None
 
         self.configure_environ()
+
+    def _generate_rustflags(self):
+        """ Rustflags to include for the build.
+      """
+        rust_flags = [
+            '-L',
+            '{}/out/Default/'.format(self.output_dir),
+            '-C',
+            'link-arg=-Wl,--allow-multiple-definition',
+        ]
+
+        return ' '.join(rust_flags)
 
     def configure_environ(self):
         """ Configure environment variables for GN and Cargo.
@@ -150,6 +179,7 @@ class HostBuild():
         # Configure Rust env variables
         self.env['CARGO_TARGET_DIR'] = self.output_dir
         self.env['CARGO_HOME'] = os.path.join(self.output_dir, 'cargo_home')
+        self.env['RUSTFLAGS'] = self._generate_rustflags()
 
         # Configure some GN variables
         if self.use_board:
@@ -364,7 +394,15 @@ class HostBuild():
     def _target_test(self):
         """ Runs the host tests.
         """
-        raise Exception('Not yet implemented')
+        # Rust tests first
+        self.run_command('test', ['cargo', 'test'], cwd=os.path.join(self.platform_dir, 'bt'), env=self.env)
+
+        # Host tests second based on host test list
+        for t in HOST_TESTS:
+            self.run_command(
+                'test', [os.path.join(self.output_dir, 'out/Default', t)],
+                cwd=os.path.join(self.output_dir),
+                env=self.env)
 
     def _target_clean(self):
         """ Delete the output directory entirely.
@@ -393,8 +431,6 @@ class HostBuild():
         elif self.target == 'main':
             self._target_main()
         elif self.target == 'test':
-            self.use.set_flag('test')
-            self._target_all()
             self._target_test()
         elif self.target == 'clean':
             self._target_clean()
@@ -406,14 +442,15 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Simple build for host.')
     parser.add_argument('--output', help='Output directory for the build.', required=True)
     parser.add_argument('--platform-dir', help='Directory where platform2 is staged.', required=True)
-    parser.add_argument('--clang', help='Use clang compiler.', default=False, action="store_true")
+    parser.add_argument('--clang', help='Use clang compiler.', default=False, action='store_true')
     parser.add_argument('--use', help='Set a specific use flag.')
+    parser.add_argument('--notest', help="Don't compile test code.", default=False, action='store_true')
     parser.add_argument('--target', help='Run specific build target')
     parser.add_argument('--sysroot', help='Set a specific sysroot path', default='/')
     parser.add_argument('--libdir', help='Libdir - default = usr/lib64', default='usr/lib64')
     parser.add_argument('--use-board', help='Use a built x86 board for dependencies. Provide path.')
     parser.add_argument('--jobs', help='Number of jobs to run', default=0, type=int)
-    parser.add_argument('--vendored-rust', help='Use vendored rust crates', default=False, action="store_true")
+    parser.add_argument('--vendored-rust', help='Use vendored rust crates', default=False, action='store_true')
     parser.add_argument('--verbose', help='Verbose logs for build.')
 
     args = parser.parse_args()
