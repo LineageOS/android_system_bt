@@ -61,6 +61,8 @@ static_library("libbluetooth_gd") {
   include_dirs = [ "." ]
   configs += [ ":gd_defaults" ]
   deps = [
+    "//bt/gd/rust/topshim:libbluetooth_topshim",
+    "//bt/gd/rust/shim:libbluetooth_rust_interop",
     "//bt/gd:BluetoothGeneratedPackets_h",
     "//bt/gd/att:BluetoothAttSources",
     "//bt/gd/common:BluetoothCommonSources",
@@ -71,7 +73,6 @@ static_library("libbluetooth_gd") {
     "//bt/gd/hal:BluetoothHalSources_hci_host",
     "//bt/gd/l2cap:BluetoothL2capSources",
     "//bt/gd/neighbor:BluetoothNeighborSources",
-    "//bt/gd/rust/shim:libbluetooth_rust_interop",
     "//bt/gd/security:BluetoothSecuritySources",
     "//bt/gd/shim:BluetoothShimSources",
     "//bt/gd/storage:BluetoothStorageSources",
