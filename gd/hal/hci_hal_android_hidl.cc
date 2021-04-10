@@ -46,6 +46,7 @@ class HciDeathRecipient : public ::android::hardware::hidl_death_recipient {
  public:
   virtual void serviceDied(uint64_t /*cookie*/, const android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
     LOG_ERROR("Bluetooth HAL service died!");
+    common::StopWatch::DumpStopWatchLog();
     abort();
   }
 };

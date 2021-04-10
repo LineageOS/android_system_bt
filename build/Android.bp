@@ -81,7 +81,7 @@ fluoride_defaults {
     defaults: ["fluoride_types_defaults_fuzzable"],
     header_libs: ["libbluetooth_headers", "libbt_callbacks_cxx_headers"],
     generated_headers: [
-        "libbt_hci_bridge_header",
+        "libbt_shim_bridge_header",
         "libbt_message_loop_thread_bridge_header",
         "cxx-bridge-header"
     ],

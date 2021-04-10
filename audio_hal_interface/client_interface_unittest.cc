@@ -86,6 +86,15 @@ constexpr SampleRatePair kSampleRatePairs[9] = {
     {.hal_sample_rate_ = SampleRate::RATE_24000,
      .btav_sample_rate_ = BTAV_A2DP_CODEC_SAMPLE_RATE_24000}};
 
+constexpr SampleRate_2_1 kSampleRates_2_1[] = {
+    SampleRate_2_1::RATE_UNKNOWN, SampleRate_2_1::RATE_8000,
+    SampleRate_2_1::RATE_16000,   SampleRate_2_1::RATE_24000,
+    SampleRate_2_1::RATE_32000,   SampleRate_2_1::RATE_44100,
+    SampleRate_2_1::RATE_48000};
+
+constexpr uint32_t kDataIntervalUs[] = {0 /* Invalid */,
+                                        10000 /* Valid 10ms */};
+
 struct BitsPerSamplePair {
   BitsPerSample hal_bits_per_sample_;
   btav_a2dp_codec_bits_per_sample_t btav_bits_per_sample_;
@@ -795,4 +804,68 @@ TEST_F(BluetoothAudioClientInterfaceTest,
       }  // ChannelMode
     }    // BitsPerSampple
   }      // SampleRate
+}
+
+TEST_F(BluetoothAudioClientInterfaceTest,
+       StartAndEndLeAudioEncodingSoftwareSession) {
+  test_sink_transport_ = new TestSinkTransport(
+      SessionType_2_1::LE_AUDIO_SOFTWARE_ENCODING_DATAPATH);
+  clientif_sink_ =
+      new BluetoothAudioSinkClientInterface(test_sink_transport_, nullptr);
+  AudioConfiguration_2_1 audio_config = {};
+  PcmParameters_2_1 pcm_config = {};
+  for (auto sample_rate : kSampleRates_2_1) {
+    pcm_config.sampleRate = sample_rate;
+    for (auto bits_per_sample_pair : kBitsPerSamplePairs) {
+      pcm_config.bitsPerSample = bits_per_sample_pair.hal_bits_per_sample_;
+      for (auto channel_mode_pair : kChannelModePairs) {
+        pcm_config.channelMode = channel_mode_pair.hal_channel_mode_;
+        for (auto data_interval_us : kDataIntervalUs) {
+          pcm_config.dataIntervalUs = data_interval_us;
+          audio_config.pcmConfig(pcm_config);
+          clientif_sink_->UpdateAudioConfig_2_1(audio_config);
+          if (IsSinkSoftwarePcmParameters_2_1_Supported(pcm_config)) {
+            ASSERT_EQ(clientif_sink_->StartSession_2_1(),
+                      kClientIfReturnSuccess);
+          } else {
+            ASSERT_NE(clientif_sink_->StartSession_2_1(),
+                      kClientIfReturnSuccess);
+          }
+          ASSERT_EQ(clientif_sink_->EndSession(), kClientIfReturnSuccess);
+        }  // dataIntervalUs
+      }    // ChannelMode
+    }      // BitsPerSampple
+  }        // SampleRate
+}
+
+TEST_F(BluetoothAudioClientInterfaceTest,
+       StartAndEndLeAudioDecodedSoftwareSession) {
+  test_source_transport_ = new TestSourceTransport(
+      SessionType_2_1::LE_AUDIO_SOFTWARE_DECODED_DATAPATH);
+  clientif_source_ =
+      new BluetoothAudioSourceClientInterface(test_source_transport_, nullptr);
+  AudioConfiguration_2_1 audio_config = {};
+  PcmParameters_2_1 pcm_config = {};
+  for (auto sample_rate : kSampleRates_2_1) {
+    pcm_config.sampleRate = sample_rate;
+    for (auto bits_per_sample_pair : kBitsPerSamplePairs) {
+      pcm_config.bitsPerSample = bits_per_sample_pair.hal_bits_per_sample_;
+      for (auto channel_mode_pair : kChannelModePairs) {
+        pcm_config.channelMode = channel_mode_pair.hal_channel_mode_;
+        for (auto data_interval_us : kDataIntervalUs) {
+          pcm_config.dataIntervalUs = data_interval_us;
+          audio_config.pcmConfig(pcm_config);
+          clientif_source_->UpdateAudioConfig_2_1(audio_config);
+          if (IsSourceSoftwarePcmParameters_2_1_Supported(pcm_config)) {
+            ASSERT_EQ(clientif_source_->StartSession_2_1(),
+                      kClientIfReturnSuccess);
+          } else {
+            ASSERT_NE(clientif_source_->StartSession_2_1(),
+                      kClientIfReturnSuccess);
+          }
+          ASSERT_EQ(clientif_source_->EndSession(), kClientIfReturnSuccess);
+        }  // dataIntervalUs
+      }    // ChannelMode
+    }      // BitsPerSampple
+  }        // SampleRate
 }

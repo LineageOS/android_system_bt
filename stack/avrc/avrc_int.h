@@ -25,10 +25,10 @@
 #ifndef AVRC_INT_H
 #define AVRC_INT_H
 
-#include "avct_defs.h"
-#include "avrc_api.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
+#include "stack/avct/avct_defs.h"
+#include "stack/include/avrc_api.h"
 
 /*      DEBUG FLAGS
  *

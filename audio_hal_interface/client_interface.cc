@@ -525,7 +525,11 @@ bool BluetoothAudioClientInterface::UpdateAudioConfig_2_1(
       (transport_->GetSessionType_2_1() ==
            SessionType_2_1::A2DP_SOFTWARE_ENCODING_DATAPATH ||
        transport_->GetSessionType_2_1() ==
-           SessionType_2_1::HEARING_AID_SOFTWARE_ENCODING_DATAPATH);
+           SessionType_2_1::HEARING_AID_SOFTWARE_ENCODING_DATAPATH ||
+       transport_->GetSessionType_2_1() ==
+           SessionType_2_1::LE_AUDIO_SOFTWARE_ENCODING_DATAPATH ||
+       transport_->GetSessionType_2_1() ==
+           SessionType_2_1::LE_AUDIO_SOFTWARE_DECODED_DATAPATH);
   bool is_offload_session = (transport_->GetSessionType_2_1() ==
                              SessionType_2_1::A2DP_HARDWARE_OFFLOAD_DATAPATH);
   auto audio_config_discriminator = audio_config_2_1.getDiscriminator();

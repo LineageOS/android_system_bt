@@ -518,24 +518,6 @@ TEST_F(IsoManagerDeathTestNoInit, RegisterNullCigCallbacks) {
   IsoManager::GetInstance()->Stop();
 }
 
-TEST_F(IsoManagerDeathTestNoInit, DoubleStart) {
-  IsoManager::GetInstance()->Start();
-
-  ASSERT_EXIT(IsoManager::GetInstance()->Start(),
-              ::testing::KilledBySignal(SIGABRT), "");
-
-  // Manual cleanup as IsoManagerDeathTest has no 'generic' cleanup
-  IsoManager::GetInstance()->Stop();
-}
-
-TEST_F(IsoManagerDeathTestNoInit, DoubleStop) {
-  IsoManager::GetInstance()->Start();
-  IsoManager::GetInstance()->Stop();
-
-  ASSERT_EXIT(IsoManager::GetInstance()->Stop(),
-              ::testing::KilledBySignal(SIGABRT), "");
-}
-
 // Verify hci layer being called by the Iso Manager
 TEST_F(IsoManagerTest, CreateCigHciCall) {
   for (uint8_t i = 220; i != 60; ++i) {
