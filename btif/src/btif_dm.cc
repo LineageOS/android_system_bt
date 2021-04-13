@@ -2254,37 +2254,27 @@ void btif_dm_load_local_oob(void) {
   }
 }
 
-void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
-  FILE* fp;
-  const char* path_a = "/data/misc/bluedroid/LOCAL/a.key";
-  const char* path_b = "/data/misc/bluedroid/LOCAL/b.key";
-  const char* path = NULL;
-  char prop_oob[PROPERTY_VALUE_MAX];
-  BTIF_TRACE_DEBUG("%s: valid=%d", __func__, valid);
-  if (is_empty_128bit(oob_cb.p192_data.c) && valid) {
-    BTIF_TRACE_DEBUG("save local OOB data in memory");
-    memcpy(oob_cb.p192_data.c, c.data(), OCTET16_LEN);
-    memcpy(oob_cb.p192_data.r, r.data(), OCTET16_LEN);
-    osi_property_get("service.brcm.bt.oob", prop_oob, "3");
-    BTIF_TRACE_DEBUG("%s: prop_oob = %s", __func__, prop_oob);
-    if (prop_oob[0] == '1')
-      path = path_a;
-    else if (prop_oob[0] == '2')
-      path = path_b;
-    if (path) {
-      fp = fopen(path, "wb+");
-      if (fp == NULL) {
-        BTIF_TRACE_DEBUG("%s: failed to save local OOB data to %s", __func__,
-                         path);
-      } else {
-        BTIF_TRACE_DEBUG("%s: save local OOB data into file %s", __func__,
-                         path);
-        fwrite(c.data(), 1, OCTET16_LEN, fp);
-        fwrite(r.data(), 1, OCTET16_LEN, fp);
-        fclose(fp);
-      }
-    }
+/*******************************************************************************
+ *
+ * Function         btif_dm_generate_local_oob_data
+ *
+ * Description      Initiate oob data fetch from controller
+ *
+ * Parameters       transport; Classic or LE
+ *
+ ******************************************************************************/
+void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport) {
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    BTM_ReadLocalOobData();
+  } else if (transport == BT_TRANSPORT_LE) {
+    // TODO(184377951): Call LE Implementation (not yet implemented?)
+  } else {
+    BTIF_TRACE_ERROR("Bad transport type! %d", transport);
   }
+}
+
+void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
+  invoke_oob_data_request_cb(BT_TRANSPORT_BR_EDR, valid, c, r);
 }
 
 /*******************************************************************************

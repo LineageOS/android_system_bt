@@ -24,6 +24,7 @@
 
 #include "avrcp/avrcp.h"
 #include "bluetooth/uuid.h"
+#include "bt_transport.h"
 #include "raw_address.h"
 
 /**
@@ -336,6 +337,7 @@ typedef struct {
 /** Represents the actual Out of Band data itself */
 typedef struct {
   // Both
+  bool is_valid = false; /* Default to invalid data; force caller to verify */
   uint8_t address[7]; /* Bluetooth Device Address (6) plus Address Type (1) */
   uint8_t c[16];      /* Simple Pairing Hash C-192/256 (Classic or LE) */
   uint8_t r[16];      /* Simple Pairing Randomizer R-192/256 (Classic or LE) */
@@ -483,6 +485,10 @@ typedef void (*le_test_mode_callback)(bt_status_t status, uint16_t num_packets);
 typedef void (*energy_info_callback)(bt_activity_energy_info* energy_info,
                                      bt_uid_traffic_t* uid_data);
 
+/** Callback invoked when OOB data is returned from the controller */
+typedef void (*generate_local_oob_data_callback)(tBT_TRANSPORT transport,
+                                                 bt_oob_data_t oob_data);
+
 /** TODO: Add callbacks for Link Up/Down and other generic
  *  notifications/callbacks */
 
@@ -504,6 +510,7 @@ typedef struct {
   le_test_mode_callback le_test_mode_cb;
   energy_info_callback energy_info_cb;
   link_quality_report_callback link_quality_report_cb;
+  generate_local_oob_data_callback generate_local_oob_data_cb;
 } bt_callbacks_t;
 
 typedef void (*alarm_cb)(void* data);
@@ -729,6 +736,11 @@ typedef struct {
    * Set the dynamic audio buffer size to the Controller
    */
   int (*set_dynamic_audio_buffer_size)(int codec, int size);
+
+  /**
+   * Fetches the local Out of Band data.
+   */
+  int (*generate_local_oob_data)(tBT_TRANSPORT transport);
 } bt_interface_t;
 
 #define BLUETOOTH_INTERFACE_STRING "bluetoothInterface"
