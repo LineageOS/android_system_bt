@@ -23,6 +23,7 @@
 
 #include <functional>
 #include <future>
+#include <string>
 
 using ::bluetooth::os::Thread;
 
@@ -65,6 +66,10 @@ class TestModuleNoDependency : public Module {
     // A module is not considered stopped until after Stop() finishes
     EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependency>());
   }
+
+  std::string ToString() const override {
+    return std::string("TestModuleNoDependency");
+  }
 };
 
 const ModuleFactory TestModuleNoDependency::Factory = ModuleFactory([]() {
@@ -96,6 +101,10 @@ class TestModuleOneDependency : public Module {
     // A module is not considered stopped until after Stop() finishes
     EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleOneDependency>());
   }
+
+  std::string ToString() const override {
+    return std::string("TestModuleOneDependency");
+  }
 };
 
 const ModuleFactory TestModuleOneDependency::Factory = ModuleFactory([]() {
@@ -119,6 +128,10 @@ class TestModuleNoDependencyTwo : public Module {
   void Stop() override {
     // A module is not considered stopped until after Stop() finishes
     EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependencyTwo>());
+  }
+
+  std::string ToString() const override {
+    return std::string("TestModuleNoDependencyTwo");
   }
 };
 
@@ -150,6 +163,10 @@ class TestModuleTwoDependencies : public Module {
 
     // A module is not considered stopped until after Stop() finishes
     EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleTwoDependencies>());
+  }
+
+  std::string ToString() const override {
+    return std::string("TestModuleTwoDependencies");
   }
 };
 
@@ -183,6 +200,10 @@ class TestModuleDumpState : public Module {
 
     // A module is not considered stopped until after Stop() finishes
     EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleDumpState>());
+  }
+
+  std::string ToString() const override {
+    return std::string("TestModuleDumpState");
   }
 
   DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) const override {
