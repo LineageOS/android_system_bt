@@ -27,6 +27,7 @@
 
 #include "bt_common.h"
 #include "bt_target.h"
+#include "l2c_api.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "port_api.h"
@@ -77,11 +78,12 @@ typedef struct {
  * RFCOMM multiplexer Control Block
 */
 typedef struct {
-  alarm_t* mcb_timer;   /* MCB timer */
-  fixed_queue_t* cmd_q; /* Queue for command messages on this mux */
+  alarm_t* mcb_timer = nullptr;   /* MCB timer */
+  fixed_queue_t* cmd_q = nullptr; /* Queue for command messages on this mux */
   uint8_t port_handles[RFCOMM_MAX_DLCI + 1]; /* Array for quick access to  */
   /* port handles based on dlci        */
-  RawAddress bd_addr;                    /* BD ADDR of the peer if initiator */
+  RawAddress bd_addr =
+      RawAddress::kEmpty;                /* BD ADDR of the peer if initiator */
   uint16_t lcid;                         /* Local cid used for this channel */
   uint16_t peer_l2cap_mtu; /* Max frame that can be sent to peer L2CAP */
   uint8_t state;           /* Current multiplexer channel state */
@@ -93,6 +95,10 @@ typedef struct {
   bool is_disc_initiator; /* true if initiated disc of port */
   uint16_t
       pending_lcid; /* store LCID for incoming connection while connecting */
+  bool pending_configure_complete;       /* true if confiquration of the pending
+                                            connection was completed*/
+  tL2CAP_CFG_INFO pending_cfg_info = {}; /* store configure info for incoming
+                                       connection while connecting */
 } tRFC_MCB;
 
 /*
