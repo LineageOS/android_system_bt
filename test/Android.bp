@@ -11,3 +11,73 @@ subdirs = [
     "rootcanal",
     "suite",
 ]
+
+filegroup {
+    name: "TestMockBta",
+    srcs: [
+      "mock/mock_bta_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockMainShim",
+    srcs: [
+      "mock/mock_main_shim*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockCommon",
+    srcs: [
+      "mock/mock_common_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStack",
+    srcs: [
+      "mock/mock_stack_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockHci",
+    srcs: [
+      "mock/mock_hci_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockFrameworks",
+    srcs: [
+      "mock/mock_frameworks_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockBtcore",
+    srcs: [
+      "mock/mock_btcore_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockSystemLibfmq",
+    srcs: [
+      "mock/mock_system_libfmq_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockUdrv",
+    srcs: [
+      "mock/mock_udrv_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockAndroidHardware",
+    srcs: [
+      "mock/mock_android_hardware_*.cc",
+    ],
+}
