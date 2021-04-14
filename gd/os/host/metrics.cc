@@ -16,13 +16,11 @@
  *
  ******************************************************************************/
 
-#include "metrics.h"
-
+#include "os/metrics.h"
 #include "os/log.h"
 
 namespace bluetooth {
-
-namespace common {
+namespace os {
 
 using bluetooth::hci::Address;
 
@@ -99,6 +97,6 @@ void LogMetricSdpAttribute(
 void LogMetricSmpPairingEvent(
     const Address& address, uint8_t smp_cmd, android::bluetooth::DirectionEnum direction, uint8_t smp_fail_reason) {}
 
-}  // namespace common
-
+void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int audio_coding_mode) {}
+}  // namespace os
 }  // namespace bluetooth

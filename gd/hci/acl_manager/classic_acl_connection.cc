@@ -15,8 +15,11 @@
  */
 
 #include "hci/acl_manager/classic_acl_connection.h"
-
 #include "hci/acl_manager/event_checkers.h"
+#include "hci/address.h"
+#include "os/metrics.h"
+
+using bluetooth::hci::Address;
 
 namespace bluetooth {
 namespace hci {
@@ -24,8 +27,9 @@ namespace acl_manager {
 
 class AclConnectionTracker : public ConnectionManagementCallbacks {
  public:
-  AclConnectionTracker(AclConnectionInterface* acl_connection_interface)
-      : acl_connection_interface_(acl_connection_interface) {}
+  AclConnectionTracker(
+      AclConnectionInterface* acl_connection_interface, const Address& address, uint16_t connection_handle)
+      : acl_connection_interface_(acl_connection_interface), address_(address), connection_handle_(connection_handle) {}
   ~AclConnectionTracker() {
     // If callbacks were registered, they should have been delivered.
     ASSERT(client_callbacks_ == nullptr || queued_callbacks_.empty());
@@ -104,13 +108,17 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
     SAVE_OR_CALL(OnReadAutomaticFlushTimeoutComplete, flush_timeout)
   }
   void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {
+    bluetooth::os::LogMetricReadTxPowerLevelResult(
+        address_, connection_handle_, static_cast<uint8_t>(ErrorCode::SUCCESS), transmit_power_level);
     SAVE_OR_CALL(OnReadTransmitPowerLevelComplete, transmit_power_level)
   }
   void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) override {
     SAVE_OR_CALL(OnReadLinkSupervisionTimeoutComplete, link_supervision_timeout)
   }
   void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) override {
-    SAVE_OR_CALL(OnReadFailedContactCounterComplete, failed_contact_counter)
+    bluetooth::os::LogMetricReadFailedContactCounterResult(
+        address_, connection_handle_, static_cast<uint8_t>(ErrorCode::SUCCESS), failed_contact_counter);
+    SAVE_OR_CALL(OnReadFailedContactCounterComplete, failed_contact_counter);
   }
   void OnReadLinkQualityComplete(uint8_t link_quality) override {
     SAVE_OR_CALL(OnReadLinkQualityComplete, link_quality)
@@ -119,7 +127,9 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
     SAVE_OR_CALL(OnReadAfhChannelMapComplete, afh_mode, afh_channel_map)
   }
   void OnReadRssiComplete(uint8_t rssi) override {
-    SAVE_OR_CALL(OnReadRssiComplete, rssi)
+    bluetooth::os::LogMetricReadRssiResult(
+        address_, connection_handle_, static_cast<uint8_t>(ErrorCode::SUCCESS), rssi);
+    SAVE_OR_CALL(OnReadRssiComplete, rssi);
   }
   void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
     SAVE_OR_CALL(OnReadClockComplete, clock, accuracy)
@@ -132,6 +142,8 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   }
   void OnReadRemoteVersionInformationComplete(
       hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) override {
+    bluetooth::os::LogMetricRemoteVersionInfo(
+        connection_handle_, static_cast<uint8_t>(hci_status), lmp_version, manufacturer_name, sub_version);
     SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, hci_status, lmp_version, manufacturer_name, sub_version);
   }
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) override {
@@ -301,11 +313,17 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   os::Handler* client_handler_ = nullptr;
   ConnectionManagementCallbacks* client_callbacks_ = nullptr;
   std::list<common::OnceClosure> queued_callbacks_;
+  Address address_;
+  uint16_t connection_handle_;
 };
 
 struct ClassicAclConnection::impl {
-  impl(AclConnectionInterface* acl_connection_interface, std::shared_ptr<Queue> queue)
-      : tracker(acl_connection_interface), queue_(std::move(queue)) {}
+  impl(
+      AclConnectionInterface* acl_connection_interface,
+      std::shared_ptr<Queue> queue,
+      const Address& address,
+      uint16_t connection_handle)
+      : tracker(acl_connection_interface, address, connection_handle), queue_(std::move(queue)) {}
   ConnectionManagementCallbacks* GetEventCallbacks() {
     ASSERT(!callbacks_given_);
     callbacks_given_ = true;
@@ -324,7 +342,7 @@ ClassicAclConnection::ClassicAclConnection(std::shared_ptr<Queue> queue,
                                            AclConnectionInterface* acl_connection_interface, uint16_t handle,
                                            Address address)
     : AclConnection(queue->GetUpEnd(), handle), acl_connection_interface_(acl_connection_interface), address_(address) {
-  pimpl_ = new ClassicAclConnection::impl(acl_connection_interface, std::move(queue));
+  pimpl_ = new ClassicAclConnection::impl(acl_connection_interface, std::move(queue), address, handle);
 }
 
 ClassicAclConnection::~ClassicAclConnection() {
