@@ -92,7 +92,7 @@ class Module {
   // Get relevant state data from the module
   virtual DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const;
 
-  virtual std::string ToString() const;
+  virtual std::string ToString() const = 0;
 
   ::bluetooth::os::Handler* GetHandler() const;
 
