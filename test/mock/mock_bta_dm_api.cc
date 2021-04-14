@@ -46,12 +46,12 @@ bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
 }
 tBTA_STATUS BTA_DmRemoveDevice(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTA_SUCCESS;
 }
 tBTA_STATUS BTA_DmSetLocalDiRecord(tBTA_DI_RECORD* p_device_info,
                                    uint32_t* p_handle) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTA_SUCCESS;
 }
 void BTA_AddEirUuid(uint16_t uuid16) { mock_function_count_map[__func__]++; }
 void BTA_DmAddBleDevice(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
