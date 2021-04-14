@@ -1214,7 +1214,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       // Piggy back the SCN over result field
       if (scn_found) {
         p_msg->disc_result.result.disc_res.result =
-            (3 + bta_dm_search_cb.peer_scn);
+            static_cast<tBTA_STATUS>((3 + bta_dm_search_cb.peer_scn));
         p_msg->disc_result.result.disc_res.services |= BTA_USER_SERVICE_MASK;
 
         APPL_TRACE_EVENT(" Piggy back the SCN over result field  SCN=%d",
