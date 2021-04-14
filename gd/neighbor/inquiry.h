@@ -73,6 +73,9 @@ class InquiryModule : public bluetooth::Module {
   void ListDependencies(ModuleList* list) override;
   void Start() override;
   void Stop() override;
+  std::string ToString() const override {
+    return std::string("InquiryModule");
+  }
 
  private:
   struct impl;
