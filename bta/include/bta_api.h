@@ -46,14 +46,14 @@
  ****************************************************************************/
 
 /* Status Return Value */
-#define BTA_SUCCESS 0 /* Successful operation. */
-#define BTA_FAILURE 1 /* Generic failure. */
-#define BTA_PENDING 2 /* API cannot be completed right now */
-#define BTA_BUSY 3
-#define BTA_NO_RESOURCES 4
-#define BTA_WRONG_MODE 5
-
-typedef uint8_t tBTA_STATUS;
+typedef enum : uint8_t {
+  BTA_SUCCESS = 0, /* Successful operation. */
+  BTA_FAILURE = 1, /* Generic failure. */
+  BTA_PENDING = 2, /* API cannot be completed right now */
+  BTA_BUSY = 3,
+  BTA_NO_RESOURCES = 4,
+  BTA_WRONG_MODE = 5,
+} tBTA_STATUS;
 
 /*
  * Service ID
