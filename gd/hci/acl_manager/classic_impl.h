@@ -180,6 +180,10 @@ struct classic_impl : public security::ISecurityManagerListener {
         client_handler_->CallOn(
             client_callbacks_, &ConnectionCallbacks::HACK_OnEscoConnectRequest, address, request.GetClassOfDevice());
         return;
+
+      case ConnectionRequestLinkType::UNKNOWN:
+        LOG_ERROR("Request has unknown ConnectionRequestLinkType.");
+        return;
     }
 
     incoming_connecting_address_ = address;

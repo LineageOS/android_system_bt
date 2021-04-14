@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_connection_management_callbacks.h"
+#include "os/metrics.h"
 
 namespace bluetooth {
 namespace hci {
@@ -23,8 +24,8 @@ namespace acl_manager {
 
 class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
  public:
-  LeAclConnectionTracker(LeAclConnectionInterface* le_acl_connection_interface)
-      : le_acl_connection_interface_(le_acl_connection_interface) {}
+  LeAclConnectionTracker(LeAclConnectionInterface* le_acl_connection_interface, uint16_t connection_handle)
+      : le_acl_connection_interface_(le_acl_connection_interface), connection_handle_(connection_handle) {}
   ~LeAclConnectionTracker() {
     ASSERT(queued_callbacks_.empty());
   }
@@ -58,6 +59,8 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
 
   void OnReadRemoteVersionInformationComplete(
       hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) {
+    bluetooth::os::LogMetricRemoteVersionInfo(
+        connection_handle_, static_cast<uint8_t>(hci_status), lmp_version, manufacturer_name, sub_version);
     SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, hci_status, lmp_version, manufacturer_name, sub_version);
   }
   void OnPhyUpdate(hci::ErrorCode hci_status, uint8_t tx_phy, uint8_t rx_phy) override {
@@ -76,11 +79,12 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
   os::Handler* client_handler_ = nullptr;
   LeConnectionManagementCallbacks* client_callbacks_ = nullptr;
   std::list<common::OnceClosure> queued_callbacks_;
+  uint16_t connection_handle_;
 };
 
 struct LeAclConnection::impl {
-  impl(LeAclConnectionInterface* le_acl_connection_interface, std::shared_ptr<Queue> queue)
-      : queue_(std::move(queue)), tracker(le_acl_connection_interface) {}
+  impl(LeAclConnectionInterface* le_acl_connection_interface, std::shared_ptr<Queue> queue, uint16_t connection_handle)
+      : queue_(std::move(queue)), tracker(le_acl_connection_interface, connection_handle) {}
   LeConnectionManagementCallbacks* GetEventCallbacks() {
     ASSERT(!callbacks_given_);
     callbacks_given_ = true;
@@ -107,7 +111,7 @@ LeAclConnection::LeAclConnection(
       local_address_(local_address),
       remote_address_(remote_address),
       role_(role) {
-  pimpl_ = new LeAclConnection::impl(le_acl_connection_interface, std::move(queue));
+  pimpl_ = new LeAclConnection::impl(le_acl_connection_interface, std::move(queue), handle);
 }
 
 LeAclConnection::~LeAclConnection() {
