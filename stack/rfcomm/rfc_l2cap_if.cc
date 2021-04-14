@@ -181,6 +181,14 @@ void RFCOMM_ConfigInd(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
 
   if (!p_mcb) {
     RFCOMM_TRACE_ERROR("RFCOMM_ConfigInd LCID:0x%x", lcid);
+    for (auto& [cid, mcb] : rfc_lcid_mcb) {
+      if (mcb != nullptr && mcb->pending_lcid == lcid) {
+        tL2CAP_CFG_INFO l2cap_cfg_info(*p_cfg);
+        mcb->pending_configure_complete = true;
+        mcb->pending_cfg_info = l2cap_cfg_info;
+        return;
+      }
+    }
     return;
   }
 
