@@ -39,7 +39,7 @@ extern std::map<std::string, int> mock_function_count_map;
 
 tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* p_cback) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return BTA_SUCCESS;
 }
 void BTA_AgAudioClose(uint16_t handle) { mock_function_count_map[__func__]++; }
 void BTA_AgAudioOpen(uint16_t handle) { mock_function_count_map[__func__]++; }
