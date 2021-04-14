@@ -51,7 +51,7 @@ static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
         .output_data_path = ESCO_DATA_PATH_PCM,
         .input_transport_unit_size = 0x00,
         .output_transport_unit_size = 0x00,
-        .max_latency_ms = 0,
+        .max_latency_ms = 0xFFFF,  // Don't care
         .packet_types = (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 |
                          ESCO_PKT_TYPES_MASK_HV3),
         .retransmission_effort = ESCO_RETRANSMISSION_OFF,
