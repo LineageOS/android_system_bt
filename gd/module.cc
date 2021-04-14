@@ -27,10 +27,6 @@ constexpr std::chrono::milliseconds kModuleStopTimeout = std::chrono::millisecon
 ModuleFactory::ModuleFactory(std::function<Module*()> ctor) : ctor_(ctor) {
 }
 
-std::string Module::ToString() const {
-  return "Module";
-}
-
 Handler* Module::GetHandler() const {
   ASSERT_LOG(handler_ != nullptr, "Can't get handler when it's not started");
   return handler_;
