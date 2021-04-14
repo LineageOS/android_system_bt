@@ -28,6 +28,9 @@ class FakeNameDbModule : public neighbor::NameDbModule {
   void ListDependencies(ModuleList* list) override {}
   void Start() override {}
   void Stop() override {}
+  std::string ToString() const override {
+    return std::string("FakeNameDbModule");
+  }
 
   void ReadRemoteNameRequest(
       hci::Address address, neighbor::ReadRemoteNameDbCallback callback, os::Handler* handler) override {

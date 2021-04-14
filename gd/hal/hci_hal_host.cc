@@ -341,6 +341,10 @@ class HciHalHost : public HciHal {
     LOG_INFO("HAL is closed");
   }
 
+  std::string ToString() const override {
+    return std::string("HciHalHost");
+  }
+
  private:
   // Held when APIs are called, NOT to be held during callbacks
   std::mutex api_mutex_;
