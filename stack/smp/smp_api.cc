@@ -498,9 +498,6 @@ void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res, uint8_t len,
  *
  ******************************************************************************/
 void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
-  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
-      << "Legacy SMP API should not be invoked when GD Security is used";
-
   tSMP_CB* p_cb = &smp_cb;
 
   tSMP_SC_OOB_DATA* p_oob = (tSMP_SC_OOB_DATA*)p_data;
@@ -551,4 +548,25 @@ void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
 
   smp_int_data.p_data = p_data;
   smp_sm_event(&smp_cb, SMP_SC_OOB_DATA_EVT, &smp_int_data);
+}
+
+/*******************************************************************************
+ *
+ * Function         SMP_CrLocScOobData
+ *
+ * Description      This function is called to generate a public key to be
+ *                  passed to a remote device via Out of Band transport
+ *
+ * Parameters:      callback - receive the data
+ *
+ ******************************************************************************/
+void SMP_CrLocScOobData(
+    base::OnceCallback<void(tBT_TRANSPORT, bool,
+                            const std::array<unsigned char, 16>&,
+                            const std::array<unsigned char, 16>&)>
+        callback) {
+  smp_cb.selected_association_model = SMP_MODEL_SEC_CONN_OOB;
+  smp_calculate_local_commitment(&smp_cb);
+  std::move(callback).Run(BT_TRANSPORT_LE, true, smp_cb.commitment,
+                          smp_cb.local_random);
 }
