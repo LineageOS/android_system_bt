@@ -779,6 +779,7 @@ enum FeatureFlag : 1 {
 }
 
 enum ErrorCode: 8 {
+  STATUS_UNKNOWN = 0xFF,
   SUCCESS = 0x00,
   UNKNOWN_HCI_COMMAND = 0x01,
   UNKNOWN_CONNECTION = 0x02,
@@ -4849,6 +4850,7 @@ packet ConnectionComplete : Event (event_code = CONNECTION_COMPLETE) {
 }
 
 enum ConnectionRequestLinkType : 8 {
+  UNKNOWN = 0xFF,
   SCO = 0x00,
   ACL = 0x01,
   ESCO = 0x02,
