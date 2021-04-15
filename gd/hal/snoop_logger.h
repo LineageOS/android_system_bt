@@ -87,6 +87,9 @@ class SnoopLogger : public ::bluetooth::Module {
   void Start() override;
   void Stop() override;
   DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const override;
+  std::string ToString() const override {
+    return std::string("SnoopLogger");
+  }
 
   // Visible for testing
   SnoopLogger(

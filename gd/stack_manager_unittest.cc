@@ -38,6 +38,9 @@ class TestModuleNoDependency : public Module {
   void ListDependencies(ModuleList* list) override {}
   void Start() override {}
   void Stop() override {}
+  std::string ToString() const override {
+    return std::string("TestModuleDep");
+  }
 };
 
 const ModuleFactory TestModuleNoDependency::Factory = ModuleFactory([]() { return new TestModuleNoDependency(); });

@@ -241,6 +241,10 @@ class HciHalHidl : public HciHal {
     bt_hci_1_1_ = nullptr;
   }
 
+  std::string ToString() const override {
+    return std::string("HciHalHidl");
+  }
+
  private:
   android::sp<InternalHciCallbacks> callbacks_;
   android::sp<IBluetoothHci_1_0> bt_hci_;

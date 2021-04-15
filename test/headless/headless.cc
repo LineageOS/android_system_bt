@@ -189,8 +189,14 @@ bt_os_callouts_t bt_os_callouts{
 void HeadlessStack::SetUp() {
   LOG(INFO) << __func__ << " Entry";
 
-  int status = bluetoothInterface.init(&bt_callbacks, false, false, 0,
-                                       StackInitFlags(), false);
+  const bool start_restricted = false;
+  const bool is_common_criteria_mode = false;
+  const int config_compare_result = 0;
+  const bool is_atv = false;
+  int status = bluetoothInterface.init(
+      &bt_callbacks, start_restricted, is_common_criteria_mode,
+      config_compare_result, StackInitFlags(), is_atv);
+
   (status == BT_STATUS_SUCCESS)
       ? LOG(INFO) << __func__ << " Initialized bluetooth callbacks"
       : LOG(FATAL) << "Failed to initialize Bluetooth stack";
