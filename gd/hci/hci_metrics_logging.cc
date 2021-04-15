@@ -22,7 +22,7 @@
 namespace bluetooth {
 namespace hci {
 
-void log_link_layer_connection_hci_event(std::unique_ptr<CommandView>& command_view, EventView& event_view) {
+void log_link_layer_connection_hci_event(std::unique_ptr<CommandView>& command_view, EventView event_view) {
   ASSERT(event_view.IsValid());
   EventCode event_code = event_view.GetEventCode();
   switch (event_code) {
@@ -228,8 +228,8 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
       static_cast<uint16_t>(reason));
 }
 
-void log_link_layer_connection_command_complete(EventView& event_view, std::unique_ptr<CommandView>& command_view) {
-  CommandCompleteView command_complete_view = CommandCompleteView::Create(event_view);
+void log_link_layer_connection_command_complete(EventView event_view, std::unique_ptr<CommandView>& command_view) {
+  CommandCompleteView command_complete_view = CommandCompleteView::Create(std::move(event_view));
   ASSERT(command_complete_view.IsValid());
   OpCode op_code = command_complete_view.GetCommandOpCode();
 
@@ -309,7 +309,7 @@ void log_link_layer_connection_command_complete(EventView& event_view, std::uniq
       static_cast<uint16_t>(reason));
 }
 
-void log_link_layer_connection_other_hci_event(EventView& packet) {
+void log_link_layer_connection_other_hci_event(EventView packet) {
   EventCode event_code = packet.GetEventCode();
   Address address = Address::kEmpty;
   uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
@@ -375,7 +375,7 @@ void log_link_layer_connection_other_hci_event(EventView& packet) {
       static_cast<uint16_t>(reason));
 }
 
-void log_link_layer_connection_event_le_meta(LeMetaEventView& le_meta_event_view) {
+void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view) {
   auto le_connection_complete_view = LeConnectionCompleteView::Create(std::move(le_meta_event_view));
   if (!le_connection_complete_view.IsValid()) {
     // function is called for all le meta events. Only need to process le connection complete.
