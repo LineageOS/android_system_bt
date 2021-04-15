@@ -27,6 +27,7 @@ constexpr audio_format_t kBluetoothDefaultAudioFormatBitsPerSample =
     AUDIO_FORMAT_PCM_16_BIT;
 
 constexpr unsigned int kBluetoothDefaultInputBufferMs = 20;
+constexpr unsigned int kBluetoothDefaultInputStateTimeoutMs = 20;
 
 constexpr unsigned int kBluetoothDefaultOutputBufferMs = 10;
 constexpr audio_channel_mask_t kBluetoothDefaultOutputChannelModeMask =
@@ -73,6 +74,24 @@ struct BluetoothAudioDevice {
   std::mutex mutex_;
   std::list<BluetoothStreamOut*> opened_stream_outs_ =
       std::list<BluetoothStreamOut*>(0);
+};
+
+struct BluetoothStreamIn {
+  // Must be the first member so it can be cast from audio_stream
+  // or audio_stream_in pointer
+  audio_stream_in stream_in_;
+  ::android::bluetooth::audio::BluetoothAudioPortIn bluetooth_input_;
+  int64_t last_read_time_us_;
+  // Audio PCM Configs
+  uint32_t sample_rate_;
+  audio_channel_mask_t channel_mask_;
+  audio_format_t format_;
+  // frame is the number of samples per channel
+  // frames count per tick
+  size_t frames_count_;
+  // total frames read after opened, never reset
+  uint64_t frames_presented_;
+  mutable std::mutex mutex_;
 };
 
 int adev_open_output_stream(struct audio_hw_device* dev,
