@@ -51,6 +51,9 @@ class NameModule : public bluetooth::Module {
   void ListDependencies(ModuleList* list) override;
   void Start() override;
   void Stop() override;
+  std::string ToString() const override {
+    return std::string("NameModule");
+  }
 
  private:
   struct impl;

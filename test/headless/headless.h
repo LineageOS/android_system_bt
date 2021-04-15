@@ -35,11 +35,17 @@ namespace {
 template <typename T>
 using ExecutionUnit = std::function<T()>;
 
+constexpr char kHeadlessInitialSentinel[] =
+    " INITIAL HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
+    "HEADLESS";
 constexpr char kHeadlessStartSentinel[] =
     " START HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
     "HEADLESS";
 constexpr char kHeadlessStopSentinel[] =
     " STOP HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
+    "HEADLESS";
+constexpr char kHeadlessFinalSentinel[] =
+    " FINAL HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS HEADLESS "
     "HEADLESS";
 
 }  // namespace
@@ -68,6 +74,7 @@ class HeadlessRun : public HeadlessStack {
 
   template <typename T>
   T RunOnHeadlessStack(ExecutionUnit<T> func) {
+    LOG(INFO) << kHeadlessInitialSentinel;
     SetUp();
     LOG(INFO) << kHeadlessStartSentinel;
 
@@ -91,6 +98,7 @@ class HeadlessRun : public HeadlessStack {
 
     LOG(INFO) << kHeadlessStopSentinel;
     TearDown();
+    LOG(INFO) << kHeadlessFinalSentinel;
     return rc;
   }
   virtual ~HeadlessRun() = default;

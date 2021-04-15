@@ -164,6 +164,10 @@ class TestHciHal : public hal::HciHal {
 
   void ListDependencies(ModuleList*) {}
 
+  std::string ToString() const override {
+    return std::string("TestHciHal");
+  }
+
   static const ModuleFactory Factory;
 
  private:
@@ -288,6 +292,10 @@ class DependsOnHci : public Module {
 
   void ListDependencies(ModuleList* list) {
     list->add<HciLayer>();
+  }
+
+  std::string ToString() const override {
+    return std::string("DependsOnHci");
   }
 
   static const ModuleFactory Factory;
