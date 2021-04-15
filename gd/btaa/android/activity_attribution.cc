@@ -17,6 +17,7 @@
 #define LOG_TAG "btaa"
 
 #include "btaa/activity_attribution.h"
+#include "activity_attribution_generated.h"
 
 #include <aidl/android/system/suspend/BnSuspendCallback.h>
 #include <aidl/android/system/suspend/BnWakelockCallback.h>
@@ -126,6 +127,11 @@ struct ActivityAttribution::impl {
     callback_ = callback;
   }
 
+  void Dump(
+      std::promise<flatbuffers::Offset<ActivityAttributionData>> promise, flatbuffers::FlatBufferBuilder* fb_builder) {
+    attribution_processor_.Dump(std::move(promise), fb_builder);
+  }
+
   ActivityAttributionCallback* callback_;
   AttributionProcessor attribution_processor_;
   HciProcessor hci_processor_;
@@ -184,6 +190,20 @@ void ActivityAttribution::Start() {
 
 void ActivityAttribution::Stop() {
   pimpl_.reset();
+}
+
+DumpsysDataFinisher ActivityAttribution::GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) const {
+  ASSERT(fb_builder != nullptr);
+
+  std::promise<flatbuffers::Offset<ActivityAttributionData>> promise;
+  auto future = promise.get_future();
+  pimpl_->Dump(std::move(promise), fb_builder);
+
+  auto dumpsys_data = future.get();
+
+  return [dumpsys_data](DumpsysDataBuilder* dumpsys_builder) {
+    dumpsys_builder->add_activity_attribution_dumpsys_data(dumpsys_data);
+  };
 }
 
 }  // namespace activity_attribution

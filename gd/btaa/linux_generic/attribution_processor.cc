@@ -35,6 +35,7 @@ void AttributionProcessor::OnBtaaPackets(std::vector<BtaaHciPacket> btaa_packets
 
     if (wakeup_) {
       wakelock_duration_aggregator_[key].wakeup_count += 1;
+      wakeup_aggregator_.Push(std::move(WakeupDescriptor(btaa_packet.activity, btaa_packet.address)));
     }
   }
   wakeup_ = false;
@@ -71,6 +72,36 @@ void AttributionProcessor::OnWakeup() {
     LOG_INFO("Previous wakeup notification is not consumed.");
   }
   wakeup_ = true;
+}
+
+void AttributionProcessor::Dump(
+    std::promise<flatbuffers::Offset<ActivityAttributionData>> promise, flatbuffers::FlatBufferBuilder* fb_builder) {
+  auto title = fb_builder->CreateString("----- BTAA Dumpsys -----");
+  ActivityAttributionDataBuilder builder(*fb_builder);
+  builder.add_title(title);
+
+  WakeupAttributionDataBuilder wakeup_attribution_builder(*fb_builder);
+  auto wakeup_title = fb_builder->CreateString("----- Wakeup Attribution Dumpsys -----");
+  wakeup_attribution_builder.add_title(wakeup_title);
+
+  std::vector<common::TimestampedEntry<WakeupDescriptor>> wakeup_aggregator = wakeup_aggregator_.Pull();
+  wakeup_attribution_builder.add_num_wakeup(wakeup_aggregator.size());
+
+  std::vector<flatbuffers::Offset<WakeupEntry>> wakeup_entry_offsets;
+  for (auto wakeup : wakeup_aggregator) {
+    WakeupEntryBuilder wakeup_entry_builder(*fb_builder);
+    wakeup_entry_builder.add_wakeup_time(wakeup.timestamp);
+    wakeup_entry_builder.add_activity(fb_builder->CreateString((CONVERT_ACTIVITY_TO_STR(wakeup.entry.activity_))));
+    wakeup_entry_builder.add_address(fb_builder->CreateString(wakeup.entry.address_.ToString()));
+    wakeup_entry_offsets.push_back(wakeup_entry_builder.Finish());
+  }
+  auto wakeup_entries = fb_builder->CreateVector(wakeup_entry_offsets);
+  wakeup_attribution_builder.add_wakeup_attribution(wakeup_entries);
+
+  builder.add_wakeup_attribution_data(wakeup_attribution_builder.Finish());
+
+  flatbuffers::Offset<ActivityAttributionData> dumpsys_data = builder.Finish();
+  promise.set_value(dumpsys_data);
 }
 
 }  // namespace activity_attribution

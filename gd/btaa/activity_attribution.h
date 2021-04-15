@@ -24,6 +24,7 @@ namespace bluetooth {
 namespace activity_attribution {
 
 enum class Activity : uint8_t { UNKNOWN = 0, ADVERTISE, CONNECT, CONTROL, SCAN, HFP, VENDOR };
+#define CONVERT_ACTIVITY_TO_STR(Activity) std::string(#Activity)
 
 struct BtaaAggregationEntry {
   hci::Address address;
@@ -62,6 +63,7 @@ class ActivityAttribution : public bluetooth::Module {
   void ListDependencies(ModuleList* list) override;
   void Start() override;
   void Stop() override;
+  DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const override;  // Module
 
  private:
   struct impl;

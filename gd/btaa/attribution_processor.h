@@ -24,6 +24,8 @@
 namespace bluetooth {
 namespace activity_attribution {
 
+static constexpr size_t kWakeupAggregatorSize = 200;
+
 struct AddressActivityKey {
   hci::Address address;
   Activity activity;
@@ -41,16 +43,27 @@ struct AddressActivityKeyHasher {
   }
 };
 
+struct WakeupDescriptor {
+  Activity activity_;
+  const hci::Address address_;
+  WakeupDescriptor(Activity activity, const hci::Address address) : activity_(activity), address_(address) {}
+  virtual ~WakeupDescriptor() {}
+};
+
 class AttributionProcessor {
  public:
   void OnBtaaPackets(std::vector<BtaaHciPacket> btaa_packets);
   void OnWakelockReleased(uint32_t duration_ms);
   void OnWakeup();
+  void Dump(
+      std::promise<flatbuffers::Offset<ActivityAttributionData>> promise, flatbuffers::FlatBufferBuilder* fb_builder);
 
  private:
   bool wakeup_ = false;
   std::unordered_map<AddressActivityKey, BtaaAggregationEntry, AddressActivityKeyHasher> btaa_aggregator_;
   std::unordered_map<AddressActivityKey, BtaaAggregationEntry, AddressActivityKeyHasher> wakelock_duration_aggregator_;
+  common::TimestampedCircularBuffer<WakeupDescriptor> wakeup_aggregator_ =
+      common::TimestampedCircularBuffer<WakeupDescriptor>(kWakeupAggregatorSize);
 };
 
 }  // namespace activity_attribution
