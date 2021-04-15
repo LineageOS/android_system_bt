@@ -270,6 +270,17 @@ static uint16_t get_le_maximum_tx_data_length(void) {
   }
 }
 
+static uint16_t get_le_maximum_tx_time(void) {
+  if (gd_rust_is_enabled()) {
+    return bluetooth::shim::rust::controller_get_le_maximum_tx_time(
+        **bluetooth::shim::Stack::GetInstance()->GetRustController());
+  } else {
+    ::bluetooth::hci::LeMaximumDataLength le_maximum_data_length =
+        GetController()->GetLeMaximumDataLength();
+    return le_maximum_data_length.supported_max_tx_time_;
+  }
+}
+
 FORWARD_GETTER_IF_RUST(uint16_t, get_le_max_advertising_data_length,
                        GetController()->GetLeMaximumAdvertisingDataLength())
 FORWARD_GETTER_IF_RUST(uint8_t, get_le_supported_advertising_sets,
@@ -362,6 +373,7 @@ static const controller_t interface = {
     get_iso_packet_size,
     get_le_suggested_default_data_length,
     get_le_maximum_tx_data_length,
+    get_le_maximum_tx_time,
     get_le_max_advertising_data_length,
     get_le_supported_advertising_sets,
     get_le_periodic_advertiser_list_size,
