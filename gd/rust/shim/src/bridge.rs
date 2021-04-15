@@ -87,6 +87,7 @@ pub mod ffi {
         fn controller_get_iso_buffer_length(c: &Controller) -> u16;
         fn controller_get_le_suggested_default_data_length(c: &Controller) -> u16;
         fn controller_get_le_maximum_tx_data_length(c: &Controller) -> u16;
+        fn controller_get_le_maximum_tx_time(c: &Controller) -> u16;
         fn controller_get_le_max_advertising_data_length(c: &Controller) -> u16;
         fn controller_get_le_supported_advertising_sets(c: &Controller) -> u8;
         fn controller_get_le_periodic_advertiser_list_size(c: &Controller) -> u8;

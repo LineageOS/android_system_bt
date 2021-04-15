@@ -101,6 +101,7 @@ typedef struct controller_t {
 
   uint16_t (*get_ble_default_data_packet_length)(void);
   uint16_t (*get_ble_maximum_tx_data_length)(void);
+  uint16_t (*get_ble_maximum_tx_time)(void);
   uint16_t (*get_ble_maxium_advertising_data_length)(void);
   uint8_t (*get_ble_number_of_supported_advertising_sets)(void);
   uint8_t (*get_ble_periodic_advertiser_list_size)(void);
