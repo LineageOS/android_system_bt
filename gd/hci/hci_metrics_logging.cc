@@ -376,6 +376,7 @@ void log_link_layer_connection_other_hci_event(EventView packet) {
 }
 
 void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view) {
+  SubeventCode leEvt = le_meta_event_view.GetSubeventCode();
   auto le_connection_complete_view = LeConnectionCompleteView::Create(std::move(le_meta_event_view));
   if (!le_connection_complete_view.IsValid()) {
     // function is called for all le meta events. Only need to process le connection complete.
@@ -391,7 +392,6 @@ void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view)
   ErrorCode status = le_connection_complete_view.GetStatus();
   ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
   uint32_t cmd = android::bluetooth::hci::CMD_UNKNOWN;
-  SubeventCode leEvt = le_meta_event_view.GetSubeventCode();
 
   os::LogMetricLinkLayerConnectionEvent(
       &address,
