@@ -665,6 +665,12 @@ static uint16_t get_ble_maximum_tx_data_length(void) {
   return ble_supported_max_tx_octets;
 }
 
+static uint16_t get_ble_maximum_tx_time(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return ble_supported_max_tx_time;
+}
+
 static uint16_t get_ble_maxium_advertising_data_length(void) {
   CHECK(readable);
   CHECK(ble_supported);
@@ -799,6 +805,7 @@ static const controller_t interface = {
 
     get_ble_suggested_default_data_length,
     get_ble_maximum_tx_data_length,
+    get_ble_maximum_tx_time,
     get_ble_maxium_advertising_data_length,
     get_ble_number_of_supported_advertising_sets,
     get_ble_periodic_advertiser_list_size,
