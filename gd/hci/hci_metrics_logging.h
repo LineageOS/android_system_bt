@@ -20,11 +20,11 @@
 
 namespace bluetooth {
 namespace hci {
-void log_link_layer_connection_hci_event(std::unique_ptr<CommandView>& command_view, EventView& packet);
+void log_link_layer_connection_hci_event(std::unique_ptr<CommandView>& command_view, EventView packet);
 void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& command_view, ErrorCode status);
-void log_link_layer_connection_command_complete(EventView& event, std::unique_ptr<CommandView>& command_view);
-void log_link_layer_connection_event_le_meta(LeMetaEventView& le_meta_event_view);
-void log_link_layer_connection_other_hci_event(EventView& packet);
+void log_link_layer_connection_command_complete(EventView event, std::unique_ptr<CommandView>& command_view);
+void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view);
+void log_link_layer_connection_other_hci_event(EventView packet);
 
 }  // namespace hci
 }  // namespace bluetooth
