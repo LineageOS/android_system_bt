@@ -132,6 +132,44 @@ class AdvertisingCache {
   std::list<Item> items;
 };
 
+class NullScanningCallback : public ScanningCallback {
+  void OnScannerRegistered(const bluetooth::hci::Uuid app_uuid, ScannerId scanner_id, ScanningStatus status) {
+    LOG_INFO("OnScannerRegistered in NullScanningCallback");
+  }
+  void OnScanResult(
+      uint16_t event_type,
+      uint8_t address_type,
+      Address address,
+      uint8_t primary_phy,
+      uint8_t secondary_phy,
+      uint8_t advertising_sid,
+      int8_t tx_power,
+      int8_t rssi,
+      uint16_t periodic_advertising_interval,
+      std::vector<uint8_t> advertising_data) {
+    LOG_INFO("OnScanResult in NullScanningCallback");
+  }
+  void OnTrackAdvFoundLost() {
+    LOG_INFO("OnTrackAdvFoundLost in NullScanningCallback");
+  }
+  void OnBatchScanReports(int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) {
+    LOG_INFO("OnBatchScanReports in NullScanningCallback");
+  }
+  void OnTimeout() {
+    LOG_INFO("OnTimeout in NullScanningCallback");
+  }
+  void OnFilterEnable(Enable enable, uint8_t status) {
+    LOG_INFO("OnFilterEnable in NullScanningCallback");
+  }
+  void OnFilterParamSetup(uint8_t available_spaces, ApcfAction action, uint8_t status) {
+    LOG_INFO("OnFilterParamSetup in NullScanningCallback");
+  }
+  void OnFilterConfigCallback(
+      ApcfFilterType filter_type, uint8_t available_spaces, ApcfAction action, uint8_t status) {
+    LOG_INFO("OnFilterConfigCallback in NullScanningCallback");
+  }
+};
+
 struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {
   impl(Module* module) : module_(module), le_scanning_interface_(nullptr) {}
 
@@ -167,6 +205,13 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     configure_scan();
   }
 
+  void stop() {
+    for (auto subevent_code : LeScanningEvents) {
+      hci_layer_->UnregisterLeEventHandler(subevent_code);
+    }
+    scanning_callbacks_ = &null_scanning_callback_;
+  }
+
   void handle_scan_results(LeMetaEventView event) {
     switch (event.GetSubeventCode()) {
       case hci::SubeventCode::ADVERTISING_REPORT:
@@ -179,9 +224,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
         handle_extended_advertising_report(LeExtendedAdvertisingReportView::Create(event));
         break;
       case hci::SubeventCode::SCAN_TIMEOUT:
-        if (scanning_callbacks_ != nullptr) {
-          scanning_callbacks_->OnTimeout();
-        }
+        scanning_callbacks_->OnTimeout();
         break;
       default:
         LOG_ALWAYS_FATAL("Unknown advertising subevent %s", hci::SubeventCodeText(event.GetSubeventCode()).c_str());
@@ -207,10 +250,6 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   }
 
   void handle_advertising_report(LeAdvertisingReportView event_view) {
-    if (scanning_callbacks_ == nullptr) {
-      LOG_INFO("Dropping advertising event (no registered handler)");
-      return;
-    }
     if (!event_view.IsValid()) {
       LOG_INFO("Dropping invalid advertising event");
       return;
@@ -269,10 +308,6 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   }
 
   void handle_directed_advertising_report(LeDirectedAdvertisingReportView event_view) {
-    if (scanning_callbacks_ == nullptr) {
-      LOG_INFO("Dropping advertising event (no registered handler)");
-      return;
-    }
     if (!event_view.IsValid()) {
       LOG_INFO("Dropping invalid advertising event");
       return;
@@ -288,10 +323,6 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   }
 
   void handle_extended_advertising_report(LeExtendedAdvertisingReportView event_view) {
-    if (scanning_callbacks_ == nullptr) {
-      LOG_INFO("Dropping advertising event (no registered handler)");
-      return;
-    }
     if (!event_view.IsValid()) {
       LOG_INFO("Dropping invalid advertising event");
       return;
@@ -869,7 +900,8 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   hci::LeScanningInterface* le_scanning_interface_;
   hci::LeAddressManager* le_address_manager_;
   bool address_manager_registered_ = false;
-  ScanningCallback* scanning_callbacks_ = nullptr;
+  NullScanningCallback null_scanning_callback_;
+  ScanningCallback* scanning_callbacks_ = &null_scanning_callback_;
   std::vector<Scanner> scanners_;
   bool is_scanning_ = false;
   bool scan_on_resume_ = false;
@@ -932,6 +964,7 @@ void LeScanningManager::Start() {
 }
 
 void LeScanningManager::Stop() {
+  pimpl_->stop();
   pimpl_.reset();
 }
 
