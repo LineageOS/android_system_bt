@@ -25,7 +25,7 @@
 
 namespace bluetooth {
 
-namespace common {
+namespace os {
 /**
  * Unknown connection handle for metrics purpose
  */
@@ -251,6 +251,6 @@ void LogMetricManufacturerInfo(
     const std::string& model,
     const std::string& hardware_version,
     const std::string& software_version);
-}  // namespace common
+}  // namespace os
 
 }  // namespace bluetooth
