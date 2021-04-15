@@ -143,6 +143,8 @@ inline hci::Role ToHciRole(hci_role_t role) {
 
 inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
   switch (reason) {
+    case hci::ErrorCode::STATUS_UNKNOWN:
+      return HCI_ERR_ILLEGAL_COMMAND;
     case hci::ErrorCode::SUCCESS:
       return HCI_SUCCESS;
     case hci::ErrorCode::UNKNOWN_HCI_COMMAND:

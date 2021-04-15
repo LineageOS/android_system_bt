@@ -20,6 +20,7 @@ filegroup {
         "class_of_device.cc",
         "controller.cc",
         "hci_layer.cc",
+        "hci_metrics_logging.cc",
         "le_address_manager.cc",
         "le_advertising_manager.cc",
         "le_scanning_manager.cc",
