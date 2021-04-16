@@ -22,13 +22,14 @@
 namespace bluetooth {
 namespace hci {
 
-void log_link_layer_connection_hci_event(std::unique_ptr<CommandView>& command_view, EventView event_view) {
+void log_hci_event(std::unique_ptr<CommandView>& command_view, EventView event_view) {
   ASSERT(event_view.IsValid());
   EventCode event_code = event_view.GetEventCode();
   switch (event_code) {
     case EventCode::COMMAND_COMPLETE: {
       ASSERT(command_view->IsValid());
       log_link_layer_connection_command_complete(event_view, command_view);
+      log_classic_pairing_command_complete(event_view, command_view);
       break;
     }
     case EventCode::COMMAND_STATUS: {
@@ -36,6 +37,7 @@ void log_link_layer_connection_hci_event(std::unique_ptr<CommandView>& command_v
       CommandStatusView response_view = CommandStatusView::Create(event_view);
       ASSERT(response_view.IsValid());
       log_link_layer_connection_command_status(command_view, response_view.GetStatus());
+      log_classic_pairing_command_status(command_view, response_view.GetStatus());
       break;
     }
     case EventCode::LE_META_EVENT: {
@@ -46,6 +48,7 @@ void log_link_layer_connection_hci_event(std::unique_ptr<CommandView>& command_v
     }
     default:
       log_link_layer_connection_other_hci_event(event_view);
+      log_classic_pairing_other_hci_event(event_view);
   }
 }
 void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& command_view, ErrorCode status) {
@@ -404,5 +407,437 @@ void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view)
       static_cast<uint16_t>(status),
       static_cast<uint16_t>(reason));
 }
+
+void log_classic_pairing_other_hci_event(EventView packet) {
+  EventCode event_code = packet.GetEventCode();
+  Address address = Address::kEmpty;
+  uint32_t cmd = android::bluetooth::hci::CMD_UNKNOWN;
+  ErrorCode status = ErrorCode::UNKNOWN_HCI_COMMAND;
+  ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
+  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  int64_t value = 0;
+
+  switch (event_code) {
+    case EventCode::IO_CAPABILITY_REQUEST: {
+      IoCapabilityRequestView io_capability_request_view = IoCapabilityRequestView::Create(std::move(packet));
+      ASSERT(io_capability_request_view.IsValid());
+      address = io_capability_request_view.GetBdAddr();
+      break;
+    }
+    case EventCode::IO_CAPABILITY_RESPONSE: {
+      IoCapabilityResponseView io_capability_response_view = IoCapabilityResponseView::Create(std::move(packet));
+      ASSERT(io_capability_response_view.IsValid());
+      address = io_capability_response_view.GetBdAddr();
+      break;
+    }
+    case EventCode::LINK_KEY_REQUEST: {
+      LinkKeyRequestView link_key_request_view = LinkKeyRequestView::Create(std::move(packet));
+      ASSERT(link_key_request_view.IsValid());
+      address = link_key_request_view.GetBdAddr();
+      break;
+    }
+    case EventCode::LINK_KEY_NOTIFICATION: {
+      LinkKeyNotificationView link_key_notification_view = LinkKeyNotificationView::Create(std::move(packet));
+      ASSERT(link_key_notification_view.IsValid());
+      address = link_key_notification_view.GetBdAddr();
+      break;
+    }
+    case EventCode::USER_PASSKEY_REQUEST: {
+      UserPasskeyRequestView user_passkey_request_view = UserPasskeyRequestView::Create(std::move(packet));
+      ASSERT(user_passkey_request_view.IsValid());
+      address = user_passkey_request_view.GetBdAddr();
+      break;
+    }
+    case EventCode::USER_PASSKEY_NOTIFICATION: {
+      UserPasskeyNotificationView user_passkey_notification_view = UserPasskeyNotificationView::Create(std::move(packet));
+      ASSERT(user_passkey_notification_view.IsValid());
+      address = user_passkey_notification_view.GetBdAddr();
+      break;
+    }
+    case EventCode::USER_CONFIRMATION_REQUEST: {
+      UserConfirmationRequestView user_confirmation_request_view = UserConfirmationRequestView::Create(std::move(packet));
+      ASSERT(user_confirmation_request_view.IsValid());
+      address = user_confirmation_request_view.GetBdAddr();
+      break;
+    }
+    case EventCode::KEYPRESS_NOTIFICATION: {
+      KeypressNotificationView keypress_notification_view = KeypressNotificationView::Create(std::move(packet));
+      ASSERT(keypress_notification_view.IsValid());
+      address = keypress_notification_view.GetBdAddr();
+      break;
+    }
+    case EventCode::REMOTE_OOB_DATA_REQUEST: {
+      RemoteOobDataRequestView remote_oob_data_request_view = RemoteOobDataRequestView::Create(std::move(packet));
+      ASSERT(remote_oob_data_request_view.IsValid());
+      address = remote_oob_data_request_view.GetBdAddr();
+      break;
+    }
+    case EventCode::SIMPLE_PAIRING_COMPLETE: {
+      SimplePairingCompleteView simple_pairing_complete_view = SimplePairingCompleteView::Create(std::move(packet));
+      ASSERT(simple_pairing_complete_view.IsValid());
+      address = simple_pairing_complete_view.GetBdAddr();
+      status = simple_pairing_complete_view.GetStatus();
+      break;
+    }
+    case EventCode::REMOTE_NAME_REQUEST_COMPLETE: {
+      RemoteNameRequestCompleteView remote_name_request_complete_view = RemoteNameRequestCompleteView::Create(std::move(packet));
+      ASSERT(remote_name_request_complete_view.IsValid());
+      address = remote_name_request_complete_view.GetBdAddr();
+      status = remote_name_request_complete_view.GetStatus();
+      break;
+    }
+    case EventCode::AUTHENTICATION_COMPLETE: {
+      AuthenticationCompleteView authentication_complete_view = AuthenticationCompleteView::Create(std::move(packet));
+      ASSERT(authentication_complete_view.IsValid());
+      status = authentication_complete_view.GetStatus();
+      connection_handle = authentication_complete_view.GetConnectionHandle();
+      break;
+    }
+    case EventCode::ENCRYPTION_CHANGE: {
+      EncryptionChangeView encryption_change_view = EncryptionChangeView::Create(std::move(packet));
+      ASSERT(encryption_change_view.IsValid());
+      status = encryption_change_view.GetStatus();
+      connection_handle = encryption_change_view.GetConnectionHandle();
+      value = static_cast<int64_t>(encryption_change_view.GetEncryptionEnabled());
+      break;
+    }
+    default:
+      return;
+  }
+  os::LogMetricClassicPairingEvent(
+      address,
+      connection_handle,
+      static_cast<uint32_t>(cmd),
+      static_cast<uint16_t>(event_code),
+      static_cast<uint16_t>(status),
+      static_cast<uint16_t>(reason),
+      value);
+}
+
+void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_view, ErrorCode status) {
+  // get op_code
+  ASSERT(command_view->IsValid());
+  OpCode op_code = command_view->GetOpCode();
+
+  // init parameters
+  Address address = Address::kEmpty;
+  ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
+  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  int64_t value = 0;
+  uint16_t event_code = android::bluetooth::hci::EVT_COMMAND_STATUS;
+
+  // create SecurityCommandView
+  SecurityCommandView security_command_view = SecurityCommandView::Create(*command_view);
+  ASSERT(security_command_view.IsValid());
+
+  // create ConnectionManagementCommandView
+  ConnectionManagementCommandView connection_management_command_view =
+      ConnectionManagementCommandView::Create(AclCommandView::Create(*command_view));
+  ASSERT(connection_management_command_view.IsValid());
+
+  // create DiscoveryCommandView
+  DiscoveryCommandView discovery_command_view = DiscoveryCommandView::Create(*command_view);
+  ASSERT(discovery_command_view.IsValid());
+
+  switch (op_code) {
+    case OpCode::READ_LOCAL_OOB_DATA: {
+      ReadLocalOobDataView read_local_oob_data_view = ReadLocalOobDataView::Create(std::move(security_command_view));
+      ASSERT(read_local_oob_data_view.IsValid());
+      break;
+    }
+    case OpCode::WRITE_SIMPLE_PAIRING_MODE: {
+      WriteSimplePairingModeView write_simple_pairing_mode_view
+      = WriteSimplePairingModeView::Create(std::move(security_command_view));
+      ASSERT(write_simple_pairing_mode_view.IsValid());
+      value = static_cast<int64_t>(write_simple_pairing_mode_view.GetSimplePairingMode());
+      break;
+    }
+    case OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT: {
+      WriteSecureConnectionsHostSupportView write_secure_connections_host_support_view
+      = WriteSecureConnectionsHostSupportView::Create(std::move(security_command_view));
+      ASSERT(write_secure_connections_host_support_view.IsValid());
+      value = static_cast<int64_t>(write_secure_connections_host_support_view.GetSecureConnectionsHostSupport());
+      break;
+    }
+    case OpCode::AUTHENTICATION_REQUESTED: {
+      AuthenticationRequestedView authentication_requested_view
+      = AuthenticationRequestedView::Create(std::move(connection_management_command_view));
+      ASSERT(authentication_requested_view.IsValid());
+      connection_handle = authentication_requested_view.GetConnectionHandle();
+      break;
+    }
+    case OpCode::SET_CONNECTION_ENCRYPTION: {
+      SetConnectionEncryptionView set_connection_encryption_view
+      = SetConnectionEncryptionView::Create(std::move(connection_management_command_view));
+      ASSERT(set_connection_encryption_view.IsValid());
+      connection_handle = set_connection_encryption_view.GetConnectionHandle();
+      value = static_cast<int64_t>(set_connection_encryption_view.GetEncryptionEnable());
+      break;
+    }
+    case OpCode::DELETE_STORED_LINK_KEY: {
+      DeleteStoredLinkKeyView delete_stored_link_key_view
+      = DeleteStoredLinkKeyView::Create(std::move(security_command_view));
+      ASSERT(delete_stored_link_key_view.IsValid());
+      address = delete_stored_link_key_view.GetBdAddr();
+      value = static_cast<int64_t>(delete_stored_link_key_view.GetDeleteAllFlag());
+      break;
+    }
+    case OpCode::REMOTE_NAME_REQUEST: {
+      RemoteNameRequestView remote_name_request_view = RemoteNameRequestView::Create(std::move(discovery_command_view));
+      ASSERT(remote_name_request_view.IsValid());
+      address = remote_name_request_view.GetBdAddr();
+      break;
+    }
+    case OpCode::REMOTE_NAME_REQUEST_CANCEL: {
+      RemoteNameRequestCancelView remote_name_request_cancel_view
+      = RemoteNameRequestCancelView::Create(std::move(discovery_command_view));
+      ASSERT(remote_name_request_cancel_view.IsValid());
+      address = remote_name_request_cancel_view.GetBdAddr();
+      break;
+    }
+    case OpCode::LINK_KEY_REQUEST_REPLY: {
+      LinkKeyRequestReplyView link_key_request_reply_view
+      = LinkKeyRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(link_key_request_reply_view.IsValid());
+      address = link_key_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::LINK_KEY_REQUEST_NEGATIVE_REPLY: {
+      LinkKeyRequestNegativeReplyView link_key_request_negative_reply_view
+      = LinkKeyRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(link_key_request_negative_reply_view.IsValid());
+      address = link_key_request_negative_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::IO_CAPABILITY_REQUEST_REPLY: {
+      IoCapabilityRequestReplyView io_capability_request_reply_view
+      = IoCapabilityRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(io_capability_request_reply_view.IsValid());
+      address = io_capability_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_CONFIRMATION_REQUEST_REPLY: {
+      UserConfirmationRequestReplyView user_confirmation_request_reply
+      = UserConfirmationRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(user_confirmation_request_reply.IsValid());
+      address = user_confirmation_request_reply.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY: {
+      UserConfirmationRequestNegativeReplyView user_confirmation_request_negative_reply
+      = UserConfirmationRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(user_confirmation_request_negative_reply.IsValid());
+      address = user_confirmation_request_negative_reply.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_PASSKEY_REQUEST_REPLY: {
+      UserPasskeyRequestReplyView user_passkey_request_reply
+      = UserPasskeyRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(user_passkey_request_reply.IsValid());
+      address = user_passkey_request_reply.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY: {
+      UserPasskeyRequestNegativeReplyView user_passkey_request_negative_reply
+      = UserPasskeyRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(user_passkey_request_negative_reply.IsValid());
+      address = user_passkey_request_negative_reply.GetBdAddr();
+      break;
+    }
+    case OpCode::REMOTE_OOB_DATA_REQUEST_REPLY: {
+      RemoteOobDataRequestReplyView remote_oob_data_request_reply_view
+      = RemoteOobDataRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(remote_oob_data_request_reply_view.IsValid());
+      address = remote_oob_data_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY: {
+      RemoteOobDataRequestNegativeReplyView remote_oob_data_request_negative_reply_view
+      = RemoteOobDataRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(remote_oob_data_request_negative_reply_view.IsValid());
+      address = remote_oob_data_request_negative_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY: {
+      IoCapabilityRequestNegativeReplyView io_capability_request_negative_reply_view
+      = IoCapabilityRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(io_capability_request_negative_reply_view.IsValid());
+      address = io_capability_request_negative_reply_view.GetBdAddr();
+      reason = io_capability_request_negative_reply_view.GetReason();
+      break;
+    }
+    default:
+      return;
+  }
+  os::LogMetricClassicPairingEvent(
+      address,
+      connection_handle,
+      static_cast<uint32_t>(op_code),
+      static_cast<uint16_t>(event_code),
+      static_cast<uint16_t>(status),
+      static_cast<uint16_t>(reason),
+      value);
+}
+
+void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<CommandView>& command_view) {
+
+  // get op_code
+  CommandCompleteView command_complete_view = CommandCompleteView::Create(std::move(event_view));
+  ASSERT(command_complete_view.IsValid());
+  OpCode op_code = command_complete_view.GetCommandOpCode();
+
+  // init parameters
+  Address address = Address::kEmpty;
+  ErrorCode status = ErrorCode::UNKNOWN_HCI_COMMAND;
+  ErrorCode reason = ErrorCode::UNKNOWN_HCI_COMMAND;
+  uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
+  int64_t value = 0;
+  EventCode event_code = EventCode::COMMAND_COMPLETE;
+
+  // get ConnectionManagementCommandView
+  ConnectionManagementCommandView connection_management_command_view =
+      ConnectionManagementCommandView::Create(AclCommandView::Create(*command_view));
+  ASSERT(connection_management_command_view.IsValid());
+
+  // create SecurityCommandView
+  SecurityCommandView security_command_view = SecurityCommandView::Create(*command_view);
+  ASSERT(security_command_view.IsValid());
+
+  switch (op_code) {
+    case OpCode::DELETE_STORED_LINK_KEY: {
+      auto delete_stored_link_key_complete_view = DeleteStoredLinkKeyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(delete_stored_link_key_complete_view.IsValid());
+      status = delete_stored_link_key_complete_view.GetStatus();
+      break;
+    }
+    case OpCode::READ_LOCAL_OOB_DATA: {
+      auto read_local_oob_data_complete_view = ReadLocalOobDataCompleteView::Create(std::move(command_complete_view));
+      ASSERT(read_local_oob_data_complete_view.IsValid());
+      status = read_local_oob_data_complete_view.GetStatus();
+      break;
+    }
+    case OpCode::WRITE_SIMPLE_PAIRING_MODE: {
+      auto write_simple_pairing_mode_complete_view = WriteSimplePairingModeCompleteView::Create(std::move(command_complete_view));
+      ASSERT(write_simple_pairing_mode_complete_view.IsValid());
+      status = write_simple_pairing_mode_complete_view.GetStatus();
+      break;
+    }
+    case OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT: {
+      auto write_secure_connections_host_support_complete_view = WriteSecureConnectionsHostSupportCompleteView::Create(std::move(command_complete_view));
+      ASSERT(write_secure_connections_host_support_complete_view.IsValid());
+      status = write_secure_connections_host_support_complete_view.GetStatus();
+      break;
+    }
+    case OpCode::READ_ENCRYPTION_KEY_SIZE: {
+      auto read_encryption_key_size_complete_view = ReadEncryptionKeySizeCompleteView::Create(std::move(command_complete_view));
+      ASSERT(read_encryption_key_size_complete_view.IsValid());
+      status = read_encryption_key_size_complete_view.GetStatus();
+      connection_handle = read_encryption_key_size_complete_view.GetConnectionHandle();
+      value = read_encryption_key_size_complete_view.GetKeySize();
+      break;
+    }
+    case OpCode::LINK_KEY_REQUEST_REPLY: {
+      auto link_key_request_reply_complete_view = LinkKeyRequestReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(link_key_request_reply_complete_view.IsValid());
+      status = link_key_request_reply_complete_view.GetStatus();
+      auto link_key_request_reply_view = LinkKeyRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(link_key_request_reply_view.IsValid());
+      address = link_key_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::LINK_KEY_REQUEST_NEGATIVE_REPLY: {
+      auto link_key_request_negative_reply_complete_view = LinkKeyRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(link_key_request_negative_reply_complete_view.IsValid());
+      status = link_key_request_negative_reply_complete_view.GetStatus();
+      auto link_key_request_negative_reply_view = LinkKeyRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(link_key_request_negative_reply_view.IsValid());
+      address = link_key_request_negative_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::IO_CAPABILITY_REQUEST_REPLY: {
+      auto io_capability_request_reply_complete_view = IoCapabilityRequestReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(io_capability_request_reply_complete_view.IsValid());
+      status = io_capability_request_reply_complete_view.GetStatus();
+      auto io_capability_request_reply_view = IoCapabilityRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(io_capability_request_reply_view.IsValid());
+      address = io_capability_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY: {
+      auto io_capability_request_negative_reply_complete_view = IoCapabilityRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(io_capability_request_negative_reply_complete_view.IsValid());
+      status = io_capability_request_negative_reply_complete_view.GetStatus();
+      auto io_capability_request_negative_reply_view = IoCapabilityRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(io_capability_request_negative_reply_view.IsValid());
+      address = io_capability_request_negative_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_CONFIRMATION_REQUEST_REPLY: {
+      auto user_confirmation_request_reply_complete_view = UserConfirmationRequestReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(user_confirmation_request_reply_complete_view.IsValid());
+      status = user_confirmation_request_reply_complete_view.GetStatus();
+      auto user_confirmation_request_reply_view = UserConfirmationRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(user_confirmation_request_reply_view.IsValid());
+      address = user_confirmation_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY: {
+      auto user_confirmation_request_negative_reply_complete_view = UserConfirmationRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(user_confirmation_request_negative_reply_complete_view.IsValid());
+      status = user_confirmation_request_negative_reply_complete_view.GetStatus();
+      auto user_confirmation_request_negative_reply_view = UserConfirmationRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(user_confirmation_request_negative_reply_view.IsValid());
+      address = user_confirmation_request_negative_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_PASSKEY_REQUEST_REPLY: {
+      auto user_passkey_request_reply_complete_view = UserPasskeyRequestReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(user_passkey_request_reply_complete_view.IsValid());
+      status = user_passkey_request_reply_complete_view.GetStatus();
+      auto user_passkey_request_reply_view = UserPasskeyRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(user_passkey_request_reply_view.IsValid());
+      address = user_passkey_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY: {
+      auto user_passkey_request_negative_reply_complete_view = UserPasskeyRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(user_passkey_request_negative_reply_complete_view.IsValid());
+      status = user_passkey_request_negative_reply_complete_view.GetStatus();
+      auto user_passkey_request_negative_reply_view = UserPasskeyRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(user_passkey_request_negative_reply_view.IsValid());
+      address = user_passkey_request_negative_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::REMOTE_OOB_DATA_REQUEST_REPLY: {
+      auto remote_oob_data_request_reply_complete_view = RemoteOobDataRequestReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(remote_oob_data_request_reply_complete_view.IsValid());
+      status = remote_oob_data_request_reply_complete_view.GetStatus();
+      auto remote_oob_data_request_reply_view = RemoteOobDataRequestReplyView::Create(std::move(security_command_view));
+      ASSERT(remote_oob_data_request_reply_view.IsValid());
+      address = remote_oob_data_request_reply_view.GetBdAddr();
+      break;
+    }
+    case OpCode::REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY: {
+      auto remote_oob_data_request_negative_reply_complete_view = RemoteOobDataRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
+      ASSERT(remote_oob_data_request_negative_reply_complete_view.IsValid());
+      status = remote_oob_data_request_negative_reply_complete_view.GetStatus();
+      auto remote_oob_data_request_negative_reply_view = RemoteOobDataRequestNegativeReplyView::Create(std::move(security_command_view));
+      ASSERT(remote_oob_data_request_negative_reply_view.IsValid());
+      address = remote_oob_data_request_negative_reply_view.GetBdAddr();
+      break;
+    }
+    default:
+      return;
+  }
+  os::LogMetricClassicPairingEvent(
+      address,
+      connection_handle,
+      static_cast<uint32_t>(op_code),
+      static_cast<uint16_t>(event_code),
+      static_cast<uint16_t>(status),
+      static_cast<uint16_t>(reason),
+      value);
+}
+
 }  // namespace hci
 }  // namespace bluetooth
