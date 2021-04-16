@@ -25,7 +25,7 @@
 
 extern std::map<std::string, int> mock_function_count_map;
 
-#include "gd/common/metrics.h"
+#include "gd/os/metrics.h"
 #include "main/shim/metrics_api.h"
 #include "types/raw_address.h"
 

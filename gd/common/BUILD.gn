@@ -18,7 +18,6 @@ source_set("BluetoothCommonSources") {
   sources = [
     "init_flags.cc",
     "metric_id_manager.cc"
-    "metrics_linux.cc",
     "stop_watch.cc",
     "strings.cc",
   ]

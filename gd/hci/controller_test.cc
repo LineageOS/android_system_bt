@@ -307,7 +307,9 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(controller_->GetLeBufferSize().total_num_le_packets_, 0x08);
   ASSERT_EQ(controller_->GetLeSupportedStates(), 0x001f123456789abe);
   ASSERT_EQ(controller_->GetLeMaximumDataLength().supported_max_tx_octets_, 0x12);
+  ASSERT_EQ(controller_->GetLeMaximumDataLength().supported_max_tx_time_, 0x34);
   ASSERT_EQ(controller_->GetLeMaximumDataLength().supported_max_rx_octets_, 0x56);
+  ASSERT_EQ(controller_->GetLeMaximumDataLength().supported_max_rx_time_, 0x78);
   ASSERT_EQ(controller_->GetLeMaximumAdvertisingDataLength(), 0x0672);
   ASSERT_EQ(controller_->GetLeNumberOfSupportedAdverisingSets(), 0xF0);
 }

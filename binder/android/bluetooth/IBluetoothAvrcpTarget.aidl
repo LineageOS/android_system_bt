@@ -25,5 +25,6 @@ interface IBluetoothAvrcpTarget {
     /**
      * @hide
      */
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void sendVolumeChanged(in int volume);
 }
