@@ -31,6 +31,7 @@
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "l2c_api.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "smp_int.h"
 #include "stack/btm/btm_ble_int.h"
@@ -375,8 +376,9 @@ bool smp_send_cmd(uint8_t cmd_code, tSMP_CB* p_cb) {
   BT_HDR* p_buf;
   bool sent = false;
 
-  SMP_TRACE_EVENT("%s: on l2cap cmd_code=0x%x, pairing_bda=%s", __func__,
-                  cmd_code, p_cb->pairing_bda.ToString().c_str());
+  LOG_DEBUG("Sending SMP command:%s[0x%x] pairing_bda=%s",
+            smp_opcode_text(static_cast<tSMP_OPCODE>(cmd_code)).c_str(),
+            cmd_code, PRIVATE_ADDRESS(p_cb->pairing_bda));
 
   if (cmd_code <= (SMP_OPCODE_MAX + 1 /* for SMP_OPCODE_PAIR_COMMITM */) &&
       smp_cmd_build_act[cmd_code] != NULL) {
