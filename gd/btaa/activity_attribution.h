@@ -23,7 +23,7 @@
 namespace bluetooth {
 namespace activity_attribution {
 
-enum class Activity : uint8_t { UNKNOWN = 0, ADVERTISE, CONNECT, CONTROL, SCAN, HFP, VENDOR };
+enum class Activity : uint8_t { UNKNOWN = 0, ACL, ADVERTISE, CONNECT, CONTROL, HFP, ISO, SCAN, VENDOR };
 #define CONVERT_ACTIVITY_TO_STR(Activity) std::string(#Activity)
 
 struct BtaaAggregationEntry {

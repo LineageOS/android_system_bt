@@ -44,6 +44,7 @@ const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() { return n
 
 static const std::string kBtWakelockName("hal_bluetooth_lock");
 static const std::string kBtWakeupReason("hs_uart_wakeup");
+static const size_t kHciAclHeaderSize = 4;
 
 struct wakelock_callback : public BnWakelockCallback {
   wakelock_callback(ActivityAttribution* module) : module_(module) {}
@@ -150,7 +151,7 @@ void ActivityAttribution::Capture(const hal::HciPacket& packet, hal::SnoopLogger
     case hal::SnoopLogger::PacketType::ACL:
     case hal::SnoopLogger::PacketType::SCO:
     case hal::SnoopLogger::PacketType::ISO:
-      truncate_length = 0;
+      truncate_length = kHciAclHeaderSize;
       break;
   }
 

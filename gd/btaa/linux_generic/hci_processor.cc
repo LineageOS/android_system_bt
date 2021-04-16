@@ -215,6 +215,45 @@ static void process_event(
   }
 }
 
+static void process_acl(
+    std::vector<BtaaHciPacket>& btaa_hci_packets,
+    packet::PacketView<packet::kLittleEndian>& packet_view,
+    uint16_t byte_count) {
+  hci::AclView acl = hci::AclView::Create(packet_view);
+  auto connection_handle = acl.begin();
+  // Connection handle is extracted from the 12 least significant bit.
+  uint16_t connection_handle_value = connection_handle.extract<uint16_t>() & 0xfff;
+  hci::Address address_value;
+  device_parser.match_handle_with_address(connection_handle_value, address_value);
+  btaa_hci_packets.push_back(BtaaHciPacket(Activity::ACL, address_value, byte_count));
+}
+
+static void process_sco(
+    std::vector<BtaaHciPacket>& btaa_hci_packets,
+    packet::PacketView<packet::kLittleEndian>& packet_view,
+    uint16_t byte_count) {
+  hci::ScoView sco = hci::ScoView::Create(packet_view);
+  auto connection_handle = sco.begin();
+  // Connection handle is extracted from the 12 least significant bit.
+  uint16_t connection_handle_value = connection_handle.extract<uint16_t>() & 0xfff;
+  hci::Address address_value;
+  device_parser.match_handle_with_address(connection_handle_value, address_value);
+  btaa_hci_packets.push_back(BtaaHciPacket(Activity::HFP, address_value, byte_count));
+}
+
+static void process_iso(
+    std::vector<BtaaHciPacket>& btaa_hci_packets,
+    packet::PacketView<packet::kLittleEndian>& packet_view,
+    uint16_t byte_count) {
+  hci::IsoView iso = hci::IsoView::Create(packet_view);
+  auto connection_handle = iso.begin();
+  // Connection handle is extracted from the 12 least significant bit.
+  uint16_t connection_handle_value = connection_handle.extract<uint16_t>() & 0xfff;
+  hci::Address address_value;
+  device_parser.match_handle_with_address(connection_handle_value, address_value);
+  btaa_hci_packets.push_back(BtaaHciPacket(Activity::ISO, address_value, byte_count));
+}
+
 std::vector<BtaaHciPacket> HciProcessor::OnHciPacket(
     hal::HciPacket packet, hal::SnoopLogger::PacketType type, uint16_t length) {
   std::vector<BtaaHciPacket> btaa_hci_packets;
@@ -227,10 +266,13 @@ std::vector<BtaaHciPacket> HciProcessor::OnHciPacket(
       process_event(btaa_hci_packets, packet_view, length);
       break;
     case hal::SnoopLogger::PacketType::ACL:
+      process_acl(btaa_hci_packets, packet_view, length);
       break;
     case hal::SnoopLogger::PacketType::SCO:
+      process_sco(btaa_hci_packets, packet_view, length);
       break;
     case hal::SnoopLogger::PacketType::ISO:
+      process_iso(btaa_hci_packets, packet_view, length);
       break;
   }
   return btaa_hci_packets;
