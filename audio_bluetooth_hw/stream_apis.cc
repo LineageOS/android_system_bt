@@ -127,6 +127,53 @@ void out_calculate_feeding_delay_ms(const BluetoothStreamOut* out,
   }
 }
 
+void in_calculate_starving_delay_ms(const BluetoothStreamIn* in,
+                                    int64_t* frames, int64_t* time) {
+  // delay_report is the audio delay from the remote headset receiving data to
+  // the headset playing sound in units of nanoseconds
+  uint64_t delay_report_ns = 0;
+  uint64_t delay_report_ms = 0;
+  // dispersed_bytes is the total number of bytes received by the Bluetooth
+  // stack from a remote headset
+  uint64_t dispersed_bytes = 0;
+  struct timespec dispersed_timestamp = {};
+
+  std::unique_lock<std::mutex> lock(in->mutex_);
+  in->bluetooth_input_.GetPresentationPosition(
+      &delay_report_ns, &dispersed_bytes, &dispersed_timestamp);
+  delay_report_ms = delay_report_ns / 1000000;
+
+  const uint64_t latency_frames = delay_report_ms * in->sample_rate_ / 1000;
+  *frames = dispersed_bytes / audio_stream_in_frame_size(&in->stream_in_);
+
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << ", delay=" << delay_report_ms
+               << "ms, data=" << dispersed_bytes
+               << " bytes, timestamp=" << dispersed_timestamp.tv_sec << "."
+               << StringPrintf("%09ld", dispersed_timestamp.tv_nsec) << "s";
+
+  if (in->frames_presented_ < *frames) {
+    // Was audio HAL reset?! The stack counter is obsoleted.
+    *frames = in->frames_presented_;
+  } else if ((in->frames_presented_ - *frames) > latency_frames) {
+    // Is the Bluetooth input reset ?! Its counter was reset but could not be
+    // used.
+    *frames = in->frames_presented_;
+  }
+  // suppose frames would be queued in the headset buffer for delay_report
+  // period, so those frames in buffers should not be included in the number
+  // of presented frames at the timestamp.
+  if (*frames > latency_frames) {
+    *frames -= latency_frames;
+  } else {
+    *frames = 0;
+  }
+
+  *time = (dispersed_timestamp.tv_sec * 1000000000LL +
+           dispersed_timestamp.tv_nsec) /
+          1000;
+}
+
 }  // namespace
 
 std::ostream& operator<<(std::ostream& os, const BluetoothStreamState& state) {
@@ -719,7 +766,366 @@ void adev_close_output_stream(struct audio_hw_device* dev,
 
 size_t adev_get_input_buffer_size(const struct audio_hw_device* dev,
                                   const struct audio_config* config) {
+  /* TODO: Adjust this value */
+  LOG(VERBOSE) << __func__;
   return 320;
+}
+
+static uint32_t in_get_sample_rate(const struct audio_stream* stream) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+
+  return in->sample_rate_;
+}
+
+static int in_set_sample_rate(struct audio_stream* stream, uint32_t rate) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << ", sample_rate=" << in->sample_rate_;
+  return (rate == in->sample_rate_ ? 0 : -ENOSYS);
+}
+
+static size_t in_get_buffer_size(const struct audio_stream* stream) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  size_t buffer_size =
+      in->frames_count_ * audio_stream_in_frame_size(&in->stream_in_);
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << ", buffer_size=" << buffer_size;
+  return buffer_size;
+}
+
+static audio_channel_mask_t in_get_channels(const struct audio_stream* stream) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  audio_config_t audio_cfg;
+  if (in->bluetooth_input_.LoadAudioConfig(&audio_cfg)) {
+    LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << " audio_cfg=" << audio_cfg;
+    return audio_cfg.channel_mask;
+  } else {
+    LOG(WARNING) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << ", channels=" << StringPrintf("%#x", in->channel_mask_)
+                 << " failure";
+    return in->channel_mask_;
+  }
+}
+
+static audio_format_t in_get_format(const struct audio_stream* stream) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  audio_config_t audio_cfg;
+  if (in->bluetooth_input_.LoadAudioConfig(&audio_cfg)) {
+    LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << " audio_cfg=" << audio_cfg;
+    return audio_cfg.format;
+  } else {
+    LOG(WARNING) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << ", format=" << in->format_ << " failure";
+    return in->format_;
+  }
+}
+
+static int in_set_format(struct audio_stream* stream, audio_format_t format) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << ", format=" << in->format_;
+  return (format == in->format_ ? 0 : -ENOSYS);
+}
+
+static bool in_state_transition_timeout(BluetoothStreamIn* in,
+                                        std::unique_lock<std::mutex>& lock,
+                                        const BluetoothStreamState& state,
+                                        uint16_t timeout_ms) {
+  /* Don't loose suspend request, AF will not retry */
+  while (in->bluetooth_input_.GetState() == state) {
+    lock.unlock();
+    usleep(1000);
+    lock.lock();
+
+    /* Don't block AF forever */
+    if (--timeout_ms <= 0) {
+      LOG(WARNING) << __func__
+                   << ", can't suspend - stucked in suspending"
+                      " state";
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static int in_standby(struct audio_stream* stream) {
+  auto* in = reinterpret_cast<BluetoothStreamIn*>(stream);
+  std::unique_lock<std::mutex> lock(in->mutex_);
+  int retval = 0;
+
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << " being standby (suspend)";
+
+  /* Give some time to start up */
+  if (!in_state_transition_timeout(in, lock, BluetoothStreamState::STARTING,
+                                   kBluetoothDefaultInputStateTimeoutMs)) {
+    LOG(ERROR) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << " NOT ready to by standby";
+    return retval;
+  }
+
+  if (in->bluetooth_input_.GetState() == BluetoothStreamState::STARTED) {
+    retval = (in->bluetooth_input_.Suspend() ? 0 : -EIO);
+  } else if (in->bluetooth_input_.GetState() !=
+             BluetoothStreamState::SUSPENDING) {
+    LOG(DEBUG) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << " standby already";
+    return retval;
+  }
+
+  /* Give some time to suspend */
+  if (!in_state_transition_timeout(in, lock, BluetoothStreamState::SUSPENDING,
+                                   kBluetoothDefaultInputStateTimeoutMs)) {
+    LOG(ERROR) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << " NOT ready to by standby";
+    return 0;
+  }
+
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << " standby (suspend) retval=" << retval;
+
+  return retval;
+}
+
+static int in_dump(const struct audio_stream* stream, int fd) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState();
+
+  return 0;
+}
+
+static int in_set_parameters(struct audio_stream* stream, const char* kvpairs) {
+  auto* in = reinterpret_cast<BluetoothStreamIn*>(stream);
+  std::unique_lock<std::mutex> lock(in->mutex_);
+  int retval = 0;
+
+  LOG(INFO) << __func__
+            << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState()
+            << ", kvpairs=[" << kvpairs << "]";
+
+  std::unordered_map<std::string, std::string> params =
+      ParseAudioParams(kvpairs);
+
+  if (params.empty()) return retval;
+
+  LOG(INFO) << __func__ << ": ParamsMap=[" << GetAudioParamString(params)
+            << "]";
+
+  return retval;
+}
+
+static char* in_get_parameters(const struct audio_stream* stream,
+                               const char* keys) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  std::unique_lock<std::mutex> lock(in->mutex_);
+
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState()
+               << ", keys=[" << keys << "]";
+
+  std::unordered_map<std::string, std::string> params = ParseAudioParams(keys);
+  if (params.empty()) return strdup("");
+
+  audio_config_t audio_cfg;
+  if (in->bluetooth_input_.LoadAudioConfig(&audio_cfg)) {
+    LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << " audio_cfg=" << audio_cfg;
+  } else {
+    LOG(ERROR) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << " failed to get audio config";
+  }
+
+  std::unordered_map<std::string, std::string> return_params;
+
+  /* TODO: Implement parameter getter */
+
+  std::string result;
+  for (const auto& ptr : return_params) {
+    result += ptr.first + "=" + ptr.second + ";";
+  }
+
+  return strdup(result.c_str());
+}
+
+static int in_add_audio_effect(const struct audio_stream* stream,
+                               effect_handle_t effect) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << ", effect=" << effect;
+  return 0;
+}
+
+static int in_remove_audio_effect(const struct audio_stream* stream,
+                                  effect_handle_t effect) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << ", effect=" << effect;
+  return 0;
+}
+
+static int in_set_gain(struct audio_stream_in* stream, float gain) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return 0;
+}
+
+static ssize_t in_read(struct audio_stream_in* stream, void* buffer,
+                       size_t bytes) {
+  auto* in = reinterpret_cast<BluetoothStreamIn*>(stream);
+  std::unique_lock<std::mutex> lock(in->mutex_);
+  size_t totalRead = 0;
+
+  /* Give some time to start up */
+  if (!in_state_transition_timeout(in, lock, BluetoothStreamState::STARTING,
+                                   kBluetoothDefaultInputStateTimeoutMs))
+    return -EBUSY;
+
+  if (in->bluetooth_input_.GetState() != BluetoothStreamState::STARTED) {
+    LOG(INFO) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+              << " first time bytes=" << bytes;
+
+    int retval = 0;
+    LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << ", starting";
+    if (in->bluetooth_input_.GetState() == BluetoothStreamState::STANDBY) {
+      retval = (in->bluetooth_input_.Start() ? 0 : -EIO);
+    } else if (in->bluetooth_input_.GetState() ==
+               BluetoothStreamState::SUSPENDING) {
+      LOG(WARNING) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                   << " NOT ready to start?!";
+      retval = -EBUSY;
+    } else if (in->bluetooth_input_.GetState() ==
+               BluetoothStreamState::DISABLED) {
+      LOG(WARNING) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                   << " NOT allow to start?!";
+      retval = -EINVAL;
+    } else {
+      LOG(DEBUG) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << " started already";
+    }
+    LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << ", starting (start) retval=" << retval;
+
+    if (retval) {
+      LOG(ERROR) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+                 << " failed to start";
+      return retval;
+    }
+  }
+
+  lock.unlock();
+  totalRead = in->bluetooth_input_.ReadData(buffer, bytes);
+  lock.lock();
+
+  struct timespec ts = {.tv_sec = 0, .tv_nsec = 0};
+  clock_gettime(CLOCK_MONOTONIC, &ts);
+  in->last_read_time_us_ = (ts.tv_sec * 1000000000LL + ts.tv_nsec) / 1000;
+
+  const size_t frames = totalRead / audio_stream_in_frame_size(stream);
+  in->frames_presented_ += frames;
+
+  return totalRead;
+}
+
+static uint32_t in_get_input_frames_lost(struct audio_stream_in* stream) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return 0;
+}
+
+static int in_get_capture_position(const struct audio_stream_in* stream,
+                                   int64_t* frames, int64_t* time) {
+  if (stream == NULL || frames == NULL || time == NULL) {
+    return -EINVAL;
+  }
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+
+  if (in->bluetooth_input_.GetState() == BluetoothStreamState::STANDBY) {
+    LOG(WARNING) << __func__ << ": state= " << in->bluetooth_input_.GetState();
+    return -ENOSYS;
+  }
+
+  in_calculate_starving_delay_ms(in, frames, time);
+
+  return 0;
+}
+
+static int in_start(const struct audio_stream_in* stream) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return 0;
+}
+
+static int in_stop(const struct audio_stream_in* stream) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return 0;
+}
+
+static int in_create_mmap_buffer(const struct audio_stream_in* stream,
+                                 int32_t min_size_frames,
+                                 struct audio_mmap_buffer_info* info) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return -ENOSYS;
+}
+
+static int in_get_mmap_position(const struct audio_stream_in* stream,
+                                struct audio_mmap_position* position) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return -ENOSYS;
+}
+
+static int in_get_active_microphones(
+    const struct audio_stream_in* stream,
+    struct audio_microphone_characteristic_t* mic_array, size_t* mic_count) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return -ENOSYS;
+}
+
+static int in_set_microphone_direction(const struct audio_stream_in* stream,
+                                       audio_microphone_direction_t direction) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return -ENOSYS;
+}
+
+static int in_set_microphone_field_dimension(
+    const struct audio_stream_in* stream, float zoom) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
+
+  return -ENOSYS;
+}
+
+static void in_update_sink_metadata(struct audio_stream_in* stream,
+                                    const struct sink_metadata* sink_metadata) {
+  const auto* in = reinterpret_cast<const BluetoothStreamIn*>(stream);
+  LOG(VERBOSE) << __func__
+               << ": NOT HANDLED! state=" << in->bluetooth_input_.GetState();
 }
 
 int adev_open_input_stream(struct audio_hw_device* dev,
@@ -729,8 +1135,75 @@ int adev_open_input_stream(struct audio_hw_device* dev,
                            audio_input_flags_t flags __unused,
                            const char* address __unused,
                            audio_source_t source __unused) {
-  return -EINVAL;
+  *stream_in = nullptr;
+  auto* in = new BluetoothStreamIn{};
+  if (!in->bluetooth_input_.SetUp(devices)) {
+    delete in;
+    return -EINVAL;
+  }
+
+  LOG(INFO) << __func__ << ": device=" << StringPrintf("%#x", devices);
+
+  in->stream_in_.common.get_sample_rate = in_get_sample_rate;
+  in->stream_in_.common.set_sample_rate = in_set_sample_rate;
+  in->stream_in_.common.get_buffer_size = in_get_buffer_size;
+  in->stream_in_.common.get_channels = in_get_channels;
+  in->stream_in_.common.get_format = in_get_format;
+  in->stream_in_.common.set_format = in_set_format;
+  in->stream_in_.common.standby = in_standby;
+  in->stream_in_.common.dump = in_dump;
+  in->stream_in_.common.set_parameters = in_set_parameters;
+  in->stream_in_.common.get_parameters = in_get_parameters;
+  in->stream_in_.common.add_audio_effect = in_add_audio_effect;
+  in->stream_in_.common.remove_audio_effect = in_remove_audio_effect;
+  in->stream_in_.set_gain = in_set_gain;
+  in->stream_in_.read = in_read;
+  in->stream_in_.get_input_frames_lost = in_get_input_frames_lost;
+  in->stream_in_.get_capture_position = in_get_capture_position;
+  in->stream_in_.start = in_start;
+  in->stream_in_.stop = in_stop;
+  in->stream_in_.create_mmap_buffer = in_create_mmap_buffer;
+  in->stream_in_.get_mmap_position = in_get_mmap_position;
+  in->stream_in_.get_active_microphones = in_get_active_microphones;
+  in->stream_in_.set_microphone_direction = in_set_microphone_direction;
+  in->stream_in_.set_microphone_field_dimension =
+      in_set_microphone_field_dimension;
+  in->stream_in_.update_sink_metadata = in_update_sink_metadata;
+
+  if (!in->bluetooth_input_.LoadAudioConfig(config)) {
+    LOG(ERROR) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << " failed to get audio config";
+    return -EINVAL;
+  }
+
+  in->sample_rate_ = config->sample_rate;
+  in->channel_mask_ = config->channel_mask;
+  in->format_ = config->format;
+  // frame is number of samples per channel
+  in->frames_count_ =
+      samples_per_ticks(kBluetoothDefaultInputBufferMs, in->sample_rate_, 1);
+  in->frames_presented_ = 0;
+
+  *stream_in = &in->stream_in_;
+  LOG(INFO) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+            << ", sample_rate=" << in->sample_rate_
+            << ", channels=" << StringPrintf("%#x", in->channel_mask_)
+            << ", format=" << in->format_ << ", frames=" << in->frames_count_;
+
+  return 0;
 }
 
 void adev_close_input_stream(struct audio_hw_device* dev,
-                             struct audio_stream_in* stream_in) {}
+                             struct audio_stream_in* stream) {
+  auto* in = reinterpret_cast<BluetoothStreamIn*>(stream);
+
+  if (in->bluetooth_input_.GetState() != BluetoothStreamState::DISABLED) {
+    in->bluetooth_input_.Stop();
+  }
+
+  in->bluetooth_input_.TearDown();
+  LOG(VERBOSE) << __func__ << ": state=" << in->bluetooth_input_.GetState()
+               << ", stopped";
+
+  delete in;
+}

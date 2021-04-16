@@ -14,6 +14,7 @@
 
 source_set("BluetoothOsSources_linux") {
   sources = [
+    "linux/metrics.cc",
     "linux/parameter_provider.cc",
     "linux/system_properties.cc",
   ]

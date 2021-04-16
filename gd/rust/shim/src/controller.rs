@@ -140,6 +140,10 @@ pub fn controller_get_le_maximum_tx_data_length(c: &Controller) -> u16 {
     c.le_max_data_length.supported_max_tx_octets
 }
 
+pub fn controller_get_le_maximum_tx_time(c: &Controller) -> u16 {
+    c.le_max_data_length.supported_max_tx_time
+}
+
 pub fn controller_get_address(c: &Controller) -> String {
     c.address.to_string()
 }

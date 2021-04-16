@@ -685,6 +685,12 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
     return BTM_ILLEGAL_VALUE;
   }
 
+  tx_pdu_length = std::min<uint16_t>(
+      tx_pdu_length,
+      controller_get_interface()->get_ble_maximum_tx_data_length());
+  tx_time = std::min<uint16_t>(
+      tx_time, controller_get_interface()->get_ble_maximum_tx_time());
+
   btsnd_hcic_ble_set_data_length(hci_handle, tx_pdu_length, tx_time);
 
   return BTM_SUCCESS;

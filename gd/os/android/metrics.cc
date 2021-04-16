@@ -22,13 +22,14 @@
 
 #include "common/metric_id_manager.h"
 #include "common/strings.h"
-#include "metrics.h"
 #include "os/log.h"
+#include "os/metrics.h"
 
 namespace bluetooth {
 
-namespace common {
+namespace os {
 
+using bluetooth::common::MetricIdManager;
 using bluetooth::hci::Address;
 
 /**
@@ -66,14 +67,14 @@ void LogMetricLinkLayerConnectionEvent(
     LOG_WARN(
         "Failed to log status %s , reason %s, from cmd %s, event %s,  ble_event %s, for %s, handle %d, type %s, "
         "error %d",
-        ToHexString(cmd_status).c_str(),
-        ToHexString(reason_code).c_str(),
-        ToHexString(hci_cmd).c_str(),
-        ToHexString(hci_event).c_str(),
-        ToHexString(hci_ble_event).c_str(),
+        common::ToHexString(cmd_status).c_str(),
+        common::ToHexString(reason_code).c_str(),
+        common::ToHexString(hci_cmd).c_str(),
+        common::ToHexString(hci_event).c_str(),
+        common::ToHexString(hci_ble_event).c_str(),
         address ? address->ToString().c_str() : "(NULL)",
         connection_handle,
-        ToHexString(link_type).c_str(),
+        common::ToHexString(link_type).c_str(),
         ret);
   }
 }
@@ -81,7 +82,7 @@ void LogMetricLinkLayerConnectionEvent(
 void LogMetricHciTimeoutEvent(uint32_t hci_cmd) {
   int ret = android::util::stats_write(android::util::BLUETOOTH_HCI_TIMEOUT_REPORTED, static_cast<int64_t>(hci_cmd));
   if (ret < 0) {
-    LOG_WARN("Failed for opcode %s, error %d", ToHexString(hci_cmd).c_str(), ret);
+    LOG_WARN("Failed for opcode %s, error %d", common::ToHexString(hci_cmd).c_str(), ret);
   }
 }
 
@@ -93,10 +94,10 @@ void LogMetricRemoteVersionInfo(
     LOG_WARN(
         "Failed for handle %d, status %s, version %s, manufacturer_name %s, subversion %s, error %d",
         handle,
-        ToHexString(status).c_str(),
-        ToHexString(version).c_str(),
-        ToHexString(manufacturer_name).c_str(),
-        ToHexString(subversion).c_str(),
+        common::ToHexString(status).c_str(),
+        common::ToHexString(version).c_str(),
+        common::ToHexString(manufacturer_name).c_str(),
+        common::ToHexString(subversion).c_str(),
         ret);
   }
 }
@@ -187,7 +188,7 @@ void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t c
         "Failed for %s, handle %d, status %s, rssi %d dBm, error %d",
         address.ToString().c_str(),
         handle,
-        ToHexString(cmd_status).c_str(),
+        common::ToHexString(cmd_status).c_str(),
         rssi,
         ret);
   }
@@ -211,7 +212,7 @@ void LogMetricReadFailedContactCounterResult(
         "Failed for %s, handle %d, status %s, failed_contact_counter %d packets, error %d",
         address.ToString().c_str(),
         handle,
-        ToHexString(cmd_status).c_str(),
+        common::ToHexString(cmd_status).c_str(),
         failed_contact_counter,
         ret);
   }
@@ -235,7 +236,7 @@ void LogMetricReadTxPowerLevelResult(
         "Failed for %s, handle %d, status %s, transmit_power_level %d packets, error %d",
         address.ToString().c_str(),
         handle,
-        ToHexString(cmd_status).c_str(),
+        common::ToHexString(cmd_status).c_str(),
         transmit_power_level,
         ret);
   }
@@ -253,9 +254,9 @@ void LogMetricSmpPairingEvent(
     LOG_WARN(
         "Failed for %s, smp_cmd %s, direction %d, smp_fail_reason %s, error %d",
         address.ToString().c_str(),
-        ToHexString(smp_cmd).c_str(),
+        common::ToHexString(smp_cmd).c_str(),
         direction,
-        ToHexString(smp_fail_reason).c_str(),
+        common::ToHexString(smp_fail_reason).c_str(),
         ret);
   }
 }
@@ -288,10 +289,10 @@ void LogMetricClassicPairingEvent(
         "reason %s, event_value %s, error %d",
         address.ToString().c_str(),
         handle,
-        ToHexString(hci_cmd).c_str(),
-        ToHexString(hci_event).c_str(),
-        ToHexString(cmd_status).c_str(),
-        ToHexString(reason_code).c_str(),
+        common::ToHexString(hci_cmd).c_str(),
+        common::ToHexString(hci_event).c_str(),
+        common::ToHexString(cmd_status).c_str(),
+        common::ToHexString(reason_code).c_str(),
         std::to_string(event_value).c_str(),
         ret);
   }
@@ -319,8 +320,8 @@ void LogMetricSdpAttribute(
     LOG_WARN(
         "Failed for %s, protocol_uuid %s, attribute_id %s, error %d",
         address.ToString().c_str(),
-        ToHexString(protocol_uuid).c_str(),
-        ToHexString(attribute_id).c_str(),
+        common::ToHexString(protocol_uuid).c_str(),
+        common::ToHexString(attribute_id).c_str(),
         ret);
   }
 }
@@ -405,6 +406,5 @@ void LogMetricManufacturerInfo(
   }
 }
 
-}  // namespace common
-
+}  // namespace os
 }  // namespace bluetooth
