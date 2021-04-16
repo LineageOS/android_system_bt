@@ -224,6 +224,7 @@ struct HciLayer::impl {
     OpCode op_code = cmd_view.GetOpCode();
     command_queue_.front().command_view = std::make_unique<CommandView>(std::move(cmd_view));
     log_link_layer_connection_command_status(command_queue_.front().command_view, ErrorCode::STATUS_UNKNOWN);
+    log_classic_pairing_command_status(command_queue_.front().command_view, ErrorCode::STATUS_UNKNOWN);
     waiting_command_ = op_code;
     command_credits_ = 0;  // Only allow one outstanding command
     if (hci_timeout_alarm_ != nullptr) {
@@ -293,7 +294,7 @@ struct HciLayer::impl {
 
   void on_hci_event(EventView event) {
     ASSERT(event.IsValid());
-    log_link_layer_connection_hci_event(command_queue_.front().command_view, event);
+    log_hci_event(command_queue_.front().command_view, event);
     EventCode event_code = event.GetEventCode();
     // Root Inflamation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {
