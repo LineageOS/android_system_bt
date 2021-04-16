@@ -522,8 +522,6 @@ static void btm_get_dynamic_audio_buffer_vsc_cmpl_cback(
  ******************************************************************************/
 static void btm_ble_vendor_capability_vsc_cmpl_cback(
     tBTM_VSC_CMPL* p_vcs_cplt_params) {
-  uint8_t status = 0xFF;
-  uint8_t* p;
 
   BTM_TRACE_DEBUG("%s", __func__);
 
@@ -531,8 +529,10 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
   CHECK(p_vcs_cplt_params->opcode == HCI_BLE_VENDOR_CAP);
   CHECK(p_vcs_cplt_params->param_len > 0);
 
-  p = p_vcs_cplt_params->p_param_buf;
-  STREAM_TO_UINT8(status, p);
+  const uint8_t* p = p_vcs_cplt_params->p_param_buf;
+  uint8_t raw_status;
+  STREAM_TO_UINT8(raw_status, p);
+  tHCI_STATUS status = to_hci_status_code(raw_status);
 
   if (status != HCI_SUCCESS) {
     BTM_TRACE_DEBUG("%s: Status = 0x%02x (0 is success)", __func__, status);

@@ -46,7 +46,6 @@ tBTM_BLE_ENERGY_INFO_CB ble_energy_info_cb;
 static void btm_ble_cont_energy_cmpl_cback(tBTM_VSC_CMPL* p_params) {
   uint8_t* p = p_params->p_param_buf;
   uint16_t len = p_params->param_len;
-  uint8_t status = 0;
   uint32_t total_tx_time = 0, total_rx_time = 0, total_idle_time = 0,
            total_energy_used = 0;
 
@@ -55,7 +54,9 @@ static void btm_ble_cont_energy_cmpl_cback(tBTM_VSC_CMPL* p_params) {
     return;
   }
 
-  STREAM_TO_UINT8(status, p);
+  uint8_t raw_status;
+  STREAM_TO_UINT8(raw_status, p);
+  tHCI_STATUS status = to_hci_status_code(raw_status);
   STREAM_TO_UINT32(total_tx_time, p);
   STREAM_TO_UINT32(total_rx_time, p);
   STREAM_TO_UINT32(total_idle_time, p);

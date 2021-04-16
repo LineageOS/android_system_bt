@@ -76,7 +76,11 @@ class ClassicAclConnection : public AclConnection {
 
  private:
   AclConnectionInterface* acl_connection_interface_;
+
+ protected:
   Address address_;
+
+ private:
   struct impl;
   struct impl* pimpl_ = nullptr;
   DISALLOW_COPY_AND_ASSIGN(ClassicAclConnection);
