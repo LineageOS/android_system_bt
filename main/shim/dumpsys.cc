@@ -23,31 +23,31 @@
 #include "shim/dumpsys.h"
 
 namespace {
+
 constexpr char kModuleName[] = "shim::legacy::dumpsys";
-static std::unordered_map<const void*, bluetooth::shim::DumpsysFunction>*
-    dumpsys_functions_{nullptr};
+static std::unordered_map<const void*, bluetooth::shim::DumpsysFunction>
+    dumpsys_functions_;
+
 }  // namespace
 
 void bluetooth::shim::RegisterDumpsysFunction(const void* token,
                                               DumpsysFunction func) {
-  dumpsys_functions_ =
-      new std::unordered_map<const void*, bluetooth::shim::DumpsysFunction>();
-  CHECK(dumpsys_functions_->find(token) == dumpsys_functions_->end());
-  dumpsys_functions_->insert({token, func});
+  CHECK(dumpsys_functions_.find(token) == dumpsys_functions_.end());
+  dumpsys_functions_.insert({token, func});
 }
 
 void bluetooth::shim::UnregisterDumpsysFunction(const void* token) {
-  CHECK(dumpsys_functions_->find(token) != dumpsys_functions_->end());
-  dumpsys_functions_->erase(token);
+  CHECK(dumpsys_functions_.find(token) != dumpsys_functions_.end());
+  dumpsys_functions_.erase(token);
 }
 
 void bluetooth::shim::Dump(int fd, const char** args) {
-  if (dumpsys_functions_ == nullptr) {
+  if (dumpsys_functions_.empty()) {
     dprintf(fd, "%s No registered dumpsys shim legacy targets\n", kModuleName);
   } else {
     dprintf(fd, "%s Dumping shim legacy targets:%zd\n", kModuleName,
-            dumpsys_functions_->size());
-    for (auto& dumpsys : *dumpsys_functions_) {
+            dumpsys_functions_.size());
+    for (auto& dumpsys : dumpsys_functions_) {
       dumpsys.second(fd);
     }
   }

@@ -763,6 +763,40 @@ struct shim::legacy::Acl::impl {
     handle_to_classic_connection_map_[handle]->SetConnectionEncryption(enable);
   }
 
+  void disconnect_classic(uint16_t handle, tHCI_STATUS reason) {
+    auto connection = handle_to_classic_connection_map_.find(handle);
+    if (connection != handle_to_classic_connection_map_.end()) {
+      auto remote_address = connection->second->GetRemoteAddress();
+      connection->second->InitiateDisconnect(
+          ToDisconnectReasonFromLegacy(reason));
+      LOG_DEBUG("Disconnection initiated classic remote:%s handle:%hu",
+                PRIVATE_ADDRESS(remote_address), handle);
+      BTM_LogHistory(kBtmLogTag, ToRawAddress(remote_address),
+                     "Disconnection initiated", "classic");
+    } else {
+      LOG_WARN("Unable to disconnect unknown classic connection handle:0x%04x",
+               handle);
+    }
+  }
+
+  void disconnect_le(uint16_t handle, tHCI_STATUS reason) {
+    auto connection = handle_to_le_connection_map_.find(handle);
+    if (connection != handle_to_le_connection_map_.end()) {
+      auto remote_address_with_type =
+          connection->second->GetRemoteAddressWithType();
+      connection->second->InitiateDisconnect(
+          ToDisconnectReasonFromLegacy(reason));
+      LOG_DEBUG("Disconnection initiated le remote:%s handle:%hu",
+                PRIVATE_ADDRESS(remote_address_with_type), handle);
+      BTM_LogHistory(kBtmLogTag,
+                     ToLegacyAddressWithType(remote_address_with_type),
+                     "Disconnection initiated", "Le");
+    } else {
+      LOG_WARN("Unable to disconnect unknown le connection handle:0x%04x",
+               handle);
+    }
+  }
+
   void accept_le_connection_from(const hci::AddressWithType& address_with_type,
                                  std::promise<bool> promise) {
     if (shadow_acceptlist_.IsFull()) {
@@ -1285,38 +1319,14 @@ void shim::legacy::Acl::ConfigureLePrivacy(bool is_le_privacy_enabled) {
 }
 
 void shim::legacy::Acl::DisconnectClassic(uint16_t handle, tHCI_STATUS reason) {
-  auto connection = pimpl_->handle_to_classic_connection_map_.find(handle);
-  if (connection != pimpl_->handle_to_classic_connection_map_.end()) {
-    auto remote_address = connection->second->GetRemoteAddress();
-    connection->second->InitiateDisconnect(
-        ToDisconnectReasonFromLegacy(reason));
-    LOG_DEBUG("Disconnection initiated classic remote:%s handle:%hu",
-              PRIVATE_ADDRESS(remote_address), handle);
-    BTM_LogHistory(kBtmLogTag, ToRawAddress(remote_address),
-                   "Disconnection initiated", "classic");
-  } else {
-    LOG_WARN("Unable to disconnect unknown classic connection handle:0x%04x",
-             handle);
-  }
+  handler_->CallOn(pimpl_.get(), &Acl::impl::disconnect_classic, handle,
+                   reason);
 }
 
 void shim::legacy::Acl::DisconnectLe(uint16_t handle, tHCI_STATUS reason) {
-  auto connection = pimpl_->handle_to_le_connection_map_.find(handle);
-  if (connection != pimpl_->handle_to_le_connection_map_.end()) {
-    auto remote_address_with_type =
-        connection->second->GetRemoteAddressWithType();
-    connection->second->InitiateDisconnect(
-        ToDisconnectReasonFromLegacy(reason));
-    LOG_DEBUG("Disconnection initiated le remote:%s handle:%hu",
-              PRIVATE_ADDRESS(remote_address_with_type), handle);
-    BTM_LogHistory(kBtmLogTag,
-                   ToLegacyAddressWithType(remote_address_with_type),
-                   "Disconnection initiated", "Le");
-  } else {
-    LOG_WARN("Unable to disconnect unknown le connection handle:0x%04x",
-             handle);
-  }
+  handler_->CallOn(pimpl_.get(), &Acl::impl::disconnect_le, handle, reason);
 }
+
 bool shim::legacy::Acl::HoldMode(uint16_t hci_handle, uint16_t max_interval,
                                  uint16_t min_interval) {
   handler_->CallOn(pimpl_.get(), &Acl::impl::HoldMode, hci_handle, max_interval,
