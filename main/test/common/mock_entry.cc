@@ -44,12 +44,6 @@ MockController* mock_controller_{nullptr};
 }  // namespace testing
 }  // namespace hci
 
-namespace legacy {
-namespace testing {
-// os::Handler* mock_handler_ { nullptr };
-}
-}  // namespace legacy
-
 namespace shim {
 
 Dumpsys* GetDumpsys() { return nullptr; }

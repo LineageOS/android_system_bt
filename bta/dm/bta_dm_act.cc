@@ -85,7 +85,7 @@ void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
                           uint8_t app_id, const RawAddress& peer_addr);
 
 /* Extended Inquiry Response */
-static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
+static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
 
 static void bta_dm_set_eir(char* local_name);
 
@@ -113,7 +113,7 @@ static void bta_dm_cancel_gatt_discovery(const RawAddress& bd_addr);
 static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 extern tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 #if (BLE_VND_INCLUDED == TRUE)
-static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
+static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result);
 #endif
 
 #ifndef BTA_DM_BLE_ADV_CHNL_MAP
@@ -2108,7 +2108,8 @@ static void bta_dm_authentication_complete_cback(
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
+static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
+                                   tBTM_SP_EVT_DATA* p_data) {
   tBTM_STATUS status = BTM_CMD_STARTED;
   tBTA_DM_SEC sec_event;
   tBTA_DM_SEC_EVT pin_evt = BTA_DM_SP_KEY_NOTIF_EVT;
@@ -3674,8 +3675,8 @@ static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
                                      tBTM_BLE_RX_TIME_MS rx_time,
                                      tBTM_BLE_IDLE_TIME_MS idle_time,
                                      tBTM_BLE_ENERGY_USED energy_used,
-                                     tBTM_STATUS status) {
-  tBTA_STATUS st = (status == BTM_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
+                                     tHCI_STATUS status) {
+  tBTA_STATUS st = (status == HCI_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
   tBTA_DM_CONTRL_STATE ctrl_state = 0;
 
   if (BTA_SUCCESS == st) ctrl_state = bta_dm_pm_obtain_controller_state();
@@ -3690,8 +3691,8 @@ void bta_dm_ble_get_energy_info(
     tBTA_BLE_ENERGY_INFO_CBACK* p_energy_info_cback) {
   bta_dm_cb.p_energy_info_cback = p_energy_info_cback;
   tBTM_STATUS btm_status = BTM_BleGetEnergyInfo(bta_ble_energy_info_cmpl);
-  if (BTM_CMD_STARTED != btm_status)
-    bta_ble_energy_info_cmpl(0, 0, 0, 0, btm_status);
+  if (btm_status != BTM_CMD_STARTED)
+    bta_ble_energy_info_cmpl(0, 0, 0, 0, HCI_ERR_UNSPECIFIED);
 }
 
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
@@ -3902,9 +3903,9 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
  * Parameters:
  *
  ******************************************************************************/
-static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result) {
+static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result) {
   APPL_TRACE_DEBUG("%s  status = %d ", __func__, result);
-  if (result == BTM_SUCCESS) {
+  if (result == HCI_SUCCESS) {
     if (bta_dm_cb.p_sec_cback)
       bta_dm_cb.p_sec_cback(BTA_DM_LE_FEATURES_READ, NULL);
   } else {
