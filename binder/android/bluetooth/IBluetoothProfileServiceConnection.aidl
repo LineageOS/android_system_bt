@@ -25,6 +25,8 @@ import android.os.IBinder;
  * {@hide}
  */
 oneway interface IBluetoothProfileServiceConnection {
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     void onServiceConnected(in ComponentName comp, in IBinder service);
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     void onServiceDisconnected(in ComponentName comp);
 }

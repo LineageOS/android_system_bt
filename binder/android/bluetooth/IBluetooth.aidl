@@ -38,6 +38,7 @@ import android.os.ResultReceiver;
  */
 interface IBluetooth
 {
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     int getState();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
@@ -54,6 +55,8 @@ interface IBluetooth
     boolean setName(in String name);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     String getName();
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_ADVERTISE)")
+    int getNameLengthForAdvertise();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     BluetoothClass getBluetoothClass();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
@@ -87,7 +90,9 @@ interface IBluetooth
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     long getDiscoveryEndMillis();
 
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     int getAdapterConnectionState();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     int getProfileConnectionState(int profile);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
@@ -103,6 +108,7 @@ interface IBluetooth
     int getBondState(in BluetoothDevice device);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean isBondingInitiatedLocally(in BluetoothDevice device);
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     long getSupportedProfiles();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getConnectionState(in BluetoothDevice device);
@@ -161,19 +167,29 @@ interface IBluetooth
     void unregisterCallback(in IBluetoothCallback callback);
 
     // For Socket
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     IBluetoothSocketManager getSocketManager();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     boolean factoryReset();
 
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isMultiAdvertisementSupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isOffloadedFilteringSupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isOffloadedScanBatchingSupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isActivityAndEnergyReportingSupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isLe2MPhySupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isLeCodedPhySupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isLeExtendedAdvertisingSupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isLePeriodicAdvertisingSupported();
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     int getLeMaximumAdvertisingDataLength();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")

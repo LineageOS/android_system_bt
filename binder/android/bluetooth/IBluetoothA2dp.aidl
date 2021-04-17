@@ -51,6 +51,7 @@ interface IBluetoothA2dp {
     boolean setConnectionPolicy(in BluetoothDevice device, int connectionPolicy);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     int getConnectionPolicy(in BluetoothDevice device);
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isAvrcpAbsoluteVolumeSupported();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     oneway void setAvrcpAbsoluteVolume(int volume);
