@@ -26,6 +26,7 @@
 
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/hci_error_code.h"
 #include "types/ble_address_with_type.h"
 
 #define CHNL_MAP_LEN 5
@@ -485,13 +486,13 @@ typedef void(tBTM_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
                                          tBTM_BLE_RX_TIME_MS rx_time,
                                          tBTM_BLE_IDLE_TIME_MS idle_time,
                                          tBTM_BLE_ENERGY_USED energy_used,
-                                         tBTM_STATUS status);
+                                         tHCI_STATUS status);
 
 typedef struct {
   tBTM_BLE_ENERGY_INFO_CBACK* p_ener_cback;
 } tBTM_BLE_ENERGY_INFO_CB;
 
-typedef void(tBTM_BLE_CTRL_FEATURES_CBACK)(tBTM_STATUS status);
+typedef void(tBTM_BLE_CTRL_FEATURES_CBACK)(tHCI_STATUS status);
 
 /* BLE encryption keys */
 typedef struct {
