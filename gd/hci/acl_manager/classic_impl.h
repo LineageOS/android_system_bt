@@ -578,7 +578,7 @@ struct classic_impl : public security::ISecurityManagerListener {
       ASSERT(!crash_on_unknown_handle_);
       return;
     }
-    callbacks->OnReadRemoteExtendedFeaturesComplete(0, 1, view.GetLmpFeatures());
+    callbacks->OnReadRemoteExtendedFeaturesComplete(0, 0, view.GetLmpFeatures());
   }
 
   void on_read_remote_extended_features_complete(EventView packet) {
