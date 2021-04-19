@@ -129,7 +129,7 @@ inline bool IsEprAvailable(const tACL_CONN& p_acl) {
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
-                                            uint8_t num_read_pages);
+                                            uint8_t max_page_number);
 static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_read_rssi_timeout(void* data);
@@ -827,10 +827,9 @@ void btm_read_remote_version_complete(tHCI_STATUS status, uint16_t handle,
  *
  ******************************************************************************/
 void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
-                                     uint8_t num_read_pages) {
+                                     uint8_t max_page_number) {
   CHECK(p_acl_cb != nullptr);
-  if (!p_acl_cb->peer_lmp_feature_valid[0] ||
-      !p_acl_cb->peer_lmp_feature_valid[1]) {
+  if (!p_acl_cb->peer_lmp_feature_valid[max_page_number]) {
     LOG_WARN(
         "Checking remote features but remote feature read is "
         "incomplete");
@@ -951,7 +950,7 @@ void btm_read_remote_features_complete(uint16_t handle, uint8_t* features) {
 
   /* Remote controller has no extended features. Process remote controller
      supported features (features page 0). */
-  btm_process_remote_ext_features(p_acl_cb, 1);
+  btm_process_remote_ext_features(p_acl_cb, 0);
 
   /* Continue with HCI connection establishment */
   internal_.btm_establish_continue(p_acl_cb);
@@ -1028,7 +1027,7 @@ void btm_read_remote_ext_features_complete(uint16_t handle, uint8_t page_num,
   LOG_DEBUG("BTM reached last remote extended features page (%d)", page_num);
 
   /* Process the pages */
-  btm_process_remote_ext_features(p_acl_cb, (uint8_t)(page_num + 1));
+  btm_process_remote_ext_features(p_acl_cb, max_page);
 
   /* Continue with HCI connection establishment */
   internal_.btm_establish_continue(p_acl_cb);
@@ -1054,7 +1053,7 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
   }
 
   /* Process supported features only */
-  btm_process_remote_ext_features(p_acl_cb, 1);
+  btm_process_remote_ext_features(p_acl_cb, 0);
 
   /* Continue HCI connection establishment */
   internal_.btm_establish_continue(p_acl_cb);

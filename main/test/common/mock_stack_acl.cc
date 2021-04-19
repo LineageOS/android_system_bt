@@ -353,7 +353,7 @@ void btm_establish_continue_from_address(const RawAddress& bda,
   mock_function_count_map[__func__]++;
 }
 void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
-                                     uint8_t num_read_pages) {
+                                     uint8_t max_page_number) {
   mock_function_count_map[__func__]++;
 }
 void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
