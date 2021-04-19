@@ -305,11 +305,10 @@ struct HciLayer::impl {
         return;
       }
     }
-    ASSERT_LOG(
-        event_handlers_.find(event_code) != event_handlers_.end(),
-        "Unhandled event of type 0x%02hhx (%s)",
-        event_code,
-        EventCodeText(event_code).c_str());
+    if (event_handlers_.find(event_code) == event_handlers_.end()) {
+      LOG_WARN("Unhandled event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
+      return;
+    }
     event_handlers_[event_code].Invoke(event);
   }
 
@@ -317,11 +316,10 @@ struct HciLayer::impl {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     ASSERT(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
-    ASSERT_LOG(
-        subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
-        "Unhandled le subevent of type 0x%02hhx (%s)",
-        subevent_code,
-        SubeventCodeText(subevent_code).c_str());
+    if (subevent_handlers_.find(subevent_code) == subevent_handlers_.end()) {
+      LOG_WARN("Unhandled le subevent of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
+      return;
+    }
     subevent_handlers_[subevent_code].Invoke(meta_event_view);
   }
 
