@@ -64,6 +64,7 @@ class AttributionProcessor {
   std::unordered_map<AddressActivityKey, BtaaAggregationEntry, AddressActivityKeyHasher> wakelock_duration_aggregator_;
   common::TimestampedCircularBuffer<WakeupDescriptor> wakeup_aggregator_ =
       common::TimestampedCircularBuffer<WakeupDescriptor>(kWakeupAggregatorSize);
+  const char* ActivityToString(Activity activity);
 };
 
 }  // namespace activity_attribution

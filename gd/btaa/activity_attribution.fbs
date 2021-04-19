@@ -8,29 +8,22 @@ table WakeupEntry {
     address:string;
 }
 
-table WakeupAttributionData {
-    title:string;
-    num_wakeup:int;
-    wakeup_attribution:[WakeupEntry];
-}
-
 table DeviceActivityAggregationEntry {
     address:string;
     activity:string;
     wakeup_count:int;
     byte_count:int;
-    wakelock_duration:int;
-}
-
-table DeviceActivityAggregationData {
-    title:string;
-    device_activity_aggregation:[DeviceActivityAggregationEntry];
+    wakelock_duration_ms:int;
+    creation_time:string;
 }
 
 table ActivityAttributionData {
-    title:string (privacy:"Any");
-    wakeup_attribution_data:WakeupAttributionData (privacy:"Any");
-    device_activity_aggregation_data:DeviceActivityAggregationData (privacy:"Any");
+    title_wakeup:string;
+    num_wakeup:int;
+    wakeup_attribution:[WakeupEntry];
+    title_activity:string;
+    num_device_activity:int;
+    device_activity_aggregation:[DeviceActivityAggregationEntry];
 }
 
 root_type ActivityAttributionData;
