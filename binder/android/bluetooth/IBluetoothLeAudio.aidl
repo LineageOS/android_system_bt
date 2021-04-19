@@ -38,6 +38,7 @@ interface IBluetoothLeAudio {
     int getConnectionState(in BluetoothDevice device);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean setActiveDevice(in BluetoothDevice device);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     List<BluetoothDevice> getActiveDevices();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     boolean setConnectionPolicy(in BluetoothDevice device, int connectionPolicy);
@@ -50,6 +51,7 @@ interface IBluetoothLeAudio {
      * Get device group id. Devices with same group id belong to same group (i.e left and right
      * earbud)
      */
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getGroupId(in BluetoothDevice device);
 
 }

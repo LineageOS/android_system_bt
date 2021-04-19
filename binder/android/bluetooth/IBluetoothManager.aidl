@@ -29,8 +29,9 @@ import android.bluetooth.IBluetoothStateChangeCallback;
  */
 interface IBluetoothManager
 {
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     IBluetooth registerAdapter(in IBluetoothManagerCallback callback);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     void unregisterAdapter(in IBluetoothManagerCallback callback);
     @UnsupportedAppUsage
     void registerStateChangeCallback(in IBluetoothStateChangeCallback callback);
@@ -48,7 +49,9 @@ interface IBluetoothManager
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     IBluetoothGatt getBluetoothGatt();
 
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean bindBluetoothProfileService(int profile, IBluetoothProfileServiceConnection proxy);
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     void unbindBluetoothProfileService(int profile, IBluetoothProfileServiceConnection proxy);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.LOCAL_MAC_ADDRESS})")
