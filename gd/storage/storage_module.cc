@@ -175,7 +175,7 @@ void StorageModule::Start() {
     config->SetProperty(kInfoSection, kTimeCreatedProperty, ss.str());
   }
   config->FixDeviceTypeInconsistencies();
-  config->SetPersistentConfigChangedCallback([this] { this->SaveDelayed(); });
+  config->SetPersistentConfigChangedCallback([this] { this->CallOn(this, &StorageModule::SaveDelayed); });
   // TODO (b/158035889) Migrate metrics module to GD
   pimpl_ = std::make_unique<impl>(GetHandler(), std::move(config.value()), temp_devices_capacity_);
   SaveDelayed();
