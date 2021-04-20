@@ -2691,12 +2691,12 @@ constexpr uint16_t kDataPacketEventBrEdr = (BT_EVT_TO_LM_HCI_ACL);
 constexpr uint16_t kDataPacketEventBle =
     (BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID);
 
-void acl_send_data_packet_br_edr([[maybe_unused]] const RawAddress& bd_addr,
-                                 BT_HDR* p_buf) {
+void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
     tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_acl == nullptr) {
-      LOG_WARN("Acl br_edr data write for unknown device");
+      LOG_WARN("Acl br_edr data write for unknown device:%s",
+               PRIVATE_ADDRESS(bd_addr));
       return;
     }
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
@@ -2708,7 +2708,8 @@ void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
     tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
     if (p_acl == nullptr) {
-      LOG_WARN("Acl le data write for unknown device");
+      LOG_WARN("Acl le data write for unknown device:%s",
+               PRIVATE_ADDRESS(bd_addr));
       return;
     }
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
