@@ -50,12 +50,12 @@ using bluetooth::Uuid;
 #endif
 
 /* declare sdp callback functions */
-void bta_ag_sdp_cback_1(uint16_t status);
-void bta_ag_sdp_cback_2(uint16_t status);
-void bta_ag_sdp_cback_3(uint16_t status);
-void bta_ag_sdp_cback_4(uint16_t status);
-void bta_ag_sdp_cback_5(uint16_t status);
-void bta_ag_sdp_cback_6(uint16_t status);
+void bta_ag_sdp_cback_1(tSDP_RESULT);
+void bta_ag_sdp_cback_2(tSDP_RESULT);
+void bta_ag_sdp_cback_3(tSDP_RESULT);
+void bta_ag_sdp_cback_4(tSDP_RESULT);
+void bta_ag_sdp_cback_5(tSDP_RESULT);
+void bta_ag_sdp_cback_6(tSDP_RESULT);
 
 /* SDP callback function table */
 typedef tSDP_DISC_CMPL_CB* tBTA_AG_SDP_CBACK;
@@ -102,12 +102,12 @@ static void bta_ag_sdp_cback(uint16_t status, uint8_t idx) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_sdp_cback_1(uint16_t status) { bta_ag_sdp_cback(status, 1); }
-void bta_ag_sdp_cback_2(uint16_t status) { bta_ag_sdp_cback(status, 2); }
-void bta_ag_sdp_cback_3(uint16_t status) { bta_ag_sdp_cback(status, 3); }
-void bta_ag_sdp_cback_4(uint16_t status) { bta_ag_sdp_cback(status, 4); }
-void bta_ag_sdp_cback_5(uint16_t status) { bta_ag_sdp_cback(status, 5); }
-void bta_ag_sdp_cback_6(uint16_t status) { bta_ag_sdp_cback(status, 6); }
+void bta_ag_sdp_cback_1(tSDP_STATUS status) { bta_ag_sdp_cback(status, 1); }
+void bta_ag_sdp_cback_2(tSDP_STATUS status) { bta_ag_sdp_cback(status, 2); }
+void bta_ag_sdp_cback_3(tSDP_STATUS status) { bta_ag_sdp_cback(status, 3); }
+void bta_ag_sdp_cback_4(tSDP_STATUS status) { bta_ag_sdp_cback(status, 4); }
+void bta_ag_sdp_cback_5(tSDP_STATUS status) { bta_ag_sdp_cback(status, 5); }
+void bta_ag_sdp_cback_6(tSDP_STATUS status) { bta_ag_sdp_cback(status, 6); }
 
 /******************************************************************************
  *
