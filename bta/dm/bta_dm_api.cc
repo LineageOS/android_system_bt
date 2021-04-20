@@ -359,7 +359,7 @@ bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
  * Returns          BTA_SUCCESS if record set sucessfully, otherwise error code.
  *
  ******************************************************************************/
-tBTA_STATUS BTA_DmSetLocalDiRecord(tBTA_DI_RECORD* p_device_info,
+tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
                                    uint32_t* p_handle) {
   tBTA_STATUS status = BTA_FAILURE;
 
