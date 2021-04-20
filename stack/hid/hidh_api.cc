@@ -40,7 +40,7 @@ using bluetooth::Uuid;
 
 tHID_HOST_CTB hh_cb;
 
-static void hidh_search_callback(uint16_t sdp_result);
+static void hidh_search_callback(tSDP_RESULT sdp_result);
 
 /*******************************************************************************
  *
@@ -88,7 +88,7 @@ void hidh_get_str_attr(tSDP_DISC_REC* p_rec, uint16_t attr_id, uint16_t max_len,
     str[0] = '\0';
 }
 
-static void hidh_search_callback(uint16_t sdp_result) {
+static void hidh_search_callback(tSDP_RESULT sdp_result) {
   tSDP_DISCOVERY_DB* p_db = hh_cb.p_sdp_db;
   tSDP_DISC_REC* p_rec;
   tSDP_DISC_ATTR *p_attr, *p_subattr1, *p_subattr2, *p_repdesc;

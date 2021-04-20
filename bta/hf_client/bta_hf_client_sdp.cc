@@ -56,7 +56,7 @@ using bluetooth::Uuid;
  * Returns          void
  *
  ******************************************************************************/
-static void bta_hf_client_sdp_cback(uint16_t status, void* data) {
+static void bta_hf_client_sdp_cback(tSDP_STATUS status, void* data) {
   uint16_t event;
   tBTA_HF_CLIENT_DISC_RESULT* p_buf = (tBTA_HF_CLIENT_DISC_RESULT*)osi_malloc(
       sizeof(tBTA_HF_CLIENT_DISC_RESULT));

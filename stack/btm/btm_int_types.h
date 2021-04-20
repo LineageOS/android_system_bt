@@ -34,15 +34,6 @@
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/security_client_callbacks.h"
 
-#define BTM_SEC_IS_SM4(sm) ((bool)(BTM_SM4_TRUE == ((sm)&BTM_SM4_TRUE)))
-#define BTM_SEC_IS_SM4_LEGACY(sm) ((bool)(BTM_SM4_KNOWN == ((sm)&BTM_SM4_TRUE)))
-#define BTM_SEC_IS_SM4_UNKNOWN(sm) \
-  ((bool)(BTM_SM4_UNKNOWN == ((sm)&BTM_SM4_TRUE)))
-
-#define BTM_SEC_LE_MASK                              \
-  (BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED | \
-   BTM_SEC_LE_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_AUTHED)
-
 #define BTM_MAX_SCN_ 31  // PORT_MAX_RFC_PORTS system/bt/stack/include/rfcdefs.h
 
 constexpr size_t kMaxLogSize = 255;
