@@ -54,7 +54,7 @@ static uint16_t a2dp_attr_list_sdp[] = {
  * Returns          Nothing.
  *
  *****************************************************************************/
-static void avrc_sdp_cback(uint16_t status) {
+static void avrc_sdp_cback(tSDP_STATUS status) {
   AVRC_TRACE_API("%s status: %d", __func__, status);
 
   /* reset service_uuid, so can start another find service */

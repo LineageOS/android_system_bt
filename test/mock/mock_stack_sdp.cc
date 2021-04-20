@@ -93,10 +93,10 @@ bool SDP_FindProfileVersionInRec(tSDP_DISC_REC* p_rec, uint16_t profile_uuid,
   return (false);
 }
 
-uint16_t SDP_DiDiscover(const RawAddress& remote_device,
-                        tSDP_DISCOVERY_DB* p_db, uint32_t len,
-                        tSDP_DISC_CMPL_CB* p_cb) {
-  return 0;
+tSDP_STATUS SDP_DiDiscover(const RawAddress& remote_device,
+                           tSDP_DISCOVERY_DB* p_db, uint32_t len,
+                           tSDP_DISC_CMPL_CB* p_cb) {
+  return SDP_SUCCESS;
 }
 
 uint8_t SDP_GetNumDiRecords(tSDP_DISCOVERY_DB* p_db) { return 0; }
