@@ -43,6 +43,7 @@ interface IBluetoothHearingAid {
     boolean setConnectionPolicy(in BluetoothDevice device, int connectionPolicy);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
     int getConnectionPolicy(in BluetoothDevice device);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     void setVolume(int volume);
 
     const int HI_SYNC_ID_INVALID = 0;
@@ -51,9 +52,11 @@ interface IBluetoothHearingAid {
 
     const int SIDE_LEFT = 0;
     const int SIDE_RIGHT = 1;
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getDeviceSide(in BluetoothDevice device);
 
     const int MODE_MONAURAL = 0;
     const int MODE_BINAURAL = 1;
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getDeviceMode(in BluetoothDevice device);
 }
