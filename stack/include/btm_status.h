@@ -43,11 +43,22 @@ enum : uint8_t {
   BTM_REPEATED_ATTEMPTS,   /* 19 repeated attempts for LE security requests */
   BTM_MODE4_LEVEL4_NOT_SUPPORTED, /* 20 Secure Connections Only Mode can't be
                                      supported */
-  BTM_DEV_RESTRICT_LISTED         /* 21 The device is restrict listed */
+  BTM_DEV_RESTRICT_LISTED,        /* 21 The device is restrict listed */
+  BTM_MAX_STATUS_VALUE = BTM_DEV_RESTRICT_LISTED,
+  BTM_UNDEFINED = 0xFF,
 };
 typedef uint8_t tBTM_STATUS;
 
-inline std::string btm_status_text(tBTM_STATUS status) {
+inline uint8_t btm_status_value(const tBTM_STATUS& status) {
+  return static_cast<uint8_t>(status);
+}
+
+inline tBTM_STATUS to_btm_status(const uint8_t& value) {
+  if (value > BTM_MAX_STATUS_VALUE) return BTM_UNDEFINED;
+  return static_cast<tBTM_STATUS>(value);
+}
+
+inline std::string btm_status_text(const tBTM_STATUS& status) {
   switch (status) {
     case BTM_SUCCESS:
       return std::string("success");
