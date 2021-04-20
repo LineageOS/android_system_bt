@@ -48,7 +48,7 @@ void bte_load_did_conf(const char* p_path) {
       break;
     }
 
-    tBTA_DI_RECORD record;
+    tSDP_DI_RECORD record;
     record.vendor =
         config_get_int(*config, section_name, "vendorId", LMP_COMPID_GOOGLE);
     record.vendor_id_source = config_get_int(
