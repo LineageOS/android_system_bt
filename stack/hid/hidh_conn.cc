@@ -164,7 +164,6 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
   tHID_CONN* p_hcon;
   bool bAccept = true;
   uint8_t i = HID_HOST_MAX_DEVICES;
-  tHID_HOST_DEV_CTB* p_dev;
 
   HIDH_TRACE_EVENT("HID-Host Rcvd L2CAP conn ind, PSM: 0x%04x  CID 0x%x", psm,
                    l2cap_cid);
@@ -176,7 +175,6 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
   }
 
   p_hcon = &hh_cb.devices[i].conn;
-  p_dev = &hh_cb.devices[i];
 
   /* Check we are in the correct state for this */
   if (psm == HID_PSM_INTERRUPT) {
