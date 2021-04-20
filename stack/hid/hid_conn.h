@@ -40,8 +40,7 @@ typedef enum : uint8_t {
 /* Define the HID Connection Block
 */
 typedef struct hid_conn {
-
-  uint8_t conn_state;
+  tHID_CONN_STATE conn_state;
 
 #define CASE_RETURN_TEXT(code) \
   case code:                   \
