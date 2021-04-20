@@ -3360,22 +3360,13 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
 
   btm_acl_resubmit_page();
 
-  if (p_dev_rec) {
-    VLOG(2) << __func__ << ": Security Manager: in state: "
-            << btm_pair_state_descr(btm_cb.pairing_state)
-            << " handle:" << handle
-            << " status:" << loghex(static_cast<uint16_t>(status))
-            << " enc_mode:" << loghex(enc_mode) << " bda:" << bda
-            << " RName:" << p_dev_rec->sec_bd_name;
-  } else {
-    VLOG(2) << __func__ << ": Security Manager: in state: "
-            << btm_pair_state_descr(btm_cb.pairing_state)
-            << " handle:" << handle
-            << " status:" << loghex(static_cast<uint16_t>(status))
-            << " enc_mode:" << loghex(enc_mode) << " bda:" << bda;
-  }
-
   if (!p_dev_rec) {
+    LOG_DEBUG(
+        "Connected to new device state:%s handle:0x%04x status:%s "
+        "enc_mode:%hhu bda:%s",
+        btm_pair_state_descr(btm_cb.pairing_state), handle,
+        hci_status_code_text(status).c_str(), enc_mode, PRIVATE_ADDRESS(bda));
+
     if (status == HCI_SUCCESS) {
       p_dev_rec = btm_sec_alloc_dev(bda);
       LOG_DEBUG("Allocated new device record for new connection peer:%s",
@@ -3396,6 +3387,13 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
     }
   } else /* Update the timestamp for this device */
   {
+    LOG_DEBUG(
+        "Connected to known device state:%s handle:0x%04x status:%s "
+        "enc_mode:%hhu bda:%s RName:%s",
+        btm_pair_state_descr(btm_cb.pairing_state), handle,
+        hci_status_code_text(status).c_str(), enc_mode, PRIVATE_ADDRESS(bda),
+        p_dev_rec->sec_bd_name);
+
     bit_shift = (handle == p_dev_rec->ble_hci_handle) ? 8 : 0;
     p_dev_rec->timestamp = btm_cb.dev_rec_count++;
     if (p_dev_rec->sm4 & BTM_SM4_CONN_PEND) {
