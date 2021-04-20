@@ -43,6 +43,25 @@ typedef struct hid_conn {
 
   uint8_t conn_state;
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
+  static inline std::string state_text(const tHID_CONN_STATE& state) {
+    switch (state) {
+      CASE_RETURN_TEXT(HID_CONN_STATE_UNUSED);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONNECTING_CTRL);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONNECTING_INTR);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONFIG);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONNECTED);
+      CASE_RETURN_TEXT(HID_CONN_STATE_DISCONNECTING);
+      CASE_RETURN_TEXT(HID_CONN_STATE_SECURITY);
+      default:
+        return std::string("UNKNOWN[%hhu]", state);
+    }
+  }
+#undef CASE_RETURN_TEXT
+
 #define HID_CONN_FLAGS_IS_ORIG (0x01)
 #define HID_CONN_FLAGS_CONGESTED (0x20)
 #define HID_CONN_FLAGS_INACTIVE (0x40)
