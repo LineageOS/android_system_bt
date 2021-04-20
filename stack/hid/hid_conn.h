@@ -27,16 +27,19 @@
 
 #include "osi/include/alarm.h"
 
+typedef enum : uint8_t {
+  HID_CONN_STATE_UNUSED = 0,
+  HID_CONN_STATE_CONNECTING_CTRL = 1,
+  HID_CONN_STATE_CONNECTING_INTR = 2,
+  HID_CONN_STATE_CONFIG = 3,
+  HID_CONN_STATE_CONNECTED = 4,
+  HID_CONN_STATE_DISCONNECTING = 5,
+  HID_CONN_STATE_SECURITY = 6,
+} tHID_CONN_STATE;
+
 /* Define the HID Connection Block
 */
 typedef struct hid_conn {
-#define HID_CONN_STATE_UNUSED (0)
-#define HID_CONN_STATE_CONNECTING_CTRL (1)
-#define HID_CONN_STATE_CONNECTING_INTR (2)
-#define HID_CONN_STATE_CONFIG (3)
-#define HID_CONN_STATE_CONNECTED (4)
-#define HID_CONN_STATE_DISCONNECTING (5)
-#define HID_CONN_STATE_SECURITY (6)
 
   uint8_t conn_state;
 
