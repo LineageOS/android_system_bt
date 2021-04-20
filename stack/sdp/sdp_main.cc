@@ -258,13 +258,13 @@ static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   SDP_TRACE_EVENT("SDP - Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
   /* Tell the user if there is a callback */
   if (p_ccb->p_cb)
-    (*p_ccb->p_cb)((uint16_t)((p_ccb->con_state == SDP_STATE_CONNECTED)
-                                  ? SDP_SUCCESS
-                                  : SDP_CONN_FAILED));
+    (*p_ccb->p_cb)(((p_ccb->con_state == SDP_STATE_CONNECTED)
+                        ? SDP_SUCCESS
+                        : SDP_CONN_FAILED));
   else if (p_ccb->p_cb2)
     (*p_ccb->p_cb2)(
-        (uint16_t)((p_ccb->con_state == SDP_STATE_CONNECTED) ? SDP_SUCCESS
-                                                             : SDP_CONN_FAILED),
+        ((p_ccb->con_state == SDP_STATE_CONNECTED) ? SDP_SUCCESS
+                                                   : SDP_CONN_FAILED),
         p_ccb->user_data);
 
   sdpu_release_ccb(p_ccb);
@@ -365,7 +365,7 @@ tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason) {
+void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason) {
   SDP_TRACE_EVENT("SDP - disconnect  CID: 0x%x", p_ccb->connection_id);
 
   /* Check if we have a connection ID */
@@ -382,7 +382,6 @@ void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason) {
 
   sdpu_release_ccb(p_ccb);
 }
-
 
 /*******************************************************************************
  *
