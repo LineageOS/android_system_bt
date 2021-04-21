@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <condition_variable>
+#include <future>
 #include <map>
 #include <thread>
 
@@ -362,4 +363,11 @@ TEST_F(MainShimTest, connect_and_disconnect) {
 
   result = rx_disconnect_future.get();
   ASSERT_EQ(123, result);
+
+  // *Our* task completing indicates reactor is done
+  std::promise<void> done;
+  auto future = done.get_future();
+  handler_->Call([](std::promise<void> done) { done.set_value(); },
+                 std::move(done));
+  future.wait();
 }
