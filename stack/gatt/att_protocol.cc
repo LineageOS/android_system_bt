@@ -437,7 +437,7 @@ static tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
   LOG_DEBUG(
       "Sending ATT command to l2cap cid:0x%04x eatt_channels:%u transport:%s",
-      p_clcb->cid, tcb.eatt, BtTransportText(tcb.transport).c_str());
+      p_clcb->cid, tcb.eatt, bt_transport_text(tcb.transport).c_str());
   tGATT_STATUS att_ret = attp_send_msg_to_l2cap(tcb, p_clcb->cid, p_cmd);
   if (att_ret != GATT_CONGESTED && att_ret != GATT_SUCCESS) {
     LOG_WARN("Unable to send ATT command to l2cap layer");

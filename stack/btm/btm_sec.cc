@@ -781,7 +781,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
   p_dev_rec->is_originator = true;
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Bonding initiated",
-                 BtTransportText(transport));
+                 bt_transport_text(transport));
 
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_init_pseudo_addr(p_dev_rec, bd_addr);
@@ -3745,7 +3745,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason) {
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
     LOG_DEBUG("Waiting for other transport to disconnect current:%s",
-              BtTransportText(transport).c_str());
+              bt_transport_text(transport).c_str());
     p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE)
                                ? BTM_SEC_STATE_DISCONNECTING
                                : BTM_SEC_STATE_DISCONNECTING_BLE;
@@ -3763,7 +3763,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason) {
                   BTM_ERR_PROCESSING);
     LOG_DEBUG("Cleaned up pending security state device:%s transport:%s",
               PRIVATE_ADDRESS(p_dev_rec->bd_addr),
-              BtTransportText(transport).c_str());
+              bt_transport_text(transport).c_str());
   }
 }
 
