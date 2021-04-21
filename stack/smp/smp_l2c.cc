@@ -104,10 +104,10 @@ static void smp_connect_callback(UNUSED_ATTR uint16_t channel,
 
   if (connected) {
     LOG_DEBUG("SMP Received connect callback bd_addr:%s transport:%s",
-              PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+              PRIVATE_ADDRESS(bd_addr), bt_transport_text(transport).c_str());
   } else {
     LOG_DEBUG("SMP Received disconnect callback bd_addr:%s transport:%s",
-              PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+              PRIVATE_ADDRESS(bd_addr), bt_transport_text(transport).c_str());
   }
 
   if (bd_addr == p_cb->pairing_bda) {
