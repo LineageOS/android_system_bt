@@ -301,7 +301,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
  * Returns          void
  *
  ******************************************************************************/
-bool bta_hh_hdl_event(BT_HDR* p_msg) {
+bool bta_hh_hdl_event(BT_HDR_RIGID* p_msg) {
   uint8_t index = BTA_HH_IDX_INVALID;
   tBTA_HH_DEV_CB* p_cb = NULL;
 

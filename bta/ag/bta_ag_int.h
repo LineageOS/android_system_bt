@@ -296,7 +296,7 @@ extern const tBTA_AG_HF_IND bta_ag_local_hf_ind_cfg[];
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-bool bta_ag_hdl_event(BT_HDR* p_msg);
+bool bta_ag_hdl_event(BT_HDR_RIGID* p_msg);
 
 /* API functions */
 extern void bta_ag_api_enable(tBTA_AG_CBACK* p_cback);

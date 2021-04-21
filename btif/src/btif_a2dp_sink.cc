@@ -70,12 +70,12 @@ enum {
 };
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t codec_info[AVDT_CODEC_SIZE];
 } tBTIF_MEDIA_SINK_DECODER_UPDATE;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   btif_a2dp_sink_focus_state_t focus_state;
 } tBTIF_MEDIA_SINK_FOCUS_UPDATE;
 
@@ -136,7 +136,7 @@ static void btif_a2dp_sink_start_session_delayed(
 static void btif_a2dp_sink_end_session_delayed();
 static void btif_a2dp_sink_shutdown_delayed();
 static void btif_a2dp_sink_cleanup_delayed();
-static void btif_a2dp_sink_command_ready(BT_HDR* p_msg);
+static void btif_a2dp_sink_command_ready(BT_HDR_RIGID* p_msg);
 static void btif_a2dp_sink_audio_handle_stop_decoding();
 static void btif_decode_alarm_cb(void* context);
 static void btif_a2dp_sink_audio_handle_start_decoding();
@@ -348,7 +348,7 @@ tA2DP_CHANNEL_COUNT btif_a2dp_sink_get_channel_count() {
   return btif_a2dp_sink_cb.channel_count;
 }
 
-static void btif_a2dp_sink_command_ready(BT_HDR* p_msg) {
+static void btif_a2dp_sink_command_ready(BT_HDR_RIGID* p_msg) {
   LOG_VERBOSE("%s: event %d %s", __func__, p_msg->event,
               dump_media_event(p_msg->event));
 
@@ -398,12 +398,14 @@ void btif_a2dp_sink_update_decoder(const uint8_t* p_codec_info) {
   p_buf->hdr.event = BTIF_MEDIA_SINK_DECODER_UPDATE;
 
   btif_a2dp_sink_cb.worker_thread.DoInThread(
-      FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, (BT_HDR*)p_buf));
+      FROM_HERE,
+      base::BindOnce(btif_a2dp_sink_command_ready, (BT_HDR_RIGID*)p_buf));
 }
 
 void btif_a2dp_sink_on_idle() {
   LOG_INFO("%s", __func__);
-  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  BT_HDR_RIGID* p_buf =
+      reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
   p_buf->event = BTIF_MEDIA_SINK_SUSPEND;
   btif_a2dp_sink_cb.worker_thread.DoInThread(
       FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
@@ -415,7 +417,8 @@ void btif_a2dp_sink_on_idle() {
 
 void btif_a2dp_sink_on_stopped(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
   LOG_INFO("%s", __func__);
-  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  BT_HDR_RIGID* p_buf =
+      reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
   p_buf->event = BTIF_MEDIA_SINK_SUSPEND;
   btif_a2dp_sink_cb.worker_thread.DoInThread(
       FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
@@ -426,7 +429,8 @@ void btif_a2dp_sink_on_stopped(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
 
 void btif_a2dp_sink_on_suspended(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
   LOG_INFO("%s", __func__);
-  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  BT_HDR_RIGID* p_buf =
+      reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
   p_buf->event = BTIF_MEDIA_SINK_SUSPEND;
   btif_a2dp_sink_cb.worker_thread.DoInThread(
       FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
@@ -438,7 +442,8 @@ void btif_a2dp_sink_on_suspended(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
 bool btif_a2dp_sink_on_start() {
   LOG_INFO("%s", __func__);
 
-  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  BT_HDR_RIGID* p_buf =
+      reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
   p_buf->event = BTIF_MEDIA_SINK_START;
   btif_a2dp_sink_cb.worker_thread.DoInThread(
       FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
@@ -681,7 +686,8 @@ void btif_a2dp_sink_audio_rx_flush_req() {
     return;
   }
 
-  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  BT_HDR_RIGID* p_buf =
+      reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
   p_buf->event = BTIF_MEDIA_SINK_AUDIO_RX_FLUSH;
   btif_a2dp_sink_cb.worker_thread.DoInThread(
       FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
@@ -699,7 +705,8 @@ void btif_a2dp_sink_set_focus_state_req(btif_a2dp_sink_focus_state_t state) {
   p_buf->focus_state = state;
   p_buf->hdr.event = BTIF_MEDIA_SINK_SET_FOCUS_STATE;
   btif_a2dp_sink_cb.worker_thread.DoInThread(
-      FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, (BT_HDR*)p_buf));
+      FROM_HERE,
+      base::BindOnce(btif_a2dp_sink_command_ready, (BT_HDR_RIGID*)p_buf));
 }
 
 static void btif_a2dp_sink_set_focus_state_event(
@@ -728,7 +735,8 @@ void btif_a2dp_sink_set_audio_track_gain(float gain) {
 
 static void btif_a2dp_sink_clear_track_event_req() {
   LOG_INFO("%s", __func__);
-  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  BT_HDR_RIGID* p_buf =
+      reinterpret_cast<BT_HDR_RIGID*>(osi_malloc(sizeof(BT_HDR_RIGID)));
 
   p_buf->event = BTIF_MEDIA_SINK_CLEAR_TRACK;
   btif_a2dp_sink_cb.worker_thread.DoInThread(

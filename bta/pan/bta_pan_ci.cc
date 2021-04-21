@@ -67,7 +67,7 @@ void bta_pan_ci_tx_ready(uint16_t handle) {
  *
  ******************************************************************************/
 void bta_pan_ci_rx_ready(uint16_t handle) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->layer_specific = handle;
   p_buf->event = BTA_PAN_CI_RX_READY_EVT;

@@ -82,7 +82,7 @@ void BTA_sys_signal_hw_error() {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_sys_event(BT_HDR* p_msg) {
+static void bta_sys_event(BT_HDR_RIGID* p_msg) {
   uint8_t id;
   bool freebuf = true;
 
@@ -163,7 +163,8 @@ bool bta_sys_is_register(uint8_t id) { return bta_sys_cb.is_reg[id]; }
  ******************************************************************************/
 void bta_sys_sendmsg(void* p_msg) {
   if (do_in_main_thread(
-          FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg))) !=
+          FROM_HERE,
+          base::Bind(&bta_sys_event, static_cast<BT_HDR_RIGID*>(p_msg))) !=
       BT_STATUS_SUCCESS) {
     LOG(ERROR) << __func__ << ": do_in_main_thread failed";
   }
@@ -171,7 +172,8 @@ void bta_sys_sendmsg(void* p_msg) {
 
 void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay) {
   if (do_in_main_thread_delayed(
-          FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg)),
+          FROM_HERE,
+          base::Bind(&bta_sys_event, static_cast<BT_HDR_RIGID*>(p_msg)),
           delay) != BT_STATUS_SUCCESS) {
     LOG(ERROR) << __func__ << ": do_in_main_thread_delayed failed";
   }
@@ -189,7 +191,7 @@ void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay) {
  ******************************************************************************/
 void bta_sys_start_timer(alarm_t* alarm, uint64_t interval_ms, uint16_t event,
                          uint16_t layer_specific) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = event;
   p_buf->layer_specific = layer_specific;

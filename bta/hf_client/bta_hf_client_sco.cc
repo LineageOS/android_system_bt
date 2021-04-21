@@ -182,7 +182,7 @@ static void bta_hf_client_sco_conn_cback(uint16_t sco_idx) {
     return;
   }
 
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
   p_buf->event = BTA_HF_CLIENT_SCO_OPEN_EVT;
   p_buf->layer_specific = client_cb->handle;
   bta_sys_sendmsg(p_buf);
@@ -207,7 +207,7 @@ static void bta_hf_client_sco_disc_cback(uint16_t sco_idx) {
     return;
   }
 
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
   p_buf->event = BTA_HF_CLIENT_SCO_CLOSE_EVT;
   p_buf->layer_specific = client_cb->handle;
   bta_sys_sendmsg(p_buf);
