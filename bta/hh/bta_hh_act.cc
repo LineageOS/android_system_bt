@@ -997,6 +997,16 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
+static uint8_t convert_api_sndcmd_param(const tBTA_HH_CMD_DATA& api_sndcmd) {
+  uint8_t api_sndcmd_param = api_sndcmd.param;
+  if (api_sndcmd.t_type == HID_TRANS_SET_PROTOCOL) {
+    api_sndcmd_param = (api_sndcmd.param == BTA_HH_PROTO_RPT_MODE)
+                           ? HID_PAR_PROTOCOL_REPORT
+                           : HID_PAR_PROTOCOL_BOOT_MODE;
+  }
+  return api_sndcmd_param;
+}
+
 void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   tBTA_HH_CBDATA cbdata = {BTA_HH_OK, 0};
   uint16_t event = (p_data->api_sndcmd.t_type - BTA_HH_FST_BTE_TRANS_EVT) +
@@ -1010,15 +1020,11 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     cbdata.handle = p_cb->hid_handle;
 
     /* match up BTE/BTA report/boot mode def */
-    if (p_data->api_sndcmd.t_type == HID_TRANS_SET_PROTOCOL) {
-      p_data->api_sndcmd.param =
-          (p_data->api_sndcmd.param == BTA_HH_PROTO_RPT_MODE)
-              ? HID_PAR_PROTOCOL_REPORT
-              : HID_PAR_PROTOCOL_BOOT_MODE;
-    }
+    const uint8_t api_sndcmd_param =
+        convert_api_sndcmd_param(p_data->api_sndcmd);
 
     if (HID_HostWriteDev(p_cb->hid_handle, p_data->api_sndcmd.t_type,
-                         p_data->api_sndcmd.param, p_data->api_sndcmd.data,
+                         api_sndcmd_param, p_data->api_sndcmd.data,
                          p_data->api_sndcmd.rpt_id,
                          p_data->api_sndcmd.p_data) != HID_SUCCESS) {
       APPL_TRACE_ERROR("HID_HostWriteDev Error ");
@@ -1027,7 +1033,7 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
       if (p_data->api_sndcmd.t_type != HID_TRANS_CONTROL &&
           p_data->api_sndcmd.t_type != HID_TRANS_DATA)
         (*bta_hh_cb.p_cback)(event, (tBTA_HH*)&cbdata);
-      else if (p_data->api_sndcmd.param == BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG)
+      else if (api_sndcmd_param == BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG)
         (*bta_hh_cb.p_cback)(BTA_HH_VC_UNPLUG_EVT, (tBTA_HH*)&cbdata);
     } else {
       switch (p_data->api_sndcmd.t_type) {
@@ -1050,7 +1056,7 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
         case HID_TRANS_CONTROL:
           /* no handshake event will be generated */
           /* if VC_UNPLUG is issued, set flag */
-          if (p_data->api_sndcmd.param == BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG)
+          if (api_sndcmd_param == BTA_HH_CTRL_VIRTUAL_CABLE_UNPLUG)
             p_cb->vp = true;
 
           break;
@@ -1067,9 +1073,9 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
         /* inform PM for mode change */
         bta_sys_busy(BTA_ID_HH, p_cb->app_id, p_cb->addr);
         bta_sys_idle(BTA_ID_HH, p_cb->app_id, p_cb->addr);
-      } else if (p_data->api_sndcmd.param == BTA_HH_CTRL_SUSPEND) {
+      } else if (api_sndcmd_param == BTA_HH_CTRL_SUSPEND) {
         bta_sys_sco_close(BTA_ID_HH, p_cb->app_id, p_cb->addr);
-      } else if (p_data->api_sndcmd.param == BTA_HH_CTRL_EXIT_SUSPEND) {
+      } else if (api_sndcmd_param == BTA_HH_CTRL_EXIT_SUSPEND) {
         bta_sys_busy(BTA_ID_HH, p_cb->app_id, p_cb->addr);
       }
     }
