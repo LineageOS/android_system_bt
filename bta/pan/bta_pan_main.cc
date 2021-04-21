@@ -307,7 +307,7 @@ tBTA_PAN_SCB* bta_pan_scb_by_handle(uint16_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-bool bta_pan_hdl_event(BT_HDR* p_msg) {
+bool bta_pan_hdl_event(BT_HDR_RIGID* p_msg) {
   tBTA_PAN_SCB* p_scb;
   bool freebuf = true;
 

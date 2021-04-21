@@ -145,7 +145,7 @@ static void bta_pan_data_flow_cb(uint16_t handle, tPAN_RESULT result) {
   if (p_scb == NULL) return;
 
   if (result == PAN_TX_FLOW_ON) {
-    BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+    BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
     p_buf->layer_specific = handle;
     p_buf->event = BTA_PAN_BNEP_FLOW_ENABLE_EVT;
     bta_sys_sendmsg(p_buf);
@@ -196,7 +196,7 @@ static void bta_pan_data_buf_ind_cback(uint16_t handle, const RawAddress& src,
   ((tBTA_PAN_DATA_PARAMS*)p_new_buf)->forward = forward;
 
   fixed_queue_enqueue(p_scb->data_queue, p_new_buf);
-  BT_HDR* p_event = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_event = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
   p_event->layer_specific = handle;
   p_event->event = BTA_PAN_RX_FROM_BNEP_READY_EVT;
   bta_sys_sendmsg(p_event);

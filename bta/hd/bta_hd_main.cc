@@ -176,7 +176,7 @@ static void bta_hd_better_state_machine(uint16_t event, tBTA_HD_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-bool bta_hd_hdl_event(BT_HDR* p_msg) {
+bool bta_hd_hdl_event(BT_HDR_RIGID* p_msg) {
   APPL_TRACE_API("%s: p_msg->event=%d", __func__, p_msg->event);
 
   switch (p_msg->event) {
