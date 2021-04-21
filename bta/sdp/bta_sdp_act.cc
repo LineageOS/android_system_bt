@@ -367,7 +367,7 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record* record,
 }
 
 /** Callback from btm after search is completed */
-static void bta_sdp_search_cback(uint16_t result, void* user_data) {
+static void bta_sdp_search_cback(tSDP_RESULT result, void* user_data) {
   tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
   int count = 0;
   APPL_TRACE_DEBUG("%s() -  res: 0x%x", __func__, result);

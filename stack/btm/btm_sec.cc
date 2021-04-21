@@ -61,6 +61,15 @@ extern tBTM_CB btm_cb;
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
+#define BTM_SEC_IS_SM4(sm) ((bool)(BTM_SM4_TRUE == ((sm)&BTM_SM4_TRUE)))
+#define BTM_SEC_IS_SM4_LEGACY(sm) ((bool)(BTM_SM4_KNOWN == ((sm)&BTM_SM4_TRUE)))
+#define BTM_SEC_IS_SM4_UNKNOWN(sm) \
+  ((bool)(BTM_SM4_UNKNOWN == ((sm)&BTM_SM4_TRUE)))
+
+#define BTM_SEC_LE_MASK                              \
+  (BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED | \
+   BTM_SEC_LE_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_AUTHED)
+
 void btm_inq_stop_on_ssp(void);
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);

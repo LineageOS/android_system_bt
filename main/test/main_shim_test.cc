@@ -43,6 +43,7 @@
 #include "include/hardware/bt_activity_attribution.h"
 #include "main/shim/acl.h"
 #include "main/shim/acl_legacy_interface.h"
+#include "main/shim/helpers.h"
 #include "main/test/common/main_handler.h"
 #include "main/test/common/mock_entry.h"
 #include "os/handler.h"
@@ -312,6 +313,17 @@ TEST_F(MainShimTest, Acl_Lifecycle) {
   auto acl = MakeAcl();
   acl.reset();
   acl = MakeAcl();
+}
+
+TEST_F(MainShimTest, helpers) {
+  uint8_t reason = 0;
+  do {
+    hci::ErrorCode gd_error_code = static_cast<hci::ErrorCode>(reason);
+    tHCI_STATUS legacy_code = ToLegacyHciErrorCode(gd_error_code);
+    ASSERT_EQ(reason,
+              static_cast<uint8_t>(ToLegacyHciErrorCode(gd_error_code)));
+    ASSERT_EQ(reason, static_cast<uint8_t>(legacy_code));
+  } while (++reason != 0);
 }
 
 TEST_F(MainShimTest, connect_and_disconnect) {

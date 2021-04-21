@@ -719,11 +719,11 @@ void bta_jv_free_scn(int32_t type /* One of BTA_JV_CONN_TYPE_ */,
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_start_discovery_cback(uint16_t result, void* user_data) {
+static void bta_jv_start_discovery_cback(tSDP_RESULT result, void* user_data) {
   tBTA_JV_STATUS status;
   uint32_t* p_rfcomm_slot_id = static_cast<uint32_t*>(user_data);
 
-  VLOG(2) << __func__ << ": res=" << loghex(result);
+  VLOG(2) << __func__ << ": res=" << loghex(static_cast<uint16_t>(result));
 
   bta_jv_cb.sdp_active = BTA_JV_SDP_ACT_NONE;
   if (bta_jv_cb.p_dm_cback) {

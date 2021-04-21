@@ -25,11 +25,6 @@
  *  Constants
  ****************************************************************************/
 
-enum {
-  HID_SDP_NO_SERV_UUID = (SDP_ILLEGAL_PARAMETER + 1),
-  HID_SDP_MANDATORY_MISSING
-};
-
 /* Attributes mask values to be used in HID_HostAddDev API */
 #define HID_VIRTUAL_CABLE 0x0001
 #define HID_NORMALLY_CONNECTABLE 0x0002
