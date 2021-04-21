@@ -77,7 +77,7 @@ void BTA_PanEnable(tBTA_PAN_CBACK p_cback) {
  *
  ******************************************************************************/
 void BTA_PanDisable(void) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   bta_sys_deregister(BTA_ID_PAN);
   p_buf->event = BTA_PAN_API_DISABLE_EVT;
@@ -157,7 +157,7 @@ void BTA_PanOpen(const RawAddress& bd_addr, tBTA_PAN_ROLE local_role,
  *
  ******************************************************************************/
 void BTA_PanClose(uint16_t handle) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_PAN_API_CLOSE_EVT;
   p_buf->layer_specific = handle;

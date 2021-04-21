@@ -85,7 +85,7 @@ typedef uint16_t tBTA_GATTC_INT_EVT;
 
 /* internal strucutre for GATTC register API  */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress remote_bda;
   tGATT_IF client_if;
   bool is_direct;
@@ -97,7 +97,7 @@ typedef struct {
 typedef tBTA_GATTC_API_OPEN tBTA_GATTC_API_CANCEL_OPEN;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tGATT_AUTH_REQ auth_req;
 
   // read by handle data
@@ -114,7 +114,7 @@ typedef struct {
 } tBTA_GATTC_API_READ;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tGATT_AUTH_REQ auth_req;
   uint16_t handle;
   tGATT_WRITE_TYPE write_type;
@@ -126,45 +126,45 @@ typedef struct {
 } tBTA_GATTC_API_WRITE;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bool is_execute;
 } tBTA_GATTC_API_EXEC;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint16_t cid;
 } tBTA_GATTC_API_CONFIRM;
 
 typedef tGATT_CL_COMPLETE tBTA_GATTC_CMPL;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t op_code;
   tGATT_STATUS status;
   tBTA_GATTC_CMPL* p_cmpl;
 } tBTA_GATTC_OP_CMPL;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bluetooth::Uuid* p_srvc_uuid;
 } tBTA_GATTC_API_SEARCH;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tGATT_AUTH_REQ auth_req;
   uint8_t num_attr;
   uint16_t handles[GATT_MAX_READ_MULTI_HANDLES];
 } tBTA_GATTC_API_READ_MULTI;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint16_t mtu;
   GATT_CONFIGURE_MTU_OP_CB mtu_cb;
   void* mtu_cb_data;
 } tBTA_GATTC_API_CFG_MTU;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress remote_bda;
   tGATT_IF client_if;
   uint8_t role;
@@ -173,7 +173,7 @@ typedef struct {
 } tBTA_GATTC_INT_CONN;
 
 typedef union {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_GATTC_API_OPEN api_conn;
   tBTA_GATTC_API_CANCEL_OPEN api_cancel_conn;
   tBTA_GATTC_API_READ api_read;
@@ -323,7 +323,7 @@ extern tBTA_GATTC_CB bta_gattc_cb;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-extern bool bta_gattc_hdl_event(BT_HDR* p_msg);
+extern bool bta_gattc_hdl_event(BT_HDR_RIGID* p_msg);
 extern bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
                                  tBTA_GATTC_DATA* p_data);
 

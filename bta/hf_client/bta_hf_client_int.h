@@ -111,26 +111,26 @@ enum {
  ****************************************************************************/
 /* data type for BTA_HF_CLIENT_API_OPEN_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress bd_addr;
   uint16_t* handle;
 } tBTA_HF_CLIENT_API_OPEN;
 
 /* data type for BTA_HF_CLIENT_DISC_RESULT_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint16_t status;
 } tBTA_HF_CLIENT_DISC_RESULT;
 
 /* data type for RFCOMM events */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint16_t port_handle;
 } tBTA_HF_CLIENT_RFC;
 
 /* generic purpose data type for other events */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bool bool_val;
   uint8_t uint8_val;
   uint32_t uint32_val1;
@@ -140,7 +140,7 @@ typedef struct {
 
 /* union of all event datatypes */
 typedef union {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_HF_CLIENT_API_OPEN api_open;
   tBTA_HF_CLIENT_DISC_RESULT disc_result;
   tBTA_HF_CLIENT_RFC rfc;
@@ -217,7 +217,7 @@ extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_bda(
     const RawAddress& bd_addr);
 extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_rfc_handle(uint16_t handle);
 extern tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_sco_handle(uint16_t handle);
-extern bool bta_hf_client_hdl_event(BT_HDR* p_msg);
+extern bool bta_hf_client_hdl_event(BT_HDR_RIGID* p_msg);
 extern void bta_hf_client_sm_execute(uint16_t event,
                                      tBTA_HF_CLIENT_DATA* p_data);
 extern void bta_hf_client_slc_seq(tBTA_HF_CLIENT_CB* client_cb, bool error);

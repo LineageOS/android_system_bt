@@ -63,7 +63,7 @@ typedef uint16_t tBTA_HD_INT_EVT;
 #define BTA_HD_INVALID_EVT (BTA_HD_API_DISABLE_EVT + 1)
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_HD_CBACK* p_cback;
 } tBTA_HD_API_ENABLE;
 
@@ -80,7 +80,7 @@ typedef struct {
 #define BTA_HD_STATE_REMOVING 0x05
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   char name[BTA_HD_APP_NAME_LEN];
   char description[BTA_HD_APP_DESCRIPTION_LEN];
   char provider[BTA_HD_APP_PROVIDER_LEN];
@@ -95,7 +95,7 @@ typedef struct {
 #define BTA_HD_REPORT_LEN HID_DEV_MTU_SIZE
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bool use_intr;
   uint8_t type;
   uint8_t id;
@@ -104,18 +104,18 @@ typedef struct {
 } tBTA_HD_SEND_REPORT;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress addr;
 } tBTA_HD_DEVICE_CTRL;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t error;
 } tBTA_HD_REPORT_ERR;
 
 /* union of all event data types */
 typedef union {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_HD_API_ENABLE api_enable;
   tBTA_HD_REGISTER_APP register_app;
   tBTA_HD_SEND_REPORT send_report;
@@ -124,7 +124,7 @@ typedef union {
 } tBTA_HD_DATA;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress addr;
   uint32_t data;
   BT_HDR* p_data;
@@ -150,7 +150,7 @@ extern tBTA_HD_CB bta_hd_cb;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-extern bool bta_hd_hdl_event(BT_HDR* p_msg);
+extern bool bta_hd_hdl_event(BT_HDR_RIGID* p_msg);
 
 extern void bta_hd_api_enable(tBTA_HD_DATA* p_data);
 extern void bta_hd_api_disable(void);

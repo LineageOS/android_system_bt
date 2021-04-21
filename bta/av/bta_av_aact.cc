@@ -2183,7 +2183,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bool initiator = false;
   bool suspend = false;
   uint8_t new_role = p_scb->role;
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tHCI_ROLE cur_role;
   uint8_t local_tsep = p_scb->seps[p_scb->sep_idx].tsep;
 

@@ -90,7 +90,9 @@ void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
                             uint16_t rx_pkt_len, uint16_t tx_pkt_len) {
   mock_function_count_map[__func__]++;
 }
-void btm_route_sco_data(BT_HDR* p_msg) { mock_function_count_map[__func__]++; }
+void btm_route_sco_data(BT_HDR_RIGID* p_msg) {
+  mock_function_count_map[__func__]++;
+}
 void btm_sco_acl_removed(const RawAddress* bda) {
   mock_function_count_map[__func__]++;
 }
