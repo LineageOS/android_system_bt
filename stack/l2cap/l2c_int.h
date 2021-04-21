@@ -115,7 +115,7 @@ inline std::string link_state_text(const tL2C_LINK_STATE& state) {
  * of the events may seem a bit strange, but they are taken from
  * the Bluetooth specification.
 */
-enum : uint16_t {
+typedef enum : uint16_t {
   /* Lower layer */
   L2CEVT_LP_CONNECT_CFM = 0,     /* connect confirm */
   L2CEVT_LP_CONNECT_CFM_NEG = 1, /* connect confirm (failed) */
@@ -178,7 +178,7 @@ enum : uint16_t {
   L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP = 43,     /* connect response */
   L2CEVT_L2CA_CREDIT_BASED_CONNECT_RSP_NEG = 44, /* connect response (failed)*/
   L2CEVT_L2CA_CREDIT_BASED_RECONFIG_REQ = 45,    /* reconfig request */
-};
+} tL2CEVT;
 
 /* Constants for LE Dynamic PSM values */
 #define LE_DYNAMIC_PSM_START 0x0080
@@ -751,7 +751,7 @@ extern void l2cu_set_info_rsp_mask(uint32_t mask);
 /* Functions provided by l2c_csm.cc
  ***********************************
 */
-extern void l2c_csm_execute(tL2C_CCB* p_ccb, uint16_t event, void* p_data);
+extern void l2c_csm_execute(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data);
 
 extern void l2c_enqueue_peer_data(tL2C_CCB* p_ccb, BT_HDR* p_buf);
 
