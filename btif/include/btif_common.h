@@ -138,7 +138,7 @@ typedef void(tBTIF_COPY_CBACK)(uint16_t event, char* p_dest, char* p_src);
 
 /* this type handles all btif context switches between BTU and HAL */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTIF_CBACK* p_cb; /* context switch callback */
 
   /* parameters passed to callback */

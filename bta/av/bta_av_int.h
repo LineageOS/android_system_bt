@@ -219,14 +219,14 @@ typedef struct {
 
 /* data type for BTA_AV_API_ENABLE_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_AV_CBACK* p_cback;
   tBTA_AV_FEAT features;
 } tBTA_AV_API_ENABLE;
 
 /* data type for BTA_AV_API_REGISTER_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   char p_service_name[BTA_SERVICE_NAME_LEN + 1];
   uint8_t app_id;
   tBTA_AV_SINK_DATA_CBACK* p_app_sink_data_cback;
@@ -254,7 +254,7 @@ inline std::string bta_av_role_switch_result_text(
 
 /* data type for BTA_AV_API_OPEN_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress bd_addr;
   bool use_rc;
   tBTA_AV_RS_RES switch_res;
@@ -263,7 +263,7 @@ typedef struct {
 
 /* data type for BTA_AV_API_STOP_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bool suspend;
   bool flush;
   bool reconfig_stop;  // True if the stream is stopped for reconfiguration
@@ -271,20 +271,20 @@ typedef struct {
 
 /* data type for BTA_AV_API_DISCONNECT_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress bd_addr;
 } tBTA_AV_API_DISCNT;
 
 /* data type for BTA_AV_API_PROTECT_REQ_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t* p_data;
   uint16_t len;
 } tBTA_AV_API_PROTECT_REQ;
 
 /* data type for BTA_AV_API_PROTECT_RSP_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t* p_data;
   uint16_t len;
   uint8_t error_code;
@@ -292,27 +292,31 @@ typedef struct {
 
 /* data type for BTA_AV_API_REMOTE_CMD_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tAVRC_MSG_PASS msg;
   uint8_t label;
 } tBTA_AV_API_REMOTE_CMD;
 
 /* data type for BTA_AV_API_VENDOR_CMD_EVT and RSP */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tAVRC_MSG_VENDOR msg;
   uint8_t label;
 } tBTA_AV_API_VENDOR;
 
 /* data type for BTA_AV_API_RC_OPEN_EVT */
-typedef struct { BT_HDR hdr; } tBTA_AV_API_OPEN_RC;
+typedef struct {
+  BT_HDR_RIGID hdr;
+} tBTA_AV_API_OPEN_RC;
 
 /* data type for BTA_AV_API_RC_CLOSE_EVT */
-typedef struct { BT_HDR hdr; } tBTA_AV_API_CLOSE_RC;
+typedef struct {
+  BT_HDR_RIGID hdr;
+} tBTA_AV_API_CLOSE_RC;
 
 /* data type for BTA_AV_API_META_RSP_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bool is_rsp;
   uint8_t label;
   tBTA_AV_CODE rsp_code;
@@ -321,7 +325,7 @@ typedef struct {
 
 /* data type for BTA_AV_API_RECONFIG_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t codec_info[AVDT_CODEC_SIZE]; /* codec configuration */
   uint8_t* p_protect_info;
   uint8_t num_protect;
@@ -331,7 +335,7 @@ typedef struct {
 
 /* data type for BTA_AV_CI_SETCONFIG_OK_EVT and BTA_AV_CI_SETCONFIG_FAIL_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_AV_HNDL hndl;
   uint8_t err_code;
   uint8_t category;
@@ -343,7 +347,7 @@ typedef struct {
 
 /* data type for all stream events from AVDTP */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   AvdtpSepConfig cfg; /* configuration/capabilities parameters */
   tAVDT_CTRL msg;  /* AVDTP callback message parameters */
   RawAddress bd_addr; /* bd address */
@@ -355,7 +359,7 @@ typedef struct {
 
 /* data type for BTA_AV_AVRC_MSG_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tAVRC_MSG msg;
   uint8_t handle;
   uint8_t label;
@@ -364,33 +368,33 @@ typedef struct {
 
 /* data type for BTA_AV_AVRC_OPEN_EVT, BTA_AV_AVRC_CLOSE_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress peer_addr;
   uint8_t handle;
 } tBTA_AV_RC_CONN_CHG;
 
 /* data type for BTA_AV_CONN_CHG_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress peer_addr;
   bool is_up;
 } tBTA_AV_CONN_CHG;
 
 /* data type for BTA_AV_ROLE_CHANGE_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t new_role;
   uint8_t hci_status;
 } tBTA_AV_ROLE_RES;
 
 /* data type for BTA_AV_SDP_DISC_OK_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
 } tBTA_AV_SDP_RES;
 
 /* data type for BTA_AV_API_OFFLOAD_RSP_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_AV_STATUS status;
 } tBTA_AV_API_STATUS_RSP;
 
@@ -419,7 +423,7 @@ typedef uint8_t tBTA_AV_ROLE;
 
 /* union of all event datatypes */
 union tBTA_AV_DATA {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_AV_API_ENABLE api_enable;
   tBTA_AV_API_REG api_reg;
   tBTA_AV_API_OPEN api_open;
@@ -711,7 +715,7 @@ extern void bta_av_sm_execute(tBTA_AV_CB* p_cb, uint16_t event,
                               tBTA_AV_DATA* p_data);
 extern void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event,
                                tBTA_AV_DATA* p_data);
-extern bool bta_av_hdl_event(BT_HDR* p_msg);
+extern bool bta_av_hdl_event(BT_HDR_RIGID* p_msg);
 extern const char* bta_av_evt_code(uint16_t evt_code);
 extern bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb);
 extern bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits);

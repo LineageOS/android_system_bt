@@ -111,7 +111,7 @@ void BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
  *
  ******************************************************************************/
 void BTA_HfClientClose(uint16_t handle) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_HF_CLIENT_API_CLOSE_EVT;
   p_buf->layer_specific = handle;
@@ -131,7 +131,7 @@ void BTA_HfClientClose(uint16_t handle) {
  *
  ******************************************************************************/
 void BTA_HfClientAudioOpen(uint16_t handle) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_HF_CLIENT_API_AUDIO_OPEN_EVT;
   p_buf->layer_specific = handle;
@@ -151,7 +151,7 @@ void BTA_HfClientAudioOpen(uint16_t handle) {
  *
  ******************************************************************************/
 void BTA_HfClientAudioClose(uint16_t handle) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_HF_CLIENT_API_AUDIO_CLOSE_EVT;
   p_buf->layer_specific = handle;

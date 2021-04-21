@@ -59,7 +59,7 @@ uint8_t bta_dm_search_get_state() { return bta_dm_search_cb.state; }
  * Returns          void
  *
  ******************************************************************************/
-bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
+bool bta_dm_search_sm_execute(BT_HDR_RIGID* p_msg) {
   APPL_TRACE_EVENT("bta_dm_search_sm_execute state:%d, event:0x%x",
                    bta_dm_search_cb.state, p_msg->event);
 

@@ -88,7 +88,7 @@ typedef uint8_t tBTA_HH_STATE;
 
 /* data structure used to send a command/data to HID device */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t t_type;
   uint8_t param;
   uint8_t rpt_id;
@@ -98,27 +98,27 @@ typedef struct {
 
 /* data type for BTA_HH_API_ENABLE_EVT */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint8_t service_name[BTA_SERVICE_NAME_LEN + 1];
   tBTA_HH_CBACK* p_cback;
 } tBTA_HH_API_ENABLE;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress bd_addr;
   tBTA_HH_PROTO_MODE mode;
 } tBTA_HH_API_CONN;
 
 /* internal event data from BTE HID callback */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress addr;
   uint32_t data;
   BT_HDR* p_data;
 } tBTA_HH_CBACK_DATA;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress bda;
   uint16_t attr_mask;
   uint16_t sub_event;
@@ -128,7 +128,7 @@ typedef struct {
 } tBTA_HH_MAINT_DEV;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint16_t conn_id;
   tBTA_GATT_REASON reason; /* disconnect reason code, not useful when connect
                               event is reported */
@@ -136,14 +136,14 @@ typedef struct {
 } tBTA_HH_LE_CLOSE;
 
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   uint16_t scan_int;
   uint16_t scan_win;
 } tBTA_HH_SCPP_UPDATE;
 
 /* union of all event data types */
 typedef union {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_HH_API_ENABLE api_enable;
   tBTA_HH_API_CONN api_conn;
   tBTA_HH_CMD_DATA api_sndcmd;
@@ -282,7 +282,7 @@ extern tBTA_HH_CFG* p_bta_hh_cfg;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
-extern bool bta_hh_hdl_event(BT_HDR* p_msg);
+extern bool bta_hh_hdl_event(BT_HDR_RIGID* p_msg);
 extern void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
                               tBTA_HH_DATA* p_data);
 

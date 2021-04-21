@@ -760,7 +760,7 @@ void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event,
  * @param p_msg event message
  * @return True to free p_msg, or False if p_msg is freed within this function
  */
-bool bta_ag_hdl_event(BT_HDR* p_msg) {
+bool bta_ag_hdl_event(BT_HDR_RIGID* p_msg) {
   switch (p_msg->event) {
     case BTA_AG_RING_TIMEOUT_EVT:
     case BTA_AG_SVC_TIMEOUT_EVT:
