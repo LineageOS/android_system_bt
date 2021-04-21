@@ -279,7 +279,7 @@ void l2c_link_sec_comp2(const RawAddress& p_bda,
 
   LOG_DEBUG("btm_status=%s, BD_ADDR=%s, transport=%s",
             btm_status_text(status).c_str(), PRIVATE_ADDRESS(p_bda),
-            BtTransportText(transport).c_str());
+            bt_transport_text(transport).c_str());
 
   if (status == BTM_SUCCESS_NO_SECURITY) {
     status = BTM_SUCCESS;

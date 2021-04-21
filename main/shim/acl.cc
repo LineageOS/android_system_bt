@@ -923,7 +923,7 @@ void DumpsysAcl(int fd) {
     LOG_DUMPSYS(fd, "    link_up_issued:%s",
                 (acl_conn.link_up_issued) ? "true" : "false");
     LOG_DUMPSYS(fd, "    transport:%s",
-                BtTransportText(acl_conn.transport).c_str());
+                bt_transport_text(acl_conn.transport).c_str());
     LOG_DUMPSYS(fd, "    flush_timeout:0x%04x",
                 acl_conn.flush_timeout_in_ticks);
     LOG_DUMPSYS(
