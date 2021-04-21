@@ -267,7 +267,7 @@ SDP_Sequence_Helper generateArbitrarySdpElemSequence(FuzzedDataProvider* fdp) {
 }
 
 // Define our callback functions we'll be using within our functions
-void sdp_disc_cmpl_cb(uint16_t result) {}
-void sdp_disc_cmpl_cb2(uint16_t result, void* user_data) {}
+void sdp_disc_cmpl_cb(tSDP_STATUS result) {}
+void sdp_disc_cmpl_cb2(tSDP_STATUS result, void* user_data) {}
 
 #endif  // FUZZER_SDP_HELPERS_H_

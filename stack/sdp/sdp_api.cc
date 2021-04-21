@@ -726,10 +726,10 @@ bool SDP_FindProfileVersionInRec(tSDP_DISC_REC* p_rec, uint16_t profile_uuid,
  * Returns          SDP_SUCCESS if query started successfully, else error
  *
  ******************************************************************************/
-uint16_t SDP_DiDiscover(const RawAddress& remote_device,
-                        tSDP_DISCOVERY_DB* p_db, uint32_t len,
-                        tSDP_DISC_CMPL_CB* p_cb) {
-  uint16_t result = SDP_DI_DISC_FAILED;
+tSDP_STATUS SDP_DiDiscover(const RawAddress& remote_device,
+                           tSDP_DISCOVERY_DB* p_db, uint32_t len,
+                           tSDP_DISC_CMPL_CB* p_cb) {
+  tSDP_STATUS result = SDP_DI_DISC_FAILED;
   uint16_t num_uuids = 1;
   uint16_t di_uuid = UUID_SERVCLASS_PNP_INFORMATION;
 

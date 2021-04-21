@@ -183,7 +183,7 @@ extern tSDP_CB sdp_cb;
 /* Functions provided by sdp_main.cc */
 extern void sdp_init(void);
 extern void sdp_free(void);
-extern void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason);
+extern void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason);
 
 extern void sdp_conn_timer_timeout(void* data);
 
