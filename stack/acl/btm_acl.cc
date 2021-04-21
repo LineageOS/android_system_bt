@@ -366,7 +366,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
         "Unable to create duplicate acl when one already exists handle:%hu"
         " role:%s transport:%s",
         hci_handle, RoleText(link_role).c_str(),
-        BtTransportText(transport).c_str());
+        bt_transport_text(transport).c_str());
     return;
   }
 
@@ -390,7 +390,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   LOG_DEBUG(
       "Created new ACL connection peer:%s role:%s handle:0x%04x transport:%s",
       PRIVATE_ADDRESS(bda), RoleText(p_acl->link_role).c_str(), hci_handle,
-      BtTransportText(transport).c_str());
+      bt_transport_text(transport).c_str());
   btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
 
   if (transport == BT_TRANSPORT_LE) {
@@ -2035,7 +2035,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
 
   if (p_acl->Handle() == HCI_INVALID_HANDLE) {
     LOG_WARN("Cannot remove unknown acl bd_addr:%s transport:%s",
-             PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+             PRIVATE_ADDRESS(bd_addr), bt_transport_text(transport).c_str());
     return BTM_UNKNOWN_ADDR;
   }
 
@@ -2043,7 +2043,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
     LOG_DEBUG(
         "Delay disconnect until role switch is complete bd_addr:%s "
         "transport:%s",
-        PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+        PRIVATE_ADDRESS(bd_addr), bt_transport_text(transport).c_str());
     p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
     return BTM_SUCCESS;
   }
