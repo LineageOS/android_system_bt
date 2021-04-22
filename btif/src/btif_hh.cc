@@ -1146,13 +1146,13 @@ void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data) {
  ******************************************************************************/
 
 static void btif_hh_handle_evt(uint16_t event, char* p_param) {
+  CHECK(p_param != nullptr);
   RawAddress* bd_addr = (RawAddress*)p_param;
-  BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
-  int ret;
   switch (event) {
     case BTIF_HH_CONNECT_REQ_EVT: {
-      ret = btif_hh_connect(bd_addr);
-      if (ret == BT_STATUS_SUCCESS) {
+      LOG_DEBUG("Connect request received remote:%s",
+                PRIVATE_ADDRESS((*bd_addr)));
+      if (btif_hh_connect(bd_addr) == BT_STATUS_SUCCESS) {
         HAL_CBACK(bt_hh_callbacks, connection_state_cb, bd_addr,
                   BTHH_CONN_STATE_CONNECTING);
       } else
@@ -1161,19 +1161,25 @@ static void btif_hh_handle_evt(uint16_t event, char* p_param) {
     } break;
 
     case BTIF_HH_DISCONNECT_REQ_EVT: {
-      BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
+      LOG_DEBUG("Disconnect request received remote:%s",
+                PRIVATE_ADDRESS((*bd_addr)));
       btif_hh_disconnect(bd_addr);
       HAL_CBACK(bt_hh_callbacks, connection_state_cb, bd_addr,
                 BTHH_CONN_STATE_DISCONNECTING);
     } break;
 
     case BTIF_HH_VUP_REQ_EVT: {
-      BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
-      ret = btif_hh_virtual_unplug(bd_addr);
+      LOG_DEBUG("Virtual unplug request received remote:%s",
+                PRIVATE_ADDRESS((*bd_addr)));
+      if (btif_hh_virtual_unplug(bd_addr) != BT_STATUS_SUCCESS) {
+        LOG_WARN("Unable to virtual unplug device remote:%s",
+                 PRIVATE_ADDRESS((*bd_addr)));
+      }
     } break;
 
     default: {
-      BTIF_TRACE_WARNING("%s : Unknown event 0x%x", __func__, event);
+      LOG_WARN("Unknown event received:%d remote:%s", event,
+               PRIVATE_ADDRESS((*bd_addr)));
     } break;
   }
 }

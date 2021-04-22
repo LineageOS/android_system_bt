@@ -27,18 +27,39 @@
 
 #include "osi/include/alarm.h"
 
+typedef enum : uint8_t {
+  HID_CONN_STATE_UNUSED = 0,
+  HID_CONN_STATE_CONNECTING_CTRL = 1,
+  HID_CONN_STATE_CONNECTING_INTR = 2,
+  HID_CONN_STATE_CONFIG = 3,
+  HID_CONN_STATE_CONNECTED = 4,
+  HID_CONN_STATE_DISCONNECTING = 5,
+  HID_CONN_STATE_SECURITY = 6,
+} tHID_CONN_STATE;
+
 /* Define the HID Connection Block
 */
 typedef struct hid_conn {
-#define HID_CONN_STATE_UNUSED (0)
-#define HID_CONN_STATE_CONNECTING_CTRL (1)
-#define HID_CONN_STATE_CONNECTING_INTR (2)
-#define HID_CONN_STATE_CONFIG (3)
-#define HID_CONN_STATE_CONNECTED (4)
-#define HID_CONN_STATE_DISCONNECTING (5)
-#define HID_CONN_STATE_SECURITY (6)
+  tHID_CONN_STATE conn_state;
 
-  uint8_t conn_state;
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
+  static inline std::string state_text(const tHID_CONN_STATE& state) {
+    switch (state) {
+      CASE_RETURN_TEXT(HID_CONN_STATE_UNUSED);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONNECTING_CTRL);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONNECTING_INTR);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONFIG);
+      CASE_RETURN_TEXT(HID_CONN_STATE_CONNECTED);
+      CASE_RETURN_TEXT(HID_CONN_STATE_DISCONNECTING);
+      CASE_RETURN_TEXT(HID_CONN_STATE_SECURITY);
+      default:
+        return std::string("UNKNOWN[%hhu]", state);
+    }
+  }
+#undef CASE_RETURN_TEXT
 
 #define HID_CONN_FLAGS_IS_ORIG (0x01)
 #define HID_CONN_FLAGS_CONGESTED (0x20)

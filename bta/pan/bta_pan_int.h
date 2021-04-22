@@ -67,13 +67,13 @@ enum { BTA_PAN_IDLE_ST, BTA_PAN_OPEN_ST, BTA_PAN_CLOSING_ST };
 
 /* data type for BTA_PAN_API_ENABLE_EVT */
 typedef struct {
-  BT_HDR hdr;              /* Event header */
+  BT_HDR_RIGID hdr;        /* Event header */
   tBTA_PAN_CBACK* p_cback; /* PAN callback function */
 } tBTA_PAN_API_ENABLE;
 
 /* data type for BTA_PAN_API_REG_ROLE_EVT */
 typedef struct {
-  BT_HDR hdr;                               /* Event header */
+  BT_HDR_RIGID hdr;                         /* Event header */
   char user_name[BTA_SERVICE_NAME_LEN + 1]; /* Service name */
   char nap_name[BTA_SERVICE_NAME_LEN + 1];  /* Service name */
   tBTA_PAN_ROLE role;
@@ -83,7 +83,7 @@ typedef struct {
 
 /* data type for BTA_PAN_API_OPEN_EVT */
 typedef struct {
-  BT_HDR hdr;               /* Event header */
+  BT_HDR_RIGID hdr;         /* Event header */
   tBTA_PAN_ROLE local_role; /* local role */
   tBTA_PAN_ROLE peer_role;  /* peer role */
   RawAddress bd_addr;       /* peer bdaddr */
@@ -91,20 +91,20 @@ typedef struct {
 
 /* data type for BTA_PAN_CI_TX_FLOW_EVT */
 typedef struct {
-  BT_HDR hdr;  /* Event header */
+  BT_HDR_RIGID hdr; /* Event header */
   bool enable; /* Flow control setting */
 } tBTA_PAN_CI_TX_FLOW;
 
 /* data type for BTA_PAN_CONN_OPEN_EVT */
 typedef struct {
-  BT_HDR hdr; /* Event header */
+  BT_HDR_RIGID hdr; /* Event header */
   tPAN_RESULT result;
 
 } tBTA_PAN_CONN;
 
 /* union of all data types */
 typedef union {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tBTA_PAN_API_ENABLE api_enable;
   tBTA_PAN_API_SET_ROLE api_set_role;
   tBTA_PAN_API_OPEN api_open;
@@ -141,7 +141,7 @@ typedef struct {
 
 /* pan data param */
 typedef struct {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   RawAddress src;
   RawAddress dst;
   uint16_t protocol;
@@ -164,7 +164,7 @@ extern tBTA_PAN_SCB* bta_pan_scb_alloc(void);
 extern void bta_pan_scb_dealloc(tBTA_PAN_SCB* p_scb);
 extern uint8_t bta_pan_scb_to_idx(tBTA_PAN_SCB* p_scb);
 extern tBTA_PAN_SCB* bta_pan_scb_by_handle(uint16_t handle);
-extern bool bta_pan_hdl_event(BT_HDR* p_msg);
+extern bool bta_pan_hdl_event(BT_HDR_RIGID* p_msg);
 
 /* action functions */
 extern void bta_pan_enable(tBTA_PAN_DATA* p_data);

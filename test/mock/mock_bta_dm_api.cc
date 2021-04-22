@@ -48,7 +48,7 @@ tBTA_STATUS BTA_DmRemoveDevice(const RawAddress& bd_addr) {
   mock_function_count_map[__func__]++;
   return BTA_SUCCESS;
 }
-tBTA_STATUS BTA_DmSetLocalDiRecord(tBTA_DI_RECORD* p_device_info,
+tBTA_STATUS BTA_DmSetLocalDiRecord(tSDP_DI_RECORD* p_device_info,
                                    uint32_t* p_handle) {
   mock_function_count_map[__func__]++;
   return BTA_SUCCESS;

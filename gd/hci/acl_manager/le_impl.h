@@ -295,8 +295,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       hci::ErrorCode hci_status, uint16_t handle, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version) {
     auto callbacks = get_callbacks(handle);
     if (callbacks == nullptr) {
-      LOG_WARN("Can't find connection 0x%hx", handle);
-      ASSERT(!crash_on_unknown_handle_);
+      LOG_INFO("No le connection registered for 0x%hx", handle);
       return;
     }
     callbacks->OnReadRemoteVersionInformationComplete(hci_status, version, manufacturer_name, sub_version);

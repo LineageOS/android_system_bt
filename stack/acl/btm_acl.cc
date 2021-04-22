@@ -366,7 +366,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
         "Unable to create duplicate acl when one already exists handle:%hu"
         " role:%s transport:%s",
         hci_handle, RoleText(link_role).c_str(),
-        BtTransportText(transport).c_str());
+        bt_transport_text(transport).c_str());
     return;
   }
 
@@ -390,7 +390,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
   LOG_DEBUG(
       "Created new ACL connection peer:%s role:%s handle:0x%04x transport:%s",
       PRIVATE_ADDRESS(bda), RoleText(p_acl->link_role).c_str(), hci_handle,
-      BtTransportText(transport).c_str());
+      bt_transport_text(transport).c_str());
   btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
 
   if (transport == BT_TRANSPORT_LE) {
@@ -2035,7 +2035,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
 
   if (p_acl->Handle() == HCI_INVALID_HANDLE) {
     LOG_WARN("Cannot remove unknown acl bd_addr:%s transport:%s",
-             PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+             PRIVATE_ADDRESS(bd_addr), bt_transport_text(transport).c_str());
     return BTM_UNKNOWN_ADDR;
   }
 
@@ -2043,7 +2043,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
     LOG_DEBUG(
         "Delay disconnect until role switch is complete bd_addr:%s "
         "transport:%s",
-        PRIVATE_ADDRESS(bd_addr), BtTransportText(transport).c_str());
+        PRIVATE_ADDRESS(bd_addr), bt_transport_text(transport).c_str());
     p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
     return BTM_SUCCESS;
   }
@@ -2691,12 +2691,12 @@ constexpr uint16_t kDataPacketEventBrEdr = (BT_EVT_TO_LM_HCI_ACL);
 constexpr uint16_t kDataPacketEventBle =
     (BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID);
 
-void acl_send_data_packet_br_edr([[maybe_unused]] const RawAddress& bd_addr,
-                                 BT_HDR* p_buf) {
+void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
     tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_acl == nullptr) {
-      LOG_WARN("Acl br_edr data write for unknown device");
+      LOG_WARN("Acl br_edr data write for unknown device:%s",
+               PRIVATE_ADDRESS(bd_addr));
       return;
     }
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
@@ -2708,7 +2708,8 @@ void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
   if (bluetooth::shim::is_gd_acl_enabled()) {
     tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
     if (p_acl == nullptr) {
-      LOG_WARN("Acl le data write for unknown device");
+      LOG_WARN("Acl le data write for unknown device:%s",
+               PRIVATE_ADDRESS(bd_addr));
       return;
     }
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);

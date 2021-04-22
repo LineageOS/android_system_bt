@@ -236,7 +236,7 @@ void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg) {
 
     p_clreg->dereg_pending = true;
 
-    BT_HDR buf;
+    BT_HDR_RIGID buf;
     buf.event = BTA_GATTC_API_CLOSE_EVT;
     buf.layer_specific = bta_gattc_cb.clcb[i].bta_conn_id;
     bta_gattc_close(&bta_gattc_cb.clcb[i], (tBTA_GATTC_DATA*)&buf);
@@ -245,7 +245,7 @@ void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg) {
 
 /** process connect API request */
 void bta_gattc_process_api_open(tBTA_GATTC_DATA* p_msg) {
-  uint16_t event = ((BT_HDR*)p_msg)->event;
+  uint16_t event = ((BT_HDR_RIGID*)p_msg)->event;
 
   tBTA_GATTC_RCB* p_clreg = bta_gattc_cl_get_regcb(p_msg->api_conn.client_if);
   if (!p_clreg) {
@@ -277,7 +277,7 @@ void bta_gattc_process_api_open(tBTA_GATTC_DATA* p_msg) {
 void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
   CHECK(p_msg != nullptr);
 
-  uint16_t event = ((BT_HDR*)p_msg)->event;
+  uint16_t event = ((BT_HDR_RIGID*)p_msg)->event;
 
   if (!p_msg->api_cancel_conn.is_direct) {
     LOG_DEBUG("Cancel GATT client background connection");
@@ -1088,12 +1088,12 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
                                  tBT_TRANSPORT transport) {
   if (connected) {
     LOG_INFO("Connected att_id:%hhu transport:%s reason:%s", gattc_if,
-             BtTransportText(transport).c_str(),
+             bt_transport_text(transport).c_str(),
              gatt_disconnection_reason_text(reason).c_str());
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_UNKNOWN);
   } else {
     LOG_INFO("Disconnected att_id:%hhu transport:%s reason:%s", gattc_if,
-             BtTransportText(transport).c_str(),
+             bt_transport_text(transport).c_str(),
              gatt_disconnection_reason_text(reason).c_str());
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_DISCONNECTED, GATT_CONN_UNKNOWN);
   }

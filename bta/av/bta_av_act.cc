@@ -183,7 +183,7 @@ static void bta_av_del_sdp_rec(uint32_t* p_sdp_handle) {
  *
  ******************************************************************************/
 static void bta_av_avrc_sdp_cback(UNUSED_ATTR uint16_t status) {
-  BT_HDR* p_msg = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_msg = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_msg->event = BTA_AV_SDP_AVRC_DISC_EVT;
 
@@ -1291,7 +1291,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   bool disabling_in_progress = false;
   uint16_t xx;
 

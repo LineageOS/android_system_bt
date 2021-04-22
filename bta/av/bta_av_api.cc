@@ -76,7 +76,7 @@ void BTA_AvEnable(tBTA_AV_FEAT features, tBTA_AV_CBACK* p_cback) {
  *
  ******************************************************************************/
 void BTA_AvDisable(void) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   bta_sys_deregister(BTA_ID_AV);
   p_buf->event = BTA_AV_API_DISABLE_EVT;
@@ -126,7 +126,7 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char* p_service_name,
  *
  ******************************************************************************/
 void BTA_AvDeregister(tBTA_AV_HNDL hndl) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->layer_specific = hndl;
   p_buf->event = BTA_AV_API_DEREGISTER_EVT;
@@ -176,7 +176,7 @@ void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
 void BTA_AvClose(tBTA_AV_HNDL handle) {
   LOG_INFO("%s: bta_handle:0x%x", __func__, handle);
 
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_AV_API_CLOSE_EVT;
   p_buf->layer_specific = handle;
@@ -217,7 +217,7 @@ void BTA_AvDisconnect(const RawAddress& bd_addr) {
 void BTA_AvStart(tBTA_AV_HNDL handle) {
   LOG_INFO("Starting audio/video stream data transfer bta_handle:%hhu", handle);
 
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_AV_API_START_EVT;
   p_buf->layer_specific = handle;
@@ -237,7 +237,7 @@ void BTA_AvStart(tBTA_AV_HNDL handle) {
 void BTA_AvOffloadStart(tBTA_AV_HNDL hndl) {
   LOG_INFO("%s: bta_handle=0x%x", __func__, hndl);
 
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_AV_API_OFFLOAD_START_EVT;
   p_buf->layer_specific = hndl;
