@@ -2910,3 +2910,35 @@ bool acl_check_and_clear_ignore_auto_connect_after_disconnect(
 void acl_clear_all_ignore_auto_connect_after_disconnect() {
   btm_cb.acl_cb_.ClearAllIgnoreAutoConnectAfterDisconnect();
 }
+
+/**
+ * Confusingly, immutable device features are stored in the
+ * ephemeral connection data structure while connection security
+ * is stored in the device record.
+ *
+ * This HACK allows legacy security protocols to work as intended under
+ * those conditions.
+ */
+void HACK_acl_check_sm4(tBTM_SEC_DEV_REC& record) {
+  // Return if we already know this info
+  if ((record.sm4 & BTM_SM4_TRUE) != BTM_SM4_UNKNOWN) return;
+
+  tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(record.RemoteAddress(), BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl for authentication device:%s",
+             PRIVATE_ADDRESS(record.RemoteAddress()));
+  }
+
+  // If we have not received the SSP feature record
+  // we have to wait
+  if (!p_acl->peer_lmp_feature_valid[1]) {
+    LOG_WARN(
+        "Authentication started without extended feature page 1 request "
+        "response");
+    return;
+  }
+  record.sm4 = (HCI_SSP_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]))
+                   ? BTM_SM4_TRUE
+                   : BTM_SM4_KNOWN;
+}
