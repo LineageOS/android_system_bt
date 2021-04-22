@@ -53,6 +53,11 @@ class LinkPropertyListener {
       uint16_t sub_version) {}
 
   /**
+   * Invoked when received remote features and remote supported features for a given link
+   */
+  virtual void OnReadRemoteSupportedFeatures(hci::Address remote, uint64_t features) {}
+
+  /**
    * Invoked when received remote features and remote extended features for a given link
    */
   virtual void OnReadRemoteExtendedFeatures(
