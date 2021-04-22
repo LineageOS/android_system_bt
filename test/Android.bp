@@ -81,3 +81,11 @@ filegroup {
       "mock/mock_android_hardware_*.cc",
     ],
 }
+
+filegroup {
+    name: "TestMockDevice",
+    srcs: [
+      "mock/mock_device_*.cc",
+    ],
+}
+
