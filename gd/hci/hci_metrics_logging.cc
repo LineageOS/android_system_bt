@@ -16,13 +16,16 @@
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 
+#include "common/strings.h"
 #include "hci/hci_metrics_logging.h"
 #include "os/metrics.h"
+#include "storage/device.h"
 
 namespace bluetooth {
 namespace hci {
 
-void log_hci_event(std::unique_ptr<CommandView>& command_view, EventView event_view) {
+void log_hci_event(
+    std::unique_ptr<CommandView>& command_view, EventView event_view, storage::StorageModule* storage_module) {
   ASSERT(event_view.IsValid());
   EventCode event_code = event_view.GetEventCode();
   switch (event_code) {
@@ -47,7 +50,7 @@ void log_hci_event(std::unique_ptr<CommandView>& command_view, EventView event_v
       break;
     }
     default:
-      log_link_layer_connection_other_hci_event(event_view);
+      log_link_layer_connection_other_hci_event(event_view, storage_module);
       log_classic_pairing_other_hci_event(event_view);
   }
 }
@@ -312,7 +315,7 @@ void log_link_layer_connection_command_complete(EventView event_view, std::uniqu
       static_cast<uint16_t>(reason));
 }
 
-void log_link_layer_connection_other_hci_event(EventView packet) {
+void log_link_layer_connection_other_hci_event(EventView packet, storage::StorageModule* storage_module) {
   EventCode event_code = packet.GetEventCode();
   Address address = Address::kEmpty;
   uint32_t connection_handle = bluetooth::os::kUnknownConnectionHandle;
@@ -329,6 +332,9 @@ void log_link_layer_connection_other_hci_event(EventView packet) {
       connection_handle = connection_complete_view.GetConnectionHandle();
       link_type = static_cast<uint16_t>(connection_complete_view.GetLinkType());
       status = connection_complete_view.GetStatus();
+
+      // besides log link layer connection events, also log remote device manufacturer info
+      log_remote_device_information(address, connection_handle, status, storage_module);
       break;
     }
     case EventCode::CONNECTION_REQUEST: {
@@ -837,6 +843,34 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
       static_cast<uint16_t>(status),
       static_cast<uint16_t>(reason),
       value);
+}
+
+void log_remote_device_information(
+    const Address& address, uint32_t connection_handle, ErrorCode status, storage::StorageModule* storage_module) {
+  if (address.IsEmpty()) {
+    return;
+  }
+  const storage::Device device = storage_module->GetDeviceByLegacyKey(address);
+  // log ManufacturerInfo
+  std::stringstream sdp_di_vendor_id_source;
+  // [N - native]::SDP::[DIP - Device ID Profile]
+  sdp_di_vendor_id_source << "N:SDP::DIP::" << common::ToHexString(device.GetSdpDiVendorIdSource().value_or(0)).c_str();
+  os::LogMetricManufacturerInfo(
+      address,
+      android::bluetooth::DeviceInfoSrcEnum::DEVICE_INFO_INTERNAL,
+      sdp_di_vendor_id_source.str(),
+      common::ToHexString(device.GetSdpDiManufacturer().value_or(0)).c_str(),
+      common::ToHexString(device.GetSdpDiModel().value_or(0)).c_str(),
+      common::ToHexString(device.GetSdpDiHardwareVersion().value_or(0)).c_str(),
+      "");
+
+  // log RemoteVersionInfo
+  os::LogMetricRemoteVersionInfo(
+      connection_handle,
+      static_cast<uint16_t>(status),
+      device.GetLmpVersion().value_or(-1),
+      device.GetManufacturerCode().value_or(-1),
+      device.GetLmpSubVersion().value_or(-1));
 }
 
 }  // namespace hci
