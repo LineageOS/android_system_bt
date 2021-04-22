@@ -185,6 +185,11 @@ class Device {
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ManufacturerCode, uint16_t, "Manufacturer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpVersion, uint8_t, "LmpVer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpSubVersion, uint16_t, "LmpSubVer");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SdpDiManufacturer, uint16_t, "SdpDiManufacturer");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SdpDiModel, uint16_t, "SdpDiModel");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SdpDiHardwareVersion, uint16_t, "SdpDiHardwareVersion");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SdpDiVendorIdSource, uint16_t, "SdpDiVendorIdSource");
+
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(MetricsId, int, "MetricsId");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PinLength, int, "PinLength");
   // unix timestamp in seconds from epoch
