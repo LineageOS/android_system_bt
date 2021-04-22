@@ -91,6 +91,8 @@ typedef struct {
   void (*on_read_link_quality_complete)(uint8_t link_quality);
   void (*on_read_link_supervision_timeout_complete)(
       uint16_t link_supervision_timeout);
+  void (*on_read_remote_supported_features_complete)(uint16_t handle,
+                                                     uint64_t features);
   void (*on_read_remote_extended_features_complete)(uint16_t handle,
                                                     uint8_t current_page_number,
                                                     uint8_t max_page_number,

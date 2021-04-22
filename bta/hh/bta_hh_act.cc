@@ -817,16 +817,28 @@ void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
 void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   tBTA_HH_CONN conn_dat;
   tBTA_HH_CBDATA disc_dat = {BTA_HH_OK, 0};
-  uint32_t reason = p_data->hid_cback.data; /* Reason for closing (32-bit) */
 
-  // TODO Fix use proper types
-  tHID_STATUS hid_status = static_cast<tHID_STATUS>(reason);
+  uint32_t reason = p_data->hid_cback.data; /* Reason for closing (32-bit) */
+  const bool l2cap_conn_fail = reason & HID_L2CAP_CONN_FAIL;
+  const bool l2cap_req_fail = reason & HID_L2CAP_REQ_FAIL;
+  const bool l2cap_cfg_fail = reason & HID_L2CAP_CFG_FAIL;
+  const tHID_STATUS hid_status = static_cast<tHID_STATUS>(reason & 0xff);
 
   /* if HID_HDEV_EVT_VC_UNPLUG was received, report BTA_HH_VC_UNPLUG_EVT */
   uint16_t event = p_cb->vp ? BTA_HH_VC_UNPLUG_EVT : BTA_HH_CLOSE_EVT;
 
   disc_dat.handle = p_cb->hid_handle;
   disc_dat.status = to_bta_hh_status(p_data->hid_cback.data);
+
+  std::string overlay_fail =
+      base::StringPrintf("%s %s %s", (l2cap_conn_fail) ? "l2cap_conn_fail" : "",
+                         (l2cap_req_fail) ? "l2cap_req_fail" : "",
+                         (l2cap_cfg_fail) ? "l2cap_cfg_fail" : "");
+  BTM_LogHistory(kBtmLogTag, p_cb->addr, "Closed",
+                 base::StringPrintf("%s reason %s %s",
+                                    (p_cb->is_le_device) ? "le" : "classic",
+                                    hid_status_text(hid_status).c_str(),
+                                    overlay_fail.c_str()));
 
   /* Check reason for closing */
   if ((reason & (HID_L2CAP_CONN_FAIL |
@@ -851,11 +863,6 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   }
   /* otherwise report CLOSE/VC_UNPLUG event */
   else {
-    BTM_LogHistory(kBtmLogTag, p_cb->addr, "Closed",
-                   base::StringPrintf("%s reason %s",
-                                      (p_cb->is_le_device) ? "le" : "classic",
-                                      hid_status_text(hid_status).c_str()));
-
     /* finaliza device driver */
     bta_hh_co_close(p_cb->hid_handle, p_cb->app_id);
     /* inform role manager */
