@@ -2816,8 +2816,43 @@ void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
   bluetooth::hci::IsoManager::GetInstance()->HandleNumComplDataPkts(p, evt_len);
 }
 
+void acl_process_supported_features(uint16_t handle, uint64_t features) {
+  ASSERT_LOG(bluetooth::shim::is_gd_acl_enabled(),
+             "Should only be called when gd_acl enabled");
+
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+  const uint8_t current_page_number = 0;
+
+  memcpy(p_acl->peer_lmp_feature_pages[current_page_number],
+         (uint8_t*)&features, sizeof(uint64_t));
+  p_acl->peer_lmp_feature_valid[current_page_number] = true;
+
+  LOG_DEBUG(
+      "Copied supported feature pages handle:%hu current_page_number:%hhu "
+      "features:%s",
+      handle, current_page_number,
+      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number])
+          .c_str());
+
+  if ((HCI_LMP_EXTENDED_SUPPORTED(p_acl->peer_lmp_feature_pages[0])) &&
+      (controller_get_interface()
+           ->supports_reading_remote_extended_features())) {
+    LOG_DEBUG("Waiting for remote extended feature response to arrive");
+  } else {
+    LOG_DEBUG("No more remote features outstanding so notify upper layer");
+    NotifyAclFeaturesReadComplete(*p_acl, current_page_number);
+  }
+}
+
 void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
                                    uint8_t max_page_number, uint64_t features) {
+  ASSERT_LOG(bluetooth::shim::is_gd_acl_enabled(),
+             "Should only be called when gd_acl enabled");
+
   if (current_page_number > HCI_EXT_FEATURES_PAGE_MAX) {
     LOG_WARN("Unable to process current_page_number:%hhu", current_page_number);
     return;

@@ -184,6 +184,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   void OnDisconnection(hci::ErrorCode reason) override;
   void OnReadRemoteVersionInformationComplete(
       hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version);
+  void OnReadRemoteSupportedFeaturesComplete(uint64_t features);
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features);
 
   struct EncryptionChangeListener {
