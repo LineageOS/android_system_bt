@@ -4860,3 +4860,11 @@ const uint8_t* btm_get_dev_class(const RawAddress& bda) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
   return p_dev_rec->dev_class;
 }
+
+void BTM_update_version_info(const RawAddress& bd_addr,
+                             const remote_version_info& remote_version_info) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  if (p_dev_rec == NULL) return;
+
+  p_dev_rec->remote_version_info = remote_version_info;
+}
