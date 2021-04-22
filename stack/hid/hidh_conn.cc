@@ -565,6 +565,7 @@ static void hidh_l2cif_disconnect(uint16_t l2cap_cid) {
     if (p_hcon->ctrl_cid) {
       HIDH_TRACE_EVENT("HID-Host Initiating L2CAP Ctrl disconnection");
       L2CA_DisconnectReq(p_hcon->ctrl_cid);
+      p_hcon->ctrl_cid = 0;
     }
   }
 
