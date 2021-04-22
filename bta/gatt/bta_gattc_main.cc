@@ -361,7 +361,7 @@ bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
  * Returns          bool
  *
  ******************************************************************************/
-bool bta_gattc_hdl_event(BT_HDR* p_msg) {
+bool bta_gattc_hdl_event(BT_HDR_RIGID* p_msg) {
   tBTA_GATTC_CLCB* p_clcb = NULL;
   bool rt = true;
 #if (BTA_GATT_DEBUG == TRUE)

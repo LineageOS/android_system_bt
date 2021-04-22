@@ -50,8 +50,8 @@ inline hci::Address ToGdAddress(const RawAddress& address) {
   return ret;
 }
 
-inline hci::AddressWithType ToAddressWithType(const RawAddress& legacy_address,
-                                       tBLE_ADDR_TYPE legacy_type) {
+inline hci::AddressWithType ToAddressWithType(
+    const RawAddress& legacy_address, const tBLE_ADDR_TYPE& legacy_type) {
   hci::Address address = ToGdAddress(legacy_address);
 
   hci::AddressType type;
@@ -130,7 +130,7 @@ inline tHCI_ROLE ToLegacyRole(hci::Role role) {
   return to_hci_role(static_cast<uint8_t>(role));
 }
 
-inline hci::Role ToHciRole(hci_role_t role) {
+inline hci::Role ToHciRole(const hci_role_t& role) {
   switch (role) {
     case HCI_ROLE_CENTRAL:
       return hci::Role::CENTRAL;
@@ -141,7 +141,7 @@ inline hci::Role ToHciRole(hci_role_t role) {
   }
 }
 
-inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
+inline tHCI_STATUS ToLegacyHciErrorCode(const hci::ErrorCode& reason) {
   switch (reason) {
     case hci::ErrorCode::SUCCESS:
       return HCI_SUCCESS;
@@ -234,11 +234,12 @@ inline tHCI_STATUS ToLegacyHciErrorCode(hci::ErrorCode reason) {
   }
 }
 
-inline tHCI_MODE ToLegacyHciMode(hci::Mode mode) {
+inline tHCI_MODE ToLegacyHciMode(const hci::Mode& mode) {
   return static_cast<tHCI_MODE>(mode);
 }
 
-inline hci::DisconnectReason ToDisconnectReasonFromLegacy(tHCI_STATUS reason) {
+inline hci::DisconnectReason ToDisconnectReasonFromLegacy(
+    const tHCI_STATUS& reason) {
   return static_cast<hci::DisconnectReason>(reason);
 }
 

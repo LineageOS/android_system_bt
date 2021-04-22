@@ -365,7 +365,25 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     bool is_scannable = event_type & (1 << kScannableBit);
     bool is_scan_response = event_type & (1 << kScanResponseBit);
     bool is_legacy = event_type & (1 << kLegacyBit);
-    // TODO handle anonymous advertisement (0xFF)
+
+    if (address_type == (uint8_t)DirectAdvertisingAddressType::NO_ADDRESS) {
+      scanning_callbacks_->OnScanResult(
+          event_type,
+          address_type,
+          address,
+          primary_phy,
+          secondary_phy,
+          advertising_sid,
+          tx_power,
+          rssi,
+          periodic_advertising_interval,
+          advertising_data);
+      return;
+    } else if (address == Address::kEmpty) {
+      LOG_WARN("Receive non-anonymous advertising report with empty address, skip!");
+      return;
+    }
+
     AddressWithType address_with_type(address, (AddressType)address_type);
 
     if (is_legacy && is_scan_response && !advertising_cache_.Exist(address_with_type)) {

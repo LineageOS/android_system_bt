@@ -181,7 +181,7 @@ void BTA_GATTC_CancelOpen(tGATT_IF client_if, const RawAddress& remote_bda,
  *
  ******************************************************************************/
 void BTA_GATTC_Close(uint16_t conn_id) {
-  BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
+  BT_HDR_RIGID* p_buf = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_buf->event = BTA_GATTC_API_CLOSE_EVT;
   p_buf->layer_specific = conn_id;

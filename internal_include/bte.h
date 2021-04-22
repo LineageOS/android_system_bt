@@ -98,7 +98,7 @@ void bte_get_startup_options(
 #define BTE_HCISU_USERIAL_OK 1
 typedef void(tUSERIAL_MSG_CBACK)(int status);
 typedef struct tHCISU_USERIAL_MSG_tag {
-  BT_HDR hdr;
+  BT_HDR_RIGID hdr;
   tUSERIAL_MSG_CBACK* p_cback;
   uint8_t port; /* port number */
   uint8_t op;

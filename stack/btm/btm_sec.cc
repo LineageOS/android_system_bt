@@ -468,9 +468,7 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
     /* clear out the old setting, just in case it exists */
     {
       p_srec->security_flags &=
-          ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM |
-            BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-            BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL);
+          ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM);
     }
 
     /* Parameter validation.  Originator should not set requirements for
@@ -498,8 +496,6 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
     {
       p_srec->security_flags &=
           ~(BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_MITM |
-            BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-            BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL |
             BTM_SEC_IN_MIN_16_DIGIT_PIN);
     }
 
@@ -785,7 +781,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
   p_dev_rec->is_originator = true;
 
   BTM_LogHistory(kBtmLogTag, bd_addr, "Bonding initiated",
-                 BtTransportText(transport));
+                 bt_transport_text(transport));
 
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_init_pseudo_addr(p_dev_rec, bd_addr);
@@ -3360,22 +3356,13 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
 
   btm_acl_resubmit_page();
 
-  if (p_dev_rec) {
-    VLOG(2) << __func__ << ": Security Manager: in state: "
-            << btm_pair_state_descr(btm_cb.pairing_state)
-            << " handle:" << handle
-            << " status:" << loghex(static_cast<uint16_t>(status))
-            << " enc_mode:" << loghex(enc_mode) << " bda:" << bda
-            << " RName:" << p_dev_rec->sec_bd_name;
-  } else {
-    VLOG(2) << __func__ << ": Security Manager: in state: "
-            << btm_pair_state_descr(btm_cb.pairing_state)
-            << " handle:" << handle
-            << " status:" << loghex(static_cast<uint16_t>(status))
-            << " enc_mode:" << loghex(enc_mode) << " bda:" << bda;
-  }
-
   if (!p_dev_rec) {
+    LOG_DEBUG(
+        "Connected to new device state:%s handle:0x%04x status:%s "
+        "enc_mode:%hhu bda:%s",
+        btm_pair_state_descr(btm_cb.pairing_state), handle,
+        hci_status_code_text(status).c_str(), enc_mode, PRIVATE_ADDRESS(bda));
+
     if (status == HCI_SUCCESS) {
       p_dev_rec = btm_sec_alloc_dev(bda);
       LOG_DEBUG("Allocated new device record for new connection peer:%s",
@@ -3396,6 +3383,13 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
     }
   } else /* Update the timestamp for this device */
   {
+    LOG_DEBUG(
+        "Connected to known device state:%s handle:0x%04x status:%s "
+        "enc_mode:%hhu bda:%s RName:%s",
+        btm_pair_state_descr(btm_cb.pairing_state), handle,
+        hci_status_code_text(status).c_str(), enc_mode, PRIVATE_ADDRESS(bda),
+        p_dev_rec->sec_bd_name);
+
     bit_shift = (handle == p_dev_rec->ble_hci_handle) ? 8 : 0;
     p_dev_rec->timestamp = btm_cb.dev_rec_count++;
     if (p_dev_rec->sm4 & BTM_SM4_CONN_PEND) {
@@ -3751,7 +3745,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason) {
 
   if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
     LOG_DEBUG("Waiting for other transport to disconnect current:%s",
-              BtTransportText(transport).c_str());
+              bt_transport_text(transport).c_str());
     p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE)
                                ? BTM_SEC_STATE_DISCONNECTING
                                : BTM_SEC_STATE_DISCONNECTING_BLE;
@@ -3769,7 +3763,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason) {
                   BTM_ERR_PROCESSING);
     LOG_DEBUG("Cleaned up pending security state device:%s transport:%s",
               PRIVATE_ADDRESS(p_dev_rec->bd_addr),
-              BtTransportText(transport).c_str());
+              bt_transport_text(transport).c_str());
   }
 }
 
@@ -4305,10 +4299,9 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
 
   /* All required  security procedures already established */
-  p_dev_rec->security_required &= ~(
-      BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT |
-      BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-      BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL);
+  p_dev_rec->security_required &=
+      ~(BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE |
+        BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT);
 
   BTM_TRACE_EVENT("Security Manager: access granted");
 
