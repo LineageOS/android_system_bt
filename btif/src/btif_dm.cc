@@ -480,14 +480,16 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
   uint8_t lmp_ver = 0;
   uint16_t lmp_subver = 0;
   uint16_t mfct_set = 0;
-  bool version_info_valid = false;
   bt_remote_version_t info;
   bt_status_t status;
 
-  version_info_valid =
+  CHECK(p_bd != nullptr);
+
+  const bool version_info_valid =
       BTM_ReadRemoteVersion(*p_bd, &lmp_ver, &mfct_set, &lmp_subver);
 
-  LOG_INFO("remote version info [%s]: %x, %x, %x", p_bd->ToString().c_str(),
+  LOG_INFO("Remote version info valid:%s [%s]: %x, %x, %x",
+           logbool(version_info_valid).c_str(), PRIVATE_ADDRESS((*p_bd)),
            lmp_ver, mfct_set, lmp_subver);
 
   if (version_info_valid) {
