@@ -513,6 +513,17 @@ class ClassicShimAclConnection
                         manufacturer_name, sub_version);
   }
 
+  void OnReadRemoteSupportedFeaturesComplete(uint64_t features) override {
+    TRY_POSTING_ON_MAIN(interface_.on_read_remote_supported_features_complete,
+                        handle_, features);
+
+    if (features & ((uint64_t(1) << 63))) {
+      connection_->ReadRemoteExtendedFeatures(1);
+      return;
+    }
+    LOG_DEBUG("Device does not support extended features");
+  }
+
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number,
                                             uint8_t max_page_number,
                                             uint64_t features) override {

@@ -287,6 +287,9 @@ void acl_link_segments_xmitted(BT_HDR_RIGID* p_msg) {
 void acl_packets_completed(uint16_t handle, uint16_t credits) {
   mock_function_count_map[__func__]++;
 }
+void acl_process_supported_features(uint16_t handle, uint64_t features) {
+  mock_function_count_map[__func__]++;
+}
 void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
                                    uint8_t max_page_number, uint64_t features) {
   mock_function_count_map[__func__]++;

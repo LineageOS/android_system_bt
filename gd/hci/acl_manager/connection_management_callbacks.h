@@ -87,6 +87,8 @@ class ConnectionManagementCallbacks {
   // Invoked when controller sends Read Remote Version Information Complete
   virtual void OnReadRemoteVersionInformationComplete(
       hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version) = 0;
+  // Invoked when controller sends Read Remote Supported Features Complete
+  virtual void OnReadRemoteSupportedFeaturesComplete(uint64_t features) = 0;
   // Invoked when controller sends Read Remote Extended Features Complete
   virtual void OnReadRemoteExtendedFeaturesComplete(
       uint8_t page_number, uint8_t max_page_number, uint64_t features) = 0;
