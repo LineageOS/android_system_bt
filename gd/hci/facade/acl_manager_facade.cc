@@ -529,6 +529,9 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
           manufacturer_name,
           sub_version);
     }
+    void OnReadRemoteSupportedFeaturesComplete(uint64_t features) override {
+      LOG_INFO("OnReadRemoteSupportedFeaturesComplete features:0x%lx", static_cast<unsigned long>(features));
+    }
     void OnReadRemoteExtendedFeaturesComplete(
         uint8_t page_number, uint8_t max_page_number, uint64_t features) override {
       LOG_INFO(

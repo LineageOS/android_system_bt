@@ -79,6 +79,7 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
       uint8_t lmp_version,
       uint16_t manufacturer_name,
       uint16_t sub_version);
+  void OnReadRemoteSupportedFeatures(hci::Address device, uint64_t features);
   void OnReadRemoteExtendedFeatures(
       hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features);
   void OnRoleChange(hci::ErrorCode hci_status, hci::Address remote, hci::Role role);
