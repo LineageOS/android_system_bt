@@ -66,6 +66,9 @@
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
+void BTM_update_version_info(const RawAddress& bd_addr,
+                             const remote_version_info& remote_version_info);
+
 void gatt_find_in_device_record(const RawAddress& bd_addr,
                                 tBLE_BD_ADDR* address_with_type);
 void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
@@ -781,6 +784,9 @@ void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
     p_acl_cb->remote_version_info.manufacturer = manufacturer;
     p_acl_cb->remote_version_info.lmp_subversion = lmp_subversion;
     p_acl_cb->remote_version_info.valid = true;
+    BTM_update_version_info(p_acl_cb->RemoteAddress(),
+                            p_acl_cb->remote_version_info);
+
     bluetooth::common::LogRemoteVersionInfo(handle, status, lmp_version,
                                             manufacturer, lmp_subversion);
   } else {
