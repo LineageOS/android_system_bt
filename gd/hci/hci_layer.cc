@@ -23,6 +23,7 @@
 #include "os/metrics.h"
 #include "os/queue.h"
 #include "packet/packet_builder.h"
+#include "storage/storage_module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -294,7 +295,7 @@ struct HciLayer::impl {
 
   void on_hci_event(EventView event) {
     ASSERT(event.IsValid());
-    log_hci_event(command_queue_.front().command_view, event);
+    log_hci_event(command_queue_.front().command_view, event, module_.GetDependency<storage::StorageModule>());
     EventCode event_code = event.GetEventCode();
     // Root Inflamation is a special case, since it aborts here
     if (event_code == EventCode::VENDOR_SPECIFIC) {
@@ -520,6 +521,7 @@ const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer
 
 void HciLayer::ListDependencies(ModuleList* list) {
   list->add<hal::HciHal>();
+  list->add<storage::StorageModule>();
 }
 
 void HciLayer::Start() {
