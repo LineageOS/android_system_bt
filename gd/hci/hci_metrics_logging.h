@@ -17,18 +17,22 @@
 #pragma once
 
 #include "hci/hci_packets.h"
+#include "storage/storage_module.h"
 
 namespace bluetooth {
 namespace hci {
-void log_hci_event(std::unique_ptr<CommandView>& command_view, EventView packet);
+void log_hci_event(
+    std::unique_ptr<CommandView>& command_view, EventView packet, storage::StorageModule* storage_module);
 void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& command_view, ErrorCode status);
 void log_link_layer_connection_command_complete(EventView event, std::unique_ptr<CommandView>& command_view);
 void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view);
-void log_link_layer_connection_other_hci_event(EventView packet);
+void log_link_layer_connection_other_hci_event(EventView packet, storage::StorageModule* storage_module);
 
 void log_classic_pairing_command_status(std::unique_ptr<CommandView>& command_view, ErrorCode status);
 void log_classic_pairing_command_complete(EventView event, std::unique_ptr<CommandView>& command_view);
 void log_classic_pairing_other_hci_event(EventView packet);
 
+void log_remote_device_information(
+    const Address& address, uint32_t connection_handle, ErrorCode status, storage::StorageModule* storage_module);
 }  // namespace hci
 }  // namespace bluetooth
