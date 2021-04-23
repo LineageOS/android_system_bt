@@ -89,3 +89,10 @@ filegroup {
     ],
 }
 
+filegroup {
+    name: "TestMockLegacyHciCommands",
+    srcs: [
+      "mock/mock_hcic_*.cc",
+    ],
+}
+
