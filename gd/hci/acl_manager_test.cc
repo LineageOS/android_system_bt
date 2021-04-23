@@ -120,7 +120,7 @@ class TestHciLayer : public HciLayer {
       std::unique_ptr<CommandBuilder> command,
       common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
     command_queue_.push(std::move(command));
-    command_status_callbacks.push_front(std::move(on_status));
+    command_status_callbacks.push_back(std::move(on_status));
     if (command_promise_ != nullptr) {
       command_promise_->set_value();
       command_promise_.reset();
