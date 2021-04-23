@@ -299,7 +299,14 @@ class ShimAclConnection {
     BT_HDR* p_buf = MakeLegacyBtHdrPacket(std::move(packet), preamble);
     ASSERT_LOG(p_buf != nullptr,
                "Unable to allocate BT_HDR legacy packet handle:%04x", handle_);
-    TRY_POSTING_ON_MAIN(send_data_upwards_, p_buf);
+    if (send_data_upwards_ == nullptr) {
+      LOG_WARN("Dropping ACL data with no callback");
+      osi_free(p_buf);
+    } else if (do_in_main_thread(FROM_HERE,
+                                 base::Bind(send_data_upwards_, p_buf)) !=
+               BT_STATUS_SUCCESS) {
+      osi_free(p_buf);
+    }
   }
 
   virtual void InitiateDisconnect(hci::DisconnectReason reason) = 0;

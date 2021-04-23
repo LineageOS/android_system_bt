@@ -2703,6 +2703,7 @@ void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
     if (p_acl == nullptr) {
       LOG_WARN("Acl br_edr data write for unknown device:%s",
                PRIVATE_ADDRESS(bd_addr));
+      osi_free(p_buf);
       return;
     }
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
@@ -2716,6 +2717,7 @@ void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
     if (p_acl == nullptr) {
       LOG_WARN("Acl le data write for unknown device:%s",
                PRIVATE_ADDRESS(bd_addr));
+      osi_free(p_buf);
       return;
     }
     return bluetooth::shim::ACL_WriteData(p_acl->hci_handle, p_buf);
