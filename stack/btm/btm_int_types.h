@@ -126,7 +126,7 @@ typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len, uint8_t* p_stream);
 
 /* Define the Device Management control structure
  */
-typedef struct {
+typedef struct tBTM_DEVCB {
   tBTM_VS_EVT_CB* p_vend_spec_cb[BTM_MAX_VSE_CALLBACKS]; /* Register for vendor
                                                             specific events  */
 
@@ -202,7 +202,7 @@ typedef struct {
   }
 } tBTM_DEVCB;
 
-typedef struct {
+typedef struct tBTM_CB {
   tBTM_CFG cfg; /* Device configuration */
 
   /*****************************************************
