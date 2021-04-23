@@ -48,7 +48,7 @@ class TestHciLayer : public HciLayer {
       common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
     std::lock_guard<std::mutex> lock(mutex_);
     command_queue_.push(std::move(command));
-    command_complete_callbacks.push_front(std::move(on_complete));
+    command_complete_callbacks.push_back(std::move(on_complete));
     if (command_promise_ != nullptr) {
       command_promise_->set_value();
       command_promise_.reset();
