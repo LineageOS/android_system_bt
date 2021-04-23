@@ -22,6 +22,7 @@
  *
  ******************************************************************************/
 
+#include <base/strings/stringprintf.h>
 #include <string.h>
 
 #include "bt_common.h"
@@ -40,6 +41,11 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_api.h"  // BTM_LogHistory
+
+namespace {
+constexpr char kBtmLogTag[] = "HIDH";
+}
 
 static uint8_t find_conn_by_cid(uint16_t cid);
 static void hidh_conn_retry(uint8_t dhandle);
@@ -141,6 +147,8 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
       hidh_l2cif_disconnect(p_hcon->intr_cid);
     else if (p_hcon->ctrl_cid)
       hidh_l2cif_disconnect(p_hcon->ctrl_cid);
+
+    BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnecting");
   } else {
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
   }
@@ -175,6 +183,12 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
   }
 
   p_hcon = &hh_cb.devices[i].conn;
+
+  BTM_LogHistory(
+      kBtmLogTag, hh_cb.devices[i].addr, "Connect request",
+      base::StringPrintf("%s state:%s",
+                         (psm == HID_PSM_CONTROL) ? "control" : "interrupt",
+                         hid_conn::state_text(p_hcon->conn_state).c_str()));
 
   /* Check we are in the correct state for this */
   if (psm == HID_PSM_INTERRUPT) {
@@ -214,6 +228,8 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
                                               disc_reason (from
                                               HID_ERR_AUTH_FAILED) */
     p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
+    BTM_LogHistory(kBtmLogTag, hh_cb.devices[i].addr, "Connecting",
+                   "waiting for interrupt channel");
     return;
   }
 
@@ -329,7 +345,11 @@ static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   } else {
     p_hcon->conn_state = HID_CONN_STATE_CONFIG;
   }
-
+  BTM_LogHistory(
+      kBtmLogTag, hh_cb.devices[dhandle].addr, "Configuring",
+      base::StringPrintf("control:0x%04x interrupt:0x%04x state:%s",
+                         p_hcon->ctrl_cid, p_hcon->intr_cid,
+                         hid_conn::state_text(p_hcon->conn_state).c_str()));
   return;
 }
 
@@ -412,6 +432,7 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
         HIDH_TRACE_WARNING("HID-Host INTR Originate failed");
         reason = HID_L2CAP_REQ_FAIL;
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
+        BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Failed");
         hidh_conn_disconnect(dhandle);
         hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE,
                        reason, NULL);
@@ -420,6 +441,8 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
         /* Transition to the next appropriate state, waiting for connection
          * confirm on interrupt channel. */
         p_hcon->conn_state = HID_CONN_STATE_CONNECTING_INTR;
+        BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Connecting",
+                       "interrupt channel");
       }
     }
   }
@@ -434,6 +457,11 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
     hh_cb.devices[dhandle].state = HID_DEV_CONNECTED;
     hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_OPEN, 0,
                    NULL);
+    BTM_LogHistory(
+        kBtmLogTag, hh_cb.devices[dhandle].addr, "Connected",
+        base::StringPrintf("control:0x%04x interrupt:0x%04x state:%s",
+                           p_hcon->ctrl_cid, p_hcon->intr_cid,
+                           hid_conn::state_text(p_hcon->conn_state).c_str()));
   }
 }
 
@@ -466,6 +494,10 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   HIDH_TRACE_EVENT("HID-Host Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
 
   p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
+  BTM_LogHistory(
+      kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnecting",
+      base::StringPrintf(
+          "%s", (l2cap_cid == p_hcon->ctrl_cid) ? "control" : "interrupt"));
 
   if (l2cap_cid == p_hcon->ctrl_cid)
     p_hcon->ctrl_cid = 0;
@@ -533,12 +565,14 @@ static void hidh_l2cif_disconnect(uint16_t l2cap_cid) {
     if (p_hcon->ctrl_cid) {
       HIDH_TRACE_EVENT("HID-Host Initiating L2CAP Ctrl disconnection");
       L2CA_DisconnectReq(p_hcon->ctrl_cid);
+      p_hcon->ctrl_cid = 0;
     }
   }
 
   if ((p_hcon->ctrl_cid == 0) && (p_hcon->intr_cid == 0)) {
     hh_cb.devices[dhandle].state = HID_DEV_NO_CONN;
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
+    BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnected");
     hh_cb.callback(dhandle, hh_cb.devices[dhandle].addr, HID_HDEV_EVT_CLOSE,
                    p_hcon->disc_reason, NULL);
   }
@@ -831,6 +865,8 @@ tHID_STATUS hidh_conn_initiate(uint8_t dhandle) {
     /* Transition to the next appropriate state, waiting for connection confirm
      * on control channel. */
     p_dev->conn.conn_state = HID_CONN_STATE_CONNECTING_CTRL;
+    BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Connecting",
+                   "control channel");
   }
 
   return (HID_SUCCESS);

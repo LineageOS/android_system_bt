@@ -513,6 +513,17 @@ class ClassicShimAclConnection
                         manufacturer_name, sub_version);
   }
 
+  void OnReadRemoteSupportedFeaturesComplete(uint64_t features) override {
+    TRY_POSTING_ON_MAIN(interface_.on_read_remote_supported_features_complete,
+                        handle_, features);
+
+    if (features & ((uint64_t(1) << 63))) {
+      connection_->ReadRemoteExtendedFeatures(1);
+      return;
+    }
+    LOG_DEBUG("Device does not support extended features");
+  }
+
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number,
                                             uint8_t max_page_number,
                                             uint64_t features) override {
@@ -898,43 +909,45 @@ void DumpsysAcl(int fd) {
   shim::Stack::GetInstance()->GetAcl()->DumpConnectionHistory(fd);
 
   for (int i = 0; i < MAX_L2CAP_LINKS; i++) {
-    const tACL_CONN& acl_conn = acl_cb.acl_db[i];
-    if (!acl_conn.in_use) continue;
+    const tACL_CONN& link = acl_cb.acl_db[i];
+    if (!link.in_use) continue;
 
-    LOG_DUMPSYS(fd, "    peer_le_features valid:%s data:%s",
-                common::ToString(acl_conn.peer_le_features_valid).c_str(),
-                bd_features_text(acl_conn.peer_le_features).c_str());
-    for (int j = 0; j < HCI_EXT_FEATURES_PAGE_MAX + 1; j++) {
-      LOG_DUMPSYS(fd, "    peer_lmp_features[%d] valid:%s data:%s", j,
-                  common::ToString(acl_conn.peer_lmp_feature_valid[j]).c_str(),
-                  bd_features_text(acl_conn.peer_lmp_feature_pages[j]).c_str());
-    }
-    LOG_DUMPSYS(fd, "      sniff_subrating:%s",
-                common::ToString(HCI_SNIFF_SUB_RATE_SUPPORTED(
-                                     acl_conn.peer_lmp_feature_pages[0]))
-                    .c_str());
-
-    LOG_DUMPSYS(fd, "remote_addr:%s", acl_conn.remote_addr.ToString().c_str());
-    LOG_DUMPSYS(fd, "    handle:0x%04x", acl_conn.hci_handle);
-    LOG_DUMPSYS(fd, "    [le] active_remote_addr:%s",
-                acl_conn.active_remote_addr.ToString().c_str());
-    LOG_DUMPSYS(fd, "    [le] conn_addr:%s",
-                acl_conn.conn_addr.ToString().c_str());
-    LOG_DUMPSYS(fd, "    link_up_issued:%s",
-                (acl_conn.link_up_issued) ? "true" : "false");
-    LOG_DUMPSYS(fd, "    transport:%s",
-                bt_transport_text(acl_conn.transport).c_str());
-    LOG_DUMPSYS(fd, "    flush_timeout:0x%04x",
-                acl_conn.flush_timeout_in_ticks);
-    LOG_DUMPSYS(
-        fd, "    [classic] link_policy:%s",
-        link_policy_text(static_cast<tLINK_POLICY>(acl_conn.link_policy))
-            .c_str());
+    LOG_DUMPSYS(fd, "remote_addr:%s handle:0x%04x transport:%s",
+                link.remote_addr.ToString().c_str(), link.hci_handle,
+                bt_transport_text(link.transport).c_str());
+    LOG_DUMPSYS(fd, "    link_up_issued:%5s",
+                (link.link_up_issued) ? "true" : "false");
+    LOG_DUMPSYS(fd, "    flush_timeout:0x%04x", link.flush_timeout_in_ticks);
     LOG_DUMPSYS(fd, "    link_supervision_timeout:%.3f sec",
-                ticks_to_seconds(acl_conn.link_super_tout));
-    LOG_DUMPSYS(fd, "    pkt_types_mask:0x%04x", acl_conn.pkt_types_mask);
-    LOG_DUMPSYS(fd, "    disconnect_reason:0x%02x", acl_conn.disconnect_reason);
-    LOG_DUMPSYS(fd, "    role:%s", RoleText(acl_conn.link_role).c_str());
+                ticks_to_seconds(link.link_super_tout));
+    LOG_DUMPSYS(fd, "    disconnect_reason:0x%02x", link.disconnect_reason);
+
+    if (link.is_transport_br_edr()) {
+      for (int j = 0; j < HCI_EXT_FEATURES_PAGE_MAX + 1; j++) {
+        LOG_DUMPSYS(fd, "    peer_lmp_features[%d] valid:%s data:%s", j,
+                    common::ToString(link.peer_lmp_feature_valid[j]).c_str(),
+                    bd_features_text(link.peer_lmp_feature_pages[j]).c_str());
+      }
+      LOG_DUMPSYS(fd, "    [classic] link_policy:%s",
+                  link_policy_text(static_cast<tLINK_POLICY>(link.link_policy))
+                      .c_str());
+      LOG_DUMPSYS(fd, "    [classic] sniff_subrating:%s",
+                  common::ToString(HCI_SNIFF_SUB_RATE_SUPPORTED(
+                                       link.peer_lmp_feature_pages[0]))
+                      .c_str());
+
+      LOG_DUMPSYS(fd, "    pkt_types_mask:0x%04x", link.pkt_types_mask);
+      LOG_DUMPSYS(fd, "    role:%s", RoleText(link.link_role).c_str());
+    } else if (link.is_transport_ble()) {
+      LOG_DUMPSYS(fd, "    [le] peer_features valid:%s data:%s",
+                  common::ToString(link.peer_le_features_valid).c_str(),
+                  bd_features_text(link.peer_le_features).c_str());
+
+      LOG_DUMPSYS(fd, "    [le] active_remote_addr:%s",
+                  link.active_remote_addr.ToString().c_str());
+      LOG_DUMPSYS(fd, "    [le] conn_addr:%s",
+                  link.conn_addr.ToString().c_str());
+    }
   }
 }
 #undef DUMPSYS_TAG
@@ -975,7 +988,6 @@ void DumpsysRecord(int fd) {
        node = list_next(node)) {
     tBTM_SEC_DEV_REC* p_dev_rec =
         static_cast<tBTM_SEC_DEV_REC*>(list_node(node));
-
     LOG_DUMPSYS(fd, "%03u %s", ++cnt, p_dev_rec->ToString().c_str());
   }
 }

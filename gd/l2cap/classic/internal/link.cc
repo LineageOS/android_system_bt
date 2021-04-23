@@ -439,9 +439,14 @@ void Link::OnReadRemoteVersionInformationComplete(
   link_manager_->OnReadRemoteVersionInformation(
       hci_status, GetDevice().GetAddress(), lmp_version, manufacturer_name, sub_version);
 }
+void Link::OnReadRemoteSupportedFeaturesComplete(uint64_t features) {
+  LOG_INFO("page_number:%hhu features:0x%lx", static_cast<uint8_t>(0), static_cast<unsigned long>(features));
+  link_manager_->OnReadRemoteSupportedFeatures(GetDevice().GetAddress(), features);
+}
+
 void Link::OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) {
   LOG_INFO(
-      "page_number:%hhu max_page_number:%hhu sub_version:0x%lx",
+      "page_number:%hhu max_page_number:%hhu features:0x%lx",
       page_number,
       max_page_number,
       static_cast<unsigned long>(features));

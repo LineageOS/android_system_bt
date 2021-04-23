@@ -970,4 +970,17 @@ typedef uint8_t tBTM_CONTRL_STATE;
 // Bluetooth Quality Report - Report receiver
 typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len, uint8_t* p_stream);
 
+struct tREMOTE_VERSION_INFO {
+  uint8_t lmp_version{0};
+  uint16_t lmp_subversion{0};
+  uint16_t manufacturer{0};
+  bool valid{false};
+  std::string ToString() const {
+    return (valid) ? base::StringPrintf("%02hhu-%05hu-%05hu", lmp_version,
+                                        lmp_subversion, manufacturer)
+                   : std::string("UNKNOWN");
+  }
+};
+using remote_version_info = tREMOTE_VERSION_INFO;
+
 #endif  // BTM_API_TYPES_H

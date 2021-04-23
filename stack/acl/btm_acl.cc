@@ -66,6 +66,9 @@
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
+void BTM_update_version_info(const RawAddress& bd_addr,
+                             const remote_version_info& remote_version_info);
+
 void gatt_find_in_device_record(const RawAddress& bd_addr,
                                 tBLE_BD_ADDR* address_with_type);
 void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
@@ -781,6 +784,9 @@ void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
     p_acl_cb->remote_version_info.manufacturer = manufacturer;
     p_acl_cb->remote_version_info.lmp_subversion = lmp_subversion;
     p_acl_cb->remote_version_info.valid = true;
+    BTM_update_version_info(p_acl_cb->RemoteAddress(),
+                            p_acl_cb->remote_version_info);
+
     bluetooth::common::LogRemoteVersionInfo(handle, status, lmp_version,
                                             manufacturer, lmp_subversion);
   } else {
@@ -2816,8 +2822,43 @@ void acl_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
   bluetooth::hci::IsoManager::GetInstance()->HandleNumComplDataPkts(p, evt_len);
 }
 
+void acl_process_supported_features(uint16_t handle, uint64_t features) {
+  ASSERT_LOG(bluetooth::shim::is_gd_acl_enabled(),
+             "Should only be called when gd_acl enabled");
+
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return;
+  }
+  const uint8_t current_page_number = 0;
+
+  memcpy(p_acl->peer_lmp_feature_pages[current_page_number],
+         (uint8_t*)&features, sizeof(uint64_t));
+  p_acl->peer_lmp_feature_valid[current_page_number] = true;
+
+  LOG_DEBUG(
+      "Copied supported feature pages handle:%hu current_page_number:%hhu "
+      "features:%s",
+      handle, current_page_number,
+      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number])
+          .c_str());
+
+  if ((HCI_LMP_EXTENDED_SUPPORTED(p_acl->peer_lmp_feature_pages[0])) &&
+      (controller_get_interface()
+           ->supports_reading_remote_extended_features())) {
+    LOG_DEBUG("Waiting for remote extended feature response to arrive");
+  } else {
+    LOG_DEBUG("No more remote features outstanding so notify upper layer");
+    NotifyAclFeaturesReadComplete(*p_acl, current_page_number);
+  }
+}
+
 void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
                                    uint8_t max_page_number, uint64_t features) {
+  ASSERT_LOG(bluetooth::shim::is_gd_acl_enabled(),
+             "Should only be called when gd_acl enabled");
+
   if (current_page_number > HCI_EXT_FEATURES_PAGE_MAX) {
     LOG_WARN("Unable to process current_page_number:%hhu", current_page_number);
     return;
@@ -2874,4 +2915,36 @@ bool acl_check_and_clear_ignore_auto_connect_after_disconnect(
 
 void acl_clear_all_ignore_auto_connect_after_disconnect() {
   btm_cb.acl_cb_.ClearAllIgnoreAutoConnectAfterDisconnect();
+}
+
+/**
+ * Confusingly, immutable device features are stored in the
+ * ephemeral connection data structure while connection security
+ * is stored in the device record.
+ *
+ * This HACK allows legacy security protocols to work as intended under
+ * those conditions.
+ */
+void HACK_acl_check_sm4(tBTM_SEC_DEV_REC& record) {
+  // Return if we already know this info
+  if ((record.sm4 & BTM_SM4_TRUE) != BTM_SM4_UNKNOWN) return;
+
+  tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(record.RemoteAddress(), BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl for authentication device:%s",
+             PRIVATE_ADDRESS(record.RemoteAddress()));
+  }
+
+  // If we have not received the SSP feature record
+  // we have to wait
+  if (!p_acl->peer_lmp_feature_valid[1]) {
+    LOG_WARN(
+        "Authentication started without extended feature page 1 request "
+        "response");
+    return;
+  }
+  record.sm4 = (HCI_SSP_HOST_SUPPORTED(p_acl->peer_lmp_feature_pages[1]))
+                   ? BTM_SM4_TRUE
+                   : BTM_SM4_KNOWN;
 }
