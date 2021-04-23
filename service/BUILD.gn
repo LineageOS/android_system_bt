@@ -63,6 +63,8 @@ source_set("service_linux_src") {
   sources = [
     "ipc/ipc_handler_linux.cc",
     "ipc/linux_ipc_host.cc",
+    "ipc/dbus/ipc_handler_dbus.cc",
+    "ipc/dbus/bluetooth_adapter.cc",
   ]
 
   deps = [
@@ -91,8 +93,6 @@ source_set("service") {
     "common/bluetooth/scan_settings.cc",
     "common/bluetooth/service.cc",
     "common/bluetooth/util/atomic_string.cc",
-    "ipc/dbus/bluetooth_adapter.cc",
-    "ipc/dbus/ipc_handler_dbus.cc",
   ]
 
   deps = [
@@ -155,6 +155,7 @@ if (use.test) {
     deps = [
       ":service_base_test_src",
       ":service_daemon_src",
+      ":service_linux_src",
       "//bt/service/common:libbluetooth_common",
     ]
 

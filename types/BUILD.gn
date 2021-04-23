@@ -54,6 +54,13 @@ if (use.test) {
       "z",
     ]
 
+    # For some reason, this is required for host build. Otherwise, I get
+    # a complaint from gmock:
+    #   undefined reference to symbol 'pthread_getspecific@@GLIBC_2.2.5'
+    ldflags = [
+      "-lpthread"
+    ]
+
     deps = [
       ":types",
     ]
