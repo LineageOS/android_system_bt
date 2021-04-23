@@ -379,6 +379,13 @@ void LinkManager::OnReadRemoteVersionInformation(
   }
 }
 
+void LinkManager::OnReadRemoteSupportedFeatures(hci::Address device, uint64_t features) {
+  if (link_property_callback_handler_ != nullptr) {
+    link_property_callback_handler_->CallOn(
+        link_property_listener_, &LinkPropertyListener::OnReadRemoteSupportedFeatures, device, features);
+  }
+}
+
 void LinkManager::OnReadRemoteExtendedFeatures(
     hci::Address device, uint8_t page_number, uint8_t max_page_number, uint64_t features) {
   if (link_property_callback_handler_ != nullptr) {

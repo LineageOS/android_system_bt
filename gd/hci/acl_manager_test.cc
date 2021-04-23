@@ -520,6 +520,7 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     MOCK_METHOD4(
         OnReadRemoteVersionInformationComplete,
         void(hci::ErrorCode hci_status, uint8_t lmp_version, uint16_t manufacturer_name, uint16_t sub_version));
+    MOCK_METHOD1(OnReadRemoteSupportedFeaturesComplete, void(uint64_t features));
     MOCK_METHOD3(
         OnReadRemoteExtendedFeaturesComplete, void(uint8_t page_number, uint8_t max_page_number, uint64_t features));
   } mock_connection_management_callbacks_;

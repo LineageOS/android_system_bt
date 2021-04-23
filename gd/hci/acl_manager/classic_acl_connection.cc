@@ -146,6 +146,9 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
         connection_handle_, static_cast<uint8_t>(hci_status), lmp_version, manufacturer_name, sub_version);
     SAVE_OR_CALL(OnReadRemoteVersionInformationComplete, hci_status, lmp_version, manufacturer_name, sub_version);
   }
+  void OnReadRemoteSupportedFeaturesComplete(uint64_t features) override {
+    SAVE_OR_CALL(OnReadRemoteSupportedFeaturesComplete, features);
+  }
   void OnReadRemoteExtendedFeaturesComplete(uint8_t page_number, uint8_t max_page_number, uint64_t features) override {
     SAVE_OR_CALL(OnReadRemoteExtendedFeaturesComplete, page_number, max_page_number, features);
   }
