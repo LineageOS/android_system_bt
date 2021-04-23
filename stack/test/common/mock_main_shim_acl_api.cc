@@ -54,7 +54,7 @@ void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
 void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
   mock_function_count_map[__func__]++;
 }
-void bluetooth::shim::ACL_WriteData(uint16_t handle, const BT_HDR* p_buf) {
+void bluetooth::shim::ACL_WriteData(uint16_t handle, BT_HDR* p_buf) {
   mock_function_count_map[__func__]++;
 }
 void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic,
