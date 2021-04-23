@@ -877,6 +877,7 @@ tBTM_STATUS bluetooth::shim::BTM_ClearInqDb(const RawAddress* p_bda) {
 tBTM_STATUS bluetooth::shim::BTM_WriteEIR(BT_HDR* p_buff) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_buff != nullptr);
+  osi_free(p_buff);
   return BTM_NO_RESOURCES;
 }
 
