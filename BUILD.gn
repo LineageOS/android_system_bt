@@ -104,7 +104,9 @@ config("target_defaults") {
     "-Wno-final-dtor-non-final-class",
   ]
 
-  cflags_cc = [ "-std=c++17" ]
+  cflags_cc = [
+    "-std=c++17",
+  ]
 
   defines = [
     "HAS_NO_BDROID_BUILDCFG",
@@ -116,7 +118,7 @@ config("target_defaults") {
 
   # If not configured as a dynamic library, default to static library
   if (!(defined(use.bt_dynlib) && use.bt_dynlib)) {
-    defines = [
+    defines += [
       "STATIC_LIBBLUETOOTH",
     ]
   }

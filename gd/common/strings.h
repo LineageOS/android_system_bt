@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <limits.h>
 #include <string.h>
 #include <charconv>
 #include <iomanip>

@@ -17,7 +17,9 @@
 #include <base/logging.h>
 #include <errno.h>
 #include <fcntl.h>
+#ifdef OS_ANDROID
 #include <statslog.h>
+#endif
 #include <stdio.h>
 #include <sys/stat.h>
 
@@ -395,6 +397,7 @@ void AddLinkQualityEventToQueue(uint8_t length, uint8_t* p_link_quality_event) {
       p_bqr_event->bqr_link_quality_event_.no_rx_count,
       p_bqr_event->bqr_link_quality_event_.nak_count);
 
+#ifdef OS_ANDROID
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_QUALITY_REPORT_REPORTED,
       p_bqr_event->bqr_link_quality_event_.quality_report_id,
@@ -420,6 +423,9 @@ void AddLinkQualityEventToQueue(uint8_t length, uint8_t* p_link_quality_event) {
     LOG(WARNING) << __func__ << ": failed to log BQR event to statsd, error "
                  << ret;
   }
+#else
+  // TODO(abps) Metrics for non-Android build
+#endif
   kpBqrEventQueue->Enqueue(p_bqr_event.release());
 }
 

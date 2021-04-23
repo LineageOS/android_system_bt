@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 /* Get thread identification. */
-pid_t gettid(void);
+pid_t gettid(void) throw();
 
 /* Copy src to string dst of size siz. */
 size_t strlcpy(char* dst, const char* src, size_t siz);
