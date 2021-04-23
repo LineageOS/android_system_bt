@@ -47,11 +47,12 @@ if [ ! -z "$CLANG_PACKAGE" ]; then
 fi
 
 sudo apt-get -y install $CLANG_PACKAGE libevent-dev libc++-dev libc++abi-dev \
-  ninja-build
-  gn_path=`which gn`
-  if [ -z $gn_path ]; then
-    gnsha1=$(curl $GNSHA1_URL | base64 -d)
-    wget -O gn http://storage.googleapis.com/chromium-gn/$gnsha1
-    chmod a+x ./gn
-    sudo mv ./gn /usr/bin/
-  fi
+  ninja-build libflatbuffers-dev libtinyxml2-dev
+
+gn_path=`which gn`
+if [ -z $gn_path ]; then
+  gnsha1=$(curl $GNSHA1_URL | base64 -d)
+  wget -O gn http://storage.googleapis.com/chromium-gn/$gnsha1
+  chmod a+x ./gn
+  sudo mv ./gn /usr/bin/
+fi
