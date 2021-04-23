@@ -20,6 +20,7 @@ source_set("BluetoothOsSources_linux") {
   ]
 
   configs += [ "//bt/gd:gd_defaults" ]
+  deps = [ "//bt:libbt-platform-protos-lite" ]
 }
 
 source_set("BluetoothOsSources_linux_generic") {

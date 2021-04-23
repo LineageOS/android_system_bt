@@ -17,7 +17,7 @@
 source_set("BluetoothCommonSources") {
   sources = [
     "init_flags.cc",
-    "metric_id_manager.cc"
+    "metric_id_manager.cc",
     "stop_watch.cc",
     "strings.cc",
   ]
@@ -25,6 +25,6 @@ source_set("BluetoothCommonSources") {
   configs += [ "//bt/gd:gd_defaults" ]
   deps = [
     "//bt/gd:gd_default_deps",
-    "//bt/third_party/proto_logging/stats:libbt-platform-protos"
+    "//bt:libbt-platform-protos-lite",
   ]
 }
