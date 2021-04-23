@@ -21,8 +21,8 @@ source_set("BluetoothHalSources") {
   deps = [ "//bt/gd:gd_default_deps" ]
 }
 
-source_set("BluetoothHalSources_hci_rootcanal") {
-  sources = [ "hci_hal_host_rootcanal.cc" ]
+source_set("BluetoothHalSources_hci_host") {
+  sources = [ "hci_hal_host.cc" ]
 
   configs += [ "//bt/gd:gd_defaults" ]
   deps = [ "//bt/gd:gd_default_deps" ]
