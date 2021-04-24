@@ -225,9 +225,12 @@ struct ClassicDynamicChannelHelper {
         static_cast<BT_HDR*>(osi_calloc(packet_vector.size() + sizeof(BT_HDR)));
     std::copy(packet_vector.begin(), packet_vector.end(), buffer->data);
     buffer->len = packet_vector.size();
-    do_in_main_thread(FROM_HERE,
-                      base::Bind(appl_info_.pL2CA_DataInd_Cb, cid_token,
-                                 base::Unretained(buffer)));
+    if (do_in_main_thread(FROM_HERE,
+                          base::Bind(appl_info_.pL2CA_DataInd_Cb, cid_token,
+                                     base::Unretained(buffer))) !=
+        BT_STATUS_SUCCESS) {
+      osi_free(buffer);
+    }
   }
 
   void on_outgoing_connection_fail(
@@ -762,18 +765,22 @@ bool L2CA_DisconnectReq(uint16_t cid) {
 uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
   if (classic_cid_token_to_channel_map_.count(cid) == 0) {
     LOG(ERROR) << __func__ << "Invalid cid: " << cid;
+    osi_free(p_data);
     return 0;
   }
   auto psm = classic_cid_token_to_channel_map_[cid];
   if (classic_dynamic_channel_helper_map_.count(psm) == 0) {
     LOG(ERROR) << __func__ << "Not registered psm: " << psm;
+    osi_free(p_data);
     return 0;
   }
   auto len = p_data->len;
   auto* data = p_data->data + p_data->offset;
-  return classic_dynamic_channel_helper_map_[psm]->send(
-             cid, MakeUniquePacket(data, len)) *
-         len;
+  uint8_t sent_length = classic_dynamic_channel_helper_map_[psm]->send(
+                            cid, MakeUniquePacket(data, len)) *
+                        len;
+  osi_free(p_data);
+  return sent_length;
 }
 
 bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bd_addr,
@@ -1000,12 +1007,14 @@ uint16_t L2CA_SendFixedChnlData(uint16_t cid, const RawAddress& rem_bda,
                                 BT_HDR* p_buf) {
   if (cid != kAttCid && cid != kSmpCid) {
     LOG(ERROR) << "Invalid cid " << cid;
+    osi_free(p_buf);
     return L2CAP_DW_FAILED;
   }
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
   auto len = p_buf->len;
   auto* data = p_buf->data + p_buf->offset;
   bool sent = helper->send(ToGdAddress(rem_bda), MakeUniquePacket(data, len));
+  osi_free(p_buf);
   return sent ? L2CAP_DW_SUCCESS : L2CAP_DW_FAILED;
 }
 
@@ -1392,9 +1401,12 @@ struct LeDynamicChannelHelper {
         static_cast<BT_HDR*>(osi_calloc(packet_vector.size() + sizeof(BT_HDR)));
     std::copy(packet_vector.begin(), packet_vector.end(), buffer->data);
     buffer->len = packet_vector.size();
-    do_in_main_thread(FROM_HERE,
-                      base::Bind(appl_info_.pL2CA_DataInd_Cb, cid_token,
-                                 base::Unretained(buffer)));
+    if (do_in_main_thread(FROM_HERE,
+                          base::Bind(appl_info_.pL2CA_DataInd_Cb, cid_token,
+                                     base::Unretained(buffer))) !=
+        BT_STATUS_SUCCESS) {
+      osi_free(buffer);
+    }
   }
 
   void on_outgoing_connection_fail(
@@ -1540,18 +1552,22 @@ bool L2CA_DisconnectLECocReq(uint16_t cid) {
 uint8_t L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data) {
   if (le_cid_token_to_channel_map_.count(cid) == 0) {
     LOG(ERROR) << __func__ << "Invalid cid: " << cid;
+    osi_free(p_data);
     return 0;
   }
   auto psm = le_cid_token_to_channel_map_[cid];
   if (le_dynamic_channel_helper_map_.count(psm) == 0) {
     LOG(ERROR) << __func__ << "Not registered psm: " << psm;
-    return false;
+    osi_free(p_data);
+    return 0;
   }
   auto len = p_data->len;
   auto* data = p_data->data + p_data->offset;
-  return le_dynamic_channel_helper_map_[psm]->send(
-             cid, MakeUniquePacket(data, len)) *
-         len;
+  uint8_t sent_length = le_dynamic_channel_helper_map_[psm]->send(
+                            cid, MakeUniquePacket(data, len)) *
+                        len;
+  osi_free(p_data);
+  return sent_length;
 }
 
 void L2CA_SwitchRoleToCentral(const RawAddress& addr) {

@@ -49,12 +49,24 @@ The following third-party dependencies are necessary but currently unavailable
 via a package manager. You may have to build these from source and install them
 to your local environment.
 
-TODO(abhishekpandit) - Provide a pre-packaged option for these or proper build
-instructions from source.
-
 * libchrome
 * modp_b64
-* tinyxml2
+
+We provide a script to produce debian packages for those components, please
+follow the instructions in build/dpkg/README.txt.
+
+The googletest packages provided by Debian/Ubuntu (libgmock-dev and
+libgtest-dev) do not provide pkg-config files, so you can build your own
+googletest using the steps below:
+
+```
+$ git clone https://github.com/google/googletest.git -b release-1.10.0
+$ cd googletest        # Main directory of the cloned repository.
+$ mkdir build          # Create a directory to hold the build output.
+$ cd build
+$ cmake ..             # Generate native build scripts for GoogleTest.
+$ sudo make install -DCMAKE_INSTALL_PREFIX=/usr
+```
 
 ### Stage your build environment
 

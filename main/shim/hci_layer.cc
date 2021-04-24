@@ -344,7 +344,7 @@ void OnTransmitPacketCommandComplete(command_complete_cb complete_callback,
                                      bluetooth::hci::CommandCompleteView view) {
   LOG_DEBUG("Received cmd complete for %s",
             bluetooth::hci::OpCodeText(view.GetCommandOpCode()).c_str());
-  std::vector<const uint8_t> data(view.begin(), view.end());
+  std::vector<uint8_t> data(view.begin(), view.end());
   BT_HDR* response = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &view);
   complete_callback(response, context);
 }
