@@ -739,7 +739,7 @@ tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state);
  * Parameters:      void
  *
  ******************************************************************************/
-void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
+void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, tBTM_STATUS res,
                                  bool is_le_transport);
 
 /*******************************************************************************
