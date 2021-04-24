@@ -117,7 +117,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
     bluetooth::shim::GetScanning()->ScanFilterParameterSetup(
         apcf_action, filter_index, advertising_filter_parameter);
     // TODO refactor callback mechanism
-    do_in_jni_thread(FROM_HERE, base::Bind(cb, 0, 0, 0));
+    do_in_jni_thread(FROM_HERE,
+                     base::Bind(cb, 0, 0, btm_status_value(BTM_SUCCESS)));
   }
 
   /** Configure a scan filter condition  */
@@ -135,7 +136,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
       new_filters.push_back(command);
     }
     bluetooth::shim::GetScanning()->ScanFilterAdd(filter_index, new_filters);
-    do_in_jni_thread(FROM_HERE, base::Bind(cb, 0, 0, 0, 0));
+    do_in_jni_thread(FROM_HERE,
+                     base::Bind(cb, 0, 0, 0, btm_status_value(BTM_SUCCESS)));
   }
 
   /** Clear all scan filter conditions for specific filter index*/
@@ -150,7 +152,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
     bluetooth::shim::GetScanning()->ScanFilterEnable(enable);
 
     uint8_t action = enable ? 1 : 0;
-    do_in_jni_thread(FROM_HERE, base::Bind(cb, action, 0));
+    do_in_jni_thread(FROM_HERE,
+                     base::Bind(cb, action, btm_status_value(BTM_SUCCESS)));
   }
 
   /** Sets the LE scan interval and window in units of N*0.625 msec */
