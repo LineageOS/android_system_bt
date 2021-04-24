@@ -64,8 +64,8 @@ extern void btm_ble_link_sec_check(const RawAddress& bd_addr,
                                    tBTM_BLE_SEC_REQ_ACT* p_sec_req_act);
 extern void btm_ble_ltk_request_reply(const RawAddress& bda, bool use_stk,
                                       const Octet16& stk);
-extern uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
-                                  tSMP_EVT_DATA* p_data);
+extern tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
+                                      tSMP_EVT_DATA* p_data);
 extern tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
                                           tBTM_BLE_SEC_ACT sec_act,
                                           uint8_t link_role);
