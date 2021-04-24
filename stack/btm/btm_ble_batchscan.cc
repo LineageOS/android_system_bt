@@ -276,7 +276,7 @@ void read_reports_cb(std::vector<uint8_t> data_all, uint8_t num_records_all,
                   num_records);
 
   if (num_records == 0) {
-    cb.Run(status, report_format, num_records_all, data_all);
+    cb.Run(BTM_SUCCESS, report_format, num_records_all, data_all);
     return;
   }
 
