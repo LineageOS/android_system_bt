@@ -727,7 +727,8 @@ typedef union {
 /* Simple Pairing Events.  Called by the stack when Simple Pairing related
  * events occur.
 */
-typedef uint8_t(tBTM_SP_CALLBACK)(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
+typedef tBTM_STATUS(tBTM_SP_CALLBACK)(tBTM_SP_EVT event,
+                                      tBTM_SP_EVT_DATA* p_data);
 
 typedef void(tBTM_MKEY_CALLBACK)(const RawAddress& bd_addr, uint8_t status,
                                  uint8_t key_flag);

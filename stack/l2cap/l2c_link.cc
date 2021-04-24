@@ -190,6 +190,9 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
     /* Get the peer information if the l2cap flow-control/rtrans is supported */
     l2cu_send_peer_info_req(p_lcb, L2CAP_EXTENDED_FEATURES_INFO_TYPE);
 
+    /* Tell BTM Acl management about the link */
+    btm_acl_created(ci.bd_addr, handle, p_lcb->LinkRole(), BT_TRANSPORT_BR_EDR);
+
     if (p_lcb->IsBonding()) {
       LOG_DEBUG("Link is dedicated bonding handle:0x%04x", p_lcb->Handle());
       if (l2cu_start_post_bond_timer(handle)) return;
