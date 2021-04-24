@@ -21,6 +21,7 @@ import android.bluetooth.IBluetoothGatt;
 import android.bluetooth.IBluetoothManagerCallback;
 import android.bluetooth.IBluetoothProfileServiceConnection;
 import android.bluetooth.IBluetoothStateChangeCallback;
+import android.content.AttributionSource;
 
 /**
  * System private API for talking with the Bluetooth service.
@@ -38,11 +39,11 @@ interface IBluetoothManager
     @UnsupportedAppUsage
     void unregisterStateChangeCallback(in IBluetoothStateChangeCallback callback);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean enable(String packageName);
+    boolean enable(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean enableNoAutoConnect(String packageName);
+    boolean enableNoAutoConnect(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean disable(String packageName, boolean persist);
+    boolean disable(in AttributionSource attributionSource, boolean persist);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     int getState();
     @UnsupportedAppUsage
@@ -55,19 +56,19 @@ interface IBluetoothManager
     void unbindBluetoothProfileService(int profile, IBluetoothProfileServiceConnection proxy);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.LOCAL_MAC_ADDRESS})")
-    String getAddress();
+    String getAddress(in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    String getName();
+    String getName(in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)")
-    boolean onFactoryReset();
+    boolean onFactoryReset(in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isBleScanAlwaysAvailable();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean enableBle(String packageName, IBinder b);
+    boolean enableBle(in AttributionSource attributionSource, IBinder b);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
-    boolean disableBle(String packageName, IBinder b);
+    boolean disableBle(in AttributionSource attributionSource, IBinder b);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     boolean isBleAppPresent();
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
