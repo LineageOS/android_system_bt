@@ -311,9 +311,6 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
                                        uint16_t flush_timeout_in_ticks) {
   mock_function_count_map[__func__]++;
 }
-void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
-  mock_function_count_map[__func__]++;
-}
 void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode) {
   mock_function_count_map[__func__]++;
