@@ -35,7 +35,7 @@
 #include "osi/include/osi.h"
 
 #if __GLIBC__
-pid_t gettid(void) { return syscall(SYS_gettid); }
+pid_t gettid(void) throw() { return syscall(SYS_gettid); }
 #endif
 
 /* These functions from bionic

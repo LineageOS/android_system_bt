@@ -67,7 +67,7 @@ static_library("libbluetooth_gd") {
     "//bt/gd/crypto_toolbox:BluetoothCryptoToolboxSources",
     "//bt/gd/dumpsys:BluetoothDumpsysSources",
     "//bt/gd/hal:BluetoothHalSources",
-    "//bt/gd/hal:BluetoothHalSources_hci_rootcanal",
+    "//bt/gd/hal:BluetoothHalSources_hci_host",
     "//bt/gd/l2cap:BluetoothL2capSources",
     "//bt/gd/neighbor:BluetoothNeighborSources",
     "//bt/gd/rust/shim:libbluetooth_rust_interop",
