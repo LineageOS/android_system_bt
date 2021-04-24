@@ -46,6 +46,9 @@ struct Controller::impl {
     // SSP is managed by security layer once enabled
     if (!common::init_flags::gd_security_is_enabled()) {
       write_simple_pairing_mode(Enable::ENABLED);
+      hci_->EnqueueCommand(
+          WriteSecureConnectionsHostSupportBuilder::Create(Enable::ENABLED),
+          handler->BindOnceOn(this, &Controller::impl::write_secure_connections_host_support_complete_handler));
     }
     hci_->EnqueueCommand(ReadLocalNameBuilder::Create(),
                          handler->BindOnceOn(this, &Controller::impl::read_local_name_complete_handler));
@@ -187,6 +190,13 @@ struct Controller::impl {
   void unregister_monitor_completed_acl_packets_callback() {
     ASSERT(!acl_monitor_credits_callback_.IsEmpty());
     acl_monitor_credits_callback_ = {};
+  }
+
+  void write_secure_connections_host_support_complete_handler(CommandCompleteView view) {
+    auto complete_view = WriteSecureConnectionsHostSupportCompleteView::Create(view);
+    ASSERT(complete_view.IsValid());
+    ErrorCode status = complete_view.GetStatus();
+    ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
   }
 
   void read_local_name_complete_handler(CommandCompleteView view) {
