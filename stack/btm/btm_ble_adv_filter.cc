@@ -149,8 +149,10 @@ static void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
     return;
   }
 
+  tBTM_STATUS btm_status = (status == 0) ? BTM_SUCCESS : BTM_ERR_PROCESSING;
+
   if (op_subcode == BTM_BLE_META_PF_FEAT_SEL) {
-    cb.Run(num_avail, action, status);
+    cb.Run(num_avail, action, btm_status);
     return;
   }
 
@@ -168,7 +170,7 @@ static void btm_flt_update_cb(uint8_t expected_ocf, tBTM_BLE_PF_CFG_CBACK cb,
   /* send ADV PF operation complete */
   btm_ble_adv_filt_cb.op_type = 0;
 
-  cb.Run(num_avail, action, status);
+  cb.Run(num_avail, action, btm_status);
 }
 
 /*******************************************************************************
@@ -533,7 +535,7 @@ static void BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
       len += Uuid::kNumBytes128;
     } else {
       BTM_TRACE_ERROR("illegal UUID length: %d", uuid_len);
-      cb.Run(0, BTM_BLE_PF_CONFIG, 1 /*BTA_FAILURE*/);
+      cb.Run(0, BTM_BLE_PF_CONFIG, BTM_ILLEGAL_VALUE);
       return;
     }
 
@@ -565,7 +567,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
                    std::vector<ApcfCommand> commands,
                    tBTM_BLE_PF_CFG_CBACK cb) {
   if (!is_filtering_supported()) {
-    cb.Run(0, BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
+    cb.Run(0, BTM_BLE_PF_ENABLE, BTM_MODE_UNSUPPORTED);
     return;
   }
 
@@ -624,7 +626,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
         break;
     }
   }
-  cb.Run(0, 0, 0);
+  cb.Run(0, 0, BTM_SUCCESS);
 }
 
 /**
@@ -633,7 +635,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
 void BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
                      tBTM_BLE_PF_CFG_CBACK cb) {
   if (!is_filtering_supported()) {
-    cb.Run(0, BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
+    cb.Run(0, BTM_BLE_PF_ENABLE, BTM_MODE_UNSUPPORTED);
     return;
   }
 
@@ -710,7 +712,7 @@ void BTM_BleAdvFilterParamSetup(
   uint8_t param[len], *p;
 
   if (!is_filtering_supported()) {
-    cb.Run(0, BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
+    cb.Run(0, BTM_BLE_PF_ENABLE, btm_status_value(BTM_MODE_UNSUPPORTED));
     return;
   }
 
@@ -722,7 +724,7 @@ void BTM_BleAdvFilterParamSetup(
     p_bda_filter = btm_ble_find_addr_filter_counter(nullptr);
     if (NULL == p_bda_filter) {
       BTM_TRACE_ERROR("BD Address not found!");
-      cb.Run(0, BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
+      cb.Run(0, BTM_BLE_PF_ENABLE, btm_status_value(BTM_UNKNOWN_ADDR));
       return;
     }
 
@@ -812,7 +814,8 @@ static void enable_cmpl_cback(tBTM_BLE_PF_STATUS_CBACK p_stat_cback, uint8_t* p,
     return;
   }
 
-  p_stat_cback.Run(action, status);
+  tBTM_STATUS btm_status = (status == 0) ? BTM_SUCCESS : BTM_ERR_PROCESSING;
+  p_stat_cback.Run(action, btm_status);
 }
 
 /*******************************************************************************
@@ -828,7 +831,9 @@ static void enable_cmpl_cback(tBTM_BLE_PF_STATUS_CBACK p_stat_cback, uint8_t* p,
 void BTM_BleEnableDisableFilterFeature(uint8_t enable,
                                        tBTM_BLE_PF_STATUS_CBACK p_stat_cback) {
   if (!is_filtering_supported()) {
-    if (p_stat_cback) p_stat_cback.Run(BTM_BLE_PF_ENABLE, 1 /* BTA_FAILURE */);
+    if (p_stat_cback)
+      p_stat_cback.Run(BTM_BLE_PF_ENABLE,
+                       BTM_MODE_UNSUPPORTED /* BTA_FAILURE */);
     return;
   }
 

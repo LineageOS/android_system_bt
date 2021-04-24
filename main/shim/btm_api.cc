@@ -548,7 +548,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   uint8_t classic_mode = inqparms.mode & 0x0f;
   if (!Stack::GetInstance()->GetBtm()->StartInquiry(
           classic_mode, inqparms.duration, 0,
-          [](uint16_t status, uint8_t inquiry_mode) {
+          [](tBTM_STATUS status, uint8_t inquiry_mode) {
             LOG_INFO("%s Inquiry is complete status:%hd inquiry_mode:%hhd",
                      __func__, status, inquiry_mode);
             btm_cb.btm_inq_vars.inqparms.mode &= ~(inquiry_mode);

@@ -425,15 +425,15 @@ typedef uint8_t tBTM_BLE_SCAN_COND_OP;
 
 /* BLE adv payload filtering config complete callback */
 using tBTM_BLE_PF_CFG_CBACK = base::Callback<void(
-    uint8_t /* avbl_space */, uint8_t /* action */, uint8_t /* status */)>;
+    uint8_t /* avbl_space */, uint8_t /* action */, uint8_t /* btm_status */)>;
 
 /* BLE adv payload filtering status setup complete callback */
 using tBTM_BLE_PF_STATUS_CBACK =
-    base::Callback<void(uint8_t /*action*/, tBTM_STATUS /* status */)>;
+    base::Callback<void(uint8_t /*action*/, uint8_t /* btm_status */)>;
 
 /* BLE adv payload filtering param setup complete callback */
 using tBTM_BLE_PF_PARAM_CB = base::Callback<void(
-    uint8_t /* avbl_space */, uint8_t /* action */, uint8_t /* status */)>;
+    uint8_t /* avbl_space */, uint8_t /* action */, uint8_t /* btm_status */)>;
 
 #ifndef BTM_CS_IRK_LIST_MAX
 #define BTM_CS_IRK_LIST_MAX 0x20
