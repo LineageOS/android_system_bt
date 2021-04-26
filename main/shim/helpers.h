@@ -244,6 +244,11 @@ inline hci::DisconnectReason ToDisconnectReasonFromLegacy(
   return static_cast<hci::DisconnectReason>(reason);
 }
 
+inline bool IsPacketFlushable(const BT_HDR* p_buf) {
+  ASSERT(p_buf != nullptr);
+  return ToPacketData<const HciDataPreamble>(p_buf)->IsFlushable();
+}
+
 namespace debug {
 
 inline void DumpBtHdr(const BT_HDR* p_buf, const char* token) {
