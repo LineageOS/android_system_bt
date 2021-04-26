@@ -716,6 +716,7 @@ cc_test {
         "btm/btm_sec.cc",
         "metrics/stack_metrics_logging.cc",
         "test/btm/stack_btm_test.cc",
+        "test/btm/peer_packet_types_test.cc",
         "test/common/mock_bta_dm_act.cc",
         "test/common/mock_bta_sys_conn.cc",
         "test/common/mock_btif_bqr.cc",
