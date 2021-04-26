@@ -104,11 +104,12 @@ inline tBLE_BD_ADDR ToLegacyAddressWithType(
 }
 
 inline std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
-    const uint8_t* data, size_t len) {
+    const uint8_t* data, size_t len, bool is_flushable) {
   bluetooth::packet::RawBuilder builder;
   std::vector<uint8_t> bytes(data, data + len);
   auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
   payload->AddOctets(bytes);
+  payload->SetFlushable(is_flushable);
   return payload;
 }
 
