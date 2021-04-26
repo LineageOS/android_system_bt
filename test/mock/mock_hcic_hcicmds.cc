@@ -26,13 +26,31 @@ extern std::map<std::string, int> mock_function_count_map;
 #define UNUSED_ATTR
 
 #include <stddef.h>
-#include <string.h>
+#include "types/raw_address.h"
+
 #include "bt_common.h"
 #include "bt_target.h"
 #include "btu.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "stack/include/acl_hci_link_interface.h"
+
+namespace test {
+namespace mock {
+namespace hcic_hcicmds {
+
+struct btsnd_hcic_change_conn_type {
+  uint16_t handle{0};
+  uint16_t packet_types{0};
+} btsnd_hcic_change_conn_type;
+
+}  // namespace hcic_hcicmds
+}  // namespace mock
+}  // namespace test
+
+namespace mock = test::mock::hcic_hcicmds;
+
+// Global by definition
 void btsnd_hcic_accept_conn(const RawAddress& dest, uint8_t role) {
   mock_function_count_map[__func__]++;
 }
@@ -51,6 +69,8 @@ void btsnd_hcic_auth_request(uint16_t handle) {
   mock_function_count_map[__func__]++;
 }
 void btsnd_hcic_change_conn_type(uint16_t handle, uint16_t packet_types) {
+  mock::btsnd_hcic_change_conn_type.handle = handle;
+  mock::btsnd_hcic_change_conn_type.packet_types = packet_types;
   mock_function_count_map[__func__]++;
 }
 void btsnd_hcic_change_name(BD_NAME name) {
@@ -296,6 +316,7 @@ void btsnd_hcic_write_voice_settings(uint16_t flags) {
 bluetooth::legacy::hci::Interface interface_ = {
     .Disconnect = btsnd_hcic_disconnect,
     .StartRoleSwitch = btsnd_hcic_switch_role,
+    .ChangeConnectionPacketType = btsnd_hcic_change_conn_type,
 };
 
 const bluetooth::legacy::hci::Interface&
