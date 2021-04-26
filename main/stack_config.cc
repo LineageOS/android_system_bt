@@ -41,7 +41,7 @@ static std::unique_ptr<config_t> config;
 
 static future_t* init() {
 // TODO(armansito): Find a better way than searching by a hardcoded path.
-#if defined(OS_GENERIC)
+#if defined(OS_GENERIC) && !defined(TARGET_FLOSS)
   const char* path = "bt_stack.conf";
 #else  // !defined(OS_GENERIC)
   const char* path = "/etc/bluetooth/bt_stack.conf";
