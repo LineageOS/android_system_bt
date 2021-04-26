@@ -49,6 +49,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "stack/acl/acl.h"
+#include "stack/acl/peer_packet_types.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
@@ -82,7 +83,8 @@ struct StackAclBtmAcl {
   tACL_CONN* acl_allocate_connection();
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
   tACL_CONN* btm_bda_to_acl(const RawAddress& bda, tBT_TRANSPORT transport);
-  tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
+  bool change_connection_packet_types(tACL_CONN& link,
+                                      const uint16_t new_packet_type_bitmask);
   void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
   void btm_set_default_link_policy(tLINK_POLICY settings);
@@ -129,8 +131,6 @@ inline bool IsEprAvailable(const tACL_CONN& p_acl) {
          controller_get_interface()->supports_encryption_pause();
 }
 
-static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
-                                              uint16_t* p_pkt_type);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t max_page_number);
 static void btm_read_failed_contact_counter_timeout(void* data);
@@ -1076,16 +1076,24 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl_cb) {
-  if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR) {
+void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl) {
+  CHECK(p_acl != nullptr);
+
+  if (p_acl->is_transport_br_edr()) {
     /* For now there are a some devices that do not like sending */
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
-    internal_.btm_set_packet_types(p_acl_cb,
-                                   btm_cb.acl_cb_.DefaultPacketTypes());
-    btm_set_link_policy(p_acl_cb, btm_cb.acl_cb_.DefaultLinkPolicy());
+    const uint16_t default_packet_type_mask =
+        btm_cb.acl_cb_.DefaultPacketTypes();
+    if (!internal_.change_connection_packet_types(*p_acl,
+                                                  default_packet_type_mask)) {
+      LOG_ERROR("Unable to change connection packet type types:%04x address:%s",
+                default_packet_type_mask,
+                PRIVATE_ADDRESS(p_acl->RemoteAddress()));
+    }
+    btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
   }
-  NotifyAclLinkUp(*p_acl_cb);
+  NotifyAclLinkUp(*p_acl);
 }
 
 void btm_establish_continue_from_address(const RawAddress& bda,
@@ -1441,7 +1449,7 @@ void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         btm_set_packet_types
+ * Function         change_connection_packet_types
  *
  * Description      This function sets the packet types used for a specific
  *                  ACL connection. It is called internally by btm_acl_created
@@ -1450,26 +1458,44 @@ void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
  * Returns          status of the operation
  *
  ******************************************************************************/
-tBTM_STATUS StackAclBtmAcl::btm_set_packet_types(tACL_CONN* p,
-                                                 uint16_t pkt_types) {
-  uint16_t temp_pkt_types;
-  /* Save in the ACL control blocks, types that we support */
-  temp_pkt_types = (pkt_types & BTM_ACL_SUPPORTED_PKTS_MASK &
-                    btm_cb.acl_cb_.btm_acl_pkt_types_supported);
+bool StackAclBtmAcl::change_connection_packet_types(
+    tACL_CONN& link, const uint16_t new_packet_type_mask) {
+  // Start with the default configured packet types
+  const uint16_t default_packet_type_mask = btm_cb.acl_cb_.DefaultPacketTypes();
+
+  uint16_t packet_type_mask =
+      default_packet_type_mask &
+      (new_packet_type_mask & BTM_ACL_SUPPORTED_PKTS_MASK);
 
   /* OR in any exception packet types if at least 2.0 version of spec */
-  temp_pkt_types |= ((pkt_types & BTM_ACL_EXCEPTION_PKTS_MASK) |
-                     (btm_cb.acl_cb_.btm_acl_pkt_types_supported &
-                      BTM_ACL_EXCEPTION_PKTS_MASK));
+  packet_type_mask |=
+      ((new_packet_type_mask & BTM_ACL_EXCEPTION_PKTS_MASK) |
+       (BTM_ACL_EXCEPTION_PKTS_MASK & default_packet_type_mask));
 
   /* Exclude packet types not supported by the peer */
-  btm_acl_chk_peer_pkt_type_support(p, &temp_pkt_types);
+  if (link.peer_lmp_feature_valid[0]) {
+    PeerPacketTypes peer_packet_types(link.peer_lmp_feature_pages[0]);
+    packet_type_mask &= peer_packet_types.acl.supported;
+    packet_type_mask |= peer_packet_types.acl.unsupported;
+  } else {
+    LOG_INFO(
+        "Unable to include remote supported packet types as read feature "
+        "incomplete");
+    LOG_INFO("TIP: Maybe wait until read feature complete beforehand");
+  }
 
-  LOG_DEBUG("Setting link packet types:0x%04x", pkt_types);
-  btsnd_hcic_change_conn_type(p->hci_handle, temp_pkt_types);
-  p->pkt_types_mask = temp_pkt_types;
+  if (packet_type_mask == 0) {
+    LOG_WARN("Unable to send controller illegal change packet mask:0x%04x",
+             packet_type_mask);
+    return false;
+  }
 
-  return (BTM_CMD_STARTED);
+  link.pkt_types_mask = packet_type_mask;
+  bluetooth::legacy::hci::GetInterface().ChangeConnectionPacketType(
+      link.Handle(), link.pkt_types_mask);
+  LOG_DEBUG("Started change connection packet type:0x%04x address:%s",
+            link.pkt_types_mask, PRIVATE_ADDRESS(link.RemoteAddress()));
+  return true;
 }
 
 void btm_set_packet_types_from_address(const RawAddress& bd_addr,
@@ -1480,9 +1506,9 @@ void btm_set_packet_types_from_address(const RawAddress& bd_addr,
     return;
   }
 
-  tBTM_STATUS status = internal_.btm_set_packet_types(p_acl, pkt_types);
-  if (status != BTM_CMD_STARTED) {
-    LOG_ERROR("Unable to set packet types from address");
+  if (!internal_.change_connection_packet_types(*p_acl, pkt_types)) {
+    LOG_ERROR("Unable to change connection packet type types:%04x address:%s",
+              pkt_types, PRIVATE_ADDRESS(bd_addr));
   }
 }
 
@@ -2184,55 +2210,6 @@ void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
  ******************************************************************************/
 void btm_acl_notif_conn_collision(const RawAddress& bda) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_sys_notify_collision, bda));
-}
-
-/*******************************************************************************
- *
- * Function         btm_acl_chk_peer_pkt_type_support
- *
- * Description      Check if peer supports requested packets
- *
- ******************************************************************************/
-void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
-  if (!p->peer_lmp_feature_valid[0]) {
-    LOG_ERROR("Remote feature reads are incomplete");
-    *p_pkt_type = 0;
-    return;
-  }
-
-  /* 3 and 5 slot packets? */
-  if (!HCI_3_SLOT_PACKETS_SUPPORTED(p->peer_lmp_feature_pages[0]))
-    *p_pkt_type &= ~(HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
-
-  if (!HCI_5_SLOT_PACKETS_SUPPORTED(p->peer_lmp_feature_pages[0]))
-    *p_pkt_type &= ~(HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5);
-
-  /* 2 and 3 MPS support? */
-  if (!HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_feature_pages[0]))
-    /* Not supported. Add 'not_supported' mask for all 2MPS packet types */
-    *p_pkt_type |= (HCI_PKT_TYPES_MASK_NO_2_DH1 + HCI_PKT_TYPES_MASK_NO_2_DH3 +
-                    HCI_PKT_TYPES_MASK_NO_2_DH5);
-
-  if (!HCI_EDR_ACL_3MPS_SUPPORTED(p->peer_lmp_feature_pages[0]))
-    /* Not supported. Add 'not_supported' mask for all 3MPS packet types */
-    *p_pkt_type |= (HCI_PKT_TYPES_MASK_NO_3_DH1 + HCI_PKT_TYPES_MASK_NO_3_DH3 +
-                    HCI_PKT_TYPES_MASK_NO_3_DH5);
-
-  /* EDR 3 and 5 slot support? */
-  if (HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_feature_pages[0]) ||
-      HCI_EDR_ACL_3MPS_SUPPORTED(p->peer_lmp_feature_pages[0])) {
-    if (!HCI_3_SLOT_EDR_ACL_SUPPORTED(p->peer_lmp_feature_pages[0]))
-      /* Not supported. Add 'not_supported' mask for all 3-slot EDR packet types
-       */
-      *p_pkt_type |=
-          (HCI_PKT_TYPES_MASK_NO_2_DH3 + HCI_PKT_TYPES_MASK_NO_3_DH3);
-
-    if (!HCI_5_SLOT_EDR_ACL_SUPPORTED(p->peer_lmp_feature_pages[0]))
-      /* Not supported. Add 'not_supported' mask for all 5-slot EDR packet types
-       */
-      *p_pkt_type |=
-          (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
-  }
 }
 
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
