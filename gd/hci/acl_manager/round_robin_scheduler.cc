@@ -138,8 +138,10 @@ void RoundRobinScheduler::buffer_packet(std::map<uint16_t, acl_queue_handler>::i
 
   ConnectionType connection_type = acl_queue_handler->second.connection_type_;
   size_t mtu = connection_type == ConnectionType::CLASSIC ? hci_mtu_ : le_hci_mtu_;
-  // TODO(b/178752129): Make A2DP and Hearing Aid audio packets flushable
-  PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE;
+  PacketBoundaryFlag packet_boundary_flag = (packet->IsFlushable())
+                                                ? PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE
+                                                : PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE;
+
   int acl_priority = acl_queue_handler->second.high_priority_ ? 1 : 0;
   if (packet->size() <= mtu) {
     fragments_to_send_.push(
