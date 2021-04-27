@@ -17,13 +17,14 @@
 
 #pragma once
 
-#include <hardware/bt_vc.h>
-
+#include <cstdint>
 #include <unordered_set>
 #include <vector>
 
-#include "bta_gatt_api.h"
-#include "types.h"
+#include "bta/include/bta_gatt_api.h"
+#include "bta/vc/types.h"
+#include "include/hardware/bt_vc.h"
+#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace vc {
