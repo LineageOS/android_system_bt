@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "gd/btaa/activity_attribution.h"
+// #include "gd/btaa/activity_attribution.h"
 #include "gd/hci/acl_manager_mock.h"
 #include "gd/hci/controller_mock.h"
 #include "gd/hci/hci_layer.h"
@@ -40,6 +40,7 @@ namespace testing {
 
 MockAclManager* mock_acl_manager_{nullptr};
 MockController* mock_controller_{nullptr};
+os::Handler* mock_gd_shim_handler_{nullptr};
 
 }  // namespace testing
 }  // namespace hci
@@ -62,7 +63,7 @@ neighbor::DiscoverabilityModule* GetDiscoverability() { return nullptr; }
 neighbor::InquiryModule* GetInquiry() { return nullptr; }
 neighbor::NameModule* GetName() { return nullptr; }
 neighbor::PageModule* GetPage() { return nullptr; }
-os::Handler* GetGdShimHandler() { return Stack::GetInstance()->GetHandler(); }
+os::Handler* GetGdShimHandler() { return hci::testing::mock_gd_shim_handler_; }
 security::SecurityModule* GetSecurityModule() { return nullptr; }
 storage::StorageModule* GetStorage() { return nullptr; }
 

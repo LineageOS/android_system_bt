@@ -693,6 +693,7 @@ cc_test {
     srcs: crypto_toolbox_srcs + [
         ":TestMockDevice",
         ":TestMockLegacyHciCommands",
+        ":TestStackL2cap",
         "acl/acl.cc",
         "acl/ble_acl.cc",
         "acl/btm_acl.cc",
@@ -731,10 +732,6 @@ cc_test {
         "test/common/mock_gatt_gatt_auth.cc",
         "test/common/mock_gatt_main.cc",
         "test/common/mock_hci_packet_parser.cc",
-        "test/common/mock_l2cap_l2c_api.cc",
-        "test/common/mock_l2cap_l2c_ble.cc",
-        "test/common/mock_l2cap_l2c_link.cc",
-        "test/common/mock_l2cap_l2c_main.cc",
         "test/common/mock_l2cap_l2c_utils.cc",
         "test/common/mock_main_bte_main.cc",
         "test/common/mock_main_shim.cc",
