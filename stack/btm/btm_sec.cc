@@ -3127,7 +3127,7 @@ void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status) {
           // Encryption is required to start SM over BR/EDR
           // indicate that this is encryption after authentication
           BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL,
-                            0);
+                            BTM_BLE_SEC_NONE);
         }
       }
       l2cu_start_post_bond_timer(p_dev_rec->hci_handle);
@@ -4607,7 +4607,7 @@ static bool btm_sec_queue_mx_request(const RawAddress& bd_addr, uint16_t psm,
   p_e->p_callback = p_callback;
   p_e->p_ref_data = p_ref_data;
   p_e->transport = BT_TRANSPORT_BR_EDR;
-  p_e->sec_act = 0;
+  p_e->sec_act = BTM_BLE_SEC_NONE;
   p_e->bd_addr = bd_addr;
 
   BTM_TRACE_EVENT(
