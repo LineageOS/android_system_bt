@@ -31,11 +31,10 @@ extern std::map<std::string, int> mock_function_count_map;
 #include <hardware/bt_vc.h>
 #include <string>
 #include <vector>
-#include "bta/vc/devices.h"
-#include "bta_gatt_api.h"
-#include "bta_gatt_queue.h"
-#include "bta_vc_api.h"
-#include "btif_storage.h"
+#include "bta/include/bta_gatt_api.h"
+#include "bta/include/bta_gatt_queue.h"
+#include "bta/include/bta_vc_api.h"
+#include "btif/include/btif_storage.h"
 
 #ifndef UNUSED_ATTR
 #define UNUSED_ATTR

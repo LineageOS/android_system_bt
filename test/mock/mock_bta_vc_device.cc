@@ -27,9 +27,6 @@ extern std::map<std::string, int> mock_function_count_map;
 #include <map>
 #include <vector>
 #include "bta/vc/devices.h"
-#include "bta_gatt_api.h"
-#include "bta_gatt_queue.h"
-#include "gatt_api.h"
 #include "stack/btm/btm_sec.h"
 
 using namespace bluetooth::vc::internal;
