@@ -33,7 +33,7 @@ void parse_namespace(
     const std::filesystem::path& input_file_relative_path,
     std::vector<std::string>* token) {
   std::filesystem::path gen_namespace = root_namespace / input_file_relative_path;
-  std::string gen_namespace_str = gen_namespace;
+  std::string gen_namespace_str = gen_namespace.u8string();
   std::regex path_tokenizer("/");
   auto it = std::sregex_token_iterator(gen_namespace_str.cbegin(), gen_namespace_str.cend(), path_tokenizer, -1);
   std::sregex_token_iterator it_end = {};
