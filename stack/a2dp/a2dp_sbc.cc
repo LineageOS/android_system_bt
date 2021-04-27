@@ -691,10 +691,13 @@ bool A2DP_GetPacketTimestampSbc(UNUSED_ATTR const uint8_t* p_codec_info,
 
 bool A2DP_BuildCodecHeaderSbc(UNUSED_ATTR const uint8_t* p_codec_info,
                               BT_HDR* p_buf, uint16_t frames_per_packet) {
-  uint8_t* p;
+  // this doesn't happen in real life, but keeps fuzzer happy
+  if (p_buf->len - p_buf->offset < A2DP_SBC_MPL_HDR_LEN) {
+    return false;
+  }
 
   p_buf->offset -= A2DP_SBC_MPL_HDR_LEN;
-  p = (uint8_t*)(p_buf + 1) + p_buf->offset;
+  uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   p_buf->len += A2DP_SBC_MPL_HDR_LEN;
   A2DP_BuildMediaPayloadHeaderSbc(p, false, false, false,
                                   (uint8_t)frames_per_packet);
