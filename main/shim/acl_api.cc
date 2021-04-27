@@ -55,9 +55,9 @@ void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
 }
 
 void bluetooth::shim::ACL_WriteData(uint16_t handle, BT_HDR* p_buf) {
-  std::unique_ptr<bluetooth::packet::RawBuilder> packet =
-      MakeUniquePacket(p_buf->data + p_buf->offset + HCI_DATA_PREAMBLE_SIZE,
-                       p_buf->len - HCI_DATA_PREAMBLE_SIZE);
+  std::unique_ptr<bluetooth::packet::RawBuilder> packet = MakeUniquePacket(
+      p_buf->data + p_buf->offset + HCI_DATA_PREAMBLE_SIZE,
+      p_buf->len - HCI_DATA_PREAMBLE_SIZE, IsPacketFlushable(p_buf));
   Stack::GetInstance()->GetAcl()->WriteData(handle, std::move(packet));
   osi_free(p_buf);
 }

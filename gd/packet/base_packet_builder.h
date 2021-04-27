@@ -38,8 +38,18 @@ class BasePacketBuilder {
   // Write to the vector with the given iterator.
   virtual void Serialize(BitInserter& it) const = 0;
 
+  void SetFlushable(bool is_flushable) {
+    is_flushable_ = is_flushable;
+  }
+  bool IsFlushable() const {
+    return is_flushable_;
+  }
+
  protected:
   BasePacketBuilder() = default;
+
+ private:
+  bool is_flushable_{false};
 };
 
 }  // namespace packet

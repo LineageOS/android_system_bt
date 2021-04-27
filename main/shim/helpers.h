@@ -104,11 +104,12 @@ inline tBLE_BD_ADDR ToLegacyAddressWithType(
 }
 
 inline std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
-    const uint8_t* data, size_t len) {
+    const uint8_t* data, size_t len, bool is_flushable) {
   bluetooth::packet::RawBuilder builder;
   std::vector<uint8_t> bytes(data, data + len);
   auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
   payload->AddOctets(bytes);
+  payload->SetFlushable(is_flushable);
   return payload;
 }
 
@@ -241,6 +242,11 @@ inline tHCI_MODE ToLegacyHciMode(const hci::Mode& mode) {
 inline hci::DisconnectReason ToDisconnectReasonFromLegacy(
     const tHCI_STATUS& reason) {
   return static_cast<hci::DisconnectReason>(reason);
+}
+
+inline bool IsPacketFlushable(const BT_HDR* p_buf) {
+  ASSERT(p_buf != nullptr);
+  return ToPacketData<const HciDataPreamble>(p_buf)->IsFlushable();
 }
 
 namespace debug {

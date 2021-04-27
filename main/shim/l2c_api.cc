@@ -776,9 +776,10 @@ uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
   }
   auto len = p_data->len;
   auto* data = p_data->data + p_data->offset;
-  uint8_t sent_length = classic_dynamic_channel_helper_map_[psm]->send(
-                            cid, MakeUniquePacket(data, len)) *
-                        len;
+  uint8_t sent_length =
+      classic_dynamic_channel_helper_map_[psm]->send(
+          cid, MakeUniquePacket(data, len, IsPacketFlushable(p_data))) *
+      len;
   osi_free(p_data);
   return sent_length;
 }
@@ -1013,7 +1014,9 @@ uint16_t L2CA_SendFixedChnlData(uint16_t cid, const RawAddress& rem_bda,
   auto* helper = &le_fixed_channel_helper_.find(cid)->second;
   auto len = p_buf->len;
   auto* data = p_buf->data + p_buf->offset;
-  bool sent = helper->send(ToGdAddress(rem_bda), MakeUniquePacket(data, len));
+  bool sent =
+      helper->send(ToGdAddress(rem_bda),
+                   MakeUniquePacket(data, len, IsPacketFlushable(p_buf)));
   osi_free(p_buf);
   return sent ? L2CAP_DW_SUCCESS : L2CAP_DW_FAILED;
 }
@@ -1563,9 +1566,10 @@ uint8_t L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data) {
   }
   auto len = p_data->len;
   auto* data = p_data->data + p_data->offset;
-  uint8_t sent_length = le_dynamic_channel_helper_map_[psm]->send(
-                            cid, MakeUniquePacket(data, len)) *
-                        len;
+  uint8_t sent_length =
+      le_dynamic_channel_helper_map_[psm]->send(
+          cid, MakeUniquePacket(data, len, IsPacketFlushable(p_data))) *
+      len;
   osi_free(p_data);
   return sent_length;
 }
