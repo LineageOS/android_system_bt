@@ -48,8 +48,11 @@ class Stack {
 
   void Stop();
   bool IsRunning();
+  bool IsDumpsysModuleStarted() const;
 
   StackManager* GetStackManager();
+  const StackManager* GetStackManager() const;
+
   legacy::Acl* GetAcl();
   LinkPolicyInterface* LinkPolicy();
 
@@ -64,7 +67,7 @@ class Stack {
   DISALLOW_COPY_AND_ASSIGN(Stack);
 
  private:
-  std::recursive_mutex mutex_;
+  mutable std::recursive_mutex mutex_;
   StackManager stack_manager_;
   bool is_running_ = false;
   os::Thread* stack_thread_ = nullptr;
