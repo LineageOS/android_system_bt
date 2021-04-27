@@ -96,3 +96,25 @@ filegroup {
     ],
 }
 
+filegroup {
+    name: "TestMockMainShimEntry",
+    srcs: [
+      "mock/mock_main_shim_entry.cc",
+    ],
+}
+
+filegroup {
+  name: "TestMockBtif",
+  srcs: [
+      "mock/mock_btif*.cc",
+  ],
+}
+
+filegroup {
+  name: "TestStackL2cap",
+  srcs: [
+      "mock/mock_stack_l2cap_*.cc",
+  ],
+}
+
+

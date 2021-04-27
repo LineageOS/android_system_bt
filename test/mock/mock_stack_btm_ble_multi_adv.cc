@@ -35,12 +35,12 @@ extern std::map<std::string, int> mock_function_count_map;
 #include <queue>
 #include <vector>
 #include "ble_advertiser.h"
-#include "ble_advertiser_hci_interface.h"
 #include "bt_target.h"
-#include "btm_int_types.h"
 #include "device/include/controller.h"
 #include "osi/include/alarm.h"
+#include "stack/btm/ble_advertiser_hci_interface.h"
 #include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_int_types.h"
 
 #ifndef UNUSED_ATTR
 #define UNUSED_ATTR
