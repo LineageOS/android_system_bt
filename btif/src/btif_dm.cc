@@ -2283,7 +2283,8 @@ void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport) {
 
 void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid,
                           const Octet16& c, const Octet16& r) {
-  invoke_oob_data_request_cb(transport, is_valid, c, r);
+  invoke_oob_data_request_cb(transport, is_valid, c, r,
+                             *controller_get_interface()->get_address());
 }
 
 /*******************************************************************************
