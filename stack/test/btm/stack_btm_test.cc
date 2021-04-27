@@ -25,9 +25,14 @@
 #include "internal_include/stack_config.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_client_interface.h"
 #include "types/raw_address.h"
+
+#include "test/mock/mock_hcic_hcicmds.h"
+
+namespace mock = test::mock::hcic_hcicmds;
 
 extern tBTM_CB btm_cb;
 
@@ -136,6 +141,42 @@ TEST_F(StackBtmTest, default_packet_type) {
 
   btm_cb.acl_cb_.SetDefaultPacketTypeMask(0x4321);
   ASSERT_EQ(0x4321, btm_cb.acl_cb_.DefaultPacketTypes());
+
+  get_btm_client_interface().lifecycle.btm_free();
+}
+
+TEST_F(StackBtmTest, change_packet_type) {
+  int cnt = 0;
+  get_btm_client_interface().lifecycle.btm_init();
+
+  btm_cb.acl_cb_.SetDefaultPacketTypeMask(0xffff);
+  ASSERT_EQ(0xffff, btm_cb.acl_cb_.DefaultPacketTypes());
+
+  // Create connection
+  RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+  btm_acl_created(bda, 0x123, HCI_ROLE_CENTRAL, BT_TRANSPORT_BR_EDR);
+
+  uint64_t features = 0xffffffffffffffff;
+  acl_process_supported_features(0x123, features);
+
+  mock::btsnd_hcic_change_conn_type = {};
+  uint16_t pkt_types = 0x55aa;
+  btm_set_packet_types_from_address(bda, pkt_types);
+  ASSERT_EQ(++cnt, mock_function_count_map["btsnd_hcic_change_conn_type"]);
+  ASSERT_EQ(0x123, mock::btsnd_hcic_change_conn_type.handle);
+  ASSERT_EQ(0x4400, mock::btsnd_hcic_change_conn_type.packet_types);
+
+  mock::btsnd_hcic_change_conn_type = {};
+  btm_set_packet_types_from_address(bda, 0xffff);
+  ASSERT_EQ(++cnt, mock_function_count_map["btsnd_hcic_change_conn_type"]);
+  ASSERT_EQ(0x123, mock::btsnd_hcic_change_conn_type.handle);
+  ASSERT_EQ(0xcc00, mock::btsnd_hcic_change_conn_type.packet_types);
+
+  mock::btsnd_hcic_change_conn_type = {};
+  btm_set_packet_types_from_address(bda, 0x0);
+  // NOTE: The call should not be executed with no bits set
+  ASSERT_EQ(0x0, mock::btsnd_hcic_change_conn_type.handle);
+  ASSERT_EQ(0x0, mock::btsnd_hcic_change_conn_type.packet_types);
 
   get_btm_client_interface().lifecycle.btm_free();
 }

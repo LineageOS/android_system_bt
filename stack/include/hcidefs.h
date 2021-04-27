@@ -860,7 +860,40 @@ typedef enum : uint8_t {
 */
 #define HCIE_PREAMBLE_SIZE 2
 #define HCI_SCO_PREAMBLE_SIZE 3
-#define HCI_DATA_PREAMBLE_SIZE 4
+
+// Packet boundary flags
+constexpr uint8_t kFIRST_NON_AUTOMATICALLY_FLUSHABLE = 0x0;
+constexpr uint8_t kCONTINUING_FRAGMENT = 0x1;
+constexpr uint8_t kHCI_FIRST_AUTOMATICALLY_FLUSHABLE = 0x2;
+
+struct HciDataPreambleBits {
+  uint16_t handle : 12;
+  uint16_t boundary : 2;
+  uint16_t broadcast : 1;
+  uint16_t unused15 : 1;
+  uint16_t length;
+};
+struct HciDataPreambleRaw {
+  uint16_t word0;
+  uint16_t word1;
+};
+union HciDataPreamble {
+  HciDataPreambleBits bits;
+  HciDataPreambleRaw raw;
+  void Serialize(uint8_t* data) {
+    *data++ = ((raw.word0) & 0xff);
+    *data++ = (((raw.word0) >> 8) & 0xff);
+    *data++ = ((raw.word1) & 0xff);
+    *data++ = (((raw.word1 >> 8)) & 0xff);
+  }
+  bool IsFlushable() const {
+    return bits.boundary == kHCI_FIRST_AUTOMATICALLY_FLUSHABLE;
+  }
+  void SetFlushable() { bits.boundary = kHCI_FIRST_AUTOMATICALLY_FLUSHABLE; }
+};
+#define HCI_DATA_PREAMBLE_SIZE sizeof(HciDataPreamble)
+static_assert(HCI_DATA_PREAMBLE_SIZE == 4);
+static_assert(sizeof(HciDataPreambleRaw) == sizeof(HciDataPreambleBits));
 
 /* local Bluetooth controller id for AMP HCI */
 #define LOCAL_BR_EDR_CONTROLLER_ID 0

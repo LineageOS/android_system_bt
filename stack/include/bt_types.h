@@ -101,6 +101,17 @@ typedef struct {
   // and will not trigger various flexible member compilation issues.
 } BT_HDR_RIGID;
 
+#ifdef __cplusplus
+template <typename T>
+T* ToPacketData(BT_HDR* bt_hdr, size_t offset = 0) {
+  return reinterpret_cast<T*>(bt_hdr->data + bt_hdr->offset + offset);
+}
+template <typename T>
+const T* ToPacketData(const BT_HDR* bt_hdr, size_t offset = 0) {
+  return reinterpret_cast<const T*>(bt_hdr->data + bt_hdr->offset + offset);
+}
+#endif  // __cplusplus
+
 #define BT_HDR_SIZE (sizeof(BT_HDR))
 
 enum {
