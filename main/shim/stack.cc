@@ -232,6 +232,12 @@ StackManager* Stack::GetStackManager() {
   return &stack_manager_;
 }
 
+const StackManager* Stack::GetStackManager() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  ASSERT(is_running_);
+  return &stack_manager_;
+}
+
 legacy::Acl* Stack::GetAcl() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);
@@ -256,6 +262,11 @@ os::Handler* Stack::GetHandler() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);
   return stack_handler_;
+}
+
+bool Stack::IsDumpsysModuleStarted() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return GetStackManager()->IsStarted<Dumpsys>();
 }
 
 }  // namespace shim
