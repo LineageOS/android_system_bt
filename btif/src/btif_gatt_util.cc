@@ -59,7 +59,6 @@ void btif_to_bta_response(tGATTS_RSP* p_dest, btgatt_response_t* p_src) {
  * Encrypted link map handling
  ******************************************************************************/
 
-#if (BLE_DELAY_REQUEST_ENC == FALSE)
 static bool btif_gatt_is_link_encrypted(const RawAddress& bd_addr) {
   return BTM_IsEncrypted(bd_addr, BT_TRANSPORT_BR_EDR) ||
          BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE);
@@ -72,9 +71,7 @@ static void btif_gatt_set_encryption_cb(UNUSED_ATTR const RawAddress& bd_addr,
     BTIF_TRACE_WARNING("%s() - Encryption failed (%d)", __func__, result);
   }
 }
-#endif
 
-#if (BLE_DELAY_REQUEST_ENC == FALSE)
 void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                                     tBT_TRANSPORT transport_link) {
   tBTM_LE_PENC_KEYS key;
@@ -89,10 +86,6 @@ void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                         BTM_BLE_SEC_ENCRYPT);
   }
 }
-#else
-void btif_gatt_check_encrypted_link(UNUSED_ATTR RawAddress bd_addr,
-                                    UNUSED_ATTR tBT_TRANSPORT transport_link) {}
-#endif
 
 void btif_gatt_move_track_adv_data(btgatt_track_adv_info_t* p_dest,
                                    btgatt_track_adv_info_t* p_src) {
