@@ -29,7 +29,6 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "avrc_api.h"
 #include "avrc_defs.h"
 #include "bt_common.h"
-#include "bt_utils.h"
 #include "osi/include/osi.h"
 #include "stack/avrc/avrc_int.h"
 

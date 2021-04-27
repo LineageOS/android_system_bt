@@ -317,7 +317,6 @@ cc_test {
         "system/bt/bta/dm",
         "system/bt/bta/include",
         "system/bt/bta/sys",
-        "system/bt/btcore/include",
         "system/bt/btif/avrcp",
         "system/bt/btif/co",
         "system/bt/btif/include",
@@ -353,6 +352,12 @@ cc_test {
           ":TestMockUdrv",
           "test/btif_stack_test.cc",
       ],
+      generated_headers: [
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
+        "BluetoothGeneratedDumpsysDataSchema_h",
+        "BluetoothGeneratedDumpsysTestData_h",
+        "BluetoothGeneratedPackets_h",
+      ],
       header_libs: ["libbluetooth_headers"],
       shared_libs: [
           "android.hardware.bluetooth.a2dp@1.0",
@@ -360,6 +365,7 @@ cc_test {
           "android.hardware.bluetooth.audio@2.1",
           "libcrypto",
           "libcutils",
+          "libflatbuffers-cpp",
           "libhidlbase",
           "liblog",
           "libtinyxml2",
