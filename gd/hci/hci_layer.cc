@@ -278,13 +278,15 @@ struct HciLayer::impl {
   }
 
   void handle_root_inflammation(uint8_t vse_error_reason) {
+    LOG_ERROR("Received a Root Inflammation Event vendor reason 0x%02hhx, scheduling an abort",
+              vse_error_reason);
+    bluetooth::os::LogMetricBluetoothHalCrashReason(Address::kEmpty, 0, vse_error_reason);
     // Add Logging for crash reason
     if (hci_timeout_alarm_ != nullptr) {
       hci_timeout_alarm_->Cancel();
       delete hci_timeout_alarm_;
       hci_timeout_alarm_ = nullptr;
     }
-    LOG_ERROR("Received a Root Inflammation Event, scheduling an abort");
     if (hci_abort_alarm_ == nullptr) {
       hci_abort_alarm_ = new Alarm(module_.GetHandler());
       hci_abort_alarm_->Schedule(BindOnce(&abort_after_root_inflammation, vse_error_reason), kHciTimeoutRestartMs);
