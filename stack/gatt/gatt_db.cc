@@ -311,23 +311,6 @@ tGATT_STATUS gatts_db_read_attr_value_by_type(
     }
   }
 
-#if (BLE_DELAY_REQUEST_ENC == TRUE)
-  uint8_t flag = 0;
-  if (BTM_GetSecurityFlags(tcb.peer_bda, &flag)) {
-    if ((tcb.att_lcid == L2CAP_ATT_CID) && (status == GATT_PENDING) &&
-        (type.As16Bit() == GATT_UUID_GAP_DEVICE_NAME)) {
-      if ((flag & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_FLAG_ENCRYPTED)) ==
-          BTM_SEC_LINK_KEY_KNOWN) {
-        tHCI_ROLE role = HCI_ROLE_UNKNOWN;
-        BTM_GetRole(tcb.peer_bda, &role);
-        if (role == HCI_ROLE_CENTRAL) {
-          btm_ble_set_encryption(tcb.peer_bda, BTM_BLE_SEC_ENCRYPT,
-                                 HCI_ROLE_CENTRAL);
-        }
-      }
-    }
-  }
-#endif
   return status;
 }
 

@@ -185,6 +185,10 @@ void PacketDef::GenValidator(std::ostream& s) const {
   s << "protected:";
   s << "virtual bool IsValid_() const {";
 
+  if (parent_ != nullptr) {
+    s << "if (!" << parent_->name_ << "View::IsValid_()) { return false; } ";
+  }
+
   // Offset by the parents known size. We know that any dynamic fields can
   // already be called since the parent must have already been validated by
   // this point.

@@ -26,7 +26,6 @@ extern std::map<std::string, int> mock_function_count_map;
 
 #include <string.h>
 #include "avdt_api.h"
-#include "avdt_int.h"
 #include "avdtc_api.h"
 #include "bt_target.h"
 #include "bt_types.h"
@@ -36,6 +35,7 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "l2c_api.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
+#include "stack/avdt/avdt_int.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/a2dp_codec_api.h"
 

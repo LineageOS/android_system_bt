@@ -270,12 +270,13 @@ typedef uint8_t tBTM_EIR_SEARCH_RESULT;
 /* 0x0A */
 #define BTM_EIR_TX_POWER_LEVEL_TYPE HCI_EIR_TX_POWER_LEVEL_TYPE
 
-#define BTM_BLE_SEC_NONE 0
-/* encrypt the link using current key */
-#define BTM_BLE_SEC_ENCRYPT 1
-#define BTM_BLE_SEC_ENCRYPT_NO_MITM 2
-#define BTM_BLE_SEC_ENCRYPT_MITM 3
-typedef uint8_t tBTM_BLE_SEC_ACT;
+typedef enum : uint8_t {
+  BTM_BLE_SEC_NONE = 0,
+  /* encrypt the link using current key */
+  BTM_BLE_SEC_ENCRYPT = 1,
+  BTM_BLE_SEC_ENCRYPT_NO_MITM = 2,
+  BTM_BLE_SEC_ENCRYPT_MITM = 3,
+} tBTM_BLE_SEC_ACT;
 
 /*******************************************************************************
  * BTM Services MACROS handle array of uint32_t bits for more than 32 services

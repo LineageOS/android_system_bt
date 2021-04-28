@@ -45,13 +45,13 @@
 #include "main/shim/acl.h"
 #include "main/shim/acl_legacy_interface.h"
 #include "main/shim/helpers.h"
-#include "main/test/common/main_handler.h"
-#include "main/test/common/mock_entry.h"
 #include "os/handler.h"
 #include "os/thread.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/btu.h"
 #include "stack/l2cap/l2c_int.h"
+#include "test/common/main_handler.h"
+#include "test/mock/mock_main_shim_entry.h"
 
 using namespace bluetooth;
 using namespace testing;
