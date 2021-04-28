@@ -406,5 +406,25 @@ void LogMetricManufacturerInfo(
   }
 }
 
+void LogMetricBluetoothHalCrashReason(
+    const Address& address,
+    uint32_t error_code,
+    uint32_t vendor_error_code) {
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_HAL_CRASH_REASON_REPORTED,
+      0 /* metric_id */,
+      byteField,
+      error_code,
+      vendor_error_code);
+  if (ret < 0) {
+    LOG_WARN(
+        "Failed for %s, error_code %s, vendor_error_code %s, error %d",
+        address.ToString().c_str(),
+        common::ToHexString(error_code).c_str(),
+        common::ToHexString(vendor_error_code).c_str(),
+        ret);
+  }
+}
+
 }  // namespace os
 }  // namespace bluetooth

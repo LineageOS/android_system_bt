@@ -98,5 +98,9 @@ void LogMetricSmpPairingEvent(
     const Address& address, uint8_t smp_cmd, android::bluetooth::DirectionEnum direction, uint8_t smp_fail_reason) {}
 
 void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int audio_coding_mode) {}
+
+void LogMetricBluetoothHalCrashReason(
+    const Address& address, uint32_t error_code, uint32_t vendor_error_code) {}
+
 }  // namespace os
 }  // namespace bluetooth
