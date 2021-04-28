@@ -32,6 +32,11 @@ class StackManager {
     return static_cast<T*>(registry_.Get(&T::Factory));
   }
 
+  template <class T>
+  bool IsStarted() const {
+    return registry_.IsStarted(&T::Factory);
+  }
+
  private:
   os::Thread* management_thread_ = nullptr;
   os::Handler* handler_ = nullptr;

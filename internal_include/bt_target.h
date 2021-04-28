@@ -571,12 +571,6 @@
  * ATT/GATT Protocol/Profile Settings
  *
  *****************************************************************************/
-#ifndef BLE_DELAY_REQUEST_ENC
-/* This flag is to work around IPHONE problem, We need to wait for iPhone ready
-   before send encryption request to iPhone */
-#define BLE_DELAY_REQUEST_ENC FALSE
-#endif
-
 #ifndef GATT_MAX_SR_PROFILES
 #define GATT_MAX_SR_PROFILES 32 /* max is 32 */
 #endif

@@ -32,7 +32,6 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_gatt_queue.h"
 #include "bta/include/bta_hearing_aid_api.h"
-#include "bta_hearing_aid_api.h"
 #include "device/include/controller.h"
 #include "embdrv/g722/g722_enc_dec.h"
 #include "osi/include/log.h"

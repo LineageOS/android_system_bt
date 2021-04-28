@@ -30,11 +30,11 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "hci/include/btsnoop.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
-#include "l2c_int.h"
 #include "l2cdefs.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/l2cap/l2c_int.h"
 
 #ifndef UNUSED_ATTR
 #define UNUSED_ATTR
