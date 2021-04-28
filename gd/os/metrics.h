@@ -251,6 +251,18 @@ void LogMetricManufacturerInfo(
     const std::string& model,
     const std::string& hardware_version,
     const std::string& software_version);
+
+/**
+ * Logs when received Bluetooth HAL crash reason report.
+ *
+ * @param address current connected address.
+ * @param error_code the crash reason from bluetooth hal
+ * @param vendor_error_code the vendor crash reason from bluetooth firmware
+ */
+void LogMetricBluetoothHalCrashReason(
+    const hci::Address& address,
+    uint32_t error_code,
+    uint32_t vendor_error_code);
 }  // namespace os
 
 }  // namespace bluetooth
