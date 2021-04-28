@@ -25,9 +25,12 @@
 #ifndef HIDH_INT_H
 #define HIDH_INT_H
 
-#include "hid_conn.h"
-#include "hidh_api.h"
-#include "l2c_api.h"
+#include <cstdint>
+
+#include "stack/hid/hid_conn.h"
+#include "stack/include/hidh_api.h"
+#include "stack/include/l2c_api.h"  // tL2CAP_CFG_INFO
+#include "types/raw_address.h"
 
 enum { HID_DEV_NO_CONN, HID_DEV_CONNECTED };
 
