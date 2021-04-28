@@ -378,7 +378,7 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
         SDP_TRACE_DEBUG(
             "SDP_AddAttribute: handle:%X, id:%04X, type:%d, len:%d, p_val:%p, "
             "*p_val:%s",
-            handle, attr_id, attr_type, attr_len, p_val, *p_val);
+            handle, attr_id, attr_type, attr_len, p_val, (char*)p_val);
       } else {
         SDP_TRACE_DEBUG(
             "SDP_AddAttribute: handle:%X, id:%04X, type:%d, len:%d, p_val:%p",
