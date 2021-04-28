@@ -337,6 +337,9 @@ class DualModeController : public Device {
   // 7.3.63
   void SendKeypressNotification(CommandView args);
 
+  // 7.3.69
+  void SetEventMaskPage2(CommandView args);
+
   // 7.3.79
   void WriteLeHostSupport(CommandView args);
 
