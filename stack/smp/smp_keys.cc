@@ -614,19 +614,18 @@ void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *
  ******************************************************************************/
 void smp_use_oob_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-  SMP_TRACE_DEBUG("%s req_oob_type: %d, role: %d", __func__, p_cb->req_oob_type,
-                  p_cb->role);
+  LOG_INFO("req_oob_type: %d, role: %d", p_cb->req_oob_type, p_cb->role);
 
   switch (p_cb->req_oob_type) {
     case SMP_OOB_BOTH:
     case SMP_OOB_LOCAL:
-      SMP_TRACE_DEBUG("%s restore secret key", __func__)
+      LOG_INFO("restore secret key");
       memcpy(p_cb->private_key, p_cb->sc_oob_data.loc_oob_data.private_key_used,
              BT_OCTET32_LEN);
       smp_process_private_key(p_cb);
       break;
     default:
-      SMP_TRACE_DEBUG("%s create secret key anew", __func__);
+      LOG_INFO("create secret key anew");
       smp_set_state(SMP_STATE_PAIR_REQ_RSP);
       smp_decide_association_model(p_cb, NULL);
       break;
