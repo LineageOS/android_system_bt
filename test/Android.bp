@@ -117,4 +117,23 @@ filegroup {
   ],
 }
 
+filegroup {
+  name: "TestStackSdp",
+  srcs: [
+      "mock/mock_stack_sdp*.cc",
+  ],
+}
 
+filegroup {
+  name: "TestStackBtm",
+  srcs: [
+      "mock/mock_stack_btm*.cc",
+  ],
+}
+
+filegroup {
+  name: "TestStubLegacyTrace",
+  srcs: [
+      "stub/legacy_trace.cc",
+  ],
+}
