@@ -169,7 +169,6 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
 static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
                                    uint16_t l2cap_cid, uint16_t psm,
                                    uint8_t l2cap_id) {
-  tHID_CONN* p_hcon;
   bool bAccept = true;
   uint8_t i = HID_HOST_MAX_DEVICES;
 
@@ -182,7 +181,7 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
     return;
   }
 
-  p_hcon = &hh_cb.devices[i].conn;
+  tHID_CONN* p_hcon = &hh_cb.devices[i].conn;
 
   BTM_LogHistory(
       kBtmLogTag, hh_cb.devices[i].addr, "Connect request",
