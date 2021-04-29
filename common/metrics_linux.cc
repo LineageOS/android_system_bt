@@ -111,6 +111,12 @@ void LogA2dpAudioOverrunEvent(const RawAddress& address,
                               int num_dropped_encoded_frames,
                               int num_dropped_encoded_bytes) {}
 
+void LogA2dpPlaybackEvent(const RawAddress& address, int playback_state,
+                          int audio_coding_mode) {}
+
+void LogBluetoothHalCrashReason(const RawAddress& address, uint32_t error_code,
+                                uint32_t vendor_error_code) {}
+
 void LogReadRssiResult(const RawAddress& address, uint16_t handle,
                        uint32_t cmd_status, int8_t rssi) {}
 
