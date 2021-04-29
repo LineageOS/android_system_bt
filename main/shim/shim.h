@@ -64,5 +64,12 @@ bool is_any_gd_enabled();
  */
 bool is_gd_stack_started_up();
 
+/**
+ * Checks if the dumpsys module has been started.
+ *
+ * @return true if specified module has started, false otherwise.
+ */
+bool is_gd_dumpsys_module_started();
+
 }  // namespace shim
 }  // namespace bluetooth
