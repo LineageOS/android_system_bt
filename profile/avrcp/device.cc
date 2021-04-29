@@ -169,6 +169,7 @@ void Device::VendorPacketHandler(uint8_t label,
         DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
         auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
         send_message(label, false, std::move(response));
+        return;
       }
       media_interface_->GetSongInfo(base::Bind(&Device::GetElementAttributesResponse, weak_ptr_factory_.GetWeakPtr(),
                                                label, get_element_attributes_request_pkt));

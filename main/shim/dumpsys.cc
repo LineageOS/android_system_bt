@@ -52,7 +52,12 @@ void bluetooth::shim::Dump(int fd, const char** args) {
     }
   }
   if (bluetooth::shim::is_gd_stack_started_up()) {
-    bluetooth::shim::GetDumpsys()->Dump(fd, args);
+    if (bluetooth::shim::is_gd_dumpsys_module_started()) {
+      bluetooth::shim::GetDumpsys()->Dump(fd, args);
+    } else {
+      dprintf(fd, "%s NOTE: gd dumpsys module not loaded or started\n",
+              kModuleName);
+    }
   } else {
     dprintf(fd, "%s gd stack is enabled but not started\n", kModuleName);
   }
