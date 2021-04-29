@@ -26,6 +26,7 @@
 
 #include "bt_target.h"
 #include "smp_api_types.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  External Function Declarations
@@ -173,6 +174,22 @@ extern void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res,
  *
  ******************************************************************************/
 extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
+
+/*******************************************************************************
+ *
+ * Function         SMP_CrLocScOobData
+ *
+ * Description      This function is called to generate a public key to be
+ *                  passed to a remote device via an Out of Band transport
+ *
+ * Parameters:      callback - receive the data
+ *
+ ******************************************************************************/
+extern void SMP_CrLocScOobData(
+    base::OnceCallback<void(tBT_TRANSPORT, bool,
+                            const std::array<unsigned char, 16>&,
+                            const std::array<unsigned char, 16>&)>
+        callback);
 
 // Called when LTK request is received from controller.
 extern bool smp_proc_ltk_request(const RawAddress& bda);
