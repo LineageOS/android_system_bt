@@ -414,8 +414,8 @@ class HostBuild():
         """
         self._target_prepare()
         self._target_tools()
-        self._target_rust()
         self._target_main()
+        self._target_rust()
 
     def build(self):
         """ Builds according to self.target
