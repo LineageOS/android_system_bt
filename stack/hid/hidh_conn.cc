@@ -270,6 +270,12 @@ static void hidh_try_repage(uint8_t dhandle) {
 
 static void hidh_on_l2cap_error(uint16_t l2cap_cid, uint16_t result) {
   auto dhandle = find_conn_by_cid(l2cap_cid);
+  if (dhandle == kHID_HOST_MAX_DEVICES) {
+    LOG_WARN("Received error for unknown device cid:0x%04x reason:%s",
+             l2cap_cid,
+             hci_reason_code_text(to_hci_reason_code(result)).c_str());
+    return;
+  }
 
   hidh_conn_disconnect(dhandle);
 
