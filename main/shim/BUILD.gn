@@ -19,6 +19,7 @@ source_set("LibBluetoothShimSources") {
     "acl.cc",
     "acl_api.cc",
     "acl_legacy_interface.cc",
+    "activity_attribution.cc",
     "btm.cc",
     "btm_api.cc",
     "config.cc",
