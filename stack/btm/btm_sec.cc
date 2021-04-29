@@ -1569,9 +1569,9 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
       }
     } else if (!(BTM_SM4_KNOWN & p_dev_rec->sm4)) {
       /* the remote features are not known yet */
-      BTM_TRACE_DEBUG("%s: (%s) remote features unknown!!sec_flags:0x%02x",
-                      __func__, (is_originator) ? "initiator" : "acceptor",
-                      p_dev_rec->sec_flags);
+      LOG_DEBUG(
+          "Remote features have not yet been received sec_flags:0x%02x %s",
+          p_dev_rec->sec_flags, (is_originator) ? "initiator" : "acceptor");
 
       p_dev_rec->sm4 |= BTM_SM4_REQ_PEND;
       return (BTM_CMD_STARTED);
