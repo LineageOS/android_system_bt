@@ -28,6 +28,7 @@ extern std::map<std::string, int> mock_function_count_map;
 #include "bta/include/bta_api.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bte_appl.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 struct uid_set_t;
@@ -168,6 +169,7 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
   return false;
 }
 
-void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
+void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid,
+                          const Octet16& c, const Octet16& r) {
   mock_function_count_map[__func__]++;
 }

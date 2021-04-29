@@ -27,6 +27,7 @@ extern std::map<std::string, int> mock_function_count_map;
 #include <cstdint>
 #include "bta/include/bta_api.h"
 #include "include/hardware/bluetooth.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 struct uid_set_t;
@@ -153,5 +154,10 @@ void btif_dm_start_discovery(void) { mock_function_count_map[__func__]++; }
 void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
                                           BD_NAME bd_name,
                                           tBT_DEVICE_TYPE dev_type) {
+  mock_function_count_map[__func__]++;
+}
+
+void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid,
+                          const Octet16& c, const Octet16& r) {
   mock_function_count_map[__func__]++;
 }
