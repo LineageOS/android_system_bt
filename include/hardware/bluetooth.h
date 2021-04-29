@@ -355,13 +355,6 @@ typedef struct {
   uint8_t le_appearance[2]; /* For the appearance of the device */
 } bt_oob_data_t;
 
-/** Bundle that can contain 1 or both of P192 and P256 */
-// typedef struct {
-//  uint8_t address[7];       /* Bluetooth Device Address (6) plus Address Type
-//  (1) */ bt_oob_data_t p192_data;  /* P192 Data or NULL */ bt_oob_data_t
-//  p256_data;  /* P256 Data or NULL */
-//} bt_oob_data_bundle_t;
-
 /** Bluetooth Device Type */
 typedef enum {
   BT_DEVICE_DEVTYPE_BREDR = 0x1,
