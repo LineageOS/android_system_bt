@@ -429,6 +429,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   void set_parameters(AdvertiserId advertiser_id, ExtendedAdvertisingConfig config) {
     advertising_sets_[advertiser_id].connectable = config.connectable;
+    advertising_sets_[advertiser_id].tx_power = config.tx_power;
 
     switch (advertising_api_type_) {
       case (AdvertisingApiType::LEGACY): {
@@ -545,6 +546,14 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         gap_data.data_.push_back(static_cast<uint8_t>(AdvertisingFlag::LE_LIMITED_DISCOVERABLE));
       }
       data.insert(data.begin(), gap_data);
+    }
+
+    // Find and fill TX Power with the correct value.
+    for (auto& gap_data : data) {
+      if (gap_data.data_type_ == GapDataType::TX_POWER_LEVEL) {
+        gap_data.data_[0] = advertising_sets_[advertiser_id].tx_power;
+        break;
+      }
     }
 
     switch (advertising_api_type_) {
