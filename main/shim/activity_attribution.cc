@@ -62,7 +62,7 @@ class ActivityAttributionInterfaceImpl
       ActivityAttributionCallbacks::BtaaAggregationEntry entry{
           bluetooth::ToRawAddress(it.address),
           (ActivityAttributionCallbacks::Activity)it.activity, it.wakeup_count,
-          it.byte_count, it.wakelock_duration};
+          it.byte_count, it.wakelock_duration_ms};
       callback_logs.push_back(entry);
     }
     do_in_jni_thread(

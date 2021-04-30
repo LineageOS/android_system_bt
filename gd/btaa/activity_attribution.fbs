@@ -1,0 +1,29 @@
+namespace bluetooth.activity_attribution;
+
+attribute "privacy";
+
+table WakeupEntry {
+    wakeup_time:string;
+    activity:string;
+    address:string;
+}
+
+table DeviceActivityAggregationEntry {
+    address:string;
+    activity:string;
+    wakeup_count:int;
+    byte_count:int;
+    wakelock_duration_ms:int;
+    creation_time:string;
+}
+
+table ActivityAttributionData {
+    title_wakeup:string;
+    num_wakeup:int;
+    wakeup_attribution:[WakeupEntry];
+    title_activity:string;
+    num_device_activity:int;
+    device_activity_aggregation:[DeviceActivityAggregationEntry];
+}
+
+root_type ActivityAttributionData;
