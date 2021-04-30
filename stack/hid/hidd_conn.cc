@@ -62,9 +62,7 @@ static const tL2CAP_APPL_INFO dev_reg_info = {
  *
  ******************************************************************************/
 static void hidd_check_config_done() {
-  tHID_CONN* p_hcon;
-
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_state == HID_CONN_STATE_CONFIG) {
     p_hcon->conn_state = HID_CONN_STATE_CONNECTED;
@@ -92,7 +90,6 @@ static void hidd_check_config_done() {
  ******************************************************************************/
 static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
                                    uint16_t psm, uint8_t id) {
-  tHID_CONN* p_hcon;
   tHID_DEV_DEV_CTB* p_dev;
   bool accept = TRUE;  // accept by default
 
@@ -108,7 +105,7 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
     return;
   }
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   switch (psm) {
     case HID_PSM_INTERRUPT:
@@ -231,11 +228,9 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result) {
  *
  ******************************************************************************/
 static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
-  tHID_CONN* p_hcon;
-
   HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid) {
     HIDD_TRACE_WARNING("%s: unknown cid", __func__);
@@ -261,11 +256,10 @@ static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t initiator,
                                   tL2CAP_CFG_INFO* p_cfg) {
   hidd_l2cif_config_ind(cid, p_cfg);
 
-  tHID_CONN* p_hcon;
 
   HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid) {
     HIDD_TRACE_WARNING("%s: unknown cid", __func__);
@@ -306,11 +300,10 @@ static void hidd_l2cif_config_cfm(uint16_t cid, uint16_t initiator,
  *
  ******************************************************************************/
 static void hidd_l2cif_disconnect_ind(uint16_t cid, bool ack_needed) {
-  tHID_CONN* p_hcon;
 
   HIDD_TRACE_EVENT("%s: cid=%04x ack_needed=%d", __func__, cid, ack_needed);
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_state == HID_CONN_STATE_UNUSED ||
       (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid)) {
@@ -345,11 +338,10 @@ static void hidd_l2cif_disconnect_ind(uint16_t cid, bool ack_needed) {
 static void hidd_l2cif_disconnect(uint16_t cid) {
   L2CA_DisconnectReq(cid);
 
-  tHID_CONN* p_hcon;
 
   HIDD_TRACE_EVENT("%s: cid=%04x", __func__, cid);
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_state == HID_CONN_STATE_UNUSED ||
       (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid)) {
@@ -393,11 +385,10 @@ static void hidd_l2cif_disconnect(uint16_t cid) {
  *
  ******************************************************************************/
 static void hidd_l2cif_cong_ind(uint16_t cid, bool congested) {
-  tHID_CONN* p_hcon;
 
   HIDD_TRACE_EVENT("%s: cid=%04x congested=%d", __func__, cid, congested);
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_state == HID_CONN_STATE_UNUSED ||
       (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid)) {
@@ -422,7 +413,6 @@ static void hidd_l2cif_cong_ind(uint16_t cid, bool congested) {
  *
  ******************************************************************************/
 static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg) {
-  tHID_CONN* p_hcon;
   uint8_t* p_data = (uint8_t*)(p_msg + 1) + p_msg->offset;
   uint8_t msg_type, param;
   bool err = FALSE;
@@ -435,7 +425,7 @@ static void hidd_l2cif_data_ind(uint16_t cid, BT_HDR* p_msg) {
     return;
   }
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_state == HID_CONN_STATE_UNUSED ||
       (p_hcon->ctrl_cid != cid && p_hcon->intr_cid != cid)) {
@@ -660,7 +650,6 @@ tHID_STATUS hidd_conn_initiate(void) {
  *
  ******************************************************************************/
 tHID_STATUS hidd_conn_disconnect(void) {
-  tHID_CONN* p_hcon;
 
   HIDD_TRACE_API("%s", __func__);
 
@@ -670,7 +659,7 @@ tHID_STATUS hidd_conn_disconnect(void) {
     hd_cb.pending_data = NULL;
   }
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if ((p_hcon->ctrl_cid != 0) || (p_hcon->intr_cid != 0)) {
     p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
@@ -704,7 +693,6 @@ tHID_STATUS hidd_conn_disconnect(void) {
 tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type,
                                 uint8_t param, uint8_t data, uint16_t len,
                                 uint8_t* p_data) {
-  tHID_CONN* p_hcon;
   BT_HDR* p_buf;
   uint8_t* p_out;
   uint16_t cid;
@@ -713,7 +701,7 @@ tHID_STATUS hidd_conn_send_data(uint8_t channel, uint8_t msg_type,
   HIDD_TRACE_VERBOSE("%s: channel(%d), msg_type(%d), len(%d)", __func__,
                      channel, msg_type, len);
 
-  p_hcon = &hd_cb.device.conn;
+  tHID_CONN* p_hcon = &hd_cb.device.conn;
 
   if (p_hcon->conn_flags & HID_CONN_FLAGS_CONGESTED) {
     return HID_ERR_CONGESTED;
