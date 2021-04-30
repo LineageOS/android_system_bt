@@ -100,29 +100,6 @@ static void l2c_csm_indicate_connection_open(tL2C_CCB* p_ccb) {
   }
 }
 
-static std::string channel_state_text(const tL2C_CHNL_STATE& state) {
-  switch (state) {
-    case CST_CLOSED: /* Channel is in closed state */
-      return std::string("closed");
-    case CST_ORIG_W4_SEC_COMP: /* Originator waits security clearence */
-      return std::string("security pending(orig)");
-    case CST_TERM_W4_SEC_COMP: /* Acceptor waits security clearence */
-      return std::string("security pending(term)");
-    case CST_W4_L2CAP_CONNECT_RSP: /* Waiting for peer connect response */
-      return std::string("wait connect response from peer");
-    case CST_W4_L2CA_CONNECT_RSP: /* Waiting for upper layer connect rsp */
-      return std::string("wait connect response from upper");
-    case CST_CONFIG: /* Negotiating configuration */
-      return std::string("configuring");
-    case CST_OPEN: /* Data transfer state */
-      return std::string("open");
-    case CST_W4_L2CAP_DISCONNECT_RSP: /* Waiting for peer disconnect rsp */
-      return std::string("wait disconnect response from peer");
-    case CST_W4_L2CA_DISCONNECT_RSP: /* Waiting for upper layer disc rsp */
-      return std::string("wait disconnect response from upper");
-  }
-}
-
 /*******************************************************************************
  *
  * Function         l2c_csm_execute
