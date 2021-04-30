@@ -277,7 +277,16 @@ struct classic_impl : public security::ISecurityManagerListener {
     connection->locally_initiated_ = locally_initiated;
     auto& connection_proxy = conn_pair.first->second;
     connection_proxy.connection_management_callbacks_ = connection->GetEventCallbacks();
-    connection_proxy.connection_management_callbacks_->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
+    if (delayed_role_change_ != nullptr) {
+      if (delayed_role_change_->GetBdAddr() == address) {
+        LOG_INFO("Sending delayed role change for %s", delayed_role_change_->GetBdAddr().ToString().c_str());
+        connection_proxy.connection_management_callbacks_->OnRoleChange(
+            delayed_role_change_->GetStatus(), delayed_role_change_->GetNewRole());
+      }
+      delayed_role_change_ = nullptr;
+    } else {
+      connection_proxy.connection_management_callbacks_->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
+    }
     client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
                                            common::Unretained(client_callbacks_), std::move(connection)));
     while (!pending_outgoing_connections_.empty()) {
@@ -503,13 +512,25 @@ struct classic_impl : public security::ISecurityManagerListener {
       LOG_ERROR("Received on_role_change with invalid packet");
       return;
     }
+    bool sent = false;
     auto hci_status = role_change_view.GetStatus();
     Address bd_addr = role_change_view.GetBdAddr();
     Role new_role = role_change_view.GetNewRole();
     for (auto& connection_pair : acl_connections_) {
       if (connection_pair.second.address_with_type_.GetAddress() == bd_addr) {
         connection_pair.second.connection_management_callbacks_->OnRoleChange(hci_status, new_role);
+        sent = true;
       }
+    }
+    if (!sent) {
+      if (delayed_role_change_ != nullptr) {
+        LOG_WARN("Second delayed role change (@%s dropped)", delayed_role_change_->GetBdAddr().ToString().c_str());
+      }
+      LOG_INFO(
+          "Role change for %s with no matching connection (new role: %s)",
+          role_change_view.GetBdAddr().ToString().c_str(),
+          RoleText(role_change_view.GetNewRole()).c_str());
+      delayed_role_change_ = std::make_unique<RoleChangeView>(role_change_view);
     }
   }
 
@@ -669,6 +690,7 @@ struct classic_impl : public security::ISecurityManagerListener {
   Address incoming_connecting_address_{Address::kEmpty};
   common::Callback<bool(Address, ClassOfDevice)> should_accept_connection_;
   std::queue<std::pair<Address, std::unique_ptr<CreateConnectionBuilder>>> pending_outgoing_connections_;
+  std::unique_ptr<RoleChangeView> delayed_role_change_ = nullptr;
 
   std::unique_ptr<security::SecurityManager> security_manager_;
   bool crash_on_unknown_handle_ = false;
