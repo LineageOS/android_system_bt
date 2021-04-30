@@ -55,6 +55,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
   ~BleScannerInterfaceImpl() override{};
 
   void Init() {
+    LOG_INFO("init BleScannerInterfaceImpl");
     bluetooth::shim::GetScanning()->RegisterScanningCallback(this);
   }
 
@@ -171,6 +172,9 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                               int batch_scan_trunc_max,
                               int batch_scan_notify_threshold, Callback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+    bluetooth::shim::GetScanning()->BatchScanConifgStorage(
+        batch_scan_full_max, batch_scan_trunc_max, batch_scan_notify_threshold);
+    do_in_jni_thread(FROM_HERE, base::Bind(cb, btm_status_value(BTM_SUCCESS)));
   }
 
   /* Enable batchscan */
@@ -178,16 +182,30 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                                int scan_window, int addr_type, int discard_rule,
                                Callback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+    auto batch_scan_mode =
+        static_cast<bluetooth::hci::BatchScanMode>(scan_mode);
+    auto batch_scan_discard_rule =
+        static_cast<bluetooth::hci::BatchScanDiscardRule>(discard_rule);
+    bluetooth::shim::GetScanning()->BatchScanEnable(
+        batch_scan_mode, scan_window, scan_interval, batch_scan_discard_rule);
+    do_in_jni_thread(FROM_HERE, base::Bind(cb, btm_status_value(BTM_SUCCESS)));
   }
 
   /* Disable batchscan */
   virtual void BatchscanDisable(Callback cb) {
     LOG(INFO) << __func__ << " in shim layer";
+    bluetooth::shim::GetScanning()->BatchScanDisable();
+    do_in_jni_thread(FROM_HERE, base::Bind(cb, btm_status_value(BTM_SUCCESS)));
   }
 
   /* Read out batchscan reports */
   void BatchscanReadReports(int client_if, int scan_mode) {
     LOG(INFO) << __func__ << " in shim layer";
+    auto batch_scan_mode =
+        static_cast<bluetooth::hci::BatchScanMode>(scan_mode);
+    auto scanner_id = static_cast<bluetooth::hci::ScannerId>(client_if);
+    bluetooth::shim::GetScanning()->BatchScanReadReport(scanner_id,
+                                                        batch_scan_mode);
   }
 
   void StartSync(uint8_t sid, RawAddress address, uint16_t skip,
@@ -249,7 +267,16 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
   void OnTrackAdvFoundLost() {}
 
   void OnBatchScanReports(int client_if, int status, int report_format,
-                          int num_records, std::vector<uint8_t> data) {}
+                          int num_records, std::vector<uint8_t> data) {
+    do_in_jni_thread(
+        FROM_HERE,
+        base::BindOnce(&ScanningCallbacks::OnBatchScanReports,
+                       base::Unretained(scanning_callbacks_), client_if, status,
+                       report_format, num_records, data));
+  }
+
+  void OnBatchScanThresholdCrossed(int client_if) {}
+
   void OnTimeout() {}
 
   void OnFilterEnable(bluetooth::hci::Enable enable, uint8_t status){};
