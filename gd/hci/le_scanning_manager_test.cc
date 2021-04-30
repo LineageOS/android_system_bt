@@ -118,9 +118,17 @@ class TestHciLayer : public HciLayer {
     registered_events_[event_code] = event_handler;
   }
 
+  void UnregisterEventHandler(EventCode event_code) override {
+    registered_events_.erase(event_code);
+  }
+
   void RegisterLeEventHandler(SubeventCode subevent_code,
                               common::ContextualCallback<void(LeMetaEventView)> event_handler) override {
     registered_le_events_[subevent_code] = event_handler;
+  }
+
+  void UnregisterLeEventHandler(SubeventCode subevent_code) override {
+    registered_le_events_.erase(subevent_code);
   }
 
   void IncomingEvent(std::unique_ptr<EventBuilder> event_builder) {
@@ -235,6 +243,9 @@ class LeScanningManagerTest : public ::testing::Test {
     if (is_filter_support_) {
       test_controller_->AddSupported(OpCode::LE_ADV_FILTER);
     }
+    if (is_batch_scan_support_) {
+      test_controller_->AddSupported(OpCode::LE_BATCH_SCAN);
+    }
     test_acl_manager_ = new TestAclManager;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
@@ -307,6 +318,7 @@ class LeScanningManagerTest : public ::testing::Test {
         OnBatchScanReports,
         (int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data),
         (override));
+    MOCK_METHOD(void, OnBatchScanThresholdCrossed, (int client_if), (override));
     MOCK_METHOD(void, OnTimeout, (), (override));
     MOCK_METHOD(void, OnFilterEnable, (Enable enable, uint8_t status), (override));
     MOCK_METHOD(void, OnFilterParamSetup, (uint8_t available_spaces, ApcfAction action, uint8_t status), (override));
@@ -320,6 +332,7 @@ class LeScanningManagerTest : public ::testing::Test {
   OpCode param_opcode_{OpCode::LE_SET_ADVERTISING_PARAMETERS};
   OpCode enable_opcode_{OpCode::LE_SET_SCAN_ENABLE};
   bool is_filter_support_ = false;
+  bool is_batch_scan_support_ = false;
 };
 
 class LeAndroidHciScanningManagerTest : public LeScanningManagerTest {
@@ -327,6 +340,7 @@ class LeAndroidHciScanningManagerTest : public LeScanningManagerTest {
   void SetUp() override {
     param_opcode_ = OpCode::LE_EXTENDED_SCAN_PARAMS;
     is_filter_support_ = true;
+    is_batch_scan_support_ = true;
     LeScanningManagerTest::SetUp();
     test_controller_->AddSupported(OpCode::LE_ADV_FILTER);
   }
@@ -444,6 +458,44 @@ TEST_F(LeAndroidHciScanningManagerTest, scan_filter_add_test) {
   test_hci_layer_->IncomingEvent(
       LeAdvFilterBroadcasterAddressCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS, ApcfAction::ADD, 0x0a));
   sync_client_handler();
+}
+
+TEST_F(LeAndroidHciScanningManagerTest, read_batch_scan_result) {
+  // Enable batch scan feature
+  auto next_command_future = test_hci_layer_->GetCommandFuture();
+  le_scanning_manager->BatchScanConifgStorage(100, 0, 95);
+  auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
+  test_hci_layer_->IncomingEvent(LeBatchScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(
+      LeBatchScanSetStorageParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  // Enable batch scan
+  next_command_future = test_hci_layer_->GetCommandFuture();
+  le_scanning_manager->BatchScanEnable(BatchScanMode::FULL, 2400, 2400, BatchScanDiscardRule::OLDEST);
+  result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
+  test_hci_layer_->IncomingEvent(LeBatchScanSetScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  // Read batch scan data
+  next_command_future = test_hci_layer_->GetCommandFuture();
+  le_scanning_manager->BatchScanReadReport(0x01, BatchScanMode::FULL);
+  result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
+
+  EXPECT_CALL(mock_callbacks_, OnBatchScanReports);
+  std::vector<uint8_t> raw_data = {0x5c, 0x1f, 0xa2, 0xc3, 0x63, 0x5d, 0x01, 0xf5, 0xb3, 0x5e, 0x00, 0x0c, 0x02,
+                                   0x01, 0x02, 0x05, 0x09, 0x6d, 0x76, 0x38, 0x76, 0x02, 0x0a, 0xf5, 0x00};
+  next_command_future = test_hci_layer_->GetCommandFuture();
+  // We will send read command while num_of_record != 0
+  test_hci_layer_->IncomingEvent(LeBatchScanReadResultParametersCompleteRawBuilder::Create(
+      uint8_t{1}, ErrorCode::SUCCESS, BatchScanDataRead::FULL_MODE_DATA, 1, raw_data));
+  result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
+
+  // OnBatchScanReports will be trigger when num_of_record == 0
+  test_hci_layer_->IncomingEvent(LeBatchScanReadResultParametersCompleteRawBuilder::Create(
+      uint8_t{1}, ErrorCode::SUCCESS, BatchScanDataRead::FULL_MODE_DATA, 0, {}));
 }
 
 TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
