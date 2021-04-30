@@ -31,8 +31,9 @@
 
 #include "language_y.h"
 
-void yylex_init(void**);
-void yylex_destroy(void*);
+
+int yylex_init(void**);
+int yylex_destroy(void*);
 void yyset_debug(int, void*);
 void yyset_in(FILE*, void*);
 
