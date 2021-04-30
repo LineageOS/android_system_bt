@@ -90,6 +90,7 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
   };
   void OnTrackAdvFoundLost(){};
   void OnBatchScanReports(int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data){};
+  void OnBatchScanThresholdCrossed(int client_if){};
   void OnTimeout(){};
   void OnFilterEnable(Enable enable, uint8_t status){};
   void OnFilterParamSetup(uint8_t available_spaces, ApcfAction action, uint8_t status){};

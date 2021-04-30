@@ -53,6 +53,7 @@ class ScanningCallback {
   virtual void OnTrackAdvFoundLost() = 0;
   virtual void OnBatchScanReports(
       int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) = 0;
+  virtual void OnBatchScanThresholdCrossed(int client_if) = 0;
   virtual void OnTimeout() = 0;
   virtual void OnFilterEnable(Enable enable, uint8_t status) = 0;
   virtual void OnFilterParamSetup(uint8_t available_spaces, ApcfAction action, uint8_t status) = 0;
@@ -88,6 +89,13 @@ class AdvertisingFilterParameter {
   uint16_t num_of_tracking_entries;
 };
 
+enum class BatchScanMode : uint8_t {
+  DISABLE = 0,
+  TRUNCATED = 1,
+  FULL = 2,
+  TRUNCATED_AND_FULL = 3,
+};
+
 class LeScanningManager : public bluetooth::Module {
  public:
   static constexpr uint8_t kMaxAppNum = 32;
@@ -111,6 +119,17 @@ class LeScanningManager : public bluetooth::Module {
       ApcfAction action, uint8_t filter_index, AdvertisingFilterParameter advertising_filter_parameter);
 
   void ScanFilterAdd(uint8_t filter_index, std::vector<AdvertisingPacketContentFilterCommand> filters);
+
+  /*Batch Scan*/
+  void BatchScanConifgStorage(
+      uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max, uint8_t batch_scan_notify_threshold);
+  void BatchScanEnable(
+      BatchScanMode scan_mode,
+      uint32_t duty_cycle_scan_window_slots,
+      uint32_t duty_cycle_scan_interval_slots,
+      BatchScanDiscardRule batch_scan_discard_rule);
+  void BatchScanDisable();
+  void BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode);
 
   void RegisterScanningCallback(ScanningCallback* scanning_callback);
 
