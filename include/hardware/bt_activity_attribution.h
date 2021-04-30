@@ -28,12 +28,14 @@ class ActivityAttributionCallbacks {
  public:
   enum class Activity : uint8_t {
     UNKNOWN = 0,
+    ACL,
     ADVERTISE,
     CONNECT,
     CONTROL,
-    SCAN,
     HFP,
-    VENDOR
+    ISO,
+    SCAN,
+    VENDOR,
   };
 
   struct BtaaAggregationEntry {
