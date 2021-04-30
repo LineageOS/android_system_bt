@@ -25,7 +25,7 @@ namespace security {
 namespace record {
 namespace {
 
-class SecurityRecordStorageTest : public ::testing::Test {
+class DISABLED_SecurityRecordStorageTest : public ::testing::Test {
  protected:
   void SetUp() override {
     // Make Fake storage module
@@ -55,9 +55,9 @@ class SecurityRecordStorageTest : public ::testing::Test {
   record::SecurityRecordStorage* record_storage_;
 };
 
-TEST_F(SecurityRecordStorageTest, setup_teardown) {}
+TEST_F(DISABLED_SecurityRecordStorageTest, setup_teardown) {}
 
-TEST_F(SecurityRecordStorageTest, store_security_record) {
+TEST_F(DISABLED_SecurityRecordStorageTest, store_security_record) {
   hci::AddressWithType remote(
       hci::Address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06}), hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   std::array<uint8_t, 16> link_key = {
@@ -78,7 +78,7 @@ TEST_F(SecurityRecordStorageTest, store_security_record) {
   }
 }
 
-TEST_F(SecurityRecordStorageTest, store_le_security_record) {
+TEST_F(DISABLED_SecurityRecordStorageTest, store_le_security_record) {
   hci::AddressWithType identity_address(
       hci::Address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06}), hci::AddressType::RANDOM_DEVICE_ADDRESS);
   std::array<uint8_t, 16> remote_ltk{
@@ -118,7 +118,7 @@ TEST_F(SecurityRecordStorageTest, store_le_security_record) {
   ASSERT_EQ(device.Le().GetPeerSignatureResolvingKeys(), "000000000883ae44d6779e901d25cdd7b6f4578502");
 }
 
-TEST_F(SecurityRecordStorageTest, load_security_record) {
+TEST_F(DISABLED_SecurityRecordStorageTest, load_security_record) {
   hci::AddressWithType remote(
       hci::Address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06}), hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   std::array<uint8_t, 16> link_key = {
@@ -151,7 +151,7 @@ TEST_F(SecurityRecordStorageTest, load_security_record) {
   }
 }
 
-TEST_F(SecurityRecordStorageTest, dont_save_temporary_records) {
+TEST_F(DISABLED_SecurityRecordStorageTest, dont_save_temporary_records) {
   hci::AddressWithType remote(
       hci::Address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06}), hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   std::array<uint8_t, 16> link_key = {
@@ -172,7 +172,7 @@ TEST_F(SecurityRecordStorageTest, dont_save_temporary_records) {
   ASSERT_EQ(record_set.size(), 0);
 }
 
-TEST_F(SecurityRecordStorageTest, test_remove) {
+TEST_F(DISABLED_SecurityRecordStorageTest, test_remove) {
   hci::AddressWithType remote(
       hci::Address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06}), hci::AddressType::PUBLIC_DEVICE_ADDRESS);
   std::array<uint8_t, 16> link_key = {
