@@ -175,7 +175,7 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
     p_clcb->request_during_discovery =
         BTA_GATTC_DISCOVER_REQ_READ_EXT_PROP_DESC;
 
-    if (p_srvc_cb->read_multiple_not_supported) {
+    if (p_srvc_cb->read_multiple_not_supported || descriptors.size() == 1) {
       tGATT_READ_PARAM read_param{
           .by_handle = {.handle = descriptors.front(),
                         .auth_req = GATT_AUTH_REQ_NONE}};

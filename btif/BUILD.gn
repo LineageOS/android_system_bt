@@ -42,6 +42,7 @@ static_library("btif") {
     "src/btif_a2dp_control.cc",
     "src/btif_a2dp_sink.cc",
     "src/btif_a2dp_source.cc",
+    "src/btif_activity_attribution.cc",
     "src/btif_av.cc",
 
     # TODO(abps) - Move this abstraction elsewhere

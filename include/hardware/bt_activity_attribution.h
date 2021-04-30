@@ -17,6 +17,8 @@
 #ifndef ANDROID_INCLUDE_BT_ACTIVITY_ATTRIBUTION_H
 #define ANDROID_INCLUDE_BT_ACTIVITY_ATTRIBUTION_H
 
+#include <vector>
+
 #include "raw_address.h"
 
 namespace bluetooth {

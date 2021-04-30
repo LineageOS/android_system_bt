@@ -2273,17 +2273,17 @@ void btif_dm_load_local_oob(void) {
  *
  ******************************************************************************/
 void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport) {
+  LOG_DEBUG("Transport %s", bt_transport_text(transport).c_str());
   if (transport == BT_TRANSPORT_BR_EDR) {
     BTM_ReadLocalOobData();
   } else if (transport == BT_TRANSPORT_LE) {
-    // TODO(184377951): Call LE Implementation (not yet implemented?)
-  } else {
-    BTIF_TRACE_ERROR("Bad transport type! %d", transport);
+    SMP_CrLocScOobData(base::BindOnce(&btif_dm_proc_loc_oob));
   }
 }
 
-void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r) {
-  invoke_oob_data_request_cb(BT_TRANSPORT_BR_EDR, valid, c, r);
+void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid,
+                          const Octet16& c, const Octet16& r) {
+  invoke_oob_data_request_cb(transport, is_valid, c, r);
 }
 
 /*******************************************************************************
