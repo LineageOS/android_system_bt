@@ -24,7 +24,7 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothStorageTestSources",
+    name: "BluetoothStorageUnitTestSources",
     srcs: [
             "adapter_config_test.cc",
             "classic_device_test.cc",
@@ -34,6 +34,12 @@ filegroup {
             "le_device_test.cc",
             "legacy_config_file_test.cc",
             "mutation_test.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothStorageTestSources",
+    srcs: [
             "storage_module_test.cc",
     ],
 }
