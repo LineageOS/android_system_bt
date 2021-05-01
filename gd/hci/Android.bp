@@ -30,21 +30,27 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothHciTestSources",
+    name: "BluetoothHciUnitTestSources",
     srcs: [
         "acl_builder_test.cc",
-        "acl_manager/round_robin_scheduler_test.cc",
-        "acl_manager_test.cc",
         "address_unittest.cc",
         "address_with_type_test.cc",
         "class_of_device_unittest.cc",
+        "hci_packets_test.cc",
+        "uuid_unittest.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothHciTestSources",
+    srcs: [
+        "acl_manager/round_robin_scheduler_test.cc",
+        "acl_manager_test.cc",
         "controller_test.cc",
         "hci_layer_test.cc",
-        "hci_packets_test.cc",
         "le_address_manager_test.cc",
         "le_advertising_manager_test.cc",
         "le_scanning_manager_test.cc",
-        "uuid_unittest.cc",
     ],
 }
 
