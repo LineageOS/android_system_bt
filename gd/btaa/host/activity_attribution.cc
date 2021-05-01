@@ -23,8 +23,13 @@ namespace activity_attribution {
 
 struct ActivityAttribution::impl {};
 
-void ActivityAttribution::RegisterActivityAttributionCallback(
-  ActivityAttributionCallback* callback) {}
+void ActivityAttribution::OnWakelockAcquired() {}
+
+void ActivityAttribution::OnWakelockReleased() {}
+
+void ActivityAttribution::OnWakeup() {}
+
+void ActivityAttribution::RegisterActivityAttributionCallback(ActivityAttributionCallback* callback) {}
 
 std::string ActivityAttribution::ToString() const {
   return "Btaa Module";
@@ -38,5 +43,9 @@ void ActivityAttribution::Stop() {}
 
 const ModuleFactory ActivityAttribution::Factory = ModuleFactory([]() { return new ActivityAttribution(); });
 
+DumpsysDataFinisher EmptyDumpsysDataFinisher = [](DumpsysDataBuilder* dumpsys_data_builder) {};
+DumpsysDataFinisher ActivityAttribution::GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const {
+  return EmptyDumpsysDataFinisher;
+}
 }  // namespace activity_attribution
 }  // namespace bluetooth
