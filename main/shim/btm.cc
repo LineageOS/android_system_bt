@@ -135,6 +135,8 @@ void Btm::ScanningCallbacks::OnBatchScanReports(int client_if, int status,
                                                 int report_format,
                                                 int num_records,
                                                 std::vector<uint8_t> data){};
+
+void Btm::ScanningCallbacks::OnBatchScanThresholdCrossed(int client_if){};
 void Btm::ScanningCallbacks::OnTimeout(){};
 void Btm::ScanningCallbacks::OnFilterEnable(bluetooth::hci::Enable enable,
                                             uint8_t status){};

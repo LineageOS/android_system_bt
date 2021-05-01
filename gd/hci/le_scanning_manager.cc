@@ -155,6 +155,9 @@ class NullScanningCallback : public ScanningCallback {
   void OnBatchScanReports(int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) {
     LOG_INFO("OnBatchScanReports in NullScanningCallback");
   }
+  void OnBatchScanThresholdCrossed(int client_if) {
+    LOG_INFO("OnBatchScanThresholdCrossed in NullScanningCallback");
+  }
   void OnTimeout() {
     LOG_INFO("OnTimeout in NullScanningCallback");
   }
@@ -168,6 +171,27 @@ class NullScanningCallback : public ScanningCallback {
       ApcfFilterType filter_type, uint8_t available_spaces, ApcfAction action, uint8_t status) {
     LOG_INFO("OnFilterConfigCallback in NullScanningCallback");
   }
+};
+
+enum class BatchScanState {
+  ERROR_STATE = 0,
+  ENABLE_CALLED = 1,
+  ENABLED_STATE = 2,
+  DISABLE_CALLED = 3,
+  DISABLED_STATE = 4,
+};
+
+#define BTM_BLE_BATCH_SCAN_MODE_DISABLE 0
+#define BTM_BLE_BATCH_SCAN_MODE_PASS 1
+#define BTM_BLE_BATCH_SCAN_MODE_ACTI 2
+#define BTM_BLE_BATCH_SCAN_MODE_PASS_ACTI 3
+
+struct BatchScanConfig {
+  BatchScanState current_state;
+  BatchScanMode scan_mode;
+  uint32_t scan_interval;
+  uint32_t scan_window;
+  BatchScanDiscardRule discard_rule;
 };
 
 struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {
@@ -197,11 +221,13 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
       api_type_ = ScanApiType::LEGACY;
     }
     is_filter_support_ = controller_->IsSupported(OpCode::LE_ADV_FILTER);
+    is_batch_scan_support_ = controller->IsSupported(OpCode::LE_BATCH_SCAN);
     scanners_ = std::vector<Scanner>(kMaxAppNum + 1);
     for (size_t i = 0; i < scanners_.size(); i++) {
       scanners_[i].app_uuid = Uuid::kEmpty;
       scanners_[i].in_use = false;
     }
+    batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
     configure_scan();
   }
 
@@ -803,6 +829,140 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
         module_handler_->BindOnceOn(this, &impl::on_advertising_filter_complete));
   }
 
+  void batch_scan_set_storage_parameter(
+      uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max, uint8_t batch_scan_notify_threshold) {
+    if (!is_batch_scan_support_) {
+      LOG_WARN("Batch scan is not supported");
+      return;
+    }
+
+    if (batch_scan_config_.current_state == BatchScanState::ERROR_STATE ||
+        batch_scan_config_.current_state == BatchScanState::DISABLED_STATE ||
+        batch_scan_config_.current_state == BatchScanState::DISABLE_CALLED) {
+      batch_scan_config_.current_state = BatchScanState::ENABLE_CALLED;
+      le_scanning_interface_->EnqueueCommand(
+          LeBatchScanEnableBuilder::Create(Enable::ENABLED),
+          module_handler_->BindOnceOn(this, &impl::on_batch_scan_enable_complete));
+    }
+
+    le_scanning_interface_->EnqueueCommand(
+        LeBatchScanSetStorageParametersBuilder::Create(
+            batch_scan_full_max, batch_scan_truncated_max, batch_scan_notify_threshold),
+        module_handler_->BindOnceOn(this, &impl::on_batch_scan_complete));
+  }
+
+  void batch_scan_enable(
+      BatchScanMode scan_mode,
+      uint32_t duty_cycle_scan_window_slots,
+      uint32_t duty_cycle_scan_interval_slots,
+      BatchScanDiscardRule batch_scan_discard_rule) {
+    if (!is_batch_scan_support_) {
+      LOG_WARN("Batch scan is not supported");
+      return;
+    }
+
+    if (batch_scan_config_.current_state == BatchScanState::ERROR_STATE ||
+        batch_scan_config_.current_state == BatchScanState::DISABLED_STATE ||
+        batch_scan_config_.current_state == BatchScanState::DISABLE_CALLED) {
+      batch_scan_config_.current_state = BatchScanState::ENABLE_CALLED;
+      le_scanning_interface_->EnqueueCommand(
+          LeBatchScanEnableBuilder::Create(Enable::ENABLED),
+          module_handler_->BindOnceOn(this, &impl::on_batch_scan_enable_complete));
+    }
+
+    batch_scan_config_.scan_mode = scan_mode;
+    batch_scan_config_.scan_interval = duty_cycle_scan_interval_slots;
+    batch_scan_config_.scan_window = duty_cycle_scan_window_slots;
+    batch_scan_config_.discard_rule = batch_scan_discard_rule;
+    /* This command starts batch scanning, if enabled */
+    batch_scan_set_scan_parameter(
+        scan_mode, duty_cycle_scan_window_slots, duty_cycle_scan_interval_slots, batch_scan_discard_rule);
+  }
+
+  void batch_scan_disable() {
+    if (!is_batch_scan_support_) {
+      LOG_WARN("Batch scan is not supported");
+      return;
+    }
+    batch_scan_config_.current_state = BatchScanState::DISABLE_CALLED;
+    batch_scan_set_scan_parameter(
+        BatchScanMode::DISABLE,
+        batch_scan_config_.scan_window,
+        batch_scan_config_.scan_interval,
+        batch_scan_config_.discard_rule);
+  }
+
+  void batch_scan_set_scan_parameter(
+      BatchScanMode scan_mode,
+      uint32_t duty_cycle_scan_window_slots,
+      uint32_t duty_cycle_scan_interval_slots,
+      BatchScanDiscardRule batch_scan_discard_rule) {
+    if (!is_batch_scan_support_) {
+      LOG_WARN("Batch scan is not supported");
+      return;
+    }
+    AdvertisingAddressType own_address_type = AdvertisingAddressType::PUBLIC_ADDRESS;
+    if (own_address_type_ == OwnAddressType::RANDOM_DEVICE_ADDRESS ||
+        own_address_type_ == OwnAddressType::RESOLVABLE_OR_RANDOM_ADDRESS) {
+      own_address_type = AdvertisingAddressType::RANDOM_ADDRESS;
+    }
+    uint8_t truncated_mode_enabled = 0x00;
+    uint8_t full_mode_enabled = 0x00;
+    if (scan_mode == BatchScanMode::TRUNCATED || scan_mode == BatchScanMode::TRUNCATED_AND_FULL) {
+      truncated_mode_enabled = 0x01;
+    }
+    if (scan_mode == BatchScanMode::FULL || scan_mode == BatchScanMode::TRUNCATED_AND_FULL) {
+      full_mode_enabled = 0x01;
+    }
+
+    if (scan_mode == BatchScanMode::DISABLE) {
+      le_scanning_interface_->EnqueueCommand(
+          LeBatchScanSetScanParametersBuilder::Create(
+              truncated_mode_enabled,
+              full_mode_enabled,
+              duty_cycle_scan_window_slots,
+              duty_cycle_scan_interval_slots,
+              own_address_type,
+              batch_scan_discard_rule),
+          module_handler_->BindOnceOn(this, &impl::on_batch_scan_disable_complete));
+    } else {
+      le_scanning_interface_->EnqueueCommand(
+          LeBatchScanSetScanParametersBuilder::Create(
+              truncated_mode_enabled,
+              full_mode_enabled,
+              duty_cycle_scan_window_slots,
+              duty_cycle_scan_interval_slots,
+              own_address_type,
+              batch_scan_discard_rule),
+          module_handler_->BindOnceOn(this, &impl::on_batch_scan_complete));
+    }
+  }
+
+  void batch_scan_read_results(ScannerId scanner_id, uint16_t total_num_of_records, BatchScanMode scan_mode) {
+    if (!is_batch_scan_support_) {
+      LOG_WARN("Batch scan is not supported");
+      int status = static_cast<int>(ErrorCode::UNSUPORTED_FEATURE_OR_PARAMETER_VALUE);
+      scanning_callbacks_->OnBatchScanReports(scanner_id, status, 0, 0, {});
+      return;
+    }
+
+    if (scan_mode != BatchScanMode::FULL && scan_mode != BatchScanMode::TRUNCATED) {
+      LOG_WARN("Invalid scan mode %d", (uint16_t)scan_mode);
+      int status = static_cast<int>(ErrorCode::INVALID_HCI_COMMAND_PARAMETERS);
+      scanning_callbacks_->OnBatchScanReports(scanner_id, status, 0, 0, {});
+      return;
+    }
+
+    if (batch_scan_result_cache_.find(scanner_id) == batch_scan_result_cache_.end()) {
+      std::vector<uint8_t> empty_data = {};
+      batch_scan_result_cache_.emplace(scanner_id, empty_data);
+    }
+
+    le_scanning_interface_->EnqueueCommand(
+        LeBatchScanReadResultParametersBuilder::Create(static_cast<BatchScanDataRead>(scan_mode)),
+        module_handler_->BindOnceOn(this, &impl::on_batch_scan_read_result_complete, scanner_id, total_num_of_records));
+  }
+
   void register_scanning_callback(ScanningCallback* scanning_callbacks) {
     scanning_callbacks_ = scanning_callbacks;
   }
@@ -890,6 +1050,68 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
   }
 
+  void on_batch_scan_complete(CommandCompleteView view) {
+    ASSERT(view.IsValid());
+    auto status_view = LeBatchScanCompleteView::Create(view);
+    ASSERT(status_view.IsValid());
+    if (status_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_INFO(
+          "Got a Command complete %s, status %s, batch_scan_opcode %s",
+          OpCodeText(view.GetCommandOpCode()).c_str(),
+          ErrorCodeText(status_view.GetStatus()).c_str(),
+          BatchScanOpcodeText(status_view.GetBatchScanOpcode()).c_str());
+    }
+  }
+
+  void on_batch_scan_enable_complete(CommandCompleteView view) {
+    ASSERT(view.IsValid());
+    auto status_view = LeBatchScanCompleteView::Create(view);
+    ASSERT(status_view.IsValid());
+    auto complete_view = LeBatchScanEnableCompleteView::Create(status_view);
+    ASSERT(complete_view.IsValid());
+    if (status_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_INFO("Got batch scan enable complete, status %s", ErrorCodeText(status_view.GetStatus()).c_str());
+      batch_scan_config_.current_state = BatchScanState::ERROR_STATE;
+    } else {
+      batch_scan_config_.current_state = BatchScanState::ENABLED_STATE;
+    }
+  }
+
+  void on_batch_scan_disable_complete(CommandCompleteView view) {
+    ASSERT(view.IsValid());
+    auto status_view = LeBatchScanCompleteView::Create(view);
+    ASSERT(status_view.IsValid());
+    auto complete_view = LeBatchScanSetScanParametersCompleteView::Create(status_view);
+    ASSERT(complete_view.IsValid());
+    ASSERT(status_view.GetStatus() == ErrorCode::SUCCESS);
+    batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
+  }
+
+  void on_batch_scan_read_result_complete(
+      ScannerId scanner_id, uint16_t total_num_of_records, CommandCompleteView view) {
+    ASSERT(view.IsValid());
+    auto status_view = LeBatchScanCompleteView::Create(view);
+    ASSERT(status_view.IsValid());
+    auto complete_view = LeBatchScanReadResultParametersCompleteRawView::Create(status_view);
+    ASSERT(complete_view.IsValid());
+    if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_INFO("Got batch scan read result complete, status %s", ErrorCodeText(status_view.GetStatus()).c_str());
+    }
+    uint8_t num_of_records = complete_view.GetNumOfRecords();
+    auto report_format = complete_view.GetBatchScanDataRead();
+    if (num_of_records == 0) {
+      scanning_callbacks_->OnBatchScanReports(
+          scanner_id, 0x00, (int)report_format, total_num_of_records, batch_scan_result_cache_[scanner_id]);
+      batch_scan_result_cache_.erase(scanner_id);
+    } else {
+      auto raw_data = complete_view.GetRawData();
+      batch_scan_result_cache_[scanner_id].insert(
+          batch_scan_result_cache_[scanner_id].end(), raw_data.begin(), raw_data.end());
+      total_num_of_records += num_of_records;
+      batch_scan_read_results(scanner_id, total_num_of_records, static_cast<BatchScanMode>(report_format));
+    }
+  }
+
   void OnPause() override {
     paused_ = true;
     scan_on_resume_ = is_scanning_;
@@ -926,12 +1148,15 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   bool paused_ = false;
   AdvertisingCache advertising_cache_;
   bool is_filter_support_ = false;
+  bool is_batch_scan_support_ = false;
 
   LeScanType le_scan_type_ = LeScanType::ACTIVE;
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
   OwnAddressType own_address_type_{OwnAddressType::PUBLIC_DEVICE_ADDRESS};
   LeScanningFilterPolicy filter_policy_{LeScanningFilterPolicy::ACCEPT_ALL};
+  BatchScanConfig batch_scan_config_;
+  std::map<ScannerId, std::vector<uint8_t>> batch_scan_result_cache_;
 
   static void check_status(CommandCompleteView view) {
     switch (view.GetCommandOpCode()) {
@@ -1018,6 +1243,38 @@ void LeScanningManager::ScanFilterParameterSetup(
 void LeScanningManager::ScanFilterAdd(
     uint8_t filter_index, std::vector<AdvertisingPacketContentFilterCommand> filters) {
   CallOn(pimpl_.get(), &impl::scan_filter_add, filter_index, filters);
+}
+
+void LeScanningManager::BatchScanConifgStorage(
+    uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max, uint8_t batch_scan_notify_threshold) {
+  CallOn(
+      pimpl_.get(),
+      &impl::batch_scan_set_storage_parameter,
+      batch_scan_full_max,
+      batch_scan_truncated_max,
+      batch_scan_notify_threshold);
+}
+
+void LeScanningManager::BatchScanEnable(
+    BatchScanMode scan_mode,
+    uint32_t duty_cycle_scan_window_slots,
+    uint32_t duty_cycle_scan_interval_slots,
+    BatchScanDiscardRule batch_scan_discard_rule) {
+  CallOn(
+      pimpl_.get(),
+      &impl::batch_scan_enable,
+      scan_mode,
+      duty_cycle_scan_window_slots,
+      duty_cycle_scan_interval_slots,
+      batch_scan_discard_rule);
+}
+
+void LeScanningManager::BatchScanDisable() {
+  CallOn(pimpl_.get(), &impl::batch_scan_disable);
+}
+
+void LeScanningManager::BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode) {
+  CallOn(pimpl_.get(), &impl::batch_scan_read_results, scanner_id, 0, scan_mode);
 }
 
 void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {
