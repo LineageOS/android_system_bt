@@ -478,6 +478,12 @@ class DualModeController : public Device {
   // 7.8.41
   void LeReadResolvingListSize(CommandView args);
 
+  // 7.8.44
+  void LeSetAddressResolutionEnable(CommandView args);
+
+  // 7.8.45
+  void LeSetResovalablePrivateAddressTimeout(CommandView args);
+
   // 7.8.46
   void LeReadMaximumDataLength(CommandView args);
 
