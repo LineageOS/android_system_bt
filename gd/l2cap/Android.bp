@@ -69,11 +69,17 @@ filegroup {
         "internal/receiver_test.cc",
         "internal/scheduler_fifo_test.cc",
         "internal/sender_test.cc",
-        "l2cap_packet_test.cc",
         "le/internal/dynamic_channel_service_manager_test.cc",
         "le/internal/fixed_channel_impl_test.cc",
         "le/internal/fixed_channel_service_manager_test.cc",
         "le/internal/link_manager_test.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothL2capUnitTestSources",
+    srcs: [
+        "l2cap_packet_test.cc",
         "signal_id_test.cc",
     ],
 }
