@@ -282,15 +282,13 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
     bta_hh_better_state_machine(p_cb, event, p_data);
 
     if (in_state != p_cb->state) {
-      APPL_TRACE_DEBUG("HH State Change: [%s] -> [%s] after Event [%s]",
-                       bta_hh_state_code(in_state),
-                       bta_hh_state_code(p_cb->state),
-                       bta_hh_evt_code(debug_event));
+      LOG_DEBUG("HHID State Change: [%s] -> [%s] after Event [%s]",
+                bta_hh_state_code(in_state), bta_hh_state_code(p_cb->state),
+                bta_hh_evt_code(debug_event));
     }
   }
-
-  return;
 }
+
 /*******************************************************************************
  *
  * Function         bta_hh_hdl_event
