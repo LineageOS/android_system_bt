@@ -280,6 +280,87 @@ cc_binary {
 }
 
 cc_test {
+    name: "bluetooth_test_gd_unit",
+    test_suites: ["device-tests"],
+    defaults: [
+        "gd_defaults",
+        "gd_clang_coverage_bin",
+    ],
+    host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
+    target: {
+        linux: {
+            srcs: [
+                ":BluetoothOsTestSources_linux_generic",
+            ],
+        },
+        host: {
+            srcs: [
+                ":BluetoothHalTestSources_hci_host",
+                ":BluetoothOsTestSources_host",
+            ],
+        },
+        android: {
+            srcs: [
+                ":BluetoothHalTestSources_hci_android_hidl",
+                ":BluetoothOsTestSources_android",
+            ],
+            shared_libs: [
+                "android.hardware.bluetooth@1.0",
+                "android.hardware.bluetooth@1.1",
+                "android.system.suspend.control-V1-ndk",
+                "libbinder_ndk",
+                "libhidlbase",
+                "libutils",
+                "libcutils",
+                "libstatslog",
+            ],
+        },
+    },
+    srcs: [
+        "module_unittest.cc",
+        "stack_manager_unittest.cc",
+        ":BluetoothCommonTestSources",
+        ":BluetoothCryptoToolboxTestSources",
+        ":BluetoothDumpsysTestSources",
+        ":BluetoothHalTestSources",
+        ":BluetoothHciUnitTestSources",
+        ":BluetoothL2capUnitTestSources",
+        ":BluetoothPacketTestSources",
+        ":BluetoothShimTestSources",
+        ":BluetoothSecurityUnitTestSources",
+        ":BluetoothStorageUnitTestSources",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
+        "BluetoothGeneratedDumpsysBundledSchema_h",
+        "BluetoothGeneratedDumpsysBundledTestSchema_h",
+        "BluetoothGeneratedDumpsysDataSchema_h",
+        "BluetoothGeneratedDumpsysTestData_h",
+        "BluetoothGeneratedPackets_h",
+    ],
+    static_libs: [
+        "libbluetooth-protos",
+        "libbluetooth_gd",
+        "libc++fs",
+        "libflatbuffers-cpp",
+        "libgmock",
+        "libbluetooth_rust_interop",
+    ],
+    shared_libs: [
+        "libchrome",
+        "libcrypto",
+        "libgrpc++",
+        "libgrpc_wrap",
+    ],
+    sanitize: {
+        address: true,
+    },
+}
+
+cc_test {
     name: "bluetooth_test_gd",
     test_suites: ["device-tests"],
     defaults: [
@@ -333,7 +414,6 @@ cc_test {
         ":BluetoothNeighborTestSources",
         ":BluetoothPacketTestSources",
         ":BluetoothSecurityTestSources",
-        ":BluetoothShimTestSources",
         ":BluetoothStorageTestSources",
     ],
     generated_headers: [
