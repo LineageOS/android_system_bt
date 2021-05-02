@@ -859,9 +859,10 @@ struct shim::legacy::Acl::impl {
     for (auto& entry : history) {
       LOG_DEBUG("%s", entry.c_str());
     }
-    LOG_DEBUG("Shadow le accept list  size:%hhu",
-              controller_get_interface()->get_ble_acceptlist_size());
     const auto acceptlist = shadow_acceptlist_.GetCopy();
+    LOG_DEBUG("Shadow le accept list  size:%-3zu controller_max_size:%hhu",
+              acceptlist.size(),
+              controller_get_interface()->get_ble_acceptlist_size());
     for (auto& entry : acceptlist) {
       LOG_DEBUG("acceptlist:%s", entry.ToString().c_str());
     }
@@ -874,10 +875,12 @@ struct shim::legacy::Acl::impl {
     for (auto& entry : history) {
       LOG_DUMPSYS(fd, "%s", entry.c_str());
     }
-    LOG_DUMPSYS(fd, "Shadow le accept list  size:%hhu",
+    auto acceptlist = shadow_acceptlist_.GetCopy();
+    LOG_DUMPSYS(fd,
+                "Shadow le accept list  size:%-3zu controller_max_size:%hhu",
+                acceptlist.size(),
                 controller_get_interface()->get_ble_acceptlist_size());
     unsigned cnt = 0;
-    auto acceptlist = shadow_acceptlist_.GetCopy();
     for (auto& entry : acceptlist) {
       LOG_DUMPSYS(fd, "%03u le acceptlist:%s", ++cnt, entry.ToString().c_str());
     }
