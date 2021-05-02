@@ -28,11 +28,17 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothSecurityTestSources",
+    name: "BluetoothSecurityUnitTestSources",
     srcs: [
         "ecc/multipoint_test.cc",
-        "pairing_handler_le_unittest.cc",
         "test/ecdh_keys_test.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothSecurityTestSources",
+    srcs: [
+        "pairing_handler_le_unittest.cc",
         "test/fake_l2cap_test.cc",
         "test/pairing_handler_le_pair_test.cc",
         ":BluetoothSecurityChannelTestSources",

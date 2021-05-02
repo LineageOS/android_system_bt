@@ -154,6 +154,7 @@ class TestHciLayer : public HciLayer {
   void CommandCompleteCallback(EventView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT_TRUE(complete_view.IsValid());
+    ASSERT_NE(command_complete_callbacks.size(), 0);
     std::move(command_complete_callbacks.front()).Invoke(complete_view);
     command_complete_callbacks.pop_front();
   }
@@ -161,6 +162,7 @@ class TestHciLayer : public HciLayer {
   void CommandStatusCallback(EventView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
     ASSERT_TRUE(status_view.IsValid());
+    ASSERT_NE(command_status_callbacks.size(), 0);
     std::move(command_status_callbacks.front()).Invoke(status_view);
     command_status_callbacks.pop_front();
   }
@@ -455,6 +457,8 @@ TEST_F(LeAndroidHciScanningManagerTest, scan_filter_add_test) {
   filters.push_back(filter);
   le_scanning_manager->ScanFilterAdd(0x01, filters);
   EXPECT_CALL(mock_callbacks_, OnFilterConfigCallback);
+  auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
   test_hci_layer_->IncomingEvent(
       LeAdvFilterBroadcasterAddressCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS, ApcfAction::ADD, 0x0a));
   sync_client_handler();
