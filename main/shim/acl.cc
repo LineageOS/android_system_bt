@@ -1287,6 +1287,10 @@ void shim::legacy::Acl::OnLeConnectSuccess(
   RawAddress peer_rpa = RawAddress::kEmpty;  /* TODO enhanced */
   uint8_t peer_addr_type = 0;                /* TODO public */
 
+  // Once an le connection has successfully been established
+  // the device address is removed from the controller accept list.
+  pimpl_->shadow_acceptlist_.Remove(address_with_type);
+
   TRY_POSTING_ON_MAIN(
       acl_interface_.connection.le.on_connected, legacy_address_with_type,
       handle, ToLegacyRole(connection_role), conn_interval, conn_latency,
