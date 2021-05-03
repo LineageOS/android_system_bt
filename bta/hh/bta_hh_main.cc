@@ -43,7 +43,7 @@ static const char* bta_hh_evt_code(tBTA_HH_INT_EVT evt_code);
 static const char* bta_hh_state_code(tBTA_HH_STATE state_code);
 
 static void bta_hh_better_state_machine(tBTA_HH_DEV_CB* p_cb, uint16_t event,
-                                        tBTA_HH_DATA* p_data) {
+                                        const tBTA_HH_DATA* p_data) {
   switch (p_cb->state) {
     case BTA_HH_IDLE_ST:
       switch (event) {
@@ -185,7 +185,7 @@ static void bta_hh_better_state_machine(tBTA_HH_DEV_CB* p_cb, uint16_t event,
  *
  ******************************************************************************/
 void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
-                       tBTA_HH_DATA* p_data) {
+                       const tBTA_HH_DATA* p_data) {
   tBTA_HH cback_data;
   tBTA_HH_EVT cback_event = 0;
   tBTA_HH_STATE in_state;

@@ -989,7 +989,7 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
  *
  ******************************************************************************/
 void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
-                          UNUSED_ATTR tBTA_HH_DATA* p_buf) {
+                          UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
   APPL_TRACE_DEBUG("%s", __func__);
   if (p_cb->status == BTA_HH_OK) {
     if (!p_cb->hid_srvc.in_use) {
@@ -1033,7 +1033,8 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
  * Returns
  *
  ******************************************************************************/
-void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
+void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB* p_cb,
+                               const tBTA_HH_DATA* p_buf) {
   if (p_cb == NULL || !p_cb->security_pending || p_buf == NULL ||
       p_buf->le_enc_cmpl.client_if != bta_hh_cb.gatt_if) {
     return;
@@ -1072,7 +1073,7 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
-                           UNUSED_ATTR tBTA_HH_DATA* p_buf) {
+                           UNUSED_ATTR const tBTA_HH_DATA* p_buf) {
   if (BTM_SecIsSecurityPending(p_cb->addr)) {
     /* if security collision happened, wait for encryption done */
     p_cb->security_pending = true;
@@ -1108,9 +1109,9 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
  * Parameters:
  *
  ******************************************************************************/
-void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf) {
-  tBTA_GATTC_OPEN* p_data = &p_buf->le_open;
-  uint8_t* p2;
+void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
+  const tBTA_GATTC_OPEN* p_data = &p_buf->le_open;
+  const uint8_t* p2;
 
   /* if received invalid callback data , ignore it */
   if (p_cb == NULL || p_data == NULL) return;
@@ -1601,7 +1602,7 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
+void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   tBTA_HH_CONN conn_dat;
 
   /* open failure in the middle of service discovery, clear all services */
@@ -1634,7 +1635,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
+void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   tBTA_HH_CBDATA disc_dat = {BTA_HH_OK, 0};
 
   /* deregister all notification */
@@ -1886,7 +1887,7 @@ static void bta_hh_le_suspend(tBTA_HH_DEV_CB* p_cb,
  * Returns          void
  *
  ******************************************************************************/
-void bta_hh_le_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
+void bta_hh_le_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   switch (p_data->api_sndcmd.t_type) {
     case HID_TRANS_SET_PROTOCOL:
       p_cb->w4_evt = BTA_HH_SET_PROTO_EVT;
@@ -1985,7 +1986,7 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond) {
  *
  ******************************************************************************/
 uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb,
-                             tBTA_HH_MAINT_DEV* p_dev_info) {
+                             const tBTA_HH_MAINT_DEV* p_dev_info) {
   p_cb->hid_handle = bta_hh_le_get_le_dev_hdl(p_cb->index);
   if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) return BTA_HH_INVALID_HANDLE;
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
