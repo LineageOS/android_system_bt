@@ -684,15 +684,15 @@ typedef void(tGATT_CONN_UPDATE_CB)(tGATT_IF gatt_if, uint16_t conn_id,
  * MUST be provided.
 */
 typedef struct {
-  tGATT_CONN_CBACK* p_conn_cb;
-  tGATT_CMPL_CBACK* p_cmpl_cb;
-  tGATT_DISC_RES_CB* p_disc_res_cb;
-  tGATT_DISC_CMPL_CB* p_disc_cmpl_cb;
-  tGATT_REQ_CBACK* p_req_cb;
-  tGATT_ENC_CMPL_CB* p_enc_cmpl_cb;
-  tGATT_CONGESTION_CBACK* p_congestion_cb;
-  tGATT_PHY_UPDATE_CB* p_phy_update_cb;
-  tGATT_CONN_UPDATE_CB* p_conn_update_cb;
+  tGATT_CONN_CBACK* p_conn_cb{nullptr};
+  tGATT_CMPL_CBACK* p_cmpl_cb{nullptr};
+  tGATT_DISC_RES_CB* p_disc_res_cb{nullptr};
+  tGATT_DISC_CMPL_CB* p_disc_cmpl_cb{nullptr};
+  tGATT_REQ_CBACK* p_req_cb{nullptr};
+  tGATT_ENC_CMPL_CB* p_enc_cmpl_cb{nullptr};
+  tGATT_CONGESTION_CBACK* p_congestion_cb{nullptr};
+  tGATT_PHY_UPDATE_CB* p_phy_update_cb{nullptr};
+  tGATT_CONN_UPDATE_CB* p_conn_update_cb{nullptr};
 } tGATT_CBACK;
 
 /*****************  Start Handle Management Definitions   *********************/
