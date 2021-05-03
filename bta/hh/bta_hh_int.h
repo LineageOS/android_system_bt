@@ -284,22 +284,29 @@ extern tBTA_HH_CFG* p_bta_hh_cfg;
  ****************************************************************************/
 extern bool bta_hh_hdl_event(BT_HDR_RIGID* p_msg);
 extern void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
-                              tBTA_HH_DATA* p_data);
+                              const tBTA_HH_DATA* p_data);
 
 /* action functions */
-extern void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_open_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_data_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_get_dscp_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
+extern void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb,
+                                const tBTA_HH_DATA* p_data);
+extern void bta_hh_open_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_data_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_ctrl_dat_act(tBTA_HH_DEV_CB* p_cb,
+                                const tBTA_HH_DATA* p_data);
+extern void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb,
+                                 const tBTA_HH_DATA* p_data);
+extern void bta_hh_get_dscp_act(tBTA_HH_DEV_CB* p_cb,
+                                const tBTA_HH_DATA* p_data);
+extern void bta_hh_handsk_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb,
+                                 const tBTA_HH_DATA* p_data);
+extern void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb,
+                                 const tBTA_HH_DATA* p_data);
+extern void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb,
+                                const tBTA_HH_DATA* p_data);
 
 /* utility functions */
 extern uint8_t bta_hh_find_cb(const RawAddress& bda);
@@ -312,7 +319,7 @@ extern void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB* p_cb);
 
 extern void bta_hh_add_device_to_list(tBTA_HH_DEV_CB* p_cb, uint8_t handle,
                                       uint16_t attr_mask,
-                                      tHID_DEV_DSCP_INFO* p_dscp_info,
+                                      const tHID_DEV_DSCP_INFO* p_dscp_info,
                                       uint8_t sub_class, uint16_t max_latency,
                                       uint16_t min_tout, uint8_t app_id);
 extern void bta_hh_update_di_info(tBTA_HH_DEV_CB* p_cb, uint16_t vendor_id,
@@ -341,19 +348,24 @@ extern void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb,
                                 const RawAddress& remote_bda);
 extern void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb);
 extern void bta_hh_le_get_dscp_act(tBTA_HH_DEV_CB* p_cb);
-extern void bta_hh_le_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
+extern void bta_hh_le_write_dev_act(tBTA_HH_DEV_CB* p_cb,
+                                    const tBTA_HH_DATA* p_data);
 extern uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb,
-                                    tBTA_HH_MAINT_DEV* p_dev_info);
+                                    const tBTA_HH_MAINT_DEV* p_dev_info);
 extern void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_cb);
-extern void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
-extern void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf);
+extern void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb,
+                                const tBTA_HH_DATA* p_data);
+extern void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
+extern void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
+                                  const tBTA_HH_DATA* p_buf);
 
-extern void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf);
-extern void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_buf);
+extern void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
+                                  const tBTA_HH_DATA* p_buf);
+extern void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
+                                 const tBTA_HH_DATA* p_buf);
 extern void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB* p_cb,
-                                      tBTA_HH_DATA* p_data);
+                                      const tBTA_HH_DATA* p_data);
 
 #if (BTA_HH_DEBUG == TRUE)
 extern void bta_hh_trace_dev_db(void);
