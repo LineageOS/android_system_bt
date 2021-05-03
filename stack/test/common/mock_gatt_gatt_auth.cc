@@ -37,11 +37,11 @@ bool gatt_security_check_start(tGATT_CLCB* p_clcb) {
 }
 tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return GATT_SEC_NONE;
 }
 tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB* p_tcb) {
   mock_function_count_map[__func__]++;
-  return 0;
+  return GATT_SEC_NONE;
 }
 tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb) {
   mock_function_count_map[__func__]++;
