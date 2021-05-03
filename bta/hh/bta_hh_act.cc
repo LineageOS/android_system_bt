@@ -539,7 +539,7 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   BTM_LogHistory(kBtmLogTag, p_cb->addr, "Opened",
                  base::StringPrintf(
                      "%s initiator:%s", (p_cb->is_le_device) ? "le" : "classic",
-                     (p_cb->incoming_conn) ? "local" : "remote"));
+                     (p_cb->incoming_conn) ? "remote" : "local"));
 
   if (!p_cb->is_le_device)
   {
