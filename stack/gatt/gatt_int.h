@@ -51,6 +51,26 @@ typedef enum : uint8_t {
   GATT_SEC_ENC_PENDING = 6,     /* wait for link encryption pending */
 } tGATT_SEC_ACTION;
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
+inline std::string gatt_security_action_text(const tGATT_SEC_ACTION& action) {
+  switch (action) {
+    CASE_RETURN_TEXT(GATT_SEC_NONE);
+    CASE_RETURN_TEXT(GATT_SEC_OK);
+    CASE_RETURN_TEXT(GATT_SEC_SIGN_DATA);
+    CASE_RETURN_TEXT(GATT_SEC_ENCRYPT);
+    CASE_RETURN_TEXT(GATT_SEC_ENCRYPT_NO_MITM);
+    CASE_RETURN_TEXT(GATT_SEC_ENCRYPT_MITM);
+    CASE_RETURN_TEXT(GATT_SEC_ENC_PENDING);
+    default:
+      return std::string("UNKNOWN[%hhu]", action);
+  }
+}
+
+#undef CASE_RETURN_TEXT
+
 #define GATT_INDEX_INVALID 0xff
 
 #define GATT_WRITE_CMD_MASK 0xc0 /*0x1100-0000*/
