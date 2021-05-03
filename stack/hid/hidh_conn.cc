@@ -149,7 +149,8 @@ tHID_STATUS hidh_conn_disconnect(uint8_t dhandle) {
     else if (p_hcon->ctrl_cid)
       hidh_l2cif_disconnect(p_hcon->ctrl_cid);
 
-    BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnecting");
+    BTM_LogHistory(kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnecting",
+                   "local initiated");
   } else {
     p_hcon->conn_state = HID_CONN_STATE_UNUSED;
   }
@@ -502,8 +503,9 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
   p_hcon->conn_state = HID_CONN_STATE_DISCONNECTING;
   BTM_LogHistory(
       kBtmLogTag, hh_cb.devices[dhandle].addr, "Disconnecting",
-      base::StringPrintf(
-          "%s", (l2cap_cid == p_hcon->ctrl_cid) ? "control" : "interrupt"));
+      base::StringPrintf("%s channel", (l2cap_cid == p_hcon->ctrl_cid)
+                                           ? "control"
+                                           : "interrupt"));
 
   if (l2cap_cid == p_hcon->ctrl_cid)
     p_hcon->ctrl_cid = 0;
