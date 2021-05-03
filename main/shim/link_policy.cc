@@ -34,9 +34,6 @@
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcidefs.h"
 
-void btsnd_hcic_switch_role(const RawAddress& bd_addr,
-                            uint8_t role);  // TODO remove
-
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task);
 
