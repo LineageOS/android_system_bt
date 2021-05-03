@@ -75,8 +75,6 @@ typedef uint16_t tBTA_GATTC_INT_EVT;
 #define BTA_GATTC_KNOWN_SR_MAX 255
 #endif
 
-#define BTA_GATTC_CONN_MAX GATT_MAX_PHY_CHANNEL
-
 #ifndef BTA_GATTC_CLCB_MAX
 #define BTA_GATTC_CLCB_MAX GATT_CL_MAX_LCB
 #endif
@@ -305,7 +303,7 @@ enum {
 typedef struct {
   uint8_t state;
 
-  tBTA_GATTC_CONN conn_track[BTA_GATTC_CONN_MAX];
+  tBTA_GATTC_CONN conn_track[GATT_MAX_PHY_CHANNEL];
   tBTA_GATTC_BG_TCK bg_track[BTA_GATTC_KNOWN_SR_MAX];
   tBTA_GATTC_RCB cl_rcb[BTA_GATTC_CL_MAX];
 
