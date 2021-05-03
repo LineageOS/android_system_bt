@@ -479,8 +479,6 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
               PRIVATE_ADDRESS(p_cb->addr));
 
     bta_hh_le_api_disc_act(p_cb);
-    BTM_LogHistory(kBtmLogTag, p_cb->addr, "Closed",
-                   base::StringPrintf("le local initiated"));
 
   } else {
     const uint8_t hid_handle =
@@ -500,9 +498,6 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
                        .handle = hid_handle},
     };
     (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, &bta_hh);
-    BTM_LogHistory(kBtmLogTag, p_cb->addr, "Closed",
-                   base::StringPrintf("classic local reason %s",
-                                      hid_status_text(status).c_str()));
   }
 }
 
