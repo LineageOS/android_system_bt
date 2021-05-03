@@ -37,6 +37,29 @@ typedef enum {
   BTHH_CONN_STATE_UNKNOWN
 } bthh_connection_state_t;
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
+static inline std::string bthh_connection_state_text(
+    const bthh_connection_state_t& state) {
+  switch (state) {
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_CONNECTED);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_CONNECTING);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_DISCONNECTED);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_DISCONNECTING);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_FAILED_MOUSE_FROM_HOST);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_FAILED_KBD_FROM_HOST);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_FAILED_TOO_MANY_DEVICES);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_FAILED_NO_BTHID_DRIVER);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_FAILED_GENERIC);
+    CASE_RETURN_TEXT(BTHH_CONN_STATE_UNKNOWN);
+    default:
+      return std::string("UNKNOWN[%u]", state);
+  }
+}
+#undef CASE_RETURN_TEXT
+
 typedef enum {
   BTHH_OK = 0,
   BTHH_HS_HID_NOT_READY,  /* handshake error : device not ready */
