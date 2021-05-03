@@ -28,6 +28,21 @@ namespace hci {
 
 using ScannerId = uint8_t;
 
+class AdvertisingFilterOnFoundOnLostInfo {
+ public:
+  uint8_t scanner_id;
+  uint8_t filter_index;
+  uint8_t advertiser_state;
+  AdvtInfoPresent advertiser_info_present;
+  Address advertiser_address;
+  uint8_t advertiser_address_type;
+  uint8_t tx_power;
+  int8_t rssi;
+  uint16_t time_stamp;
+  std::vector<uint8_t> adv_packet;
+  std::vector<uint8_t> scan_response;
+};
+
 class ScanningCallback {
  public:
   enum ScanningStatus {
@@ -50,7 +65,7 @@ class ScanningCallback {
       int8_t rssi,
       uint16_t periodic_advertising_interval,
       std::vector<uint8_t> advertising_data) = 0;
-  virtual void OnTrackAdvFoundLost() = 0;
+  virtual void OnTrackAdvFoundLost(AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info) = 0;
   virtual void OnBatchScanReports(
       int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) = 0;
   virtual void OnBatchScanThresholdCrossed(int client_if) = 0;
@@ -102,6 +117,7 @@ class LeScanningManager : public bluetooth::Module {
   static constexpr uint8_t kAdvertisingDataInfoNotPresent = 0xff;
   static constexpr uint8_t kTxPowerInformationNotPresent = 0x7f;
   static constexpr uint8_t kNotPeriodicAdvertisement = 0x00;
+  static constexpr ScannerId kInvalidScannerId = 0xFF;
   LeScanningManager();
 
   void RegisterScanner(const Uuid app_uuid);
@@ -122,7 +138,10 @@ class LeScanningManager : public bluetooth::Module {
 
   /*Batch Scan*/
   void BatchScanConifgStorage(
-      uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max, uint8_t batch_scan_notify_threshold);
+      uint8_t batch_scan_full_max,
+      uint8_t batch_scan_truncated_max,
+      uint8_t batch_scan_notify_threshold,
+      ScannerId scanner_id);
   void BatchScanEnable(
       BatchScanMode scan_mode,
       uint32_t duty_cycle_scan_window_slots,
@@ -130,6 +149,8 @@ class LeScanningManager : public bluetooth::Module {
       BatchScanDiscardRule batch_scan_discard_rule);
   void BatchScanDisable();
   void BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode);
+
+  void TrackAdvertiser(ScannerId scanner_id);
 
   void RegisterScanningCallback(ScanningCallback* scanning_callback);
 

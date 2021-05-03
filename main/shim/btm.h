@@ -221,7 +221,8 @@ class Btm {
                       int8_t tx_power, int8_t rssi,
                       uint16_t periodic_advertising_interval,
                       std::vector<uint8_t> advertising_data);
-    void OnTrackAdvFoundLost();
+    void OnTrackAdvFoundLost(bluetooth::hci::AdvertisingFilterOnFoundOnLostInfo
+                                 on_found_on_lost_info);
     void OnBatchScanReports(int client_if, int status, int report_format,
                             int num_records, std::vector<uint8_t> data);
     void OnBatchScanThresholdCrossed(int client_if);
