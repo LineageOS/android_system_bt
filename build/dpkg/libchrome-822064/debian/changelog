@@ -1,0 +1,5 @@
+libchrome (822064-1) buster; urgency=low
+
+  * Initial release.
+
+ -- Sonny Sasaka <sonnysasaka@chromium.org>  Fri, 30 Apr 2021 19:41:40 +0000
