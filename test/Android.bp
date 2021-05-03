@@ -137,3 +137,17 @@ filegroup {
       "stub/legacy_trace.cc",
   ],
 }
+
+filegroup {
+  name: "TestStubOsi",
+  srcs: [
+      "stub/osi.cc",
+  ],
+}
+
+filegroup {
+  name: "TestMockStackAcl",
+  srcs: [
+      "mock/mock_stack_acl*.cc",
+  ],
+}

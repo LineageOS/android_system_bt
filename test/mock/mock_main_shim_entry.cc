@@ -15,6 +15,8 @@
  */
 
 // #include "gd/btaa/activity_attribution.h"
+#include "gd/module.h"
+
 #include "gd/hci/acl_manager_mock.h"
 #include "gd/hci/controller_mock.h"
 #include "gd/hci/hci_layer.h"
@@ -30,7 +32,6 @@
 #include "gd/security/security_module.h"
 #include "gd/shim/dumpsys.h"
 #include "gd/storage/storage_module.h"
-#include "hci/acl_manager.h"
 #include "main/shim/entry.h"
 #include "main/shim/stack.h"
 

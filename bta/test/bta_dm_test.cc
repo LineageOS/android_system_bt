@@ -26,23 +26,11 @@
 
 std::map<std::string, int> mock_function_count_map;
 
-bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
-                                      base::OnceClosure task,
-                                      const base::TimeDelta& delay) {
-  return BT_STATUS_SUCCESS;
-}
-
-bt_status_t do_in_main_thread(const base::Location& from_here,
-                              base::OnceClosure task) {
-  return BT_STATUS_SUCCESS;
-}
-
 void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {}
 
 namespace base {
 class MessageLoop;
 }  // namespace base
-bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 
 namespace {
 constexpr uint8_t kUnusedTimer = BTA_ID_MAX;
