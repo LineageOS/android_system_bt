@@ -51,6 +51,7 @@ class HciLayer;
 class AclManager;
 class LeAdvertisingManager;
 class LeScanningManager;
+class VendorSpecificEventManager;
 }
 
 namespace l2cap {
@@ -90,6 +91,7 @@ hci::LeScanningManager* GetScanning();
 bluetooth::security::SecurityModule* GetSecurityModule();
 storage::StorageModule* GetStorage();
 hci::AclManager* GetAclManager();
+hci::VendorSpecificEventManager* GetVendorSpecificEventManager();
 activity_attribution::ActivityAttribution* GetActivityAttribution();
 
 }  // namespace shim

@@ -26,6 +26,7 @@ filegroup {
         "le_scanning_manager.cc",
         "link_key.cc",
         "uuid.cc",
+        "vendor_specific_event_manager.cc",
     ],
 }
 
