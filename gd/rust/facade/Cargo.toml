@@ -14,7 +14,7 @@
 #  limitations under the License.
 
 [package]
-name = "bt_facade_helpers"
+name = "bluetooth_with_facades"
 version = "0.0.1"
 edition = "2018"
 
@@ -32,6 +32,17 @@ log = "*"
 protobuf = "*"
 tokio = "*"
 
+# Binary-only deps
+clap = "*"
+lazy_static = "*"
+nix = "*"
+bt_common = { path = "../common" }
+
+
+[[bin]]
+name = "bluetooth_with_facades"
+path = "src/main.rs"
+
 [lib]
-path = "helpers/lib.rs"
+path = "src/lib.rs"
 crate-type = ["rlib"]
