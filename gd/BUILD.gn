@@ -80,6 +80,7 @@ static_library("libbluetooth_gd") {
 
 flatbuffer("BluetoothGeneratedDumpsysDataSchema_h") {
   sources = [
+    "btaa/activity_attribution.fbs",
     "common/init_flags.fbs",
     "dumpsys_data.fbs",
     "hci/hci_acl_manager.fbs",
@@ -90,6 +91,7 @@ flatbuffer("BluetoothGeneratedDumpsysDataSchema_h") {
 
 bt_flatc_binary_schema("BluetoothGeneratedDumpsysBinarySchema_bfbs") {
   sources = [
+    "btaa/activity_attribution.fbs",
     "common/init_flags.fbs",
     "dumpsys_data.fbs",
     "hci/hci_acl_manager.fbs",
