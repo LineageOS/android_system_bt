@@ -130,7 +130,6 @@ typedef struct {
   uint8_t* p_value;
 } tBTA_GATT_UNFMT;
 
-#define BTA_GATT_CONN_NONE 0x0101 /* 0x0101 no connection to cancel  */
 typedef uint16_t tBTA_GATT_REASON;
 
 #define BTA_GATTC_MULTI_MAX GATT_MAX_READ_MULTI_HANDLES
