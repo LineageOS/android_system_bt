@@ -56,6 +56,7 @@ source_set("LibBluetoothShimSources") {
     "//bt/gd/os:BluetoothOsSources_linux_generic",
     "//bt/gd/packet:BluetoothPacketSources",
     "//bt/gd/rust/shim:libbluetooth_rust_interop",
+    "//bt/gd/rust/topshim:libbluetooth_topshim",
     "//bt/osi",
     "//bt/stack",
     "//bt/types",
