@@ -32,7 +32,8 @@ group("all") {
 group("bluetooth") {
   deps = [
     "//bt/main:bluetooth",
-    "//bt/service:bluetoothtbd",
+    "//bt/main:bluetooth-static",
+    #"//bt/service:bluetoothtbd",
   ]
 }
 
