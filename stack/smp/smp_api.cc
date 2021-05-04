@@ -29,6 +29,8 @@
 #include "bt_utils.h"
 #include "stack_config.h"
 
+#include "gd/os/log.h"
+#include "gd/os/rand.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
@@ -565,6 +567,7 @@ void SMP_CrLocScOobData(
                             const std::array<unsigned char, 16>&,
                             const std::array<unsigned char, 16>&)>
         callback) {
+  smp_cb.local_random = bluetooth::os::GenerateRandom<16>();
   smp_cb.selected_association_model = SMP_MODEL_SEC_CONN_OOB;
   smp_calculate_local_commitment(&smp_cb);
   std::move(callback).Run(BT_TRANSPORT_LE, true, smp_cb.commitment,

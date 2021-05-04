@@ -526,7 +526,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_alloc(const RawAddress& remote_bda) {
   uint8_t i_conn = 0;
   tBTA_GATTC_CONN* p_conn = &bta_gattc_cb.conn_track[0];
 
-  for (i_conn = 0; i_conn < BTA_GATTC_CONN_MAX; i_conn++, p_conn++) {
+  for (i_conn = 0; i_conn < GATT_MAX_PHY_CHANNEL; i_conn++, p_conn++) {
     if (!p_conn->in_use) {
 #if (BTA_GATT_DEBUG == TRUE)
       VLOG(1) << __func__ << ": found conn_track:" << +i_conn << " available";
@@ -552,7 +552,7 @@ tBTA_GATTC_CONN* bta_gattc_conn_find(const RawAddress& remote_bda) {
   uint8_t i_conn = 0;
   tBTA_GATTC_CONN* p_conn = &bta_gattc_cb.conn_track[0];
 
-  for (i_conn = 0; i_conn < BTA_GATTC_CONN_MAX; i_conn++, p_conn++) {
+  for (i_conn = 0; i_conn < GATT_MAX_PHY_CHANNEL; i_conn++, p_conn++) {
     if (p_conn->in_use && remote_bda == p_conn->remote_bda) {
 #if (BTA_GATT_DEBUG == TRUE)
       VLOG(1) << __func__ << ": found conn_track:" << +i_conn << " matched";
