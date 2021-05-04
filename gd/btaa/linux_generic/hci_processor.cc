@@ -16,37 +16,23 @@
 
 #include "btaa/hci_processor.h"
 
-#include "btaa/cmd_evt_classification.h"
 #include "os/log.h"
 
 namespace bluetooth {
 namespace activity_attribution {
 
-class DeviceParser {
- public:
-  void match_handle_with_address(uint16_t connection_handle, hci::Address& address) {
-    if (connection_handle && !address.IsEmpty()) {
-      connection_lookup_table[connection_handle] = address;
-    } else if (connection_handle) {
-      if (connection_lookup_table.find(connection_handle) != connection_lookup_table.end()) {
-        address = connection_lookup_table[connection_handle];
-      }
+void DeviceParser::match_handle_with_address(uint16_t connection_handle, hci::Address& address) {
+  if (connection_handle && !address.IsEmpty()) {
+    connection_lookup_table_[connection_handle] = address;
+  } else if (connection_handle) {
+    if (connection_lookup_table_.find(connection_handle) != connection_lookup_table_.end()) {
+      address = connection_lookup_table_[connection_handle];
     }
   }
+}
 
- private:
-  std::map<uint16_t, hci::Address> connection_lookup_table;
-};
-
-struct PendingCommand {
-  hci::OpCode opcode;
-  BtaaHciPacket btaa_hci_packet;
-};
-
-static DeviceParser device_parser;
-static PendingCommand pending_command;
-
-static void process_le_event(std::vector<BtaaHciPacket>& btaa_hci_packets, int16_t byte_count, hci::EventView& event) {
+void HciProcessor::process_le_event(
+    std::vector<BtaaHciPacket>& btaa_hci_packets, int16_t byte_count, hci::EventView& event) {
   uint16_t connection_handle_value = 0;
   hci::Address address_value;
 
@@ -68,12 +54,12 @@ static void process_le_event(std::vector<BtaaHciPacket>& btaa_hci_packets, int16
       auto address_value_it = event.begin() + le_event_info.address_pos;
       address_value = address_value_it.extract<hci::Address>();
     }
-    device_parser.match_handle_with_address(connection_handle_value, address_value);
+    device_parser_.match_handle_with_address(connection_handle_value, address_value);
     btaa_hci_packets.push_back(BtaaHciPacket(le_event_info.activity, address_value, byte_count));
   }
 }
 
-static void process_special_event(
+void HciProcessor::process_special_event(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
     hci::EventCode event_code,
     uint16_t byte_count,
@@ -103,7 +89,7 @@ static void process_special_event(
       auto completed_packets = packet_view.GetCompletedPackets();
       avg_byte_count = byte_count / completed_packets.size();
       for (auto& completed_packet : completed_packets) {
-        device_parser.match_handle_with_address(completed_packet.connection_handle_, address_value);
+        device_parser_.match_handle_with_address(completed_packet.connection_handle_, address_value);
         btaa_hci_packets.push_back(BtaaHciPacket(Activity::CONNECT, address_value, avg_byte_count));
       }
     } break;
@@ -126,7 +112,7 @@ static void process_special_event(
   }
 }
 
-static void process_command(
+void HciProcessor::process_command(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
     packet::PacketView<packet::kLittleEndian>& packet_view,
     uint16_t byte_count) {
@@ -148,13 +134,13 @@ static void process_command(
     auto address_value_it = command.begin() + cmd_info.address_pos;
     address_value = address_value_it.extract<hci::Address>();
   }
-  device_parser.match_handle_with_address(connection_handle_value, address_value);
-  pending_command.btaa_hci_packet = BtaaHciPacket(cmd_info.activity, address_value, byte_count);
+  device_parser_.match_handle_with_address(connection_handle_value, address_value);
+  pending_command_.btaa_hci_packet = BtaaHciPacket(cmd_info.activity, address_value, byte_count);
 
-  pending_command.opcode = opcode;
+  pending_command_.opcode = opcode;
 }
 
-static void process_event(
+void HciProcessor::process_event(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
     packet::PacketView<packet::kLittleEndian>& packet_view,
     uint16_t byte_count) {
@@ -178,25 +164,25 @@ static void process_event(
       auto address_value_it = event.begin() + event_info.address_pos;
       address_value = address_value_it.extract<hci::Address>();
     }
-    device_parser.match_handle_with_address(connection_handle_value, address_value);
+    device_parser_.match_handle_with_address(connection_handle_value, address_value);
     btaa_hci_packets.push_back(BtaaHciPacket(event_info.activity, address_value, byte_count));
   } else {
     // The event requires additional processing.
     switch (event_code) {
       case hci::EventCode::COMMAND_COMPLETE: {
         auto packet_view = hci::CommandCompleteView::Create(event);
-        if (packet_view.IsValid() && packet_view.GetCommandOpCode() == pending_command.opcode) {
-          pending_command.btaa_hci_packet.byte_count += byte_count;
-          btaa_hci_packets.push_back(std::move(pending_command.btaa_hci_packet));
+        if (packet_view.IsValid() && packet_view.GetCommandOpCode() == pending_command_.opcode) {
+          pending_command_.btaa_hci_packet.byte_count += byte_count;
+          btaa_hci_packets.push_back(std::move(pending_command_.btaa_hci_packet));
         } else {
           btaa_hci_packets.push_back(BtaaHciPacket(Activity::UNKNOWN, address_value, byte_count));
         }
       } break;
       case hci::EventCode::COMMAND_STATUS: {
         auto packet_view = hci::CommandStatusView::Create(event);
-        if (packet_view.IsValid() && packet_view.GetCommandOpCode() == pending_command.opcode) {
-          pending_command.btaa_hci_packet.byte_count += byte_count;
-          btaa_hci_packets.push_back(std::move(pending_command.btaa_hci_packet));
+        if (packet_view.IsValid() && packet_view.GetCommandOpCode() == pending_command_.opcode) {
+          pending_command_.btaa_hci_packet.byte_count += byte_count;
+          btaa_hci_packets.push_back(std::move(pending_command_.btaa_hci_packet));
         } else {
           btaa_hci_packets.push_back(BtaaHciPacket(Activity::UNKNOWN, address_value, byte_count));
         }
@@ -215,7 +201,7 @@ static void process_event(
   }
 }
 
-static void process_acl(
+void HciProcessor::process_acl(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
     packet::PacketView<packet::kLittleEndian>& packet_view,
     uint16_t byte_count) {
@@ -224,11 +210,11 @@ static void process_acl(
   // Connection handle is extracted from the 12 least significant bit.
   uint16_t connection_handle_value = connection_handle.extract<uint16_t>() & 0xfff;
   hci::Address address_value;
-  device_parser.match_handle_with_address(connection_handle_value, address_value);
+  device_parser_.match_handle_with_address(connection_handle_value, address_value);
   btaa_hci_packets.push_back(BtaaHciPacket(Activity::ACL, address_value, byte_count));
 }
 
-static void process_sco(
+void HciProcessor::process_sco(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
     packet::PacketView<packet::kLittleEndian>& packet_view,
     uint16_t byte_count) {
@@ -237,11 +223,11 @@ static void process_sco(
   // Connection handle is extracted from the 12 least significant bit.
   uint16_t connection_handle_value = connection_handle.extract<uint16_t>() & 0xfff;
   hci::Address address_value;
-  device_parser.match_handle_with_address(connection_handle_value, address_value);
+  device_parser_.match_handle_with_address(connection_handle_value, address_value);
   btaa_hci_packets.push_back(BtaaHciPacket(Activity::HFP, address_value, byte_count));
 }
 
-static void process_iso(
+void HciProcessor::process_iso(
     std::vector<BtaaHciPacket>& btaa_hci_packets,
     packet::PacketView<packet::kLittleEndian>& packet_view,
     uint16_t byte_count) {
@@ -250,7 +236,7 @@ static void process_iso(
   // Connection handle is extracted from the 12 least significant bit.
   uint16_t connection_handle_value = connection_handle.extract<uint16_t>() & 0xfff;
   hci::Address address_value;
-  device_parser.match_handle_with_address(connection_handle_value, address_value);
+  device_parser_.match_handle_with_address(connection_handle_value, address_value);
   btaa_hci_packets.push_back(BtaaHciPacket(Activity::ISO, address_value, byte_count));
 }
 
