@@ -17,6 +17,7 @@
 #pragma once
 
 #include "btaa/activity_attribution.h"
+#include "btaa/cmd_evt_classification.h"
 #include "hal/snoop_logger.h"
 #include "hci/address.h"
 
@@ -27,14 +28,59 @@ struct BtaaHciPacket {
   Activity activity;
   hci::Address address;
   uint16_t byte_count;
+
   BtaaHciPacket() {}
   BtaaHciPacket(Activity activity, hci::Address address, uint16_t byte_count)
       : activity(activity), address(address), byte_count(byte_count) {}
-} __attribute__((__packed__));
+};
+
+class DeviceParser {
+ public:
+  void match_handle_with_address(uint16_t connection_handle, hci::Address& address);
+
+ private:
+  std::map<uint16_t, hci::Address> connection_lookup_table_;
+};
+
+struct PendingCommand {
+  hci::OpCode opcode;
+  BtaaHciPacket btaa_hci_packet;
+};
 
 class HciProcessor {
  public:
   std::vector<BtaaHciPacket> OnHciPacket(hal::HciPacket packet, hal::SnoopLogger::PacketType type, uint16_t length);
+
+ private:
+  void process_le_event(std::vector<BtaaHciPacket>& btaa_hci_packets, int16_t byte_count, hci::EventView& event);
+  void process_special_event(
+      std::vector<BtaaHciPacket>& btaa_hci_packets,
+      hci::EventCode event_code,
+      uint16_t byte_count,
+      hci::EventView& event);
+  void process_command(
+      std::vector<BtaaHciPacket>& btaa_hci_packets,
+      packet::PacketView<packet::kLittleEndian>& packet_view,
+      uint16_t byte_count);
+  void process_event(
+      std::vector<BtaaHciPacket>& btaa_hci_packets,
+      packet::PacketView<packet::kLittleEndian>& packet_view,
+      uint16_t byte_count);
+  void process_acl(
+      std::vector<BtaaHciPacket>& btaa_hci_packets,
+      packet::PacketView<packet::kLittleEndian>& packet_view,
+      uint16_t byte_count);
+  void process_sco(
+      std::vector<BtaaHciPacket>& btaa_hci_packets,
+      packet::PacketView<packet::kLittleEndian>& packet_view,
+      uint16_t byte_count);
+  void process_iso(
+      std::vector<BtaaHciPacket>& btaa_hci_packets,
+      packet::PacketView<packet::kLittleEndian>& packet_view,
+      uint16_t byte_count);
+
+  DeviceParser device_parser_;
+  PendingCommand pending_command_;
 };
 
 }  // namespace activity_attribution
