@@ -44,5 +44,10 @@ void ActivityAttribution::Start() {}
 
 void ActivityAttribution::Stop() {}
 
+DumpsysDataFinisher EmptyDumpsysDataFinisher = [](DumpsysDataBuilder* dumpsys_data_builder) {};
+DumpsysDataFinisher ActivityAttribution::GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const {
+  return EmptyDumpsysDataFinisher;
+}
+
 }  // namespace activity_attribution
 }  // namespace bluetooth
