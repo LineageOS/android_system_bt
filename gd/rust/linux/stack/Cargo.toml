@@ -1,0 +1,20 @@
+[package]
+name = "btstack"
+version = "0.1.0"
+edition = "2018"
+
+[dependencies]
+bt_topshim = { path = "../../topshim" }
+bt_shim = { path = "../../shim" }
+
+btif_macros = { path = "btif_macros" }
+
+dbus = "0.9.2"
+
+num-traits = "*"
+num-derive = "*"
+
+tokio = { version = "1", features = ['bytes', 'fs', 'io-util', 'libc', 'macros', 'memchr', 'mio', 'net', 'num_cpus', 'rt', 'rt-multi-thread', 'sync', 'time', 'tokio-macros'] }
+
+[lib]
+path = "src/lib.rs"
