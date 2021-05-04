@@ -151,3 +151,17 @@ filegroup {
       "mock/mock_stack_acl*.cc",
   ],
 }
+
+filegroup {
+  name: "TestMockStackSmp",
+  srcs: [
+      "mock/mock_stack_smp*.cc",
+  ],
+}
+
+filegroup {
+  name: "TestMockStackMetrics",
+  srcs: [
+      "mock/mock_stack_metrics*.cc",
+  ],
+}
