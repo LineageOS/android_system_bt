@@ -18,6 +18,24 @@ config("libbluetooth_config") {
   include_dirs = [ "../include" ]
 }
 
+# Complete static library for linking with Rust
+static_library("bluetooth-static") {
+  complete_static_lib = true
+
+  sources = [
+    "//bt/service/hal/bluetooth_interface.cc",
+    "//bt/service/logging_helpers.cc",
+  ]
+
+  configs += [
+    "//bt:target_defaults"
+  ]
+
+  deps = [
+    ":bluetooth",
+  ]
+}
+
 # Configure libbluetooth as either dynamic or static library
 if (defined(use.bt_dynlib) && use.bt_dynlib) {
   lib_type = "shared_library"
@@ -26,11 +44,9 @@ if (defined(use.bt_dynlib) && use.bt_dynlib) {
 }
 
 target(lib_type, "bluetooth") {
-  # HAL layer
-  sources = [ "//bt/btif/src/bluetooth.cc" ]
 
-  # platform specific
-  sources += [
+  # Platform specific
+  sources = [
     "bte_conf.cc",
     "bte_init_cpp_logging.cc",
     "bte_logmsg.cc",
