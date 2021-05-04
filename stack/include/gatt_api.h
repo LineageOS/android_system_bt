@@ -207,27 +207,30 @@ typedef enum : uint16_t {
   GATT_CONN_TERMINATE_LOCAL_HOST = HCI_ERR_CONN_CAUSE_LOCAL_HOST,
   /* 0x22 connection fail for LMP response tout */
   GATT_CONN_LMP_TIMEOUT = HCI_ERR_LMP_RESPONSE_TIMEOUT,
+
+  BTA_GATT_CONN_NONE = 0x0101, /* 0x0101 no connection to cancel  */
+
 } tGATT_DISCONN_REASON;
+
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
 
 inline std::string gatt_disconnection_reason_text(
     const tGATT_DISCONN_REASON& reason) {
   switch (reason) {
-    case GATT_CONN_OK:
-      return std::string("ok/unknown");
-    case GATT_CONN_L2C_FAILURE:
-      return std::string("l2cap_failure");
-    case GATT_CONN_TIMEOUT:
-      return std::string("timeout");
-    case GATT_CONN_TERMINATE_PEER_USER:
-      return std::string("remote_terminated");
-    case GATT_CONN_TERMINATE_LOCAL_HOST:
-      return std::string("local_terminated");
-    case GATT_CONN_LMP_TIMEOUT:
-      return std::string("lmp_response_timeout");
+    CASE_RETURN_TEXT(GATT_CONN_OK);
+    CASE_RETURN_TEXT(GATT_CONN_L2C_FAILURE);
+    CASE_RETURN_TEXT(GATT_CONN_TIMEOUT);
+    CASE_RETURN_TEXT(GATT_CONN_TERMINATE_PEER_USER);
+    CASE_RETURN_TEXT(GATT_CONN_TERMINATE_LOCAL_HOST);
+    CASE_RETURN_TEXT(GATT_CONN_LMP_TIMEOUT);
+    CASE_RETURN_TEXT(BTA_GATT_CONN_NONE);
     default:
-      return base::StringPrintf("UNKNOWN:[0x%04hx]", reason);
+      return std::string("UNKNOWN[%hu]", reason);
   }
 }
+#undef CASE_RETURN_TEXT
 
 /* MAX GATT MTU size
 */
