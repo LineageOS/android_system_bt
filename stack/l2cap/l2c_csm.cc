@@ -1098,16 +1098,19 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
           p_ccb->local_cid <= L2CAP_LAST_FIXED_CHNL) {
         if (p_ccb->local_cid < L2CAP_BASE_APPL_CID) {
           if (l2cb.fixed_reg[p_ccb->local_cid - L2CAP_FIRST_FIXED_CHNL]
-                  .pL2CA_FixedData_Cb)
+                  .pL2CA_FixedData_Cb != nullptr) {
+            p_ccb->metrics.rx(static_cast<BT_HDR*>(p_data)->len);
             (*l2cb.fixed_reg[p_ccb->local_cid - L2CAP_FIRST_FIXED_CHNL]
                   .pL2CA_FixedData_Cb)(p_ccb->local_cid,
                                        p_ccb->p_lcb->remote_bd_addr,
                                        (BT_HDR*)p_data);
-          else
-            osi_free(p_data);
+          } else {
+            if (p_data != nullptr) osi_free_and_reset(&p_data);
+          }
           break;
         }
       }
+      if (p_data) p_ccb->metrics.rx(static_cast<BT_HDR*>(p_data)->len);
       (*p_ccb->p_rcb->api.pL2CA_DataInd_Cb)(p_ccb->local_cid, (BT_HDR*)p_data);
       break;
 
@@ -1244,9 +1247,11 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
       break;
 
     case L2CEVT_L2CAP_DATA: /* Peer data packet rcvd    */
-      if ((p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_DataInd_Cb))
+      if ((p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_DataInd_Cb)) {
+        p_ccb->metrics.rx(static_cast<BT_HDR*>(p_data)->len);
         (*p_ccb->p_rcb->api.pL2CA_DataInd_Cb)(p_ccb->local_cid,
                                               (BT_HDR*)p_data);
+      }
       break;
 
     case L2CEVT_L2CA_DISCONNECT_REQ: /* Upper wants to disconnect */
@@ -1543,6 +1548,10 @@ static const char* l2c_csm_get_event_name(tL2CEVT event) {
  *
  ******************************************************************************/
 void l2c_enqueue_peer_data(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
+  CHECK(p_ccb != nullptr);
+
+  p_ccb->metrics.tx(p_buf->len);
+
   uint8_t* p;
 
   if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
