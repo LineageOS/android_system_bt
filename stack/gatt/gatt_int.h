@@ -235,6 +235,23 @@ typedef enum : uint8_t {
   GATT_CH_OPEN = 4,
 } tGATT_CH_STATE;
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
+inline std::string gatt_channel_state_text(const tGATT_CH_STATE& state) {
+  switch (state) {
+    CASE_RETURN_TEXT(GATT_CH_CLOSE);
+    CASE_RETURN_TEXT(GATT_CH_CLOSING);
+    CASE_RETURN_TEXT(GATT_CH_CONN);
+    CASE_RETURN_TEXT(GATT_CH_CFG);
+    CASE_RETURN_TEXT(GATT_CH_OPEN);
+    default:
+      return std::string("UNKNOWN[%hhu]", state);
+  }
+}
+#undef CASE_RETURN_TEXT
+
 #define GATT_GATT_START_HANDLE 1
 #define GATT_GAP_START_HANDLE 20
 #define GATT_APP_START_HANDLE 40
