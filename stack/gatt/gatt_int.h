@@ -258,7 +258,6 @@ typedef struct {
   uint16_t payload_size;
 
   tGATT_CH_STATE ch_state;
-  uint8_t ch_flags;
 
   std::unordered_set<uint8_t> app_hold_link;
 
