@@ -14,23 +14,17 @@
  * limitations under the License.
  */
 
-/*
- * Generated mock file from original source file
- *   Functions generated:2
- */
-
+#include <gtest/gtest.h>
+#include <cstdint>
 #include <map>
 #include <string>
 
-extern std::map<std::string, int> mock_function_count_map;
+#include "stack/include/btu.h"
 
-#include "hci/include/hci_packet_factory.h"
+std::map<std::string, int> mock_function_count_map;
 
-#ifndef UNUSED_ATTR
-#define UNUSED_ATTR
-#endif
+void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {}
 
-const hci_packet_factory_t* hci_packet_factory_get_interface() {
-  mock_function_count_map[__func__]++;
-  return nullptr;
-}
+class StackBtuTest : public ::testing::Test {};
+
+TEST_F(StackBtuTest, post_on_main) {}
