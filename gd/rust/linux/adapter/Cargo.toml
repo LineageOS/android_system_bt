@@ -20,7 +20,13 @@ edition = "2018"
 
 [dependencies]
 # BT dependencies
+bt_topshim = { path = "../../topshim" }
 bt_shim = { path = "../../shim" }
+
+num-traits = "*"
+num-derive = "*"
+tokio = { version = "1.0", features = ['bytes', 'fs', 'io-util', 'libc', 'macros', 'memchr', 'mio', 'net', 'num_cpus', 'rt', 'rt-multi-thread', 'sync', 'time', 'tokio-macros'] }
+tokio-stream = "0.1"
 
 [build-dependencies]
 pkg-config = "0.3"
@@ -28,4 +34,4 @@ pkg-config = "0.3"
 [[bin]]
 name = "bluetoothd"
 path = "src/main.rs"
-
+build = "build.rs"
