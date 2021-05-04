@@ -42,7 +42,7 @@ std::string ParameterProvider::ConfigFilePath() {
       return config_file_path;
     }
   }
-  return "/etc/systembt/bt_config.conf";
+  return "/etc/bluetooth/bt_config.conf";
 }
 
 void ParameterProvider::OverrideConfigFilePath(const std::string& path) {
@@ -58,7 +58,7 @@ std::string ParameterProvider::SnoopLogFilePath() {
     }
   }
 
-  return "/etc/systembt/btsnoop_hci.log";
+  return "/etc/bluetooth/btsnoop_hci.log";
 }
 
 void ParameterProvider::OverrideSnoopLogFilePath(const std::string& path) {
