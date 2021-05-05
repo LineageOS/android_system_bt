@@ -116,7 +116,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   EXPECT_CALL(mock_le_fixed_channel_service_manager, GetRegisteredServices()).WillRepeatedly(Return(results));
 
   // Step 2: Connect to fixed channel without ACL connection should trigger ACL connection process
-  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type)).Times(1);
+  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type, true)).Times(1);
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .handler_ = user_handler_,
       .on_fail_callback_ = common::BindOnce([](FixedChannelManager::ConnectionResult result) { FAIL(); })};
@@ -223,7 +223,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_no
   EXPECT_CALL(mock_le_fixed_channel_service_manager, GetRegisteredServices()).WillRepeatedly(Return(results));
 
   // Step 2: Connect to fixed channel without any service registered will result in failure
-  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type)).Times(0);
+  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type, true)).Times(0);
   FixedChannelManager::ConnectionResult my_result;
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .handler_ = user_handler_,
@@ -262,7 +262,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_hc
   EXPECT_CALL(mock_le_fixed_channel_service_manager, GetRegisteredServices()).WillRepeatedly(Return(results));
 
   // Step 2: Connect to fixed channel without ACL connection should trigger ACL connection process
-  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type)).Times(1);
+  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type, true)).Times(1);
   FixedChannelManager::ConnectionResult my_result;
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .handler_ = user_handler_,
@@ -311,7 +311,7 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
   EXPECT_CALL(mock_le_fixed_channel_service_manager, GetRegisteredServices()).WillRepeatedly(Return(results));
 
   // Step 2: Connect to fixed channel without ACL connection should trigger ACL connection process
-  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type)).Times(1);
+  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type, true)).Times(1);
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .handler_ = user_handler_,
       .on_fail_callback_ = common::BindOnce([](FixedChannelManager::ConnectionResult result) { FAIL(); })};
@@ -407,7 +407,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
   EXPECT_CALL(mock_le_fixed_channel_service_manager, GetRegisteredServices()).WillRepeatedly(Return(results));
 
   // Step 2: Connect to fixed channel without ACL connection should trigger ACL connection process
-  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type)).Times(1);
+  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type, true)).Times(1);
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .handler_ = user_handler_,
       .on_fail_callback_ = common::BindOnce([](FixedChannelManager::ConnectionResult result) { FAIL(); })};
@@ -505,7 +505,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
   EXPECT_CALL(mock_le_fixed_channel_service_manager, GetRegisteredServices()).WillRepeatedly(Return(results));
 
   // Step 2: Connect to fixed channel without ACL connection should trigger ACL connection process
-  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type)).Times(1);
+  EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type, true)).Times(1);
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .handler_ = user_handler_,
       .on_fail_callback_ = common::BindOnce([](FixedChannelManager::ConnectionResult result) { FAIL(); })};
