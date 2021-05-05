@@ -29,6 +29,7 @@
 #include <memory>
 #include <string>
 
+#include "btif/include/btif_hh.h"
 #include "device/include/controller.h"
 #include "gd/common/bidi_queue.h"
 #include "gd/common/bind.h"
@@ -965,6 +966,34 @@ void DumpsysAcl(int fd) {
 using Record = common::TimestampedEntry<std::string>;
 const std::string kTimeFormat("%Y-%m-%d %H:%M:%S");
 
+#define DUMPSYS_TAG "shim::legacy::hid"
+extern btif_hh_cb_t btif_hh_cb;
+
+void DumpsysHid(int fd) {
+  LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
+  LOG_DUMPSYS(fd, "status:%s num_devices:%u",
+              btif_hh_status_text(btif_hh_cb.status).c_str(),
+              btif_hh_cb.device_num);
+  LOG_DUMPSYS(fd, "status:%s", btif_hh_status_text(btif_hh_cb.status).c_str());
+  for (unsigned i = 0; i < BTIF_HH_MAX_HID; i++) {
+    const btif_hh_device_t* p_dev = &btif_hh_cb.devices[i];
+    if (p_dev->bd_addr != RawAddress::kEmpty) {
+      LOG_DUMPSYS(fd, "  %u: addr:%s fd:%d state:%s ready:%s thread_id:%d", i,
+                  PRIVATE_ADDRESS(p_dev->bd_addr), p_dev->fd,
+                  bthh_connection_state_text(p_dev->dev_status).c_str(),
+                  (p_dev->ready_for_data) ? ("T") : ("F"),
+                  static_cast<int>(p_dev->hh_poll_thread_id));
+    }
+  }
+  for (unsigned i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
+    const btif_hh_added_device_t* p_dev = &btif_hh_cb.added_devices[i];
+    if (p_dev->bd_addr != RawAddress::kEmpty) {
+      LOG_DUMPSYS(fd, "  %u: addr:%s", i, PRIVATE_ADDRESS(p_dev->bd_addr));
+    }
+  }
+}
+#undef DUMPSYS_TAG
+
 #define DUMPSYS_TAG "shim::legacy::btm"
 void DumpsysBtm(int fd) {
   LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
@@ -1004,6 +1033,7 @@ void DumpsysRecord(int fd) {
 #undef DUMPSYS_TAG
 
 void shim::legacy::Acl::Dump(int fd) const {
+  DumpsysHid(fd);
   DumpsysRecord(fd);
   DumpsysAcl(fd);
   DumpsysL2cap(fd);
