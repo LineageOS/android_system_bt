@@ -41,14 +41,15 @@
 #define GATT_TRANS_ID_MAX 0x0fffffff /* 4 MSB is reserved */
 
 /* security action for GATT write and read request */
-#define GATT_SEC_NONE 0
-#define GATT_SEC_OK 1
-#define GATT_SEC_SIGN_DATA 2       /* compute the signature for the write cmd */
-#define GATT_SEC_ENCRYPT 3         /* encrypt the link with current key */
-#define GATT_SEC_ENCRYPT_NO_MITM 4 /* unauthenticated encryption or better */
-#define GATT_SEC_ENCRYPT_MITM 5    /* authenticated encryption */
-#define GATT_SEC_ENC_PENDING 6     /* wait for link encryption pending */
-typedef uint8_t tGATT_SEC_ACTION;
+typedef enum : uint8_t {
+  GATT_SEC_NONE = 0,
+  GATT_SEC_OK = 1,
+  GATT_SEC_SIGN_DATA = 2,       /* compute the signature for the write cmd */
+  GATT_SEC_ENCRYPT = 3,         /* encrypt the link with current key */
+  GATT_SEC_ENCRYPT_NO_MITM = 4, /* unauthenticated encryption or better */
+  GATT_SEC_ENCRYPT_MITM = 5,    /* authenticated encryption */
+  GATT_SEC_ENC_PENDING = 6,     /* wait for link encryption pending */
+} tGATT_SEC_ACTION;
 
 #define GATT_INDEX_INVALID 0xff
 
@@ -258,7 +259,6 @@ typedef struct {
   uint16_t payload_size;
 
   tGATT_CH_STATE ch_state;
-  uint8_t ch_flags;
 
   std::unordered_set<uint8_t> app_hold_link;
 

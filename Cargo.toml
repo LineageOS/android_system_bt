@@ -13,46 +13,12 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 
-[package]
-name = "bt_shim_ffi"
-version = "0.0.1"
-edition = "2018"
+[workspace]
 
-[dependencies]
-# BT dependencies
-bt_common = { path = "gd/rust/common" }
-bt_facade_helpers = { path = "gd/rust/facade" }
-bt_hal = { path = "gd/rust/hal" }
-bt_hci = { path = "gd/rust/hci" }
-bt_main = { path = "gd/rust/main" }
-bt_packets = { path = "gd/rust/packets" }
-
-# All external dependencies. Keep all versions at build/rust/Cargo.toml
-bindgen = "0.51"
-bytes = "1.0"
-cxx = { version = "0.5.9", features = ["c++17"] }
-env_logger = "0.8"
-futures = "0.3"
-grpcio = { version = "0.7", features = ["protobuf", "protobuf-codec", "openssl"] }
-grpcio-sys = { version = "*", features = ["openssl"] }
-lazy_static = "1.4"
-log = "0.4"
-nix = "0.19"
-num-derive = "0.3"
-num-traits = "0.2"
-paste = "1.0"
-proc-macro2 = "1.0.24"
-protobuf = "2.0"
-protoc-grpcio = "2.0"
-protoc-rust = "2.0"
-quote = "1.0.8"
-thiserror = "1.0"
-syn = { version = "1.0.58", features = ['default', 'full'] }
-tokio = { version = "1.0", features = ['bytes', 'fs', 'io-util', 'libc', 'macros', 'memchr', 'mio', 'net', 'num_cpus', 'rt', 'rt-multi-thread', 'sync', 'time', 'tokio-macros'] }
-tokio-stream = "0.1"
-walkdir = "2.2"
-
-
-[lib]
-path = "gd/rust/shim/src/lib.rs"
-crate-type = ["staticlib"]
+members = [
+  "gd/rust/shim",
+  "gd/rust/topshim",
+  "gd/rust/linux/mgmt",
+  "gd/rust/linux/adapter",
+  "gd/rust/linux/service",
+]

@@ -24,15 +24,7 @@
 
 extern std::map<std::string, int> mock_function_count_map;
 
-#include <base/logging.h>
-#include "bt_types.h"
-#include "buffer_allocator.h"
-#include "hci_internals.h"
-#include "hci_layer.h"
-#include "hci_packet_factory.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "osi/include/allocator.h"
+#include "hci/include/hci_packet_factory.h"
 
 #ifndef UNUSED_ATTR
 #define UNUSED_ATTR

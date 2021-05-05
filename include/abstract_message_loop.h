@@ -21,7 +21,11 @@
  * the old libchrome version so use the basic messageloop where that's required.
  * Elsewhere, use the SingleThreadTaskExecutor instead.
  */
+#if BASE_VER >= 822064
+#include <base/task/current_thread.h>
+#else
 #include <base/message_loop/message_loop_current.h>
+#endif
 #include <base/message_loop/message_pump.h>
 #include <base/task/single_thread_task_executor.h>
 #include <base/test/task_environment.h>

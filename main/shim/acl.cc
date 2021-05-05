@@ -859,9 +859,10 @@ struct shim::legacy::Acl::impl {
     for (auto& entry : history) {
       LOG_DEBUG("%s", entry.c_str());
     }
-    LOG_DEBUG("Shadow le accept list  size:%hhu",
-              controller_get_interface()->get_ble_acceptlist_size());
     const auto acceptlist = shadow_acceptlist_.GetCopy();
+    LOG_DEBUG("Shadow le accept list  size:%-3zu controller_max_size:%hhu",
+              acceptlist.size(),
+              controller_get_interface()->get_ble_acceptlist_size());
     for (auto& entry : acceptlist) {
       LOG_DEBUG("acceptlist:%s", entry.ToString().c_str());
     }
@@ -874,10 +875,12 @@ struct shim::legacy::Acl::impl {
     for (auto& entry : history) {
       LOG_DUMPSYS(fd, "%s", entry.c_str());
     }
-    LOG_DUMPSYS(fd, "Shadow le accept list  size:%hhu",
+    auto acceptlist = shadow_acceptlist_.GetCopy();
+    LOG_DUMPSYS(fd,
+                "Shadow le accept list  size:%-3zu controller_max_size:%hhu",
+                acceptlist.size(),
                 controller_get_interface()->get_ble_acceptlist_size());
     unsigned cnt = 0;
-    auto acceptlist = shadow_acceptlist_.GetCopy();
     for (auto& entry : acceptlist) {
       LOG_DUMPSYS(fd, "%03u le acceptlist:%s", ++cnt, entry.ToString().c_str());
     }
@@ -1286,6 +1289,10 @@ void shim::legacy::Acl::OnLeConnectSuccess(
   RawAddress local_rpa = RawAddress::kEmpty; /* TODO enhanced */
   RawAddress peer_rpa = RawAddress::kEmpty;  /* TODO enhanced */
   uint8_t peer_addr_type = 0;                /* TODO public */
+
+  // Once an le connection has successfully been established
+  // the device address is removed from the controller accept list.
+  pimpl_->shadow_acceptlist_.Remove(address_with_type);
 
   TRY_POSTING_ON_MAIN(
       acl_interface_.connection.le.on_connected, legacy_address_with_type,
