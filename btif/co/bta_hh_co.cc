@@ -229,7 +229,6 @@ static inline pthread_t create_thread(void* (*start_routine)(void*),
  ******************************************************************************/
 static void* btif_hh_poll_event_thread(void* arg) {
   btif_hh_device_t* p_dev = (btif_hh_device_t*)arg;
-  APPL_TRACE_DEBUG("%s: Thread created fd = %d", __func__, p_dev->fd);
   struct pollfd pfds[1];
 
   // This thread is created by bt_main_thread with RT priority. Lower the thread
@@ -241,7 +240,10 @@ static void* btif_hh_poll_event_thread(void* arg) {
     p_dev->hh_poll_thread_id = -1;
     return 0;
   }
+  p_dev->pid = gettid();
   pthread_setname_np(pthread_self(), BT_HH_THREAD);
+  LOG_DEBUG("Host hid polling thread created name:%s pid:%d fd:%d",
+            BT_HH_THREAD, p_dev->pid, p_dev->fd);
 
   pfds[0].fd = p_dev->fd;
   pfds[0].events = POLLIN;
@@ -265,6 +267,7 @@ static void* btif_hh_poll_event_thread(void* arg) {
   }
 
   p_dev->hh_poll_thread_id = -1;
+  p_dev->pid = -1;
   return 0;
 }
 
