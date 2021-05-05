@@ -26,6 +26,7 @@
 
 #include "bta/include/bta_ag_api.h"  // tBTA_AG_RES_DATA::kEmpty
 #include "hci/include/hci_layer.h"   // hci_t
+#include "test/mock/mock_hci_layer.h"
 
 std::map<std::string, int> mock_function_count_map;
 
@@ -166,7 +167,6 @@ hci_t mock_hci = {
     .transmit_command_futured = transmit_command_futured,
     .transmit_downward = transmit_downward,
 };
-const hci_t* hci_layer_get_interface() { return &mock_hci; }
 
 bool is_bluetooth_uid() { return false; }
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
@@ -181,7 +181,10 @@ class BluetoothMetricsLogger {};
 
 class StackCycleTest : public ::testing::Test {
  protected:
-  void SetUp() override { stack_manager_ = stack_manager_get_interface(); }
+  void SetUp() override {
+    test::mock::hci_layer::hci_layer_get_interface.hci = &mock_hci;
+    stack_manager_ = stack_manager_get_interface();
+  }
 
   void TearDown() override { stack_manager_ = nullptr; }
   const stack_manager_t* stack_manager_{nullptr};

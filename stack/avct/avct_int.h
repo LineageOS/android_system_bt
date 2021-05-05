@@ -66,7 +66,6 @@ typedef struct {
   uint8_t allocated;  /* 0, not allocated. index+1, otherwise. */
   uint8_t state;      /* The state machine state */
   uint8_t ch_state;   /* L2CAP channel state */
-  uint8_t ch_flags;   /* L2CAP configuration flags */
 } tAVCT_SCB;
 
 /* link control block type */
@@ -77,7 +76,6 @@ typedef struct {
   uint8_t allocated;      /* 0, not allocated. index+1, otherwise. */
   uint8_t state;          /* The state machine state */
   uint8_t ch_state;       /* L2CAP channel state */
-  uint8_t ch_flags;       /* L2CAP configuration flags */
   BT_HDR* p_rx_msg;       /* Message being reassembled */
   uint16_t conflict_lcid; /* L2CAP channel LCID */
   RawAddress peer_addr;   /* BD address of peer */
@@ -93,7 +91,6 @@ typedef struct {
   uint8_t allocated;  /* 0, not allocated. index+1, otherwise. */
   uint8_t state;      /* The state machine state */
   uint8_t ch_state;   /* L2CAP channel state */
-  uint8_t ch_flags;   /* L2CAP configuration flags */
   BT_HDR* p_tx_msg;  /* Message to be sent - in case the browsing channel is not
                         open when MsgReg is called */
   uint8_t ch_close;  /* CCB index+1, if CCB initiated channel close */

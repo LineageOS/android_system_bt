@@ -62,7 +62,6 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
                                      tBTA_HH_RPT_CACHE_ENTRY* p_rpt_cache,
                                      uint8_t num_rpt);
 
-#if (BTA_HH_DEBUG == TRUE)
 static const char* bta_hh_le_rpt_name[4] = {"UNKNOWN", "INPUT", "OUTPUT",
                                             "FEATURE"};
 
@@ -142,7 +141,6 @@ static const char* bta_hh_uuid_to_str(uint16_t uuid) {
   }
 }
 
-#endif
 /*******************************************************************************
  *
  * Function         bta_hh_le_enable
@@ -370,10 +368,8 @@ static tBTA_HH_LE_RPT* bta_hh_le_find_rpt_by_idtype(tBTA_HH_LE_RPT* p_head,
   tBTA_HH_LE_RPT* p_rpt = p_head;
   uint8_t i;
 
-#if (BTA_HH_DEBUG == TRUE)
   APPL_TRACE_DEBUG("bta_hh_le_find_rpt_by_idtype: r_type: %d rpt_id: %d",
                    r_type, rpt_id);
-#endif
 
   for (i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++) {
     if (p_rpt->in_use && p_rpt->rpt_id == rpt_id && r_type == p_rpt->rpt_type) {
@@ -516,9 +512,7 @@ static void bta_hh_le_save_report_ref(tBTA_HH_DEV_CB* p_dev_cb,
     if (p_rpt->rpt_type > BTA_HH_RPTT_FEATURE) /* invalid report type */
       p_rpt->rpt_type = BTA_HH_RPTT_RESRV;
 
-#if (BTA_HH_DEBUG == TRUE)
     APPL_TRACE_DEBUG("%s: report ID: %d", __func__, p_rpt->rpt_id);
-#endif
     tBTA_HH_RPT_CACHE_ENTRY rpt_entry;
     rpt_entry.rpt_id = p_rpt->rpt_id;
     rpt_entry.rpt_type = p_rpt->rpt_type;
@@ -550,10 +544,8 @@ static void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB* p_dev_cb,
                                            bool register_ba) {
   tBTA_HH_LE_RPT* p_rpt = &p_dev_cb->hid_srvc.report[0];
 
-#if (BTA_HH_DEBUG == TRUE)
   APPL_TRACE_DEBUG("%s: bta_hh_le_register_input_notif mode: %d", __func__,
                    proto_mode);
-#endif
 
   for (int i = 0; i < BTA_HH_LE_RPT_MAX; i++, p_rpt++) {
     if (p_rpt->rpt_type == BTA_HH_RPTT_INPUT) {
@@ -639,9 +631,7 @@ static void bta_hh_le_deregister_input_notif(tBTA_HH_DEV_CB* p_dev_cb) {
  ******************************************************************************/
 static void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
   if (p_cb->disc_active == BTA_HH_LE_DISC_NONE) {
-#if (BTA_HH_DEBUG == TRUE)
     bta_hh_le_hid_report_dbg(p_cb);
-#endif
     bta_hh_le_register_input_notif(p_cb, p_cb->mode, true);
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
 
@@ -850,12 +840,10 @@ static void get_protocol_mode_cb(uint16_t conn_id, tGATT_STATUS status,
     p_dev_cb->mode = hs_data.rsp_data.proto_mode;
   }
 
-#if (BTA_HH_DEBUG == TRUE)
   APPL_TRACE_DEBUG("LE GET_PROTOCOL Mode = [%s]",
                    (hs_data.rsp_data.proto_mode == BTA_HH_PROTO_RPT_MODE)
                        ? "Report"
                        : "Boot");
-#endif
 
   p_dev_cb->w4_evt = 0;
   (*bta_hh_cb.p_cback)(BTA_HH_GET_PROTO_EVT, (tBTA_HH*)&hs_data);
@@ -908,12 +896,10 @@ static void bta_hh_le_dis_cback(const RawAddress& addr,
   p_cb->disc_active &= ~BTA_HH_LE_DISC_DIS;
   /* plug in the PnP info for this device */
   if (p_dis_value->attr_mask & DIS_ATTR_PNP_ID_BIT) {
-#if (BTA_HH_DEBUG == TRUE)
     APPL_TRACE_DEBUG(
         "Plug in PnP info: product_id = %02x, vendor_id = %04x, version = %04x",
         p_dis_value->pnp_id.product_id, p_dis_value->pnp_id.vendor_id,
         p_dis_value->pnp_id.product_version);
-#endif
     p_cb->dscp_info.product_id = p_dis_value->pnp_id.product_id;
     p_cb->dscp_info.vendor_id = p_dis_value->pnp_id.vendor_id;
     p_cb->dscp_info.version = p_dis_value->pnp_id.product_version;
@@ -1138,10 +1124,8 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
 
     BtaGattQueue::Clean(p_cb->conn_id);
 
-#if (BTA_HH_DEBUG == TRUE)
     APPL_TRACE_DEBUG("hid_handle = %2x conn_id = %04x cb_index = %d",
                      p_cb->hid_handle, p_cb->conn_id, p_cb->index);
-#endif
 
     bta_hh_sm_execute(p_cb, BTA_HH_START_ENC_EVT, NULL);
 
@@ -1274,10 +1258,8 @@ static void read_ext_rpt_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
 
   STREAM_TO_UINT16(p_dev_cb->hid_srvc.ext_rpt_ref, pp);
 
-#if (BTA_HH_DEBUG == TRUE)
   APPL_TRACE_DEBUG("%s: External Report Reference UUID 0x%04x", __func__,
                    p_dev_cb->hid_srvc.ext_rpt_ref);
-#endif
 }
 
 static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
@@ -1794,9 +1776,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   if (cb_evt == 0) return;
 
-#if (BTA_HH_DEBUG == TRUE)
   APPL_TRACE_DEBUG("bta_hh_le_write_cmpl w4_evt: %d", p_dev_cb->w4_evt);
-#endif
 
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(conn_id, handle);
@@ -2042,9 +2022,7 @@ void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
  ******************************************************************************/
 static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   tBTA_HH_DEV_CB* p_dev_cb;
-#if (BTA_HH_DEBUG == TRUE)
   APPL_TRACE_DEBUG("bta_hh_gattc_callback event = %d", event);
-#endif
   if (p_data == NULL) return;
 
   switch (event) {
