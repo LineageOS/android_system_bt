@@ -21,6 +21,7 @@
 #include <map>
 #include <thread>
 
+#include "btif/include/btif_hh.h"
 #include "device/include/controller.h"
 #include "gd/btaa/activity_attribution.h"
 #include "gd/hal/hci_hal.h"
@@ -62,6 +63,7 @@ const uint8_t kMaxLeAcceptlistSize = 16;
 std::map<std::string, int> mock_function_count_map;
 tL2C_CB l2cb;
 tBTM_CB btm_cb;
+btif_hh_cb_t btif_hh_cb;
 
 namespace {
 std::map<std::string, std::promise<uint16_t>> mock_function_handle_promise_map;

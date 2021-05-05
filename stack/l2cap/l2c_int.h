@@ -352,6 +352,28 @@ typedef struct t_l2c_ccb {
   /* used to indicate that ECOC is used */
   bool ecoc{false};
   bool reconfig_started;
+
+  struct {
+    struct {
+      unsigned bytes{0};
+      unsigned packets{0};
+      void operator()(unsigned bytes) {
+        this->bytes += bytes;
+        this->packets++;
+      }
+    } rx, tx;
+    struct {
+      struct {
+        unsigned bytes{0};
+        unsigned packets{0};
+        void operator()(unsigned bytes) {
+          this->bytes += bytes;
+          this->packets++;
+        }
+      } rx, tx;
+    } dropped;
+  } metrics;
+
 } tL2C_CCB;
 
 /***********************************************************************
