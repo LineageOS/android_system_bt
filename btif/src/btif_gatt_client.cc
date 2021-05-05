@@ -234,7 +234,7 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
 
 static void bta_gattc_cback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   LOG_DEBUG(" gatt client callback event:%s [%d]",
-            GattClientEventText(event).c_str(), event);
+            gatt_client_event_text(event).c_str(), event);
   bt_status_t status =
       btif_transfer_context(btif_gattc_upstreams_evt, (uint16_t)event,
                             (char*)p_data, sizeof(tBTA_GATTC), NULL);
