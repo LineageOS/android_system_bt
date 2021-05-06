@@ -32,6 +32,7 @@
 #include "gd/storage/storage_module.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "main/shim/shim.h"
 
 #include "advertise_data_parser.h"
 #include "stack/btm/btm_int_types.h"
@@ -410,7 +411,10 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
         }
       }
     }
-
+    if (!bluetooth::shim::is_gd_stack_started_up()) {
+      LOG_WARN("Gd stack is stopped, return");
+      return;
+    }
     auto* storage_module = bluetooth::shim::GetStorage();
     bluetooth::hci::Address address = ToGdAddress(bd_addr);
 
