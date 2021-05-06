@@ -5631,10 +5631,15 @@ packet VendorSpecificEvent : Event (event_code = VENDOR_SPECIFIC) {
 packet StorageThresholdBreachEvent : VendorSpecificEvent (subevent_code = BLE_THRESHOLD) {
 }
 
+enum AdvtInfoPresent : 8 {
+  ADVT_INFO_PRESENT = 0x00,
+  NO_ADVT_INFO_PRESENT = 0x01,
+}
+
 packet LEAdvertisementTrackingEvent : VendorSpecificEvent (subevent_code = BLE_TRACKING) {
   apcf_filter_index : 8,
   advertiser_state : 8,
-  advt_info_present : 8,
+  advt_info_present : AdvtInfoPresent,
   advertiser_address : Address,
   advertiser_address_type : 8,
   _body_,
@@ -5643,7 +5648,7 @@ packet LEAdvertisementTrackingEvent : VendorSpecificEvent (subevent_code = BLE_T
 packet LEAdvertisementTrackingWithInfoEvent : LEAdvertisementTrackingEvent {
   tx_power : 8,
   rssi : 8,
-  timestamp : 8,
+  timestamp : 16,
   _size_(adv_packet) : 8,
   adv_packet : 8[],
   _size_(scan_response) : 8,

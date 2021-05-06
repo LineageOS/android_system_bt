@@ -149,7 +149,7 @@ class NullScanningCallback : public ScanningCallback {
       std::vector<uint8_t> advertising_data) {
     LOG_INFO("OnScanResult in NullScanningCallback");
   }
-  void OnTrackAdvFoundLost() {
+  void OnTrackAdvFoundLost(AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info) {
     LOG_INFO("OnTrackAdvFoundLost in NullScanningCallback");
   }
   void OnBatchScanReports(int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data) {
@@ -192,6 +192,7 @@ struct BatchScanConfig {
   uint32_t scan_interval;
   uint32_t scan_window;
   BatchScanDiscardRule discard_rule;
+  ScannerId ref_value;
 };
 
 struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback {
@@ -222,12 +223,21 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
     is_filter_support_ = controller_->IsSupported(OpCode::LE_ADV_FILTER);
     is_batch_scan_support_ = controller->IsSupported(OpCode::LE_BATCH_SCAN);
+    if (is_batch_scan_support_) {
+      // TODO implement vse module
+      // hci_layer_->RegisterVesEventHandler(
+      //     VseSubeventCode::BLE_THRESHOLD, handler->BindOn(this,
+      //     &LeScanningManager::impl::on_storage_threshold_breach));
+      // hci_layer_->RegisterVesEventHandler(
+      //     VseSubeventCode::BLE_TRACKING, handler->BindOn(this, &LeScanningManager::impl::on_advertisement_tracking));
+    }
     scanners_ = std::vector<Scanner>(kMaxAppNum + 1);
     for (size_t i = 0; i < scanners_.size(); i++) {
       scanners_[i].app_uuid = Uuid::kEmpty;
       scanners_[i].in_use = false;
     }
     batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
+    batch_scan_config_.ref_value = kInvalidScannerId;
     configure_scan();
   }
 
@@ -235,6 +245,13 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     for (auto subevent_code : LeScanningEvents) {
       hci_layer_->UnregisterLeEventHandler(subevent_code);
     }
+    if (is_batch_scan_support_) {
+      // TODO implete vse module
+      // hci_layer_->UnregisterVesEventHandler(VseSubeventCode::BLE_THRESHOLD);
+      // hci_layer_->UnregisterVesEventHandler(VseSubeventCode::BLE_TRACKING);
+    }
+    batch_scan_config_.current_state = BatchScanState::DISABLED_STATE;
+    batch_scan_config_.ref_value = kInvalidScannerId;
     scanning_callbacks_ = &null_scanning_callback_;
   }
 
@@ -830,11 +847,16 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   }
 
   void batch_scan_set_storage_parameter(
-      uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max, uint8_t batch_scan_notify_threshold) {
+      uint8_t batch_scan_full_max,
+      uint8_t batch_scan_truncated_max,
+      uint8_t batch_scan_notify_threshold,
+      ScannerId scanner_id) {
     if (!is_batch_scan_support_) {
       LOG_WARN("Batch scan is not supported");
       return;
     }
+    // scanner id for OnBatchScanThresholdCrossed
+    batch_scan_config_.ref_value = scanner_id;
 
     if (batch_scan_config_.current_state == BatchScanState::ERROR_STATE ||
         batch_scan_config_.current_state == BatchScanState::DISABLED_STATE ||
@@ -961,6 +983,18 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     le_scanning_interface_->EnqueueCommand(
         LeBatchScanReadResultParametersBuilder::Create(static_cast<BatchScanDataRead>(scan_mode)),
         module_handler_->BindOnceOn(this, &impl::on_batch_scan_read_result_complete, scanner_id, total_num_of_records));
+  }
+
+  void track_advertiser(ScannerId scanner_id) {
+    if (!is_batch_scan_support_) {
+      LOG_WARN("Batch scan is not supported");
+      AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info = {};
+      on_found_on_lost_info.scanner_id = scanner_id;
+      on_found_on_lost_info.advertiser_info_present = AdvtInfoPresent::NO_ADVT_INFO_PRESENT;
+      scanning_callbacks_->OnTrackAdvFoundLost(on_found_on_lost_info);
+      return;
+    }
+    tracker_id = scanner_id;
   }
 
   void register_scanning_callback(ScanningCallback* scanning_callbacks) {
@@ -1112,6 +1146,46 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
   }
 
+  void on_storage_threshold_breach(VendorSpecificEventView event) {
+    if (batch_scan_config_.ref_value == kInvalidScannerId) {
+      LOG_WARN("storage threshold was not set !!");
+      return;
+    }
+    scanning_callbacks_->OnBatchScanThresholdCrossed(static_cast<int>(batch_scan_config_.ref_value));
+  }
+
+  void on_advertisement_tracking(VendorSpecificEventView event) {
+    if (tracker_id == kInvalidScannerId) {
+      LOG_WARN("Advertisement track is not register");
+      return;
+    }
+    auto view = LEAdvertisementTrackingEventView::Create(event);
+    ASSERT(view.IsValid());
+    AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info = {};
+    on_found_on_lost_info.scanner_id = tracker_id;
+    on_found_on_lost_info.filter_index = view.GetApcfFilterIndex();
+    on_found_on_lost_info.advertiser_state = view.GetAdvertiserState();
+    on_found_on_lost_info.advertiser_address = view.GetAdvertiserAddress();
+    on_found_on_lost_info.advertiser_address_type = view.GetAdvertiserAddressType();
+    on_found_on_lost_info.advertiser_info_present = view.GetAdvtInfoPresent();
+    /* Extract the adv info details */
+    if (on_found_on_lost_info.advertiser_info_present == AdvtInfoPresent::ADVT_INFO_PRESENT) {
+      auto info_view = LEAdvertisementTrackingWithInfoEventView::Create(view);
+      ASSERT(info_view.IsValid());
+      on_found_on_lost_info.tx_power = info_view.GetTxPower();
+      on_found_on_lost_info.rssi = info_view.GetRssi();
+      on_found_on_lost_info.time_stamp = info_view.GetTimestamp();
+      auto adv_data = info_view.GetAdvPacket();
+      on_found_on_lost_info.adv_packet.reserve(adv_data.size());
+      on_found_on_lost_info.adv_packet.insert(on_found_on_lost_info.adv_packet.end(), adv_data.begin(), adv_data.end());
+      auto scan_rsp_data = info_view.GetScanResponse();
+      on_found_on_lost_info.scan_response.reserve(scan_rsp_data.size());
+      on_found_on_lost_info.scan_response.insert(
+          on_found_on_lost_info.scan_response.end(), scan_rsp_data.begin(), scan_rsp_data.end());
+    }
+    scanning_callbacks_->OnTrackAdvFoundLost(on_found_on_lost_info);
+  }
+
   void OnPause() override {
     paused_ = true;
     scan_on_resume_ = is_scanning_;
@@ -1157,6 +1231,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   LeScanningFilterPolicy filter_policy_{LeScanningFilterPolicy::ACCEPT_ALL};
   BatchScanConfig batch_scan_config_;
   std::map<ScannerId, std::vector<uint8_t>> batch_scan_result_cache_;
+  ScannerId tracker_id = kInvalidScannerId;
 
   static void check_status(CommandCompleteView view) {
     switch (view.GetCommandOpCode()) {
@@ -1246,13 +1321,17 @@ void LeScanningManager::ScanFilterAdd(
 }
 
 void LeScanningManager::BatchScanConifgStorage(
-    uint8_t batch_scan_full_max, uint8_t batch_scan_truncated_max, uint8_t batch_scan_notify_threshold) {
+    uint8_t batch_scan_full_max,
+    uint8_t batch_scan_truncated_max,
+    uint8_t batch_scan_notify_threshold,
+    ScannerId scanner_id) {
   CallOn(
       pimpl_.get(),
       &impl::batch_scan_set_storage_parameter,
       batch_scan_full_max,
       batch_scan_truncated_max,
-      batch_scan_notify_threshold);
+      batch_scan_notify_threshold,
+      scanner_id);
 }
 
 void LeScanningManager::BatchScanEnable(
@@ -1275,6 +1354,10 @@ void LeScanningManager::BatchScanDisable() {
 
 void LeScanningManager::BatchScanReadReport(ScannerId scanner_id, BatchScanMode scan_mode) {
   CallOn(pimpl_.get(), &impl::batch_scan_read_results, scanner_id, 0, scan_mode);
+}
+
+void LeScanningManager::TrackAdvertiser(ScannerId scanner_id) {
+  CallOn(pimpl_.get(), &impl::track_advertiser, scanner_id);
 }
 
 void LeScanningManager::RegisterScanningCallback(ScanningCallback* scanning_callback) {
