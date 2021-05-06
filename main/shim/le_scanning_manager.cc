@@ -92,7 +92,7 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
 
     if (filt_param != nullptr) {
       if (filt_param && filt_param->dely_mode == 1) {
-        // TODO refactor BTM_BleTrackAdvertiser
+        bluetooth::shim::GetScanning()->TrackAdvertiser(client_if);
       }
       advertising_filter_parameter.feature_selection = filt_param->feat_seln;
       advertising_filter_parameter.list_logic_type =
@@ -174,7 +174,8 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                               int batch_scan_notify_threshold, Callback cb) {
     LOG(INFO) << __func__ << " in shim layer";
     bluetooth::shim::GetScanning()->BatchScanConifgStorage(
-        batch_scan_full_max, batch_scan_trunc_max, batch_scan_notify_threshold);
+        batch_scan_full_max, batch_scan_trunc_max, batch_scan_notify_threshold,
+        client_if);
     do_in_jni_thread(FROM_HERE, base::Bind(cb, btm_status_value(BTM_SUCCESS)));
   }
 
@@ -265,7 +266,41 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
         advertising_data);
   }
 
-  void OnTrackAdvFoundLost() {}
+  void OnTrackAdvFoundLost(bluetooth::hci::AdvertisingFilterOnFoundOnLostInfo
+                               on_found_on_lost_info) {
+    AdvertisingTrackInfo track_info = {};
+    RawAddress raw_address =
+        ToRawAddress(on_found_on_lost_info.advertiser_address);
+    track_info.advertiser_address = raw_address;
+    track_info.advertiser_address_type =
+        on_found_on_lost_info.advertiser_address_type;
+    track_info.scanner_id = on_found_on_lost_info.scanner_id;
+    track_info.filter_index = on_found_on_lost_info.filter_index;
+    track_info.advertiser_state = on_found_on_lost_info.advertiser_state;
+    track_info.advertiser_info_present =
+        static_cast<uint8_t>(on_found_on_lost_info.advertiser_info_present);
+    if (on_found_on_lost_info.advertiser_info_present ==
+        bluetooth::hci::AdvtInfoPresent::ADVT_INFO_PRESENT) {
+      track_info.tx_power = on_found_on_lost_info.tx_power;
+      track_info.rssi = on_found_on_lost_info.rssi;
+      track_info.time_stamp = on_found_on_lost_info.time_stamp;
+      auto adv_data = on_found_on_lost_info.adv_packet;
+      track_info.adv_packet_len = (uint8_t)adv_data.size();
+      track_info.adv_packet.reserve(adv_data.size());
+      track_info.adv_packet.insert(track_info.adv_packet.end(),
+                                   adv_data.begin(), adv_data.end());
+      auto scan_rsp_data = on_found_on_lost_info.scan_response;
+      track_info.scan_response_len = (uint8_t)scan_rsp_data.size();
+      track_info.scan_response.reserve(adv_data.size());
+      track_info.scan_response.insert(track_info.scan_response.end(),
+                                      scan_rsp_data.begin(),
+                                      scan_rsp_data.end());
+    }
+    do_in_jni_thread(
+        FROM_HERE,
+        base::BindOnce(&ScanningCallbacks::OnTrackAdvFoundLost,
+                       base::Unretained(scanning_callbacks_), track_info));
+  }
 
   void OnBatchScanReports(int client_if, int status, int report_format,
                           int num_records, std::vector<uint8_t> data) {
@@ -276,7 +311,12 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
                        report_format, num_records, data));
   }
 
-  void OnBatchScanThresholdCrossed(int client_if) {}
+  void OnBatchScanThresholdCrossed(int client_if) {
+    do_in_jni_thread(
+        FROM_HERE,
+        base::BindOnce(&ScanningCallbacks::OnBatchScanThresholdCrossed,
+                       base::Unretained(scanning_callbacks_), client_if));
+  }
 
   void OnTimeout() {}
 
