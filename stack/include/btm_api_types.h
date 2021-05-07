@@ -772,11 +772,9 @@ typedef void(tBTM_BOND_CANCEL_CMPL_CALLBACK)(tBTM_STATUS result);
 #define BTM_LE_SC_OOB_REQ_EVT SMP_SC_OOB_REQ_EVT
 /* SC OOB local data set is created (as result of SMP_CrLocScOobData(...)) */
 #define BTM_LE_SC_LOC_OOB_EVT SMP_SC_LOC_OOB_DATA_UP_EVT
-/* SMP over BR keys request event */
-#define BTM_LE_BR_KEYS_REQ_EVT SMP_BR_KEYS_REQ_EVT
 /* SMP complete event */
 #define BTM_LE_COMPLT_EVT SMP_COMPLT_EVT
-#define BTM_LE_LAST_FROM_SMP BTM_LE_BR_KEYS_REQ_EVT
+#define BTM_LE_LAST_FROM_SMP SMP_BR_KEYS_REQ_EVT
 /* KEY update event */
 #define BTM_LE_KEY_EVT (BTM_LE_LAST_FROM_SMP + 1)
 #define BTM_LE_CONSENT_REQ_EVT SMP_CONSENT_REQ_EVT
