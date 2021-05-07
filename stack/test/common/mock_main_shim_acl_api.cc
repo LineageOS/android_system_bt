@@ -43,7 +43,7 @@ void bluetooth::shim::ACL_CancelClassicConnection(
   mock_function_count_map[__func__]++;
 }
 bool bluetooth::shim::ACL_AcceptLeConnectionFrom(
-    const tBLE_BD_ADDR& legacy_address_with_type) {
+    const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct) {
   mock_function_count_map[__func__]++;
   return true;
 }
