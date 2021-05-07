@@ -626,9 +626,9 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
   tGATT_STATUS encrypt_status;
   uint8_t* p = p_data;
   uint8_t i;
-  uint8_t event = (op_code == GATT_HANDLE_VALUE_IND)
-                      ? GATTC_OPTYPE_INDICATION
-                      : GATTC_OPTYPE_NOTIFICATION;
+  tGATTC_OPTYPE event = (op_code == GATT_HANDLE_VALUE_IND)
+                            ? GATTC_OPTYPE_INDICATION
+                            : GATTC_OPTYPE_NOTIFICATION;
 
   VLOG(1) << __func__;
 
