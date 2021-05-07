@@ -88,7 +88,7 @@ class LeScanningManagerFacadeService : public LeScanningManagerFacade::Service, 
     le_report_msg.set_event(std::string(bytes.begin(), bytes.end()));
     pending_events_.OnIncomingEvent(std::move(le_report_msg));
   };
-  void OnTrackAdvFoundLost(){};
+  void OnTrackAdvFoundLost(AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info){};
   void OnBatchScanReports(int client_if, int status, int report_format, int num_records, std::vector<uint8_t> data){};
   void OnBatchScanThresholdCrossed(int client_if){};
   void OnTimeout(){};

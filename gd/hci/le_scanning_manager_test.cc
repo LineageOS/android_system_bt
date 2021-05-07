@@ -314,7 +314,11 @@ class LeScanningManagerTest : public ::testing::Test {
          uint16_t periodic_advertising_interval,
          std::vector<uint8_t> advertising_data),
         (override));
-    MOCK_METHOD(void, OnTrackAdvFoundLost, (), (override));
+    MOCK_METHOD(
+        void,
+        OnTrackAdvFoundLost,
+        (bluetooth::hci::AdvertisingFilterOnFoundOnLostInfo on_found_on_lost_info),
+        (override));
     MOCK_METHOD(
         void,
         OnBatchScanReports,
@@ -467,7 +471,7 @@ TEST_F(LeAndroidHciScanningManagerTest, scan_filter_add_test) {
 TEST_F(LeAndroidHciScanningManagerTest, read_batch_scan_result) {
   // Enable batch scan feature
   auto next_command_future = test_hci_layer_->GetCommandFuture();
-  le_scanning_manager->BatchScanConifgStorage(100, 0, 95);
+  le_scanning_manager->BatchScanConifgStorage(100, 0, 95, 0x00);
   auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
   ASSERT_EQ(std::future_status::ready, result);
   test_hci_layer_->IncomingEvent(LeBatchScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
