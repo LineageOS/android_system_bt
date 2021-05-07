@@ -27,12 +27,12 @@
 #include <string.h>
 #include "bt_common.h"
 
-#include "btm_int.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_ble_int_types.h"
+#include "stack/btm/btm_int.h"
 #include "stack/btm/btm_sec.h"
 
 using base::StringPrintf;
