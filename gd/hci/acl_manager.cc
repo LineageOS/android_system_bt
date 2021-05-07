@@ -159,8 +159,8 @@ void AclManager::CreateConnection(Address address) {
   CallOn(pimpl_->classic_impl_, &classic_impl::create_connection, address);
 }
 
-void AclManager::CreateLeConnection(AddressWithType address_with_type) {
-  CallOn(pimpl_->le_impl_, &le_impl::create_le_connection, address_with_type, true);
+void AclManager::CreateLeConnection(AddressWithType address_with_type, bool is_direct) {
+  CallOn(pimpl_->le_impl_, &le_impl::create_le_connection, address_with_type, true, is_direct);
 }
 
 void AclManager::SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t time) {

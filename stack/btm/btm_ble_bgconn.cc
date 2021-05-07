@@ -541,7 +541,8 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
           PRIVATE_ADDRESS(address));
     }
     return bluetooth::shim::ACL_AcceptLeConnectionFrom(
-        convert_to_address_with_type(address, btm_find_dev(address)));
+        convert_to_address_with_type(address, btm_find_dev(address)),
+        /* is_direct */ false);
   }
 
   if (background_connections_count() ==
