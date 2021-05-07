@@ -76,7 +76,7 @@ public:
  virtual void CreateConnection(Address address);
 
  // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
- virtual void CreateLeConnection(AddressWithType address_with_type);
+ virtual void CreateLeConnection(AddressWithType address_with_type, bool is_direct);
 
  // Ask the controller for specific data parameters
  virtual void SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t time);

@@ -80,14 +80,14 @@ void LinkManager::ConnectFixedChannelServices(hci::AddressWithType address_with_
   }
   pending_link->second.pending_fixed_channel_connections_.push_back(std::move(pending_fixed_channel_connection));
   // Then create new ACL connection
-  acl_manager_->CreateLeConnection(address_with_type);
+  acl_manager_->CreateLeConnection(address_with_type, /* is_direct */ true);
 }
 
 void LinkManager::ConnectDynamicChannelServices(
     hci::AddressWithType device, Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm) {
   auto* link = GetLink(device);
   if (link == nullptr) {
-    acl_manager_->CreateLeConnection(device);
+    acl_manager_->CreateLeConnection(device, /* is_direct */ true);
     pending_dynamic_channels_[device].push_back(std::make_pair(psm, std::move(pending_dynamic_channel_connection)));
     return;
   }
