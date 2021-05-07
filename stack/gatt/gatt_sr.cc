@@ -28,9 +28,9 @@
 
 #include "gatt_int.h"
 #include "l2c_api.h"
-#include "l2c_int.h"
 #include "osi/include/log.h"
 #include "stack/eatt/eatt.h"
+#include "stack/l2cap/l2c_int.h"
 #define GATT_MTU_REQ_MIN_LEN 2
 
 using base::StringPrintf;

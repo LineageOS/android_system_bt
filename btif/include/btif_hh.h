@@ -75,6 +75,7 @@ inline std::string btif_hh_status_text(const BTIF_HH_STATUS& status) {
 }
 #undef CASE_RETURN_TEXT
 
+// Shared with uhid polling thread
 typedef struct {
   bthh_connection_state_t dev_status;
   uint8_t dev_handle;
@@ -85,6 +86,7 @@ typedef struct {
   int fd;
   bool ready_for_data;
   pthread_t hh_poll_thread_id;
+  pid_t pid{-1};
   uint8_t hh_keep_polling;
   alarm_t* vup_timer;
   fixed_queue_t* get_rpt_id_queue;
