@@ -72,7 +72,7 @@ class MockAclManager : public AclManager {
   MOCK_METHOD(void, RegisterCallbacks, (ConnectionCallbacks * callbacks, os::Handler* handler), (override));
   MOCK_METHOD(void, RegisterLeCallbacks, (LeConnectionCallbacks * callbacks, os::Handler* handler), (override));
   MOCK_METHOD(void, CreateConnection, (Address address), (override));
-  MOCK_METHOD(void, CreateLeConnection, (AddressWithType address_with_type), (override));
+  MOCK_METHOD(void, CreateLeConnection, (AddressWithType address_with_type, bool is_direct), (override));
   MOCK_METHOD(void, CancelConnect, (Address address), (override));
   MOCK_METHOD(
       void,

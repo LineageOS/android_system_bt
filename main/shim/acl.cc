@@ -819,7 +819,7 @@ struct shim::legacy::Acl::impl {
   }
 
   void accept_le_connection_from(const hci::AddressWithType& address_with_type,
-                                 std::promise<bool> promise) {
+                                 bool is_direct, std::promise<bool> promise) {
     if (shadow_acceptlist_.IsFull()) {
       LOG_ERROR("Acceptlist is full preventing new Le connection");
       promise.set_value(false);
@@ -827,7 +827,7 @@ struct shim::legacy::Acl::impl {
     }
     shadow_acceptlist_.Add(address_with_type);
     promise.set_value(true);
-    GetAclManager()->CreateLeConnection(address_with_type);
+    GetAclManager()->CreateLeConnection(address_with_type, is_direct);
     LOG_DEBUG("Allow Le connection from remote:%s",
               PRIVATE_ADDRESS(address_with_type));
     BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type),
@@ -1143,9 +1143,10 @@ void shim::legacy::Acl::CancelClassicConnection(const hci::Address& address) {
 }
 
 void shim::legacy::Acl::AcceptLeConnectionFrom(
-    const hci::AddressWithType& address_with_type, std::promise<bool> promise) {
+    const hci::AddressWithType& address_with_type, bool is_direct,
+    std::promise<bool> promise) {
   handler_->CallOn(pimpl_.get(), &Acl::impl::accept_le_connection_from,
-                   address_with_type, std::move(promise));
+                   address_with_type, is_direct, std::move(promise));
 }
 
 void shim::legacy::Acl::IgnoreLeConnectionFrom(
