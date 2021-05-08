@@ -35,7 +35,7 @@ class LinkConnectionInterface {
   virtual void CancelClassicConnection(
       const bluetooth::hci::Address& address) = 0;
   virtual void AcceptLeConnectionFrom(
-      const bluetooth::hci::AddressWithType& address_with_type,
+      const bluetooth::hci::AddressWithType& address_with_type, bool is_direct,
       std::promise<bool>) = 0;
   virtual void IgnoreLeConnectionFrom(
       const bluetooth::hci::AddressWithType& address_with_type) = 0;

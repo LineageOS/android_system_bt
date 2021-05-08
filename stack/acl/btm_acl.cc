@@ -1138,31 +1138,28 @@ tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
  ******************************************************************************/
 tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
                                  uint16_t timeout) {
-  tACL_CONN* p = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
-  if (p != (tACL_CONN*)NULL) {
-    p->link_super_tout = timeout;
-
-    /* Only send if current role is Central; 2.0 spec requires this */
-    if (p->link_role == HCI_ROLE_CENTRAL) {
-      LOG_DEBUG("Setting supervison timeout:%.2fms bd_addr:%s",
-                supervision_timeout_to_seconds(timeout),
-                PRIVATE_ADDRESS(remote_bda));
-
-      btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID,
-                                       p->hci_handle, timeout);
-      return (BTM_CMD_STARTED);
-    } else {
-      LOG_WARN(
-          "Role is peripheral so unable to set supervison timeout:%.2fms "
-          "bd_addr:%s",
-          supervision_timeout_to_seconds(timeout), PRIVATE_ADDRESS(remote_bda));
-      return (BTM_SUCCESS);
-    }
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return BTM_UNKNOWN_ADDR;
   }
-  LOG_WARN("Unable to find active acl");
 
-  /* If here, no BD Addr found */
-  return (BTM_UNKNOWN_ADDR);
+  /* Only send if current role is Central; 2.0 spec requires this */
+  if (p_acl->link_role == HCI_ROLE_CENTRAL) {
+    p_acl->link_super_tout = timeout;
+    btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID,
+                                     p_acl->hci_handle, timeout);
+    LOG_DEBUG("Set supervision timeout:%.2fms bd_addr:%s",
+              supervision_timeout_to_seconds(timeout),
+              PRIVATE_ADDRESS(remote_bda));
+    return BTM_CMD_STARTED;
+  } else {
+    LOG_WARN(
+        "Role is peripheral so unable to set supervision timeout:%.2fms "
+        "bd_addr:%s",
+        supervision_timeout_to_seconds(timeout), PRIVATE_ADDRESS(remote_bda));
+    return BTM_SUCCESS;
+  }
 }
 
 bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
@@ -2729,7 +2726,8 @@ bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr) {
     gatt_find_in_device_record(bd_addr, &address_with_type);
     LOG_DEBUG("Creating le connection to:%s",
               address_with_type.ToString().c_str());
-    bluetooth::shim::ACL_AcceptLeConnectionFrom(address_with_type);
+    bluetooth::shim::ACL_AcceptLeConnectionFrom(address_with_type,
+                                                /* is_direct */ true);
     return true;
   }
   return connection_manager::direct_connect_add(id, bd_addr);

@@ -25,7 +25,7 @@ grpcio = "*"
 lazy_static = "*"
 log = "*"
 nix = "*"
-tokio = { version = "*", features = ['bytes', 'net'] }
+tokio = { version = "*", features = ['bytes', 'macros', 'net', 'rt-multi-thread', 'time'] }
 
 # Proc Macro dependency
 paste = "*"
