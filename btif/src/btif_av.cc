@@ -3282,16 +3282,19 @@ uint8_t btif_av_get_peer_sep(void) {
 }
 
 void btif_av_clear_remote_suspend_flag(void) {
-  BtifAvPeer* peer = btif_av_find_active_peer();
-  if (peer == nullptr) {
-    BTIF_TRACE_WARNING("%s: No active peer found", __func__);
-    return;
-  }
-
-  BTIF_TRACE_DEBUG("%s: Peer %s : flags=%s are cleared", __func__,
-                   peer->PeerAddress().ToString().c_str(),
-                   peer->FlagsToString().c_str());
-  peer->ClearFlags(BtifAvPeer::kFlagRemoteSuspend);
+  auto clear_remote_suspend_flag = []() {
+    BtifAvPeer* peer = btif_av_find_active_peer();
+    if (peer == nullptr) {
+      BTIF_TRACE_WARNING("%s: No active peer found", __func__);
+      return;
+    }
+    BTIF_TRACE_DEBUG("%s: Peer %s : flags=%s are cleared", __func__,
+                     peer->PeerAddress().ToString().c_str(),
+                     peer->FlagsToString().c_str());
+    peer->ClearFlags(BtifAvPeer::kFlagRemoteSuspend);
+  };
+  // switch to main thread to prevent a race condition of accessing peers
+  do_in_main_thread(FROM_HERE, base::Bind(clear_remote_suspend_flag));
 }
 
 bool btif_av_is_peer_edr(const RawAddress& peer_address) {

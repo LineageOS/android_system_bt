@@ -127,6 +127,7 @@ class A2dpTransport
   void StopRequest() override {
     if (btif_av_get_peer_sep() == AVDT_TSEP_SNK &&
         !btif_av_stream_started_ready()) {
+      btif_av_clear_remote_suspend_flag();
       return;
     }
     LOG(INFO) << __func__ << ": handling";
