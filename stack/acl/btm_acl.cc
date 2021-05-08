@@ -1117,14 +1117,15 @@ void btm_establish_continue_from_address(const RawAddress& bda,
  ******************************************************************************/
 tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
                                  uint16_t* p_timeout) {
-  tACL_CONN* p = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
-  if (p != (tACL_CONN*)NULL) {
-    *p_timeout = p->link_super_tout;
-    return (BTM_SUCCESS);
+  CHECK(p_timeout != nullptr);
+  const tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_WARN("Unable to find active acl");
+    return BTM_UNKNOWN_ADDR;
   }
-  LOG_WARN("Unable to find active acl");
-  /* If here, no BD Addr found */
-  return (BTM_UNKNOWN_ADDR);
+  *p_timeout = p_acl->link_super_tout;
+  return BTM_SUCCESS;
 }
 
 /*******************************************************************************
