@@ -39,9 +39,15 @@
 using bluetooth::Uuid;
 using std::vector;
 
+namespace {
+
 #ifndef BTA_HH_LE_RECONN
-#define BTA_HH_LE_RECONN TRUE
+constexpr bool kBTA_HH_LE_RECONN = true;
+#else
+constexpr bool kBTA_HH_LE_RECONN = false;
 #endif
+
+}  // namespace
 
 #define BTA_HH_APP_ID_LE 0xff
 
@@ -620,11 +626,9 @@ static void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
     bta_hh_le_register_input_notif(p_cb, p_cb->mode, true);
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
 
-#if (BTA_HH_LE_RECONN == TRUE)
-    if (p_cb->status == BTA_HH_OK) {
+    if (kBTA_HH_LE_RECONN && p_cb->status == BTA_HH_OK) {
       bta_hh_le_add_dev_bg_conn(p_cb, true);
     }
-#endif
   }
 }
 
@@ -1620,15 +1624,10 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   /* if no connection is active and HH disable is signaled, disable service */
   if (bta_hh_cb.cnt_num == 0 && bta_hh_cb.w4_disable) {
     bta_hh_disc_cmpl();
-  } else {
-#if (BTA_HH_LE_RECONN == TRUE)
-    if (p_data->le_close.reason == HCI_ERR_CONNECTION_TOUT) {
-      bta_hh_le_add_dev_bg_conn(p_cb, false);
-    }
-#endif
+  } else if (kBTA_HH_LE_RECONN &&
+             p_data->le_close.reason == HCI_ERR_CONNECTION_TOUT) {
+    bta_hh_le_add_dev_bg_conn(p_cb, false);
   }
-
-  return;
 }
 
 /*******************************************************************************
