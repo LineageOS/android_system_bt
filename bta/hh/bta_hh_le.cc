@@ -206,21 +206,6 @@ bool bta_hh_le_is_hh_gatt_if(tGATT_IF client_if) {
  ******************************************************************************/
 void bta_hh_le_deregister(void) { BTA_GATTC_AppDeregister(bta_hh_cb.gatt_if); }
 
-/*******************************************************************************
- *
- * Function         bta_hh_is_le_device
- *
- * Description      Check to see if the remote device is a LE only device
- *
- * Parameters:
- *
- ******************************************************************************/
-bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
-  p_cb->is_le_device = BTM_UseLeLink(remote_bda);
-
-  return p_cb->is_le_device;
-}
-
 /******************************************************************************
  *
  * Function         bta_hh_le_get_le_cb
