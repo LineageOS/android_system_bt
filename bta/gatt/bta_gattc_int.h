@@ -135,7 +135,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR_RIGID hdr;
-  uint8_t op_code;
+  tGATTC_OPTYPE op_code;
   tGATT_STATUS status;
   tGATT_CL_COMPLETE* p_cmpl;
 } tBTA_GATTC_OP_CMPL;
