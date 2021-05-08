@@ -2505,7 +2505,8 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
             PRIVATE_ADDRESS(bda));
       } else {
         if (!bluetooth::shim::ACL_AcceptLeConnectionFrom(
-                convert_to_address_with_type(bda, btm_find_dev(bda)))) {
+                convert_to_address_with_type(bda, btm_find_dev(bda)),
+                /* is_direct */ false)) {
           LOG_ERROR("Unable to add to acceptlist as it is full:%s",
                     PRIVATE_ADDRESS(bda));
         }

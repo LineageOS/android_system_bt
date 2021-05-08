@@ -32,6 +32,12 @@ namespace acl_manager {
 
 using common::BindOnce;
 
+constexpr uint16_t kScanIntervalFast = 0x0060;
+constexpr uint16_t kScanWindowFast = 0x0030;
+constexpr uint16_t kScanIntervalSlow = 0x0800;
+constexpr uint16_t kScanWindowSlow = 0x0030;
+constexpr std::chrono::milliseconds kCreateConnectionTimeoutMs = std::chrono::milliseconds(30 * 1000);
+
 struct le_acl_connection {
   le_acl_connection(AddressWithType remote_address, AclConnection::QueueDownEnd* queue_down_end, os::Handler* handler)
       : assembler_(remote_address, queue_down_end, handler), remote_address_(remote_address) {}
@@ -128,6 +134,10 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       LOG_WARN("No prior connection request for %s", address_with_type.ToString().c_str());
     } else {
       connecting_le_.erase(connecting_addr_with_type);
+    }
+    if (create_connection_timeout_alarms_.find(address_with_type) != create_connection_timeout_alarms_.end()) {
+      create_connection_timeout_alarms_.at(address_with_type).Cancel();
+      create_connection_timeout_alarms_.erase(address_with_type);
     }
   }
 
@@ -398,11 +408,23 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
   }
 
-  void create_le_connection(AddressWithType address_with_type, bool add_to_connect_list) {
+  void create_le_connection(AddressWithType address_with_type, bool add_to_connect_list, bool is_direct) {
     // TODO: Configure default LE connection parameters?
-
     if (add_to_connect_list) {
       add_device_to_connect_list(address_with_type);
+      if (is_direct) {
+        direct_connections_.insert(address_with_type);
+        if (create_connection_timeout_alarms_.find(address_with_type) == create_connection_timeout_alarms_.end()) {
+          create_connection_timeout_alarms_.emplace(
+              std::piecewise_construct,
+              std::forward_as_tuple(address_with_type.GetAddress(), address_with_type.GetAddressType()),
+              std::forward_as_tuple(handler_));
+          create_connection_timeout_alarms_.at(address_with_type)
+              .Schedule(
+                  common::BindOnce(&le_impl::on_create_connection_timeout, common::Unretained(this), address_with_type),
+                  kCreateConnectionTimeoutMs);
+        }
+      }
     }
 
     if (!address_manager_registered) {
@@ -425,8 +447,13 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     }
 
-    uint16_t le_scan_interval = 0x0060;
-    uint16_t le_scan_window = 0x0030;
+    uint16_t le_scan_interval = kScanIntervalSlow;
+    uint16_t le_scan_window = kScanWindowSlow;
+    // If there is any direct connection in the connection list, use the fast parameter
+    if (!direct_connections_.empty()) {
+      le_scan_interval = kScanIntervalFast;
+      le_scan_window = kScanWindowFast;
+    }
     InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_CONNECT_LIST;
     OwnAddressType own_address_type =
         static_cast<OwnAddressType>(le_address_manager_->GetCurrentAddress().GetAddressType());
@@ -474,6 +501,15 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
   }
 
+  void on_create_connection_timeout(AddressWithType address_with_type) {
+    LOG_INFO("on_create_connection_timeout, address: %s", address_with_type.ToString().c_str());
+    if (create_connection_timeout_alarms_.find(address_with_type) != create_connection_timeout_alarms_.end()) {
+      create_connection_timeout_alarms_.at(address_with_type).Cancel();
+      create_connection_timeout_alarms_.erase(address_with_type);
+      cancel_connect(address_with_type);
+    }
+  }
+
   void cancel_connect(AddressWithType address_with_type) {
     // the connection will be canceled by LeAddressManager.OnPause()
     remove_device_from_connect_list(address_with_type);
@@ -487,6 +523,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   void remove_device_from_connect_list(AddressWithType address_with_type) {
     AddressType address_type = address_with_type.GetAddressType();
+    direct_connections_.erase(address_with_type);
     if (!address_manager_registered) {
       le_address_manager_->Register(this);
       address_manager_registered = true;
@@ -620,7 +657,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   void OnResume() override {
     pause_connection = false;
     if (!canceled_connections_.empty()) {
-      create_le_connection(*canceled_connections_.begin(), false);
+      create_le_connection(*canceled_connections_.begin(), false, false);
     }
     canceled_connections_.clear();
     le_address_manager_->AckResume(this);
@@ -659,10 +696,12 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   std::map<uint16_t, le_acl_connection> le_acl_connections_;
   std::set<AddressWithType> connecting_le_;
   std::set<AddressWithType> canceled_connections_;
+  std::set<AddressWithType> direct_connections_;
   bool address_manager_registered = false;
   bool ready_to_unregister = false;
   bool pause_connection = false;
   bool crash_on_unknown_handle_ = false;
+  std::map<AddressWithType, os::Alarm> create_connection_timeout_alarms_;
 };
 
 }  // namespace acl_manager
