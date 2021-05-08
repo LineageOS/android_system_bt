@@ -222,7 +222,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
           break;
         case BTA_HH_API_WRITE_DEV_EVT:
           cback_event = (p_data->api_sndcmd.t_type - BTA_HH_FST_BTE_TRANS_EVT) +
-                        BTA_HH_FST_TRANS_CB_EVT;
+                        BTA_HH_GET_RPT_EVT;
           osi_free_and_reset((void**)&p_data->api_sndcmd.p_data);
           if (p_data->api_sndcmd.t_type == HID_TRANS_SET_PROTOCOL ||
               p_data->api_sndcmd.t_type == HID_TRANS_SET_REPORT ||

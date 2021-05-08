@@ -1015,7 +1015,7 @@ static uint8_t convert_api_sndcmd_param(const tBTA_HH_CMD_DATA& api_sndcmd) {
 void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   tBTA_HH_CBDATA cbdata = {BTA_HH_OK, 0};
   uint16_t event = (p_data->api_sndcmd.t_type - BTA_HH_FST_BTE_TRANS_EVT) +
-                   BTA_HH_FST_TRANS_CB_EVT;
+                   BTA_HH_GET_RPT_EVT;
 
   if (p_cb->is_le_device)
     bta_hh_le_write_dev_act(p_cb, p_data);
