@@ -937,17 +937,15 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
                                     UNUSED_ATTR tBT_TRANSPORT transport,
                                     UNUSED_ATTR void* p_ref_data,
                                     tBTM_STATUS result) {
-  uint8_t idx = bta_hh_find_cb(*bd_addr);
-  tBTA_HH_DEV_CB* p_dev_cb;
-
-  if (idx != BTA_HH_IDX_INVALID)
-    p_dev_cb = &bta_hh_cb.kdev[idx];
-  else {
-    APPL_TRACE_ERROR("unexpected encryption callback, ignore");
+  tBTA_HH_DEV_CB* p_dev_cb = bta_hh_get_cb(*bd_addr);
+  if (p_dev_cb == nullptr) {
+    LOG_ERROR("unexpected encryption callback, ignore");
     return;
   }
+
+  // TODO Collapse the duplicated status values
   p_dev_cb->status = (result == BTM_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR_SEC;
-  p_dev_cb->reason = result;
+  p_dev_cb->btm_status = result;
 
   bta_hh_sm_execute(p_dev_cb, BTA_HH_ENC_CMPL_EVT, NULL);
 }
@@ -992,9 +990,11 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
       bta_hh_le_pri_service_discovery(p_cb);
     }
   } else {
-    APPL_TRACE_ERROR("%s() - encryption failed; status=0x%04x, reason=0x%04x",
-                     __func__, p_cb->status, p_cb->reason);
-    if (!(p_cb->status == BTA_HH_ERR_SEC && p_cb->reason == BTM_ERR_PROCESSING))
+    LOG_ERROR("Encryption failed status:%s btm_status:%s",
+              bta_hh_status_text(p_cb->status).c_str(),
+              btm_status_text(p_cb->btm_status).c_str());
+    if (!(p_cb->status == BTA_HH_ERR_SEC &&
+          p_cb->btm_status == BTM_ERR_PROCESSING))
       bta_hh_le_api_disc_act(p_cb);
   }
 }
