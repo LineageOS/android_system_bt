@@ -58,53 +58,37 @@ inline tBTM_STATUS to_btm_status(const uint8_t& value) {
   return static_cast<tBTM_STATUS>(value);
 }
 
+#define CASE_RETURN_TEXT(code) \
+  case code:                   \
+    return #code
+
 inline std::string btm_status_text(const tBTM_STATUS& status) {
   switch (status) {
-    case BTM_SUCCESS:
-      return std::string("success");
-    case BTM_CMD_STARTED:
-      return std::string("command_started");
-    case BTM_BUSY:
-      return std::string("busy");
-    case BTM_NO_RESOURCES:
-      return std::string("no_resources");
-    case BTM_MODE_UNSUPPORTED:
-      return std::string("unsupported_mode");
-    case BTM_ILLEGAL_VALUE:
-      return std::string("illegal_value");
-    case BTM_WRONG_MODE:
-      return std::string("wrong_mode");
-    case BTM_UNKNOWN_ADDR:
-      return std::string("unknown_address");
-    case BTM_DEVICE_TIMEOUT:
-      return std::string("device_timeout");
-    case BTM_BAD_VALUE_RET:
-      return std::string("bad_hci_value");
-    case BTM_ERR_PROCESSING:
-      return std::string("processing_error");
-    case BTM_NOT_AUTHORIZED:
-      return std::string("unauthorized");
-    case BTM_DEV_RESET:
-      return std::string("device_reset");
-    case BTM_CMD_STORED:
-      return std::string("command_stored");
-    case BTM_ILLEGAL_ACTION:
-      return std::string("illegal_action");
-    case BTM_DELAY_CHECK:
-      return std::string("delay_check");
-    case BTM_SCO_BAD_LENGTH:
-      return std::string("sco_bad_length");
-    case BTM_SUCCESS_NO_SECURITY:
-      return std::string("success_no_security");
-    case BTM_FAILED_ON_SECURITY:
-      return std::string("failed_security");
-    case BTM_REPEATED_ATTEMPTS:
-      return std::string("repeated_attempts");
-    case BTM_MODE4_LEVEL4_NOT_SUPPORTED:
-      return std::string("level4_security_unsupported");
-    case BTM_DEV_RESTRICT_LISTED:
-      return std::string("restrict_listed");
+    CASE_RETURN_TEXT(BTM_SUCCESS);
+    CASE_RETURN_TEXT(BTM_CMD_STARTED);
+    CASE_RETURN_TEXT(BTM_BUSY);
+    CASE_RETURN_TEXT(BTM_NO_RESOURCES);
+    CASE_RETURN_TEXT(BTM_MODE_UNSUPPORTED);
+    CASE_RETURN_TEXT(BTM_ILLEGAL_VALUE);
+    CASE_RETURN_TEXT(BTM_WRONG_MODE);
+    CASE_RETURN_TEXT(BTM_UNKNOWN_ADDR);
+    CASE_RETURN_TEXT(BTM_DEVICE_TIMEOUT);
+    CASE_RETURN_TEXT(BTM_BAD_VALUE_RET);
+    CASE_RETURN_TEXT(BTM_ERR_PROCESSING);
+    CASE_RETURN_TEXT(BTM_NOT_AUTHORIZED);
+    CASE_RETURN_TEXT(BTM_DEV_RESET);
+    CASE_RETURN_TEXT(BTM_CMD_STORED);
+    CASE_RETURN_TEXT(BTM_ILLEGAL_ACTION);
+    CASE_RETURN_TEXT(BTM_DELAY_CHECK);
+    CASE_RETURN_TEXT(BTM_SCO_BAD_LENGTH);
+    CASE_RETURN_TEXT(BTM_SUCCESS_NO_SECURITY);
+    CASE_RETURN_TEXT(BTM_FAILED_ON_SECURITY);
+    CASE_RETURN_TEXT(BTM_REPEATED_ATTEMPTS);
+    CASE_RETURN_TEXT(BTM_MODE4_LEVEL4_NOT_SUPPORTED);
+    CASE_RETURN_TEXT(BTM_DEV_RESTRICT_LISTED);
     default:
-      return base::StringPrintf("UNKNOWN[%u]", status);
+      return std::string("UNKNOWN[%hhu]", status);
   }
 }
+
+#undef CASE_RETURN_TEXT
