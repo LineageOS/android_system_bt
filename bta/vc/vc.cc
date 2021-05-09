@@ -344,7 +344,8 @@ class VolumeControlImpl : public VolumeControl {
   }
 
   void OnGattDisconnected(uint16_t connection_id, tGATT_IF /*client_if*/,
-                          RawAddress remote_bda, tBTA_GATT_REASON /*reason*/) {
+                          RawAddress remote_bda,
+                          tGATT_DISCONN_REASON /*reason*/) {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {

@@ -130,9 +130,7 @@ typedef struct {
 typedef struct {
   BT_HDR_RIGID hdr;
   uint16_t conn_id;
-  tBTA_GATT_REASON reason; /* disconnect reason code, not useful when connect
-                              event is reported */
-
+  tGATT_DISCONN_REASON reason;
 } tBTA_HH_LE_CLOSE;
 
 typedef struct {
