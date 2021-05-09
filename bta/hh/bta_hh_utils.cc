@@ -99,6 +99,14 @@ uint8_t bta_hh_find_cb(const RawAddress& bda) {
   return xx;
 }
 
+tBTA_HH_DEV_CB* bta_hh_get_cb(const RawAddress& bda) {
+  uint8_t idx = bta_hh_find_cb(bda);
+  if (idx == BTA_HH_IDX_INVALID) {
+    return nullptr;
+  }
+  return &bta_hh_cb.kdev[idx];
+}
+
 /*******************************************************************************
  *
  * Function         bta_hh_clean_up_kdev
