@@ -39,9 +39,15 @@
 using bluetooth::Uuid;
 using std::vector;
 
+namespace {
+
 #ifndef BTA_HH_LE_RECONN
-#define BTA_HH_LE_RECONN TRUE
+constexpr bool kBTA_HH_LE_RECONN = true;
+#else
+constexpr bool kBTA_HH_LE_RECONN = false;
 #endif
+
+}  // namespace
 
 #define BTA_HH_APP_ID_LE 0xff
 
@@ -205,21 +211,6 @@ bool bta_hh_le_is_hh_gatt_if(tGATT_IF client_if) {
  *
  ******************************************************************************/
 void bta_hh_le_deregister(void) { BTA_GATTC_AppDeregister(bta_hh_cb.gatt_if); }
-
-/*******************************************************************************
- *
- * Function         bta_hh_is_le_device
- *
- * Description      Check to see if the remote device is a LE only device
- *
- * Parameters:
- *
- ******************************************************************************/
-bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda) {
-  p_cb->is_le_device = BTM_UseLeLink(remote_bda);
-
-  return p_cb->is_le_device;
-}
 
 /******************************************************************************
  *
@@ -635,11 +626,9 @@ static void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
     bta_hh_le_register_input_notif(p_cb, p_cb->mode, true);
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
 
-#if (BTA_HH_LE_RECONN == TRUE)
-    if (p_cb->status == BTA_HH_OK) {
+    if (kBTA_HH_LE_RECONN && p_cb->status == BTA_HH_OK) {
       bta_hh_le_add_dev_bg_conn(p_cb, true);
     }
-#endif
   }
 }
 
@@ -948,17 +937,15 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
                                     UNUSED_ATTR tBT_TRANSPORT transport,
                                     UNUSED_ATTR void* p_ref_data,
                                     tBTM_STATUS result) {
-  uint8_t idx = bta_hh_find_cb(*bd_addr);
-  tBTA_HH_DEV_CB* p_dev_cb;
-
-  if (idx != BTA_HH_IDX_INVALID)
-    p_dev_cb = &bta_hh_cb.kdev[idx];
-  else {
-    APPL_TRACE_ERROR("unexpected encryption callback, ignore");
+  tBTA_HH_DEV_CB* p_dev_cb = bta_hh_get_cb(*bd_addr);
+  if (p_dev_cb == nullptr) {
+    LOG_ERROR("unexpected encryption callback, ignore");
     return;
   }
+
+  // TODO Collapse the duplicated status values
   p_dev_cb->status = (result == BTM_SUCCESS) ? BTA_HH_OK : BTA_HH_ERR_SEC;
-  p_dev_cb->reason = result;
+  p_dev_cb->btm_status = result;
 
   bta_hh_sm_execute(p_dev_cb, BTA_HH_ENC_CMPL_EVT, NULL);
 }
@@ -1003,9 +990,11 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
       bta_hh_le_pri_service_discovery(p_cb);
     }
   } else {
-    APPL_TRACE_ERROR("%s() - encryption failed; status=0x%04x, reason=0x%04x",
-                     __func__, p_cb->status, p_cb->reason);
-    if (!(p_cb->status == BTA_HH_ERR_SEC && p_cb->reason == BTM_ERR_PROCESSING))
+    LOG_ERROR("Encryption failed status:%s btm_status:%s",
+              bta_hh_status_text(p_cb->status).c_str(),
+              btm_status_text(p_cb->btm_status).c_str());
+    if (!(p_cb->status == BTA_HH_ERR_SEC &&
+          p_cb->btm_status == BTM_ERR_PROCESSING))
       bta_hh_le_api_disc_act(p_cb);
   }
 }
@@ -1618,7 +1607,6 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  tBTA_HH_CBDATA disc_dat = {BTA_HH_OK, 0};
 
   /* deregister all notification */
   bta_hh_le_deregister_input_notif(p_cb);
@@ -1627,23 +1615,19 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   /* update total conn number */
   bta_hh_cb.cnt_num--;
 
-  disc_dat.handle = p_cb->hid_handle;
-  disc_dat.status = p_cb->status;
-
+  tBTA_HH_CBDATA disc_dat = {
+      .status = p_cb->status,
+      .handle = p_cb->hid_handle,
+  };
   (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, (tBTA_HH*)&disc_dat);
 
   /* if no connection is active and HH disable is signaled, disable service */
   if (bta_hh_cb.cnt_num == 0 && bta_hh_cb.w4_disable) {
     bta_hh_disc_cmpl();
-  } else {
-#if (BTA_HH_LE_RECONN == TRUE)
-    if (p_data->le_close.reason == HCI_ERR_CONNECTION_TOUT) {
-      bta_hh_le_add_dev_bg_conn(p_cb, false);
-    }
-#endif
+  } else if (kBTA_HH_LE_RECONN &&
+             p_data->le_close.reason == HCI_ERR_CONNECTION_TOUT) {
+    bta_hh_le_add_dev_bg_conn(p_cb, false);
   }
-
-  return;
 }
 
 /*******************************************************************************
