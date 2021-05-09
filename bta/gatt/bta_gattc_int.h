@@ -133,13 +133,11 @@ typedef struct {
   uint16_t cid;
 } tBTA_GATTC_API_CONFIRM;
 
-typedef tGATT_CL_COMPLETE tBTA_GATTC_CMPL;
-
 typedef struct {
   BT_HDR_RIGID hdr;
   uint8_t op_code;
   tGATT_STATUS status;
-  tBTA_GATTC_CMPL* p_cmpl;
+  tGATT_CL_COMPLETE* p_cmpl;
 } tBTA_GATTC_OP_CMPL;
 
 typedef struct {

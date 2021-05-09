@@ -130,9 +130,7 @@ typedef struct {
 typedef struct {
   BT_HDR_RIGID hdr;
   uint16_t conn_id;
-  tBTA_GATT_REASON reason; /* disconnect reason code, not useful when connect
-                              event is reported */
-
+  tGATT_DISCONN_REASON reason;
 } tBTA_HH_LE_CLOSE;
 
 typedef struct {
@@ -226,7 +224,7 @@ typedef struct {
 
   uint8_t disc_active;
   tBTA_HH_STATUS status;
-  tBTA_GATT_REASON reason;
+  tBTM_STATUS btm_status;
   bool is_le_device;
   tBTA_HH_LE_HID_SRVC hid_srvc;
   uint16_t conn_id;
@@ -310,6 +308,7 @@ extern void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb,
 
 /* utility functions */
 extern uint8_t bta_hh_find_cb(const RawAddress& bda);
+extern tBTA_HH_DEV_CB* bta_hh_get_cb(const RawAddress& bda);
 extern void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT* p_kb_data,
                                    uint8_t* p_report, uint16_t report_len);
 extern void bta_hh_parse_mice_rpt(tBTA_HH_BOOT_RPT* p_kb_data,
@@ -342,8 +341,6 @@ extern tBTA_HH_STATUS bta_hh_read_ssr_param(const RawAddress& bd_addr,
 extern void bta_hh_le_enable(void);
 extern bool bta_hh_le_is_hh_gatt_if(tGATT_IF client_if);
 extern void bta_hh_le_deregister(void);
-extern bool bta_hh_is_le_device(tBTA_HH_DEV_CB* p_cb,
-                                const RawAddress& remote_bda);
 extern void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb,
                                 const RawAddress& remote_bda);
 extern void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb);
