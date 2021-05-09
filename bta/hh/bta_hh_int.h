@@ -310,6 +310,7 @@ extern void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb,
 
 /* utility functions */
 extern uint8_t bta_hh_find_cb(const RawAddress& bda);
+extern tBTA_HH_DEV_CB* bta_hh_get_cb(const RawAddress& bda);
 extern void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT* p_kb_data,
                                    uint8_t* p_report, uint16_t report_len);
 extern void bta_hh_parse_mice_rpt(tBTA_HH_BOOT_RPT* p_kb_data,
