@@ -877,7 +877,8 @@ void bta_gattc_confirm(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 }
 
 /** read complete */
-void bta_gattc_read_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_OP_CMPL* p_data) {
+static void bta_gattc_read_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                tBTA_GATTC_OP_CMPL* p_data) {
   GATT_READ_OP_CB cb = p_clcb->p_q_cmd->api_read.read_cb;
   void* my_cb_data = p_clcb->p_q_cmd->api_read.read_cb_data;
 
@@ -897,7 +898,8 @@ void bta_gattc_read_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_OP_CMPL* p_data) {
 }
 
 /** write complete */
-void bta_gattc_write_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_OP_CMPL* p_data) {
+static void bta_gattc_write_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                 tBTA_GATTC_OP_CMPL* p_data) {
   GATT_WRITE_OP_CB cb = p_clcb->p_q_cmd->api_write.write_cb;
   void* my_cb_data = p_clcb->p_q_cmd->api_write.write_cb_data;
 
@@ -910,7 +912,8 @@ void bta_gattc_write_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_OP_CMPL* p_data) {
 }
 
 /** execute write complete */
-void bta_gattc_exec_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_OP_CMPL* p_data) {
+static void bta_gattc_exec_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                tBTA_GATTC_OP_CMPL* p_data) {
   tBTA_GATTC cb_data;
 
   osi_free_and_reset((void**)&p_clcb->p_q_cmd);
@@ -924,8 +927,8 @@ void bta_gattc_exec_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_OP_CMPL* p_data) {
 }
 
 /** configure MTU operation complete */
-void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb,
-                            tBTA_GATTC_OP_CMPL* p_data) {
+static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb,
+                                   tBTA_GATTC_OP_CMPL* p_data) {
   GATT_CONFIGURE_MTU_OP_CB cb = p_clcb->p_q_cmd->api_mtu.mtu_cb;
   void* my_cb_data = p_clcb->p_q_cmd->api_mtu.mtu_cb_data;
   tBTA_GATTC cb_data;
