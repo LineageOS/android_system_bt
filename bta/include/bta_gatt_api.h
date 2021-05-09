@@ -183,8 +183,7 @@ typedef struct {
   tGATT_STATUS status;
   tGATT_IF client_if;
   RawAddress remote_bda;
-  tBTA_GATT_REASON reason; /* disconnect reason code, not useful when connect
-                              event is reported */
+  tGATT_DISCONN_REASON reason;
 } tBTA_GATTC_CLOSE;
 
 typedef struct {
