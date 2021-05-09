@@ -1607,7 +1607,6 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
-  tBTA_HH_CBDATA disc_dat = {BTA_HH_OK, 0};
 
   /* deregister all notification */
   bta_hh_le_deregister_input_notif(p_cb);
@@ -1616,9 +1615,10 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   /* update total conn number */
   bta_hh_cb.cnt_num--;
 
-  disc_dat.handle = p_cb->hid_handle;
-  disc_dat.status = p_cb->status;
-
+  tBTA_HH_CBDATA disc_dat = {
+      .status = p_cb->status,
+      .handle = p_cb->hid_handle,
+  };
   (*bta_hh_cb.p_cback)(BTA_HH_CLOSE_EVT, (tBTA_HH*)&disc_dat);
 
   /* if no connection is active and HH disable is signaled, disable service */
