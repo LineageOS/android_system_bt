@@ -119,8 +119,6 @@ typedef struct {
   uint8_t* p_value;
 } tBTA_GATT_UNFMT;
 
-typedef uint16_t tBTA_GATT_REASON;
-
 #define BTA_GATTC_MULTI_MAX GATT_MAX_READ_MULTI_HANDLES
 
 typedef struct {
