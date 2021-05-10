@@ -119,11 +119,9 @@ typedef struct {
   uint8_t* p_value;
 } tBTA_GATT_UNFMT;
 
-#define BTA_GATTC_MULTI_MAX GATT_MAX_READ_MULTI_HANDLES
-
 typedef struct {
   uint8_t num_attr;
-  uint16_t handles[BTA_GATTC_MULTI_MAX];
+  uint16_t handles[GATT_MAX_READ_MULTI_HANDLES];
 } tBTA_GATTC_MULTI;
 
 /* callback data structure */
