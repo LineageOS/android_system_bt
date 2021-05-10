@@ -342,7 +342,7 @@ struct tGATT_CLCB {
   uint16_t counter; /* used as offset, attribute length, num of prepare write */
   uint16_t start_offset;
   tGATT_AUTH_REQ auth_req; /* authentication requirement */
-  uint8_t operation;       /* one logic channel can have one operation active */
+  tGATTC_OPTYPE operation; /* one logic channel can have one operation active */
   uint8_t op_subtype;      /* operation subtype */
   tGATT_STATUS status;     /* operation status */
   bool first_read_blob_after_read;

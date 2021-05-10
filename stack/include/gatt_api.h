@@ -576,15 +576,16 @@ typedef union {
 
 /* GATT client operation type, used in client callback function
 */
-#define GATTC_OPTYPE_NONE 0
-#define GATTC_OPTYPE_DISCOVERY 1
-#define GATTC_OPTYPE_READ 2
-#define GATTC_OPTYPE_WRITE 3
-#define GATTC_OPTYPE_EXE_WRITE 4
-#define GATTC_OPTYPE_CONFIG 5
-#define GATTC_OPTYPE_NOTIFICATION 6
-#define GATTC_OPTYPE_INDICATION 7
-typedef uint8_t tGATTC_OPTYPE;
+typedef enum : uint8_t {
+  GATTC_OPTYPE_NONE = 0,
+  GATTC_OPTYPE_DISCOVERY = 1,
+  GATTC_OPTYPE_READ = 2,
+  GATTC_OPTYPE_WRITE = 3,
+  GATTC_OPTYPE_EXE_WRITE = 4,
+  GATTC_OPTYPE_CONFIG = 5,
+  GATTC_OPTYPE_NOTIFICATION = 6,
+  GATTC_OPTYPE_INDICATION = 7,
+} tGATTC_OPTYPE;
 
 /* characteristic declaration
 */
