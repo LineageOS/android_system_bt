@@ -1480,7 +1480,7 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
   tGATT_CL_COMPLETE cb_data;
   tGATT_CMPL_CBACK* p_cmpl_cb =
       (p_clcb->p_reg) ? p_clcb->p_reg->app_cb.p_cmpl_cb : NULL;
-  uint8_t op = p_clcb->operation;
+  tGATTC_OPTYPE op = p_clcb->operation;
   tGATT_DISC_TYPE disc_type = GATT_DISC_MAX;
   tGATT_DISC_CMPL_CB* p_disc_cmpl_cb =
       (p_clcb->p_reg) ? p_clcb->p_reg->app_cb.p_disc_cmpl_cb : NULL;
