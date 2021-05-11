@@ -90,38 +90,37 @@ static void acceptlist_command_complete(tHCI_STATUS status, const char* msg) {
 }
 
 static void acceptlist_add_command_complete(uint8_t* p_data, uint16_t evt_len) {
-  if (evt_len > sizeof(uint8_t)) {
-    uint8_t status;
-    STREAM_TO_UINT8(status, p_data);
-    acceptlist_command_complete(static_cast<tHCI_STATUS>(status),
-                                kAcceptlistAdd);
-  } else {
+  if (evt_len < sizeof(uint8_t)) {
     LOG_ERROR("Received bogus acceptlist add complete length:%hu", evt_len);
+    return;
   }
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_data);
+  acceptlist_command_complete(static_cast<tHCI_STATUS>(status), kAcceptlistAdd);
 }
 
 static void acceptlist_remove_command_complete(uint8_t* p_data,
                                                uint16_t evt_len) {
-  if (evt_len > sizeof(uint8_t)) {
-    uint8_t status;
-    STREAM_TO_UINT8(status, p_data);
-    acceptlist_command_complete(static_cast<tHCI_STATUS>(status),
-                                kAcceptlistRemove);
-  } else {
+  if (evt_len < sizeof(uint8_t)) {
     LOG_ERROR("Received bogus acceptlist remove complete length:%hu", evt_len);
+    return;
   }
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_data);
+  acceptlist_command_complete(static_cast<tHCI_STATUS>(status),
+                              kAcceptlistRemove);
 }
 
 static void acceptlist_clear_command_complete(uint8_t* p_data,
                                               uint16_t evt_len) {
-  if (evt_len > sizeof(uint8_t)) {
-    uint8_t status;
-    STREAM_TO_UINT8(status, p_data);
-    acceptlist_command_complete(static_cast<tHCI_STATUS>(status),
-                                kAcceptlistClear);
-  } else {
+  if (evt_len < sizeof(uint8_t)) {
     LOG_ERROR("Received bogus acceptlist remove complete length:%hu", evt_len);
+    return;
   }
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_data);
+  acceptlist_command_complete(static_cast<tHCI_STATUS>(status),
+                              kAcceptlistClear);
 }
 
 /** This function is to stop auto connection procedure */
