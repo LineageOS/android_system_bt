@@ -486,7 +486,7 @@ void BTA_AvClose(tBTA_AV_HNDL handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvDisconnect(const RawAddress& bd_addr);
+void BTA_AvDisconnect(tBTA_AV_HNDL handle);
 
 /*******************************************************************************
  *

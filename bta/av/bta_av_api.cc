@@ -193,14 +193,14 @@ void BTA_AvClose(tBTA_AV_HNDL handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvDisconnect(const RawAddress& bd_addr) {
-  LOG_INFO("%s: peer %s", __func__, bd_addr.ToString().c_str());
+void BTA_AvDisconnect(tBTA_AV_HNDL handle) {
+  LOG_INFO("%s: bta_handle=0x%x", __func__, handle);
 
   tBTA_AV_API_DISCNT* p_buf =
       (tBTA_AV_API_DISCNT*)osi_malloc(sizeof(tBTA_AV_API_DISCNT));
 
   p_buf->hdr.event = BTA_AV_API_DISCONNECT_EVT;
-  p_buf->bd_addr = bd_addr;
+  p_buf->hdr.layer_specific = handle;
 
   bta_sys_sendmsg(p_buf);
 }
