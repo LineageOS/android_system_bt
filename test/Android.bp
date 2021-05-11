@@ -200,3 +200,10 @@ filegroup {
       "mock/mock_main_bte*.cc",
   ],
 }
+
+filegroup {
+  name: "TestMockStackCryptotoolbox",
+  srcs: [
+      "mock/mock_stack_crypto_toolbox*.cc",
+  ],
+}
