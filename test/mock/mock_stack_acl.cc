@@ -450,3 +450,7 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
 void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status) {
   mock_function_count_map[__func__]++;
 }
+void acl_add_to_ignore_auto_connect_after_disconnect(
+    const RawAddress& bd_addr) {
+  mock_function_count_map[__func__]++;
+}
