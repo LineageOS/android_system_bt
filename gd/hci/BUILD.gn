@@ -35,7 +35,10 @@ source_set("BluetoothHciSources") {
 
   include_dirs = [ "//bt/gd" ]
 
-  deps = [ "//bt/gd:gd_default_deps" ]
+  deps = [
+    "//bt:libbt-platform-protos-lite",
+    "//bt/gd:gd_default_deps",
+  ]
 
   configs += [ "//bt:target_defaults" ]
 }
