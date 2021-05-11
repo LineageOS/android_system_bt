@@ -921,51 +921,53 @@ AvdtpScb* avdt_scb_by_hdl(uint8_t hdl) {
  ******************************************************************************/
 uint8_t avdt_scb_verify(AvdtpCcb* p_ccb, uint8_t state, uint8_t* p_seid,
                         uint16_t num_seid, uint8_t* p_err_code) {
-  int i;
-  AvdtpScb* p_scb;
-  uint8_t nsc_mask;
-  uint8_t ret = 0;
-
   AVDT_TRACE_DEBUG("avdt_scb_verify state %d", state);
   /* set nonsupported command mask */
   /* translate public state into private state */
-  nsc_mask = 0;
+  uint8_t nsc_mask = 0;
   if (state == AVDT_VERIFY_SUSPEND) {
     nsc_mask = AvdtpStreamConfig::AVDT_NSC_SUSPEND;
   }
 
   /* verify every scb */
-  for (i = 0, *p_err_code = 0;
-       (i < num_seid) && (*p_err_code == 0) && (i < AVDT_NUM_SEPS); i++) {
-    p_scb = avdt_scb_by_hdl(p_seid[i]);
-    if (p_scb == NULL)
+  for (int i = 0, *p_err_code = 0; (i < num_seid) && (i < AVDT_NUM_SEPS); i++) {
+    AvdtpScb* p_scb = avdt_scb_by_hdl(p_seid[i]);
+    if (p_scb == NULL) {
       *p_err_code = AVDT_ERR_BAD_STATE;
-    else if (p_scb->p_ccb != p_ccb)
+      return p_seid[i];
+    }
+
+    if (p_scb->p_ccb != p_ccb) {
       *p_err_code = AVDT_ERR_BAD_STATE;
-    else if (p_scb->stream_config.nsc_mask & nsc_mask)
+      return p_seid[i];
+    }
+
+    if (p_scb->stream_config.nsc_mask & nsc_mask) {
       *p_err_code = AVDT_ERR_NSC;
+      return p_seid[i];
+    }
 
     switch (state) {
       case AVDT_VERIFY_OPEN:
       case AVDT_VERIFY_START:
         if (p_scb->state != AVDT_SCB_OPEN_ST &&
-            p_scb->state != AVDT_SCB_STREAM_ST)
+            p_scb->state != AVDT_SCB_STREAM_ST) {
           *p_err_code = AVDT_ERR_BAD_STATE;
+          return p_seid[i];
+        }
         break;
 
       case AVDT_VERIFY_SUSPEND:
       case AVDT_VERIFY_STREAMING:
-        if (p_scb->state != AVDT_SCB_STREAM_ST)
+        if (p_scb->state != AVDT_SCB_STREAM_ST) {
           *p_err_code = AVDT_ERR_BAD_STATE;
+          return p_seid[i];
+        }
         break;
     }
   }
 
-  if ((i != num_seid) && (i < AVDT_NUM_SEPS)) {
-    ret = p_seid[i];
-  }
-
-  return ret;
+  return 0;
 }
 
 /*******************************************************************************
