@@ -20,33 +20,33 @@
 #include <gtest/gtest.h>
 #include <map>
 
+#include "btif/include/btif_hh.h"
 #include "hci/include/hci_layer.h"
 #include "hci/include/hci_packet_factory.h"
+#include "hci/include/packet_fragmenter.h"
 #include "internal_include/stack_config.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_client_interface.h"
-#include "types/raw_address.h"
-
+#include "stack/l2cap/l2c_int.h"
 #include "test/mock/mock_hcic_hcicmds.h"
+#include "types/raw_address.h"
 
 namespace mock = test::mock::hcic_hcicmds;
 
 extern tBTM_CB btm_cb;
 
-bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
+uint8_t appl_trace_level = BT_TRACE_LEVEL_VERBOSE;
+btif_hh_cb_t btif_hh_cb;
+tL2C_CB l2cb;
 
 const hci_packet_factory_t* hci_packet_factory_get_interface() {
   return nullptr;
 }
 const hci_t* hci_layer_get_interface() { return nullptr; }
 
-bt_status_t do_in_main_thread(const base::Location& from_here,
-                              base::OnceClosure task) {
-  return BT_STATUS_SUCCESS;
-}
 void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {}
 
 const std::string kSmpOptions("mock smp options");
@@ -59,6 +59,7 @@ bool get_pts_crosskey_sdp_disable(void) { return false; }
 const std::string* get_pts_smp_options(void) { return &kSmpOptions; }
 int get_pts_smp_failure_case(void) { return 123; }
 config_t* get_all(void) { return nullptr; }
+const packet_fragmenter_t* packet_fragmenter_get_interface() { return nullptr; }
 
 stack_config_t mock_stack_config{
     .get_trace_config_enabled = get_trace_config_enabled,
@@ -76,7 +77,7 @@ const stack_config_t* stack_config_get_interface(void) {
 
 std::map<std::string, int> mock_function_count_map;
 
-bool MOCK_bluetooth_shim_is_gd_acl_enabled_;
+extern bool MOCK_bluetooth_shim_is_gd_acl_enabled_;
 
 namespace {
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "module.h"
+#include "gd/module.h"
 
 #include "btif/include/btif_activity_attribution.h"
 #include "main/shim/activity_attribution.h"
