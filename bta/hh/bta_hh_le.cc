@@ -1625,7 +1625,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   if (bta_hh_cb.cnt_num == 0 && bta_hh_cb.w4_disable) {
     bta_hh_disc_cmpl();
   } else if (kBTA_HH_LE_RECONN &&
-             p_data->le_close.reason == HCI_ERR_CONNECTION_TOUT) {
+             p_data->le_close.reason == GATT_CONN_TIMEOUT) {
     bta_hh_le_add_dev_bg_conn(p_cb, false);
   }
 }
