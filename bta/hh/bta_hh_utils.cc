@@ -36,15 +36,6 @@
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-#define BTA_HH_KB_CTRL_MASK 0x11
-#define BTA_HH_KB_SHIFT_MASK 0x22
-#define BTA_HH_KB_ALT_MASK 0x44
-#define BTA_HH_KB_GUI_MASK 0x88
-
-#define BTA_HH_KB_CAPS_LOCK 0x39 /* caps lock */
-#define BTA_HH_KB_NUM_LOCK 0x53  /* num lock */
-
-#define BTA_HH_MAX_RPT_CHARS 8
 
 /*******************************************************************************
  *
