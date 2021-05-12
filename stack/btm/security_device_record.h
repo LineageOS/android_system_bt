@@ -189,7 +189,7 @@ typedef enum : uint8_t {
 } tBTM_SM4_BIT;
 
 inline std::string class_of_device_text(const DEV_CLASS& cod) {
-  return base::StringPrintf("0x%01x%01x%01x", cod[2], cod[1], cod[0]);
+  return base::StringPrintf("0x%02x%02x%02x", cod[2], cod[1], cod[0]);
 }
 
 /*
@@ -424,10 +424,10 @@ struct tBTM_SEC_DEV_REC {
 
   std::string ToString() const {
     return base::StringPrintf(
-        "%s %6s SecureConn:%s cod:%s remote_info:%s sm4:0x%02x name:\"%s\"",
+        "%s %6s cod:%s remote_info:%-14s sm4:0x%02x SecureConn:%c name:\"%s\"",
         PRIVATE_ADDRESS(bd_addr), DeviceTypeText(device_type).c_str(),
-        logbool(remote_supports_secure_connections).c_str(),
         class_of_device_text(dev_class).c_str(),
-        remote_version_info.ToString().c_str(), sm4, sec_bd_name);
+        remote_version_info.ToString().c_str(), sm4,
+        (remote_supports_secure_connections) ? 'T' : 'F', sec_bd_name);
   }
 };
