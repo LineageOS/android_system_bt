@@ -19,6 +19,7 @@
 #include "gd/hci/hci_layer.h"
 #include "gd/hci/le_advertising_manager.h"
 #include "gd/hci/le_scanning_manager.h"
+#include "gd/hci/vendor_specific_event_manager.h"
 #include "gd/neighbor/connectability.h"
 #include "gd/neighbor/discoverability.h"
 #include "gd/neighbor/inquiry.h"
@@ -123,6 +124,12 @@ hci::AclManager* GetAclManager() {
   return Stack::GetInstance()
       ->GetStackManager()
       ->GetInstance<hci::AclManager>();
+}
+
+hci::VendorSpecificEventManager* GetVendorSpecificEventManager() {
+  return Stack::GetInstance()
+      ->GetStackManager()
+      ->GetInstance<hci::VendorSpecificEventManager>();
 }
 
 activity_attribution::ActivityAttribution* GetActivityAttribution() {
