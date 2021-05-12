@@ -23,9 +23,10 @@
  ******************************************************************************/
 #include "bt_target.h"
 
+#include <string>
+
 #include <base/strings/string_number_conversions.h>
 #include <stdio.h>
-#include <string.h>
 #include "bt_common.h"
 #include "device/include/controller.h"
 #include "gatt_api.h"
@@ -986,7 +987,8 @@ void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
  *                  with GATT
  *
  ******************************************************************************/
-tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info, bool eatt_support) {
+tGATT_IF GATT_Register(const Uuid& app_uuid128, std::string name,
+                       tGATT_CBACK* p_cb_info, bool eatt_support) {
   tGATT_REG* p_reg;
   uint8_t i_gatt_if = 0;
   tGATT_IF gatt_if = 0;
@@ -1010,9 +1012,10 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info, bool eat
       p_reg->app_cb = *p_cb_info;
       p_reg->in_use = true;
       p_reg->eatt_support = eatt_support;
-      LOG(INFO) << __func__ << ": Allocated gatt_if=" << +gatt_if
-                << " eatt_support=" << std::boolalpha << eatt_support
-                << std::noboolalpha << " " << app_uuid128;
+      p_reg->name = name;
+      LOG_INFO("Allocated name:%s uuid:%s gatt_if:%hhu eatt_support:%u",
+               name.c_str(), app_uuid128.ToString().c_str(), gatt_if,
+               eatt_support);
       return gatt_if;
     }
   }

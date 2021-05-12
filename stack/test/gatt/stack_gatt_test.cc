@@ -46,6 +46,10 @@ TEST_F(StackGattTest, lifecycle_tGATT_REG) {
     memset(reg0.get(), 0xff, sizeof(tGATT_REG));
     memset(reg1.get(), 0xff, sizeof(tGATT_REG));
     ASSERT_EQ(0, memcmp(reg0.get(), reg1.get(), sizeof(tGATT_REG)));
+
+    memset(reg0.get(), 0x0, sizeof(tGATT_REG));
+    memset(reg1.get(), 0x0, sizeof(tGATT_REG));
+    ASSERT_EQ(0, memcmp(reg0.get(), reg1.get(), sizeof(tGATT_REG)));
   }
 
   {
@@ -57,6 +61,8 @@ TEST_F(StackGattTest, lifecycle_tGATT_REG) {
 
     // Clear the structures
     memset(reg0.get(), 0, sizeof(tGATT_REG));
+    // Restore the complex structure after memset
+    memset(&reg1.name, 0, sizeof(std::string));
     reg1 = {};
     ASSERT_EQ(0, memcmp(reg0.get(), &reg1, actual_sizeof_tGATT_REG()));
   }
