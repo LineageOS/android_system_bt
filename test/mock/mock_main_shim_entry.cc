@@ -57,6 +57,9 @@ hci::Controller* GetController() { return hci::testing::mock_controller_; }
 hci::HciLayer* GetHciLayer() { return nullptr; }
 hci::LeAdvertisingManager* GetAdvertising() { return nullptr; }
 hci::LeScanningManager* GetScanning() { return nullptr; }
+hci::VendorSpecificEventManager* GetVendorSpecificEventManager() {
+  return nullptr;
+}
 l2cap::classic::L2capClassicModule* GetL2capClassicModule() { return nullptr; }
 l2cap::le::L2capLeModule* GetL2capLeModule() { return nullptr; }
 neighbor::ConnectabilityModule* GetConnectability() { return nullptr; }
