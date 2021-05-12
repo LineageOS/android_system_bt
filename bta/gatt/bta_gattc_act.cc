@@ -176,7 +176,8 @@ void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
   for (uint8_t i = 0; i < BTA_GATTC_CL_MAX; i++) {
     if (!bta_gattc_cb.cl_rcb[i].in_use) {
       if ((bta_gattc_cb.cl_rcb[i].client_if = GATT_Register(
-               app_uuid, &bta_gattc_cl_cback, eatt_suppport)) == 0) {
+               app_uuid, "GattClient", &bta_gattc_cl_cback, eatt_suppport)) ==
+          0) {
         LOG(ERROR) << "Register with GATT stack failed.";
         status = GATT_ERROR;
       } else {
