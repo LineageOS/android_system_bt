@@ -205,10 +205,16 @@ void avdt_ccb_hdl_discover_rsp(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_ccb_hdl_getcap_cmd(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
-  AvdtpScb* p_scb;
-
   /* look up scb for seid sent to us */
-  p_scb = avdt_scb_by_hdl(p_data->msg.single.seid);
+  AvdtpScb* p_scb = avdt_scb_by_hdl(p_data->msg.single.seid);
+
+  if (p_scb == nullptr) {
+    /* not ok, send reject */
+    p_data->msg.hdr.err_code = AVDT_ERR_BAD_STATE;
+    p_data->msg.hdr.err_param = p_data->msg.single.seid;
+    avdt_msg_send_rej(p_ccb, AVDT_SIG_START, &p_data->msg);
+    return;
+  }
 
   p_data->msg.svccap.p_cfg = &p_scb->stream_config.cfg;
 
