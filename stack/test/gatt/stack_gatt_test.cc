@@ -14,22 +14,19 @@
  * limitations under the License.
  */
 
-#include "gd/module.h"
+#include <gtest/gtest.h>
+#include <cstdint>
+#include <map>
+#include <string>
 
-#include "btif/include/btif_activity_attribution.h"
-#include "main/shim/activity_attribution.h"
-#include "main/shim/shim.h"
+#include "common/message_loop_thread.h"
 
-ActivityAttributionInterface*
-bluetooth::activity_attribution::get_activity_attribution_instance() {
-  return nullptr;
-}
+std::map<std::string, int> mock_function_count_map;
 
-ActivityAttributionInterface*
-bluetooth::shim::get_activity_attribution_instance() {
-  return nullptr;
-}
+void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {}
 
-const bluetooth::ModuleFactory
-    bluetooth::activity_attribution::ActivityAttribution::Factory =
-        bluetooth::ModuleFactory([]() { return nullptr; });
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
+
+class StackGattTest : public ::testing::Test {};
+
+TEST_F(StackGattTest, nop) {}
