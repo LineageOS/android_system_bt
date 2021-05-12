@@ -180,8 +180,9 @@ bt_status_t btif_gattc_test_command_impl(int command,
       if (params->u1) {
         std::array<uint8_t, Uuid::kNumBytes128> tmp;
         tmp.fill(0xAE);
-        test_cb.gatt_if = GATT_Register(bluetooth::Uuid::From128BitBE(tmp),
-                                        &btif_test_callbacks, false);
+        test_cb.gatt_if =
+            GATT_Register(bluetooth::Uuid::From128BitBE(tmp),
+                          std::string("GattTest"), &btif_test_callbacks, false);
         GATT_StartIf(test_cb.gatt_if);
       } else {
         GATT_Deregister(test_cb.gatt_if);
