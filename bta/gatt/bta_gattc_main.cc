@@ -65,7 +65,7 @@ enum {
 };
 /* type for action functions */
 typedef void (*tBTA_GATTC_ACTION)(tBTA_GATTC_CLCB* p_clcb,
-                                  tBTA_GATTC_DATA* p_data);
+                                  const tBTA_GATTC_DATA* p_data);
 
 /* action function list */
 const tBTA_GATTC_ACTION bta_gattc_action[] = {
@@ -296,7 +296,7 @@ static const char* gattc_state_code(tBTA_GATTC_STATE state_code);
  *
  ******************************************************************************/
 bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
-                          tBTA_GATTC_DATA* p_data) {
+                          const tBTA_GATTC_DATA* p_data) {
   tBTA_GATTC_ST_TBL state_table;
   uint8_t action;
   int i;
@@ -386,8 +386,8 @@ bool bta_gattc_hdl_event(BT_HDR_RIGID* p_msg) {
         p_clcb = bta_gattc_find_clcb_by_conn_id(p_msg->layer_specific);
 
       if (p_clcb != NULL) {
-        rt =
-            bta_gattc_sm_execute(p_clcb, p_msg->event, (tBTA_GATTC_DATA*)p_msg);
+        rt = bta_gattc_sm_execute(p_clcb, p_msg->event,
+                                  (const tBTA_GATTC_DATA*)p_msg);
       } else {
         VLOG(1) << "Ignore unknown conn ID: " << +p_msg->layer_specific;
       }
