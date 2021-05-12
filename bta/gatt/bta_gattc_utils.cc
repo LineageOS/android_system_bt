@@ -322,7 +322,7 @@ tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda) {
  * Returns          success or failure.
  *
  ******************************************************************************/
-bool bta_gattc_enqueue(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
+bool bta_gattc_enqueue(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   if (p_clcb->p_q_cmd == NULL) {
     p_clcb->p_q_cmd = p_data;
     return true;

@@ -61,10 +61,10 @@ static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
                                             tBTA_GATTC_SERV* p_srvc_cb);
 
 static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
-                                        tBTA_GATTC_OP_CMPL* p_data);
+                                        const tBTA_GATTC_OP_CMPL* p_data);
 
 static void bta_gattc_read_ext_prop_desc_cmpl(tBTA_GATTC_CLCB* p_clcb,
-                                              tBTA_GATTC_OP_CMPL* p_data);
+                                              const tBTA_GATTC_OP_CMPL* p_data);
 
 // define the max retry count for DATABASE_OUT_OF_SYNC
 #define BTA_GATTC_DISCOVER_RETRY_COUNT 2
@@ -367,7 +367,7 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
 
 /** operation completed */
 void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb,
-                                        tBTA_GATTC_DATA* p_data) {
+                                        const tBTA_GATTC_DATA* p_data) {
   // Currently, there are two cases needed to be handled.
   // 1. Read ext prop descriptor value after service discovery
   // 2. Read db hash before starting service discovery
@@ -643,7 +643,7 @@ bool bta_gattc_read_db_hash(tBTA_GATTC_CLCB* p_clcb) {
 
 /* handle response of reading database hash */
 static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
-                                        tBTA_GATTC_OP_CMPL* p_data) {
+                                        const tBTA_GATTC_OP_CMPL* p_data) {
   uint8_t op = (uint8_t)p_data->op_code;
   if (op != GATTC_OPTYPE_READ) {
     VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
@@ -680,8 +680,8 @@ static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb,
 }
 
 /* handle response of reading extended properties descriptor */
-static void bta_gattc_read_ext_prop_desc_cmpl(tBTA_GATTC_CLCB* p_clcb,
-                                              tBTA_GATTC_OP_CMPL* p_data) {
+static void bta_gattc_read_ext_prop_desc_cmpl(
+    tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_CMPL* p_data) {
   uint8_t op = (uint8_t)p_data->op_code;
   if (op != GATTC_OPTYPE_READ) {
     VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;

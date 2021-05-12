@@ -1087,7 +1087,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
 
   connection_manager::on_app_deregistered(gatt_if);
 
-  memset(p_reg, 0, sizeof(tGATT_REG));
+  *p_reg = {};
 }
 
 /*******************************************************************************
