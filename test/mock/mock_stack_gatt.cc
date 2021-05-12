@@ -82,8 +82,8 @@ tGATT_HDL_LIST_ELEM& gatt_add_an_item_to_list(uint16_t s_handle) {
   mock_function_count_map[__func__]++;
   return elem;
 }
-tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info,
-                       bool eatt_support) {
+tGATT_IF GATT_Register(const Uuid& app_uuid128, std::string name,
+                       tGATT_CBACK* p_cb_info, bool eatt_support) {
   mock_function_count_map[__func__]++;
   return 0;
 }
