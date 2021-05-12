@@ -548,7 +548,7 @@ inline std::string DeviceTypeText(tBT_DEVICE_TYPE type) {
     case BT_DEVICE_TYPE_BLE:
       return std::string("BLE");
     case BT_DEVICE_TYPE_DUMO:
-      return std::string("BR_EDR and BLE");
+      return std::string("DUAL");
     default:
       return std::string("Unknown");
   }
