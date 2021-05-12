@@ -309,10 +309,6 @@ extern void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb,
 /* utility functions */
 extern uint8_t bta_hh_find_cb(const RawAddress& bda);
 extern tBTA_HH_DEV_CB* bta_hh_get_cb(const RawAddress& bda);
-extern void bta_hh_parse_keybd_rpt(tBTA_HH_BOOT_RPT* p_kb_data,
-                                   uint8_t* p_report, uint16_t report_len);
-extern void bta_hh_parse_mice_rpt(tBTA_HH_BOOT_RPT* p_kb_data,
-                                  uint8_t* p_report, uint16_t report_len);
 extern bool bta_hh_tod_spt(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class);
 extern void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB* p_cb);
 
