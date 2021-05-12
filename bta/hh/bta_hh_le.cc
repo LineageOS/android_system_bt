@@ -29,10 +29,11 @@
 #include "device/include/interop.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "stack/btm/btm_sec.h"
-#include "stack/include/l2c_api.h"
-#include "stack/include/srvc_api.h"
+#include "osi/include/osi.h"         // ARRAY_SIZE
+#include "stack/btm/btm_sec.h"       // BTM_
+#include "stack/include/btu.h"       // post_on_bt_main
+#include "stack/include/l2c_api.h"   // L2CA_
+#include "stack/include/srvc_api.h"  // tDIS_VALUE
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -1130,28 +1131,36 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
  *
  * Function         bta_hh_le_close
  *
- * Description      This function process the GATT close event and post it as a
- *                  BTA HH internal event
- *
- * Parameters:
+ * Description      This function converts the GATT close event and post it as a
+ *                  BTA HH internal event.
  *
  ******************************************************************************/
-static void bta_hh_le_close(tBTA_GATTC_CLOSE* p_data) {
-  tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_bda(p_data->remote_bda);
-  uint16_t sm_event = BTA_HH_GATT_CLOSE_EVT;
-
-  if (p_dev_cb != NULL) {
-    tBTA_HH_LE_CLOSE* p_buf =
-        (tBTA_HH_LE_CLOSE*)osi_malloc(sizeof(tBTA_HH_LE_CLOSE));
-    p_buf->hdr.event = sm_event;
-    p_buf->hdr.layer_specific = (uint16_t)p_dev_cb->hid_handle;
-    p_buf->conn_id = p_data->conn_id;
-    p_buf->reason = p_data->reason;
-
-    p_dev_cb->conn_id = GATT_INVALID_CONN_ID;
-    p_dev_cb->security_pending = false;
-    bta_sys_sendmsg(p_buf);
+static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
+  tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(gattc_data.remote_bda);
+  if (p_cb == nullptr) {
+    LOG_WARN("Received close event with unknown device:%s",
+             PRIVATE_ADDRESS(gattc_data.remote_bda));
+    return;
   }
+  p_cb->conn_id = GATT_INVALID_CONN_ID;
+  p_cb->security_pending = false;
+
+  post_on_bt_main([=]() {
+    const tBTA_HH_DATA data = {
+        .le_close =
+            {
+                .conn_id = gattc_data.conn_id,
+                .reason = gattc_data.reason,
+                .hdr =
+                    {
+                        .event = BTA_HH_GATT_CLOSE_EVT,
+                        .layer_specific =
+                            static_cast<uint16_t>(p_cb->hid_handle),
+                    },
+            },
+    };
+    bta_hh_sm_execute(p_cb, BTA_HH_GATT_CLOSE_EVT, &data);
+  });
 }
 
 /*******************************************************************************
@@ -2024,7 +2033,7 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       break;
 
     case BTA_GATTC_CLOSE_EVT: /* 5 */
-      bta_hh_le_close(&p_data->close);
+      bta_hh_le_close(p_data->close);
       break;
 
     case BTA_GATTC_SEARCH_CMPL_EVT: /* 6 */
