@@ -27,6 +27,7 @@
 #include "main/shim/dumpsys.h"
 #include "osi/include/alarm.h"
 #include "stack/include/btm_api_types.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
@@ -227,7 +228,8 @@ struct tBTM_SEC_DEV_REC {
                                uint8_t pin_len, uint8_t* p_pin);
   friend void btm_sec_auth_complete(uint16_t handle, tHCI_STATUS status);
   friend void btm_sec_connected(const RawAddress& bda, uint16_t handle,
-                                tHCI_STATUS status, uint8_t enc_mode);
+                                tHCI_STATUS status, uint8_t enc_mode,
+                                tHCI_ROLE);
   friend void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
                                      uint8_t encr_enable);
   friend void btm_sec_link_key_notification(const RawAddress& p_bda,
