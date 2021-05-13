@@ -65,10 +65,6 @@ typedef uint16_t tBTA_HH_INT_EVT; /* HID host internal events */
 
 #define BTA_HH_INVALID_EVT (BTA_HH_DISC_CMPL_EVT + 1)
 
-/* sub event code used for device maintainence API call */
-#define BTA_HH_ADD_DEV 0
-#define BTA_HH_REMOVE_DEV 1
-
 /* state machine states */
 enum {
   BTA_HH_NULL_ST,
