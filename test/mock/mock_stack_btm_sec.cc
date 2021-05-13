@@ -252,7 +252,8 @@ void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc) {
   mock_function_count_map[__func__]++;
 }
 void btm_sec_connected(const RawAddress& bda, uint16_t handle,
-                       tHCI_STATUS status, uint8_t enc_mode) {
+                       tHCI_STATUS status, uint8_t enc_mode,
+                       tHCI_ROLE assigned_role) {
   mock_function_count_map[__func__]++;
 }
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
