@@ -3349,7 +3349,8 @@ static void btm_sec_connect_after_reject_timeout(UNUSED_ATTR void* data) {
  *
  ******************************************************************************/
 void btm_sec_connected(const RawAddress& bda, uint16_t handle,
-                       tHCI_STATUS status, uint8_t enc_mode) {
+                       tHCI_STATUS status, uint8_t enc_mode,
+                       tHCI_ROLE assigned_role) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
   tBTM_STATUS res;
   bool is_pairing_device = false;
@@ -3577,7 +3578,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
   }
 
   p_dev_rec->hci_handle = handle;
-  btm_acl_created(bda, handle, HCI_ROLE_PERIPHERAL, BT_TRANSPORT_BR_EDR);
+  btm_acl_created(bda, handle, assigned_role, BT_TRANSPORT_BR_EDR);
 
   /* role may not be correct here, it will be updated by l2cap, but we need to
    */

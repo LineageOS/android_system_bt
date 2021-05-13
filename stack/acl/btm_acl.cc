@@ -96,9 +96,14 @@ struct StackAclBtmAcl {
   }
 };
 
+struct RoleChangeView {
+  tHCI_ROLE new_role = HCI_ROLE_UNKNOWN;
+  RawAddress bd_addr;
+};
+
 namespace {
 StackAclBtmAcl internal_;
-
+std::unique_ptr<RoleChangeView> delayed_role_change_ = nullptr;
 const bluetooth::legacy::hci::Interface& GetLegacyHciInterface() {
   return bluetooth::legacy::hci::GetInterface();
 }
@@ -1380,6 +1385,13 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
                                           tHCI_ROLE new_role) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
+    // If we get a role change before connection complete, we cache the new
+    // role here and then propagate it when ACL Link is created.
+    RoleChangeView role_change;
+    role_change.new_role = new_role;
+    role_change.bd_addr = bd_addr;
+    delayed_role_change_ =
+        std::make_unique<RoleChangeView>(std::move(role_change));
     LOG_WARN("Unable to find active acl");
     return;
   }
@@ -2180,6 +2192,16 @@ void btm_acl_reset_paging(void) {
  *
  ******************************************************************************/
 void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
+  // This function is called by the device initiating the connection.
+  // If no role change is requested from the remote device, we want
+  // to classify the connection initiator as the central device.
+  if (delayed_role_change_ == nullptr) {
+    RoleChangeView role_change;
+    role_change.bd_addr = bda;
+    role_change.new_role = HCI_ROLE_CENTRAL;
+    delayed_role_change_ =
+        std::make_unique<RoleChangeView>(std::move(role_change));
+  }
   if (!BTM_IsAclConnectionUp(bda, BT_TRANSPORT_BR_EDR)) {
     VLOG(1) << "connecting_bda: " << btm_cb.connecting_bda;
     if (btm_cb.paging && bda == btm_cb.connecting_bda) {
@@ -2520,7 +2542,13 @@ bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
 
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
                              uint8_t enc_mode) {
-  btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
+  if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
+    btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode,
+                      delayed_role_change_->new_role);
+  } else {
+    btm_sec_connected(bda, handle, HCI_SUCCESS, enc_mode);
+  }
+  delayed_role_change_ = nullptr;
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(HCI_SUCCESS, handle, bda);
   constexpr uint16_t link_supervision_timeout = 8000;
@@ -2546,8 +2574,13 @@ void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
 void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status) {
   ASSERT_LOG(status != HCI_SUCCESS,
              "Successful connection entering failing code path");
-
-  btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false);
+  if (delayed_role_change_ != nullptr && delayed_role_change_->bd_addr == bda) {
+    btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false,
+                      delayed_role_change_->new_role);
+  } else {
+    btm_sec_connected(bda, HCI_INVALID_HANDLE, status, false);
+  }
+  delayed_role_change_ = nullptr;
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bda);
 }
