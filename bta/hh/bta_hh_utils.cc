@@ -27,6 +27,7 @@
 #include "device/include/interop.h"
 #include "osi/include/osi.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "types/raw_address.h"
 
 /* if SSR max latency is not defined by remote device, set the default value
@@ -36,6 +37,12 @@
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
+
+namespace {
+
+constexpr uint16_t kSsrMaxLatency = 18; /* slots * 0.625ms */
+
+}  // namespace
 
 /*******************************************************************************
  *
@@ -232,52 +239,52 @@ bool bta_hh_tod_spt(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class) {
 tBTA_HH_STATUS bta_hh_read_ssr_param(const RawAddress& bd_addr,
                                      uint16_t* p_max_ssr_lat,
                                      uint16_t* p_min_ssr_tout) {
-  tBTA_HH_STATUS status = BTA_HH_ERR;
-  tBTA_HH_CB* p_cb = &bta_hh_cb;
-  uint8_t i;
-  uint16_t ssr_max_latency;
-  for (i = 0; i < BTA_HH_MAX_KNOWN; i++) {
-    if (p_cb->kdev[i].addr == bd_addr) {
-      /* if remote device does not have HIDSSRHostMaxLatency attribute in SDP,
-      set SSR max latency default value here.  */
-      if (p_cb->kdev[i].dscp_info.ssr_max_latency == HID_SSR_PARAM_INVALID) {
-        /* The default is calculated as half of link supervision timeout.*/
-
-        BTM_GetLinkSuperTout(p_cb->kdev[i].addr, &ssr_max_latency);
-        ssr_max_latency = BTA_HH_GET_DEF_SSR_MAX_LAT(ssr_max_latency);
-
-        /* per 1.1 spec, if the newly calculated max latency is greater than
-        BTA_HH_SSR_MAX_LATENCY_DEF which is 500ms, use
-        BTA_HH_SSR_MAX_LATENCY_DEF */
-        if (ssr_max_latency > BTA_HH_SSR_MAX_LATENCY_DEF)
-          ssr_max_latency = BTA_HH_SSR_MAX_LATENCY_DEF;
-
-        char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
-        if (btif_storage_get_stored_remote_name(bd_addr, remote_name)) {
-          if (interop_match_name(INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL,
-                                 remote_name)) {
-            if (ssr_max_latency > 18 /* slots * 0.625ms */) {
-              ssr_max_latency = 18;
-            }
-          }
-        }
-
-        *p_max_ssr_lat = ssr_max_latency;
-      } else
-        *p_max_ssr_lat = p_cb->kdev[i].dscp_info.ssr_max_latency;
-
-      if (p_cb->kdev[i].dscp_info.ssr_min_tout == HID_SSR_PARAM_INVALID)
-        *p_min_ssr_tout = BTA_HH_SSR_MIN_TOUT_DEF;
-      else
-        *p_min_ssr_tout = p_cb->kdev[i].dscp_info.ssr_min_tout;
-
-      status = BTA_HH_OK;
-
-      break;
-    }
+  tBTA_HH_DEV_CB* p_cb = bta_hh_get_cb(bd_addr);
+  if (p_cb == nullptr) {
+    LOG_WARN("Unable to find device:%s", PRIVATE_ADDRESS(bd_addr));
+    return BTA_HH_ERR;
   }
 
-  return status;
+  /* if remote device does not have HIDSSRHostMaxLatency attribute in SDP,
+     set SSR max latency default value here.  */
+  if (p_cb->dscp_info.ssr_max_latency == HID_SSR_PARAM_INVALID) {
+    /* The default is calculated as half of link supervision timeout.*/
+
+    uint16_t ssr_max_latency;
+    if (get_btm_client_interface().link_controller.BTM_GetLinkSuperTout(
+            p_cb->addr, &ssr_max_latency) != BTM_SUCCESS) {
+      LOG_WARN("Unable to get supervision timeout for peer:%s",
+               PRIVATE_ADDRESS(p_cb->addr));
+      return BTA_HH_ERR;
+    }
+    ssr_max_latency = BTA_HH_GET_DEF_SSR_MAX_LAT(ssr_max_latency);
+
+    /* per 1.1 spec, if the newly calculated max latency is greater than
+       BTA_HH_SSR_MAX_LATENCY_DEF which is 500ms, use
+       BTA_HH_SSR_MAX_LATENCY_DEF */
+    if (ssr_max_latency > BTA_HH_SSR_MAX_LATENCY_DEF)
+      ssr_max_latency = BTA_HH_SSR_MAX_LATENCY_DEF;
+
+    char remote_name[BTM_MAX_REM_BD_NAME_LEN] = "";
+    if (btif_storage_get_stored_remote_name(bd_addr, remote_name)) {
+      if (interop_match_name(INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL,
+                             remote_name)) {
+        if (ssr_max_latency > kSsrMaxLatency /* slots * 0.625ms */) {
+          ssr_max_latency = kSsrMaxLatency;
+        }
+      }
+    }
+
+    *p_max_ssr_lat = ssr_max_latency;
+  } else
+    *p_max_ssr_lat = p_cb->dscp_info.ssr_max_latency;
+
+  if (p_cb->dscp_info.ssr_min_tout == HID_SSR_PARAM_INVALID)
+    *p_min_ssr_tout = BTA_HH_SSR_MIN_TOUT_DEF;
+  else
+    *p_min_ssr_tout = p_cb->dscp_info.ssr_min_tout;
+
+  return BTA_HH_OK;
 }
 
 /*******************************************************************************
