@@ -412,7 +412,7 @@ void gap_attr_db_init(void) {
   Uuid app_uuid = Uuid::From128BitBE(tmp);
   gatt_attr.fill({});
 
-  gatt_if = GATT_Register(app_uuid, &gap_cback, false);
+  gatt_if = GATT_Register(app_uuid, "Gap", &gap_cback, false);
 
   GATT_StartIf(gatt_if);
 

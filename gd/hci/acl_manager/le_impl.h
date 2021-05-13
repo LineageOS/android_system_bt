@@ -151,8 +151,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     AddressWithType remote_address(address, peer_address_type);
     AddressWithType local_address = le_address_manager_->GetCurrentAddress();
     on_common_le_connection_complete(remote_address);
-    if (status == ErrorCode::UNKNOWN_CONNECTION &&
-        canceled_connections_.find(remote_address) != canceled_connections_.end()) {
+    if (status == ErrorCode::UNKNOWN_CONNECTION && pause_connection) {
       // connection canceled by LeAddressManager.OnPause(), will auto reconnect by LeAddressManager.OnResume()
       return;
     } else {
@@ -210,8 +209,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       remote_address = AddressWithType(peer_resolvable_address, AddressType::RANDOM_DEVICE_ADDRESS);
     }
     on_common_le_connection_complete(remote_address);
-    if (status == ErrorCode::UNKNOWN_CONNECTION &&
-        canceled_connections_.find(remote_address) != canceled_connections_.end()) {
+    if (status == ErrorCode::UNKNOWN_CONNECTION && pause_connection) {
       // connection canceled by LeAddressManager.OnPause(), will auto reconnect by LeAddressManager.OnResume()
       return;
     } else {

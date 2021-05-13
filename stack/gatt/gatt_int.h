@@ -188,11 +188,12 @@ typedef struct {
 
 typedef struct {
   bluetooth::Uuid app_uuid128;
-  tGATT_CBACK app_cb;
-  tGATT_IF gatt_if; /* one based */
-  bool in_use;
-  uint8_t listening; /* if adv for all has been enabled */
-  bool eatt_support;
+  tGATT_CBACK app_cb{};
+  tGATT_IF gatt_if{0}; /* one based */
+  bool in_use{false};
+  uint8_t listening{0}; /* if adv for all has been enabled */
+  bool eatt_support{false};
+  std::string name;
 } tGATT_REG;
 
 struct tGATT_CLCB;
