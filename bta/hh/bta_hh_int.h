@@ -65,9 +65,6 @@ typedef uint16_t tBTA_HH_INT_EVT; /* HID host internal events */
 
 #define BTA_HH_INVALID_EVT (BTA_HH_DISC_CMPL_EVT + 1)
 
-/* event used to map between BTE event and BTA event */
-#define BTA_HH_FST_BTE_TRANS_EVT HID_TRANS_GET_REPORT
-
 /* sub event code used for device maintainence API call */
 #define BTA_HH_ADD_DEV 0
 #define BTA_HH_REMOVE_DEV 1
