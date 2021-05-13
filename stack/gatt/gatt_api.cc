@@ -1005,7 +1005,7 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, std::string name,
   for (i_gatt_if = 0, p_reg = gatt_cb.cl_rcb; i_gatt_if < GATT_MAX_APPS;
        i_gatt_if++, p_reg++) {
     if (!p_reg->in_use) {
-      memset(p_reg, 0, sizeof(tGATT_REG));
+      *p_reg = {};
       i_gatt_if++; /* one based number */
       p_reg->app_uuid128 = app_uuid128;
       gatt_if = p_reg->gatt_if = (tGATT_IF)i_gatt_if;
