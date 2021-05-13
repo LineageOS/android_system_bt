@@ -23,6 +23,7 @@
 #include "hci/hci_packets.h"
 #include "hci/le_scanning_interface.h"
 #include "hci/le_scanning_manager.h"
+#include "hci/vendor_specific_event_manager.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -204,11 +205,16 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     }
   }
 
-  void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::Controller* controller,
-             hci::AclManager* acl_manager) {
+  void start(
+      os::Handler* handler,
+      hci::HciLayer* hci_layer,
+      hci::Controller* controller,
+      hci::AclManager* acl_manager,
+      hci::VendorSpecificEventManager* vendor_specific_event_manager) {
     module_handler_ = handler;
     hci_layer_ = hci_layer;
     controller_ = controller;
+    vendor_specific_event_manager_ = vendor_specific_event_manager;
     le_address_manager_ = acl_manager->GetLeAddressManager();
     le_scanning_interface_ = hci_layer_->GetLeScanningInterface(
         module_handler_->BindOn(this, &LeScanningManager::impl::handle_scan_results));
@@ -224,12 +230,10 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
     is_filter_support_ = controller_->IsSupported(OpCode::LE_ADV_FILTER);
     is_batch_scan_support_ = controller->IsSupported(OpCode::LE_BATCH_SCAN);
     if (is_batch_scan_support_) {
-      // TODO implement vse module
-      // hci_layer_->RegisterVesEventHandler(
-      //     VseSubeventCode::BLE_THRESHOLD, handler->BindOn(this,
-      //     &LeScanningManager::impl::on_storage_threshold_breach));
-      // hci_layer_->RegisterVesEventHandler(
-      //     VseSubeventCode::BLE_TRACKING, handler->BindOn(this, &LeScanningManager::impl::on_advertisement_tracking));
+      vendor_specific_event_manager_->RegisterEventHandler(
+          VseSubeventCode::BLE_THRESHOLD, handler->BindOn(this, &LeScanningManager::impl::on_storage_threshold_breach));
+      vendor_specific_event_manager_->RegisterEventHandler(
+          VseSubeventCode::BLE_TRACKING, handler->BindOn(this, &LeScanningManager::impl::on_advertisement_tracking));
     }
     scanners_ = std::vector<Scanner>(kMaxAppNum + 1);
     for (size_t i = 0; i < scanners_.size(); i++) {
@@ -1211,6 +1215,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
   os::Handler* module_handler_;
   hci::HciLayer* hci_layer_;
   hci::Controller* controller_;
+  hci::VendorSpecificEventManager* vendor_specific_event_manager_;
   hci::LeScanningInterface* le_scanning_interface_;
   hci::LeAddressManager* le_address_manager_;
   bool address_manager_registered_ = false;
@@ -1272,13 +1277,18 @@ LeScanningManager::LeScanningManager() {
 
 void LeScanningManager::ListDependencies(ModuleList* list) {
   list->add<hci::HciLayer>();
+  list->add<hci::VendorSpecificEventManager>();
   list->add<hci::Controller>();
   list->add<hci::AclManager>();
 }
 
 void LeScanningManager::Start() {
-  pimpl_->start(GetHandler(), GetDependency<hci::HciLayer>(), GetDependency<hci::Controller>(),
-                GetDependency<AclManager>());
+  pimpl_->start(
+      GetHandler(),
+      GetDependency<hci::HciLayer>(),
+      GetDependency<hci::Controller>(),
+      GetDependency<AclManager>(),
+      GetDependency<VendorSpecificEventManager>());
 }
 
 void LeScanningManager::Stop() {

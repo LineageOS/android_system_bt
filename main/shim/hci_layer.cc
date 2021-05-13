@@ -28,6 +28,7 @@
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
 #include "hci/le_acl_connection_interface.h"
+#include "hci/vendor_specific_event_manager.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
@@ -107,8 +108,8 @@ bool is_valid_event_code(bluetooth::hci::EventCode event_code) {
     case bluetooth::hci::EventCode::KEYPRESS_NOTIFICATION:
     case bluetooth::hci::EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION:
     case bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_DATA_BLOCKS:
-    case bluetooth::hci::EventCode::VENDOR_SPECIFIC:
       return true;
+    case bluetooth::hci::EventCode::VENDOR_SPECIFIC:
     case bluetooth::hci::EventCode::LE_META_EVENT:  // Private to hci
       return false;
   }
@@ -337,6 +338,16 @@ static void subevent_callback(
   }
   send_data_upwards.Run(FROM_HERE, WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT,
                                                      &le_meta_event_view));
+}
+
+static void vendor_specific_event_callback(
+    bluetooth::hci::VendorSpecificEventView vendor_specific_event_view) {
+  if (!send_data_upwards) {
+    return;
+  }
+  send_data_upwards.Run(
+      FROM_HERE,
+      WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &vendor_specific_event_view));
 }
 
 void OnTransmitPacketCommandComplete(command_complete_cb complete_callback,
@@ -757,6 +768,12 @@ void bluetooth::shim::hci_on_reset_complete() {
       cpp::register_le_event(subevent_code);
     }
   }
+
+  // TODO handle BQR event in GD
+  auto handler = bluetooth::shim::GetGdShimHandler();
+  bluetooth::shim::GetVendorSpecificEventManager()->RegisterEventHandler(
+      bluetooth::hci::VseSubeventCode::BQR_EVENT,
+      handler->Bind(cpp::vendor_specific_event_callback));
 
   if (bluetooth::shim::is_gd_acl_enabled()) {
     return;
