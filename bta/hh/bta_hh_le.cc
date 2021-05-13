@@ -1469,11 +1469,9 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
       APPL_TRACE_DEBUG("%s: have HID service inst_id= %d", __func__,
                        p_dev_cb->hid_srvc.srvc_inst_id);
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_SCAN_PARAM)) {
-      p_dev_cb->scan_refresh_char_handle = 0;
 
       for (const gatt::Characteristic& charac : service.characteristics) {
         if (charac.uuid == Uuid::From16Bit(GATT_UUID_SCAN_REFRESH)) {
-          p_dev_cb->scan_refresh_char_handle = charac.value_handle;
 
           if (charac.properties & GATT_CHAR_PROP_BIT_NOTIFY)
             p_dev_cb->scps_notify |= BTA_HH_LE_SCPS_NOTIFY_SPT;
