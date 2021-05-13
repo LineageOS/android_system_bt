@@ -189,7 +189,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
   tBTA_HH cback_data;
   tBTA_HH_EVT cback_event = 0;
   tBTA_HH_STATE in_state;
-  uint16_t debug_event = event;
+  tBTA_HH_INT_EVT debug_event = static_cast<tBTA_HH_INT_EVT>(event);
 
   memset(&cback_data, 0, sizeof(tBTA_HH));
 
