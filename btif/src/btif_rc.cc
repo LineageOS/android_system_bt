@@ -4271,6 +4271,11 @@ static void handle_change_path_response(tBTA_AV_META_MSG* pmeta_msg,
   btif_rc_device_cb_t* p_dev =
       btif_rc_get_device_by_handle(pmeta_msg->rc_handle);
 
+  if (p_dev == NULL) {
+    BTIF_TRACE_ERROR("%s: Invalid rc handle", __func__);
+    return;
+  }
+
   if (p_rsp->status == AVRC_STS_NO_ERROR) {
     do_in_jni_thread(FROM_HERE,
                      base::Bind(bt_rc_ctrl_callbacks->change_folder_path_cb,
@@ -4294,6 +4299,11 @@ static void handle_set_browsed_player_response(tBTA_AV_META_MSG* pmeta_msg,
                                                tAVRC_SET_BR_PLAYER_RSP* p_rsp) {
   btif_rc_device_cb_t* p_dev =
       btif_rc_get_device_by_handle(pmeta_msg->rc_handle);
+
+  if (p_dev == NULL) {
+    BTIF_TRACE_ERROR("%s: Invalid rc handle", __func__);
+    return;
+  }
 
   if (p_rsp->status == AVRC_STS_NO_ERROR) {
     do_in_jni_thread(
