@@ -1,24 +1,22 @@
-#
-#  Copyright 2021 Google, Inc.
-#
-#  Licensed under the Apache License, Version 2.0 (the "License");
-#  you may not use this file except in compliance with the License.
-#  You may obtain a copy of the License at:
-#
-#  http://www.apache.org/licenses/LICENSE-2.0
-#
-#  Unless required by applicable law or agreed to in writing, software
-#  distributed under the License is distributed on an "AS IS" BASIS,
-#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-#  See the License for the specific language governing permissions and
-#  limitations under the License.
-
 [package]
-name = "btmgmt"
+name = "manager_service"
 version = "0.0.1"
 edition = "2018"
 
-[[bin]]
-name = "btmgmtd"
-path = "src/main.rs"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[dependencies]
+
+# bt deps
+bt_common = { path = "../../common" }
+
+# external deps
+dbus = "0.9.2"
+dbus-tokio = "0.7.3"
+dbus-crossroads = "0.3.0"
+inotify = "*"
+nix = "*"
+tokio = { version = "1.0", features = ["fs", "macros", "rt-multi-thread", "sync"] }
+
+[[bin]]
+name = "btmanagerd"
