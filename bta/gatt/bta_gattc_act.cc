@@ -546,13 +546,16 @@ void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb,
 void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   tBTA_GATTC_CBACK* p_cback = p_clcb->p_rcb->p_cback;
   tBTA_GATTC_RCB* p_clreg = p_clcb->p_rcb;
-  tBTA_GATTC cb_data;
-
-  cb_data.close.client_if = p_clcb->p_rcb->client_if;
-  cb_data.close.conn_id = p_clcb->bta_conn_id;
-  cb_data.close.reason = GATT_CONN_OK;
-  cb_data.close.remote_bda = p_clcb->bda;
-  cb_data.close.status = GATT_SUCCESS;
+  tBTA_GATTC cb_data = {
+      .close =
+          {
+              .client_if = p_clcb->p_rcb->client_if,
+              .conn_id = p_clcb->bta_conn_id,
+              .reason = GATT_CONN_OK,
+              .remote_bda = p_clcb->bda,
+              .status = GATT_SUCCESS,
+          },
+  };
 
   if (p_clcb->transport == BT_TRANSPORT_BR_EDR)
     bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
