@@ -271,10 +271,11 @@ static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   } else {
     /* not a known device, i.e. attempt to connect to device never seen before
      */
-    if (to_add)
+    if (to_add) {
       background_connection_add(BLE_ADDR_PUBLIC, bd_addr);
-    else
+    } else {
       background_connection_remove(bd_addr);
+    }
   }
 
   return true;
