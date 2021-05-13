@@ -962,26 +962,31 @@ static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb,
 
 /** operation completed */
 void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
-  uint8_t op = (uint8_t)p_data->op_cmpl.op_code;
-  uint8_t mapped_op = 0;
-
-  VLOG(1) << __func__ << ": op:" << +op;
-
-  if (op == GATTC_OPTYPE_INDICATION || op == GATTC_OPTYPE_NOTIFICATION) {
-    LOG(ERROR) << "unexpected operation, ignored";
+  if (p_clcb->p_q_cmd == NULL) {
+    LOG_ERROR("No pending command gatt client command");
     return;
   }
 
-  if (op < GATTC_OPTYPE_READ) return;
+  const tGATTC_OPTYPE op = p_data->op_cmpl.op_code;
+  switch (op) {
+    case GATTC_OPTYPE_READ:
+    case GATTC_OPTYPE_WRITE:
+    case GATTC_OPTYPE_EXE_WRITE:
+    case GATTC_OPTYPE_CONFIG:
+      break;
 
-  if (p_clcb->p_q_cmd == NULL) {
-    LOG(ERROR) << "No pending command";
-    return;
+    case GATTC_OPTYPE_NONE:
+    case GATTC_OPTYPE_DISCOVERY:
+    case GATTC_OPTYPE_NOTIFICATION:
+    case GATTC_OPTYPE_INDICATION:
+    default:
+      LOG(ERROR) << "unexpected operation, ignored";
+      return;
   }
 
   if (p_clcb->p_q_cmd->hdr.event !=
       bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ]) {
-    mapped_op =
+    uint8_t mapped_op =
         p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
     if (mapped_op > GATTC_OPTYPE_INDICATION) mapped_op = 0;
 
