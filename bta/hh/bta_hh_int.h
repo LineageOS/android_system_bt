@@ -33,9 +33,6 @@
 #include "bta/sys/bta_sys.h"
 #include "stack/include/bt_types.h"
 
-/* can be moved to bta_api.h */
-#define BTA_HH_MAX_RPT_CHARS 8
-
 /* state machine events, these events are handled by the state machine */
 enum tBTA_HH_INT_EVT : uint16_t {
   BTA_HH_API_OPEN_EVT = BTA_SYS_EVT_START(BTA_ID_HH),
