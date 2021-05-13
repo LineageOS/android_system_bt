@@ -49,6 +49,7 @@ TestCommandHandler::TestCommandHandler(TestModel& test_model) : model_(test_mode
   SET_HANDLER("set_timer_period", SetTimerPeriod);
   SET_HANDLER("start_timer", StartTimer);
   SET_HANDLER("stop_timer", StopTimer);
+  SET_HANDLER("reset", Reset);
 #undef SET_HANDLER
 }
 
