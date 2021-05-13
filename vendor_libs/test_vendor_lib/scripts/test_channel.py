@@ -241,6 +241,22 @@ class TestChannelShell(cmd.Cmd):
         sleep_time = float(args.split()[0])
         time.sleep(sleep_time)
 
+    def do_reset(self, args):
+        """Arguments: None.
+
+    Resets the simulation.
+    """
+        self._test_channel.send_command('reset', [])
+
+    def do_end(self, args):
+        """Arguments: None.
+
+    Ends the simulation and exits.
+    """
+        self._test_channel.send_command('END_SIMULATION', [])
+        print('Goodbye.')
+        return True
+
     def do_quit(self, args):
         """Arguments: None.
 

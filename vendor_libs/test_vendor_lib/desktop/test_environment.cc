@@ -33,7 +33,7 @@ using test_vendor_lib::AsyncTaskId;
 using test_vendor_lib::TaskCallback;
 
 void TestEnvironment::initialize(std::promise<void> barrier) {
-  LOG_INFO("%s", __func__);
+  LOG_INFO();
 
   barrier_ = std::move(barrier);
 
@@ -41,12 +41,15 @@ void TestEnvironment::initialize(std::promise<void> barrier) {
   test_channel_transport_.RegisterCommandHandler(
       [this, user_id](const std::string& name,
                       const std::vector<std::string>& args) {
-        async_manager_.ExecAsync(
-            user_id, std::chrono::milliseconds(0),
-            [this, name, args]() { test_channel_.HandleCommand(name, args); });
+        async_manager_.ExecAsync(user_id, std::chrono::milliseconds(0),
+                                 [this, name, args]() {
+                                   if (name == "END_SIMULATION") {
+                                     barrier_.set_value();
+                                   } else {
+                                     test_channel_.HandleCommand(name, args);
+                                   }
+                                 });
       });
-
-  test_model_.Reset();
 
   SetUpTestChannel();
   SetUpHciServer([this](int fd) { test_model_.IncomingHciConnection(fd); });
@@ -175,13 +178,22 @@ void TestEnvironment::SetUpTestChannel() {
       return;
     }
     LOG_INFO("Test channel connection accepted.");
+    if (test_channel_open_) {
+      LOG_WARN("Only one connection at a time is supported");
+      async_manager_.StopWatchingFileDescriptor(conn_fd);
+      test_channel_transport_.SendResponse(conn_fd, "The connection is broken");
+      return;
+    }
+    test_channel_open_ = true;
     test_channel_.RegisterSendResponse(
-        [this, conn_fd](const std::string& response) { test_channel_transport_.SendResponse(conn_fd, response); });
+        [this, conn_fd](const std::string& response) {
+          test_channel_transport_.SendResponse(conn_fd, response);
+        });
 
     async_manager_.WatchFdForNonBlockingReads(conn_fd, [this](int conn_fd) {
       test_channel_transport_.OnCommandReady(conn_fd, [this, conn_fd]() {
         async_manager_.StopWatchingFileDescriptor(conn_fd);
-        barrier_.set_value();
+        test_channel_open_ = false;
       });
     });
   });
