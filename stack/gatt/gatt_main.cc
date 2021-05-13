@@ -167,8 +167,10 @@ void gatt_free(void) {
   }
 
   gatt_cb.hdl_list_info->clear();
+  delete gatt_cb.hdl_list_info;
   gatt_cb.hdl_list_info = nullptr;
   gatt_cb.srv_list_info->clear();
+  delete gatt_cb.srv_list_info;
   gatt_cb.srv_list_info = nullptr;
 
   EattExtension::GetInstance()->Stop();
