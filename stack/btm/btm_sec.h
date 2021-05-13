@@ -22,11 +22,13 @@
  *
  ******************************************************************************/
 
+#pragma once
 #include <cstdint>
 #include "stack/btm/security_device_record.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/security_client_callbacks.h"
+#include "types/hci_role.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
@@ -624,7 +626,8 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
  *
  ******************************************************************************/
 void btm_sec_connected(const RawAddress& bda, uint16_t handle,
-                       tHCI_STATUS status, uint8_t enc_mode);
+                       tHCI_STATUS status, uint8_t enc_mode,
+                       tHCI_ROLE assigned_role = HCI_ROLE_PERIPHERAL);
 
 /*******************************************************************************
  *
