@@ -37,7 +37,7 @@
 #define BTA_HH_MAX_RPT_CHARS 8
 
 /* state machine events, these events are handled by the state machine */
-enum {
+enum tBTA_HH_INT_EVT : uint16_t {
   BTA_HH_API_OPEN_EVT = BTA_SYS_EVT_START(BTA_ID_HH),
   BTA_HH_API_CLOSE_EVT,
   BTA_HH_INT_OPEN_EVT,
@@ -60,8 +60,7 @@ enum {
   BTA_HH_API_ENABLE_EVT,
   BTA_HH_API_DISABLE_EVT,
   BTA_HH_DISC_CMPL_EVT
-};
-typedef uint16_t tBTA_HH_INT_EVT; /* HID host internal events */
+}; /* HID host internal events */
 
 #define BTA_HH_INVALID_EVT (BTA_HH_DISC_CMPL_EVT + 1)
 
