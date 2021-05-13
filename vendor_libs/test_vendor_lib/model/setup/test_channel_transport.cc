@@ -99,6 +99,7 @@ void TestChannelTransport::OnCommandReady(int fd, std::function<void(void)> unwa
   int bytes_read = read(fd, &command_name_size, 1);
   if (bytes_read != 1) {
     LOG_INFO("Unexpected (command_name_size) bytes_read: %d != %d", bytes_read, 1);
+    close(fd);
   }
   vector<uint8_t> command_name_raw;
   command_name_raw.resize(command_name_size);
@@ -148,6 +149,10 @@ void TestChannelTransport::SendResponse(int fd, const std::string& response) con
   uint8_t size_buf[4] = {static_cast<uint8_t>(size & 0xff), static_cast<uint8_t>((size >> 8) & 0xff),
                          static_cast<uint8_t>((size >> 16) & 0xff), static_cast<uint8_t>((size >> 24) & 0xff)};
   int written = write(fd, size_buf, 4);
+  if (written == -1 && errno == EBADFD) {
+    LOG_WARN("Unable to send a response.  EBADFD");
+    return;
+  }
   ASSERT_LOG(written == 4, "What happened? written = %d errno = %d", written, errno);
   written = write(fd, response.c_str(), size);
   ASSERT_LOG(written == static_cast<int>(size), "What happened? written = %d errno = %d", written, errno);
