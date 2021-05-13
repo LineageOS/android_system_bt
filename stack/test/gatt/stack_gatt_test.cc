@@ -24,6 +24,7 @@
 
 #include "common/message_loop_thread.h"
 #include "stack/gatt/gatt_int.h"
+#include "stack/include/gatt_api.h"
 
 std::map<std::string, int> mock_function_count_map;
 
@@ -77,4 +78,9 @@ TEST_F(StackGattTest, lifecycle_tGATT_REG) {
     delete reg1;
     delete reg0;
   }
+}
+
+TEST_F(StackGattTest, gatt_init) {
+  gatt_init();
+  gatt_free();
 }
