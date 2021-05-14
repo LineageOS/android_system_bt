@@ -324,7 +324,6 @@ function incremental_venv {
     cp {$HOST_LIB,$DEST_LIB_DIR}/libz-host.so
     cp {$HOST_LIB,$DEST_LIB_DIR}/libprotobuf-cpp-full.so
     cp {$HOST_LIB,$DEST_LIB_DIR}/libunwindstack.so
-    cp {$HOST_LIB,$DEST_LIB_DIR}/libdexfile_support.so
     cp {$HOST_LIB,$DEST_LIB_DIR}/liblzma.so
     cp {$HOST_LIB,$DEST_LIB_DIR}/libbacktrace.so
 
