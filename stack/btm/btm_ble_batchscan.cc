@@ -269,6 +269,11 @@ void read_reports_cb(std::vector<uint8_t> data_all, uint8_t num_records_all,
     return;
   }
 
+  if (len < 4) {
+    BTM_TRACE_ERROR("%s: wrong length", __func__);
+    return;
+  }
+
   uint8_t report_format, num_records;
   STREAM_TO_UINT8(report_format, p);
   STREAM_TO_UINT8(num_records, p);
