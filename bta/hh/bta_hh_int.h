@@ -33,11 +33,8 @@
 #include "bta/sys/bta_sys.h"
 #include "stack/include/bt_types.h"
 
-/* can be moved to bta_api.h */
-#define BTA_HH_MAX_RPT_CHARS 8
-
 /* state machine events, these events are handled by the state machine */
-enum {
+enum tBTA_HH_INT_EVT : uint16_t {
   BTA_HH_API_OPEN_EVT = BTA_SYS_EVT_START(BTA_ID_HH),
   BTA_HH_API_CLOSE_EVT,
   BTA_HH_INT_OPEN_EVT,
@@ -60,18 +57,9 @@ enum {
   BTA_HH_API_ENABLE_EVT,
   BTA_HH_API_DISABLE_EVT,
   BTA_HH_DISC_CMPL_EVT
-};
-typedef uint16_t tBTA_HH_INT_EVT; /* HID host internal events */
+}; /* HID host internal events */
 
 #define BTA_HH_INVALID_EVT (BTA_HH_DISC_CMPL_EVT + 1)
-
-/* event used to map between BTE event and BTA event */
-#define BTA_HH_FST_TRANS_CB_EVT BTA_HH_GET_RPT_EVT
-#define BTA_HH_FST_BTE_TRANS_EVT HID_TRANS_GET_REPORT
-
-/* sub event code used for device maintainence API call */
-#define BTA_HH_ADD_DEV 0
-#define BTA_HH_REMOVE_DEV 1
 
 /* state machine states */
 enum {
@@ -213,7 +201,6 @@ typedef struct {
   bool in_use;                 /* control block currently in use */
   bool incoming_conn;          /* is incoming connection? */
   uint8_t incoming_hid_handle; /* temporary handle for incoming connection? */
-  bool opened; /* true if device successfully opened HID connection */
   tBTA_HH_PROTO_MODE mode; /* protocol mode */
   tBTA_HH_STATE state;     /* CB state */
 
@@ -230,33 +217,19 @@ typedef struct {
   uint16_t conn_id;
   bool in_bg_conn;
   uint8_t clt_cfg_idx;
-  uint16_t scan_refresh_char_handle;
   bool scps_supported;
 
 #define BTA_HH_LE_SCPS_NOTIFY_NONE 0
 #define BTA_HH_LE_SCPS_NOTIFY_SPT 0x01
 #define BTA_HH_LE_SCPS_NOTIFY_ENB 0x02
   uint8_t scps_notify; /* scan refresh supported/notification enabled */
-
   bool security_pending;
 } tBTA_HH_DEV_CB;
-
-/* key board parsing control block */
-typedef struct {
-  bool mod_key[4]; /* ctrl, shift(upper), Alt, GUI */
-  bool num_lock;
-  bool caps_lock;
-  uint8_t last_report[BTA_HH_MAX_RPT_CHARS];
-} tBTA_HH_KB_CB;
 
 /******************************************************************************
  * Main Control Block
  ******************************************************************************/
 typedef struct {
-  tBTA_HH_KB_CB kb_cb;                    /* key board control block,
-                                             suppose BTA will connect
-                                             to only one keyboard at
-                                              the same time */
   tBTA_HH_DEV_CB kdev[BTA_HH_MAX_DEVICE]; /* device control block */
   tBTA_HH_DEV_CB* p_cur;                  /* current device control
                                                  block idx, used in sdp */
@@ -267,7 +240,6 @@ typedef struct {
   tGATT_IF gatt_if;
   tBTA_HH_CBACK* p_cback; /* Application callbacks */
   tSDP_DISCOVERY_DB* p_disc_db;
-  uint8_t trace_level; /* tracing level */
   uint8_t cnt_num;     /* connected device number */
   bool w4_disable;     /* w4 disable flag */
 } tBTA_HH_CB;

@@ -50,6 +50,7 @@ class TestEnvironment {
   uint16_t hci_server_port_;
   uint16_t link_server_port_;
   std::string default_commands_file_;
+  bool test_channel_open_{false};
   std::promise<void> barrier_;
 
   test_vendor_lib::AsyncManager async_manager_;
