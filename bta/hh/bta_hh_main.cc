@@ -189,7 +189,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
   tBTA_HH cback_data;
   tBTA_HH_EVT cback_event = 0;
   tBTA_HH_STATE in_state;
-  uint16_t debug_event = event;
+  tBTA_HH_INT_EVT debug_event = static_cast<tBTA_HH_INT_EVT>(event);
 
   memset(&cback_data, 0, sizeof(tBTA_HH));
 
@@ -221,8 +221,8 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
           }
           break;
         case BTA_HH_API_WRITE_DEV_EVT:
-          cback_event = (p_data->api_sndcmd.t_type - BTA_HH_FST_BTE_TRANS_EVT) +
-                        BTA_HH_FST_TRANS_CB_EVT;
+          cback_event = (p_data->api_sndcmd.t_type - HID_TRANS_GET_REPORT) +
+                        BTA_HH_GET_RPT_EVT;
           osi_free_and_reset((void**)&p_data->api_sndcmd.p_data);
           if (p_data->api_sndcmd.t_type == HID_TRANS_SET_PROTOCOL ||
               p_data->api_sndcmd.t_type == HID_TRANS_SET_REPORT ||
