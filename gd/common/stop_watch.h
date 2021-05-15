@@ -22,6 +22,13 @@
 namespace bluetooth {
 namespace common {
 
+typedef struct {
+  std::chrono::system_clock::time_point timestamp;
+  std::chrono::high_resolution_clock::time_point start_timestamp;
+  std::chrono::high_resolution_clock::time_point end_timestamp;
+  std::string message;
+} StopWatchLog;
+
 class StopWatch {
  public:
   static void DumpStopWatchLog(void);
@@ -30,9 +37,9 @@ class StopWatch {
 
  private:
   std::string text_;
-  std::chrono::time_point<std::chrono::high_resolution_clock> start_time_;
-  std::string start_timestamp_;
-  void RecordLog(std::string log);
+  std::chrono::system_clock::time_point timestamp_;
+  std::chrono::high_resolution_clock::time_point start_timestamp_;
+  void RecordLog(StopWatchLog log);
 };
 
 }  // namespace common

@@ -930,7 +930,8 @@ uint8_t avdt_scb_verify(AvdtpCcb* p_ccb, uint8_t state, uint8_t* p_seid,
   }
 
   /* verify every scb */
-  for (int i = 0, *p_err_code = 0; (i < num_seid) && (i < AVDT_NUM_SEPS); i++) {
+  *p_err_code = 0;
+  for (int i = 0; (i < num_seid) && (i < AVDT_NUM_SEPS); i++) {
     AvdtpScb* p_scb = avdt_scb_by_hdl(p_seid[i]);
     if (p_scb == NULL) {
       *p_err_code = AVDT_ERR_BAD_STATE;
