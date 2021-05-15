@@ -546,13 +546,16 @@ void bta_gattc_close_fail(tBTA_GATTC_CLCB* p_clcb,
 void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
   tBTA_GATTC_CBACK* p_cback = p_clcb->p_rcb->p_cback;
   tBTA_GATTC_RCB* p_clreg = p_clcb->p_rcb;
-  tBTA_GATTC cb_data;
-
-  cb_data.close.client_if = p_clcb->p_rcb->client_if;
-  cb_data.close.conn_id = p_clcb->bta_conn_id;
-  cb_data.close.reason = GATT_CONN_OK;
-  cb_data.close.remote_bda = p_clcb->bda;
-  cb_data.close.status = GATT_SUCCESS;
+  tBTA_GATTC cb_data = {
+      .close =
+          {
+              .client_if = p_clcb->p_rcb->client_if,
+              .conn_id = p_clcb->bta_conn_id,
+              .reason = GATT_CONN_OK,
+              .remote_bda = p_clcb->bda,
+              .status = GATT_SUCCESS,
+          },
+  };
 
   if (p_clcb->transport == BT_TRANSPORT_BR_EDR)
     bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
@@ -959,26 +962,31 @@ static void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb,
 
 /** operation completed */
 void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
-  uint8_t op = (uint8_t)p_data->op_cmpl.op_code;
-  uint8_t mapped_op = 0;
-
-  VLOG(1) << __func__ << ": op:" << +op;
-
-  if (op == GATTC_OPTYPE_INDICATION || op == GATTC_OPTYPE_NOTIFICATION) {
-    LOG(ERROR) << "unexpected operation, ignored";
+  if (p_clcb->p_q_cmd == NULL) {
+    LOG_ERROR("No pending command gatt client command");
     return;
   }
 
-  if (op < GATTC_OPTYPE_READ) return;
+  const tGATTC_OPTYPE op = p_data->op_cmpl.op_code;
+  switch (op) {
+    case GATTC_OPTYPE_READ:
+    case GATTC_OPTYPE_WRITE:
+    case GATTC_OPTYPE_EXE_WRITE:
+    case GATTC_OPTYPE_CONFIG:
+      break;
 
-  if (p_clcb->p_q_cmd == NULL) {
-    LOG(ERROR) << "No pending command";
-    return;
+    case GATTC_OPTYPE_NONE:
+    case GATTC_OPTYPE_DISCOVERY:
+    case GATTC_OPTYPE_NOTIFICATION:
+    case GATTC_OPTYPE_INDICATION:
+    default:
+      LOG(ERROR) << "unexpected operation, ignored";
+      return;
   }
 
   if (p_clcb->p_q_cmd->hdr.event !=
       bta_gattc_opcode_to_int_evt[op - GATTC_OPTYPE_READ]) {
-    mapped_op =
+    uint8_t mapped_op =
         p_clcb->p_q_cmd->hdr.event - BTA_GATTC_API_READ_EVT + GATTC_OPTYPE_READ;
     if (mapped_op > GATTC_OPTYPE_INDICATION) mapped_op = 0;
 
