@@ -67,7 +67,6 @@ static uint32_t codec_channel_mode2value(
     case BTAV_A2DP_CODEC_CHANNEL_MODE_MONO:
       return 1;
     case BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO:
-    case BTAV_A2DP_CODEC_CHANNEL_MODE_DUAL_CHANNEL:
       return 2;
     case BTAV_A2DP_CODEC_CHANNEL_MODE_NONE:
       break;
