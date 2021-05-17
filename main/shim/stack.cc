@@ -99,12 +99,12 @@ void Stack::StartEverything() {
     modules.add<hci::HciLayer>();
     modules.add<storage::StorageModule>();
     modules.add<shim::Dumpsys>();
+    modules.add<hci::VendorSpecificEventManager>();
   }
   if (common::init_flags::gd_controller_is_enabled()) {
     modules.add<hci::Controller>();
   }
   if (common::init_flags::gd_acl_is_enabled()) {
-    modules.add<hci::VendorSpecificEventManager>();
     modules.add<hci::AclManager>();
   }
   if (common::init_flags::gd_l2cap_is_enabled()) {
