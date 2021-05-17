@@ -826,6 +826,11 @@
 #define AVDT_PROTECT_SIZE 90
 #endif
 
+/* Default sink delay value in ms. */
+#ifndef AVDT_SINK_DELAY_MS
+#define AVDT_SINK_DELAY_MS 300
+#endif
+
 /******************************************************************************
  *
  * PAN
