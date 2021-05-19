@@ -13,6 +13,7 @@ filegroup {
         "android/metrics.cc",
         "android/parameter_provider.cc",
         "android/system_properties.cc",
+        "android/wakelock_native.cc",
     ],
 }
 
@@ -20,6 +21,7 @@ filegroup {
     name: "BluetoothOsTestSources_android",
     srcs: [
         "android/system_properties_test.cc",
+        "android/wakelock_native_test.cc",
     ],
 }
 
@@ -29,6 +31,7 @@ filegroup {
         "host/metrics.cc",
         "host/parameter_provider.cc",
         "host/system_properties.cc",
+        "host/wakelock_native.cc",
     ],
 }
 
@@ -50,6 +53,7 @@ filegroup {
         "linux_generic/repeating_alarm.cc",
         "linux_generic/reactive_semaphore.cc",
         "linux_generic/thread.cc",
+        "linux_generic/wakelock_manager.cc",
     ],
 }
 
@@ -63,6 +67,7 @@ filegroup {
         "linux_generic/reactor_unittest.cc",
         "linux_generic/repeating_alarm_unittest.cc",
         "linux_generic/thread_unittest.cc",
+        "linux_generic/wakelock_manager_unittest.cc",
     ],
 }
 
