@@ -54,6 +54,7 @@
 #include "btif_bqr.h"
 #include "btif_config.h"
 #include "btif_dm.h"
+#include "btif_gatt.h"
 #include "btif_hd.h"
 #include "btif_hf.h"
 #include "btif_hh.h"
@@ -1334,16 +1335,16 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
             p_data->disc_res.num_uuids == 0) {
           LOG_INFO("SDP failed, send empty UUID to unblock bonding %s",
                    bd_addr.ToString().c_str());
-          bt_property_t prop;
+          bt_property_t prop_uuids;
           Uuid uuid = {};
 
-          prop.type = BT_PROPERTY_UUIDS;
-          prop.val = &uuid;
-          prop.len = Uuid::kNumBytes128;
+          prop_uuids.type = BT_PROPERTY_UUIDS;
+          prop_uuids.val = &uuid;
+          prop_uuids.len = Uuid::kNumBytes128;
 
           /* Send the event to the BTIF */
           invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr, 1,
-                                             &prop);
+                                             &prop_uuids);
           break;
         }
       }
@@ -2374,14 +2375,92 @@ void btif_dm_generate_local_oob_data(tBT_TRANSPORT transport) {
   if (transport == BT_TRANSPORT_BR_EDR) {
     BTM_ReadLocalOobData();
   } else if (transport == BT_TRANSPORT_LE) {
-    SMP_CrLocScOobData(base::BindOnce(&btif_dm_proc_loc_oob));
+    // Call create data first, so we don't have to hold on to the address for
+    // the state machine lifecycle.  Rather, lets create the data, then start
+    // advertising then request the address.
+    SMP_CrLocScOobData();
   }
+}
+
+// Step Four: CallBack from Step Three
+static void get_address_callback(tBT_TRANSPORT transport, bool is_valid,
+                                 const Octet16& c, const Octet16& r,
+                                 uint8_t address_type, RawAddress address) {
+  invoke_oob_data_request_cb(transport, is_valid, c, r, address, address_type);
+}
+
+// Step Three: CallBack from Step Two, advertise and get address
+static void start_advertising_callback(uint8_t id, tBT_TRANSPORT transport,
+                                       bool is_valid, const Octet16& c,
+                                       const Octet16& r, uint8_t status) {
+  if (status != 0) {
+    LOG_INFO("OOB get advertiser ID failed with status %hhd", status);
+    invoke_oob_data_request_cb(transport, false, c, r, RawAddress{}, 0x00);
+    SMP_ClearLocScOobData();
+    return;
+  }
+  LOG_DEBUG("OOB advertiser with id %hhd", id);
+  auto advertiser = get_ble_advertiser_instance();
+  advertiser->GetOwnAddress(
+      id, base::Bind(&get_address_callback, transport, is_valid, c, r));
+}
+
+static void timeout_cb(uint8_t id, uint8_t status) {
+  LOG_INFO("OOB advertiser with id %hhd timed out with status %hhd", id,
+           status);
+  auto advertiser = get_ble_advertiser_instance();
+  advertiser->Unregister(id);
+  SMP_ClearLocScOobData();
+}
+
+// Step Two: CallBack from Step One, advertise and get address
+static void id_status_callback(tBT_TRANSPORT transport, bool is_valid,
+                               const Octet16& c, const Octet16& r, uint8_t id,
+                               uint8_t status) {
+  if (status != 0) {
+    LOG_INFO("OOB get advertiser ID failed with status %hhd", status);
+    invoke_oob_data_request_cb(transport, false, c, r, RawAddress{}, 0x00);
+    SMP_ClearLocScOobData();
+    return;
+  }
+
+  auto advertiser = get_ble_advertiser_instance();
+  AdvertiseParameters parameters;
+  parameters.advertising_event_properties = 0x0041 /* connectable, tx power */;
+  parameters.min_interval = 0xa0;   // 100 ms
+  parameters.max_interval = 0x500;  // 800 ms
+  parameters.channel_map = 0x7;     // Use all the channels
+  parameters.tx_power = 0;          // 0 dBm
+  parameters.primary_advertising_phy = 1;
+  parameters.secondary_advertising_phy = 2;
+  parameters.scan_request_notification_enable = 0;
+
+  std::vector<uint8_t> advertisement{0x02, 0x01 /* Flags */,
+                                     0x02 /* Connectable */};
+  std::vector<uint8_t> scan_data{};
+
+  advertiser->StartAdvertising(
+      id,
+      base::Bind(&start_advertising_callback, id, transport, is_valid, c, r),
+      parameters, advertisement, scan_data, 3600 /* timeout_s */,
+      base::Bind(&timeout_cb, id));
+}
+
+// Step One: Start the advertiser
+static void start_oob_advertiser(tBT_TRANSPORT transport, bool is_valid,
+                                 const Octet16& c, const Octet16& r) {
+  auto advertiser = get_ble_advertiser_instance();
+  advertiser->RegisterAdvertiser(
+      base::Bind(&id_status_callback, transport, is_valid, c, r));
 }
 
 void btif_dm_proc_loc_oob(tBT_TRANSPORT transport, bool is_valid,
                           const Octet16& c, const Octet16& r) {
-  invoke_oob_data_request_cb(transport, is_valid, c, r,
-                             *controller_get_interface()->get_address());
+  // is_valid is important for deciding which OobDataCallback function to use
+  if (!is_valid)
+    invoke_oob_data_request_cb(transport, false, c, r, RawAddress{}, 0x00);
+  // Now that we have the data, lets start advertising and get the address.
+  start_oob_advertiser(transport, is_valid, c, r);
 }
 
 /*******************************************************************************

@@ -182,14 +182,17 @@ extern void SMP_SecureConnectionOobDataReply(uint8_t* p_data);
  * Description      This function is called to generate a public key to be
  *                  passed to a remote device via an Out of Band transport
  *
- * Parameters:      callback - receive the data
+ ******************************************************************************/
+extern void SMP_CrLocScOobData();
+
+/*******************************************************************************
+ *
+ * Function         SMP_ClearLocScOobData
+ *
+ * Description      This function is called to clear out the OOB stored locally.
  *
  ******************************************************************************/
-extern void SMP_CrLocScOobData(
-    base::OnceCallback<void(tBT_TRANSPORT, bool,
-                            const std::array<unsigned char, 16>&,
-                            const std::array<unsigned char, 16>&)>
-        callback);
+extern void SMP_ClearLocScOobData();
 
 // Called when LTK request is received from controller.
 extern bool smp_proc_ltk_request(const RawAddress& bda);
