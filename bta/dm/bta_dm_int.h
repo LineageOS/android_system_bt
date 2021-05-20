@@ -66,17 +66,19 @@ enum {
   BTA_DM_SDP_RESULT_EVT,
   BTA_DM_SEARCH_CMPL_EVT,
   BTA_DM_DISCOVERY_RESULT_EVT,
-  BTA_DM_DISC_CLOSE_TOUT_EVT
+  BTA_DM_DISC_CLOSE_TOUT_EVT,
+  BTA_DM_API_QUEUE_SEARCH_EVT,
+  BTA_DM_API_QUEUE_DISCOVER_EVT
 };
 
-/* data type for BTA_DM_API_SEARCH_EVT */
+/* data type for BTA_DM_API_SEARCH_EVT and BTA_DM_API_QUEUE_SEARCH_EVT */
 typedef struct {
   BT_HDR_RIGID hdr;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
 } tBTA_DM_API_SEARCH;
 
-/* data type for BTA_DM_API_DISCOVER_EVT */
+/* data type for BTA_DM_API_DISCOVER_EVT and BTA_DM_API_QUEUE_DISCOVER_EVT */
 typedef struct {
   BT_HDR_RIGID hdr;
   RawAddress bd_addr;
@@ -362,7 +364,7 @@ typedef struct {
   alarm_t* search_timer;
   uint8_t service_index;
   tBTA_DM_MSG* p_pending_search;
-  tBTA_DM_MSG* p_pending_discovery;
+  fixed_queue_t* pending_discovery_queue;
   bool wait_disc;
   bool sdp_results;
   bluetooth::Uuid uuid;
@@ -536,6 +538,8 @@ extern void bta_dm_search_result(tBTA_DM_MSG* p_data);
 extern void bta_dm_discovery_cmpl(tBTA_DM_MSG* p_data);
 extern void bta_dm_queue_search(tBTA_DM_MSG* p_data);
 extern void bta_dm_queue_disc(tBTA_DM_MSG* p_data);
+extern void bta_dm_execute_queued_request();
+extern bool bta_dm_is_search_request_queued();
 extern void bta_dm_search_clear_queue();
 extern void bta_dm_search_cancel_cmpl();
 extern void bta_dm_search_cancel_notify();
