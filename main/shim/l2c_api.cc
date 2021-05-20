@@ -60,6 +60,9 @@ using namespace bluetooth::l2cap;
 
 namespace {
 uint16_t classic_cid_token_counter_ = 0x41;
+constexpr uint64_t kBrEdrNotSupportedMask = 0x0000002000000000;      // Bit 37
+constexpr uint64_t kLeSupportedControllerMask = 0x0000004000000000;  // Bit 38
+constexpr uint64_t kLeSupportedHostMask = 0x0000000000000002;        // Bit 1
 
 std::unordered_map<uint16_t /* token */, uint16_t /* psm */>
     classic_cid_token_to_channel_map_;
@@ -369,6 +372,9 @@ struct RemoteFeature {
   uint8_t raw_remote_features[8];
   bool version_info_received = false;
   bool role_switch_supported = false;
+  bool br_edr_supported = false;
+  bool le_supported_controller = false;
+  bool le_supported_host = false;
   bool ssp_supported = false;
   bool sc_supported = false;
   bool received_page_0 = false;
@@ -409,15 +415,21 @@ struct LinkPropertyListenerShim
     if (page_number == 0) {
       entry.received_page_0 = true;
       if (features & 0x20) entry.role_switch_supported = true;
+      entry.br_edr_supported = !(features & kBrEdrNotSupportedMask);
+      entry.le_supported_controller = features & kLeSupportedControllerMask;
       std::memcpy(entry.raw_remote_features, &features, 8);
     }
     if (page_number == 1) {
       entry.received_page_1 = true;
       if (features & 0x01) entry.ssp_supported = true;
+      entry.le_supported_host = features & kLeSupportedHostMask;
     }
     if (entry.received_page_0 && entry.received_page_1) {
+      const bool le_supported =
+          entry.le_supported_controller && entry.le_supported_host;
       btm_sec_set_peer_sec_caps(address_to_handle_[remote], entry.ssp_supported,
-                                false, entry.role_switch_supported);
+                                false, entry.role_switch_supported,
+                                entry.br_edr_supported, le_supported);
     }
   }
 

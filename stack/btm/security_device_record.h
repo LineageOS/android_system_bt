@@ -373,7 +373,9 @@ struct tBTM_SEC_DEV_REC {
   bool remote_supports_secure_connections;
   friend void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
                                         bool sc_supported,
-                                        bool hci_role_switch_supported);
+                                        bool hci_role_switch_supported,
+                                        bool br_edr_supported,
+                                        bool le_supported);
 
  public:
   bool SupportsSecureConnections() const {
@@ -385,6 +387,8 @@ struct tBTM_SEC_DEV_REC {
   /* HCI_IO_CAPABILITY_REQUEST_EVT from the peer before */
   /* it knows peer's support for Secure Connections */
   bool remote_supports_hci_role_switch = false;
+  bool remote_supports_bredr;
+  bool remote_supports_ble;
   bool remote_feature_received = false;
 
   uint16_t ble_hci_handle; /* use in DUMO connection */
