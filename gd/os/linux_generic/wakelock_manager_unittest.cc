@@ -167,9 +167,7 @@ TEST_F(WakelockManagerTest, test_with_os_callouts_in_a_loop_and_dump) {
 
   {
     flatbuffers::FlatBufferBuilder builder(1024);
-    WakelockManager::Get().GetDumpsysData(&builder);
-    WakelockManagerDataBuilder specific_builder(builder);
-    auto offset = specific_builder.Finish();
+    auto offset = WakelockManager::Get().GetDumpsysData(&builder);
     FinishWakelockManagerDataBuffer(builder, offset);
     auto data = GetWakelockManagerData(builder.GetBufferPointer());
 
@@ -182,9 +180,7 @@ TEST_F(WakelockManagerTest, test_with_os_callouts_in_a_loop_and_dump) {
 
   {
     flatbuffers::FlatBufferBuilder builder(1024);
-    WakelockManager::Get().GetDumpsysData(&builder);
-    WakelockManagerDataBuilder specific_builder(builder);
-    auto offset = specific_builder.Finish();
+    auto offset = WakelockManager::Get().GetDumpsysData(&builder);
     FinishWakelockManagerDataBuffer(builder, offset);
     auto data = GetWakelockManagerData(builder.GetBufferPointer());
 

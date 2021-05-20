@@ -25,7 +25,6 @@
 
 #include "os/internal/wakelock_native.h"
 #include "os/log.h"
-#include "wakelock_manager_generated.h"
 
 namespace bluetooth {
 namespace os {
@@ -42,7 +41,7 @@ uint64_t now_ms() {
   return (ts.tv_sec * 1000LL) + (ts.tv_nsec / 1000000LL);
 }
 
-const std::string WakelockManager::kBtWakelockId = "bluetooth_timer";
+const std::string WakelockManager::kBtWakelockId = "bluetooth_gd_timer";
 
 // Wakelock statistics for the "bluetooth_timer"
 struct WakelockManager::Stats {
@@ -131,7 +130,8 @@ struct WakelockManager::Stats {
     total_acquired_interval_ms += delta_ms;
   }
 
-  void GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder, bool is_native) const {
+  flatbuffers::Offset<WakelockManagerData> GetDumpsysData(
+      flatbuffers::FlatBufferBuilder* fb_builder, bool is_native) const {
     const uint64_t just_now_ms = now_ms();
     // Compute the last acquired interval if the wakelock is still acquired
     uint64_t delta_ms = 0;
@@ -174,6 +174,7 @@ struct WakelockManager::Stats {
     builder.add_avg_interval_millis(avg_interval_ms);
     builder.add_total_interval_millis(total_interval_ms);
     builder.add_total_time_since_reset_millis(just_now_ms - last_reset_timestamp_ms);
+    return builder.Finish();
   }
 };
 
@@ -260,9 +261,9 @@ void WakelockManager::CleanUp() {
   initialized_ = false;
 }
 
-void WakelockManager::GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) {
+flatbuffers::Offset<WakelockManagerData> WakelockManager::GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) {
   std::lock_guard<std::recursive_mutex> lock_guard(mutex_);
-  pstats_->GetDumpsysData(fb_builder, is_native_);
+  return pstats_->GetDumpsysData(fb_builder, is_native_);
 }
 
 WakelockManager::WakelockManager() : pstats_(std::make_unique<Stats>()) {}

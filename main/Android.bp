@@ -137,6 +137,7 @@ cc_library_shared {
         android: {
             shared_libs: [
                 "android.system.suspend.control-V1-ndk",
+                "android.system.suspend@1.0",
                 "libaaudio",
                 "libfmq",
             ],
