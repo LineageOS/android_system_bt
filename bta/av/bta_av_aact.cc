@@ -79,8 +79,6 @@
 /* ACL quota we are letting FW use for A2DP Offload Tx. */
 #define BTA_AV_A2DP_OFFLOAD_XMIT_QUOTA 4
 
-#define BTIF_A2DP_MAX_BITPOOL_MQ 35
-
 static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
                                          tBT_A2DP_OFFLOAD* p_a2dp_offload);
 static void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb,
@@ -3257,7 +3255,7 @@ static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
     case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
       codec_type = BTA_AV_CODEC_TYPE_SBC;
       if (A2DP_GetMaxBitpoolSbc(p_scb->cfg.codec_info) <=
-          BTIF_A2DP_MAX_BITPOOL_MQ) {
+          A2DP_SBC_BITPOOL_MIDDLE_QUALITY) {
         APPL_TRACE_WARNING("%s: Restricting streaming MTU size for MQ Bitpool",
                            __func__);
         mtu = MAX_2MBPS_AVDTP_MTU;
