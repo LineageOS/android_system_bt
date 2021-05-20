@@ -689,7 +689,11 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
   int dev_type;
 
   /* Remote properties update */
-  if (!btif_get_device_type(p_pin_req->bd_addr, &dev_type)) {
+  if (BTM_GetPeerDeviceTypeFromFeatures(p_pin_req->bd_addr) ==
+      BT_DEVICE_TYPE_DUMO) {
+    dev_type = BT_DEVICE_TYPE_DUMO;
+  } else if (!btif_get_device_type(p_pin_req->bd_addr, &dev_type)) {
+    // Failed to get device type, defaulting to BR/EDR.
     dev_type = BT_DEVICE_TYPE_BREDR;
   }
   btif_update_remote_properties(p_pin_req->bd_addr, p_pin_req->bd_name,
@@ -777,7 +781,11 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   BTIF_TRACE_DEBUG("%s", __func__);
 
   /* Remote properties update */
-  if (!btif_get_device_type(p_ssp_cfm_req->bd_addr, &dev_type)) {
+  if (BTM_GetPeerDeviceTypeFromFeatures(p_ssp_cfm_req->bd_addr) ==
+      BT_DEVICE_TYPE_DUMO) {
+    dev_type = BT_DEVICE_TYPE_DUMO;
+  } else if (!btif_get_device_type(p_ssp_cfm_req->bd_addr, &dev_type)) {
+    // Failed to get device type, defaulting to BR/EDR.
     dev_type = BT_DEVICE_TYPE_BREDR;
   }
   btif_update_remote_properties(p_ssp_cfm_req->bd_addr, p_ssp_cfm_req->bd_name,
@@ -853,7 +861,11 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   BTIF_TRACE_DEBUG("%s", __func__);
 
   /* Remote properties update */
-  if (!btif_get_device_type(p_ssp_key_notif->bd_addr, &dev_type)) {
+  if (BTM_GetPeerDeviceTypeFromFeatures(p_ssp_key_notif->bd_addr) ==
+      BT_DEVICE_TYPE_DUMO) {
+    dev_type = BT_DEVICE_TYPE_DUMO;
+  } else if (!btif_get_device_type(p_ssp_key_notif->bd_addr, &dev_type)) {
+    // Failed to get device type, defaulting to BR/EDR.
     dev_type = BT_DEVICE_TYPE_BREDR;
   }
   btif_update_remote_properties(
@@ -945,8 +957,15 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
     if (!bluetooth::shim::is_gd_security_enabled()) {
       btif_storage_set_remote_addr_type(&bd_addr, p_auth_cmpl->addr_type);
     }
+
+    int dev_type;
+    if (BTM_GetPeerDeviceTypeFromFeatures(bd_addr) == BT_DEVICE_TYPE_DUMO) {
+      dev_type = BT_DEVICE_TYPE_DUMO;
+    } else {
+      dev_type = p_auth_cmpl->dev_type;
+    }
     btif_update_remote_properties(p_auth_cmpl->bd_addr, p_auth_cmpl->bd_name,
-                                  NULL, p_auth_cmpl->dev_type);
+                                  NULL, dev_type);
     pairing_cb.timeout_retries = 0;
     status = BT_STATUS_SUCCESS;
     state = BT_BOND_STATE_BONDED;
