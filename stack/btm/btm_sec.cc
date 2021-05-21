@@ -1377,6 +1377,40 @@ bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr) {
   return (p_dev_rec->SupportsSecureConnections());
 }
 
+/*******************************************************************************
+ *
+ * Function         BTM_GetPeerDeviceTypeFromFeatures
+ *
+ * Description      This function is called to retrieve the peer device type
+ *                  by referencing the remote features.
+ *
+ * Parameters:      bd_addr - address of the peer
+ *
+ * Returns          BT_DEVICE_TYPE_DUMO if both BR/EDR and BLE transports are
+ *                  supported by the peer,
+ *                  BT_DEVICE_TYPE_BREDR if only BR/EDR transport is supported,
+ *                  BT_DEVICE_TYPE_BLE if only BLE transport is supported.
+ *
+ ******************************************************************************/
+tBT_DEVICE_TYPE BTM_GetPeerDeviceTypeFromFeatures(const RawAddress& bd_addr) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  if (p_dev_rec == nullptr) {
+    LOG_WARN("Unknown BDA:%s", PRIVATE_ADDRESS(bd_addr));
+  } else {
+    if (p_dev_rec->remote_supports_ble && p_dev_rec->remote_supports_bredr) {
+      return BT_DEVICE_TYPE_DUMO;
+    } else if (p_dev_rec->remote_supports_bredr) {
+      return BT_DEVICE_TYPE_BREDR;
+    } else if (p_dev_rec->remote_supports_ble) {
+      return BT_DEVICE_TYPE_BLE;
+    } else {
+      LOG_WARN("Device features does not support BR/EDR and BLE:%s",
+               PRIVATE_ADDRESS(bd_addr));
+    }
+  }
+  return BT_DEVICE_TYPE_BREDR;
+}
+
 /************************************************************************
  *              I N T E R N A L     F U N C T I O N S
  ************************************************************************/
@@ -4834,7 +4868,8 @@ static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
                                bool sc_supported,
-                               bool hci_role_switch_supported) {
+                               bool hci_role_switch_supported,
+                               bool br_edr_supported, bool le_supported) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
   if (p_dev_rec == nullptr) return;
 
@@ -4874,6 +4909,9 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
     /* Request for remaining Security Features (if any) */
     l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
   }
+
+  p_dev_rec->remote_supports_bredr = br_edr_supported;
+  p_dev_rec->remote_supports_ble = le_supported;
 }
 
 // Return DEV_CLASS (uint8_t[3]) of bda. If record doesn't exist, create one.
