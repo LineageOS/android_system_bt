@@ -25,6 +25,7 @@
 #include <flatbuffers/flatbuffers.h>
 
 #include "handler.h"
+#include "wakelock_manager_generated.h"
 
 namespace bluetooth {
 namespace os {
@@ -72,7 +73,7 @@ class WakelockManager {
   void CleanUp();
 
   // Dump wakelock-related debug info to a flat buffer defined in wakelock_manager.fbs
-  void GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder);
+  flatbuffers::Offset<WakelockManagerData> GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder);
 
   ~WakelockManager();
 
