@@ -582,7 +582,16 @@ struct eatt_impl {
     LOG(INFO) << __func__ << " " << bd_addr;
 
     eatt_device* eatt_dev = find_device_by_address(bd_addr);
-    if (!eatt_dev) return;
+    if (!eatt_dev) {
+      LOG(WARNING) << __func__ << " no eatt device found";
+      return;
+    }
+
+    if (!eatt_dev->eatt_tcb_) {
+      LOG_ASSERT(eatt_dev->eatt_channels.size() == 0);
+      LOG(WARNING) << __func__ << " no eatt channels found";
+      return;
+    }
 
     auto iter = eatt_dev->eatt_channels.begin();
     while (iter != eatt_dev->eatt_channels.end()) {
