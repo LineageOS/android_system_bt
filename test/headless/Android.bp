@@ -61,6 +61,7 @@ cc_test {
         "android.hardware.bluetooth@1.0",
         "android.hardware.bluetooth@1.1",
         "android.system.suspend.control-V1-ndk",
+        "android.system.suspend@1.0",
         "libaaudio",
         "libbase",
         "libbinder_ndk",

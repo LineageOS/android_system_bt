@@ -140,6 +140,7 @@ cc_defaults {
                 "android.hardware.bluetooth@1.0",
                 "android.hardware.bluetooth@1.1",
                 "android.system.suspend.control-V1-ndk",
+                "android.system.suspend@1.0",
                 "libbinder_ndk",
                 "libcutils",
                 "libhidlbase",
@@ -260,6 +261,7 @@ cc_binary {
                 "android.hardware.bluetooth@1.0",
                 "android.hardware.bluetooth@1.1",
                 "android.system.suspend.control-V1-ndk",
+                "android.system.suspend@1.0",
                 "libbinder_ndk",
                 "libhidlbase",
                 "libutils",
@@ -311,6 +313,7 @@ cc_test {
                 "android.hardware.bluetooth@1.0",
                 "android.hardware.bluetooth@1.1",
                 "android.system.suspend.control-V1-ndk",
+                "android.system.suspend@1.0",
                 "libbinder_ndk",
                 "libhidlbase",
                 "libutils",
@@ -392,6 +395,7 @@ cc_test {
                 "android.hardware.bluetooth@1.0",
                 "android.hardware.bluetooth@1.1",
                 "android.system.suspend.control-V1-ndk",
+                "android.system.suspend@1.0",
                 "libbinder_ndk",
                 "libhidlbase",
                 "libutils",
@@ -661,6 +665,7 @@ genrule {
         "hci/hci_acl_manager.fbs",
         "l2cap/classic/l2cap_classic_module.fbs",
         "shim/dumpsys.fbs",
+        "os/wakelock_manager.fbs",
     ],
     out: [
         "activity_attribution.bfbs",
@@ -669,6 +674,7 @@ genrule {
         "dumpsys_data.bfbs",
         "hci_acl_manager.bfbs",
         "l2cap_classic_module.bfbs",
+        "wakelock_manager.bfbs",
     ],
 }
 
@@ -685,6 +691,7 @@ genrule {
         "hci/hci_acl_manager.fbs",
         "l2cap/classic/l2cap_classic_module.fbs",
         "shim/dumpsys.fbs",
+        "os/wakelock_manager.fbs",
     ],
     out: [
         "activity_attribution_generated.h",
@@ -693,6 +700,7 @@ genrule {
         "hci_acl_manager_generated.h",
         "init_flags_generated.h",
         "l2cap_classic_module_generated.h",
+        "wakelock_manager_generated.h",
     ],
 }
 

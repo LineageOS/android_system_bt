@@ -526,14 +526,14 @@ int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
 static bt_os_callouts_t* wakelock_os_callouts_saved = nullptr;
 
 static int acquire_wake_lock_cb(const char* lock_name) {
-  return do_in_main_thread(
+  return do_in_jni_thread(
       FROM_HERE, base::Bind(base::IgnoreResult(
                                 wakelock_os_callouts_saved->acquire_wake_lock),
                             lock_name));
 }
 
 static int release_wake_lock_cb(const char* lock_name) {
-  return do_in_main_thread(
+  return do_in_jni_thread(
       FROM_HERE, base::Bind(base::IgnoreResult(
                                 wakelock_os_callouts_saved->release_wake_lock),
                             lock_name));
