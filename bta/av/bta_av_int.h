@@ -272,7 +272,6 @@ typedef struct {
 /* data type for BTA_AV_API_DISCONNECT_EVT */
 typedef struct {
   BT_HDR_RIGID hdr;
-  RawAddress bd_addr;
 } tBTA_AV_API_DISCNT;
 
 /* data type for BTA_AV_API_PROTECT_REQ_EVT */
@@ -491,6 +490,9 @@ struct tBTA_AV_SCB final {
   tAVDT_SEP_INFO sep_info[BTA_AV_NUM_SEPS]; /* stream discovery results */
   AvdtpSepConfig cfg;                       /* local SEP configuration */
   alarm_t* avrc_ct_timer;                   /* delay timer for AVRC CT */
+  alarm_t* link_signalling_timer;
+  alarm_t*
+      accept_signalling_timer; /* timer to monitor signalling when accepting */
   uint16_t l2c_cid;                         /* L2CAP channel ID */
   uint16_t stream_mtu;                      /* MTU of stream */
   uint8_t media_type;         /* Media type: AVDT_MEDIA_TYPE_* */
@@ -616,9 +618,6 @@ typedef struct {
   tBTA_AV_CBACK* p_cback;                /* application callback function */
   tBTA_AV_RCB rcb[BTA_AV_NUM_RCB];       /* RCB control block */
   tBTA_AV_LCB lcb[BTA_AV_NUM_LINKS + 1]; /* link control block */
-  alarm_t* link_signalling_timer;
-  alarm_t*
-      accept_signalling_timer;  /* timer to monitor signalling when accepting */
   uint32_t sdp_a2dp_handle;     /* SDP record handle for audio src */
   uint32_t sdp_a2dp_snk_handle; /* SDP record handle for audio snk */
   tBTA_AV_FEAT features;        /* features mask */
