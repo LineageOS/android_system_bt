@@ -496,6 +496,7 @@ class AvdtpScb {
   uint8_t curr_evt;    // current event; set only by the state machine
   bool cong;           // True if the media transport channel is congested
   uint8_t close_code;  // Error code received in close response
+  bool curr_stream;    // True if the SCB is the current stream, False otherwise
 
  private:
   uint8_t scb_handle_;  // Unique handle for this AvdtpScb entry
