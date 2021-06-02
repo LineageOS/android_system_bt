@@ -560,6 +560,41 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
   if (p_ctrl_le_feature_rd_cmpl_cback != NULL)
     p_ctrl_le_feature_rd_cmpl_cback(status);
 }
+
+#if (BLE_VND_MALFORMED_HCI_BLE_VENDOR_CAP_RESPONSE == TRUE)
+/*******************************************************************************
+ *
+ * Function         btm_ble_malformed_vendor_capability_vsc_cmpl_cback
+ *
+ * Description      Command Complete callback for malformed HCI_BLE_VENDOR_CAP
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void btm_ble_malformed_vendor_capability_vsc_cmpl_cback(
+    tBTM_VSC_CMPL* p_vcs_cplt_params) {
+  CHECK(p_vcs_cplt_params->opcode == HCI_BLE_VENDOR_CAP);
+  CHECK(p_vcs_cplt_params->param_len > 0);
+
+  uint8_t param_buf[BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE] = { 0 };
+  memcpy(param_buf, p_vcs_cplt_params->p_param_buf, p_vcs_cplt_params->param_len);
+
+  tBTM_VSC_CMPL vcs_cplt_params;
+  vcs_cplt_params.opcode = p_vcs_cplt_params->opcode;
+  vcs_cplt_params.param_len = p_vcs_cplt_params->param_len;
+  vcs_cplt_params.p_param_buf = param_buf;
+
+  if (vcs_cplt_params.param_len < BTM_VSC_CHIP_CAPABILITY_RSP_LEN) {
+    vcs_cplt_params.param_len = BTM_VSC_CHIP_CAPABILITY_RSP_LEN;
+  } else if (vcs_cplt_params.param_len > BTM_VSC_CHIP_CAPABILITY_RSP_LEN_L_RELEASE) {
+    if (vcs_cplt_params.param_len < BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE) {
+      vcs_cplt_params.param_len = BTM_VSC_CHIP_CAPABILITY_RSP_LEN_M_RELEASE;
+    }
+  }
+
+  btm_ble_vendor_capability_vsc_cmpl_cback(&vcs_cplt_params);
+}
+#endif /* (BLE_VND_MALFORMED_HCI_BLE_VENDOR_CAP_RESPONSE == TRUE) */
 #endif /* (BLE_VND_INCLUDED == TRUE) */
 
 /*******************************************************************************
@@ -601,8 +636,13 @@ extern void BTM_BleReadControllerFeatures(
   BTM_TRACE_DEBUG("BTM_BleReadControllerFeatures");
 
   p_ctrl_le_feature_rd_cmpl_cback = p_vsc_cback;
+#if (BLE_VND_MALFORMED_HCI_BLE_VENDOR_CAP_RESPONSE == TRUE)
+  BTM_VendorSpecificCommand(HCI_BLE_VENDOR_CAP, 0, NULL,
+                            btm_ble_malformed_vendor_capability_vsc_cmpl_cback);
+#else
   BTM_VendorSpecificCommand(HCI_BLE_VENDOR_CAP, 0, NULL,
                             btm_ble_vendor_capability_vsc_cmpl_cback);
+#endif
 }
 #else
 extern void BTM_BleReadControllerFeatures(
