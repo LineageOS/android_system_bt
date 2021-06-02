@@ -860,6 +860,8 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   p_scb->num_disc_snks = 0;
   p_scb->coll_mask = 0;
   alarm_cancel(p_scb->avrc_ct_timer);
+  alarm_cancel(p_scb->link_signalling_timer);
+  alarm_cancel(p_scb->accept_signalling_timer);
 
   /* TODO(eisenbach): RE-IMPLEMENT USING VSC OR HAL EXTENSION
     vendor_get_interface()->send_command(
@@ -935,7 +937,7 @@ void bta_av_config_ind(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   /* Clear collision mask */
   p_scb->coll_mask = 0;
-  alarm_cancel(bta_av_cb.accept_signalling_timer);
+  alarm_cancel(p_scb->accept_signalling_timer);
 
   /* if no codec parameters in configuration, fail */
   if ((p_evt_cfg->num_codec == 0) ||
@@ -1001,7 +1003,8 @@ void bta_av_disconnect_req(tBTA_AV_SCB* p_scb,
   APPL_TRACE_API("%s: conn_lcb: 0x%x peer_addr: %s", __func__,
                  bta_av_cb.conn_lcb, p_scb->PeerAddress().ToString().c_str());
 
-  alarm_cancel(bta_av_cb.link_signalling_timer);
+  alarm_cancel(p_scb->link_signalling_timer);
+  alarm_cancel(p_scb->accept_signalling_timer);
   alarm_cancel(p_scb->avrc_ct_timer);
 
   // conn_lcb is the index bitmask of all used LCBs, and since LCB and SCB use
@@ -1091,7 +1094,7 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label,
                  p_data->ci_setconfig.err_code, p_data->ci_setconfig.category);
 
-  alarm_cancel(bta_av_cb.link_signalling_timer);
+  alarm_cancel(p_scb->link_signalling_timer);
 
   if (p_data->ci_setconfig.err_code == AVDT_SUCCESS) {
     p_scb->wait = BTA_AV_WAIT_ACP_CAPS_ON;
@@ -1316,7 +1319,7 @@ void bta_av_do_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   if (p_scb->co_started) {
     bta_av_str_stopped(p_scb, NULL);
   }
-  alarm_cancel(bta_av_cb.link_signalling_timer);
+  alarm_cancel(p_scb->link_signalling_timer);
 
   /* close stream */
   p_scb->started = false;
