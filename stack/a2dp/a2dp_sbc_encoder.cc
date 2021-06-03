@@ -903,6 +903,23 @@ void A2dpCodecConfigSbcSource::debug_codec_dump(int fd) {
 
   A2dpCodecConfig::debug_codec_dump(fd);
 
+  uint8_t codec_info[AVDT_CODEC_SIZE];
+  if (copyOutOtaCodecConfig(codec_info)) {
+    dprintf(fd,
+            "  Block length                                            : %d\n",
+            A2DP_GetNumberOfBlocksSbc(codec_info));
+    dprintf(fd,
+            "  Number of subbands                                      : %d\n",
+            A2DP_GetNumberOfSubbandsSbc(codec_info));
+    dprintf(fd,
+            "  Allocation method                                       : %d\n",
+            A2DP_GetAllocationMethodCodeSbc(codec_info));
+    dprintf(
+        fd,
+        "  Bitpool (min/max)                                       : %d / %d\n",
+        A2DP_GetMinBitpoolSbc(codec_info), A2DP_GetMaxBitpoolSbc(codec_info));
+  }
+
   dprintf(fd,
           "  Packet counts (expected/dropped)                        : %zu / "
           "%zu\n",
