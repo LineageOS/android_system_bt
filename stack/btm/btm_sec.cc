@@ -4611,15 +4611,26 @@ void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
   tBTM_SEC_CALLBACK* p_callback = p_dev_rec->p_callback;
   p_dev_rec->p_callback = NULL;
   if (p_callback != nullptr) {
-    if (is_le_transport)
+    if (is_le_transport) {
       (*p_callback)(&p_dev_rec->ble.pseudo_addr, BT_TRANSPORT_LE,
                     p_dev_rec->p_ref_data, btm_status);
-    else
+    } else {
       (*p_callback)(&p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR,
                     p_dev_rec->p_ref_data, btm_status);
+    }
   }
 
   btm_sec_check_pending_reqs();
+}
+
+void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address,
+                                         tSMP_LOC_OOB_DATA loc_oob_data) {
+  tBTM_LE_EVT_DATA evt_data = {
+      .local_oob_data = loc_oob_data,
+  };
+  if (btm_cb.api.p_le_callback) {
+    (*btm_cb.api.p_le_callback)(BTM_LE_SC_LOC_OOB_EVT, address, &evt_data);
+  }
 }
 
 /*******************************************************************************

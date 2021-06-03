@@ -1673,6 +1673,13 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       BTIF_TRACE_DEBUG("BTA_DM_BLE_SC_OOB_REQ_EVT. ");
       btif_dm_ble_sc_oob_req_evt(&p_data->rmt_oob);
       break;
+    case BTA_DM_BLE_SC_CR_LOC_OOB_EVT:
+      BTIF_TRACE_DEBUG("BTA_DM_BLE_SC_CR_LOC_OOB_EVT");
+      btif_dm_proc_loc_oob(BT_TRANSPORT_LE, true,
+                           p_data->local_oob_data.local_oob_c,
+                           p_data->local_oob_data.local_oob_r);
+      break;
+
     case BTA_DM_BLE_LOCAL_IR_EVT:
       BTIF_TRACE_DEBUG("BTA_DM_BLE_LOCAL_IR_EVT. ");
       ble_local_key_cb.is_id_keys_rcvd = true;
@@ -2812,7 +2819,7 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
 
   /* make sure OOB data is for this particular device */
   if (req_oob_type->bd_addr != oob_cb.bdaddr) {
-    LOG_WARN("remote address didn't match OOB data address");
+    LOG_ERROR("remote address didn't match OOB data address");
     return;
   }
 

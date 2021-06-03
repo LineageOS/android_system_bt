@@ -569,7 +569,7 @@ void SMP_CrLocScOobData(
         callback) {
   smp_cb.local_random = bluetooth::os::GenerateRandom<16>();
   smp_cb.selected_association_model = SMP_MODEL_SEC_CONN_OOB;
-  smp_calculate_local_commitment(&smp_cb);
-  std::move(callback).Run(BT_TRANSPORT_LE, true, smp_cb.commitment,
-                          smp_cb.local_random);
+
+  tSMP_INT_DATA smp_int_data;
+  smp_sm_event(&smp_cb, SMP_CR_LOC_SC_OOB_DATA_EVT, &smp_int_data);
 }
