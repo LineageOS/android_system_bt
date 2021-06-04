@@ -758,7 +758,6 @@ const tAVDT_SCB_ST_TBL avdt_scb_st_tbl[] = {
 void avdt_scb_event(AvdtpScb* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
   tAVDT_SCB_ST_TBL state_table;
   uint8_t action;
-  int i;
 
 #if (AVDT_DEBUG == TRUE)
   AVDT_TRACE_EVENT(
@@ -766,6 +765,36 @@ void avdt_scb_event(AvdtpScb* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
       __func__, avdt_scb_to_hdl(p_scb), event, avdt_scb_evt_str[event],
       avdt_scb_st_str[p_scb->state], p_scb, p_scb->stream_config.scb_index);
 #endif
+
+  /* Check that we only send AVDT_SCB_API_WRITE_REQ_EVT to the active stream
+   * device */
+  uint8_t num_st_streams = 0;
+  int ccb_index = -1;
+  int scb_index = -1;
+
+  for (int i = 0; i < AVDT_NUM_LINKS; i++) {
+    for (int j = 0; j < AVDT_NUM_SEPS; j++) {
+      AvdtpScb* p_avdt_scb = &avdtp_cb.ccb[i].scb[j];
+      if (p_avdt_scb->allocated &&
+          avdt_scb_st_tbl[p_avdt_scb->state] == avdt_scb_st_stream) {
+        num_st_streams++;
+        ccb_index = i;
+        scb_index = j;
+      } else {
+        p_avdt_scb->curr_stream = false;
+      }
+    }
+  }
+
+  if (num_st_streams == 1) {
+    avdtp_cb.ccb[ccb_index].scb[scb_index].curr_stream = true;
+  } else if (num_st_streams > 1 && !p_scb->curr_stream &&
+             event == AVDT_SCB_API_WRITE_REQ_EVT) {
+    AVDT_TRACE_ERROR("%s: ignore AVDT_SCB_API_WRITE_REQ_EVT", __func__);
+    avdt_scb_free_pkt(p_scb, p_data);
+    return;
+  }
+
   /* set current event */
   p_scb->curr_evt = event;
 
@@ -778,7 +807,7 @@ void avdt_scb_event(AvdtpScb* p_scb, uint8_t event, tAVDT_SCB_EVT* p_data) {
   }
 
   /* execute action functions */
-  for (i = 0; i < AVDT_SCB_ACTIONS; i++) {
+  for (int i = 0; i < AVDT_SCB_ACTIONS; i++) {
     action = state_table[event][i];
     if (action != AVDT_SCB_IGNORE) {
       (*avdtp_cb.p_scb_act[action])(p_scb, p_data);

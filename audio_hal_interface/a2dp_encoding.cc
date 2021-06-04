@@ -19,6 +19,7 @@
 #include "client_interface.h"
 #include "codec_status.h"
 
+#include "a2dp_sbc_constants.h"
 #include "btif_a2dp_source.h"
 #include "btif_av.h"
 #include "btif_av_co.h"
@@ -282,7 +283,11 @@ bool a2dp_get_selected_hal_codec_config(CodecConfiguration* codec_config) {
   } else {
     codec_config->peerMtu = peer_param.peer_mtu;
   }
-  if (codec_config->peerMtu > MAX_3MBPS_AVDTP_MTU) {
+  if (current_codec.codec_type == BTAV_A2DP_CODEC_INDEX_SOURCE_SBC &&
+      codec_config->config.sbcConfig().maxBitpool <=
+          A2DP_SBC_BITPOOL_MIDDLE_QUALITY) {
+    codec_config->peerMtu = MAX_2MBPS_AVDTP_MTU;
+  } else if (codec_config->peerMtu > MAX_3MBPS_AVDTP_MTU) {
     codec_config->peerMtu = MAX_3MBPS_AVDTP_MTU;
   }
   LOG(INFO) << __func__ << ": CodecConfiguration=" << toString(*codec_config);

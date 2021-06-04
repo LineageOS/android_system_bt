@@ -1305,6 +1305,12 @@ void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
    * expect BTA_AV_DEREG_COMP_EVT when deregister is complete */
   for (xx = 0; xx < BTA_AV_NUM_STRS; xx++) {
     if (p_cb->p_scb[xx] != NULL) {
+      // Free signalling timers
+      alarm_free(p_cb->p_scb[xx]->link_signalling_timer);
+      p_cb->p_scb[xx]->link_signalling_timer = NULL;
+      alarm_free(p_cb->p_scb[xx]->accept_signalling_timer);
+      p_cb->p_scb[xx]->accept_signalling_timer = NULL;
+
       hdr.layer_specific = xx + 1;
       bta_av_api_deregister((tBTA_AV_DATA*)&hdr);
       disabling_in_progress = true;
@@ -1315,10 +1321,6 @@ void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   // no needed to setup this disabling flag.
   p_cb->disabling = disabling_in_progress;
 
-  alarm_free(p_cb->link_signalling_timer);
-  p_cb->link_signalling_timer = NULL;
-  alarm_free(p_cb->accept_signalling_timer);
-  p_cb->accept_signalling_timer = NULL;
 }
 
 /*******************************************************************************
@@ -1331,8 +1333,10 @@ void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_api_disconnect(tBTA_AV_DATA* p_data) {
-  AVDT_DisconnectReq(p_data->api_discnt.bd_addr, bta_av_conn_cback);
-  alarm_cancel(bta_av_cb.link_signalling_timer);
+  tBTA_AV_SCB* p_scb =
+      bta_av_hndl_to_scb(p_data->api_discnt.hdr.layer_specific);
+  AVDT_DisconnectReq(p_scb->PeerAddress(), bta_av_conn_cback);
+  alarm_cancel(p_scb->link_signalling_timer);
 }
 
 /**
@@ -1450,21 +1454,30 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
          * The following function shall send the event and start the
          * recurring timer
          */
-        bta_av_signalling_timer(NULL);
+        if (!p_scb->link_signalling_timer) {
+          p_scb->link_signalling_timer = alarm_new("link_signalling_timer");
+        }
+        BT_HDR hdr;
+        hdr.layer_specific = p_scb->hndl;
+        bta_av_signalling_timer((tBTA_AV_DATA*)&hdr);
 
         APPL_TRACE_DEBUG("%s: Re-start timer for AVDTP service", __func__);
         bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
         /* Possible collision : need to avoid outgoing processing while the
          * timer is running */
         p_scb->coll_mask = BTA_AV_COLL_INC_TMR;
+        if (!p_scb->accept_signalling_timer) {
+          p_scb->accept_signalling_timer = alarm_new("accept_signalling_timer");
+        }
         alarm_set_on_mloop(
-            p_cb->accept_signalling_timer, BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
+            p_scb->accept_signalling_timer, BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
             bta_av_accept_signalling_timer_cback, UINT_TO_PTR(xx));
       }
     }
   }
   else if (event == BTA_AR_AVDT_CONN_EVT) {
-    alarm_cancel(bta_av_cb.link_signalling_timer);
+    uint8_t scb_index = p_data->str_msg.scb_index;
+    alarm_cancel(p_cb->p_scb[scb_index]->link_signalling_timer);
   }
   else {
     /* disconnected. */
@@ -1511,6 +1524,9 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_signalling_timer(UNUSED_ATTR tBTA_AV_DATA* p_data) {
+  tBTA_AV_HNDL hndl = p_data->hdr.layer_specific;
+  tBTA_AV_SCB* p_scb = bta_av_hndl_to_scb(hndl);
+
   tBTA_AV_CB* p_cb = &bta_av_cb;
   int xx;
   uint8_t mask;
@@ -1527,9 +1543,10 @@ void bta_av_signalling_timer(UNUSED_ATTR tBTA_AV_DATA* p_data) {
     if (mask & p_cb->conn_lcb) {
       /* this entry is used. check if it is connected */
       if (!p_lcb->conn_msk) {
-        bta_sys_start_timer(p_cb->link_signalling_timer,
+        APPL_TRACE_DEBUG("%s hndl 0x%x", __func__, p_scb->hndl);
+        bta_sys_start_timer(p_scb->link_signalling_timer,
                             BTA_AV_SIGNALLING_TIMEOUT_MS,
-                            BTA_AV_SIGNALLING_TIMER_EVT, 0);
+                            BTA_AV_SIGNALLING_TIMER_EVT, hndl);
         tBTA_AV_PEND pend;
         pend.bd_addr = p_lcb->addr;
         tBTA_AV bta_av_data;
@@ -1574,7 +1591,7 @@ static void bta_av_accept_signalling_timer_cback(void* data) {
           /* We are still doing SDP. Run the timer again. */
           p_scb->coll_mask |= BTA_AV_COLL_INC_TMR;
 
-          alarm_set_on_mloop(p_cb->accept_signalling_timer,
+          alarm_set_on_mloop(p_scb->accept_signalling_timer,
                              BTA_AV_ACCEPT_SIGNALLING_TIMEOUT_MS,
                              bta_av_accept_signalling_timer_cback,
                              UINT_TO_PTR(inx));
