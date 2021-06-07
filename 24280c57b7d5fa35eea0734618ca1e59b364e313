@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6de68435_28cc4e7f",
+        "filename": "stack/avrc/avrc_api.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 12604
+      },
+      "writtenOn": "2021-06-07T17:10:03Z",
+      "side": 1,
+      "message": "Yes, the intent was to fix the usage of p_drop_msg, but this change is not required to fix the security issue.  I have put it in a separate commit.",
+      "parentUuid": "e7af0005_ef3783a9",
+      "range": {
+        "startLine": 651,
+        "startChar": 0,
+        "endLine": 651,
+        "endChar": 27
+      },
+      "revId": "24280c57b7d5fa35eea0734618ca1e59b364e313",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "717378e2_22a0acd8",
         "filename": "stack/avrc/avrc_api.c",
         "patchSetId": 4
