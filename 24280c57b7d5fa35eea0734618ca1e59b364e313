@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e7af0005_ef3783a9",
+        "filename": "stack/avrc/avrc_api.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 651,
+      "author": {
+        "id": 15173
+      },
+      "writtenOn": "2021-06-07T12:38:33Z",
+      "side": 1,
+      "message": "This code change seems unrelated to the security issue being patched.",
+      "range": {
+        "startLine": 651,
+        "startChar": 0,
+        "endLine": 651,
+        "endChar": 27
+      },
+      "revId": "24280c57b7d5fa35eea0734618ca1e59b364e313",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "717378e2_22a0acd8",
+        "filename": "stack/avrc/avrc_api.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 693,
+      "author": {
+        "id": 15173
+      },
+      "writtenOn": "2021-06-07T12:38:33Z",
+      "side": 1,
+      "message": "Ditto",
+      "range": {
+        "startLine": 693,
+        "startChar": 0,
+        "endLine": 693,
+        "endChar": 27
+      },
+      "revId": "24280c57b7d5fa35eea0734618ca1e59b364e313",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
