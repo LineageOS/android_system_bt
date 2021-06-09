@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <arpa/inet.h>  // htons
 #include <dlfcn.h>
 #include <gtest/gtest.h>
 
@@ -109,4 +110,50 @@ TEST_F(StackAvrcpTest, test_avrcp_parse_browse_cmd) {
   msg.browse.browse_len = 7;
   EXPECT_EQ(AVRC_ParsCommand(&msg, &result, scratch_buf, sizeof(scratch_buf)),
             AVRC_STS_NO_ERROR);
+}
+
+TEST_F(StackAvrcpTest, test_avrcp_pdu_register_notification) {
+  ASSERT_EQ(htons(0x500), 5);
+
+  struct {
+    uint8_t pdu;
+    uint8_t reserved;
+    uint16_t len;
+    struct {
+      uint8_t event_id;
+      uint32_t param;
+    } payload;
+  } data = {
+      AVRC_PDU_REGISTER_NOTIFICATION,
+      0,  // reserved
+      htons(sizeof(data.payload)),
+      .payload =
+          {
+              .event_id = 0,
+              .param = 0x1234,
+          },
+  };
+
+  tAVRC_MSG msg = {
+      .vendor =
+          {
+              .hdr =
+                  {
+                      .ctype = AVRC_CMD_NOTIF,
+                      .opcode = AVRC_OP_VENDOR,
+                  },
+              .p_vendor_data = (uint8_t*)&data,
+              .vendor_len = sizeof(data),
+          },
+  };
+  tAVRC_COMMAND result{};
+
+  // Run through all possible event ids
+  uint8_t id = 0;
+  do {
+    data.payload.event_id = id;
+    ASSERT_EQ((id == 0 || id > AVRC_NUM_NOTIF_EVENTS) ? AVRC_STS_BAD_PARAM
+                                                      : AVRC_STS_NO_ERROR,
+              AVRC_Ctrl_ParsCommand(&msg, &result));
+  } while (++id != 0);
 }
