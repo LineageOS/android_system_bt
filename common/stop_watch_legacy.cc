@@ -19,6 +19,7 @@
 #include "common/stop_watch_legacy.h"
 
 #include <iomanip>
+#include <mutex>
 #include <sstream>
 #include <utility>
 
@@ -31,16 +32,29 @@ namespace common {
 static const int LOG_BUFFER_LENGTH = 10;
 static std::array<StopWatchLog, LOG_BUFFER_LENGTH> stopwatch_logs;
 static int current_buffer_index;
+static std::recursive_mutex stopwatch_log_mutex;
 
 void StopWatchLegacy::RecordLog(StopWatchLog log) {
+  std::unique_lock<std::recursive_mutex> lock(stopwatch_log_mutex, std::defer_lock);
+  if (!lock.try_lock()) {
+    LOG_INFO("try_lock fail. log content: %s, took %zu us", log.message.c_str(),
+             static_cast<size_t>(
+                 std::chrono::duration_cast<std::chrono::microseconds>(
+                     stopwatch_logs[current_buffer_index].end_timestamp -
+                     stopwatch_logs[current_buffer_index].start_timestamp)
+                     .count()));
+    return;
+  }
   if (current_buffer_index >= LOG_BUFFER_LENGTH) {
     current_buffer_index = 0;
   }
   stopwatch_logs[current_buffer_index] = std::move(log);
   current_buffer_index++;
+  lock.unlock();
 }
 
 void StopWatchLegacy::DumpStopWatchLog() {
+  std::lock_guard<std::recursive_mutex> lock(stopwatch_log_mutex);
   LOG_INFO("=====================================");
   LOG_INFO("bluetooth stopwatch log history:");
   for (int i = 0; i < LOG_BUFFER_LENGTH; i++) {
@@ -48,7 +62,8 @@ void StopWatchLegacy::DumpStopWatchLog() {
       current_buffer_index = 0;
     }
     if (stopwatch_logs[current_buffer_index].message.empty()) {
-      break;
+      current_buffer_index++;
+      continue;
     }
     std::stringstream ss;
     auto now = stopwatch_logs[current_buffer_index].timestamp;
