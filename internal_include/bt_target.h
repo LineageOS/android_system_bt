@@ -292,6 +292,16 @@
 #define BTM_SCO_ENHANCED_SYNC_ENABLED TRUE
 #endif
 
+/*  This is used to work around an uncompliant AOSP implementation regarding
+ *  eSCO Transport Unit Size parameter defined as 0x00 (HCI) which is not
+ *  suitable for all devices. This sets this parameter to 16 bits (PCM)
+ */
+#ifdef BTM_ESCO_TRANSPORT_UNIT_SIZE_PCM16
+#define ESCO_TRANSPORT_UNIT_SIZE 16
+#else
+#define ESCO_TRANSPORT_UNIT_SIZE 0x00
+#endif
+
 /**************************
  * Initial SCO TX credit
  ************************/
