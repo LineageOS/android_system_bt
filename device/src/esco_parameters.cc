@@ -18,6 +18,7 @@
 
 #include "base/logging.h"
 
+#include "bt_target.h"
 #include "device/include/esco_parameters.h"
 
 static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
@@ -48,8 +49,8 @@ static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
      .output_pcm_payload_msb_position = 0,
      .input_data_path = ESCO_DATA_PATH_PCM,
      .output_data_path = ESCO_DATA_PATH_PCM,
-     .input_transport_unit_size = 0x00,
-     .output_transport_unit_size = 0x00,
+     .input_transport_unit_size = ESCO_TRANSPORT_UNIT_SIZE,
+     .output_transport_unit_size = ESCO_TRANSPORT_UNIT_SIZE,
 #if (BTA_HFP_VERSION >= HFP_VERSION_1_7)
      .max_latency_ms = 12,
 #else
@@ -96,8 +97,8 @@ static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
      .output_pcm_payload_msb_position = 0,
      .input_data_path = ESCO_DATA_PATH_PCM,
      .output_data_path = ESCO_DATA_PATH_PCM,
-     .input_transport_unit_size = 0x00,
-     .output_transport_unit_size = 0x00,
+     .input_transport_unit_size = ESCO_TRANSPORT_UNIT_SIZE,
+     .output_transport_unit_size = ESCO_TRANSPORT_UNIT_SIZE,
      .max_latency_ms = 8,
      .packet_types =
          (ESCO_PKT_TYPES_MASK_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 |
@@ -131,8 +132,8 @@ static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
      .output_pcm_payload_msb_position = 0,
      .input_data_path = ESCO_DATA_PATH_PCM,
      .output_data_path = ESCO_DATA_PATH_PCM,
-     .input_transport_unit_size = 0x00,
-     .output_transport_unit_size = 0x00,
+     .input_transport_unit_size = ESCO_TRANSPORT_UNIT_SIZE,
+     .output_transport_unit_size = ESCO_TRANSPORT_UNIT_SIZE,
      .max_latency_ms = 13,
      .packet_types =
          (ESCO_PKT_TYPES_MASK_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 |
