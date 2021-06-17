@@ -652,7 +652,7 @@ void avdt_scb_hdl_setconfig_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_scb_snd_snk_delay_rpt_req(AvdtpScb* p_scb,
-                                UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
+                                    UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
   if (p_scb->p_ccb == NULL) {
     return;
   }
@@ -683,8 +683,7 @@ void avdt_scb_snd_snk_delay_rpt_req(AvdtpScb* p_scb,
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_scb_hdl_setconfig_rsp(AvdtpScb* p_scb,
-                                UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
+void avdt_scb_hdl_setconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
   tAVDT_EVT_HDR single;
 
   if (p_scb->p_ccb != NULL) {
