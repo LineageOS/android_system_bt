@@ -963,7 +963,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         ** peer features do not have HF Indicators, service level conn. now open
         */
         if (!p_scb->svc_conn &&
-            !((p_scb->features & BTA_AG_FEAT_HF_IND) &&
+            !((p_scb->masked_features & BTA_AG_FEAT_HF_IND) &&
               (p_scb->peer_features & BTA_AG_PEER_FEAT_HF_IND))) {
           bta_ag_svc_conn_open(p_scb, tBTA_AG_DATA::kEmpty);
         }
@@ -1060,9 +1060,9 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
          * peer features do not have 3-way or HF Indicators, service level conn.
          * now open */
         if (!p_scb->svc_conn &&
-            !((p_scb->features & BTA_AG_FEAT_3WAY) &&
+            !((p_scb->masked_features & BTA_AG_FEAT_3WAY) &&
               (p_scb->peer_features & BTA_AG_PEER_FEAT_3WAY)) &&
-            !((p_scb->features & BTA_AG_FEAT_HF_IND) &&
+            !((p_scb->masked_features & BTA_AG_FEAT_HF_IND) &&
               (p_scb->peer_features & BTA_AG_PEER_FEAT_HF_IND))) {
           bta_ag_svc_conn_open(p_scb, tBTA_AG_DATA::kEmpty);
         }
@@ -1102,17 +1102,16 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
       /* store peer features */
       p_scb->peer_features = (uint16_t)int_arg;
 
-      tBTA_AG_FEAT features = p_scb->features;
       if (p_scb->peer_version < HFP_VERSION_1_7) {
-        features &= HFP_1_6_FEAT_MASK;
+        p_scb->masked_features &= HFP_1_6_FEAT_MASK;
       }
 
       APPL_TRACE_DEBUG("%s BRSF HF: 0x%x, phone: 0x%x", __func__,
-                       p_scb->peer_features, features);
+                       p_scb->peer_features, p_scb->masked_features);
 
       /* send BRSF, send OK */
       bta_ag_send_result(p_scb, BTA_AG_LOCAL_RES_BRSF, nullptr,
-                         (int16_t)features);
+                         (int16_t)p_scb->masked_features);
       bta_ag_send_ok(p_scb);
       break;
     }
