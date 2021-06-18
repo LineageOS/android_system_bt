@@ -42,6 +42,7 @@
 #include "common/message_loop_thread.h"
 #include "common/metrics.h"
 #include "common/once_timer.h"
+#include "common/stop_watch_legacy.h"
 #include "hci_inject.h"
 #include "hci_internals.h"
 #include "hcidefs.h"
@@ -58,6 +59,7 @@
 
 using bluetooth::common::MessageLoopThread;
 using bluetooth::common::OnceTimer;
+using bluetooth::common::StopWatchLegacy;
 
 extern void hci_initialize();
 extern void hci_transmit(BT_HDR* packet);
@@ -376,6 +378,8 @@ static void event_finish_startup(UNUSED_ATTR void* context) {
 static void startup_timer_expired(UNUSED_ATTR void* context) {
   LOG_ERROR("%s", __func__);
 
+  StopWatchLegacy::DumpStopWatchLog();
+
   LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, HCI_STARTUP_TIMED_OUT);
 
   hci_close();
@@ -522,6 +526,7 @@ static void command_timed_out_log_info(void* original_wait_entry) {
 // Print debugging information and quit. Don't dereference original_wait_entry.
 static void command_timed_out(void* original_wait_entry) {
   LOG_ERROR("%s", __func__);
+  StopWatchLegacy::DumpStopWatchLog();
   std::unique_lock<std::recursive_timed_mutex> lock(
       commands_pending_response_mutex, std::defer_lock);
   if (!lock.try_lock_for(std::chrono::milliseconds(
