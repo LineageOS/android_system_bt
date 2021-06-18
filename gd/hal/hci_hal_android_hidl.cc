@@ -83,6 +83,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
   }
 
   Return<void> initializationComplete(HidlStatus status) {
+    common::StopWatch(__func__);
     ASSERT(status == HidlStatus::SUCCESS);
     init_promise_->set_value();
     return Void();
