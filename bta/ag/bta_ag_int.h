@@ -203,6 +203,7 @@ struct tBTA_AG_SCB {
   tBTA_SERVICE_MASK open_services;      /* services specified in open API */
   uint16_t conn_handle;                 /* RFCOMM handle of connected service */
   tBTA_AG_FEAT features;                /* features registered by application */
+  tBTA_AG_FEAT masked_features;         /* local BRSF features for this connection */
   tBTA_AG_PEER_FEAT peer_features;      /* peer device features */
   uint16_t peer_sdp_features;           /* peer device SDP features */
   uint16_t peer_version;                /* profile version of peer device */
