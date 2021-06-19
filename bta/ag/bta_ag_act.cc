@@ -100,6 +100,7 @@ void bta_ag_register(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   /* initialize control block */
   p_scb->reg_services = data.api_register.services;
   p_scb->features = data.api_register.features;
+  p_scb->masked_features = data.api_register.features;
   p_scb->app_id = data.api_register.app_id;
 
   /* create SDP records */
@@ -361,6 +362,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb,
   /* reinitialize stuff */
   p_scb->conn_service = 0;
   p_scb->peer_features = 0;
+  p_scb->masked_features = p_scb->features;
   p_scb->peer_codecs = BTA_AG_CODEC_CVSD;
   p_scb->sco_codec = BTA_AG_CODEC_CVSD;
   /* Clear these flags upon SLC teardown */
