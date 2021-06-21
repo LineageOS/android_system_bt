@@ -59,6 +59,9 @@
   (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_VREC | \
    BTA_AG_FEAT_INBAND | BTA_AG_FEAT_VTAG)
 
+/* Timeout for alarm in 2018 toyota camry carkit workaround */
+#define BTA_AG_BIND_TIMEOUT_MS 500
+
 enum {
   /* these events are handled by the state machine */
   BTA_AG_API_REGISTER_EVT = BTA_SYS_EVT_START(BTA_ID_AG),
@@ -231,6 +234,7 @@ struct tBTA_AG_SCB {
   uint8_t battchg_ind;      /* CIEV battery charge indicator value */
   uint8_t callheld_ind;     /* CIEV call held indicator value */
   uint32_t bia_masked_out;  /* indicators HF does not want us to send */
+  alarm_t* bind_timer;      /* Timer for toyota camry 2018 carkit workaround */
   alarm_t* collision_timer;
   alarm_t* ring_timer;
   alarm_t* codec_negotiation_timer;
