@@ -25,6 +25,7 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/utl.h"
+#include "device/include/interop.h"
 #include "osi/include/compat.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"  // UNUSED_ATTR
@@ -822,6 +823,21 @@ static bool bta_ag_parse_biev_response(tBTA_AG_SCB* p_scb, tBTA_AG_VAL* val) {
 
 /*******************************************************************************
  *
+ * Function         bta_ag_bind_timer_cback
+ *
+ * Description      Handles bind timer callback
+ *
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_ag_bind_timer_cback(void* data) {
+  tBTA_AG_SCB* p_scb = (tBTA_AG_SCB*)data;
+  bta_ag_svc_conn_open(p_scb, tBTA_AG_DATA::kEmpty);
+}
+
+/*******************************************************************************
+ *
  * Function         bta_ag_at_hfp_cback
  *
  * Description      AT command processing callback for HFP.
@@ -966,6 +982,13 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
             !((p_scb->masked_features & BTA_AG_FEAT_HF_IND) &&
               (p_scb->peer_features & BTA_AG_PEER_FEAT_HF_IND))) {
           bta_ag_svc_conn_open(p_scb, tBTA_AG_DATA::kEmpty);
+        } else {
+          if (p_scb->peer_version >= HFP_VERSION_1_7 &&
+              interop_match_addr(INTEROP_SLC_SKIP_BIND_COMMAND,
+                                 &p_scb->peer_addr)) {
+            alarm_set_on_mloop(p_scb->bind_timer, BTA_AG_BIND_TIMEOUT_MS,
+                               bta_ag_bind_timer_cback, p_scb);
+          }
         }
       } else {
         val.idx = bta_ag_parse_chld(p_scb, val.str);
@@ -1008,6 +1031,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
     case BTA_AG_AT_BIND_EVT:
       APPL_TRACE_DEBUG("%s BTA_AG_AT_BIND_EVT arg_type: %d", __func__,
                        arg_type);
+      alarm_cancel(p_scb->bind_timer);
       if (arg_type == BTA_AG_AT_SET) {
         if (bta_ag_parse_bind_set(p_scb, val)) {
           bta_ag_send_ok(p_scb);

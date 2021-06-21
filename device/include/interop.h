@@ -111,7 +111,11 @@ typedef enum {
 
   // Do not send AVDTP SUSPEND while the playback is paused.
   // Some older A2DP Sink devices might not support to pause the streaming.
-  INTEROP_DISABLE_AVDTP_SUSPEND
+  INTEROP_DISABLE_AVDTP_SUSPEND,
+
+  // Some car kits do not send the AT+BIND command while establishing the SLC
+  // which causes an HFP profile connection failure
+  INTEROP_SLC_SKIP_BIND_COMMAND
 } interop_feature_t;
 
 // Check if a given |addr| matches a known interoperability workaround as
