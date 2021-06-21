@@ -110,9 +110,8 @@ class EattTest : public testing::Test {
     ASSERT_TRUE(test_tcb.eatt == 0);
   }
 
-  void DisconnectEattDevice(void) {
-    EXPECT_CALL(l2cap_interface_, DisconnectRequest(_))
-        .Times(connected_cids_.size());
+  void DisconnectEattDevice(std::vector<uint16_t> cids) {
+    EXPECT_CALL(l2cap_interface_, DisconnectRequest(_)).Times(cids.size());
     eatt_instance_->Disconnect(test_address);
 
     ASSERT_TRUE(test_tcb.eatt == 0);
@@ -177,12 +176,28 @@ class EattTest : public testing::Test {
 
 TEST_F(EattTest, ConnectSucceed) {
   ConnectDeviceEattSupported(1);
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
+}
+
+TEST_F(EattTest, ReconnectInitiatedByRemoteSucceed) {
+  ConnectDeviceEattSupported(1);
+  DisconnectEattDevice(connected_cids_);
+  std::vector<uint16_t> incoming_cids{71, 72, 73, 74, 75};
+
+  EXPECT_CALL(
+      l2cap_interface_,
+      ConnectCreditBasedRsp(test_address, 1, incoming_cids, L2CAP_CONN_OK, _))
+      .WillOnce(Return(true));
+
+  l2cap_app_info_.pL2CA_CreditBasedConnectInd_Cb(
+      test_address, incoming_cids, BT_PSM_EATT, EATT_MIN_MTU_MPS, 1);
+
+  DisconnectEattDevice(incoming_cids);
 }
 
 TEST_F(EattTest, ConnectSucceedMultipleChannels) {
   ConnectDeviceEattSupported(5);
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 }
 
 TEST_F(EattTest, ConnectFailedEattNotSupported) {
@@ -253,7 +268,7 @@ TEST_F(EattTest, ReconfigAllSucceed) {
     ASSERT_TRUE(channel->rx_mtu_ == new_mtu);
   }
 
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 }
 
 TEST_F(EattTest, ReconfigAllFailed) {
@@ -281,7 +296,7 @@ TEST_F(EattTest, ReconfigAllFailed) {
     ASSERT_TRUE(channel->rx_mtu_ != new_mtu);
   }
 
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 }
 
 TEST_F(EattTest, ReconfigSingleSucceed) {
@@ -308,7 +323,7 @@ TEST_F(EattTest, ReconfigSingleSucceed) {
   ASSERT_TRUE(channel->state_ == EattChannelState::EATT_CHANNEL_OPENED);
   ASSERT_TRUE(channel->rx_mtu_ == new_mtu);
 
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 }
 
 TEST_F(EattTest, ReconfigSingleFailed) {
@@ -336,7 +351,7 @@ TEST_F(EattTest, ReconfigSingleFailed) {
   ASSERT_TRUE(channel->state_ == EattChannelState::EATT_CHANNEL_OPENED);
   ASSERT_TRUE(channel->rx_mtu_ != new_mtu);
 
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 }
 
 TEST_F(EattTest, ReconfigPeerSucceed) {
@@ -355,7 +370,7 @@ TEST_F(EattTest, ReconfigPeerSucceed) {
     ASSERT_TRUE(channel->tx_mtu_ == new_mtu);
   }
 
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 }
 
 TEST_F(EattTest, ReconfigPeerFailed) {
@@ -375,12 +390,12 @@ TEST_F(EattTest, ReconfigPeerFailed) {
     ASSERT_TRUE(channel->tx_mtu_ != new_mtu);
   }
 
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 }
 
 TEST_F(EattTest, DoubleDisconnect) {
   ConnectDeviceEattSupported(1);
-  DisconnectEattDevice();
+  DisconnectEattDevice(connected_cids_);
 
   /* Force second disconnect */
   eatt_instance_->Disconnect(test_address);
