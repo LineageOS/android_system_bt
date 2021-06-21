@@ -571,7 +571,8 @@ struct eatt_impl {
                  << bd_addr;
   }
 
-  void supported_features_cb(const RawAddress& bd_addr, uint8_t features) {
+  void supported_features_cb(uint8_t role, const RawAddress& bd_addr,
+                             uint8_t features) {
     bool is_eatt_supported = features & BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK;
 
     LOG(INFO) << __func__ << " " << bd_addr
@@ -579,6 +580,15 @@ struct eatt_impl {
     if (!is_eatt_supported) return;
 
     eatt_device* eatt_dev = add_eatt_device(bd_addr);
+
+    if (role != HCI_ROLE_CENTRAL) {
+      /* TODO For now do nothing, we could run a timer here and start EATT if
+       * not started by central */
+      LOG(INFO)
+          << " EATT Should be connected by the central. Let's wait for it.";
+      return;
+    }
+
     connect_eatt(eatt_dev);
   }
 
@@ -624,19 +634,18 @@ struct eatt_impl {
     LOG(INFO) << __func__ << " device " << bd_addr << " role"
               << (role == HCI_ROLE_CENTRAL ? "central" : "peripheral");
 
-    if (role != HCI_ROLE_CENTRAL) {
-      /* TODO For now do nothing, we could run a timer here and start EATT if
-       * not started by central */
-      LOG(INFO)
-          << " EATT Should be connected by the central. Let's wait for it.";
-      return;
-    }
-
     if (eatt_dev) {
       /* We are reconnecting device we know that support EATT.
        * Just connect CoC
        */
       LOG(INFO) << __func__ << " Known device, connect eCoC";
+
+      if (role != HCI_ROLE_CENTRAL) {
+        LOG(INFO)
+            << " EATT Should be connected by the central. Let's wait for it.";
+        return;
+      }
+
       connect_eatt(eatt_dev);
       return;
     }
@@ -644,7 +653,7 @@ struct eatt_impl {
     /* For new device, first read GATT server supported features. */
     if (gatt_cl_read_sr_supp_feat_req(
             bd_addr, base::BindOnce(&eatt_impl::supported_features_cb,
-                                    base::Unretained(this))) == false) {
+                                    base::Unretained(this), role)) == false) {
       LOG(INFO) << __func__ << "Eatt is not supported. Checked for device "
                 << bd_addr;
     }

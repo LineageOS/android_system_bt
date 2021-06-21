@@ -179,6 +179,46 @@ TEST_F(EattTest, ConnectSucceed) {
   DisconnectEattDevice(connected_cids_);
 }
 
+TEST_F(EattTest, IncomingEattConnectionByUnknownDevice) {
+  std::vector<uint16_t> incoming_cids{71, 72, 73, 74, 75};
+
+  EXPECT_CALL(l2cap_interface_,
+              ConnectCreditBasedRsp(test_address, 1, incoming_cids,
+                                    L2CAP_CONN_NO_RESOURCES, _))
+      .WillOnce(Return(true));
+
+  l2cap_app_info_.pL2CA_CreditBasedConnectInd_Cb(
+      test_address, incoming_cids, BT_PSM_EATT, EATT_MIN_MTU_MPS, 1);
+}
+
+TEST_F(EattTest, IncomingEattConnectionByKnownDevice) {
+  hci_role_ = HCI_ROLE_PERIPHERAL;
+  ON_CALL(gatt_interface_, ClientReadSupportedFeatures)
+      .WillByDefault(
+          [](const RawAddress& addr,
+             base::OnceCallback<void(const RawAddress&, uint8_t)> cb) {
+            std::move(cb).Run(addr, BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK);
+            return true;
+          });
+  ON_CALL(gatt_interface_, GetEattSupport)
+      .WillByDefault([](const RawAddress& addr) { return true; });
+
+  eatt_instance_->Connect(test_address);
+  std::vector<uint16_t> incoming_cids{71, 72, 73, 74, 75};
+
+  EXPECT_CALL(
+      l2cap_interface_,
+      ConnectCreditBasedRsp(test_address, 1, incoming_cids, L2CAP_CONN_OK, _))
+      .WillOnce(Return(true));
+
+  l2cap_app_info_.pL2CA_CreditBasedConnectInd_Cb(
+      test_address, incoming_cids, BT_PSM_EATT, EATT_MIN_MTU_MPS, 1);
+
+  DisconnectEattDevice(incoming_cids);
+
+  hci_role_ = HCI_ROLE_CENTRAL;
+}
+
 TEST_F(EattTest, ReconnectInitiatedByRemoteSucceed) {
   ConnectDeviceEattSupported(1);
   DisconnectEattDevice(connected_cids_);
