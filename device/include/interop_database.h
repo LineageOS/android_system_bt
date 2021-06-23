@@ -165,6 +165,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Honda Civic Carkit
     {{{0x0c, 0xd9, 0xc1, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
+
+    // Toyota Camry 2018 Carkit HFP AT+BIND missing
+    {{{0x94, 0xb2, 0xcc, 0x30, 0, 0}}, 4, INTEROP_SLC_SKIP_BIND_COMMAND}
 };
 
 typedef struct {
