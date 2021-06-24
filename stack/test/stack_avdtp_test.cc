@@ -49,6 +49,7 @@ class StackAvdtpTest : public ::testing::Test {
    uint8_t event, tAVDT_CTRL* p_data, uint8_t scb_index) {
     mock_function_count_map[__func__]++;
   }
+
   static void _streamcallback(uint8_t handle, const RawAddress& bd_addr,
    uint8_t event, tAVDT_CTRL* p_data,
    uint8_t scb_index) {
@@ -130,7 +131,28 @@ TEST_F(StackAvdtpTest, test_no_delay_report_if_not_sink) {
   // Get SCB ready to send response
   auto pscb = avdt_scb_by_hdl(scb_handle_);
   pscb->in_use = true;
+
+  // Change the scb to SRC
   pscb->stream_config.tsep = AVDT_TSEP_SRC;
+
+  // Send SetConfig response
+  uint8_t label = 0;
+  uint8_t err_code = 0;
+  uint8_t category = 0;
+  mock_function_count_map["avdt_msg_send_rsp"] = 0;
+  mock_function_count_map["avdt_msg_send_cmd"] = 0;
+  ASSERT_EQ(AVDT_ConfigRsp(scb_handle_, label, err_code, category), AVDT_SUCCESS);
+  ASSERT_EQ(mock_function_count_map["avdt_msg_send_rsp"], 1); // Config response sent
+  ASSERT_EQ(mock_function_count_map["avdt_msg_send_cmd"], 0); // Delay report command not sent
+}
+
+TEST_F(StackAvdtpTest, test_no_delay_report_if_not_enabled) {
+  // Get SCB ready to send response
+  auto pscb = avdt_scb_by_hdl(scb_handle_);
+  pscb->in_use = true;
+
+  // Disable the scb's delay report mask
+  pscb->stream_config.cfg.psc_mask &= ~AVDT_PSC_DELAY_RPT;
 
   // Send SetConfig response
   uint8_t label = 0;
