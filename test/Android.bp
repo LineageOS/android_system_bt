@@ -34,6 +34,20 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockStackA2dp",
+    srcs: [
+      "mock/mock_stack_a2dp_*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackL2cap",
+    srcs: [
+      "mock/mock_stack_l2cap_*.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockStack",
     srcs: [
       "mock/mock_stack_*.cc",
