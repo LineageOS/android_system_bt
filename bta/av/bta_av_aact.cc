@@ -132,7 +132,7 @@ static const uint16_t bta_av_stream_evt_ok[] = {
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_CONN_EVT */
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_DISCONN_EVT */
     BTA_AV_AVDT_DELAY_RPT_EVT, /* AVDT_DELAY_REPORT_EVT */
-    0                          /* AVDT_DELAY_REPORT_CFM_EVT */
+    BTA_AV_AVDT_DELAY_RPT_CFM_EVT, /* AVDT_DELAY_REPORT_CFM_EVT */
 };
 
 static const uint16_t bta_av_stream_evt_fail[] = {
@@ -157,7 +157,7 @@ static const uint16_t bta_av_stream_evt_fail[] = {
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_CONN_EVT */
     BTA_AV_AVDT_RPT_CONN_EVT, /* AVDT_REPORT_DISCONN_EVT */
     BTA_AV_AVDT_DELAY_RPT_EVT, /* AVDT_DELAY_REPORT_EVT */
-    0                          /* AVDT_DELAY_REPORT_CFM_EVT */
+    BTA_AV_AVDT_DELAY_RPT_CFM_EVT, /* AVDT_DELAY_REPORT_CFM_EVT */
 };
 
 /***********************************************
