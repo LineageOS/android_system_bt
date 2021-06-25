@@ -644,21 +644,55 @@ void avdt_scb_hdl_setconfig_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
 
 /*******************************************************************************
  *
+ * Function         avdt_scb_snd_snk_delay_rpt_req
+ *
+ * Description      This function sends the delay report request once it is sink
+ *
+ * Returns          Nothing.
+ *
+ ******************************************************************************/
+void avdt_scb_snd_snk_delay_rpt_req(AvdtpScb* p_scb,
+                                    UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
+  if (p_scb->p_ccb == NULL) {
+    return;
+  }
+
+  // In sink mode, report a fixed delay value when this device is the sink
+  // side. Delay value in this function is in unit of 1/10ms.
+  if (p_scb->stream_config.tsep != AVDT_TSEP_SNK) {
+    return;
+  }
+
+  tAVDT_SCB_EVT evt;
+  evt.apidelay.hdr.seid = p_scb->peer_seid;
+  evt.apidelay.delay = AVDT_SINK_DELAY_MS * 10;
+  avdt_scb_event(p_scb, AVDT_SCB_API_DELAY_RPT_REQ_EVT, &evt);
+}
+
+/*******************************************************************************
+ *
  * Function         avdt_scb_hdl_setconfig_rsp
  *
  * Description      This function sends the SCB an AVDT_SCB_API_OPEN_REQ_EVT
  *                  to initiate sending of an open command message.
  *
+ *                  This function sends the SCB an AVDT_SCB_API_DELAY_RPT_REQ_EVT
+ *                  to initiate sending of delay report command message only
+ *                  when the endpoint takes sink role.
+ *
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avdt_scb_hdl_setconfig_rsp(AvdtpScb* p_scb,
-                                UNUSED_ATTR tAVDT_SCB_EVT* p_data) {
+void avdt_scb_hdl_setconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
   tAVDT_EVT_HDR single;
 
   if (p_scb->p_ccb != NULL) {
     /* save configuration */
     p_scb->curr_cfg = p_scb->req_cfg;
+
+    // In sink mode, report delay value when this device initiates the connection.
+    // Delay reporting is sent before open request (i.e., in configured state).
+    avdt_scb_snd_snk_delay_rpt_req(p_scb, p_data);
 
     /* initiate open */
     single.seid = p_scb->peer_seid;
@@ -805,8 +839,10 @@ void avdt_scb_hdl_tc_close(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_scb_snd_delay_rpt_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
-  avdt_msg_send_cmd(p_scb->p_ccb, p_scb, AVDT_SIG_DELAY_RPT,
-                    (tAVDT_MSG*)&p_data->apidelay);
+  if (p_scb->stream_config.cfg.psc_mask & AVDT_PSC_DELAY_RPT) {
+    avdt_msg_send_cmd(p_scb->p_ccb, p_scb, AVDT_SIG_DELAY_RPT,
+                      (tAVDT_MSG*)&p_data->apidelay);
+  }
 }
 
 /*******************************************************************************

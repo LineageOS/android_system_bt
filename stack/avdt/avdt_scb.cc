@@ -112,6 +112,7 @@ const tAVDT_SCB_ACTION avdt_scb_action[] = {avdt_scb_hdl_abort_cmd,
                                             avdt_scb_snd_setconfig_req,
                                             avdt_scb_snd_setconfig_rej,
                                             avdt_scb_snd_setconfig_rsp,
+                                            avdt_scb_snd_snk_delay_rpt_req,
                                             avdt_scb_snd_tc_close,
                                             avdt_scb_cb_err,
                                             avdt_scb_cong_state,
@@ -158,7 +159,7 @@ const uint8_t avdt_scb_st_idle[][AVDT_SCB_NUM_COLS] = {
     /* API_GETCONFIG_RSP_EVT */
     {AVDT_SCB_IGNORE, AVDT_SCB_IGNORE, AVDT_SCB_IDLE_ST},
     /* API_SETCONFIG_RSP_EVT */
-    {AVDT_SCB_SND_SETCONFIG_RSP, AVDT_SCB_IGNORE, AVDT_SCB_CONF_ST},
+    {AVDT_SCB_SND_SETCONFIG_RSP, AVDT_SCB_SND_SNK_DELAY_RPT_REQ, AVDT_SCB_CONF_ST},
     /* API_SETCONFIG_REJ_EVT */
     {AVDT_SCB_SND_SETCONFIG_REJ, AVDT_SCB_IGNORE, AVDT_SCB_IDLE_ST},
     /* API_OPEN_RSP_EVT */
