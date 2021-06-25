@@ -508,6 +508,56 @@ cc_test {
 }
 
 cc_test {
+    name: "net_test_stack_avdtp",
+    defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
+    host_supported: true,
+    test_options: {
+        unit_test: true,
+    },
+    include_dirs: [
+        "external/libldac/inc",
+        "system/bt",
+        "system/bt/stack/include",
+        "system/bt/utils/include",
+    ],
+    srcs: [
+        "test/stack_avdtp_test.cc",
+        "avdt/avdt_ad.cc",
+        "avdt/avdt_api.cc",
+        "avdt/avdt_ccb.cc",
+        "avdt/avdt_ccb_act.cc",
+        "avdt/avdt_l2c.cc",
+        "avdt/avdt_scb.cc",
+        "avdt/avdt_scb_act.cc",
+        "test/common/mock_btu_layer.cc",
+        "test/common/mock_stack_avdt_msg.cc",
+        ":TestMockStackL2cap",
+        ":TestMockStackAcl",
+        ":TestMockStackA2dp",
+        ":TestMockBta",
+        ":TestMockDevice",
+    ],
+    shared_libs: [
+        "libcrypto",
+        "libcutils",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "libbt-common",
+        "libbt-protos-lite",
+        "liblog",
+        "libosi",
+        "libosi-AllocationTestHarness",
+    ],
+    sanitize: {
+        address: true,
+        cfi: true,
+        misc_undefined: ["bounds"],
+    },
+}
+
+cc_test {
     name: "net_test_stack_a2dp_native",
     defaults: ["fluoride_defaults"],
     test_suites: ["device-tests"],

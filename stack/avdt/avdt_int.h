@@ -234,6 +234,7 @@ enum {
   AVDT_SCB_SND_SETCONFIG_REQ,
   AVDT_SCB_SND_SETCONFIG_REJ,
   AVDT_SCB_SND_SETCONFIG_RSP,
+  AVDT_SCB_SND_SNK_DELAY_RPT_REQ,
   AVDT_SCB_SND_TC_CLOSE,
   AVDT_SCB_CB_ERR,
   AVDT_SCB_CONG_STATE,
@@ -911,6 +912,7 @@ extern void avdt_scb_snd_security_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
 extern void avdt_scb_snd_setconfig_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
 extern void avdt_scb_snd_setconfig_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
 extern void avdt_scb_snd_setconfig_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
+extern void avdt_scb_snd_snk_delay_rpt_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
 extern void avdt_scb_snd_tc_close(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
 extern void avdt_scb_cb_err(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
 extern void avdt_scb_cong_state(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data);
