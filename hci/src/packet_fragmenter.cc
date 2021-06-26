@@ -254,8 +254,10 @@ static void reassemble_and_dispatch_iso(UNUSED_ATTR BT_HDR* packet) {
         return;
       }
 
-      if ((boundary_flag == HCI_ISO_BF_COMPLETE_PACKET) &&
-          (iso_full_len != packet->len)) {
+      if (((boundary_flag == HCI_ISO_BF_COMPLETE_PACKET) &&
+           (iso_full_len != packet->len)) ||
+          ((boundary_flag == HCI_ISO_BF_FIRST_FRAGMENTED_PACKET) &&
+           (iso_full_len <= packet->len))) {
         LOG_ERROR("%s corrupted ISO frame", __func__);
         return;
       }
@@ -321,6 +323,18 @@ static void reassemble_and_dispatch_iso(UNUSED_ATTR BT_HDR* packet) {
       if (boundary_flag == HCI_ISO_BF_CONTINUATION_FRAGMENT_PACKET) {
         partial_packet->offset += packet->len - HCI_ISO_PREAMBLE_SIZE;
         buffer_allocator->free(packet);
+        return;
+      }
+
+      if (partial_packet->len !=
+          partial_packet->offset + packet->len - HCI_ISO_PREAMBLE_SIZE) {
+        LOG_ERROR(
+            "%s got last fragment, but it doesn't fill up the whole packet of "
+            "size %d",
+            __func__, partial_packet->len);
+        buffer_allocator->free(packet);
+        partial_iso_packets.erase(map_iter);
+        buffer_allocator->free(partial_packet);
         return;
       }
 
