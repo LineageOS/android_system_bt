@@ -597,12 +597,11 @@ void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     // out, so if the advertiser times out we want the pairing to fail anyway.
     if (!is_empty(&saved_local_oob_data)) {
       LOG_WARN("Found OOB data, loading keys");
-      memcpy(p_cb->private_key, saved_local_oob_data.private_key_used,
-             BT_OCTET32_LEN);
-      memcpy(p_cb->loc_publ_key.x, saved_local_oob_data.publ_key_used.x,
-             BT_OCTET32_LEN);
-      memcpy(p_cb->loc_publ_key.y, saved_local_oob_data.publ_key_used.y,
-             BT_OCTET32_LEN);
+      for (int i = 0; i < BT_OCTET32_LEN; i++) {
+        p_cb->private_key[i] = saved_local_oob_data.private_key_used[i];
+        p_cb->loc_publ_key.x[i] = saved_local_oob_data.publ_key_used.x[i];
+        p_cb->loc_publ_key.y[i] = saved_local_oob_data.publ_key_used.y[i];
+      }
       p_cb->sc_oob_data.loc_oob_data = saved_local_oob_data;
       p_cb->local_random = saved_local_oob_data.randomizer;
       smp_process_private_key(p_cb);
