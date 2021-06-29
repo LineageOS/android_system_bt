@@ -2854,8 +2854,9 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   }
 
   /* Remote name update */
-  btif_update_remote_properties(req_oob_type->bd_addr, req_oob_type->bd_name,
-                                NULL, BT_DEVICE_TYPE_BLE);
+  btif_update_remote_properties(req_oob_type->bd_addr,
+                                oob_data_to_use.device_name, NULL,
+                                BT_DEVICE_TYPE_BLE);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
