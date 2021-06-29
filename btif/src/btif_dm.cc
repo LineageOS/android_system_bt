@@ -439,8 +439,9 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
     return;
   }
 
-  if (pairing_cb.bond_type == tBTM_SEC_DEV_REC::BOND_TYPE_TEMPORARY)
+  if (pairing_cb.bond_type == tBTM_SEC_DEV_REC::BOND_TYPE_TEMPORARY) {
     state = BT_BOND_STATE_NONE;
+  }
 
   LOG_INFO(
       "Bond state changed to state=%d [0:none, 1:bonding, 2:bonded],"
@@ -1910,6 +1911,7 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr,
     memcpy(&oob_cb.p192_data, &p192_data, sizeof(bt_oob_data_t));
     oob_cb.data_present = (int)BTM_OOB_PRESENT_192;
   }
+
   if (memcmp(&p256_data, &empty_data, sizeof(p256_data)) != 0) {
     memcpy(&oob_cb.p256_data, &p256_data, sizeof(bt_oob_data_t));
     if (oob_cb.data_present == (int)BTM_OOB_PRESENT_192) {
@@ -1920,35 +1922,71 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr,
   }
 
   uint8_t empty[] = {0, 0, 0, 0, 0, 0, 0};
-  // TODO(181889116): Upgrade to support p256 (for now we just ignore P256)
-  // because the controllers do not yet support it.
   switch (transport) {
     case BT_TRANSPORT_BR_EDR:
       // TODO(182162589): Flesh out classic impl in legacy BTMSec
       // Nothing to do yet, but not an error
-      break;
-    case BT_TRANSPORT_LE:
-      // If we have an address, lets get the type
-      if (memcmp(p192_data.address, empty, 7) != 0) {
-        /* byte no 7 is address type in LE Bluetooth Address OOB data */
-        tBLE_ADDR_TYPE address_type =
-            static_cast<tBLE_ADDR_TYPE>(p192_data.address[6]);
-        if (address_type == BLE_ADDR_PUBLIC ||
-            address_type == BLE_ADDR_RANDOM) {
-          // bd_addr->address is already reversed, so use it instead of
-          // oob_data->address
-          BTM_SecAddBleDevice(bd_addr, BT_DEVICE_TYPE_BLE, address_type);
-        }
+
+      // The controller only supports P192
+      switch (oob_cb.data_present) {
+        case BTM_OOB_PRESENT_192_AND_256:
+          LOG_INFO("Have both P192 and  P256");
+          [[fallthrough]];
+        case BTM_OOB_PRESENT_192:
+          LOG_INFO("Using P192");
+          break;
+        case BTM_OOB_PRESENT_256:
+          LOG_INFO("Using P256");
+          [[fallthrough]];
+        default:
+          // TODO(181889116):
+          // Upgrade to support p256 (for now we just ignore P256)
+          // because the controllers do not yet support it.
+          LOG_ERROR("Invalid data present for controller: %d",
+                    oob_cb.data_present);
+          bond_state_changed(BT_STATUS_FAIL, bd_addr, BT_BOND_STATE_NONE);
+          return;
       }
+      pairing_cb.is_local_initiated = true;
+      LOG_ERROR("Classic not implemented yet");
+      bond_state_changed(BT_STATUS_FAIL, bd_addr, BT_BOND_STATE_NONE);
+      return;
+    case BT_TRANSPORT_LE: {
+      // Guess default RANDOM for address type for LE
+      tBLE_ADDR_TYPE address_type = BLE_ADDR_RANDOM;
+      LOG_INFO("Using LE Transport");
+      switch (oob_cb.data_present) {
+        case BTM_OOB_PRESENT_192_AND_256:
+          LOG_INFO("Have both P192 and  P256");
+          [[fallthrough]];
+        // Always prefer 256 for LE
+        case BTM_OOB_PRESENT_256:
+          LOG_INFO("Using P256");
+          // If we have an address, lets get the type
+          if (memcmp(p256_data.address, empty, 7) != 0) {
+            /* byte no 7 is address type in LE Bluetooth Address OOB data */
+            address_type = static_cast<tBLE_ADDR_TYPE>(p256_data.address[6]);
+          }
+          break;
+        case BTM_OOB_PRESENT_192:
+          LOG_INFO("Using P192");
+          // If we have an address, lets get the type
+          if (memcmp(p192_data.address, empty, 7) != 0) {
+            /* byte no 7 is address type in LE Bluetooth Address OOB data */
+            address_type = static_cast<tBLE_ADDR_TYPE>(p192_data.address[6]);
+          }
+          break;
+      }
+      pairing_cb.is_local_initiated = true;
+      BTM_SecAddBleDevice(bd_addr, BT_DEVICE_TYPE_BLE, address_type);
+      BTA_DmBond(bd_addr, address_type, transport, BT_DEVICE_TYPE_BLE);
       break;
+    }
     default:
       LOG_ERROR("Invalid transport: %d", transport);
+      bond_state_changed(BT_STATUS_FAIL, bd_addr, BT_BOND_STATE_NONE);
       return;
   }
-
-  BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __func__,
-                   bd_addr.ToString().c_str(), transport);
-  btif_dm_create_bond(bd_addr, transport);
 }
 
 /*******************************************************************************
@@ -2235,36 +2273,69 @@ void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* p_has_oob_data) {
 void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
                                    tBTM_OOB_DATA* p_has_oob_data,
                                    tBTM_LE_AUTH_REQ* p_auth_req) {
-  if (!is_empty_128bit(oob_cb.p192_data.c) &&
-      !is_empty_128bit(oob_cb.p192_data.r)) {
-    /* We have LE SC OOB data */
+  switch (oob_cb.data_present) {
+    case BTM_OOB_PRESENT_192_AND_256:
+      LOG_INFO("Have both P192 and  P256");
+      [[fallthrough]];
+    // Always prefer 256 for LE
+    case BTM_OOB_PRESENT_256:
+      LOG_INFO("Using P256");
+      if (!is_empty_128bit(oob_cb.p256_data.c) &&
+          !is_empty_128bit(oob_cb.p256_data.r)) {
+        /* make sure OOB data is for this particular device */
+        if (bd_addr == oob_cb.bdaddr) {
+          *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
+          *p_has_oob_data = true;
+        } else {
+          *p_has_oob_data = false;
+          LOG_WARN("P256-1: Remote address didn't match OOB data address");
+        }
+      } else if (!is_empty_128bit(oob_cb.p256_data.sm_tk)) {
+        /* We have security manager TK */
 
-    /* make sure OOB data is for this particular device */
-    if (bd_addr == oob_cb.bdaddr) {
-      *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
-      *p_has_oob_data = true;
-    } else {
-      *p_has_oob_data = false;
-      BTIF_TRACE_WARNING("%s: remote address didn't match OOB data address",
-                         __func__);
-    }
-  } else if (!is_empty_128bit(oob_cb.p192_data.sm_tk)) {
-    /* We have security manager TK */
+        /* make sure OOB data is for this particular device */
+        if (bd_addr == oob_cb.bdaddr) {
+          // When using OOB with TK, SC Secure Connections bit must be disabled.
+          tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
+          *p_auth_req = ((*p_auth_req) & mask);
+          *p_has_oob_data = true;
+        } else {
+          *p_has_oob_data = false;
+          LOG_WARN("P256-2: Remote address didn't match OOB data address");
+        }
+      } else {
+        *p_has_oob_data = false;
+      }
+      break;
+    case BTM_OOB_PRESENT_192:
+      LOG_INFO("Using P192");
+      if (!is_empty_128bit(oob_cb.p192_data.c) &&
+          !is_empty_128bit(oob_cb.p192_data.r)) {
+        /* make sure OOB data is for this particular device */
+        if (bd_addr == oob_cb.bdaddr) {
+          *p_auth_req = ((*p_auth_req) | BTM_LE_AUTH_REQ_SC_ONLY);
+          *p_has_oob_data = true;
+        } else {
+          *p_has_oob_data = false;
+          LOG_WARN("P192-1: Remote address didn't match OOB data address");
+        }
+      } else if (!is_empty_128bit(oob_cb.p192_data.sm_tk)) {
+        /* We have security manager TK */
 
-    /* make sure OOB data is for this particular device */
-    if (bd_addr == oob_cb.bdaddr) {
-      // When using OOB with TK, SC Secure Connections bit must be disabled.
-      tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
-      *p_auth_req = ((*p_auth_req) & mask);
-
-      *p_has_oob_data = true;
-    } else {
-      *p_has_oob_data = false;
-      BTIF_TRACE_WARNING("%s: remote address didn't match OOB data address",
-                         __func__);
-    }
-  } else {
-    *p_has_oob_data = false;
+        /* make sure OOB data is for this particular device */
+        if (bd_addr == oob_cb.bdaddr) {
+          // When using OOB with TK, SC Secure Connections bit must be disabled.
+          tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
+          *p_auth_req = ((*p_auth_req) & mask);
+          *p_has_oob_data = true;
+        } else {
+          *p_has_oob_data = false;
+          LOG_WARN("P192-2: Remote address didn't match OOB data address");
+        }
+      } else {
+        *p_has_oob_data = false;
+      }
+      break;
   }
   BTIF_TRACE_DEBUG("%s *p_has_oob_data=%d", __func__, *p_has_oob_data);
 }
@@ -2735,22 +2806,44 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
   BTIF_TRACE_DEBUG("%s", __func__);
 
   RawAddress bd_addr = req_oob_type->bd_addr;
+  BTIF_TRACE_DEBUG("%s: bd_addr: %s", __func__, bd_addr.ToString().c_str());
+  BTIF_TRACE_DEBUG("%s: oob_cb.bdaddr: %s", __func__,
+                   oob_cb.bdaddr.ToString().c_str());
+
+  /* make sure OOB data is for this particular device */
+  if (req_oob_type->bd_addr != oob_cb.bdaddr) {
+    LOG_WARN("remote address didn't match OOB data address");
+    return;
+  }
 
   /* We already checked if OOB data is present in
    * btif_dm_set_oob_for_le_io_req, but check here again. If it's not present
    * do nothing, pairing will timeout.
    */
-  if (is_empty_128bit(oob_cb.p192_data.c) &&
-      is_empty_128bit(oob_cb.p192_data.r)) {
-    BTIF_TRACE_WARNING("%s: LE SC OOB data is empty", __func__);
-    return;
-  }
-
-  /* make sure OOB data is for this particular device */
-  if (req_oob_type->bd_addr != oob_cb.bdaddr) {
-    BTIF_TRACE_WARNING("%s: remote address didn't match OOB data address",
-                       __func__);
-    return;
+  bt_oob_data_t oob_data_to_use = {};
+  switch (oob_cb.data_present) {
+    case BTM_OOB_PRESENT_192_AND_256:
+      LOG_INFO("Have both P192 and  P256");
+      [[fallthrough]];
+    // Always prefer 256 for LE
+    case BTM_OOB_PRESENT_256:
+      LOG_INFO("Using P256");
+      if (is_empty_128bit(oob_cb.p256_data.c) &&
+          is_empty_128bit(oob_cb.p256_data.r)) {
+        LOG_WARN("P256 LE SC OOB data is empty");
+        return;
+      }
+      oob_data_to_use = oob_cb.p256_data;
+      break;
+    case BTM_OOB_PRESENT_192:
+      LOG_INFO("Using P192");
+      if (is_empty_128bit(oob_cb.p192_data.c) &&
+          is_empty_128bit(oob_cb.p192_data.r)) {
+        LOG_WARN("P192 LE SC OOB data is empty");
+        return;
+      }
+      oob_data_to_use = oob_cb.p192_data;
+      break;
   }
 
   /* Remote name update */
@@ -2759,12 +2852,11 @@ static void btif_dm_ble_sc_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
-  pairing_cb.is_le_only =
-      true;  // TODO: we can derive classic pairing from this one
+  // TODO: we can derive classic pairing from this one
+  pairing_cb.is_le_only = true;
   pairing_cb.is_le_nc = false;
-
-  BTM_BleSecureConnectionOobDataReply(req_oob_type->bd_addr, oob_cb.p192_data.c,
-                                      oob_cb.p192_data.r);
+  BTM_BleSecureConnectionOobDataReply(req_oob_type->bd_addr, oob_data_to_use.c,
+                                      oob_data_to_use.r);
 }
 
 void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
