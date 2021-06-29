@@ -79,10 +79,6 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
   mock_function_count_map[__func__]++;
 }
 
-void SMP_CrLocScOobData(
-    base::OnceCallback<void(tBT_TRANSPORT, bool,
-                            const std::array<unsigned char, 16>&,
-                            const std::array<unsigned char, 16>&)>
-        callback) {
-  mock_function_count_map[__func__]++;
-}
+void SMP_CrLocScOobData() { mock_function_count_map[__func__]++; }
+
+void SMP_ClearLocScOobData() { mock_function_count_map[__func__]++; }

@@ -63,6 +63,8 @@ void smp_save_local_oob_data(tSMP_CB* p_cb) {
   saved_local_oob_data = p_cb->sc_oob_data.loc_oob_data;
 }
 
+void smp_clear_local_oob_data() { saved_local_oob_data = {}; }
+
 static bool is_empty(tSMP_LOC_OOB_DATA* data) {
   tSMP_LOC_OOB_DATA empty_data = {};
   return memcmp(data, &empty_data, sizeof(tSMP_LOC_OOB_DATA)) == 0;

@@ -739,7 +739,8 @@ void invoke_ssp_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
 }
 
 void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
-                                Octet16 r, RawAddress raw_address) {
+                                Octet16 r, RawAddress raw_address,
+                                uint8_t address_type) {
   LOG_INFO("%s", __func__);
   bt_oob_data_t oob_data = {};
 
@@ -749,8 +750,7 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
     oob_data.address[i] = raw_address.address[j];
     j--;
   }
-  // Set type always public
-  oob_data.address[6] = 0;
+  oob_data.address[6] = address_type;
 
   // Each value (for C and R) is 16 octets in length
   bool c_empty = true;
