@@ -220,6 +220,10 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           smp_br_state_machine_event(p_cb, SMP_BR_KEYS_RSP_EVT, NULL);
           break;
 
+        // Expected, but nothing to do
+        case SMP_SC_LOC_OOB_DATA_UP_EVT:
+          break;
+
         default:
           LOG_ERROR("Unexpected event: %hhu", p_cb->cb_evt);
       }
