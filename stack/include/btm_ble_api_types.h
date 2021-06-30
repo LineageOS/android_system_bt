@@ -556,6 +556,7 @@ typedef union {
   tBTM_LE_COMPLT complt; /* BTM_LE_COMPLT_EVT      */
   tSMP_OOB_DATA_TYPE req_oob_type;
   tBTM_LE_KEY key;
+  tSMP_LOC_OOB_DATA local_oob_data;
 } tBTM_LE_EVT_DATA;
 
 /* Simple Pairing Events.  Called by the stack when Simple Pairing related

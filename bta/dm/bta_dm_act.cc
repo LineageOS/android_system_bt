@@ -3447,6 +3447,14 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       bta_dm_cb.p_sec_cback(BTA_DM_BLE_SC_OOB_REQ_EVT, &sec_event);
       break;
 
+    case BTM_LE_SC_LOC_OOB_EVT:
+      tBTA_DM_LOC_OOB_DATA local_oob_data;
+      local_oob_data.local_oob_c = p_data->local_oob_data.commitment;
+      local_oob_data.local_oob_r = p_data->local_oob_data.randomizer;
+      sec_event.local_oob_data = local_oob_data;
+      bta_dm_cb.p_sec_cback(BTA_DM_BLE_SC_CR_LOC_OOB_EVT, &sec_event);
+      break;
+
     case BTM_LE_KEY_EVT:
       sec_event.ble_key.bd_addr = bda;
       sec_event.ble_key.key_type = p_data->key.key_type;

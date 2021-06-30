@@ -784,5 +784,17 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
                                bool hci_role_switch_supported,
                                bool br_edr_supported, bool le_supported);
 
+/*******************************************************************************
+ *
+ * Function         btm_sec_cr_loc_oob_data_cback_event
+ *
+ * Description      This function is called to pass the local oob up to caller
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address,
+                                         tSMP_LOC_OOB_DATA loc_oob_data);
+
 // Return DEV_CLASS (uint8_t[3]) of bda. If record doesn't exist, create one.
 const uint8_t* btm_get_dev_class(const RawAddress& bda);

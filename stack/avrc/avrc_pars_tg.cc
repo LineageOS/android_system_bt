@@ -119,6 +119,13 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
   if (p_msg->vendor_len == 0) return AVRC_STS_NO_ERROR;
   if (p_msg->p_vendor_data == NULL) return AVRC_STS_INTERNAL_ERR;
 
+  if (p_msg->vendor_len < 4) {
+    android_errorWriteLog(0x534e4554, "168712382");
+    AVRC_TRACE_WARNING("%s: message length %d too short: must be at least 4",
+                       __func__, p_msg->vendor_len);
+    return AVRC_STS_INTERNAL_ERR;
+  }
+
   p = p_msg->p_vendor_data;
   p_result->pdu = *p++;
   AVRC_TRACE_DEBUG("%s pdu:0x%x", __func__, p_result->pdu);

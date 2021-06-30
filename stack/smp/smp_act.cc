@@ -220,6 +220,10 @@ void smp_send_app_cback(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
           smp_br_state_machine_event(p_cb, SMP_BR_KEYS_RSP_EVT, NULL);
           break;
 
+        // Expected, but nothing to do
+        case SMP_SC_LOC_OOB_DATA_UP_EVT:
+          break;
+
         default:
           LOG_ERROR("Unexpected event: %hhu", p_cb->cb_evt);
       }
@@ -1436,7 +1440,13 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       return;
     }
 
-    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
+    // If we are doing SMP_MODEL_SEC_CONN_OOB we don't need to request OOB data
+    // locally if loc_oob_flag == 0x00 b/c there is no OOB data to give.  In the
+    // event the loc_oob_flag is another value, we should request the OOB data
+    // locally.  Which seems to cause it to make a TK REQUEST which is used for
+    // the legacy flow which requires both sides to have OOB data.
+    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB &&
+        p_cb->loc_oob_flag != 0x00) {
       if (smp_request_oob_data(p_cb)) return;
     }
 
@@ -1927,9 +1937,20 @@ void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
                          p_cb->sc_oob_data.loc_oob_data.publ_key_used.x,
                          p_cb->sc_oob_data.loc_oob_data.randomizer, 0);
 
+  p_cb->sc_oob_data.loc_oob_data.present = true;
+
   /* pass created OOB data up */
   p_cb->cb_evt = SMP_SC_LOC_OOB_DATA_UP_EVT;
   smp_send_app_cback(p_cb, NULL);
+
+  // Store the data for later use when we are paired with
+  // Event though the doc above says to pass up for safe keeping it never gets
+  // kept safe. Additionally, when we need the data to make a decision we
+  // wouldn't have it.  This will save the sc_oob_data in the smp_keys.cc such
+  // that when we receive a request to create new keys we check to see if the
+  // sc_oob_data exists and utilize the keys that are stored there otherwise the
+  // connector will fail commitment check and dhkey exchange.
+  smp_save_local_oob_data(p_cb);
 
   smp_cb_cleanup(p_cb);
 }
