@@ -80,6 +80,7 @@
 #include "osi/include/wakelock.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/avdt_api.h"
+#include "stack/include/btm_api.h"
 #include "stack/include/btu.h"
 #include "stack_manager.h"
 
@@ -743,6 +744,11 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
                                 uint8_t address_type) {
   LOG_INFO("%s", __func__);
   bt_oob_data_t oob_data = {};
+  char* local_name;
+  BTM_ReadLocalDeviceName(&local_name);
+  for (int i = 0; i < BTM_MAX_LOC_BD_NAME_LEN; i++) {
+    oob_data.device_name[i] = local_name[i];
+  }
 
   // Set the local address
   int j = 5;
