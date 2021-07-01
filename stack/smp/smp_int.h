@@ -461,4 +461,9 @@ extern bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb);
 extern void print128(const Octet16& x, const uint8_t* key_name);
 extern void smp_xor_128(Octet16* a, const Octet16& b);
 
+/* Save the p_cb->sc_oob_data.loc_oob_data for later, since the p_cb gets
+ * cleaned up */
+extern void smp_save_local_oob_data(tSMP_CB* p_cb);
+extern void smp_clear_local_oob_data();
+
 #endif /* SMP_INT_H */

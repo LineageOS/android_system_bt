@@ -55,6 +55,21 @@ static void smp_process_private_key(tSMP_CB* p_cb);
 
 #define SMP_PASSKEY_MASK 0xfff00000
 
+// If there is data saved here, then use its info instead
+// This needs to be cleared on a successfult pairing using the oob data
+static tSMP_LOC_OOB_DATA saved_local_oob_data = {};
+
+void smp_save_local_oob_data(tSMP_CB* p_cb) {
+  saved_local_oob_data = p_cb->sc_oob_data.loc_oob_data;
+}
+
+void smp_clear_local_oob_data() { saved_local_oob_data = {}; }
+
+static bool is_empty(tSMP_LOC_OOB_DATA* data) {
+  tSMP_LOC_OOB_DATA empty_data = {};
+  return memcmp(data, &empty_data, sizeof(tSMP_LOC_OOB_DATA)) == 0;
+}
+
 void smp_debug_print_nbyte_little_endian(uint8_t* p, const char* key_name,
                                          uint8_t len) {
 }
@@ -572,6 +587,28 @@ Octet16 smp_calculate_legacy_short_term_key(tSMP_CB* p_cb) {
  ******************************************************************************/
 void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
+
+  // Only use the stored OOB data if we are in an oob association model
+  if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
+    LOG_WARN("OOB Association Model");
+    // Make sure our data isn't empty, otherwise we generate new and eventually
+    // pairing will fail Not much we can do about it at this point, just have to
+    // generate new data The data will be cleared after the advertiser times
+    // out, so if the advertiser times out we want the pairing to fail anyway.
+    if (!is_empty(&saved_local_oob_data)) {
+      LOG_WARN("Found OOB data, loading keys");
+      for (int i = 0; i < BT_OCTET32_LEN; i++) {
+        p_cb->private_key[i] = saved_local_oob_data.private_key_used[i];
+        p_cb->loc_publ_key.x[i] = saved_local_oob_data.publ_key_used.x[i];
+        p_cb->loc_publ_key.y[i] = saved_local_oob_data.publ_key_used.y[i];
+      }
+      p_cb->sc_oob_data.loc_oob_data = saved_local_oob_data;
+      p_cb->local_random = saved_local_oob_data.randomizer;
+      smp_process_private_key(p_cb);
+      return;
+    }
+    LOG_WARN("OOB Association Model with no saved data present");
+  }
 
   btsnd_hcic_ble_rand(Bind(
       [](tSMP_CB* p_cb, BT_OCTET8 rand) {

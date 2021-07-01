@@ -1848,7 +1848,13 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
         break;
     }
   } else {
-    BTM_TRACE_ERROR("btm_proc_smp_cback received for unknown device");
+    // If we are being paired with via OOB we haven't created a dev rec for
+    // the device yet
+    if (event == SMP_SC_LOC_OOB_DATA_UP_EVT) {
+      btm_sec_cr_loc_oob_data_cback_event(bd_addr, p_data->loc_oob_data);
+    } else {
+      LOG_WARN("Unexpected event '%d' without p_dev_rec", event);
+    }
   }
 
   return BTM_SUCCESS;

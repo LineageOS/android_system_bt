@@ -557,19 +557,19 @@ void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
  * Function         SMP_CrLocScOobData
  *
  * Description      This function is called to generate a public key to be
- *                  passed to a remote device via Out of Band transport
- *
- * Parameters:      callback - receive the data
+ *                  passed to a remote device via Out of Band transport.
  *
  ******************************************************************************/
-void SMP_CrLocScOobData(
-    base::OnceCallback<void(tBT_TRANSPORT, bool,
-                            const std::array<unsigned char, 16>&,
-                            const std::array<unsigned char, 16>&)>
-        callback) {
-  smp_cb.local_random = bluetooth::os::GenerateRandom<16>();
-  smp_cb.selected_association_model = SMP_MODEL_SEC_CONN_OOB;
-  smp_calculate_local_commitment(&smp_cb);
-  std::move(callback).Run(BT_TRANSPORT_LE, true, smp_cb.commitment,
-                          smp_cb.local_random);
+void SMP_CrLocScOobData() {
+  tSMP_INT_DATA smp_int_data;
+  smp_sm_event(&smp_cb, SMP_CR_LOC_SC_OOB_DATA_EVT, &smp_int_data);
 }
+
+/*******************************************************************************
+ *
+ * Function         SMP_ClearLocScOobData
+ *
+ * Description      This function is called to clear out the OOB stored locally.
+ *
+ ******************************************************************************/
+void SMP_ClearLocScOobData() { smp_clear_local_oob_data(); }
