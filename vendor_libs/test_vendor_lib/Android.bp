@@ -33,6 +33,7 @@ cc_library_static {
         "model/devices/device.cc",
         "model/devices/device_properties.cc",
         "model/devices/h4_packetizer.cc",
+        "model/devices/h4_parser.cc",
         "model/devices/hci_protocol.cc",
         "model/devices/hci_socket_device.cc",
         "model/devices/keyboard.cc",
@@ -104,6 +105,7 @@ cc_test_host {
     ],
     srcs: [
         "test/async_manager_unittest.cc",
+        "test/h4_parser_unittest.cc",
         "test/security_manager_unittest.cc",
     ],
     header_libs: [
