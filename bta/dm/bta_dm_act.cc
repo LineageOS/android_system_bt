@@ -39,6 +39,7 @@
 #include "main/shim/btm_api.h"
 #include "main/shim/dumpsys.h"
 #include "main/shim/shim.h"
+#include "osi/include/fixed_queue.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
@@ -312,6 +313,8 @@ void BTA_dm_on_hw_off() {
   /* hw is ready, go on with BTA DM initialization */
   alarm_free(bta_dm_search_cb.search_timer);
   alarm_free(bta_dm_search_cb.gatt_close_timer);
+  osi_free(bta_dm_search_cb.p_pending_search);
+  fixed_queue_free(bta_dm_search_cb.pending_discovery_queue, osi_free);
   memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
 
   /* notify BTA DM is now unactive */
@@ -335,6 +338,8 @@ void BTA_dm_on_hw_on() {
   /* hw is ready, go on with BTA DM initialization */
   alarm_free(bta_dm_search_cb.search_timer);
   alarm_free(bta_dm_search_cb.gatt_close_timer);
+  osi_free(bta_dm_search_cb.p_pending_search);
+  fixed_queue_free(bta_dm_search_cb.pending_discovery_queue, osi_free);
   memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
   /*
    * TODO: Should alarm_free() the bta_dm_search_cb timers during
@@ -343,6 +348,7 @@ void BTA_dm_on_hw_on() {
   bta_dm_search_cb.search_timer = alarm_new("bta_dm_search.search_timer");
   bta_dm_search_cb.gatt_close_timer =
       alarm_new("bta_dm_search.gatt_close_timer");
+  bta_dm_search_cb.pending_discovery_queue = fixed_queue_new(SIZE_MAX);
 
   memset(&bta_dm_conn_srvcs, 0, sizeof(bta_dm_conn_srvcs));
   memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
@@ -1306,6 +1312,8 @@ void bta_dm_search_cmpl() {
   bta_dm_search_cb.p_search_cback(BTA_DM_DISC_BLE_RES_EVT, &result);
 
   bta_dm_search_cb.p_search_cback(BTA_DM_DISC_CMPL_EVT, nullptr);
+
+  bta_dm_execute_queued_request();
 }
 
 /*******************************************************************************
@@ -1402,13 +1410,13 @@ void bta_dm_free_sdp_db() {
  *
  * Function         bta_dm_queue_search
  *
- * Description      Queues search command while search is being cancelled
+ * Description      Queues search command
  *
  * Returns          void
  *
  ******************************************************************************/
 void bta_dm_queue_search(tBTA_DM_MSG* p_data) {
-  bta_dm_search_clear_queue();
+  osi_free_and_reset((void**)&bta_dm_search_cb.p_pending_search);
   bta_dm_search_cb.p_pending_search =
       (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_API_SEARCH));
   memcpy(bta_dm_search_cb.p_pending_search, p_data, sizeof(tBTA_DM_API_SEARCH));
@@ -1418,17 +1426,62 @@ void bta_dm_queue_search(tBTA_DM_MSG* p_data) {
  *
  * Function         bta_dm_queue_disc
  *
- * Description      Queues discovery command while search is being cancelled
+ * Description      Queues discovery command
  *
  * Returns          void
  *
  ******************************************************************************/
 void bta_dm_queue_disc(tBTA_DM_MSG* p_data) {
-  bta_dm_search_clear_queue();
-  bta_dm_search_cb.p_pending_discovery =
+  tBTA_DM_MSG* p_pending_discovery =
       (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
-  memcpy(bta_dm_search_cb.p_pending_discovery, p_data,
-         sizeof(tBTA_DM_API_DISCOVER));
+  memcpy(p_pending_discovery, p_data, sizeof(tBTA_DM_API_DISCOVER));
+  fixed_queue_enqueue(bta_dm_search_cb.pending_discovery_queue,
+                      p_pending_discovery);
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_execute_queued_request
+ *
+ * Description      Executes queued request if one exists
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void bta_dm_execute_queued_request() {
+  if (bta_dm_search_cb.p_pending_search) {
+    // Updated queued event to search event to trigger start search
+    if (bta_dm_search_cb.p_pending_search->hdr.event ==
+        BTA_DM_API_QUEUE_SEARCH_EVT) {
+      bta_dm_search_cb.p_pending_search->hdr.event = BTA_DM_API_SEARCH_EVT;
+    }
+    LOG_INFO("%s Start pending search", __func__);
+    bta_sys_sendmsg(bta_dm_search_cb.p_pending_search);
+    bta_dm_search_cb.p_pending_search = NULL;
+  } else {
+    tBTA_DM_MSG* p_pending_discovery = (tBTA_DM_MSG*)fixed_queue_try_dequeue(
+        bta_dm_search_cb.pending_discovery_queue);
+    if (p_pending_discovery) {
+      if (p_pending_discovery->hdr.event == BTA_DM_API_QUEUE_DISCOVER_EVT) {
+        p_pending_discovery->hdr.event = BTA_DM_API_DISCOVER_EVT;
+      }
+      LOG_INFO("%s Start pending discovery", __func__);
+      bta_sys_sendmsg(p_pending_discovery);
+    }
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         bta_dm_is_search_request_queued
+ *
+ * Description      Checks if there is a queued search request
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool bta_dm_is_search_request_queued() {
+  return bta_dm_search_cb.p_pending_search != NULL;
 }
 
 /*******************************************************************************
@@ -1442,7 +1495,7 @@ void bta_dm_queue_disc(tBTA_DM_MSG* p_data) {
  ******************************************************************************/
 void bta_dm_search_clear_queue() {
   osi_free_and_reset((void**)&bta_dm_search_cb.p_pending_search);
-  osi_free_and_reset((void**)&bta_dm_search_cb.p_pending_discovery);
+  fixed_queue_flush(bta_dm_search_cb.pending_discovery_queue, osi_free);
 }
 
 /*******************************************************************************
@@ -1454,15 +1507,7 @@ void bta_dm_search_clear_queue() {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_search_cancel_cmpl() {
-  if (bta_dm_search_cb.p_pending_search) {
-    bta_sys_sendmsg(bta_dm_search_cb.p_pending_search);
-    bta_dm_search_cb.p_pending_search = NULL;
-  } else if (bta_dm_search_cb.p_pending_discovery) {
-    bta_sys_sendmsg(bta_dm_search_cb.p_pending_discovery);
-    bta_dm_search_cb.p_pending_discovery = NULL;
-  }
-}
+void bta_dm_search_cancel_cmpl() { bta_dm_execute_queued_request(); }
 
 /*******************************************************************************
  *
