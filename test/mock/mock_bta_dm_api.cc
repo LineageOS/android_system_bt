@@ -108,7 +108,7 @@ void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
   mock_function_count_map[__func__]++;
 }
 void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
-                    tBT_TRANSPORT transport) {
+                    tBT_TRANSPORT transport, bool is_bonding_or_sd) {
   mock_function_count_map[__func__]++;
 }
 void BTA_DmLocalOob(void) { mock_function_count_map[__func__]++; }
@@ -116,7 +116,7 @@ void BTA_DmPinReply(const RawAddress& bd_addr, bool accept, uint8_t pin_len,
                     uint8_t* p_pin) {
   mock_function_count_map[__func__]++;
 }
-void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback) {
+void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback, bool is_bonding_or_sdp) {
   mock_function_count_map[__func__]++;
 }
 void BTA_DmSearchCancel(void) { mock_function_count_map[__func__]++; }
