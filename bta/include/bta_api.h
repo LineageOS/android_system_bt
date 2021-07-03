@@ -698,13 +698,15 @@ extern bool BTA_DmSetVisibility(bt_scan_mode_t mode);
  *                  first performs an inquiry; for each device found from the
  *                  inquiry it gets the remote name of the device.  If
  *                  parameter services is nonzero, service discovery will be
- *                  performed on each device for the services specified.
+ *                  performed on each device for the services specified. If the
+ *                  parameter is_bonding_or_sdp is true, the request will be
+ *                  queued until bonding or sdp completes
  *
  *
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback);
+extern void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback, bool is_bonding_or_sdp);
 
 /*******************************************************************************
  *
@@ -732,7 +734,7 @@ extern void BTA_DmSearchCancel(void);
  ******************************************************************************/
 extern void BTA_DmDiscover(const RawAddress& bd_addr,
                            tBTA_DM_SEARCH_CBACK* p_cback,
-                           tBT_TRANSPORT transport);
+                           tBT_TRANSPORT transport, bool is_bonding_or_sdp);
 
 /*******************************************************************************
  *
