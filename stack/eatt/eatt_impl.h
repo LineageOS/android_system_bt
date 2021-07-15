@@ -313,7 +313,7 @@ struct eatt_impl {
               << +connecting_cids.size();
 
     for (uint16_t cid : connecting_cids) {
-      LOG(INFO) << " /n/t cid: " << loghex(cid);
+      LOG(INFO) << " \t cid: " << loghex(cid);
 
       auto chan = std::make_shared<EattChannel>(eatt_dev->bda_, cid, 0,
                                                 eatt_dev->rx_mtu_);
