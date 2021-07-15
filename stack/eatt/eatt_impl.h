@@ -131,6 +131,12 @@ struct eatt_impl {
                                     &local_coc_cfg))
       return;
 
+    if (!eatt_dev->eatt_tcb_) {
+      eatt_dev->eatt_tcb_ =
+          gatt_find_tcb_by_addr(eatt_dev->bda_, BT_TRANSPORT_LE);
+      CHECK(eatt_dev->eatt_tcb_);
+    }
+
     for (uint16_t cid : lcids) {
       EattChannel* channel = find_eatt_channel_by_cid(bda, cid);
       CHECK(!channel);
@@ -140,8 +146,6 @@ struct eatt_impl {
       eatt_dev->eatt_channels.insert({cid, chan});
 
       chan->EattChannelSetState(EattChannelState::EATT_CHANNEL_OPENED);
-
-      CHECK(eatt_dev->eatt_tcb_);
       eatt_dev->eatt_tcb_->eatt++;
 
       LOG(INFO) << __func__ << " Channel connected CID " << loghex(cid);
