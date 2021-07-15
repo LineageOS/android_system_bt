@@ -317,6 +317,8 @@ typedef struct {
   // TODO(hylo): support byte array data
   /* Client supported feature*/
   uint8_t cl_supp_feat;
+  /* Server supported features */
+  uint8_t sr_supp_feat;
   /* Use for server. if false, should handle database out of sync. */
   bool is_robust_cache_change_aware;
 
@@ -459,9 +461,11 @@ extern void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda);
 /* from gatt_attr.cc */
 extern uint16_t gatt_profile_find_conn_id_by_bd_addr(const RawAddress& bda);
 
-extern bool gatt_profile_get_eatt_support(
-    const RawAddress& remote_bda,
-    base::OnceCallback<void(const RawAddress&, bool)> cb);
+extern bool gatt_profile_get_eatt_support(const RawAddress& remote_bda);
+extern void gatt_cl_init_sr_status(tGATT_TCB& tcb);
+extern bool gatt_cl_read_sr_supp_feat_req(
+    const RawAddress& peer_bda,
+    base::OnceCallback<void(const RawAddress&, uint8_t)> cb);
 
 extern bool gatt_sr_is_cl_change_aware(tGATT_TCB& tcb);
 extern void gatt_sr_init_cl_status(tGATT_TCB& tcb);

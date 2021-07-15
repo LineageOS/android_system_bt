@@ -32,6 +32,8 @@
 namespace bluetooth {
 namespace eatt {
 
+#define BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK 0x01
+
 class eatt_device {
  public:
   RawAddress bda_;
@@ -269,9 +271,7 @@ struct eatt_impl {
   }
 
   bool is_eatt_supported_by_peer(const RawAddress& bd_addr) {
-    /* For now on the list we have only devices which does support eatt */
-    eatt_device* eatt_dev = find_device_by_address(bd_addr);
-    return eatt_dev ? true : false;
+    return gatt_profile_get_eatt_support(bd_addr);
   }
 
   eatt_device* find_device_by_address(const RawAddress& bd_addr) {
@@ -567,7 +567,9 @@ struct eatt_impl {
                  << bd_addr;
   }
 
-  void eatt_is_supported_cb(const RawAddress& bd_addr, bool is_eatt_supported) {
+  void supported_features_cb(const RawAddress& bd_addr, uint8_t features) {
+    bool is_eatt_supported = features & BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK;
+
     LOG(INFO) << __func__ << " " << bd_addr
               << " is_eatt_supported = " << int(is_eatt_supported);
     if (!is_eatt_supported) return;
@@ -635,9 +637,9 @@ struct eatt_impl {
       return;
     }
 
-    /* For new device, first check if EATT is supported. */
-    if (gatt_profile_get_eatt_support(
-            bd_addr, base::BindOnce(&eatt_impl::eatt_is_supported_cb,
+    /* For new device, first read GATT server supported features. */
+    if (gatt_cl_read_sr_supp_feat_req(
+            bd_addr, base::BindOnce(&eatt_impl::supported_features_cb,
                                     base::Unretained(this))) == false) {
       LOG(INFO) << __func__ << "Eatt is not supported. Checked for device "
                 << bd_addr;

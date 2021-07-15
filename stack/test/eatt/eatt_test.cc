@@ -43,6 +43,8 @@ using testing::StrictMock;
 using bluetooth::eatt::EattChannel;
 using bluetooth::eatt::EattChannelState;
 
+#define BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK 0x01
+
 /* Needed for testing context */
 static tGATT_TCB test_tcb;
 void btif_storage_add_eatt_supported(const RawAddress& addr) { return; }
@@ -59,13 +61,15 @@ const RawAddress test_address({0x11, 0x11, 0x11, 0x11, 0x11, 0x11});
 class EattTest : public testing::Test {
  protected:
   void ConnectDeviceEattSupported(int num_of_accepted_connections) {
-    ON_CALL(gatt_interface_, GetEattSupport)
+    ON_CALL(gatt_interface_, ClientReadSupportedFeatures)
         .WillByDefault(
             [](const RawAddress& addr,
-               base::OnceCallback<void(const RawAddress&, bool)> cb) {
-              std::move(cb).Run(addr, true);
+               base::OnceCallback<void(const RawAddress&, uint8_t)> cb) {
+              std::move(cb).Run(addr, BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK);
               return true;
             });
+    ON_CALL(gatt_interface_, GetEattSupport)
+        .WillByDefault([](const RawAddress& addr) { return true; });
 
     std::vector<uint16_t> test_local_cids{61, 62, 63, 64, 65};
     EXPECT_CALL(l2cap_interface_,
@@ -182,12 +186,15 @@ TEST_F(EattTest, ConnectSucceedMultipleChannels) {
 }
 
 TEST_F(EattTest, ConnectFailedEattNotSupported) {
+  ON_CALL(gatt_interface_, ClientReadSupportedFeatures)
+      .WillByDefault(
+          [](const RawAddress& addr,
+             base::OnceCallback<void(const RawAddress&, uint8_t)> cb) {
+            std::move(cb).Run(addr, 0);
+            return true;
+          });
   ON_CALL(gatt_interface_, GetEattSupport)
-      .WillByDefault([](const RawAddress& addr,
-                        base::OnceCallback<void(const RawAddress&, bool)> cb) {
-        std::move(cb).Run(addr, false);
-        return true;
-      });
+      .WillByDefault([](const RawAddress& addr) { return false; });
 
   EXPECT_CALL(l2cap_interface_,
               ConnectCreditBasedReq(BT_PSM_EATT, test_address, _))
