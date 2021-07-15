@@ -83,6 +83,7 @@ using bluetooth::Uuid;
 #define BTIF_STORAGE_KEY_ADAPTER_DISC_TIMEOUT "DiscoveryTimeout"
 #define BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED "GattClientSupportedFeatures"
 #define BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH "GattClientDatabaseHash"
+#define BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED "GattServerSupportedFeatures"
 
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
@@ -854,6 +855,9 @@ bt_status_t btif_storage_remove_bonded_device(
   }
   if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH)) {
     ret &= btif_config_remove(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH);
+  }
+  if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED)) {
+    ret &= btif_config_remove(bdstr, BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED);
   }
 
   /* write bonded info immediately */
@@ -1658,6 +1662,34 @@ bool btif_storage_get_hearing_aid_prop(
   }
 
   return true;
+}
+
+/** Stores information about GATT server supported features */
+void btif_storage_set_gatt_sr_supp_feat(const RawAddress& addr, uint8_t feat) {
+  do_in_jni_thread(
+      FROM_HERE, Bind(
+                     [](const RawAddress& addr, uint8_t feat) {
+                       std::string bdstr = addr.ToString();
+                       VLOG(2)
+                           << "GATT server supported features for: " << bdstr
+                           << " features: " << +feat;
+                       btif_config_set_int(
+                           bdstr, BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED, feat);
+                       btif_config_save();
+                     },
+                     addr, feat));
+}
+
+/** Gets information about GATT server supported features */
+uint8_t btif_storage_get_sr_supp_feat(const RawAddress& bd_addr) {
+  auto name = bd_addr.ToString();
+
+  int value = 0;
+  btif_config_get_int(name, BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED, &value);
+  BTIF_TRACE_DEBUG("Remote device: %s GATT server supported features 0x%02x",
+                   name.c_str(), value);
+
+  return value;
 }
 
 /*******************************************************************************
