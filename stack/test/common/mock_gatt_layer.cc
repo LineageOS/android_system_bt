@@ -24,8 +24,16 @@ void bluetooth::gatt::SetMockGattInterface(
   gatt_interface = mock_gatt_interface;
 }
 
-bool gatt_profile_get_eatt_support(
+bool gatt_profile_get_eatt_support(const RawAddress& peer_bda) {
+  return gatt_interface->GetEattSupport(peer_bda);
+}
+
+void gatt_cl_init_sr_status(tGATT_TCB& tcb) {
+  return gatt_interface->ClientInitServerStatus(tcb);
+}
+
+bool gatt_cl_read_sr_supp_feat_req(
     const RawAddress& peer_bda,
-    base::OnceCallback<void(const RawAddress&, bool)> cb) {
-  return gatt_interface->GetEattSupport(peer_bda, std::move(cb));
+    base::OnceCallback<void(const RawAddress&, uint8_t)> cb) {
+  return gatt_interface->ClientReadSupportedFeatures(peer_bda, std::move(cb));
 }

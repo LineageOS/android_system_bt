@@ -242,6 +242,12 @@ uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr);
 /** Remove client supported features */
 void btif_storage_remove_gatt_cl_supp_feat(const RawAddress& bd_addr);
 
+/** Stores information about GATT server supported features */
+void btif_storage_set_gatt_sr_supp_feat(const RawAddress& addr, uint8_t feat);
+
+/** Gets information about GATT server supported features */
+uint8_t btif_storage_get_sr_supp_feat(const RawAddress& bd_addr);
+
 /** Store last server database hash for remote client */
 void btif_storage_set_gatt_cl_db_hash(const RawAddress& bd_addr, Octet16 hash);
 

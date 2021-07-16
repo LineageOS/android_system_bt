@@ -29,6 +29,7 @@
 #include "bt_target.h"
 #include "bt_utils.h"
 #include "btif/include/btif_storage.h"
+#include "eatt/eatt.h"
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "gd/common/init_flags.h"
@@ -47,11 +48,12 @@ using bluetooth::Uuid;
 #define BLE_GATT_CL_ANDROID_SUP_FEAT \
   (BLE_GATT_CL_SUP_FEAT_EATT_BITMASK | BLE_GATT_CL_SUP_FEAT_MULTI_NOTIF_BITMASK)
 
-using gatt_eatt_support_cb = base::OnceCallback<void(const RawAddress&, bool)>;
+using gatt_sr_supported_feat_cb =
+    base::OnceCallback<void(const RawAddress&, uint8_t)>;
 
 typedef struct {
   uint16_t op_uuid;
-  gatt_eatt_support_cb cb;
+  gatt_sr_supported_feat_cb cb;
 } gatt_op_cb_data;
 
 static std::map<uint16_t, gatt_op_cb_data> OngoingOps;
@@ -502,19 +504,6 @@ static void gatt_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
   gatt_cl_start_config_ccc(p_clcb);
 }
 
-static void gatt_attr_send_is_eatt_cb(uint16_t conn_id, gatt_op_cb_data* cb,
-                                      bool eatt_supported) {
-  tGATT_IF gatt_if;
-  RawAddress bd_addr;
-  tBT_TRANSPORT transport;
-
-  GATT_GetConnectionInfor(conn_id, &gatt_if, bd_addr, &transport);
-
-  std::move(cb->cb).Run(bd_addr, eatt_supported);
-
-  cb->op_uuid = 0;
-}
-
 static bool gatt_svc_read_cl_supp_feat_req(uint16_t conn_id,
                                            gatt_op_cb_data* cb) {
   tGATT_READ_PARAM param;
@@ -585,6 +574,7 @@ static void gatt_cl_op_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
 
   gatt_op_cb_data* operation_callback_data = &iter->second;
   uint16_t cl_op_uuid = operation_callback_data->op_uuid;
+  operation_callback_data->op_uuid = 0;
 
   uint8_t* pp = p_data->att_value.value;
 
@@ -592,24 +582,24 @@ static void gatt_cl_op_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
 
   switch (cl_op_uuid) {
     case GATT_UUID_SERVER_SUP_FEAT: {
-      uint8_t supported_feat_mask = 0;
+      uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
+      tGATT_TCB& tcb = gatt_cb.tcb[tcb_idx];
 
       /* Check if EATT is supported */
       if (status == GATT_SUCCESS) {
-        STREAM_TO_UINT8(supported_feat_mask, pp);
+        STREAM_TO_UINT8(tcb.sr_supp_feat, pp);
+        btif_storage_set_gatt_sr_supp_feat(tcb.peer_bda, tcb.sr_supp_feat);
       }
 
-      /* Notify user if eatt is supported */
-      bool eatt_supported =
-          supported_feat_mask & BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK;
-      gatt_attr_send_is_eatt_cb(conn_id, operation_callback_data,
-                                eatt_supported);
+      /* Notify user about the supported features */
+      std::move(operation_callback_data->cb)
+          .Run(tcb.peer_bda, tcb.sr_supp_feat);
 
       /* If server supports EATT lets try to find handle for the
        * client supported features characteristic, where we could write
        * our supported features as a client.
        */
-      if (eatt_supported) {
+      if (tcb.sr_supp_feat & BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK) {
         /* If read succeed, return here */
         if (gatt_svc_read_cl_supp_feat_req(conn_id, operation_callback_data))
           return;
@@ -717,19 +707,46 @@ void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool enable,
 
 /*******************************************************************************
  *
- * Function         gatt_svc_read_supp_feat_req
+ * Function         gatt_cl_init_sr_status
+ *
+ * Description      Restore status for trusted GATT Server device
+ *
+ * Returns          none
+ *
+ ******************************************************************************/
+void gatt_cl_init_sr_status(tGATT_TCB& tcb) {
+  tcb.sr_supp_feat = btif_storage_get_sr_supp_feat(tcb.peer_bda);
+
+  if (tcb.sr_supp_feat & BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK)
+    bluetooth::eatt::EattExtension::AddFromStorage(tcb.peer_bda);
+}
+
+/*******************************************************************************
+ *
+ * Function         gatt_cl_read_sr_supp_feat_req
  *
  * Description      Read remote device supported GATT feature mask.
  *
  * Returns          bool
  *
  ******************************************************************************/
-static bool gatt_svc_read_supp_feat_req(
-    const RawAddress& peer_bda, uint16_t conn_id,
-    base::OnceCallback<void(const RawAddress&, bool)> cb) {
+bool gatt_cl_read_sr_supp_feat_req(
+    const RawAddress& peer_bda,
+    base::OnceCallback<void(const RawAddress&, uint8_t)> cb) {
+  tGATT_PROFILE_CLCB* p_clcb;
   tGATT_READ_PARAM param;
-  tGATT_PROFILE_CLCB* p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
+  uint16_t conn_id;
 
+  if (!cb) return false;
+
+  VLOG(1) << __func__ << " BDA: " << peer_bda
+          << " read gatt supported features";
+
+  GATT_GetConnIdIfConnected(gatt_cb.gatt_if, peer_bda, &conn_id,
+                            BT_TRANSPORT_LE);
+  if (conn_id == GATT_INVALID_CONN_ID) return false;
+
+  p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
   if (!p_clcb) {
     p_clcb = gatt_profile_clcb_alloc(conn_id, peer_bda, BT_TRANSPORT_LE);
   }
@@ -773,18 +790,13 @@ static bool gatt_svc_read_supp_feat_req(
  *
  * Description      Check if EATT is supported with remote device.
  *
- * Returns          false in case read could not be sent.
+ * Returns          if EATT is supported.
  *
  ******************************************************************************/
-bool gatt_profile_get_eatt_support(
-    const RawAddress& remote_bda,
-    base::OnceCallback<void(const RawAddress&, bool)> cb) {
+bool gatt_profile_get_eatt_support(const RawAddress& remote_bda) {
   uint16_t conn_id;
 
-  if (!cb) return false;
-
-  VLOG(1) << __func__ << " BDA: " << remote_bda
-          << " read gatt supported features";
+  VLOG(1) << __func__ << " BDA: " << remote_bda << " read GATT support";
 
   GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
                             BT_TRANSPORT_LE);
@@ -792,7 +804,10 @@ bool gatt_profile_get_eatt_support(
   /* This read is important only when connected */
   if (conn_id == GATT_INVALID_CONN_ID) return false;
 
-  return gatt_svc_read_supp_feat_req(remote_bda, conn_id, std::move(cb));
+  /* Get tcb info */
+  uint8_t tcb_idx = GATT_GET_TCB_IDX(conn_id);
+  tGATT_TCB& tcb = gatt_cb.tcb[tcb_idx];
+  return tcb.sr_supp_feat & BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK;
 }
 
 /*******************************************************************************

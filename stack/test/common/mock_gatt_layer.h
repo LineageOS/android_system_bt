@@ -26,17 +26,21 @@ namespace gatt {
 
 class GattInterface {
  public:
-  virtual bool GetEattSupport(
+  virtual void ClientInitServerStatus(tGATT_TCB& tcb) = 0;
+  virtual bool ClientReadSupportedFeatures(
       const RawAddress& peer_bda,
-      base::OnceCallback<void(const RawAddress&, bool)> cb) = 0;
+      base::OnceCallback<void(const RawAddress&, uint8_t)> cb) = 0;
+  virtual bool GetEattSupport(const RawAddress& peer_bda) = 0;
   virtual ~GattInterface() = default;
 };
 
 class MockGattInterface : public GattInterface {
  public:
-  MOCK_METHOD2(GetEattSupport,
+  MOCK_METHOD1(ClientInitServerStatus, void(tGATT_TCB& tcb));
+  MOCK_METHOD2(ClientReadSupportedFeatures,
                bool(const RawAddress& peer_bda,
-                    base::OnceCallback<void(const RawAddress&, bool)> cb));
+                    base::OnceCallback<void(const RawAddress&, uint8_t)> cb));
+  MOCK_METHOD1(GetEattSupport, bool(const RawAddress& peer_bda));
 };
 
 /**
