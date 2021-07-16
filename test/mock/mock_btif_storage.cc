@@ -215,3 +215,10 @@ void btif_storage_set_hearing_aid_acceptlist(const RawAddress& address,
                                              bool add_to_acceptlist) {
   mock_function_count_map[__func__]++;
 }
+void btif_storage_set_gatt_sr_supp_feat(const RawAddress& addr, uint8_t feat) {
+  mock_function_count_map[__func__]++;
+}
+uint8_t btif_storage_get_sr_supp_feat(const RawAddress& bd_addr) {
+  mock_function_count_map[__func__]++;
+  return 0;
+}
