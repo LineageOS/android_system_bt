@@ -160,7 +160,12 @@ void BTM_PM_OnConnected(uint16_t handle, const RawAddress& remote_bda) {
   pm_mode_db[handle].Init(remote_bda, handle);
 }
 
-void BTM_PM_OnDisconnected(uint16_t handle) { pm_mode_db.erase(handle); }
+void BTM_PM_OnDisconnected(uint16_t handle) {
+  pm_mode_db.erase(handle);
+  if (handle == pm_pend_link) {
+    pm_pend_link = 0;
+  }
+}
 
 /*******************************************************************************
  *
@@ -623,6 +628,19 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id,
   return BTM_CMD_STARTED;
 }
 
+static void btm_pm_continue_pending_mode_changes() {
+  for (auto& entry : pm_mode_db) {
+    if (entry.second.state & BTM_PM_STORED_MASK) {
+      entry.second.state &= ~BTM_PM_STORED_MASK;
+      LOG_INFO("Found another link requiring power mode change:%s",
+               PRIVATE_ADDRESS(entry.second.bda_));
+      btm_pm_snd_md_req(entry.second.handle_, BTM_PM_SET_ONLY_ID,
+                        entry.second.handle_, NULL);
+      return;
+    }
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btm_pm_proc_cmd_status
@@ -636,8 +654,19 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id,
  *
  ******************************************************************************/
 void btm_pm_proc_cmd_status(tHCI_STATUS status) {
-  if (pm_pend_link == 0 || pm_mode_db.count(pm_pend_link) == 0) {
-    LOG_ERROR("There are no links pending power mode changes");
+  if (pm_pend_link == 0) {
+    LOG_ERROR(
+        "There are no links pending power mode changes; try to find other "
+        "pending changes");
+    btm_pm_continue_pending_mode_changes();
+    return;
+  }
+  if (pm_mode_db.count(pm_pend_link) == 0) {
+    LOG_ERROR(
+        "Got PM change status for disconnected link %d; forgot to clean up "
+        "pm_pend_link?",
+        pm_pend_link);
+    btm_pm_continue_pending_mode_changes();
     return;
   }
 
@@ -663,16 +692,7 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status) {
            power_mode_state_text(p_cb->state).c_str());
   pm_pend_link = 0;
 
-  for (auto& entry : pm_mode_db) {
-    if (entry.second.state & BTM_PM_STORED_MASK) {
-      entry.second.state &= ~BTM_PM_STORED_MASK;
-      LOG_DEBUG("Found another link requiring power mode change:%s",
-                PRIVATE_ADDRESS(entry.second.bda_));
-      btm_pm_snd_md_req(entry.second.handle_, BTM_PM_SET_ONLY_ID,
-                        entry.second.handle_, NULL);
-      break;
-    }
-  }
+  btm_pm_continue_pending_mode_changes();
 }
 
 /*******************************************************************************
