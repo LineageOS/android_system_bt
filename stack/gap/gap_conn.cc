@@ -994,7 +994,7 @@ static void gap_release_ccb(tGAP_CCB* p_ccb) {
   }
 
   /* Free the security record for this PSM */
-  BTM_SecClrService(p_ccb->service_id);
+  BTM_SecClrServiceByPsm(p_ccb->psm);
   if (p_ccb->transport == BT_TRANSPORT_BR_EDR) L2CA_Deregister(p_ccb->psm);
   if (p_ccb->transport == BT_TRANSPORT_LE) L2CA_DeregisterLECoc(p_ccb->psm);
 }
