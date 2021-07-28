@@ -382,7 +382,7 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
     return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info, sec_level, cfg);
   }
 
-  if (p_cb_info.pL2CA_ConnectInd_Cb != nullptr && psm < LE_DYNAMIC_PSM_START) {
+  if (p_cb_info.pL2CA_ConnectInd_Cb != nullptr || psm < LE_DYNAMIC_PSM_START) {
     //  If we register LE COC for outgoing connection only, don't register with
     //  BTM_Sec, because it's handled by L2CA_ConnectLECocReq.
     BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
