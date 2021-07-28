@@ -30,6 +30,7 @@
 #include "bt_utils.h"
 #include "bta_hf_client_api.h"
 #include "bta_hf_client_int.h"
+#include <base/logging.h>
 
 /* Number of protocol elements in protocol element list. */
 #define BTA_HF_CLIENT_NUM_PROTO_ELEMS      2
@@ -346,7 +347,7 @@ void bta_hf_client_do_disc(void)
     if (!db_inited)
     {
         /*free discover db */
-        bta_hf_client_free_db(NULL);
+        osi_free_and_reset((void**)&bta_hf_client_cb.scb.p_disc_db);
         /* sent failed event */
         bta_hf_client_sm_execute(BTA_HF_CLIENT_DISC_FAIL_EVT, NULL);
     }
