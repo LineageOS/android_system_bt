@@ -252,7 +252,7 @@ void bta_hf_client_rfc_do_close(tBTA_HF_CLIENT_DATA *p_data)
         if(bta_hf_client_cb.scb.p_disc_db)
         {
             (void)SDP_CancelServiceSearch (bta_hf_client_cb.scb.p_disc_db);
-            bta_hf_client_free_db(NULL);
+            osi_free_and_reset((void**)&bta_hf_client_cb.scb.p_disc_db);
         }
     }
 }

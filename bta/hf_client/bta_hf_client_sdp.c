@@ -346,7 +346,7 @@ void bta_hf_client_do_disc(void)
     if (!db_inited)
     {
         /*free discover db */
-        bta_hf_client_free_db(NULL);
+        osi_free_and_reset((void**)&bta_hf_client_cb.scb.p_disc_db);
         /* sent failed event */
         bta_hf_client_sm_execute(BTA_HF_CLIENT_DISC_FAIL_EVT, NULL);
     }

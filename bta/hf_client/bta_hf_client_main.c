@@ -350,7 +350,7 @@ void bta_hf_client_collision_cback (tBTA_SYS_CONN_STATUS status, UINT8 id,
         if(bta_hf_client_cb.scb.p_disc_db)
         {
             (void)SDP_CancelServiceSearch (bta_hf_client_cb.scb.p_disc_db);
-            bta_hf_client_free_db(NULL);
+            osi_free_and_reset((void**)&bta_hf_client_cb.scb.p_disc_db);
         }
 
         /* reopen registered server */
