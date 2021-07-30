@@ -124,7 +124,7 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result);
 
 /* Disable timer interval (in milliseconds) */
 #ifndef BTA_DM_DISABLE_TIMER_MS
-#define BTA_DM_DISABLE_TIMER_MS 5000
+#define BTA_DM_DISABLE_TIMER_MS (2000)
 #endif
 
 /* Disable timer retrial interval (in milliseconds) */
