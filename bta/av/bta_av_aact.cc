@@ -1819,6 +1819,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       (cur_role == HCI_ROLE_CENTRAL)) {
     BTM_block_role_switch_for(p_scb->PeerAddress());
   }
+  BTM_block_sniff_mode_for(p_scb->PeerAddress());
 
   if (p_scb->started) {
     p_scb->role |= BTA_AV_ROLE_START_INT;
@@ -1887,6 +1888,7 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   BTM_unblock_role_switch_for(p_scb->PeerAddress());
+  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
 
   if (p_scb->co_started) {
     if (p_scb->offload_started) {
@@ -2381,6 +2383,7 @@ void bta_av_start_failed(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   }
 
   BTM_unblock_role_switch_for(p_scb->PeerAddress());
+  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
   p_scb->sco_suspend = false;
 }
 
@@ -2403,6 +2406,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       p_scb->open_status, p_scb->chnl, p_scb->co_started);
 
   BTM_unblock_role_switch_for(p_scb->PeerAddress());
+  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
   if (bta_av_cb.audio_open_cnt <= 1) {
     BTM_default_unblock_role_switch();
   }
@@ -2507,6 +2511,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   BTM_unblock_role_switch_for(p_scb->PeerAddress());
+  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
 
   /* in case that we received suspend_ind, we may need to call co_stop here */
   if (p_scb->co_started) {
