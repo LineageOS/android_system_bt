@@ -475,6 +475,8 @@ void end_session() {
   }
   active_hal_interface->EndSession();
   static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
+      ->ResetPendingCmd();
+  static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
       ->ResetPresentationPosition();
 }
 
