@@ -534,8 +534,10 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 
   if (controller_get_interface()->supports_ble()) {
     btm_ble_start_inquiry(p_inq->inqparms.duration);
+  } else {
+    LOG_WARN("Trying to do LE scan on a non-LE adapter");
+    p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
   }
-  p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
 
   btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
 
