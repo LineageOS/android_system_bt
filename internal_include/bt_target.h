@@ -285,7 +285,7 @@
 /* Sets the Page_Scan_Activity:  the interval between the start of two
  * consecutive page scans. */
 #ifndef BTM_DEFAULT_CONN_INTERVAL
-#define BTM_DEFAULT_CONN_INTERVAL 0x0800
+#define BTM_DEFAULT_CONN_INTERVAL 0x0400
 #endif
 
 /* When automatic inquiry scan is enabled, this sets the inquiry scan window. */
