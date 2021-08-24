@@ -143,7 +143,6 @@ interface IBluetooth
     int getBondState(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean isBondingInitiatedLocally(in BluetoothDevice device, in AttributionSource attributionSource);
-    void setBondingInitiatedLocally(in BluetoothDevice devicei, in boolean localInitiated);
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     long getSupportedProfiles();
     @UnsupportedAppUsage
@@ -177,9 +176,6 @@ interface IBluetooth
     int getBatteryLevel(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     int getMaxConnectedAudioDevices(in AttributionSource attributionSource);
-
-    boolean isTwsPlusDevice(in BluetoothDevice device);
-    String getTwsPlusPeerAddress(in BluetoothDevice device);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean setPin(in BluetoothDevice device, boolean accept, int len, in byte[] pinCode, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
@@ -260,7 +256,6 @@ interface IBluetooth
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void onLeServiceUp(in AttributionSource attributionSource);
-    void updateQuietModeStatus(boolean quietMode);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void onBrEdrDown(in AttributionSource attributionSource);
 
@@ -286,7 +281,35 @@ interface IBluetooth
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void generateLocalOobData(in int transport, IBluetoothOobDataCallback callback, in AttributionSource attributionSource);
 
-    int getDeviceType(in BluetoothDevice device);
+    // Value Added
+
+    @UnsupportedAppUsage
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    void setBondingInitiatedLocally(in BluetoothDevice devicei, in boolean localInitiated, in AttributionSource attributionSource);
+
+    @UnsupportedAppUsage
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    int getDeviceType(in BluetoothDevice device, in AttributionSource attributionSource);
+
+    @UnsupportedAppUsage
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    boolean isTwsPlusDevice(in BluetoothDevice device, in AttributionSource attributionSource);
+
+    @UnsupportedAppUsage
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    String getTwsPlusPeerAddress(in BluetoothDevice device, in AttributionSource attributionSource);
+
+    @UnsupportedAppUsage
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    void updateQuietModeStatus(boolean quietMode, in AttributionSource attributionSource);
+
+    @UnsupportedAppUsage
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int setSocketOpt(int type, int port, int optionName, in byte [] optionVal, int optionLen);
+
+    @UnsupportedAppUsage
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int getSocketOpt(int type, int port, int optionName, out byte [] optionVal);
 
     boolean isBroadcastActive();
 

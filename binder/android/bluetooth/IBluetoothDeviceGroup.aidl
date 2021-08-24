@@ -31,6 +31,7 @@ package android.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.DeviceGroup;
+import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
 import android.bluetooth.IBluetoothGroupCallback;
@@ -41,18 +42,32 @@ import android.bluetooth.IBluetoothGroupCallback;
  */
 
 interface IBluetoothDeviceGroup {
-  void connect (in int appId, in BluetoothDevice device);
-  void disconnect (in int appId, in BluetoothDevice device);
-  void registerGroupClientApp(in ParcelUuid uuid, in IBluetoothGroupCallback callback);
-  void unregisterGroupClientApp(in int appId);
-  void startGroupDiscovery(in int appId, in int groupId);
-  void stopGroupDiscovery(in int appId, in int groupId);
-  List<DeviceGroup> getDiscoveredGroups(in boolean mPublicAddr);
-  DeviceGroup getDeviceGroup(in int groupId, in boolean mPublicAddr);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  void connect (in int appId, in BluetoothDevice device, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  void disconnect (in int appId, in BluetoothDevice device, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  void registerGroupClientApp(in ParcelUuid uuid, in IBluetoothGroupCallback callback,
+          in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  void unregisterGroupClientApp(in int appId, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  void startGroupDiscovery(in int appId, in int groupId, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  void stopGroupDiscovery(in int appId, in int groupId, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  List<DeviceGroup> getDiscoveredGroups(in boolean mPublicAddr, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+  DeviceGroup getDeviceGroup(in int groupId, in boolean mPublicAddr, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
   int getRemoteDeviceGroupId (in BluetoothDevice device, in ParcelUuid uuid,
-                              in boolean mPublicAddr);
-  boolean isGroupDiscoveryInProgress(in int groupId);
+                              in boolean mPublicAddr, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
+  boolean isGroupDiscoveryInProgress(in int groupId, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
   void setExclusiveAccess(in int appId, in int groupId, in List<BluetoothDevice> devices,
-                          in int value);
-  void getExclusiveAccessStatus(in int appId, in int groupId, in List<BluetoothDevice> devices);
+                          in int value, in AttributionSource attributionSource);
+  @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+  void getExclusiveAccessStatus(in int appId, in int groupId, in List<BluetoothDevice> devices,
+                          in AttributionSource attributionSource);
 }
