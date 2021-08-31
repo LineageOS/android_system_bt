@@ -200,11 +200,30 @@ genrule {
 }
 
 // bt_vhci_forwarder in cuttlefish depends on this H4Packetizer implementation.
-filegroup {
-    name: "H4PacketizerSources",
+cc_library_static {
+    name: "h4_packetizer_lib",
+    vendor: true,
+    defaults: [
+        "gd_defaults",
+    ],
     srcs: [
         "model/devices/h4_packetizer.cc",
         "model/devices/h4_parser.cc",
         "model/devices/hci_protocol.cc",
+    ],
+
+    local_include_dirs: [
+        "include",
+    ],
+    export_include_dirs: [
+        "include",
+        ".",
+    ],
+    generated_headers: [
+        "libbt_init_flags_bridge_header",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/gd",
     ],
 }
