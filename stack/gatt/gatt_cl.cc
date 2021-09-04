@@ -609,6 +609,7 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
     gatt_end_operation(p_clcb, p_clcb->status, &value);
   }
 }
+
 /*******************************************************************************
  *
  * Function         gatt_process_notification
@@ -620,10 +621,10 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
  ******************************************************************************/
 void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
                                uint16_t len, uint8_t* p_data) {
-  tGATT_VALUE value;
+  tGATT_VALUE value = {};
   tGATT_REG* p_reg;
   uint16_t conn_id;
-  tGATT_STATUS encrypt_status;
+  tGATT_STATUS encrypt_status = {};
   uint8_t* p = p_data;
   uint8_t i;
   tGATTC_OPTYPE event = (op_code == GATT_HANDLE_VALUE_IND)
@@ -632,27 +633,16 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
 
   VLOG(1) << __func__;
 
+  // Ensure our packet has enough data (2 bytes)
   if (len < GATT_NOTIFICATION_MIN_LEN) {
     LOG(ERROR) << "illegal notification PDU length, discard";
     return;
   }
 
-  memset(&value, 0, sizeof(value));
+  // Get 2 byte handle
   STREAM_TO_UINT16(value.handle, p);
 
-  if (op_code == GATT_HANDLE_MULTI_VALUE_NOTIF) {
-    STREAM_TO_UINT16(value.len, p);
-  } else {
-    value.len = len - 2;
-  }
-
-  if (value.len > GATT_MAX_ATTR_LEN) {
-    LOG(ERROR) << "value.len larger than GATT_MAX_ATTR_LEN, discard";
-    return;
-  }
-
-  STREAM_TO_ARRAY(value.value, p, value.len);
-
+  // Fail early if the GATT handle is not valid
   if (!GATT_HANDLE_IS_VALID(value.handle)) {
     /* illegal handle, send ack now */
     if (op_code == GATT_HANDLE_VALUE_IND)
@@ -660,6 +650,35 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
     return;
   }
 
+  // Calculate value length based on opcode
+  if (op_code == GATT_HANDLE_MULTI_VALUE_NOTIF) {
+    // Ensure our packet has enough data; MIN + 2 more bytes for len value
+    if (len < GATT_NOTIFICATION_MIN_LEN + 2) {
+      LOG(ERROR) << "illegal notification PDU length, discard";
+      return;
+    }
+
+    // Allow multi value opcode to set value len from the packet
+    STREAM_TO_UINT16(value.len, p);
+
+    if (value.len > len - 4) {
+      LOG(ERROR) << "value.len (" << value.len << ") greater than length ("
+                 << (len - 4);
+      return;
+    }
+
+  } else {
+    // For single value, just use the passed in len minus opcode length (2)
+    value.len = len - 2;
+  }
+
+  // Verify the new calculated length
+  if (value.len > GATT_MAX_ATTR_LEN) {
+    LOG(ERROR) << "value.len larger than GATT_MAX_ATTR_LEN, discard";
+    return;
+  }
+
+  // Handle indications differently
   if (event == GATTC_OPTYPE_INDICATION) {
     if (tcb.ind_count) {
       /* this is an error case that receiving an indication but we
@@ -670,34 +689,67 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
       LOG(ERROR) << __func__ << " rcv Ind. but ind_count=" << tcb.ind_count
                  << " (will reset ind_count)";
     }
+
+    // Zero out the ind_count
     tcb.ind_count = 0;
-  }
 
-  /* should notify all registered client with the handle value
-     notificaion/indication
-     Note: need to do the indication count and start timer first then do
-     callback
-   */
+    // Notify all registered clients with the handle value
+    // notification/indication
+    // Note: need to do the indication count and start timer first then do
+    // callback
+    for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
+      if (p_reg->in_use && p_reg->app_cb.p_cmpl_cb) tcb.ind_count++;
+    }
 
-  for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
-    if (p_reg->in_use && p_reg->app_cb.p_cmpl_cb &&
-        (event == GATTC_OPTYPE_INDICATION))
-      tcb.ind_count++;
-  }
-
-  if (event == GATTC_OPTYPE_INDICATION) {
     /* start a timer for app confirmation */
-    if (tcb.ind_count > 0)
+    if (tcb.ind_count > 0) {
       gatt_start_ind_ack_timer(tcb, cid);
-    else /* no app to indicate, or invalid handle */
+    } else { /* no app to indicate, or invalid handle */
       attp_send_cl_confirmation_msg(tcb, cid);
+    }
   }
 
   encrypt_status = gatt_get_link_encrypt_status(tcb);
 
-  uint16_t rem_len = len;
-  while (rem_len) {
-    tGATT_CL_COMPLETE gatt_cl_complete;
+  STREAM_TO_ARRAY(value.value, p, value.len);
+
+  tGATT_CL_COMPLETE gatt_cl_complete;
+  gatt_cl_complete.att_value = value;
+  gatt_cl_complete.cid = cid;
+
+  for (i = 0, p_reg = gatt_cb.cl_rcb; i < GATT_MAX_APPS; i++, p_reg++) {
+    if (p_reg->in_use && p_reg->app_cb.p_cmpl_cb) {
+      conn_id = GATT_CREATE_CONN_ID(tcb.tcb_idx, p_reg->gatt_if);
+      (*p_reg->app_cb.p_cmpl_cb)(conn_id, event, encrypt_status,
+                                 &gatt_cl_complete);
+    }
+  }
+
+  // If this is single value, then nothing is left to do
+  if (op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) return;
+
+  // Need a signed type to check if the value is below 0
+  // as uint16_t doesn't have negatives so the negatives register as a number
+  // thus anything less than zero won't trigger the conditional and it is not
+  // always 0
+  // when done looping as value.len is arbitrary.
+  int16_t rem_len = (int16_t)len - (4 /* octets */ + value.len);
+
+  // Already streamed the first value and sent it, lets send the rest
+  while (rem_len > 4 /* octets */) {
+    // 2
+    STREAM_TO_UINT16(value.handle, p);
+    // + 2 = 4
+    STREAM_TO_UINT16(value.len, p);
+    // Accounting
+    rem_len -= 4;
+    // Make sure we don't read past the remaining data even if the length says
+    // we can Also need to watch comparing the int16_t with the uint16_t
+    value.len = std::min(rem_len, (int16_t)value.len);
+    STREAM_TO_ARRAY(value.value, p, value.len);
+    // Accounting
+    rem_len -= value.len;
+
     gatt_cl_complete.att_value = value;
     gatt_cl_complete.cid = cid;
 
@@ -707,16 +759,6 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
         (*p_reg->app_cb.p_cmpl_cb)(conn_id, event, encrypt_status,
                                    &gatt_cl_complete);
       }
-    }
-
-    if (op_code != GATT_HANDLE_MULTI_VALUE_NOTIF) return;
-
-    /* 4 stands for 2 octects for handle and 2 octecs for len */
-    rem_len -= (4 + value.len);
-    if (rem_len) {
-      STREAM_TO_UINT16(value.handle, p);
-      STREAM_TO_UINT16(value.len, p);
-      STREAM_TO_ARRAY(value.value, p, value.len);
     }
   }
 }
