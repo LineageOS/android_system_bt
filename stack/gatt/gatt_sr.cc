@@ -32,6 +32,7 @@
 #include "stack/eatt/eatt.h"
 #include "stack/l2cap/l2c_int.h"
 #define GATT_MTU_REQ_MIN_LEN 2
+#define L2CAP_PKT_OVERHEAD 4
 
 using base::StringPrintf;
 using bluetooth::Uuid;
@@ -814,7 +815,7 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len,
 
   LOG(INFO) << "MTU request PDU with MTU size " << +tcb.payload_size;
 
-  BTM_SetBleDataLength(tcb.peer_bda, tcb.payload_size);
+  BTM_SetBleDataLength(tcb.peer_bda, tcb.payload_size + L2CAP_PKT_OVERHEAD);
 
   tGATT_SR_MSG gatt_sr_msg;
   gatt_sr_msg.mtu = tcb.payload_size;
