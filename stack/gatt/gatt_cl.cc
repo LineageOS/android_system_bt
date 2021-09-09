@@ -46,6 +46,8 @@
 #define GATT_MTU_RSP_MIN_LEN 2
 #define GATT_READ_BY_TYPE_RSP_MIN_LEN 1
 
+#define L2CAP_PKT_OVERHEAD 4
+
 using base::StringPrintf;
 using bluetooth::Uuid;
 using bluetooth::eatt::EattExtension;
@@ -1094,7 +1096,7 @@ void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t len,
       tcb.payload_size = mtu;
   }
 
-  BTM_SetBleDataLength(tcb.peer_bda, tcb.payload_size);
+  BTM_SetBleDataLength(tcb.peer_bda, tcb.payload_size + L2CAP_PKT_OVERHEAD);
 
   gatt_end_operation(p_clcb, status, NULL);
 }
