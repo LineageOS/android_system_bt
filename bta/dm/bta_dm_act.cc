@@ -979,7 +979,7 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
 void bta_dm_inq_cmpl(uint8_t num) {
   if (bta_dm_search_get_state() == BTA_DM_SEARCH_CANCELLING) {
     bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-    bta_dm_search_cancel_cmpl();
+    bta_dm_execute_queued_request();
     return;
   }
 
@@ -1278,6 +1278,7 @@ void bta_dm_search_cmpl() {
   /* no BLE connection, i.e. Classic service discovery end */
   if (conn_id == GATT_INVALID_CONN_ID) {
     bta_dm_search_cb.p_search_cback(BTA_DM_DISC_CMPL_EVT, nullptr);
+    bta_dm_execute_queued_request();
     return;
   }
 
@@ -1288,6 +1289,7 @@ void bta_dm_search_cmpl() {
   if (count == 0) {
     LOG_INFO("Empty GATT database - no BLE services discovered");
     bta_dm_search_cb.p_search_cback(BTA_DM_DISC_CMPL_EVT, nullptr);
+    bta_dm_execute_queued_request();
     return;
   }
 
@@ -1497,17 +1499,6 @@ void bta_dm_search_clear_queue() {
   osi_free_and_reset((void**)&bta_dm_search_cb.p_pending_search);
   fixed_queue_flush(bta_dm_search_cb.pending_discovery_queue, osi_free);
 }
-
-/*******************************************************************************
- *
- * Function         bta_dm_search_cancel_cmpl
- *
- * Description      Search cancel is complete
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_search_cancel_cmpl() { bta_dm_execute_queued_request(); }
 
 /*******************************************************************************
  *
