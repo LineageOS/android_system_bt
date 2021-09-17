@@ -43,4 +43,8 @@ interface IBluetoothVcp {
     void setMute (in BluetoothDevice device, in boolean enableMute, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean isMute(in BluetoothDevice device, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    boolean setActiveProfile(in BluetoothDevice device, int audioType, int profile, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int getActiveProfile(int audioType, in AttributionSource attributionSource);
 }
