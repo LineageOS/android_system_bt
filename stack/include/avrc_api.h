@@ -131,7 +131,7 @@
 #endif
 
 #ifndef AVRC_DEFAULT_VERSION
-#define AVRC_DEFAULT_VERSION AVRC_1_4_STRING
+#define AVRC_DEFAULT_VERSION AVRC_1_5_STRING
 #endif
 
 /* Supported categories */

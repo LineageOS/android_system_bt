@@ -624,7 +624,8 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
          *
          * We create 1.4 for SINK since we support browsing.
          */
-        if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) {
+        if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE &&
+            !is_new_avrcp_enabled()) {
           bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL, NULL,
                           p_bta_av_cfg->avrc_ct_cat,
                           (bta_av_cb.features & BTA_AV_FEAT_BROWSE),
