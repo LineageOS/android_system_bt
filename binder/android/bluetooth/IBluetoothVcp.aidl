@@ -22,6 +22,7 @@
 package android.bluetooth;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.AttributionSource;
 
 /**
  * APIs for Bluetooth Vcp Service
@@ -30,10 +31,16 @@ import android.bluetooth.BluetoothDevice;
  */
 interface IBluetoothVcp {
     // Public API
-    int getConnectionState(in BluetoothDevice device);
-    int getConnectionMode(in BluetoothDevice device);
-    void setAbsoluteVolume(in BluetoothDevice device, int volume);
-    int getAbsoluteVolume(in BluetoothDevice device);
-    void setMute (in BluetoothDevice device, in boolean enableMute);
-    boolean isMute(in BluetoothDevice device);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int getConnectionState(in BluetoothDevice device, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int getConnectionMode(in BluetoothDevice device, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    void setAbsoluteVolume(in BluetoothDevice device, int volume, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int getAbsoluteVolume(in BluetoothDevice device, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    void setMute (in BluetoothDevice device, in boolean enableMute, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    boolean isMute(in BluetoothDevice device, in AttributionSource attributionSource);
 }
