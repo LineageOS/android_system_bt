@@ -133,7 +133,6 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
   mock_function_count_map[__func__]++;
 }
 void bta_dm_search_cancel() { mock_function_count_map[__func__]++; }
-void bta_dm_search_cancel_cmpl() { mock_function_count_map[__func__]++; }
 void bta_dm_search_cancel_notify() { mock_function_count_map[__func__]++; }
 void bta_dm_execute_queued_request() { mock_function_count_map[__func__]++; }
 bool bta_dm_is_search_request_queued() {
