@@ -80,7 +80,7 @@ static const uint8_t hci_event_parameters_minimum_length[] = {
     10,   //  0x3B - HCI_User_Passkey_Notification Event
     7,    //  0x3C - HCI_Keypress_Notification Event
     14,   //  0x3D - HCI_Remote_Host_Supported_Features_Notification Event
-    0,    //  0x3E - LE Meta event
+    1,    //  0x3E - LE Meta event
     0,    //  0x3F - N/A
     2,    //  0x40 - HCI_Physical_Link_Complete Event
     1,    //  0x41 - HCI_Channel_Selected Event
