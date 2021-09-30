@@ -63,6 +63,7 @@ char *osi_strndup(const char *str, size_t len) {
 }
 
 void *osi_malloc(size_t size) {
+  assert((ssize_t)size >= 0);
   size_t real_size = allocation_tracker_resize_for_canary(size);
   void *ptr = malloc(real_size);
   assert(ptr);
@@ -70,6 +71,7 @@ void *osi_malloc(size_t size) {
 }
 
 void *osi_calloc(size_t size) {
+  assert((ssize_t)size >= 0);
   size_t real_size = allocation_tracker_resize_for_canary(size);
   void *ptr = calloc(1, real_size);
   assert(ptr);
