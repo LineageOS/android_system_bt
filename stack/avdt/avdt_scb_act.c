@@ -291,19 +291,26 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
         if (offset > len) goto length_error;
         p += 2;
         BE_STREAM_TO_UINT16(ex_len, p);
-        offset += ex_len * 4;
         p += ex_len * 4;
     }
+
+    if ((p - p_start) > len)
+    {
+        android_errorWriteLog(0x534e4554, "142546355");
+        osi_free_and_reset((void **)&p_data->p_pkt);
+        return;
+    }
+    offset = p - p_start;
 
     /* adjust length for any padding at end of packet */
     if (o_p)
     {
         /* padding length in last byte of packet */
-        pad_len =  *(p_start + p_data->p_pkt->len);
+        pad_len = *(p_start + len);
     }
 
     /* do sanity check */
-    if ((offset > p_data->p_pkt->len) || ((pad_len + offset) > p_data->p_pkt->len))
+    if (pad_len > (len - offset))
     {
         AVDT_TRACE_WARNING("Got bad media packet");
         osi_free_and_reset((void **)&p_data->p_pkt);
