@@ -1047,6 +1047,8 @@ void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote) {
 static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
   const uint16_t acl_packet_size_classic =
       controller_get_interface()->get_acl_packet_size_classic();
+  const uint16_t acl_data_size_classic =
+      controller_get_interface()->get_acl_data_size_classic();
   const uint16_t link_xmit_quota = p_lcb->link_xmit_quota;
   const bool is_bdr_and_fits_in_buffer =
       bluetooth::shim::is_gd_acl_enabled()
@@ -1062,8 +1064,8 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     l2cb.controller_xmit_window--;
   } else {
     uint16_t num_segs =
-        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_packet_size_classic - 1) /
-        acl_packet_size_classic;
+        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size_classic - 1) /
+        acl_data_size_classic;
 
     /* If doing round-robin, then only 1 segment each time */
     if (p_lcb->link_xmit_quota == 0) {
@@ -1097,6 +1099,8 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
 static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
   const uint16_t acl_packet_size_ble =
       controller_get_interface()->get_acl_packet_size_ble();
+  const uint16_t acl_data_size_ble =
+      controller_get_interface()->get_acl_data_size_ble();
   const uint16_t link_xmit_quota = p_lcb->link_xmit_quota;
   const bool is_ble_and_fits_in_buffer = (p_buf->len <= acl_packet_size_ble);
 
@@ -1109,8 +1113,8 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     l2cb.controller_le_xmit_window--;
   } else {
     uint16_t num_segs =
-        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_packet_size_ble - 1) /
-        acl_packet_size_ble;
+        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size_ble - 1) /
+        acl_data_size_ble;
 
     /* If doing round-robin, then only 1 segment each time */
     if (p_lcb->link_xmit_quota == 0) {
