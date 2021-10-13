@@ -83,7 +83,7 @@ void uint2devclass(uint32_t cod, DEV_CLASS dev_class) {
  *  Description     This function converts an ASCII string into HEX
  *
  *  Returns         the number of hex bytes filled.
-*/
+ */
 int ascii_2_hex(const char* p_ascii, int len, uint8_t* p_hex) {
   int x;
   uint8_t c;
@@ -155,6 +155,7 @@ const char* dump_dm_event(uint16_t event) {
     CASE_RETURN_STR(BTA_DM_BLE_PASSKEY_NOTIF_EVT)
     CASE_RETURN_STR(BTA_DM_BLE_PASSKEY_REQ_EVT)
     CASE_RETURN_STR(BTA_DM_BLE_OOB_REQ_EVT)
+    CASE_RETURN_STR(BTA_DM_BLE_SC_OOB_REQ_EVT)
     CASE_RETURN_STR(BTA_DM_BLE_LOCAL_IR_EVT)
     CASE_RETURN_STR(BTA_DM_BLE_LOCAL_ER_EVT)
     CASE_RETURN_STR(BTA_DM_BLE_AUTH_CMPL_EVT)
