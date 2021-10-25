@@ -26,6 +26,7 @@
 #include "btif/include/btif_debug_btsnoop.h"
 #include "hci/include/btsnoop_mem.h"
 #include "internal_include/bt_target.h"
+#include "osi/include/properties.h"
 #include "osi/include/ringbuffer.h"
 
 #define REDUCE_HCI_TYPE_TO_SIGNIFICANT_BITS(type) ((type) >> 8)
@@ -38,6 +39,7 @@ static const size_t BTSNOOP_MEM_BUFFER_SIZE = (256 * 1024);
 static std::mutex buffer_mutex;
 static ringbuffer_t* buffer = NULL;
 static uint64_t last_timestamp_ms = 0;
+static bool qualcomm_debug_log_enable = false;
 
 static size_t btsnoop_calculate_packet_length(uint16_t type,
                                               const uint8_t* data,
@@ -80,6 +82,9 @@ static size_t btsnoop_calculate_packet_length(uint16_t type,
   static const size_t L2CAP_CID_OFFSET = (HCI_ACL_HEADER_SIZE + 2);
   static const uint16_t L2CAP_SIGNALING_CID = 0x0001;
 
+  static const size_t HCI_ACL_HANDLE_OFFSET = 0;
+  static const uint16_t QUALCOMM_DEBUG_LOG_HANDLE = 0xedc;
+
   // Maximum amount of ACL data to log.
   // Enough for an RFCOMM frame up to the frame check;
   // not enough for a HID report or audio data.
@@ -101,10 +106,18 @@ static size_t btsnoop_calculate_packet_length(uint16_t type,
       if (length > len_hci_acl) {
         uint16_t l2cap_cid =
             data[L2CAP_CID_OFFSET] | (data[L2CAP_CID_OFFSET + 1] << 8);
+        uint16_t hci_acl_packet_handle = data[HCI_ACL_HANDLE_OFFSET] |
+                                         (data[HCI_ACL_HANDLE_OFFSET + 1] << 8);
+        hci_acl_packet_handle &= 0x0FFF;
+
         if (l2cap_cid == L2CAP_SIGNALING_CID) {
           // For the signaling CID, take the full packet.
           // That way, the PSM setup is captured, allowing decoding of PSMs down
           // the road.
+          return length;
+        } else if (qualcomm_debug_log_enable &&
+                   hci_acl_packet_handle == QUALCOMM_DEBUG_LOG_HANDLE) {
+          // For the enhanced controller debug log, take the full packet.
           return length;
         } else {
           // Otherwise, return as much as we reasonably can
@@ -131,6 +144,12 @@ static size_t btsnoop_calculate_packet_length(uint16_t type,
 void btif_debug_btsnoop_init(void) {
   if (buffer == NULL) buffer = ringbuffer_init(BTSNOOP_MEM_BUFFER_SIZE);
   btsnoop_mem_set_callback(btsnoop_cb);
+
+  char value[PROPERTY_VALUE_MAX] = {0};
+  int ret = osi_property_get("ro.soc.manufacturer", value, "");
+  if (ret > 0 && strncmp(value, "Qualcomm", ret) == 0) {
+    qualcomm_debug_log_enable = true;
+  }
 }
 
 #ifndef OS_ANDROID
