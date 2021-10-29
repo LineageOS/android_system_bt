@@ -717,9 +717,25 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
             *(p_uuid + num_uuids) = Uuid::From16Bit(UUID_SERVCLASS_AUDIO_SINK);
             num_uuids++;
           } break;
+          case BTA_PBAP_SERVICE_ID: {
+            *(p_uuid + num_uuids) = Uuid::From16Bit(UUID_SERVCLASS_PBAP_PSE);
+            num_uuids++;
+          } break;
           case BTA_HFP_HS_SERVICE_ID: {
             *(p_uuid + num_uuids) =
                 Uuid::From16Bit(UUID_SERVCLASS_HF_HANDSFREE);
+            num_uuids++;
+          } break;
+          case BTA_MAP_SERVICE_ID: {
+            *(p_uuid + num_uuids) = Uuid::From16Bit(UUID_SERVCLASS_MESSAGE_ACCESS);
+            num_uuids++;
+          } break;
+          case BTA_MN_SERVICE_ID: {
+            *(p_uuid + num_uuids) = Uuid::From16Bit(UUID_SERVCLASS_MESSAGE_NOTIFICATION);
+            num_uuids++;
+          } break;
+          case BTA_PCE_SERVICE_ID: {
+            *(p_uuid + num_uuids) = Uuid::From16Bit(UUID_SERVCLASS_PBAP_PCE);
             num_uuids++;
           } break;
         }

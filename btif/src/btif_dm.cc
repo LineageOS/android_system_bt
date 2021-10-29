@@ -288,6 +288,22 @@ bt_status_t btif_in_execute_service_request(tBTA_SERVICE_ID service_id,
     case BTA_HIDD_SERVICE_ID: {
       btif_hd_execute_service(b_enable);
     } break;
+    case BTA_PBAP_SERVICE_ID:
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
+    case BTA_PCE_SERVICE_ID:
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
+    case BTA_MAP_SERVICE_ID:
+      FALLTHROUGH_INTENDED; /* FALLTHROUGH */
+    case BTA_MN_SERVICE_ID: {
+      /**
+       * Do nothing; these services were started elsewhere. However, we need to flow through this
+       * codepath in order to properly report back the local UUIDs back to adapter properties in
+       * Java. To achieve this, we need to catch these service IDs in order for {@link
+       * btif_in_execute_service_request} to return {@code BT_STATUS_SUCCESS}, so that in {@link
+       * btif_dm_enable_service} the check passes and the UUIDs are allowed to be passed up into
+       * the Java layer.
+       */
+    } break;
     default:
       BTIF_TRACE_ERROR("%s: Unknown service %d being %s", __func__, service_id,
                        (b_enable) ? "enabled" : "disabled");
