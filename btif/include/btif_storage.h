@@ -290,4 +290,7 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name);
 size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid,
                                size_t max_uuids);
 
+// Get the number of bonded devices
+int btif_storage_get_num_bonded_devices(void);
+
 #endif /* BTIF_STORAGE_H */
