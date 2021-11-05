@@ -849,7 +849,6 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   /* if de-registering shut everything down */
   msg.hdr.layer_specific = p_scb->hndl;
   p_scb->started = false;
-  p_scb->offload_started = false;
   p_scb->use_rtp_header_marker_bit = false;
   p_scb->cong = false;
   p_scb->role = role;
@@ -871,8 +870,6 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
       (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
     }
   */
-
-  p_scb->offload_start_pending = false;
 
   if (p_scb->deregistering) {
     /* remove stream */
@@ -1168,7 +1165,6 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bta_av_conn_chg((tBTA_AV_DATA*)&msg);
   /* set the congestion flag, so AV would not send media packets by accident */
   p_scb->cong = true;
-  p_scb->offload_start_pending = false;
   // Don't use AVDTP SUSPEND for restrict listed devices
   btif_storage_get_stored_remote_name(p_scb->PeerAddress(), remote_name);
   if (interop_match_name(INTEROP_DISABLE_AVDTP_SUSPEND, remote_name) ||
@@ -1891,9 +1887,15 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
 
   if (p_scb->co_started) {
-    if (p_scb->offload_started) {
+    uint16_t handle = get_btm_client_interface().lifecycle.BTM_GetHCIConnHandle(
+        p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
+    if (bta_av_cb.offload_started_acl_hdl == handle) {
       bta_av_vendor_offload_stop();
-      p_scb->offload_started = false;
+      bta_av_cb.offload_started_acl_hdl = HCI_INVALID_HANDLE;
+    } else if (bta_av_cb.offload_start_pending_acl_hdl == handle) {
+      APPL_TRACE_WARNING("%s: Stop pending offload start command", __func__);
+      bta_av_vendor_offload_stop();
+      bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
     }
 
     bta_av_stream_chg(p_scb, false);
@@ -2515,9 +2517,15 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   /* in case that we received suspend_ind, we may need to call co_stop here */
   if (p_scb->co_started) {
-    if (p_scb->offload_started) {
+    uint16_t handle = get_btm_client_interface().lifecycle.BTM_GetHCIConnHandle(
+        p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
+    if (bta_av_cb.offload_started_acl_hdl == handle) {
       bta_av_vendor_offload_stop();
-      p_scb->offload_started = false;
+      bta_av_cb.offload_started_acl_hdl = HCI_INVALID_HANDLE;
+    } else if (bta_av_cb.offload_start_pending_acl_hdl == handle) {
+      APPL_TRACE_WARNING("%s: Stop pending offload start command", __func__);
+      bta_av_vendor_offload_stop();
+      bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
     }
     bta_av_stream_chg(p_scb, false);
 
@@ -3008,6 +3016,13 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
         APPL_TRACE_DEBUG("%s: VS_HCI_STOP_A2DP_MEDIA successful", __func__);
         break;
       case VS_HCI_A2DP_OFFLOAD_START:
+        if (bta_av_cb.offload_start_pending_acl_hdl != HCI_INVALID_HANDLE) {
+          bta_av_cb.offload_started_acl_hdl =
+              bta_av_cb.offload_start_pending_acl_hdl;
+          bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
+        } else {
+          LOG_INFO("%s: No pending start command due to AVDTP suspend immediately", __func__);
+        }
         (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &value);
         break;
       default:
@@ -3016,8 +3031,10 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
   } else {
     APPL_TRACE_DEBUG("%s: Offload failed for subopcode= %d", __func__,
                      sub_opcode);
-    if (param->opcode != VS_HCI_A2DP_OFFLOAD_STOP)
+    if (param->opcode != VS_HCI_A2DP_OFFLOAD_STOP) {
+      bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
       (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &value);
+    }
   }
 }
 
@@ -3042,7 +3059,7 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb,
   UINT16_TO_STREAM(p_param, offload_start->mtu);
   ARRAY_TO_STREAM(p_param, offload_start->codec_info,
                   (int8_t)sizeof(offload_start->codec_info));
-  p_scb->offload_started = true;
+  bta_av_cb.offload_start_pending_acl_hdl = offload_start->acl_hdl;
   BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, p_param - param,
                             param, offload_vendor_callback);
 }
@@ -3075,6 +3092,10 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* Support offload if only one audio source stream is open. */
   if (p_scb->started != true) {
     status = BTA_AV_FAIL_STREAM;
+  } else if (bta_av_cb.offload_start_pending_acl_hdl != HCI_INVALID_HANDLE ||
+             bta_av_cb.offload_started_acl_hdl != HCI_INVALID_HANDLE) {
+    APPL_TRACE_WARNING("%s: offload already started, ignore request", __func__);
+    return;
   } else {
     bta_av_offload_codec_builder(p_scb, &offload_start);
     bta_av_vendor_offload_start(p_scb, &offload_start);
@@ -3144,7 +3165,7 @@ void bta_av_offload_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     status = BTA_AV_FAIL_STREAM;
   }
 
-  p_scb->offload_start_pending = false;
+  bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
   tBTA_AV bta_av_data;
   bta_av_data.status = status;
   (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
