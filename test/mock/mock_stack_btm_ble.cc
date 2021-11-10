@@ -254,3 +254,6 @@ void read_phy_cb(
     uint8_t* data, uint16_t len) {
   mock_function_count_map[__func__]++;
 }
+void btm_ble_reset_id(void) {
+  mock_function_count_map[__func__]++;
+}
