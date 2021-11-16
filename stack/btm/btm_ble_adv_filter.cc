@@ -641,6 +641,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
             return;
           }
           // Allocate a new "temporary" device record
+
           btm_sec_alloc_dev(cmd.address);
           remove_me_later_map.emplace(filt_index, cmd.address);
           // Set the IRK
@@ -729,15 +730,6 @@ void BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
     /* clear service data filter */
     BTM_LE_PF_srvc_data_pattern(BTM_BLE_SCAN_COND_CLEAR, filt_index, {}, {},
                                 fDoNothing);
-
-    // If we have an entry, lets remove the device if it isn't bonded
-    auto entry = remove_me_later_map.find(filt_index);
-    if (entry != remove_me_later_map.end()) {
-      auto entry = remove_me_later_map.find(filt_index);
-      if (!btm_sec_is_a_bonded_dev(entry->second)) {
-        BTM_SecDeleteDevice(entry->second);
-      }
-    }
   }
 
   uint8_t len = BTM_BLE_ADV_FILT_META_HDR_LENGTH + BTM_BLE_PF_FEAT_SEL_LEN;
@@ -854,24 +846,6 @@ void BTM_BleAdvFilterParamSetup(
         FROM_HERE, HCI_BLE_ADV_FILTER, param,
         (uint8_t)(BTM_BLE_ADV_FILT_META_HDR_LENGTH),
         base::Bind(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
-
-    auto entry = remove_me_later_map.find(filt_index);
-    if (entry != remove_me_later_map.end()) {
-      LOG_WARN("Replacing existing filter index entry with new address");
-      // If device is not bonded, then try removing the device
-      // If the device doesn't get removed then it is currently connected
-      // (may be pairing?) If we do delete the device we want to erase the
-      // filter index so we can replace it If the device is bonded, we
-      // want to erase the filter index so we don't delete it in the later
-      // BTM_LE_PF_clear call.
-      if (!btm_sec_is_a_bonded_dev(entry->second)) {
-        if (!BTM_SecDeleteDevice(entry->second)) {
-          LOG_WARN("Unable to remove device, still connected.");
-          return;
-        }
-      }
-      remove_me_later_map.erase(filt_index);
-    }
 
   } else if (BTM_BLE_SCAN_COND_CLEAR == action) {
     /* Deallocate all filters here */
