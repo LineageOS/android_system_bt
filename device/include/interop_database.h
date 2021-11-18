@@ -175,6 +175,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // KDDI Carkit
     {{{0x44, 0xea, 0xd8, 0, 0, 0}}, 3, INTEROP_DISABLE_SNIFF},
 
+    // Phonak
+    {{{0x70, 0x66, 0x1b, 0, 0, 0}}, 3, INTEROP_DISABLE_SNIFF},
+
     // Toyota Camry 2018 Carkit HFP AT+BIND missing
     {{{0x94, 0xb2, 0xcc, 0x30, 0, 0}}, 4, INTEROP_SLC_SKIP_BIND_COMMAND},
 };
