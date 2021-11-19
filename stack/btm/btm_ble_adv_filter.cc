@@ -607,7 +607,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
       case BTM_BLE_PF_ADDR_FILTER: {
         tBLE_BD_ADDR target_addr;
         target_addr.bda = cmd.address;
-        target_addr.type = cmd.addr_type;
+        target_addr.type = (cmd.addr_type & (~BLE_ADDR_TYPE_ID_BIT));
 
         BTM_LE_PF_addr_filter(action, filt_index, target_addr,
                               base::DoNothing());
@@ -647,7 +647,8 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
           // Set the IRK
           tBTM_LE_PID_KEYS pid_keys;
           pid_keys.irk = cmd.irk;
-          pid_keys.identity_addr_type = cmd.addr_type;
+          pid_keys.identity_addr_type =
+              (cmd.addr_type & (~BLE_ADDR_TYPE_ID_BIT));
           pid_keys.identity_addr = cmd.address;
           // Add it to the union to pass to SecAddBleKey
           tBTM_LE_KEY_VALUE le_key;
