@@ -1,0 +1,46 @@
+{   "_description": "Bluetooth cert testing",
+    "testbed":
+    [
+        {
+            "_description": "Two Android devices with GD cert and SL4A dut",
+            "name": "AndroidDeviceCert",
+            "GdDevice":
+            [
+                {
+                    "grpc_port": "8898",
+                    "grpc_root_server_port": "8896",
+                    "signal_port": "8894",
+                    "label": "cert",
+                    "serial_number": "CERT",
+                    "name": "Cert Device",
+                    "cmd":
+                    [
+                        "adb",
+                        "-s",
+                        "$(serial_number)",
+                        "shell",
+                        "ASAN_OPTIONS=detect_container_overflow=0",
+                        "/system/bin/bluetooth_stack_with_facade",
+                        "--grpc-port=$(grpc_port)",
+                        "--root-server-port=$(grpc_root_server_port)",
+                        "--btsnoop=/data/misc/bluetooth/logs/btsnoop_hci.log",
+                        "--btsnooz=/data/misc/bluetooth/logs/btsnooz_hci.log",
+                        "--btconfig=/data/misc/bluedroid/bt_config.conf",
+                        "--signal-port=$(signal_port)"
+                    ]
+                }
+            ],
+            "AndroidDevice":
+            [
+                {
+                    "serial": "DUT",
+                    "label": "dut",
+                    "client_port": "8895",
+                    "forwarded_port": "8899",
+                    "server_port": "8899"
+                }
+            ]
+        }
+    ],
+    "logpath": "/tmp/logs"
+}

@@ -426,22 +426,22 @@ class GdAndroidDevice(GdDeviceBase):
         try:
             self.adb.shell("rm /data/misc/bluetooth/logs/btsnoop_hci.log")
         except AdbCommandError as error:
-            logging.error("Error during setup: " + str(error))
+            logging.warning("Failed to remove old btsnoop log: " + str(error))
 
         try:
             self.adb.shell("rm /data/misc/bluetooth/logs/btsnooz_hci.log")
         except AdbCommandError as error:
-            logging.error("Error during setup: " + str(error))
+            logging.warning("Failed to remove old btsnooz log: " + str(error))
 
         try:
             self.adb.shell("rm /data/misc/bluedroid/bt_config.conf")
         except AdbCommandError as error:
-            logging.error("Error during setup: " + str(error))
+            logging.warning("Failed to remove old bt config: " + str(error))
 
         try:
             self.adb.shell("rm /data/misc/bluedroid/bt_config.bak")
         except AdbCommandError as error:
-            logging.error("Error during setup: " + str(error))
+            logging.warning("Failed to remove back up config: " + str(error))
 
         self.ensure_no_output(self.adb.shell("svc bluetooth disable"))
 
@@ -486,28 +486,34 @@ class GdAndroidDevice(GdDeviceBase):
             logging.error("logcat_process %s_%s stopped with code: %d" % (self.label, self.serial_number, return_code))
         self.logcat_logger.stop()
         self.cleanup_port_forwarding()
-        self.adb.pull("/data/misc/bluetooth/logs/btsnoop_hci.log %s" % os.path.join(self.log_path_base,
-                                                                                    "%s_btsnoop_hci.log" % self.label))
-        self.adb.pull("/data/misc/bluedroid/bt_config.conf %s" % os.path.join(self.log_path_base,
-                                                                              "%s_bt_config.conf" % self.label))
-        self.adb.pull(
-            "/data/misc/bluedroid/bt_config.bak %s" % os.path.join(self.log_path_base, "%s_bt_config.bak" % self.label))
+        self.pull_logs(self.log_path_base)
+
+    def pull_logs(self, base_dir):
+        try:
+            self.adb.pull("/data/misc/bluetooth/logs/btsnoop_hci.log %s" % os.path.join(
+                base_dir, "%s_btsnoop_hci.log" % self.label))
+            self.adb.pull(
+                "/data/misc/bluedroid/bt_config.conf %s" % os.path.join(base_dir, "%s_bt_config.conf" % self.label))
+            self.adb.pull(
+                "/data/misc/bluedroid/bt_config.bak %s" % os.path.join(base_dir, "%s_bt_config.bak" % self.label))
+        except AdbCommandError as error:
+            logging.warning("Failed to pull logs from device: " + str(error))
 
     def cleanup_port_forwarding(self):
         try:
             self.adb.remove_tcp_forward(self.grpc_port)
         except AdbError as error:
-            logging.error("Error during port forwarding cleanup: " + str(error))
+            logging.warning("Failed to cleanup gRPC port: " + str(error))
 
         try:
             self.adb.remove_tcp_forward(self.grpc_root_server_port)
         except AdbError as error:
-            logging.error("Error during port forwarding cleanup: " + str(error))
+            logging.warning("Failed to cleanup gRPC server port: " + str(error))
 
         try:
             self.adb.reverse("--remove tcp:%d" % self.signal_port)
         except AdbError as error:
-            logging.error("Error during port forwarding cleanup: " + str(error))
+            logging.warning("Failed to cleanup signal port: " + str(error))
 
     @staticmethod
     def ensure_no_output(result):
