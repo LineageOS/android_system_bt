@@ -427,6 +427,7 @@ typedef struct {
   uint16_t ble_periodic_adv_int;
   tBT_DEVICE_TYPE device_type;
   uint8_t flag;
+  RawAddress original_bda; /* original address to pass up to GattService#onScanResult */
 } tBTA_DM_INQ_RES;
 
 /* Structure associated with BTA_DM_INQ_CMPL_EVT */

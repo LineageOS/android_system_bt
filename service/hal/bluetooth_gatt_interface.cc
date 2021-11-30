@@ -97,7 +97,7 @@ void ScanResultCallback(
     uint8_t ble_primary_phy, uint8_t ble_secondary_phy,
     uint8_t ble_advertising_sid, int8_t ble_tx_power, int8_t rssi,
     uint16_t ble_periodic_adv_int,
-    std::vector<uint8_t> adv_data) {  // NOLINT(pass-by-value)
+    std::vector<uint8_t> adv_data, RawAddress* original_bda) {  // NOLINT(pass-by-value)
   shared_lock<shared_mutex_impl> lock(g_instance_lock);
   VERIFY_INTERFACE_OR_RETURN();
   CHECK(bda);

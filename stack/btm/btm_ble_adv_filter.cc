@@ -479,12 +479,24 @@ static void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
   UINT8_TO_STREAM(p, filt_index);
 
   if (action != BTM_BLE_SCAN_COND_CLEAR) {
-    if (addr.type == BLE_ADDR_PUBLIC_ID) {
+    if (addr.type == BLE_ADDR_PUBLIC_ID || addr.type == BLE_ADDR_PUBLIC) {
       LOG(INFO) << __func__ << " Filter address " << addr.bda
                 << " has type PUBLIC_ID, try to get identity address";
       /* If no matching identity address is found for the input address,
-       * this call will have no effect. */
-      btm_random_pseudo_to_identity_addr(&addr.bda, &addr.type);
+       * this call will have no effect.
+       *
+       * This is necessary in the case that the address passed is an RPA.  The RPA is then looked
+       * up and converted to the identity address.
+       *
+       * However, we don't want to change the address type because if it is a 2 then the mapping
+       * function gets confused and defaults to 3.
+       *
+       * Using the dummy type we don't change the original type.
+       *
+       * This sort of change has been made in AOSP already. aosp/1842714
+       */
+      uint8_t dummy_addr_type;
+      btm_random_pseudo_to_identity_addr(&addr.bda, &dummy_addr_type);
     }
 
     LOG(INFO) << __func__
