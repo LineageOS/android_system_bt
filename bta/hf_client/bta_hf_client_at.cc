@@ -1615,9 +1615,13 @@ void bta_hf_client_at_parse(tBTA_HF_CLIENT_CB* client_cb, char* buf,
     bta_hf_client_at_parse_start(client_cb);
     bta_hf_client_at_clear_buf(client_cb);
 
-    /* recover cut data */
-    memcpy(client_cb->at_cb.buf, tmp_buff, tmp);
-    client_cb->at_cb.offset += tmp;
+    /* TODO: recover cut data */
+    // memcpy(client_cb->at_cb.buf, tmp_buff, tmp);
+    // client_cb->at_cb.offset += tmp;
+    // Observed SIGSEV issue in Defensics, when received buf is more than
+    // BTA_HF_CLIENT_AT_PARSER_MAX_LEN.
+    // Assuming to return from here, Once AT command is retrieved.
+    return;
   }
 
   memcpy(client_cb->at_cb.buf + client_cb->at_cb.offset, buf, len);
