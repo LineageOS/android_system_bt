@@ -3385,7 +3385,6 @@ static void btm_sec_connect_after_reject_timeout(UNUSED_ATTR void* data) {
 void btm_sec_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode,
                        tHCI_ROLE assigned_role) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
   tBTM_STATUS res;
   bool is_pairing_device = false;
   bool addr_matched;
@@ -3393,6 +3392,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
 
   btm_acl_resubmit_page();
 
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
   if (!p_dev_rec) {
     LOG_DEBUG(
         "Connected to new device state:%s handle:0x%04x status:%s "
