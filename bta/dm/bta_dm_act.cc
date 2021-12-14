@@ -138,7 +138,7 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result);
 
 /* Disable connection down timer (in milliseconds) */
 #ifndef BTA_DM_DISABLE_CONN_DOWN_TIMER_MS
-#define BTA_DM_DISABLE_CONN_DOWN_TIMER_MS 1000
+#define BTA_DM_DISABLE_CONN_DOWN_TIMER_MS 100
 #endif
 
 /* Switch delay timer (in milliseconds) */
