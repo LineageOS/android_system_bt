@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4494f810_dba685e5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 12604
+      },
+      "writtenOn": "2021-12-15T23:56:03Z",
+      "side": 1,
+      "message": "Added backport of critical rce CVE-2021-0968",
+      "revId": "0aa22150de7873b6fbc32b898b59a7020b2f39e6",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
