@@ -503,6 +503,26 @@ static void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
               << " Adding scan filter with peer address: " << addr.bda;
 
     BDADDR_TO_STREAM(p, addr.bda);
+
+    /*
+     * DANGER: Thar be dragons!
+     *
+     * The vendor command (APCF Filtering 0x0157) takes Public (0) or Random (1) or Any (2).
+     *
+     * Advertising results have four types:
+     * ￼    -  Public = 0
+     * ￼    -  Random = 1
+     * ￼    -  Public ID = 2
+     * ￼    -  Random ID = 3
+     *
+     * e.g. specifying PUBLIC (0) will only return results with a public address.
+     * It will ignore resolved addresses, since they return PUBLIC IDENTITY (2).
+     * For this, Any (0x02) must be specified.  This should also cover if the RPA is
+     * derived from RANDOM STATIC.
+     */
+
+    /* ALWAYS FORCE 2 for this vendor command! */
+    addr.type = 0x02; // Really, you will break scanning if you change this.
     UINT8_TO_STREAM(p, addr.type);
   }
 
