@@ -479,18 +479,50 @@ static void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
   UINT8_TO_STREAM(p, filt_index);
 
   if (action != BTM_BLE_SCAN_COND_CLEAR) {
-    if (addr.type == BLE_ADDR_PUBLIC_ID) {
+    if (addr.type == BLE_ADDR_PUBLIC_ID || addr.type == BLE_ADDR_PUBLIC) {
       LOG(INFO) << __func__ << " Filter address " << addr.bda
                 << " has type PUBLIC_ID, try to get identity address";
       /* If no matching identity address is found for the input address,
-       * this call will have no effect. */
-      btm_random_pseudo_to_identity_addr(&addr.bda, &addr.type);
+       * this call will have no effect.
+       *
+       * This is necessary in the case that the address passed is an RPA.  The RPA is then looked
+       * up and converted to the identity address.
+       *
+       * However, we don't want to change the address type because if it is a 2 then the mapping
+       * function gets confused and defaults to 3.
+       *
+       * Using the dummy type we don't change the original type.
+       *
+       * This sort of change has been made in AOSP already. aosp/1842714
+       */
+      uint8_t dummy_addr_type;
+      btm_random_pseudo_to_identity_addr(&addr.bda, &dummy_addr_type);
     }
 
     LOG(INFO) << __func__
               << " Adding scan filter with peer address: " << addr.bda;
 
     BDADDR_TO_STREAM(p, addr.bda);
+
+    /*
+     * DANGER: Thar be dragons!
+     *
+     * The vendor command (APCF Filtering 0x0157) takes Public (0) or Random (1) or Any (2).
+     *
+     * Advertising results have four types:
+     * ￼    -  Public = 0
+     * ￼    -  Random = 1
+     * ￼    -  Public ID = 2
+     * ￼    -  Random ID = 3
+     *
+     * e.g. specifying PUBLIC (0) will only return results with a public address.
+     * It will ignore resolved addresses, since they return PUBLIC IDENTITY (2).
+     * For this, Any (0x02) must be specified.  This should also cover if the RPA is
+     * derived from RANDOM STATIC.
+     */
+
+    /* ALWAYS FORCE 2 for this vendor command! */
+    addr.type = 0x02; // Really, you will break scanning if you change this.
     UINT8_TO_STREAM(p, addr.type);
   }
 
@@ -607,7 +639,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
       case BTM_BLE_PF_ADDR_FILTER: {
         tBLE_BD_ADDR target_addr;
         target_addr.bda = cmd.address;
-        target_addr.type = (cmd.addr_type & (~BLE_ADDR_TYPE_ID_BIT));
+        target_addr.type = cmd.addr_type;
 
         BTM_LE_PF_addr_filter(action, filt_index, target_addr,
                               base::DoNothing());
@@ -647,8 +679,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
           // Set the IRK
           tBTM_LE_PID_KEYS pid_keys;
           pid_keys.irk = cmd.irk;
-          pid_keys.identity_addr_type =
-              (cmd.addr_type & (~BLE_ADDR_TYPE_ID_BIT));
+          pid_keys.identity_addr_type = cmd.addr_type;
           pid_keys.identity_addr = cmd.address;
           // Add it to the union to pass to SecAddBleKey
           tBTM_LE_KEY_VALUE le_key;
