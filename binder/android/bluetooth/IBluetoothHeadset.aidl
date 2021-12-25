@@ -103,4 +103,8 @@ interface IBluetoothHeadset {
     boolean isNoiseReductionSupported(in BluetoothDevice device, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean isVoiceRecognitionSupported(in BluetoothDevice device, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.MODIFY_PHONE_STATE})")
+    oneway void phoneStateChangedDsDa(int numActive, int numHeld, int callState, String number, int type, String name, in AttributionSource attributionSource);
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.MODIFY_PHONE_STATE})")
+    void clccResponseDsDa(int index, int direction, int status, int mode, boolean mpty, String number, int type, in AttributionSource attributionSource);
 }
