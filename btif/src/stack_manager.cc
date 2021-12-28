@@ -74,6 +74,10 @@
 #include "internal_include/stack_config.h"
 #include "main/shim/controller.h"
 
+#ifndef BT_STACK_CLEANUP_WAIT_MS
+#define BT_STACK_CLEANUP_WAIT_MS 1000
+#endif
+
 void main_thread_shut_down();
 void main_thread_start_up();
 void BTA_dm_on_hw_on();
@@ -92,7 +96,7 @@ static bool stack_is_running;
 static void event_init_stack(void* context);
 static void event_start_up_stack(void* context);
 static void event_shut_down_stack(void* context);
-static void event_clean_up_stack(void* context);
+static void event_clean_up_stack(std::promise<void> promise);
 
 static void event_signal_stack_up(void* context);
 static void event_signal_stack_down(void* context);
@@ -129,12 +133,18 @@ static void shut_down_stack_async() {
 static void clean_up_stack() {
   // This is a synchronous process. Post it to the thread though, so
   // state modification only happens there.
-  semaphore_t* semaphore = semaphore_new(0);
-  management_thread.DoInThread(FROM_HERE,
-                               base::Bind(event_clean_up_stack, semaphore));
-  semaphore_wait(semaphore);
-  semaphore_free(semaphore);
-  management_thread.ShutDown();
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  management_thread.DoInThread(
+      FROM_HERE, base::BindOnce(event_clean_up_stack, std::move(promise)));
+
+  auto status =
+      future.wait_for(std::chrono::milliseconds(BT_STACK_CLEANUP_WAIT_MS));
+  if (status == std::future_status::ready) {
+    management_thread.ShutDown();
+  } else {
+    LOG_ERROR("cleanup could not be completed in time, abandon it");
+  }
 }
 
 static bool get_stack_is_running() { return stack_is_running; }
@@ -383,7 +393,7 @@ static void ensure_stack_is_not_running() {
 }
 
 // Synchronous function to clean up the stack
-static void event_clean_up_stack(void* context) {
+static void event_clean_up_stack(std::promise<void> promise) {
   if (!stack_is_initialized) {
     LOG_INFO("%s found the stack already in a clean state", __func__);
     goto cleanup;
@@ -407,8 +417,7 @@ static void event_clean_up_stack(void* context) {
   LOG_INFO("%s finished", __func__);
 
 cleanup:;
-  semaphore_t* semaphore = (semaphore_t*)context;
-  if (semaphore) semaphore_post(semaphore);
+  promise.set_value();
 }
 
 static void event_signal_stack_up(UNUSED_ATTR void* context) {
