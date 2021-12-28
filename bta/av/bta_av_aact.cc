@@ -1807,16 +1807,6 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     return;
   }
 
-  /* disallow role switch during streaming, only if we are the central role
-   * i.e. allow role switch, if we are peripheral.
-   * It would not hurt us, if the peer device wants us to be central */
-  tHCI_ROLE cur_role;
-  if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
-      (cur_role == HCI_ROLE_CENTRAL)) {
-    BTM_block_role_switch_for(p_scb->PeerAddress());
-  }
-  BTM_block_sniff_mode_for(p_scb->PeerAddress());
-
   if (p_scb->started) {
     p_scb->role |= BTA_AV_ROLE_START_INT;
     if (p_scb->wait != 0) {
@@ -1848,6 +1838,18 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   p_scb->role |= BTA_AV_ROLE_START_INT;
   bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
+  /* disallow role switch during streaming, only if we are the central role
+   * i.e. allow role switch, if we are peripheral.
+   * It would not hurt us, if the peer device wants us to be central
+   * disable sniff mode unconditionally during streaming */
+  tHCI_ROLE cur_role;
+  if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
+      (cur_role == HCI_ROLE_CENTRAL)) {
+    BTM_block_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
+  } else {
+    BTM_block_sniff_mode_for(p_scb->PeerAddress());
+  }
+
   uint16_t result = AVDT_StartReq(&p_scb->avdt_handle, 1);
   if (result != AVDT_SUCCESS) {
     LOG_ERROR("%s: AVDT_StartReq failed for peer %s result:%d", __func__,
@@ -1883,19 +1885,16 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       bta_av_cb.audio_open_cnt, p_data, start);
 
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
-  BTM_unblock_role_switch_for(p_scb->PeerAddress());
-  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
+  BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
 
   if (p_scb->co_started) {
-    uint16_t handle = get_btm_client_interface().lifecycle.BTM_GetHCIConnHandle(
-        p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
-    if (bta_av_cb.offload_started_acl_hdl == handle) {
+    if (bta_av_cb.offload_started_hndl == p_scb->hndl) {
       bta_av_vendor_offload_stop();
-      bta_av_cb.offload_started_acl_hdl = HCI_INVALID_HANDLE;
-    } else if (bta_av_cb.offload_start_pending_acl_hdl == handle) {
+      bta_av_cb.offload_started_hndl = 0;
+    } else if (bta_av_cb.offload_start_pending_hndl == p_scb->hndl) {
       APPL_TRACE_WARNING("%s: Stop pending offload start command", __func__);
       bta_av_vendor_offload_stop();
-      bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
+      bta_av_cb.offload_start_pending_hndl = 0;
     }
 
     bta_av_stream_chg(p_scb, false);
@@ -2318,10 +2317,13 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       /* If souce is the central role, disable role switch during streaming.
        * Otherwise allow role switch, if source is peripheral.
        * Because it would not hurt source, if the peer device wants source to be
-       * central */
+       * central.
+       * disable sniff mode unconditionally during streaming */
       if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
           (cur_role == HCI_ROLE_CENTRAL)) {
-        BTM_block_role_switch_for(p_scb->PeerAddress());
+        BTM_block_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
+      } else {
+        BTM_block_sniff_mode_for(p_scb->PeerAddress());
       }
     }
 
@@ -2384,8 +2386,7 @@ void bta_av_start_failed(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     notify_start_failed(p_scb);
   }
 
-  BTM_unblock_role_switch_for(p_scb->PeerAddress());
-  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
+  BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
   p_scb->sco_suspend = false;
 }
 
@@ -2407,8 +2408,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
       p_scb->open_status, p_scb->chnl, p_scb->co_started);
 
-  BTM_unblock_role_switch_for(p_scb->PeerAddress());
-  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
+  BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
   if (bta_av_cb.audio_open_cnt <= 1) {
     BTM_default_unblock_role_switch();
   }
@@ -2512,20 +2512,17 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
-  BTM_unblock_role_switch_for(p_scb->PeerAddress());
-  BTM_unblock_sniff_mode_for(p_scb->PeerAddress());
+  BTM_unblock_role_switch_and_sniff_mode_for(p_scb->PeerAddress());
 
   /* in case that we received suspend_ind, we may need to call co_stop here */
   if (p_scb->co_started) {
-    uint16_t handle = get_btm_client_interface().lifecycle.BTM_GetHCIConnHandle(
-        p_scb->PeerAddress(), BT_TRANSPORT_BR_EDR);
-    if (bta_av_cb.offload_started_acl_hdl == handle) {
+    if (bta_av_cb.offload_started_hndl == p_scb->hndl) {
       bta_av_vendor_offload_stop();
-      bta_av_cb.offload_started_acl_hdl = HCI_INVALID_HANDLE;
-    } else if (bta_av_cb.offload_start_pending_acl_hdl == handle) {
+      bta_av_cb.offload_started_hndl = 0;
+    } else if (bta_av_cb.offload_start_pending_hndl == p_scb->hndl) {
       APPL_TRACE_WARNING("%s: Stop pending offload start command", __func__);
       bta_av_vendor_offload_stop();
-      bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
+      bta_av_cb.offload_start_pending_hndl = 0;
     }
     bta_av_stream_chg(p_scb, false);
 
@@ -3016,10 +3013,13 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
         APPL_TRACE_DEBUG("%s: VS_HCI_STOP_A2DP_MEDIA successful", __func__);
         break;
       case VS_HCI_A2DP_OFFLOAD_START:
-        if (bta_av_cb.offload_start_pending_acl_hdl != HCI_INVALID_HANDLE) {
-          bta_av_cb.offload_started_acl_hdl =
-              bta_av_cb.offload_start_pending_acl_hdl;
-          bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
+        LOG_INFO("%s, bta_av_cb.offload_start_pending_hndl=%d", __func__,
+                bta_av_cb.offload_start_pending_hndl);
+        if (bta_av_cb.offload_start_pending_hndl) {
+          APPL_TRACE_DEBUG("%s: VS_HCI_START_A2DP_MEDIA successful", __func__);
+          bta_av_cb.offload_started_hndl =
+              bta_av_cb.offload_start_pending_hndl;
+          bta_av_cb.offload_start_pending_hndl = 0;
         } else {
           LOG_INFO("%s: No pending start command due to AVDTP suspend immediately", __func__);
         }
@@ -3032,7 +3032,7 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
     APPL_TRACE_DEBUG("%s: Offload failed for subopcode= %d", __func__,
                      sub_opcode);
     if (param->opcode != VS_HCI_A2DP_OFFLOAD_STOP) {
-      bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
+      bta_av_cb.offload_start_pending_hndl = 0;
       (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &value);
     }
   }
@@ -3059,7 +3059,8 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb,
   UINT16_TO_STREAM(p_param, offload_start->mtu);
   ARRAY_TO_STREAM(p_param, offload_start->codec_info,
                   (int8_t)sizeof(offload_start->codec_info));
-  bta_av_cb.offload_start_pending_acl_hdl = offload_start->acl_hdl;
+  bta_av_cb.offload_start_pending_hndl = p_scb->hndl;
+  //bta_av_cb.offload_start_pending_hndl = offload_start->hndl;
   BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, p_param - param,
                             param, offload_vendor_callback);
 }
@@ -3092,8 +3093,8 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   /* Support offload if only one audio source stream is open. */
   if (p_scb->started != true) {
     status = BTA_AV_FAIL_STREAM;
-  } else if (bta_av_cb.offload_start_pending_acl_hdl != HCI_INVALID_HANDLE ||
-             bta_av_cb.offload_started_acl_hdl != HCI_INVALID_HANDLE) {
+  } else if (bta_av_cb.offload_start_pending_hndl ||
+          bta_av_cb.offload_started_hndl) {
     APPL_TRACE_WARNING("%s: offload already started, ignore request", __func__);
     return;
   } else {
@@ -3165,7 +3166,7 @@ void bta_av_offload_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     status = BTA_AV_FAIL_STREAM;
   }
 
-  bta_av_cb.offload_start_pending_acl_hdl = HCI_INVALID_HANDLE;
+  bta_av_cb.offload_start_pending_hndl = 0;
   tBTA_AV bta_av_data;
   bta_av_data.status = status;
   (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &bta_av_data);
