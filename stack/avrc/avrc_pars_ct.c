@@ -285,6 +285,11 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(
                          __func__, p_result->get_caps.capability_id, p_result->get_caps.count);
         if (p_result->get_caps.capability_id == AVRC_CAP_COMPANY_ID)
         {
+            if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_COMP_ID)
+            {
+                android_errorWriteLog(0x534e4554, "205837191");
+                return AVRC_STS_INTERNAL_ERR;
+            }
             min_len += MIN(p_result->get_caps.count, AVRC_CAP_MAX_NUM_COMP_ID) * 3;
             if (len < min_len) goto length_error;
             for(int xx = 0; ((xx < p_result->get_caps.count) && (xx < AVRC_CAP_MAX_NUM_COMP_ID));
@@ -295,6 +300,11 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(
         }
         else if (p_result->get_caps.capability_id == AVRC_CAP_EVENTS_SUPPORTED)
         {
+            if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_EVT_ID)
+            {
+                android_errorWriteLog(0x534e4554, "205837191");
+                return AVRC_STS_INTERNAL_ERR;
+            }
             min_len += MIN(p_result->get_caps.count, AVRC_CAP_MAX_NUM_EVT_ID);
             if (len < min_len) goto length_error;
             for(int xx = 0; ((xx < p_result->get_caps.count) && (xx < AVRC_CAP_MAX_NUM_EVT_ID));
