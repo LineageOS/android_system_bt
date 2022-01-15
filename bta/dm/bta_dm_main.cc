@@ -129,7 +129,7 @@ bool bta_dm_search_sm_execute(BT_HDR_RIGID* p_msg) {
           bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
           bta_dm_free_sdp_db();
           bta_dm_search_cancel_notify();
-          bta_dm_search_cancel_cmpl();
+          bta_dm_execute_queued_request();
           break;
       }
       break;

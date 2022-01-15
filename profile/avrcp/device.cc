@@ -411,6 +411,11 @@ void Device::HandleVolumeChanged(
 void Device::SetVolume(int8_t volume) {
   // TODO (apanicke): Implement logic for Multi-AVRCP
   DEVICE_VLOG(1) << __func__ << ": volume=" << (int)volume;
+  if (volume == volume_) {
+    DEVICE_LOG(WARNING)
+        << __func__ << ": Ignoring volume change same as current volume level";
+    return;
+  }
   auto request = SetAbsoluteVolumeRequestBuilder::MakeBuilder(volume);
 
   uint8_t label = MAX_TRANSACTION_LABEL;

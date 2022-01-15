@@ -164,6 +164,7 @@ static void btif_in_hf_client_generic_evt(uint16_t event, char* p_param) {
   btif_hf_client_cb_t* cb = btif_hf_client_get_cb_by_bda(*bd_addr);
   if (cb == NULL || !is_connected(cb)) {
     BTIF_TRACE_ERROR("%s: failed to find block for bda", __func__);
+    return;
   }
 
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);

@@ -147,6 +147,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // AirPods 2 - unacceptably loud volume
     {{{0x9c, 0x64, 0x8b, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
 
+    // Phonak AG - volume level not change
+    {{{0x00, 0x0f, 0x59, 0, 0, 0}}, 3, INTEROP_DISABLE_ABSOLUTE_VOLUME},
+
     // for skip name request,
     // because BR/EDR address and ADV random address are the same
     {{{0xd4, 0x7a, 0xe2, 0, 0, 0}}, 3, INTEROP_DISABLE_NAME_REQUEST},
@@ -166,11 +169,17 @@ static const interop_addr_entry_t interop_addr_database[] = {
     // Honda Civic Carkit
     {{{0x0c, 0xd9, 0xc1, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
 
+    // BMW Carkit
+    {{{0x9c, 0xdf, 0x03, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
+
     // KDDI Carkit
     {{{0x44, 0xea, 0xd8, 0, 0, 0}}, 3, INTEROP_DISABLE_SNIFF},
 
+    // Phonak
+    {{{0x70, 0x66, 0x1b, 0, 0, 0}}, 3, INTEROP_DISABLE_SNIFF},
+
     // Toyota Camry 2018 Carkit HFP AT+BIND missing
-    {{{0x94, 0xb2, 0xcc, 0x30, 0, 0}}, 4, INTEROP_SLC_SKIP_BIND_COMMAND}
+    {{{0x94, 0xb2, 0xcc, 0x30, 0, 0}}, 4, INTEROP_SLC_SKIP_BIND_COMMAND},
 };
 
 typedef struct {

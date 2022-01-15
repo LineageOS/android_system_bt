@@ -473,7 +473,6 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
     pairing_cb.bd_addr = bd_addr;
   } else {
     pairing_cb = {};
-    bta_dm_execute_queued_request();
   }
 }
 
@@ -1330,7 +1329,6 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
         // Both SDP and bonding are done, clear pairing control block in case
         // it is not already cleared
         pairing_cb = {};
-        bta_dm_execute_queued_request();
 
         // Send one empty UUID to Java to unblock pairing intent when SDP failed
         // or no UUID is discovered
@@ -2217,7 +2215,9 @@ void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
                    remote_addr.ToString().c_str());
 
   BTA_DmDiscover(remote_addr, btif_dm_search_services_evt, transport,
-                 remote_addr != pairing_cb.bd_addr && is_bonding_or_sdp());
+                 remote_addr != pairing_cb.bd_addr &&
+                     remote_addr != pairing_cb.static_bdaddr &&
+                     is_bonding_or_sdp());
 }
 
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
