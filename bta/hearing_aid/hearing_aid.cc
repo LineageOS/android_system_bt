@@ -1120,12 +1120,36 @@ class HearingAidImpl : public HearingAid {
                 << ", audio type=" << loghex(start[2])
                 << ", device=" << device->address
                 << ", other side streaming=" << loghex(start[4]);
-      device->playback_started = true;
       device->command_acked = false;
-      BtaGattQueue::WriteCharacteristic(device->conn_id,
-                                        device->audio_control_point_handle,
-                                        start, GATT_WRITE, nullptr, nullptr);
+      BtaGattQueue::WriteCharacteristic(
+          device->conn_id, device->audio_control_point_handle, start,
+          GATT_WRITE, HearingAidImpl::StartAudioCtrlCallbackStatic, nullptr);
     }
+  }
+
+  static void StartAudioCtrlCallbackStatic(uint16_t conn_id,
+                                           tGATT_STATUS status, uint16_t handle,
+                                           void* data) {
+    if (status != GATT_SUCCESS) {
+      LOG(ERROR) << __func__ << ": handle=" << handle << ", conn_id=" << conn_id
+                 << ", status=" << loghex(static_cast<uint8_t>(status));
+      return;
+    }
+    if (!instance) {
+      LOG(ERROR) << __func__ << ": instance is null.";
+      return;
+    }
+    instance->StartAudioCtrlCallback(conn_id);
+  }
+
+  void StartAudioCtrlCallback(uint16_t conn_id) {
+    HearingDevice* hearingDevice = hearingDevices.FindByConnId(conn_id);
+    if (!hearingDevice) {
+      LOG(ERROR) << "Skipping unknown device, conn_id=" << loghex(conn_id);
+      return;
+    }
+    LOG(INFO) << __func__ << ": device: " << hearingDevice->address;
+    hearingDevice->playback_started = true;
   }
 
   void OnAudioDataReady(const std::vector<uint8_t>& data) {
