@@ -93,6 +93,38 @@ bool AdvertisingConfigFromProto(const AdvertisingConfig& config_proto, hci::Adve
   config->filter_policy = static_cast<hci::AdvertisingFilterPolicy>(config_proto.filter_policy());
 
   config->tx_power = static_cast<uint8_t>(config_proto.tx_power());
+
+  return true;
+}
+
+bool ExtendedAdvertisingConfigFromProto(
+    const ExtendedAdvertisingConfig& config_proto, hci::ExtendedAdvertisingConfig* config) {
+  AdvertisingConfigFromProto(config_proto.advertising_config(), config);
+  config->connectable = config_proto.connectable();
+  config->scannable = config_proto.scannable();
+  config->directed = config_proto.directed();
+  config->high_duty_directed_connectable = config_proto.high_duty_directed_connectable();
+  config->legacy_pdus = config_proto.legacy_pdus();
+  config->anonymous = config_proto.anonymous();
+  config->include_tx_power = config_proto.include_tx_power();
+  config->use_le_coded_phy = config_proto.use_le_coded_phy();
+  if (config_proto.secondary_map_skip() < 0 || config_proto.secondary_map_skip() > 0xFF) {
+    LOG_WARN("Base secondary_map_skip: 0x%x", config_proto.secondary_map_skip());
+    return false;
+  }
+  config->secondary_max_skip = config_proto.secondary_map_skip();
+  if (config_proto.secondary_advertising_phy() <= 0 || config_proto.secondary_advertising_phy() > 3) {
+    LOG_WARN("Base secondary_advertising_phy: 0x%x", config_proto.secondary_advertising_phy());
+    return false;
+  }
+  config->secondary_advertising_phy = static_cast<SecondaryPhyType>(config_proto.secondary_advertising_phy());
+  if (config_proto.sid() < 0 || config_proto.sid() > 0xF) {
+    LOG_WARN("Base sid: 0x%x", config_proto.sid());
+    return false;
+  }
+  config->sid = config_proto.sid();
+  config->enable_scan_request_notifications =
+      config_proto.enable_scan_request_notification() ? Enable::ENABLED : Enable::DISABLED;
   return true;
 }
 
@@ -128,6 +160,8 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
   ::grpc::Status CreateAdvertiser(::grpc::ServerContext* context, const CreateAdvertiserRequest* request,
                                   CreateAdvertiserResponse* response) override {
     hci::ExtendedAdvertisingConfig config = {};
+    config.legacy_pdus = true;
+    config.secondary_advertising_phy = SecondaryPhyType::LE_1M;
     if (!AdvertisingConfigFromProto(request->config(), &config)) {
       LOG_WARN("Error parsing advertising config %s", request->SerializeAsString().c_str());
       response->set_advertiser_id(LeAdvertisingManager::kInvalidId);
@@ -155,9 +189,29 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
   ::grpc::Status ExtendedCreateAdvertiser(::grpc::ServerContext* context,
                                           const ExtendedCreateAdvertiserRequest* request,
                                           ExtendedCreateAdvertiserResponse* response) override {
-    LOG_WARN("ExtendedCreateAdvertiser is not implemented");
-    response->set_advertiser_id(LeAdvertisingManager::kInvalidId);
-    return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "ExtendedCreateAdvertiser is not implemented");
+    hci::ExtendedAdvertisingConfig config = {};
+    if (!ExtendedAdvertisingConfigFromProto(request->config(), &config)) {
+      LOG_WARN("Error parsing extended advertising config %s", request->SerializeAsString().c_str());
+      response->set_advertiser_id(LeAdvertisingManager::kInvalidId);
+      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Error while parsing extended advertising config");
+    }
+    LeAdvertiser le_advertiser(config);
+    auto advertiser_id = le_advertising_manager_->ExtendedCreateAdvertiser(
+        -1,
+        config,
+        common::Bind(&LeAdvertiser::ScanCallback, common::Unretained(&le_advertiser)),
+        common::Bind(&LeAdvertiser::TerminatedCallback, common::Unretained(&le_advertiser)),
+        0,
+        0,
+        facade_handler_);
+    if (advertiser_id != LeAdvertisingManager::kInvalidId) {
+      le_advertiser.SetAdvertiserId(advertiser_id);
+      le_advertisers_.push_back(le_advertiser);
+    } else {
+      LOG_WARN("Failed to create advertiser");
+    }
+    response->set_advertiser_id(advertiser_id);
+    return ::grpc::Status::OK;
   }
 
   ::grpc::Status GetNumberOfAdvertisingInstances(::grpc::ServerContext* context,
