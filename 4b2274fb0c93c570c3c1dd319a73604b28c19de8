@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a87bf0fe_61f6a98b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 29415
+      },
+      "writtenOn": "2022-01-23T23:28:34Z",
+      "side": 1,
+      "message": "Verified all (twelve-qti-bt-stack) commits in this chain on ZenFone 8 (SM8350)",
+      "revId": "4b2274fb0c93c570c3c1dd319a73604b28c19de8",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
