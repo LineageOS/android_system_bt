@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7d4c554_53cc2a8b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2022-01-25T12:53:16Z",
+      "side": 1,
+      "message": "This chain breaks AOSP BT:\n\n\u003e system/bt/main/shim/le_scanning_manager.cc:507:34: error: allocating an object of abstract class type \u0027BleScannerInterfaceImpl\u0027\n\u003e     bt_le_scanner_instance \u003d new BleScannerInterfaceImpl();\n\u003e                                  ^\n\nStill searching for the fix.",
+      "revId": "45c95de4479842f3d2b80725e865f15cd67d2d1c",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
