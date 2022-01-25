@@ -16,6 +16,24 @@
       "message": "What was the point to upload an empty change?",
       "revId": "67b1ec340dec395ddbe3c85248ea98ecf5b53fbf",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e3effdc_0c60789a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 24438
+      },
+      "writtenOn": "2022-01-25T12:53:37Z",
+      "side": 1,
+      "message": "I was doing repopicking the whole topic, and I forgot to drop it, my bad",
+      "parentUuid": "2108a188_3a022096",
+      "revId": "67b1ec340dec395ddbe3c85248ea98ecf5b53fbf",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
