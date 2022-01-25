@@ -34,6 +34,24 @@
       "parentUuid": "2108a188_3a022096",
       "revId": "67b1ec340dec395ddbe3c85248ea98ecf5b53fbf",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6007728_44017c10",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2022-01-25T12:56:31Z",
+      "side": 1,
+      "message": "Can you abandon it then?",
+      "parentUuid": "4e3effdc_0c60789a",
+      "revId": "67b1ec340dec395ddbe3c85248ea98ecf5b53fbf",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
