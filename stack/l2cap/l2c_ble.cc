@@ -621,7 +621,7 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
       break;
     }
     case L2CAP_CMD_CREDIT_BASED_CONN_RES:
-      if (p + 2 > p_pkt_end) {
+      if (p + 8 > p_pkt_end) {
         LOG(ERROR) << "invalid L2CAP_CMD_CREDIT_BASED_CONN_RES len";
         return;
       }
