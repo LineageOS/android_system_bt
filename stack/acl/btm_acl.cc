@@ -721,6 +721,16 @@ void BTM_block_role_switch_for(const RawAddress& peer_addr) {
   btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
 
+void BTM_unblock_role_switch_and_sniff_mode_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_on_for(
+      peer_addr, HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
+}
+
+void BTM_block_role_switch_and_sniff_mode_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_off_for(
+      peer_addr, HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
+}
+
 void StackAclBtmAcl::btm_set_default_link_policy(tLINK_POLICY settings) {
   check_link_policy(&settings);
   btm_cb.acl_cb_.btm_def_link_policy = settings;
