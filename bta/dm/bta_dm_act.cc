@@ -138,7 +138,7 @@ static void bta_dm_ctrl_features_rd_cmpl_cback(tHCI_STATUS result);
 
 /* Disable connection down timer (in milliseconds) */
 #ifndef BTA_DM_DISABLE_CONN_DOWN_TIMER_MS
-#define BTA_DM_DISABLE_CONN_DOWN_TIMER_MS 1000
+#define BTA_DM_DISABLE_CONN_DOWN_TIMER_MS 100
 #endif
 
 /* Switch delay timer (in milliseconds) */
@@ -1814,6 +1814,10 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
   uint16_t service_class;
 
   result.inq_res.bd_addr = p_inq->remote_bd_addr;
+
+  // Pass the original address to GattService#onScanResult
+  result.inq_res.original_bda = p_inq->original_bda;
+
   memcpy(result.inq_res.dev_class, p_inq->dev_class, DEV_CLASS_LEN);
   BTM_COD_SERVICE_CLASS(service_class, p_inq->dev_class);
   result.inq_res.is_limited =
@@ -1858,7 +1862,6 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
  ******************************************************************************/
 static void bta_dm_inq_cmpl_cb(void* p_result) {
   APPL_TRACE_DEBUG("%s", __func__);
-
   bta_dm_inq_cmpl(((tBTM_INQUIRY_CMPL*)p_result)->num_resp);
 }
 
@@ -3311,8 +3314,8 @@ static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
   tBTA_DM_SEARCH result;
   tBTM_INQ_INFO* p_inq_info;
   APPL_TRACE_DEBUG("bta_dm_observe_results_cb");
-
   result.inq_res.bd_addr = p_inq->remote_bd_addr;
+  result.inq_res.original_bda = p_inq->original_bda;
   result.inq_res.rssi = p_inq->rssi;
   result.inq_res.ble_addr_type = p_inq->ble_addr_type;
   result.inq_res.inq_result_type = p_inq->inq_result_type;

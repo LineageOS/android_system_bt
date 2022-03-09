@@ -154,7 +154,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
                                   uint8_t secondary_phy,
                                   uint8_t advertising_sid, int8_t tx_power,
                                   int8_t rssi, uint16_t periodic_adv_int,
-                                  uint8_t data_len, uint8_t* data) {
+                                  uint8_t data_len, uint8_t* data, const RawAddress& original_bda) {
   mock_function_count_map[__func__]++;
 }
 void btm_ble_process_adv_pkt_cont_for_inquiry(

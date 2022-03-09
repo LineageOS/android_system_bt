@@ -3013,12 +3013,9 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
         APPL_TRACE_DEBUG("%s: VS_HCI_STOP_A2DP_MEDIA successful", __func__);
         break;
       case VS_HCI_A2DP_OFFLOAD_START:
-        LOG_INFO("%s, bta_av_cb.offload_start_pending_hndl=%d", __func__,
-                bta_av_cb.offload_start_pending_hndl);
         if (bta_av_cb.offload_start_pending_hndl) {
           APPL_TRACE_DEBUG("%s: VS_HCI_START_A2DP_MEDIA successful", __func__);
-          bta_av_cb.offload_started_hndl =
-              bta_av_cb.offload_start_pending_hndl;
+          bta_av_cb.offload_started_hndl = bta_av_cb.offload_start_pending_hndl;
           bta_av_cb.offload_start_pending_hndl = 0;
         } else {
           LOG_INFO("%s: No pending start command due to AVDTP suspend immediately", __func__);
@@ -3060,7 +3057,6 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb,
   ARRAY_TO_STREAM(p_param, offload_start->codec_info,
                   (int8_t)sizeof(offload_start->codec_info));
   bta_av_cb.offload_start_pending_hndl = p_scb->hndl;
-  //bta_av_cb.offload_start_pending_hndl = offload_start->hndl;
   BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, p_param - param,
                             param, offload_vendor_callback);
 }
@@ -3094,7 +3090,7 @@ void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   if (p_scb->started != true) {
     status = BTA_AV_FAIL_STREAM;
   } else if (bta_av_cb.offload_start_pending_hndl ||
-          bta_av_cb.offload_started_hndl) {
+             bta_av_cb.offload_started_hndl) {
     APPL_TRACE_WARNING("%s: offload already started, ignore request", __func__);
     return;
   } else {

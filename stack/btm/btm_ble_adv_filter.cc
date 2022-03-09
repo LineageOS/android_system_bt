@@ -479,18 +479,50 @@ static void BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
   UINT8_TO_STREAM(p, filt_index);
 
   if (action != BTM_BLE_SCAN_COND_CLEAR) {
-    if (addr.type == BLE_ADDR_PUBLIC_ID) {
+    if (addr.type == BLE_ADDR_PUBLIC_ID || addr.type == BLE_ADDR_PUBLIC) {
       LOG(INFO) << __func__ << " Filter address " << addr.bda
                 << " has type PUBLIC_ID, try to get identity address";
       /* If no matching identity address is found for the input address,
-       * this call will have no effect. */
-      btm_random_pseudo_to_identity_addr(&addr.bda, &addr.type);
+       * this call will have no effect.
+       *
+       * This is necessary in the case that the address passed is an RPA.  The RPA is then looked
+       * up and converted to the identity address.
+       *
+       * However, we don't want to change the address type because if it is a 2 then the mapping
+       * function gets confused and defaults to 3.
+       *
+       * Using the dummy type we don't change the original type.
+       *
+       * This sort of change has been made in AOSP already. aosp/1842714
+       */
+      uint8_t dummy_addr_type;
+      btm_random_pseudo_to_identity_addr(&addr.bda, &dummy_addr_type);
     }
 
     LOG(INFO) << __func__
               << " Adding scan filter with peer address: " << addr.bda;
 
     BDADDR_TO_STREAM(p, addr.bda);
+
+    /*
+     * DANGER: Thar be dragons!
+     *
+     * The vendor command (APCF Filtering 0x0157) takes Public (0) or Random (1) or Any (2).
+     *
+     * Advertising results have four types:
+     * ￼    -  Public = 0
+     * ￼    -  Random = 1
+     * ￼    -  Public ID = 2
+     * ￼    -  Random ID = 3
+     *
+     * e.g. specifying PUBLIC (0) will only return results with a public address.
+     * It will ignore resolved addresses, since they return PUBLIC IDENTITY (2).
+     * For this, Any (0x02) must be specified.  This should also cover if the RPA is
+     * derived from RANDOM STATIC.
+     */
+
+    /* ALWAYS FORCE 2 for this vendor command! */
+    addr.type = 0x02; // Really, you will break scanning if you change this.
     UINT8_TO_STREAM(p, addr.type);
   }
 
@@ -641,6 +673,7 @@ void BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
             return;
           }
           // Allocate a new "temporary" device record
+
           btm_sec_alloc_dev(cmd.address);
           remove_me_later_map.emplace(filt_index, cmd.address);
           // Set the IRK
@@ -729,15 +762,6 @@ void BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
     /* clear service data filter */
     BTM_LE_PF_srvc_data_pattern(BTM_BLE_SCAN_COND_CLEAR, filt_index, {}, {},
                                 fDoNothing);
-
-    // If we have an entry, lets remove the device if it isn't bonded
-    auto entry = remove_me_later_map.find(filt_index);
-    if (entry != remove_me_later_map.end()) {
-      auto entry = remove_me_later_map.find(filt_index);
-      if (!btm_sec_is_a_bonded_dev(entry->second)) {
-        BTM_SecDeleteDevice(entry->second);
-      }
-    }
   }
 
   uint8_t len = BTM_BLE_ADV_FILT_META_HDR_LENGTH + BTM_BLE_PF_FEAT_SEL_LEN;
@@ -854,24 +878,6 @@ void BTM_BleAdvFilterParamSetup(
         FROM_HERE, HCI_BLE_ADV_FILTER, param,
         (uint8_t)(BTM_BLE_ADV_FILT_META_HDR_LENGTH),
         base::Bind(&btm_flt_update_cb, BTM_BLE_META_PF_FEAT_SEL, cb));
-
-    auto entry = remove_me_later_map.find(filt_index);
-    if (entry != remove_me_later_map.end()) {
-      LOG_WARN("Replacing existing filter index entry with new address");
-      // If device is not bonded, then try removing the device
-      // If the device doesn't get removed then it is currently connected
-      // (may be pairing?) If we do delete the device we want to erase the
-      // filter index so we can replace it If the device is bonded, we
-      // want to erase the filter index so we don't delete it in the later
-      // BTM_LE_PF_clear call.
-      if (!btm_sec_is_a_bonded_dev(entry->second)) {
-        if (!BTM_SecDeleteDevice(entry->second)) {
-          LOG_WARN("Unable to remove device, still connected.");
-          return;
-        }
-      }
-      remove_me_later_map.erase(filt_index);
-    }
 
   } else if (BTM_BLE_SCAN_COND_CLEAR == action) {
     /* Deallocate all filters here */

@@ -33,6 +33,7 @@ cc_library_static {
         "model/devices/device.cc",
         "model/devices/device_properties.cc",
         "model/devices/h4_packetizer.cc",
+        "model/devices/h4_parser.cc",
         "model/devices/hci_protocol.cc",
         "model/devices/hci_socket_device.cc",
         "model/devices/keyboard.cc",
@@ -104,6 +105,7 @@ cc_test_host {
     ],
     srcs: [
         "test/async_manager_unittest.cc",
+        "test/h4_parser_unittest.cc",
         "test/security_manager_unittest.cc",
     ],
     header_libs: [
@@ -194,5 +196,34 @@ genrule {
     ],
     out: [
         "packets/link_layer_packets.h",
+    ],
+}
+
+// bt_vhci_forwarder in cuttlefish depends on this H4Packetizer implementation.
+cc_library_static {
+    name: "h4_packetizer_lib",
+    vendor: true,
+    defaults: [
+        "gd_defaults",
+    ],
+    srcs: [
+        "model/devices/h4_packetizer.cc",
+        "model/devices/h4_parser.cc",
+        "model/devices/hci_protocol.cc",
+    ],
+
+    local_include_dirs: [
+        "include",
+    ],
+    export_include_dirs: [
+        "include",
+        ".",
+    ],
+    generated_headers: [
+        "libbt_init_flags_bridge_header",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/gd",
     ],
 }

@@ -387,7 +387,8 @@ uint8_t* avdt_scb_hdl_report(AvdtpScb* p_scb, uint8_t* p, uint16_t len) {
             goto avdt_scb_hdl_report_exit;
           }
           BE_STREAM_TO_UINT8(name_length, p);
-          if (name_length > len - 2 || name_length > AVDT_MAX_CNAME_SIZE) {
+          if (name_length > len - min_len ||
+              name_length > AVDT_MAX_CNAME_SIZE) {
             result = AVDT_BAD_PARAMS;
           } else {
             BE_STREAM_TO_ARRAY(p, &(report.cname[0]), name_length);
@@ -400,8 +401,8 @@ uint8_t* avdt_scb_hdl_report(AvdtpScb* p_scb, uint8_t* p, uint16_t len) {
                 __func__, len, min_len);
             goto avdt_scb_hdl_report_exit;
           }
-          AVDT_TRACE_WARNING(" - SDES SSRC=0x%08x sc=%d %d len=%d %s", ssrc,
-                             o_cc, *p, *(p + 1), p + 2);
+          AVDT_TRACE_WARNING("%s: SDES SSRC=0x%08x sc=%d %d len=%d", __func__,
+                             ssrc, o_cc, sdes_type, *p);
           result = AVDT_BUSY;
         }
         break;

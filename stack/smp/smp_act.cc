@@ -1417,7 +1417,6 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  process IO response for a peripheral device.
  ******************************************************************************/
 void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
-
   SMP_TRACE_DEBUG("%s", __func__);
   if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
     /* pairing started by local (peripheral) Security Request */
@@ -1442,12 +1441,40 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 
     // If we are doing SMP_MODEL_SEC_CONN_OOB we don't need to request OOB data
     // locally if loc_oob_flag == 0x00 b/c there is no OOB data to give.  In the
-    // event the loc_oob_flag is another value, we should request the OOB data
-    // locally.  Which seems to cause it to make a TK REQUEST which is used for
-    // the legacy flow which requires both sides to have OOB data.
-    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB &&
-        p_cb->loc_oob_flag != 0x00) {
-      if (smp_request_oob_data(p_cb)) return;
+    // event the loc_oob_flag is present value, we should request the OOB data
+    // locally; otherwise fail.
+    // If we are the initiator the OOB data has already been stored and will be
+    // collected in the statemachine later.
+    //
+    // loc_oob_flag could be one of the following tSMP_OOB_FLAG enum values:
+    // SMP_OOB_NONE = 0
+    // SMP_OOB_PRESENT = 1
+    // SMP_OOB_UNKNOWN = 2
+    //
+    // The only time Android cares about needing to provide the peer oob data
+    // here would be in the advertiser situation or role.  If the
+    // device is doing the connecting it will not need to get the data again as
+    // it was already provided in the initiation call.
+    //
+    // loc_oob_flag should only equal SMP_OOB_PRESENT when PEER DATA exists and
+    // device is the advertiser as opposed to being the connector.
+    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_OOB) {
+      switch (p_cb->loc_oob_flag) {
+        case SMP_OOB_NONE:
+          LOG_INFO("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_NONE");
+          smp_send_pair_rsp(p_cb, NULL);
+          break;
+        case SMP_OOB_PRESENT:
+          LOG_INFO("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_PRESENT");
+          if (smp_request_oob_data(p_cb)) return;
+          break;
+        case SMP_OOB_UNKNOWN:
+          LOG_WARN("SMP_MODEL_SEC_CONN_OOB with SMP_OOB_UNKNOWN");
+          tSMP_INT_DATA smp_int_data;
+          smp_int_data.status = SMP_PAIR_AUTH_FAIL;
+          smp_send_pair_fail(p_cb, &smp_int_data);
+          return;
+      }
     }
 
     // PTS Testing failure modes

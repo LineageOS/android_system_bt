@@ -2960,6 +2960,7 @@ void HACK_acl_check_sm4(tBTM_SEC_DEV_REC& record) {
   if (p_acl == nullptr) {
     LOG_WARN("Unable to find active acl for authentication device:%s",
              PRIVATE_ADDRESS(record.RemoteAddress()));
+    return;
   }
 
   // If we have not received the SSP feature record

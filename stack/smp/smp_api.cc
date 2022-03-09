@@ -530,6 +530,12 @@ void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
       if (!p_oob->loc_oob_data.present) data_missing = true;
       break;
     case SMP_OOB_BOTH:
+      // Check for previous local OOB data in cache
+      // This would be in the case data was generated BEFORE pairing was
+      // attempted and this instance is the connector or pairing initiator.
+      // [NOTICE]: Overridding data present here if the data exists so state
+      // machine asks for it later
+      p_oob->loc_oob_data.present = smp_has_local_oob_data();
       if (!p_oob->loc_oob_data.present || !p_oob->peer_oob_data.present)
         data_missing = true;
       break;

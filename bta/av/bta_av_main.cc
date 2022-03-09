@@ -1411,8 +1411,7 @@ void bta_debug_av_dump(int fd) {
   dprintf(fd, "  Connected LCBs mask: 0x%x\n", bta_av_cb.conn_lcb);
   dprintf(fd, "  Offload start pending handle: %d\n",
           bta_av_cb.offload_start_pending_hndl);
-  dprintf(fd, "  Offload started handle: %d\n",
-          bta_av_cb.offload_started_hndl);
+  dprintf(fd, "  Offload started handle: %d\n", bta_av_cb.offload_started_hndl);
 
   for (size_t i = 0; i < sizeof(bta_av_cb.lcb) / sizeof(bta_av_cb.lcb[0]);
        i++) {

@@ -465,5 +465,5 @@ extern void smp_xor_128(Octet16* a, const Octet16& b);
  * cleaned up */
 extern void smp_save_local_oob_data(tSMP_CB* p_cb);
 extern void smp_clear_local_oob_data();
-
+extern bool smp_has_local_oob_data();
 #endif /* SMP_INT_H */

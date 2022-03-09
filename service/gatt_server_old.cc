@@ -377,7 +377,7 @@ void ScanResultCallback(uint16_t ble_evt_type, uint8_t addr_type,
                         uint8_t ble_secondary_phy, uint8_t ble_advertising_sid,
                         int8_t ble_tx_power, int8_t rssi,
                         uint16_t ble_periodic_adv_int,
-                        std::vector<uint8_t> adv_data) {
+                        std::vector<uint8_t> adv_data, RawAddress* original_bda) {
   std::string addr(BtAddrString(bda));
   std::lock_guard<std::mutex> lock(g_internal->lock);
   g_internal->scan_results[addr] = rssi;
