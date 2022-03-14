@@ -469,6 +469,18 @@ extern bool L2CA_GetPeerLECocConfig(uint16_t lcid,
 
 /*******************************************************************************
  *
+ *  Function         L2CA_GetPeerLECocCredit
+ *
+ *  Description      Get peers current credit for LE Connection Oriented
+ *                   Channel.
+ *
+ *  Return value:    Number of the peer current credit
+ *
+ ******************************************************************************/
+uint16_t L2CA_GetPeerLECocCredit(const RawAddress& bd_addr, uint16_t lcid);
+
+/*******************************************************************************
+ *
  *  Function         L2CA_ReconfigCreditBasedConnsReq
  *
  *  Description      Start reconfigure procedure on Connection Oriented Channel.
