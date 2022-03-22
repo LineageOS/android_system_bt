@@ -123,12 +123,10 @@ static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR* packet) {
   if ((packet->event & MSG_EVT_MASK) == MSG_HC_TO_STACK_HCI_ACL) {
     uint8_t* stream = packet->data;
     uint16_t handle;
-    uint16_t l2cap_length;
     uint16_t acl_length;
 
     STREAM_TO_UINT16(handle, stream);
     STREAM_TO_UINT16(acl_length, stream);
-    STREAM_TO_UINT16(l2cap_length, stream);
 
     CHECK(acl_length == packet->len - HCI_ACL_PREAMBLE_SIZE);
 
@@ -162,6 +160,9 @@ static void reassemble_and_dispatch(UNUSED_ATTR BT_HDR* packet) {
         buffer_allocator->free(packet);
         return;
       }
+
+      uint16_t l2cap_length;
+      STREAM_TO_UINT16(l2cap_length, stream);
 
       uint16_t full_length =
           l2cap_length + L2CAP_HEADER_SIZE + HCI_ACL_PREAMBLE_SIZE;
