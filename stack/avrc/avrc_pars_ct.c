@@ -541,8 +541,12 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(
                 BE_STREAM_TO_UINT32(p_attrs[i].attr_id, p);
                 BE_STREAM_TO_UINT16(p_attrs[i].name.charset_id, p);
                 BE_STREAM_TO_UINT16(p_attrs[i].name.str_len, p);
-                min_len += p_attrs[i].name.str_len;
-                if (len < min_len)
+                if ((UINT16)(min_len + p_attrs[i].name.str_len) <
+                    min_len) {
+                   // Check for overflow
+                   android_errorWriteLog(0x534e4554, "205570663");
+                }
+                if (len - min_len < p_attrs[i].name.str_len)
                 {
                    for (int j = 0; j < i; j++)
                    {
@@ -552,6 +556,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(
                    p_result->get_attrs.num_attrs = 0;
                    goto length_error;
                 }
+                min_len += p_attrs[i].name.str_len;
                 if (p_attrs[i].name.str_len > 0)
                 {
                     p_attrs[i].name.p_str = (UINT8 *)osi_calloc(p_attrs[i].name.str_len);
