@@ -27,6 +27,56 @@ class StackAvrcpTest : public ::testing::Test {
   virtual ~StackAvrcpTest() = default;
 };
 
+TEST_F(StackAvrcpTest, test_avrcp_ctrl_parse_vendor_rsp) {
+  uint8_t scratch_buf[512]{};
+  uint16_t scratch_buf_len = 512;
+  tAVRC_MSG msg{};
+  tAVRC_RESPONSE result{};
+  uint8_t vendor_rsp_buf[512]{};
+
+  msg.hdr.opcode = AVRC_OP_VENDOR;
+  msg.hdr.ctype = AVRC_CMD_STATUS;
+
+  memset(vendor_rsp_buf, 0, sizeof(vendor_rsp_buf));
+  vendor_rsp_buf[0] = AVRC_PDU_GET_ELEMENT_ATTR;
+  uint8_t* p = &vendor_rsp_buf[2];
+  UINT16_TO_BE_STREAM(p, 0x0009);   // parameter length
+  UINT8_TO_STREAM(p, 0x01);         // number of attributes
+  UINT32_TO_STREAM(p, 0x00000000);  // attribute ID
+  UINT16_TO_STREAM(p, 0x0000);      // character set ID
+  UINT16_TO_STREAM(p, 0xffff);      // attribute value length
+  msg.vendor.p_vendor_data = vendor_rsp_buf;
+  msg.vendor.vendor_len = 13;
+  EXPECT_EQ(
+      AVRC_Ctrl_ParsResponse(&msg, &result, scratch_buf, &scratch_buf_len),
+      AVRC_STS_INTERNAL_ERR);
+}
+
+TEST_F(StackAvrcpTest, test_avrcp_parse_browse_rsp) {
+  uint8_t scratch_buf[512]{};
+  uint16_t scratch_buf_len = 512;
+  tAVRC_MSG msg{};
+  tAVRC_RESPONSE result{};
+  uint8_t browse_rsp_buf[512]{};
+
+  msg.hdr.opcode = AVRC_OP_BROWSE;
+
+  memset(browse_rsp_buf, 0, sizeof(browse_rsp_buf));
+  browse_rsp_buf[0] = AVRC_PDU_GET_ITEM_ATTRIBUTES;
+  uint8_t* p = &browse_rsp_buf[1];
+  UINT16_TO_BE_STREAM(p, 0x000a);   // parameter length;
+  UINT8_TO_STREAM(p, 0x04);         // status
+  UINT8_TO_STREAM(p, 0x01);         // number of attribute
+  UINT32_TO_STREAM(p, 0x00000000);  // attribute ID
+  UINT16_TO_STREAM(p, 0x0000);      // character set ID
+  UINT16_TO_STREAM(p, 0xffff);      // attribute value length
+  msg.browse.p_browse_data = browse_rsp_buf;
+  msg.browse.browse_len = 13;
+  EXPECT_EQ(
+      AVRC_Ctrl_ParsResponse(&msg, &result, scratch_buf, &scratch_buf_len),
+      AVRC_STS_BAD_CMD);
+}
+
 TEST_F(StackAvrcpTest, test_avrcp_parse_browse_cmd) {
   uint8_t scratch_buf[512]{};
   tAVRC_MSG msg{};
