@@ -50,3 +50,10 @@
 #ifndef AVRCP_SUPF_TG
 #define AVRCP_SUPF_TG_DEFAULT AVRCP_SUPF_TG_1_4
 #endif
+
+/**
+ * Supported Feature for AVRCP tartget control
+ */
+#ifndef AVRCP_SUPF_TG_CT
+#define AVRCP_SUPF_TG_CT AVRC_SUPF_CT_CAT2
+#endif
