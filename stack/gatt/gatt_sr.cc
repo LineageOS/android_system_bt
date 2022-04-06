@@ -173,6 +173,9 @@ static void build_read_multi_rsp(tGATT_SR_CMD* p_cmd, uint16_t mtu) {
 
     if (p_rsp != NULL) {
       total_len = (p_buf->len + p_rsp->attr_value.len);
+      if (p_cmd->multi_req.variable_len) {
+        total_len += 2;
+      }
 
       if (total_len > mtu) {
         /* just send the partial response for the overflow case */
