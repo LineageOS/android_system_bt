@@ -486,8 +486,7 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
                         attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr );
 
                     attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr] = '\0';
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr+1] = '\0';
+                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr - 1] = '\0';
                 }
                 else
                     attr_len = 0;
