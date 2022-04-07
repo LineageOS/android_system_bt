@@ -443,8 +443,7 @@ bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
               attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr);
 
           attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-          p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr] = '\0';
-          p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr + 1] = '\0';
+          p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr - 1] = '\0';
         } else
           attr_len = 0;
       }
