@@ -33,6 +33,23 @@
       "message": "Builds fine for potter and thea.",
       "revId": "b54bcceeaedb52142c8e65b6ab18e1e95b2756ae",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b259d01b_aaa72f7e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2022-04-11T15:10:59Z",
+      "side": 1,
+      "message": "Builds fine and runs on Moto G5 Cedric. THANK YOU!",
+      "revId": "b54bcceeaedb52142c8e65b6ab18e1e95b2756ae",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
