@@ -355,6 +355,10 @@ static void bta_hf_client_handle_cind_list_item(char *name, UINT32 min, UINT32 m
 
     APPL_TRACE_DEBUG("%s %lu.%s <%lu:%lu>", __FUNCTION__, index, name, min, max);
 
+    if (index >= BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
+      return;
+    }
+
     /* look for a matching indicator on list of supported ones */
     for(i = 0; i < BTA_HF_CLIENT_AT_SUPPORTED_INDICATOR_COUNT; i++)
     {
