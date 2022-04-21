@@ -83,7 +83,6 @@ using bluetooth::Uuid;
  *****************************************************************************/
 
 const Uuid UUID_HEARING_AID = Uuid::FromString("FDF0");
-const Uuid UUID_VC = Uuid::FromString("1844");
 
 #define COD_MASK 0x07FF
 
@@ -1257,8 +1256,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
 
 /* Returns true if |uuid| should be passed as device property */
 static bool btif_is_interesting_le_service(bluetooth::Uuid uuid) {
-  return (uuid.As16Bit() == UUID_SERVCLASS_LE_HID || uuid == UUID_HEARING_AID ||
-          uuid == UUID_VC);
+  return (uuid.As16Bit() == UUID_SERVCLASS_LE_HID || uuid == UUID_HEARING_AID);
 }
 
 /*******************************************************************************
