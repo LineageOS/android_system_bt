@@ -797,9 +797,9 @@ void bta_hf_client_binp(tBTA_HF_CLIENT_CB* client_cb, char* number) {
   } while (0)
 
 /* skip rest of AT string up to <cr> */
-#define AT_SKIP_REST(buf)           \
-  do {                              \
-    while (*(buf) != '\r') (buf)++; \
+#define AT_SKIP_REST(buf)                             \
+  do {                                                \
+    while (*(buf) != '\r' && *(buf) != '\0') (buf)++; \
   } while (0)
 
 static char* bta_hf_client_parse_ok(tBTA_HF_CLIENT_CB* client_cb,
