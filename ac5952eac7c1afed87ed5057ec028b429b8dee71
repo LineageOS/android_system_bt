@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ce13f1d_25374034",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 19907
+      },
+      "writtenOn": "2022-05-04T10:57:16Z",
+      "side": 1,
+      "message": "My bad, solution for this is in the kernel https://review.lineageos.org/c/LineageOS/android_kernel_samsung_gta4xl/+/330458\n\nChanges I linked earlier fixes SCO sample rate",
+      "revId": "ac5952eac7c1afed87ed5057ec028b429b8dee71",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
