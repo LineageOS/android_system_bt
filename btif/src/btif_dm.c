@@ -1387,7 +1387,6 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
                 break;
 
             case HCI_ERR_PAIRING_NOT_ALLOWED:
-                btif_storage_remove_bonded_device(&bd_addr);
                 status = BT_STATUS_AUTH_REJECTED;
                 break;
 
@@ -1398,7 +1397,6 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             /* map the auth failure codes, so we can retry pairing if necessary */
             case HCI_ERR_AUTH_FAILURE:
             case HCI_ERR_KEY_MISSING:
-                btif_storage_remove_bonded_device(&bd_addr);
             case HCI_ERR_HOST_REJECT_SECURITY:
             case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
             case HCI_ERR_UNIT_KEY_USED:
@@ -1429,7 +1427,6 @@ static void btif_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         if (check_cod(&bd_addr, COD_HID_POINTING)) {
             /* Remove Device as bonded in nvram as authentication failed */
             BTIF_TRACE_DEBUG("%s(): removing hid pointing device from nvram", __FUNCTION__);
-            btif_storage_remove_bonded_device(&bd_addr);
         }
         bond_state_changed(status, &bd_addr, state);
     }
