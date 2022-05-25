@@ -1182,16 +1182,13 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         break;
 
       case HCI_ERR_PAIRING_NOT_ALLOWED:
-        is_bonded_device_removed =
-            (btif_storage_remove_bonded_device(&bd_addr) == BT_STATUS_SUCCESS);
         status = BT_STATUS_AUTH_REJECTED;
         break;
 
       /* map the auth failure codes, so we can retry pairing if necessary */
       case HCI_ERR_AUTH_FAILURE:
       case HCI_ERR_KEY_MISSING:
-        is_bonded_device_removed =
-            (btif_storage_remove_bonded_device(&bd_addr) == BT_STATUS_SUCCESS);
+        is_bonded_device_removed = false;
         [[fallthrough]];
       case HCI_ERR_HOST_REJECT_SECURITY:
       case HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
@@ -1222,8 +1219,6 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       /* Remove Device as bonded in nvram as authentication failed */
       BTIF_TRACE_DEBUG("%s(): removing hid pointing device from nvram",
                        __func__);
-      is_bonded_device_removed =
-          (btif_storage_remove_bonded_device(&bd_addr) == BT_STATUS_SUCCESS);
     }
     // Report bond state change to java only if we are bonding to a device or
     // a device is removed from the pairing list.
