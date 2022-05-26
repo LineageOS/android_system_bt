@@ -26,6 +26,7 @@
 
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include <log/log.h>
 
 #include "bt_target.h"
 #include "bta_hearing_aid_api.h"
@@ -515,6 +516,15 @@ void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 
       /* Check how many channels remote side wants. */
       num_of_channels = (p_pkt_end - p) / sizeof(uint16_t);
+      if (num_of_channels > L2CAP_CREDIT_BASED_MAX_CIDS) {
+        android_errorWriteLog(0x534e4554, "232256974");
+        LOG_WARN("L2CAP - invalid number of channels requested: %d",
+                 num_of_channels);
+        l2cu_reject_credit_based_conn_req(p_lcb, id,
+                                          L2CAP_CREDIT_BASED_MAX_CIDS,
+                                          L2CAP_LE_RESULT_INVALID_PARAMETERS);
+        return;
+      }
 
       LOG_DEBUG(
           "Recv L2CAP_CMD_CREDIT_BASED_CONN_REQ with "
