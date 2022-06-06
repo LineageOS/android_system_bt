@@ -297,6 +297,13 @@ void AvrcpService::Init(MediaInterface* media_interface,
                              profile_version, 0);
   btif_dm_add_uuid_to_eir(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
 
+  ct_sdp_record_handle = SDP_CreateRecord();
+
+  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REMOTE_CONTROL,
+                             "AV Remote Control", NULL, AVRCP_SUPF_TG_CT,
+                             ct_sdp_record_handle, false, AVRC_REV_1_3, 0);
+  btif_dm_add_uuid_to_eir(UUID_SERVCLASS_AV_REMOTE_CONTROL);
+
   media_interface_ = new MediaInterfaceWrapper(media_interface);
   media_interface->RegisterUpdateCallback(instance_);
 
@@ -333,6 +340,9 @@ void AvrcpService::Cleanup() {
   avrcp_interface_.RemoveRecord(sdp_record_handle);
   btif_dm_remove_uuid_from_eir(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
   sdp_record_handle = -1;
+  avrcp_interface_.RemoveRecord(ct_sdp_record_handle);
+  btif_dm_remove_uuid_from_eir(UUID_SERVCLASS_AV_REMOTE_CONTROL);
+  ct_sdp_record_handle = -1;
 
   connection_handler_->CleanUp();
   connection_handler_ = nullptr;

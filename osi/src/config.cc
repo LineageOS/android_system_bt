@@ -493,8 +493,8 @@ static bool config_parse(FILE* fp, config_t* config) {
   CHECK(config != nullptr);
 
   int line_num = 0;
-  char line[1024];
-  char section[1024];
+  char line[4096];
+  char section[4096];
   strcpy(section, CONFIG_DEFAULT_SECTION);
 
   while (fgets(line, sizeof(line), fp)) {
@@ -511,7 +511,7 @@ static bool config_parse(FILE* fp, config_t* config) {
                 << line_num;
         return false;
       }
-      strncpy(section, line_ptr + 1, len - 2);  // NOLINT (len < 1024)
+      strncpy(section, line_ptr + 1, len - 2);  // NOLINT (len < 4096)
       section[len - 2] = '\0';
     } else {
       char* split = strchr(line_ptr, '=');
