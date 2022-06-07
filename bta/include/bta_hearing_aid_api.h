@@ -70,19 +70,23 @@ struct rssi_log {
 };
 
 struct AudioStats {
-  size_t packet_flush_count;
+  size_t trigger_drop_count;
+  size_t packet_drop_count;
   size_t packet_send_count;
-  size_t frame_flush_count;
+  size_t packet_flush_count;
   size_t frame_send_count;
+  size_t frame_flush_count;
   std::deque<rssi_log> rssi_history;
 
   AudioStats() { Reset(); }
 
   void Reset() {
-    packet_flush_count = 0;
+    trigger_drop_count = 0;
+    packet_drop_count = 0;
     packet_send_count = 0;
-    frame_flush_count = 0;
+    packet_flush_count = 0;
     frame_send_count = 0;
+    frame_flush_count = 0;
   }
 };
 

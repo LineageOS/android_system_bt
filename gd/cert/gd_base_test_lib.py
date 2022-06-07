@@ -42,6 +42,9 @@ def setup_class_core(dut_module, cert_module, verbose_mode, log_path_base, contr
 
     # Start root-canal if needed
     info['rootcanal_running'] = False
+    info['rootcanal_logpath'] = ""
+    info['rootcanal_process'] = None
+    info['rootcanal_logger'] = None
     if 'rootcanal' in info['controller_configs']:
         info['rootcanal_running'] = True
         # Get root canal binary

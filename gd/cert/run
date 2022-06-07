@@ -89,6 +89,7 @@ NUM_REPETITIONS="1"
 SKIP_SOONG_BUILD=false
 USE_ASHMEM_VENV=true
 VERBOSE_MODE=false
+DEVICE_TEST=false
 
 # Directory for test configs to modify
 CONFIG_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
@@ -156,29 +157,7 @@ function parse_options {
         ;;
         --device)
         TEST_CONFIG="${ANDROID_BUILD_TOP}/system/bt/gd/cert/devices_config.json"
-        RR="$(cat ${TEST_CONFIG}|grep \"CERT\\\|DUT\")"
-        if [ "$RR" != "" ]; then
-        DUT_SERIAL="$(menu-adb DUT)"
-        DUT_ADB="adb -s ${DUT_SERIAL}"
-        DUT_NAME="$(adb devices -l | grep -v "List of device" | grep ${DUT_SERIAL} | awk '{ print $6 }' | cut -d ':' -f 2)"
-        CERT_SERIAL="$(menu-adb CERT)"
-        CERT_ADB="adb -s ${CERT_SERIAL}"
-        CERT_NAME="$(adb devices -l | grep -v "List of device" | grep ${CERT_SERIAL} | awk '{ print $6 }' | cut -d ':' -f 2)"
-
-        if [ "${CERT_SERIAL}" == "${DUT_SERIAL}" ]; then
-            echo
-            echo "ERROR: CERT and DUT cannot be the same device, or you only have one device connected!"
-            echo
-            exit 1
-        fi
-
-        ## Set android devices in config
-        pushd .
-        cd "${CONFIG_DIR}"
-        popd
-        sed -i "s/\"DUT\"/\"${DUT_SERIAL}\"/g" ${CONFIG_DIR}/devices_config.json
-        sed -i "s/\"CERT\"/\"${CERT_SERIAL}\"/g" ${CONFIG_DIR}/devices_config.json
-        fi
+        DEVICE_TEST=true
         shift # past argument
         ;;
         # Repeat running the specified test cases by N times in one single setup
@@ -198,6 +177,7 @@ function parse_options {
         BUILD_TARGET=$RUST_BUILD_TARGET
         export RUST_BACKTRACE=1
         TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/rust_android_devices_config.json
+        DEVICE_TEST=true
         shift # past argument
         ;;
         --rhost)
@@ -235,6 +215,34 @@ function parse_options {
       echo -e "${YELLOW}Try to reuse existing virtualenv at ${CERT_TEST_VENV}${NOCOLOR}"
     fi
 
+}
+
+function select_devices {
+    if [ "$DEVICE_TEST" == true ] ; then
+        RR="$(cat ${TEST_CONFIG}|grep \"CERT\\\|DUT\")"
+        if [ "$RR" != "" ]; then
+            DUT_SERIAL="$(menu-adb DUT)"
+            DUT_ADB="adb -s ${DUT_SERIAL}"
+            DUT_NAME="$(adb devices -l | grep -v "List of device" | grep ${DUT_SERIAL} | awk '{ print $6 }' | cut -d ':' -f 2)"
+            CERT_SERIAL="$(menu-adb CERT)"
+            CERT_ADB="adb -s ${CERT_SERIAL}"
+            CERT_NAME="$(adb devices -l | grep -v "List of device" | grep ${CERT_SERIAL} | awk '{ print $6 }' | cut -d ':' -f 2)"
+
+            if [ "${CERT_SERIAL}" == "${DUT_SERIAL}" ]; then
+                echo
+                echo "ERROR: CERT and DUT cannot be the same device, or you only have one device connected!"
+                echo
+                exit 1
+            fi
+
+            ## Set android devices in config
+            pushd .
+            cd "${CONFIG_DIR}"
+            popd
+            sed -i "s/\"DUT\"/\"${DUT_SERIAL}\"/g" ${TEST_CONFIG}
+            sed -i "s/\"CERT\"/\"${CERT_SERIAL}\"/g" ${TEST_CONFIG}
+        fi
+    fi
 }
 
 function soong_build {
@@ -475,6 +483,7 @@ function menu-adb() {
 function main {
     check_environment
     parse_options $@
+    select_devices
     if [[ "${SKIP_SOONG_BUILD}" != true ]] ; then
         soong_build
     fi
