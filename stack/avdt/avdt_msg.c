@@ -1411,6 +1411,11 @@ BT_HDR *avdt_msg_asmbl(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
          * would have allocated smaller buffer.
          */
         p_ccb->p_rx_msg = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
+        if (sizeof(BT_HDR) + p_buf->offset + p_buf->len > BT_DEFAULT_BUFFER_SIZE)
+        {
+            android_errorWriteLog(0x534e4554, "232023771");
+            return NULL;
+        }
         memcpy(p_ccb->p_rx_msg, p_buf,
                sizeof(BT_HDR) + p_buf->offset + p_buf->len);
 
