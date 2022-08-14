@@ -310,7 +310,7 @@ uint8_t* avdt_scb_hdl_report(AvdtpScb* p_scb, uint8_t* p, uint16_t len) {
   uint8_t* p_start = p;
   uint32_t ssrc;
   uint8_t o_v, o_p, o_cc;
-  uint16_t min_len = 0;
+  uint32_t min_len = 0;
   AVDT_REPORT_TYPE pt;
   tAVDT_REPORT_DATA report;
 

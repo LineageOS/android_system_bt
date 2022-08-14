@@ -437,7 +437,7 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
   uint8_t* p = p_msg->p_browse_data;
   int count;
 
-  uint16_t min_len = 3;
+  uint32_t min_len = 3;
   RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
                          "msg too short");
 
