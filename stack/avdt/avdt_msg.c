@@ -1410,12 +1410,14 @@ BT_HDR *avdt_msg_asmbl(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
          * not aware of possible packet size after reassembly, they
          * would have allocated smaller buffer.
          */
-        p_ccb->p_rx_msg = (BT_HDR *)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
         if (sizeof(BT_HDR) + p_buf->offset + p_buf->len > BT_DEFAULT_BUFFER_SIZE)
         {
             android_errorWriteLog(0x534e4554, "232023771");
-            return NULL;
+            osi_free(p_buf);
+            p_ret = NULL;
+            return p_ret;
         }
+        p_ccb->p_rx_msg = (BT_HDR*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
         memcpy(p_ccb->p_rx_msg, p_buf,
                sizeof(BT_HDR) + p_buf->offset + p_buf->len);
 
