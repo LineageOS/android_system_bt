@@ -363,7 +363,7 @@ UINT8 * avdt_scb_hdl_report(tAVDT_SCB *p_scb, UINT8 *p, UINT16 len)
     UINT8   *p_start = p;
     UINT32  ssrc;
     UINT8   o_v, o_p, o_cc;
-    UINT16  min_len = 0;
+    UINT32  min_len = 0;
     AVDT_REPORT_TYPE    pt;
     tAVDT_REPORT_DATA   report, *p_rpt;
 
