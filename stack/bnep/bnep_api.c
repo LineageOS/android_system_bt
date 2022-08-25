@@ -283,6 +283,7 @@ tBNEP_RESULT BNEP_ConnectResp (UINT16 handle, tBNEP_RESULT resp)
         while (extension_present && p && rem_len)
         {
             ext_type = *p++;
+            rem_len--;
             extension_present = ext_type >> 7;
             ext_type &= 0x7F;
 
