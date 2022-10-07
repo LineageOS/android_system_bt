@@ -259,6 +259,7 @@ tBNEP_RESULT BNEP_ConnectResp(uint16_t handle, tBNEP_RESULT resp) {
     p = (uint8_t*)(p_bcb->p_pending_data + 1) + p_bcb->p_pending_data->offset;
     while (extension_present && p && rem_len) {
       ext_type = *p++;
+      rem_len--;
       extension_present = ext_type >> 7;
       ext_type &= 0x7F;
 

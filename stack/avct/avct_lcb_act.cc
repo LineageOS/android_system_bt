@@ -30,6 +30,7 @@
 #include "bt_types.h"
 #include "bt_utils.h"
 #include "btm_api.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 
 /* packet header length lookup table */
@@ -64,7 +65,12 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
   pkt_type = AVCT_PKT_TYPE(p);
 
   /* quick sanity check on length */
-  if (p_buf->len < avct_lcb_pkt_type_len[pkt_type]) {
+  if (p_buf->len < avct_lcb_pkt_type_len[pkt_type] ||
+      (sizeof(BT_HDR) + p_buf->offset + p_buf->len) > BT_DEFAULT_BUFFER_SIZE) {
+    if ((sizeof(BT_HDR) + p_buf->offset + p_buf->len) >
+        BT_DEFAULT_BUFFER_SIZE) {
+      android_errorWriteWithInfoLog(0x534e4554, "230867224", -1, NULL, 0);
+    }
     osi_free(p_buf);
     AVCT_TRACE_WARNING("Bad length during reassembly");
     p_ret = NULL;
@@ -85,13 +91,19 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
     if (p_lcb->p_rx_msg != NULL)
       AVCT_TRACE_WARNING("Got start during reassembly");
 
-    osi_free(p_lcb->p_rx_msg);
+    osi_free_and_reset((void**)&p_lcb->p_rx_msg);
 
     /*
      * Allocate bigger buffer for reassembly. As lower layers are
      * not aware of possible packet size after reassembly, they
      * would have allocated smaller buffer.
      */
+    if (sizeof(BT_HDR) + p_buf->offset + p_buf->len > BT_DEFAULT_BUFFER_SIZE) {
+      android_errorWriteLog(0x534e4554, "232023771");
+      osi_free(p_buf);
+      p_ret = NULL;
+      return p_ret;
+    }
     p_lcb->p_rx_msg = (BT_HDR*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
     memcpy(p_lcb->p_rx_msg, p_buf, sizeof(BT_HDR) + p_buf->offset + p_buf->len);
 
