@@ -1098,6 +1098,38 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
 
 /*******************************************************************************
  *
+ * Function         btif_hh_hsdata_rpt_copy_cb
+ *
+ * Description      Deep copies the tBTA_HH_HSDATA structure
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+
+static void btif_hh_hsdata_rpt_copy_cb(uint16_t event, char* p_dest,
+                                       char* p_src) {
+  tBTA_HH_HSDATA* p_dst_data = (tBTA_HH_HSDATA*)p_dest;
+  tBTA_HH_HSDATA* p_src_data = (tBTA_HH_HSDATA*)p_src;
+  BT_HDR* hdr;
+
+  if (!p_src) {
+    BTIF_TRACE_ERROR("%s: Nothing to copy", __func__);
+    return;
+  }
+
+  memcpy(p_dst_data, p_src_data, sizeof(tBTA_HH_HSDATA));
+
+  hdr = p_src_data->rsp_data.p_rpt_data;
+  if (hdr != NULL) {
+    uint8_t* p_data = ((uint8_t*)p_dst_data) + sizeof(tBTA_HH_HSDATA);
+    memcpy(p_data, hdr, BT_HDR_SIZE + hdr->offset + hdr->len);
+
+    p_dst_data->rsp_data.p_rpt_data = (BT_HDR*)p_data;
+  }
+}
+
+/*******************************************************************************
+ *
  * Function         bte_hh_evt
  *
  * Description      Switches context from BTE to BTIF for all HH events
@@ -1109,6 +1141,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
 void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data) {
   bt_status_t status;
   int param_len = 0;
+  tBTIF_COPY_CBACK* p_copy_cback = NULL;
 
   if (BTA_HH_ENABLE_EVT == event)
     param_len = sizeof(tBTA_HH_STATUS);
@@ -1120,11 +1153,18 @@ void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data) {
     param_len = sizeof(tBTA_HH_CBDATA);
   else if (BTA_HH_GET_DSCP_EVT == event)
     param_len = sizeof(tBTA_HH_DEV_DSCP_INFO);
-  else if ((BTA_HH_GET_PROTO_EVT == event) || (BTA_HH_GET_RPT_EVT == event) ||
-           (BTA_HH_GET_IDLE_EVT == event))
+  else if ((BTA_HH_GET_PROTO_EVT == event) || (BTA_HH_GET_IDLE_EVT == event))
     param_len = sizeof(tBTA_HH_HSDATA);
-  else if ((BTA_HH_SET_PROTO_EVT == event) || (BTA_HH_SET_RPT_EVT == event) ||
-           (BTA_HH_VC_UNPLUG_EVT == event) || (BTA_HH_SET_IDLE_EVT == event))
+  else if (BTA_HH_GET_RPT_EVT == event) {
+    BT_HDR* hdr = p_data->hs_data.rsp_data.p_rpt_data;
+    param_len = sizeof(tBTA_HH_HSDATA);
+
+    if (hdr != NULL) {
+      p_copy_cback = btif_hh_hsdata_rpt_copy_cb;
+      param_len += BT_HDR_SIZE + hdr->offset + hdr->len;
+    }
+  } else if ((BTA_HH_SET_PROTO_EVT == event) || (BTA_HH_SET_RPT_EVT == event) ||
+             (BTA_HH_VC_UNPLUG_EVT == event) || (BTA_HH_SET_IDLE_EVT == event))
     param_len = sizeof(tBTA_HH_CBDATA);
   else if ((BTA_HH_ADD_DEV_EVT == event) || (BTA_HH_RMV_DEV_EVT == event))
     param_len = sizeof(tBTA_HH_DEV_INFO);
@@ -1133,7 +1173,7 @@ void bte_hh_evt(tBTA_HH_EVT event, tBTA_HH* p_data) {
   /* switch context to btif task context (copy full union size for convenience)
    */
   status = btif_transfer_context(btif_hh_upstreams_evt, (uint16_t)event,
-                                 (char*)p_data, param_len, NULL);
+                                 (char*)p_data, param_len, p_copy_cback);
 
   /* catch any failed context transfers */
   ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
