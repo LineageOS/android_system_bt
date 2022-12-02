@@ -58,7 +58,20 @@ class AttributionProcessor {
   void Dump(
       std::promise<flatbuffers::Offset<ActivityAttributionData>> promise, flatbuffers::FlatBufferBuilder* fb_builder);
 
+  using ClockType = std::chrono::time_point<std::chrono::system_clock>;
+  using NowFunc = ClockType (*)();
+
+  // by default, we use the std::chrono::system_clock::now implementation to
+  // get the current timestamp
+  AttributionProcessor() : now_func_(std::chrono::system_clock::now) {}
+  // in other cases, we may need to use different implementation
+  // e.g., for testing purposes
+  AttributionProcessor(NowFunc func) : now_func_(func) {}
+
  private:
+  // this function is added for testing support in
+  // OnWakelockReleased
+  NowFunc now_func_ = std::chrono::system_clock::now;
   bool wakeup_ = false;
   std::unordered_map<AddressActivityKey, BtaaAggregationEntry, AddressActivityKeyHasher> btaa_aggregator_;
   std::unordered_map<AddressActivityKey, BtaaAggregationEntry, AddressActivityKeyHasher> wakelock_duration_aggregator_;

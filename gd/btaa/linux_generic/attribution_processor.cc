@@ -64,7 +64,7 @@ void AttributionProcessor::OnWakelockReleased(uint32_t duration_ms) {
   }
 
   ms_per_byte = duration_ms / total_byte_count;
-  auto cur_time = std::chrono::system_clock::now();
+  auto cur_time = now_func_();
   for (auto& it : wakelock_duration_aggregator_) {
     it.second.wakelock_duration_ms = ms_per_byte * it.second.byte_count;
     if (btaa_aggregator_.find(it.first) == btaa_aggregator_.end()) {
