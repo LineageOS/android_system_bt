@@ -91,12 +91,15 @@ void AttributionProcessor::OnWakelockReleased(uint32_t duration_ms) {
     return;
   }
   // Trim down the transient entries in the aggregator to avoid that it overgrows
-  for (auto& it : btaa_aggregator_) {
+  auto it = btaa_aggregator_.begin();
+  while (it != btaa_aggregator_.end()) {
     auto elapsed_time_sec =
-        std::chrono::duration_cast<std::chrono::seconds>(cur_time - it.second.creation_time).count();
+        std::chrono::duration_cast<std::chrono::seconds>(cur_time - it->second.creation_time).count();
     if (elapsed_time_sec > kDurationTransientDeviceActivityEntrySecs &&
-        it.second.byte_count < kByteCountTransientDeviceActivityEntry) {
-      btaa_aggregator_.erase(it.first);
+        it->second.byte_count < kByteCountTransientDeviceActivityEntry) {
+      it = btaa_aggregator_.erase(it);
+    } else {
+      it++;
     }
   }
 }
