@@ -1973,8 +1973,23 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
         if (p_lcb) {
           rc_handle = bta_av_rc_create(p_cb, AVCT_INT,
                                        (uint8_t)(p_scb->hdi + 1), p_lcb->lidx);
-          p_cb->rcb[rc_handle].peer_features = peer_features;
-          p_cb->rcb[rc_handle].cover_art_psm = cover_art_psm;
+          if (rc_handle < BTA_AV_NUM_RCB) {
+            p_cb->rcb[rc_handle].peer_features = peer_features;
+            p_cb->rcb[rc_handle].cover_art_psm = cover_art_psm;
+          } else {
+            /* cannot create valid rc_handle for current device. report failure
+             */
+            APPL_TRACE_ERROR("%s: no link resources available", __func__);
+            p_scb->use_rc = false;
+            tBTA_AV_RC_OPEN rc_open;
+            rc_open.peer_addr = p_scb->PeerAddress();
+            rc_open.peer_features = 0;
+            rc_open.cover_art_psm = 0;
+            rc_open.status = BTA_AV_FAIL_RESOURCES;
+            tBTA_AV bta_av_data;
+            bta_av_data.rc_open = rc_open;
+            (*p_cb->p_cback)(BTA_AV_RC_OPEN_EVT, &bta_av_data);
+          }
         } else {
           APPL_TRACE_ERROR("%s: can not find LCB!!", __func__);
         }
