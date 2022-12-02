@@ -30,3 +30,10 @@ filegroup {
         "linux_generic/wakelock_processor.cc",
     ],
 }
+
+filegroup {
+    name: "BluetoothBtaaSources_linux_generic_tests",
+    srcs: [
+        "linux_generic/attribution_processor_tests.cc",
+    ],
+}
