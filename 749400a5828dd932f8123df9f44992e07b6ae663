@@ -16,6 +16,24 @@
       "message": "either you mean decrement, or your code is wrong",
       "revId": "749400a5828dd932f8123df9f44992e07b6ae663",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c170122_cc53bbac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 12604
+      },
+      "writtenOn": "2022-12-08T09:23:29Z",
+      "side": 1,
+      "message": "The author made a mistake in the topic wording",
+      "parentUuid": "5ee432d5_faa84581",
+      "revId": "749400a5828dd932f8123df9f44992e07b6ae663",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
