@@ -52,6 +52,23 @@
       "parentUuid": "0c170122_cc53bbac",
       "revId": "749400a5828dd932f8123df9f44992e07b6ae663",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f17b5208_df9f86b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2022-12-12T17:13:47Z",
+      "side": 1,
+      "message": "Entire topic builds fine and runs on Moto G5 Cedric. THANK YOU!",
+      "revId": "749400a5828dd932f8123df9f44992e07b6ae663",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
