@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba869f79_bc8bf4c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 32245
+      },
+      "writtenOn": "2023-01-07T17:31:14Z",
+      "side": 1,
+      "message": "Fixes Bluetooth Call on legacy chips",
+      "revId": "c137a0f4bfa67f7a58b0bb83ebc876c63781eca0",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
