@@ -572,7 +572,8 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   LOG(ERROR) << StringPrintf("value resp op_code = %s len = %d",
                              gatt_dbg_op_name(op_code), len);
 
-  if (len < GATT_PREP_WRITE_RSP_MIN_LEN) {
+  if (len < GATT_PREP_WRITE_RSP_MIN_LEN ||
+      len > GATT_PREP_WRITE_RSP_MIN_LEN + sizeof(value.value)) {
     LOG(ERROR) << "illegal prepare write response length, discard";
     gatt_end_operation(p_clcb, GATT_INVALID_PDU, &value);
     return;
@@ -581,7 +582,7 @@ void gatt_process_prep_write_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   STREAM_TO_UINT16(value.handle, p);
   STREAM_TO_UINT16(value.offset, p);
 
-  value.len = len - 4;
+  value.len = len - GATT_PREP_WRITE_RSP_MIN_LEN;
 
   memcpy(value.value, p, value.len);
 
