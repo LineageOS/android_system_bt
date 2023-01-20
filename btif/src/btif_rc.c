@@ -3171,6 +3171,13 @@ static bt_status_t register_notification_rsp(btrc_event_id_t event_id,
         BTIF_TRACE_ERROR("Avrcp Event id not registered: event_id = %x", event_id);
         return BT_STATUS_NOT_READY;
     }
+
+    if (event_id > MAX_RC_NOTIFICATIONS)
+    {
+        BTIF_TRACE_ERROR("Invalid event id");
+        return BT_STATUS_PARM_INVALID;
+    }
+
     memset(&(avrc_rsp.reg_notif), 0, sizeof(tAVRC_REG_NOTIF_RSP));
     avrc_rsp.reg_notif.event_id = event_id;
 
