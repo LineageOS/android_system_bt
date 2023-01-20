@@ -1955,6 +1955,11 @@ static bt_status_t register_notification_rsp(
                    dump_rc_notification_event_id(event_id));
   std::unique_lock<std::mutex> lock(btif_rc_cb.lock);
 
+  if (event_id > MAX_RC_NOTIFICATIONS) {
+    BTIF_TRACE_ERROR("Invalid event id");
+    return BT_STATUS_PARM_INVALID;
+  }
+
   memset(&(avrc_rsp.reg_notif), 0, sizeof(tAVRC_REG_NOTIF_RSP));
 
   avrc_rsp.reg_notif.event_id = event_id;
