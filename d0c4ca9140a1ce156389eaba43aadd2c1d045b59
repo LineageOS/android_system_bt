@@ -33,6 +33,24 @@
       "message": "Builds fine for Moto G5 Cedric. This time, I refrained from doing a complete sync and picking all the topics again, but merely picked this month\u0027s topic in addition to the ones already present from previous builds. This worked, but I would miss changes to earlier patches.",
       "revId": "d0c4ca9140a1ce156389eaba43aadd2c1d045b59",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "70bf7a80_e21ec945",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 12604
+      },
+      "writtenOn": "2023-03-20T18:12:11Z",
+      "side": 1,
+      "message": "the force switch in repopick might be a workaround",
+      "parentUuid": "62238642_2dc4800d",
+      "revId": "d0c4ca9140a1ce156389eaba43aadd2c1d045b59",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
