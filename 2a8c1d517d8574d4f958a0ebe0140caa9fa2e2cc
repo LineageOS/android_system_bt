@@ -16,6 +16,23 @@
       "message": "This isn\u0027t a merge commit, it\u0027s clearly not a squash of a merge, and lineage 17 is android 10",
       "revId": "2a8c1d517d8574d4f958a0ebe0140caa9fa2e2cc",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66ea6fb3_14439bca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 20587
+      },
+      "writtenOn": "2023-03-25T17:39:10Z",
+      "side": 1,
+      "message": "Yes this went wrong somehow. I cherry-picked the merge from the lineage-18.1 branch and though git was able to figure this out. But it was now a kind of a squash of that merge.\nAnyway: Changes submitted individually as 352276-352278",
+      "revId": "2a8c1d517d8574d4f958a0ebe0140caa9fa2e2cc",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
