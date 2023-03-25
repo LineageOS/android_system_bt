@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8de9c1c9_149ac9af",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 15173
+      },
+      "writtenOn": "2023-03-25T17:19:07Z",
+      "side": 1,
+      "message": "This isn\u0027t a merge commit, it\u0027s clearly not a squash of a merge, and lineage 17 is android 10",
+      "revId": "2a8c1d517d8574d4f958a0ebe0140caa9fa2e2cc",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
