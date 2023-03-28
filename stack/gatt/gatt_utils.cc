@@ -1498,6 +1498,13 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
       cb_data.att_value.handle = p_clcb->s_handle;
       cb_data.att_value.len = p_clcb->counter;
 
+      if (cb_data.att_value.len > GATT_MAX_ATTR_LEN) {
+        LOG(WARNING) << __func__
+                     << StringPrintf(" Large cb_data.att_value, size=%d",
+                                     cb_data.att_value.len);
+        cb_data.att_value.len = GATT_MAX_ATTR_LEN;
+      }
+
       if (p_data && p_clcb->counter)
         memcpy(cb_data.att_value.value, p_data, cb_data.att_value.len);
     }
