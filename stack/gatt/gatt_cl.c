@@ -653,13 +653,18 @@ void gatt_process_prep_write_rsp (tGATT_TCB *p_tcb, tGATT_CLCB *p_clcb, UINT8 op
 
     memcpy (value.value, p, value.len);
 
+    BOOLEAN subtype_is_write_prepare = (p_clcb->op_subtype == GATT_WRITE_PREPARE);
+
     if (!gatt_check_write_long_terminate(p_tcb, p_clcb, &value))
     {
         gatt_send_prepare_write(p_tcb, p_clcb);
         return;
     }
 
-    if (p_clcb->op_subtype == GATT_WRITE_PREPARE)
+    // We now know that we have not terminated, or else we would have returned
+    // early.  We free the buffer only if the subtype is not equal to
+    // GATT_WRITE_PREPARE, so checking here is adequate to prevent UAF.
+    if (subtype_is_write_prepare)
     {
         /* application should verify handle offset
            and value are matched or not */
