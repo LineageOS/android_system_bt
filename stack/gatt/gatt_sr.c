@@ -122,7 +122,8 @@ void gatt_dequeue_sr_cmd (tGATT_TCB *p_tcb)
 static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
                                        tGATTS_RSP *p_msg, UINT16 mtu)
 {
-    UINT16          ii, total_len, len;
+    UINT16          ii;
+    size_t          total_len, len;
     UINT8           *p;
     BOOLEAN         is_overflow = FALSE;
 
@@ -182,7 +183,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
                         /* just send the partial response for the overflow case */
                         len = p_rsp->attr_value.len - (total_len - mtu);
                         is_overflow = TRUE;
-                        GATT_TRACE_DEBUG ("multi read overflow available len=%d val_len=%d", len, p_rsp->attr_value.len );
+                        GATT_TRACE_DEBUG ("multi read overflow available len=%zu val_len=%d", len, p_rsp->attr_value.len );
                     }
                     else
                     {
@@ -191,10 +192,19 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
 
                     if (p_rsp->attr_value.handle == p_cmd->multi_req.handles[ii])
                     {
-                        memcpy (p, p_rsp->attr_value.value, len);
-                        if (!is_overflow)
-                            p += len;
-                        p_buf->len += len;
+                        // check for possible integer overflow
+                        if (p_buf->len + len <= UINT16_MAX)
+                        {
+                            memcpy(p, p_rsp->attr_value.value, len);
+                            if (!is_overflow)
+                                p += len;
+                            p_buf->len += len;
+                        }
+                        else
+                        {
+                            p_cmd->status = GATT_NOT_FOUND;
+                            break;
+                        }
                     }
                     else
                     {
