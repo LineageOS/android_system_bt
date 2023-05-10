@@ -1455,14 +1455,14 @@ BT_HDR *avdt_msg_asmbl(tAVDT_CCB *p_ccb, BT_HDR *p_buf)
              * NOTE: The buffer is allocated above at the beginning of the
              * reassembly, and is always of size BT_DEFAULT_BUFFER_SIZE.
              */
-            UINT16 buf_len = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR);
+            size_t buf_len = BT_DEFAULT_BUFFER_SIZE - sizeof(BT_HDR);
 
             /* adjust offset and len of fragment for header byte */
             p_buf->offset += AVDT_LEN_TYPE_CONT;
             p_buf->len -= AVDT_LEN_TYPE_CONT;
 
             /* verify length */
-            if ((p_ccb->p_rx_msg->offset + p_buf->len) > buf_len) {
+            if (((size_t) p_ccb->p_rx_msg->offset + (size_t) p_buf->len) > buf_len) {
                 /* won't fit; free everything */
                 AVDT_TRACE_WARNING("%s: Fragmented message too big!", __func__);
                 osi_free_and_reset((void **)&p_ccb->p_rx_msg);
