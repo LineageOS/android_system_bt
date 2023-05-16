@@ -137,7 +137,8 @@ void gatt_dequeue_sr_cmd(tGATT_TCB& tcb, uint16_t cid) {
 }
 
 static void build_read_multi_rsp(tGATT_SR_CMD* p_cmd, uint16_t mtu) {
-  uint16_t ii, total_len, len;
+  uint16_t ii;
+  size_t total_len, len;
   uint8_t* p;
   bool is_overflow = false;
 
@@ -182,7 +183,7 @@ static void build_read_multi_rsp(tGATT_SR_CMD* p_cmd, uint16_t mtu) {
         len = p_rsp->attr_value.len - (total_len - mtu);
         is_overflow = true;
         VLOG(1) << StringPrintf(
-            "multi read overflow available len=%d val_len=%d", len,
+            "multi read overflow available len=%zu val_len=%d", len,
             p_rsp->attr_value.len);
       } else {
         len = p_rsp->attr_value.len;
@@ -194,9 +195,15 @@ static void build_read_multi_rsp(tGATT_SR_CMD* p_cmd, uint16_t mtu) {
       }
 
       if (p_rsp->attr_value.handle == p_cmd->multi_req.handles[ii]) {
-        memcpy(p, p_rsp->attr_value.value, len);
-        if (!is_overflow) p += len;
-        p_buf->len += len;
+        // check for possible integer overflow
+        if (p_buf->len + len <= UINT16_MAX) {
+          memcpy(p, p_rsp->attr_value.value, len);
+          if (!is_overflow) p += len;
+          p_buf->len += len;
+        } else {
+          p_cmd->status = GATT_NOT_FOUND;
+          break;
+        }
       } else {
         p_cmd->status = GATT_NOT_FOUND;
         break;
