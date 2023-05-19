@@ -23,6 +23,8 @@
 #include <base/logging.h>
 #include <utils/StrongPointer.h>
 
+#include <algorithm>
+
 #include "bt_target.h"
 #include "osi/include/log.h"
 
@@ -152,7 +154,7 @@ static size_t transcodeQ15ToFloat(uint8_t* buffer, size_t length,
                                   BtifAvrcpAudioTrack* trackHolder) {
   size_t sampleSize = sampleSizeFor(trackHolder);
   size_t i = 0;
-  for (; i <= length / sampleSize; i++) {
+  for (; i < std::min(trackHolder->bufferLength, length / sampleSize); i++) {
     trackHolder->buffer[i] = ((int16_t*)buffer)[i] * kScaleQ15ToFloat;
   }
   return i * sampleSize;
@@ -162,7 +164,7 @@ static size_t transcodeQ23ToFloat(uint8_t* buffer, size_t length,
                                   BtifAvrcpAudioTrack* trackHolder) {
   size_t sampleSize = sampleSizeFor(trackHolder);
   size_t i = 0;
-  for (; i <= length / sampleSize; i++) {
+  for (; i < std::min(trackHolder->bufferLength, length / sampleSize); i++) {
     size_t offset = i * sampleSize;
     int32_t sample = *((int32_t*)(buffer + offset - 1)) & 0x00FFFFFF;
     trackHolder->buffer[i] = sample * kScaleQ23ToFloat;
@@ -174,7 +176,7 @@ static size_t transcodeQ31ToFloat(uint8_t* buffer, size_t length,
                                   BtifAvrcpAudioTrack* trackHolder) {
   size_t sampleSize = sampleSizeFor(trackHolder);
   size_t i = 0;
-  for (; i <= length / sampleSize; i++) {
+  for (; i < std::min(trackHolder->bufferLength, length / sampleSize); i++) {
     trackHolder->buffer[i] = ((int32_t*)buffer)[i] * kScaleQ31ToFloat;
   }
   return i * sampleSize;
