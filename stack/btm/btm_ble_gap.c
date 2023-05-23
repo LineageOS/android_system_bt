@@ -2687,20 +2687,28 @@ void btm_ble_process_adv_pkt (UINT8 data_len, UINT8 *data)
     UINT8 *p = data;
     UINT8 evt_type, addr_type, num_reports, pkt_data_len;
     INT8 rssi;
+    size_t bytes_to_process;
 
     /* Only process the results if the inquiry is still active */
     if (!BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity))
         return;
+
+    bytes_to_process = 1;
+
+    if (data_len < bytes_to_process) {
+        BTM_TRACE_ERROR("Malformed LE advertising packet: not enough room for num reports");
+        return;
+    }
 
     /* Extract the number of reports in this event. */
     STREAM_TO_UINT8(num_reports, p);
 
     while (num_reports--)
     {
-        if (p > data + data_len)
-        {
-            // TODO(jpawlowski): we should crash the stack here
-            BTM_TRACE_ERROR("Malformed LE Advertising Report Event from controller");
+        bytes_to_process += 9;
+
+        if (data_len < bytes_to_process) {
+            BTM_TRACE_ERROR("Malformed LE advertising packet: not enough room for metadata");
             return;
         }
 
@@ -2712,9 +2720,12 @@ void btm_ble_process_adv_pkt (UINT8 data_len, UINT8 *data)
 
         UINT8 *pkt_data = p;
         p += pkt_data_len; /* Advance to the the rssi byte */
-        if (p > data + data_len - sizeof(rssi))
-        {
-            BTM_TRACE_ERROR("Invalid pkt_data_len: %d", pkt_data_len);
+
+        // include rssi for this check
+        bytes_to_process += pkt_data_len + 1;
+        if (data_len < bytes_to_process) {
+            BTM_TRACE_ERROR("Malformed LE advertising packet: not enough room for "
+                            "packet data and/or RSSI");
             return;
         }
 
