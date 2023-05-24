@@ -345,6 +345,8 @@ static int pin_reply(const bt_bdaddr_t *bd_addr, uint8_t accept,
     /* sanity check */
     if (interface_ready() == FALSE)
         return BT_STATUS_NOT_READY;
+    if (pin_code == NULL || pin_len > PIN_CODE_LEN)
+        return BT_STATUS_FAIL;
 
     return btif_dm_pin_reply(bd_addr, accept, pin_len, pin_code);
 }
