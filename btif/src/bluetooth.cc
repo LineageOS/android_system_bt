@@ -292,6 +292,7 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
   bt_pin_code_t tmp_pin_code;
   /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (pin_code == nullptr || pin_len > PIN_CODE_LEN) return BT_STATUS_FAIL;
 
   memcpy(&tmp_pin_code, pin_code, pin_len);
   return btif_dm_pin_reply(bd_addr, accept, pin_len, &tmp_pin_code);
