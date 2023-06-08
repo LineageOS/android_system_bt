@@ -70,9 +70,14 @@ static uint8_t* add_attr(uint8_t* p, uint8_t* p_end, tSDP_DISCOVERY_DB* p_db,
  *
  ******************************************************************************/
 static uint8_t* sdpu_build_uuid_seq(uint8_t* p_out, uint16_t num_uuids,
-                                    Uuid* p_uuid_list) {
+                                    Uuid* p_uuid_list, uint16_t& bytes_left) {
   uint16_t xx;
   uint8_t* p_len;
+
+  if (bytes_left < 2) {
+    DCHECK(0) << "SDP: No space for data element header";
+    return (p_out);
+  }
 
   /* First thing is the data element header */
   UINT8_TO_BE_STREAM(p_out, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
@@ -81,9 +86,20 @@ static uint8_t* sdpu_build_uuid_seq(uint8_t* p_out, uint16_t num_uuids,
   p_len = p_out;
   p_out += 1;
 
+  /* Account for data element header and length */
+  bytes_left -= 2;
+
   /* Now, loop through and put in all the UUID(s) */
   for (xx = 0; xx < num_uuids; xx++, p_uuid_list++) {
     int len = p_uuid_list->GetShortestRepresentationSize();
+
+    if (len + 1 > bytes_left) {
+      DCHECK(0) << "SDP: Too many UUIDs for internal buffer";
+      break;
+    } else {
+      bytes_left -= (len + 1);
+    }
+
     if (len == Uuid::kNumBytes16) {
       UINT8_TO_BE_STREAM(p_out, (UUID_DESC_TYPE << 3) | SIZE_TWO_BYTES);
       UINT16_TO_BE_STREAM(p_out, p_uuid_list->As16Bit());
@@ -120,6 +136,7 @@ static void sdp_snd_service_search_req(tCONN_CB* p_ccb, uint8_t cont_len,
   uint8_t *p, *p_start, *p_param_len;
   BT_HDR* p_cmd = (BT_HDR*)osi_malloc(SDP_DATA_BUF_SIZE);
   uint16_t param_len;
+  uint16_t bytes_left = SDP_DATA_BUF_SIZE;
 
   /* Prepare the buffer for sending the packet to L2CAP */
   p_cmd->offset = L2CAP_MIN_OFFSET;
@@ -134,13 +151,30 @@ static void sdp_snd_service_search_req(tCONN_CB* p_ccb, uint8_t cont_len,
   p_param_len = p;
   p += 2;
 
-/* Build the UID sequence. */
+  /* Account for header size, max service record count and
+   * continuation state */
+  const uint16_t base_bytes = (sizeof(BT_HDR) + L2CAP_MIN_OFFSET +
+                               3u + /* service search request header */
+                               2u + /* param len */
+                               3u + ((p_cont) ? cont_len : 0));
+
+  if (base_bytes > bytes_left) {
+    DCHECK(0) << "SDP: Overran SDP data buffer";
+    osi_free(p_cmd);
+    return;
+  }
+
+  bytes_left -= base_bytes;
+
+  /* Build the UID sequence. */
 #if (SDP_BROWSE_PLUS == TRUE)
   p = sdpu_build_uuid_seq(p, 1,
-                          &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx]);
+                          &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx],
+                          bytes_left);
 #else
+  /* Build the UID sequence. */
   p = sdpu_build_uuid_seq(p, p_ccb->p_db->num_uuid_filters,
-                          p_ccb->p_db->uuid_filters);
+                          p_ccb->p_db->uuid_filters, bytes_left);
 #endif
 
   /* Set max service record count */
@@ -575,6 +609,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
   if ((cont_request_needed) || (!p_reply)) {
     BT_HDR* p_msg = (BT_HDR*)osi_malloc(SDP_DATA_BUF_SIZE);
     uint8_t* p;
+    uint16_t bytes_left = SDP_DATA_BUF_SIZE;
 
     p_msg->offset = L2CAP_MIN_OFFSET;
     p = p_start = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
@@ -588,13 +623,29 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
     p_param_len = p;
     p += 2;
 
-/* Build the UID sequence. */
+    /* Account for header size, max service record count and
+     * continuation state */
+    const uint16_t base_bytes = (sizeof(BT_HDR) + L2CAP_MIN_OFFSET +
+                                 3u + /* service search request header */
+                                 2u + /* param len */
+                                 3u + /* max service record count */
+                                 ((p_reply) ? (*p_reply) : 0));
+
+    if (base_bytes > bytes_left) {
+      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+      return;
+    }
+
+    bytes_left -= base_bytes;
+
+    /* Build the UID sequence. */
 #if (SDP_BROWSE_PLUS == TRUE)
     p = sdpu_build_uuid_seq(p, 1,
-                            &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx]);
+                            &p_ccb->p_db->uuid_filters[p_ccb->cur_uuid_idx],
+                            bytes_left);
 #else
     p = sdpu_build_uuid_seq(p, p_ccb->p_db->num_uuid_filters,
-                            p_ccb->p_db->uuid_filters);
+                            p_ccb->p_db->uuid_filters, bytes_left);
 #endif
 
     /* Max attribute byte count */
