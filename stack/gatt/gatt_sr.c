@@ -183,9 +183,24 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
                 if (p_rsp != NULL)
                 {
 
-                    total_len = (p_buf->len + p_rsp->attr_value.len);
+                    total_len = p_buf->len;
 
                     if (total_len >  mtu)
+                    {
+                        GATT_TRACE_DEBUG ("Buffer space not enough for this data item, skipping");
+                        break;
+                    }
+
+                    len = (p_rsp->attr_value.len < mtu - total_len) ?
+                           p_rsp->attr_value.len : mtu - total_len;
+
+                    if (len == 0)
+                    {
+                        GATT_TRACE_DEBUG ("Buffer space not enough for this data item, skipping");
+                        break;
+                    }
+
+                    if (len < p_rsp->attr_value.len)
                     {
                         /* just send the partial response for the overflow case */
                         len = p_rsp->attr_value.len - (total_len - mtu);
@@ -199,19 +214,8 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
 
                     if (p_rsp->attr_value.handle == p_cmd->multi_req.handles[ii])
                     {
-                        // check for possible integer overflow
-                        if (p_buf->len + len <= UINT16_MAX)
-                        {
-                            memcpy(p, p_rsp->attr_value.value, len);
-                            if (!is_overflow)
-                                p += len;
-                            p_buf->len += len;
-                        }
-                        else
-                        {
-                            p_cmd->status = GATT_NOT_FOUND;
-                            break;
-                        }
+                        ARRAY_TO_STREAM(p, p_rsp->attr_value.value, (uint16_t) len);
+                        p_buf->len += (uint16_t) len;
                     }
                     else
                     {
