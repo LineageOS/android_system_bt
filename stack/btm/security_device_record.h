@@ -356,6 +356,7 @@ struct tBTM_SEC_DEV_REC {
                                                uint16_t security_required,
                                                tBTM_SEC_CALLBACK* p_callback,
                                                void* p_ref_data);
+  friend tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 
  public:
   bool IsLocallyInitiated() const { return is_originator; }
