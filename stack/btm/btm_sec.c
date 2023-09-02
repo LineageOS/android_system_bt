@@ -2648,8 +2648,13 @@ tBTM_STATUS btm_sec_mx_access_request (BD_ADDR bd_addr, UINT16 psm, BOOLEAN is_o
         }
         else /* rc == BTM_SUCCESS */
         {
+            if (access_secure_service_from_temp_bond(p_dev_rec,
+                is_originator, security_required)) {
+                LOG_ERROR(LOG_TAG, "Trying to access a secure rfcomm service from a temp bonding, reject");
+                rc = BTM_FAILED_ON_SECURITY;
+            }
             /* access granted */
-             if (p_callback)
+            if (p_callback)
             {
                 (*p_callback) (bd_addr, transport, p_ref_data, (UINT8)rc);
             }
