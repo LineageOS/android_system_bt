@@ -2423,6 +2423,11 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
                                mx_chan_id, p_callback, p_ref_data);
     } else /* rc == BTM_SUCCESS */
     {
+      if (access_secure_service_from_temp_bond(p_dev_rec,
+          is_originator, security_required)) {
+        LOG_ERROR(LOG_TAG, "Trying to access a secure rfcomm service from a temp bonding, reject");
+        rc = BTM_FAILED_ON_SECURITY;
+      }
       /* access granted */
       if (p_callback) {
         (*p_callback)(&bd_addr, transport, p_ref_data, (uint8_t)rc);
