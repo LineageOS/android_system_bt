@@ -106,7 +106,7 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
                                        uint32_t mx_proto_id,
                                        uint32_t mx_chan_id);
 
-static bool btm_dev_authenticated(tBTM_SEC_DEV_REC* p_dev_rec);
+static bool btm_dev_authenticated(const tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_encrypted(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_authorized(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
@@ -148,7 +148,7 @@ static const bool btm_sec_io_map[BTM_IO_CAP_MAX][BTM_IO_CAP_MAX] = {
  * Returns          bool    true or false
  *
  ******************************************************************************/
-static bool btm_dev_authenticated(tBTM_SEC_DEV_REC* p_dev_rec) {
+static bool btm_dev_authenticated(const tBTM_SEC_DEV_REC* p_dev_rec) {
   if (p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED) {
     return (true);
   }
@@ -220,6 +220,25 @@ static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
     return (true);
   }
   return (false);
+}
+
+/*******************************************************************************
+ *
+ * Function         access_secure_service_from_temp_bond
+ *
+ * Description      a utility function to test whether an access to
+ *                  secure service from temp bonding is happening
+ *
+ * Returns          true if the aforementioned condition holds,
+ *                  false otherwise
+ *
+ ******************************************************************************/
+static bool access_secure_service_from_temp_bond(const tBTM_SEC_DEV_REC* p_dev_rec,
+                                                 bool locally_initiated,
+                                                 uint16_t security_req) {
+  return !locally_initiated && (security_req & BTM_SEC_IN_AUTHENTICATE) &&
+    btm_dev_authenticated(p_dev_rec) &&
+    p_dev_rec->bond_type == BOND_TYPE_TEMPORARY;
 }
 
 /*******************************************************************************
@@ -1863,9 +1882,13 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
       }
 
       if (rc == BTM_SUCCESS) {
+        if (access_secure_service_from_temp_bond(p_dev_rec, is_originator, security_required)) {
+          LOG_ERROR(LOG_TAG, "Trying to access a secure service from a temp bonding, rejecting");
+          rc = BTM_FAILED_ON_SECURITY;
+        }
         if (p_callback)
-          (*p_callback)(&bd_addr, transport, (void*)p_ref_data, BTM_SUCCESS);
-        return (BTM_SUCCESS);
+          (*p_callback)(&bd_addr, transport, (void*)p_ref_data, rc);
+        return (rc);
       }
     }
 
@@ -4928,6 +4951,13 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
       BTM_TRACE_EVENT("Security Manager: Start authorization");
       return (btm_sec_start_authorization(p_dev_rec));
     }
+  }
+
+  if (access_secure_service_from_temp_bond(p_dev_rec,
+                                           p_dev_rec->is_originator,
+                                           p_dev_rec->security_required)) {
+    LOG_ERROR(LOG_TAG, "Trying to access a secure service from a temp bonding, rejecting");
+    return (BTM_FAILED_ON_SECURITY);
   }
 
   /* All required  security procedures already established */
