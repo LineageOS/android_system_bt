@@ -2356,15 +2356,15 @@ tBTM_STATUS btm_sec_l2cap_access_req (BD_ADDR bd_addr, UINT16 psm, UINT16 handle
         {
             if (is_originator)
             {
-                /* SM4 to SM4 -> always authenticate & encrypt */
-                security_required |= (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT);
+                /* SM4 to SM4 -> always encrypt */
+                security_required |= BTM_SEC_OUT_ENCRYPT;
             }
             else /* acceptor */
             {
                 /* SM4 to SM4: the acceptor needs to make sure the authentication is already done */
                 chk_acp_auth_done = TRUE;
-                /* SM4 to SM4 -> always authenticate & encrypt */
-                security_required |= (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT);
+                /* SM4 to SM4 -> always encrypt */
+                security_required |= BTM_SEC_IN_ENCRYPT;
            }
         }
         else if (!(BTM_SM4_KNOWN & p_dev_rec->sm4))
