@@ -1615,14 +1615,14 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
     if (BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
       if (is_originator) {
         /* SM4 to SM4 -> always authenticate & encrypt */
-        security_required |= (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT);
+        security_required |= BTM_SEC_OUT_ENCRYPT;
       } else /* acceptor */
       {
         /* SM4 to SM4: the acceptor needs to make sure the authentication is
          * already done */
         chk_acp_auth_done = true;
         /* SM4 to SM4 -> always authenticate & encrypt */
-        security_required |= (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT);
+        security_required |= BTM_SEC_IN_ENCRYPT;
       }
     } else if (!(BTM_SM4_KNOWN & p_dev_rec->sm4)) {
       /* the remote features are not known yet */
