@@ -5528,17 +5528,19 @@ extern tBTM_STATUS btm_sec_execute_procedure (tBTM_SEC_DEV_REC *p_dev_rec)
         {
             if (p_dev_rec->is_originator)
             {
-                if (p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)
+                if (p_dev_rec->security_required &
+                    (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT))
                 {
-                    LOG_DEBUG(LOG_TAG, "Outgoing authentication Required");
+                    LOG_DEBUG(LOG_TAG, "Outgoing authentication/encryption Required");
                     start_auth = true;
                 }
             }
             else
             {
-                if (p_dev_rec->security_required & BTM_SEC_IN_AUTHENTICATE)
+                if (p_dev_rec->security_required &
+                    (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT))
                 {
-                    LOG_DEBUG(LOG_TAG, "Incoming authentication Required");
+                    LOG_DEBUG(LOG_TAG, "Incoming authentication/encryption Required");
                     start_auth = true;
                 }
             }
