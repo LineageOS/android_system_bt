@@ -4879,13 +4879,15 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
     // Check link status of BR/EDR
     if (!(p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED)) {
       if (p_dev_rec->is_originator) {
-        if (p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE) {
-          LOG_DEBUG(LOG_TAG, "Outgoing authentication Required");
+        if (p_dev_rec->security_required &
+            (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT)) {
+          LOG_DEBUG(LOG_TAG, "Outgoing authentication/encryption Required");
           start_auth = true;
         }
       } else {
-        if (p_dev_rec->security_required & BTM_SEC_IN_AUTHENTICATE) {
-          LOG_DEBUG(LOG_TAG, "Incoming authentication Required");
+        if (p_dev_rec->security_required &
+            (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)) {
+          LOG_DEBUG(LOG_TAG, "Incoming authentication/encryption Required");
           start_auth = true;
         }
       }
