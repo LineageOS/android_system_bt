@@ -4296,48 +4296,65 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   /* If connection is not authenticated and authentication is required */
   /* start authentication and return PENDING to the caller */
-  if ((((!(p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED)) &&
-        ((p_dev_rec->IsLocallyInitiated() &&
-          (p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)) ||
-         (!p_dev_rec->IsLocallyInitiated() &&
-          (p_dev_rec->security_required & BTM_SEC_IN_AUTHENTICATE)))) ||
-       (!(p_dev_rec->sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED) &&
-        (!p_dev_rec->IsLocallyInitiated() &&
-         (p_dev_rec->security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN)))) &&
-      (p_dev_rec->hci_handle != HCI_INVALID_HANDLE)) {
-    /*
-     * We rely on BTM_SEC_16_DIGIT_PIN_AUTHED being set if MITM is in use,
-     * as 16 DIGIT is only needed if MITM is not used. Unfortunately, the
-     * BTM_SEC_AUTHENTICATED is used for both MITM and non-MITM
-     * authenticated connections, hence we cannot distinguish here.
-     */
+  if (p_dev_rec->hci_handle != HCI_INVALID_HANDLE) {
+    bool start_auth = false;
 
-    LOG_DEBUG("Security Manager: Start authentication");
-
-    /*
-     * If we do have a link-key, but we end up here because we need an
-     * upgrade, then clear the link-key known and authenticated flag before
-     * restarting authentication.
-     * WARNING: If the controller has link-key, it is optional and
-     * recommended for the controller to send a Link_Key_Request.
-     * In case we need an upgrade, the only alternative would be to delete
-     * the existing link-key. That could lead to very bad user experience
-     * or even IOP issues, if a reconnect causes a new connection that
-     * requires an upgrade.
-     */
-    if ((p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN) &&
-        (!(p_dev_rec->sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED) &&
-         (!p_dev_rec->IsLocallyInitiated() &&
-          (p_dev_rec->security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN)))) {
-      p_dev_rec->sec_flags &=
-          ~(BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED |
-            BTM_SEC_AUTHENTICATED);
+    // Check link status of BR/EDR
+    if (!(p_dev_rec->sec_flags & BTM_SEC_AUTHENTICATED)) {
+      if (p_dev_rec->IsLocallyInitiated()) {
+        if (p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE) {
+          LOG_DEBUG("Outgoing authentication Required");
+          start_auth = true;
+        }
+      } else {
+        if (p_dev_rec->security_required & BTM_SEC_IN_AUTHENTICATE) {
+          LOG_DEBUG("Incoming authentication Required");
+          start_auth = true;
+        }
+      }
     }
 
-    btm_sec_start_authentication(p_dev_rec);
-    return (BTM_CMD_STARTED);
-  } else {
-    LOG_DEBUG("Authentication not required");
+    if (!(p_dev_rec->sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED)) {
+      /*
+       * We rely on BTM_SEC_16_DIGIT_PIN_AUTHED being set if MITM is in use,
+       * as 16 DIGIT is only needed if MITM is not used. Unfortunately, the
+       * BTM_SEC_AUTHENTICATED is used for both MITM and non-MITM
+       * authenticated connections, hence we cannot distinguish here.
+       */
+      if (!p_dev_rec->IsLocallyInitiated()) {
+        if (p_dev_rec->security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN) {
+          LOG_DEBUG("BTM_SEC_IN_MIN_16_DIGIT_PIN Required");
+          start_auth = true;
+        }
+      }
+    }
+
+    if (start_auth) {
+      LOG_DEBUG("Security Manager: Start authentication");
+
+      /*
+       * If we do have a link-key, but we end up here because we need an
+       * upgrade, then clear the link-key known and authenticated flag before
+       * restarting authentication.
+       * WARNING: If the controller has link-key, it is optional and
+       * recommended for the controller to send a Link_Key_Request.
+       * In case we need an upgrade, the only alternative would be to delete
+       * the existing link-key. That could lead to very bad user experience
+       * or even IOP issues, if a reconnect causes a new connection that
+       * requires an upgrade.
+       */
+      if ((p_dev_rec->sec_flags & BTM_SEC_LINK_KEY_KNOWN) &&
+          (!(p_dev_rec->sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED) &&
+          (!p_dev_rec->IsLocallyInitiated() &&
+            (p_dev_rec->security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN)))) {
+        p_dev_rec->sec_flags &=
+            ~(BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED |
+              BTM_SEC_AUTHENTICATED);
+      }
+
+      btm_sec_start_authentication(p_dev_rec);
+      return (BTM_CMD_STARTED);
+    }
   }
 
   /* If connection is not encrypted and encryption is required */
