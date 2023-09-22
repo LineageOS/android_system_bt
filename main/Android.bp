@@ -239,6 +239,7 @@ cc_test {
         "shim/metrics_api.cc",
         "shim/shim.cc",
         "shim/stack.cc",
+        "shim/utils.cc",
         "test/main_shim_test.cc",
     ],
     static_libs: [

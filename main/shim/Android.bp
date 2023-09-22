@@ -29,5 +29,6 @@ filegroup {
         "metrics_api.cc",
         "shim.cc",
         "stack.cc",
+        "utils.cc",
     ]
 }

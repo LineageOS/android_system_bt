@@ -35,6 +35,7 @@ source_set("LibBluetoothShimSources") {
     "metrics_api.cc",
     "shim.cc",
     "stack.cc",
+    "utils.cc",
   ]
 
   include_dirs = [
