@@ -41,6 +41,7 @@
 #include "hcimsgs.h"
 #include "log/log.h"
 #include "l2c_int.h"
+#include "openssl/mem.h"
 #include "osi/include/log.h"
 #include "smp_api.h"
 
@@ -2280,7 +2281,7 @@ BOOLEAN BTM_BleVerifySignature (BD_ADDR bd_addr, UINT8 *p_orig, UINT16 len, UINT
 
         if (aes_cipher_msg_auth_code(p_rec->ble.keys.pcsrk, p_orig, len, BTM_CMAC_TLEN_SIZE, p_mac))
         {
-            if (memcmp(p_mac, p_comp, BTM_CMAC_TLEN_SIZE) == 0)
+            if (CRYPTO_memcmp(p_mac, p_comp, BTM_CMAC_TLEN_SIZE) == 0)
             {
                 btm_ble_increment_sign_ctr(bd_addr, FALSE);
                 verified = TRUE;
