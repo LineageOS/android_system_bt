@@ -25,6 +25,10 @@ void parse_gap_data(const std::vector<uint8_t> &raw_data,
       hci::GapData gap_data;
       uint8_t len = raw_data[offset];
 
+      if (offset + len + 1 > raw_data.size()) {
+        break;
+      }
+
       auto begin = raw_data.begin() + offset;
       auto end = begin + len + 1;  // 1 byte for len
       auto data_copy = std::make_shared<std::vector<uint8_t>>(begin, end);
