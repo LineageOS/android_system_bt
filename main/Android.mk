@@ -52,12 +52,14 @@ LOCAL_C_INCLUDES+= . \
 	$(LOCAL_PATH)/../audio_a2dp_hw \
 	$(LOCAL_PATH)/../utils/include \
 	$(bluetooth_C_INCLUDES) \
+	external/boringssl \
 	external/tinyxml2 \
     external/zlib \
     $(call include-path-for, audio-utils)
 
 LOCAL_SHARED_LIBRARIES := \
     libcutils \
+    libcrypto \
     libdl \
     liblog \
     libz \

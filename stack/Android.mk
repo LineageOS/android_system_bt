@@ -33,7 +33,8 @@ LOCAL_C_INCLUDES:= \
                    $(LOCAL_PATH)/../bta/sys \
                    $(LOCAL_PATH)/../utils/include \
                    $(LOCAL_PATH)/../ \
-                   $(bluetooth_C_INCLUDES)
+                   $(bluetooth_C_INCLUDES) \
+                   external/boringssl
 
 LOCAL_SRC_FILES:= \
     ./a2dp/a2d_api.c \
@@ -154,7 +155,7 @@ LOCAL_SRC_FILES:= \
 
 LOCAL_MODULE := libbt-stack
 LOCAL_STATIC_LIBRARIES := libbt-hci
-LOCAL_SHARED_LIBRARIES := libcutils
+LOCAL_SHARED_LIBRARIES := libcutils libcrypto
 
 
 LOCAL_CFLAGS += $(bluetooth_CFLAGS)
