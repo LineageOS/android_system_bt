@@ -29,6 +29,7 @@
 
 #include <base/bind.h>
 #include <string.h>
+#include <openssl/mem.h>
 
 #include "bt_types.h"
 #include "bt_utils.h"
@@ -2235,7 +2236,7 @@ bool BTM_BleVerifySignature(const RawAddress& bd_addr, uint8_t* p_orig,
 
     if (aes_cipher_msg_auth_code(p_rec->ble.keys.pcsrk, p_orig, len,
                                  BTM_CMAC_TLEN_SIZE, p_mac)) {
-      if (memcmp(p_mac, p_comp, BTM_CMAC_TLEN_SIZE) == 0) {
+      if (CRYPTO_memcmp(p_mac, p_comp, BTM_CMAC_TLEN_SIZE) == 0) {
         btm_ble_increment_sign_ctr(bd_addr, false);
         verified = true;
       }

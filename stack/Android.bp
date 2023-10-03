@@ -99,6 +99,7 @@ cc_library_static {
         "btm/btm_pm.cc",
         "btm/btm_sco.cc",
         "btm/btm_sec.cc",
+        "btm/mem.c",
         "btu/btu_hcif.cc",
         "btu/btu_init.cc",
         "btu/btu_task.cc",
@@ -176,6 +177,7 @@ cc_library_static {
     shared_libs: [
         "libcutils",
         "liblog",
+        "libcrypto",
     ],
     required: [
         "libldacBT_enc",
