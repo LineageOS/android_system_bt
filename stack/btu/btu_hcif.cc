@@ -1765,6 +1765,12 @@ static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
     return;
   }
 
+  // 2 bytes each for handle, tx_data_len, TxTimer, rx_data_len
+  if (evt_len < 8) {
+    LOG_ERROR("Event packet too short");
+    return;
+  }
+
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT16(tx_data_len, p);
   p += 2; /* Skip the TxTimer */
