@@ -414,6 +414,12 @@ void smp_send_ltk_reply(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  process security request.
  ******************************************************************************/
 void smp_proc_sec_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+  if (smp_command_has_invalid_length(p_cb)) {
+    uint8_t reason = SMP_INVALID_PARAMETERS;
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    return;
+  }
+
   tBTM_LE_AUTH_REQ auth_req = *(tBTM_LE_AUTH_REQ*)p_data;
   tBTM_BLE_SEC_REQ_ACT sec_req_act;
   uint8_t reason;
