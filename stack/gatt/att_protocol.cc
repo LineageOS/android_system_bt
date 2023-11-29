@@ -159,8 +159,14 @@ static BT_HDR* attp_build_read_by_type_value_cmd(
     uint16_t payload_size, tGATT_FIND_TYPE_VALUE* p_value_type) {
   uint8_t* p;
   uint16_t len = p_value_type->value_len;
-  BT_HDR* p_buf =
-      (BT_HDR*)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
+  BT_HDR* p_buf = nullptr;
+
+  if (payload_size < 5) {
+    return nullptr;
+  }
+
+  p_buf =
+  (BT_HDR*)osi_malloc(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   p_buf->offset = L2CAP_MIN_OFFSET;
