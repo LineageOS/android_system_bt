@@ -113,8 +113,8 @@ void btif_to_bta_response(tBTA_GATTS_RSP *p_dest, btgatt_response_t* p_src)
 {
     p_dest->attr_value.auth_req = p_src->attr_value.auth_req;
     p_dest->attr_value.handle   = p_src->attr_value.handle;
-    p_dest->attr_value.len      = (p_dest->attr_value.len < GATT_MAX_ATTR_LEN) ?
-                                   p_dest->attr_value.len : GATT_MAX_ATTR_LEN;
+    p_dest->attr_value.len      = (p_src->attr_value.len < GATT_MAX_ATTR_LEN) ?
+                                   p_src->attr_value.len : GATT_MAX_ATTR_LEN;
     p_dest->attr_value.offset   = p_src->attr_value.offset;
     memcpy(p_dest->attr_value.value, p_src->attr_value.value, p_dest->attr_value.len);
 }
