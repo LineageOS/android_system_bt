@@ -18,6 +18,8 @@
 
 #define LOG_TAG "bt_btif_gatt"
 
+#include <algorithm>
+
 #include "btif_gatt_util.h"
 
 #include <errno.h>
@@ -99,9 +101,9 @@ void btif_to_bta_uuid(tBT_UUID* p_dest, const bt_uuid_t* p_src) {
 void btif_to_bta_response(tBTA_GATTS_RSP* p_dest, btgatt_response_t* p_src) {
   p_dest->attr_value.auth_req = p_src->attr_value.auth_req;
   p_dest->attr_value.handle = p_src->attr_value.handle;
-  p_dest->attr_value.len = p_src->attr_value.len;
+  p_dest->attr_value.len = std::min<uint16_t>(p_src->attr_value.len, GATT_MAX_ATTR_LEN);
   p_dest->attr_value.offset = p_src->attr_value.offset;
-  memcpy(p_dest->attr_value.value, p_src->attr_value.value, GATT_MAX_ATTR_LEN);
+  memcpy(p_dest->attr_value.value, p_src->attr_value.value, p_dest->attr_value.len);
 }
 
 void btif_to_bta_uuid_mask(tBTM_BLE_PF_COND_MASK* p_mask,
