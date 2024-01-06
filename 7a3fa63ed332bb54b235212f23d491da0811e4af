@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5bb643b3_06d64eea",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2024-01-06T12:14:39Z",
+      "side": 1,
+      "message": "I\u0027m yet again failing to build. Looks like repo auto-updated into a non-working state:\n\nekkehard@ektus-mini-pc:~/nougat/lineage14$ repo sync\nwarning: repo is not tracking a remote branch, so it will not receive updates; run `repo init --repo-rev\u003dstable` to fix.\nFetching: 100% (584/584), done in 1m23.019s\ninfo: A new version of repo is available\n\nwarning: \u0027refs/heads/v2.9-7-ga99f19f\u0027 is not signed; falling back to signed release \u0027v2.9\u0027\n\ninfo: Restarting repo with latest version\nfatal: [\u0027--repo-upgraded\u0027]\nekkehard@ektus-mini-pc:~/nougat/lineage14$ . lineageos-gerrit-repopick-topic.sh\nekkehard@ektus-mini-pc:~/nougat/lineage14$ repopick_topic n-asb-2021-09\n  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n100     8  100     8    0     0     25      0 --:--:-- --:--:-- --:--:--    25\ncalling ./repopick.py\nTraceback (most recent call last):\n  File \"/home/ekkehard/nougat/lineage14/.repo/repo/main.py\", line 56, in \u003cmodule\u003e\n    from subcmds.version import Version\n  File \"/home/ekkehard/nougat/lineage14/.repo/repo/subcmds/__init__.py\", line 35, in \u003cmodule\u003e\n    mod \u003d __import__(__name__,\n  File \"/home/ekkehard/nougat/lineage14/.repo/repo/subcmds/help.py\", line 20, in \u003cmodule\u003e\n    from formatter import AbstractFormatter, DumbWriter\nModuleNotFoundError: No module named \u0027formatter\u0027\nTraceback (most recent call last):\n  File \"./repopick.py\", line 237, in \u003cmodule\u003e\n    manifest \u003d subprocess.check_output([\u0027repo\u0027, \u0027manifest\u0027])\n  File \"/usr/lib/python2.7/subprocess.py\", line 223, in check_output\n    raise CalledProcessError(retcode, cmd, output\u003doutput)\nsubprocess.CalledProcessError: Command \u0027[\u0027repo\u0027, \u0027manifest\u0027]\u0027 returned non-zero exit status 1",
+      "revId": "7a3fa63ed332bb54b235212f23d491da0811e4af",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
