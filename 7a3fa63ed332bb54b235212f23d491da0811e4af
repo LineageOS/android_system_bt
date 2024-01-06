@@ -70,6 +70,24 @@
       "parentUuid": "f1db1acc_0b3e4915",
       "revId": "7a3fa63ed332bb54b235212f23d491da0811e4af",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6997ed7b_02b9599e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2024-01-06T22:11:37Z",
+      "side": 1,
+      "message": "Okay, this did the trick. Build is comlete:\n#### make completed successfully (53:02 (mm:ss)) ####\n\nInstalled successfully on my device, too. THANK YOU!",
+      "parentUuid": "c236b566_4e6829eb",
+      "revId": "7a3fa63ed332bb54b235212f23d491da0811e4af",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
