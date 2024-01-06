@@ -34,6 +34,24 @@
       "parentUuid": "5bb643b3_06d64eea",
       "revId": "7a3fa63ed332bb54b235212f23d491da0811e4af",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1db1acc_0b3e4915",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2024-01-06T20:07:35Z",
+      "side": 1,
+      "message": "Thank you for the guide, but this didn\u0027t work:\n\nekkehard@ektus-mini-pc:~/nougat/lineage14/.repo/repo$ git checkout -b repo-v2.36.1 v2.36.1\nZu neuem Branch \u0027repo-v2.36.1\u0027 gewechselt\nekkehard@ektus-mini-pc:~/nougat/lineage14/.repo/repo$ git describe --tags --always\nv2.36.1\nekkehard@ektus-mini-pc:~/nougat/lineage14/.repo/repo$ cd ../..\nekkehard@ektus-mini-pc:~/nougat/lineage14$ repo init --repo-rev\u003dv2.36.1\nwarning: repo is not tracking a remote branch, so it will not receive updates\nrepo: reusing existing repo client checkout in /home/ekkehard/nougat/lineage14\n\nrepo has been initialized in /home/ekkehard/nougat/lineage14\nekkehard@ektus-mini-pc:~/nougat/lineage14$ cd .repo/repo\nekkehard@ektus-mini-pc:~/nougat/lineage14/.repo/repo$ git checkout default\nZu Zweig »default« gewechselt\nekkehard@ektus-mini-pc:~/nougat/lineage14/.repo/repo$ git fetch\nremote: Finding sources: 100% (38/38)\nremote: Total 38 (delta 16), reused 35 (delta 16)\nEntpacke Objekte: 100% (38/38), 118.02 KiB | 1.15 MiB/s, fertig.\nVon https://gerrit.googlesource.com/git-repo\n * tag               v2.36.1    -\u003e FETCH_HEAD\n   acb9523..208f344  main       -\u003e origin/main\n   b99272c..4c80921  stable     -\u003e origin/stable\nekkehard@ektus-mini-pc:~/nougat/lineage14/.repo/repo$ git reset --hard\nHEAD ist jetzt bei b99272c sync: PersistentTransport call parent init\nekkehard@ektus-mini-pc:~/nougat/lineage14/.repo/repo$ git describe --tags --always\nv2.39",
+      "parentUuid": "700c12b4_4a55f8d7",
+      "revId": "7a3fa63ed332bb54b235212f23d491da0811e4af",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
