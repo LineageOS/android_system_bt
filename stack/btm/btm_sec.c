@@ -245,8 +245,7 @@ static BOOLEAN access_secure_service_from_temp_bond(const tBTM_SEC_DEV_REC* p_de
                                                     uint16_t security_req)
 {
     return !locally_initiated && (security_req & BTM_SEC_IN_AUTHENTICATE) &&
-    btm_dev_authenticated(p_dev_rec) &&
-     p_dev_rec->bond_type == BOND_TYPE_TEMPORARY;
+           p_dev_rec->bond_type == BOND_TYPE_TEMPORARY;
 }
 
 /*******************************************************************************
