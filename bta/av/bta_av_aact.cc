@@ -1783,7 +1783,7 @@ void bta_av_setconfig_rej(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: sep_idx: %d", __func__, p_scb->sep_idx);
   AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, AVDT_ERR_UNSUP_CFG, 0);
 
-  reject.bd_addr = p_data->str_msg.bd_addr;
+  reject.bd_addr = p_scb->PeerAddress();
   reject.hndl = p_scb->hndl;
 
   tBTA_AV bta_av_data;
