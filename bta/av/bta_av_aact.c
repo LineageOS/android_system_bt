@@ -2134,7 +2134,7 @@ void bta_av_setconfig_rej (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
     APPL_TRACE_DEBUG("bta_av_setconfig_rej: sep_idx: %d",p_scb->sep_idx);
     AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, AVDT_ERR_UNSUP_CFG, 0);
 
-    bdcpy(reject.bd_addr, p_data->str_msg.bd_addr);
+    bdcpy(reject.bd_addr, p_scb->peer_addr);
     reject.hndl = p_scb->hndl;
     (*bta_av_cb.p_cback)(BTA_AV_REJECT_EVT, (tBTA_AV *) &reject);
 }
