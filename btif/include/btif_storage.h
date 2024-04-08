@@ -161,6 +161,29 @@ BOOLEAN btif_storage_is_device_bonded(bt_bdaddr_t *remote_bd_addr);
 bt_status_t btif_storage_load_bonded_devices(void);
 
 /*******************************************************************************
+ *
+ * Function         btif_storage_set_hid_connection_policy
+ *
+ * Description      Stores connection policy info in nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_set_hid_connection_policy(bt_bdaddr_t addr,
+                                                   BOOLEAN reconnect_allowed);
+/*******************************************************************************
+ *
+ * Function         btif_storage_get_hid_connection_policy
+ *
+ * Description      get connection policy info from nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_get_hid_connection_policy(bt_bdaddr_t addr,
+                                                   BOOLEAN* reconnect_allowed);
+
+/*******************************************************************************
 **
 ** Function         btif_storage_read_hl_apps_cb
 **
