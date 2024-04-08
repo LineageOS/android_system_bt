@@ -79,6 +79,8 @@
 #define BTIF_STORAGE_KEY_ADAPTER_SCANMODE "ScanMode"
 #define BTIF_STORAGE_KEY_ADAPTER_DISC_TIMEOUT "DiscoveryTimeout"
 
+#define BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED "HidReConnectAllowed"
+
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
 
@@ -1345,6 +1347,52 @@ bt_status_t btif_storage_get_remote_addr_type(bt_bdaddr_t *remote_bd_addr,
     return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 #endif
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_set_hid_connection_policy
+ *
+ * Description      Stores connection policy info in nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_set_hid_connection_policy(bt_bdaddr_t addr,
+                                                   BOOLEAN reconnect_allowed) {
+  bdstr_t bdstr;
+
+  if (btif_config_set_int(bdaddr_to_string(&addr, bdstr, sizeof(bdstr)),
+                          BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED,
+                          reconnect_allowed)) {
+    return BT_STATUS_SUCCESS;
+  } else {
+    return BT_STATUS_FAIL;
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_get_hid_connection_policy
+ *
+ * Description      get connection policy info from nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_get_hid_connection_policy(bt_bdaddr_t addr,
+                                                   BOOLEAN* reconnect_allowed) {
+  bdstr_t bdstr;
+
+  // For backward compatibility, assume that the reconnection is allowed in the
+  // absence of the key
+  int value = 1;
+  btif_config_get_int(bdaddr_to_string(&addr, bdstr, sizeof(bdstr)),
+                      BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED, &value);
+  *reconnect_allowed = (value != 0);
+
+  return BT_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
 **
 ** Function         btif_storage_add_hid_device_info
@@ -1447,8 +1495,12 @@ bt_status_t btif_storage_load_bonded_hid_info(void)
                     btif_config_get_bin(name, "HidDescriptor", (uint8_t *)dscp_info.descriptor.dsc_list, &len);
                 }
                 string_to_bdaddr(name, &bd_addr);
+
+                BOOLEAN reconnect_allowed = false;
+                btif_storage_get_hid_connection_policy(bd_addr, &reconnect_allowed);
+
                 // add extracted information to BTA HH
-                if (btif_hh_add_added_dev(bd_addr,attr_mask))
+                if (btif_hh_add_added_dev(bd_addr, attr_mask, reconnect_allowed ))
                 {
                     BTA_HhAddDev(bd_addr.address, attr_mask, sub_class,
                             app_id, dscp_info);
