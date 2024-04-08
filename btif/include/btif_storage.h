@@ -153,6 +153,29 @@ bt_status_t btif_storage_load_bonded_devices(void);
 
 /*******************************************************************************
  *
+ * Function         btif_storage_set_hid_connection_policy
+ *
+ * Description      Stores connection policy info in nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_set_hid_connection_policy(const RawAddress& addr,
+                                                   bool reconnect_allowed);
+/*******************************************************************************
+ *
+ * Function         btif_storage_get_hid_connection_policy
+ *
+ * Description      get connection policy info from nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_get_hid_connection_policy(const RawAddress& addr,
+                                                   bool* reconnect_allowed);
+
+/*******************************************************************************
+ *
  * Function         btif_storage_add_hid_device_info
  *
  * Description      BTIF storage API - Adds the hid information of bonded hid

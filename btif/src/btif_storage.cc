@@ -80,6 +80,8 @@
 #define BTIF_STORAGE_KEY_ADAPTER_SCANMODE "ScanMode"
 #define BTIF_STORAGE_KEY_ADAPTER_DISC_TIMEOUT "DiscoveryTimeout"
 
+#define BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED "HidReConnectAllowed"
+
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
 
@@ -1249,6 +1251,50 @@ bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
                                 addr_type);
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_set_hid_connection_policy
+ *
+ * Description      Stores connection policy info in nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_set_hid_connection_policy(const RawAddress& addr,
+                                                   bool reconnect_allowed) {
+  const char* bdstr = addr.ToString().c_str();
+
+  if (btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED,
+                          reconnect_allowed)) {
+    return BT_STATUS_SUCCESS;
+  } else {
+    return BT_STATUS_FAIL;
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_get_hid_connection_policy
+ *
+ * Description      get connection policy info from nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_get_hid_connection_policy(const RawAddress& addr,
+                                                   bool* reconnect_allowed) {
+  const char* bdstr = addr.ToString().c_str();
+
+  // For backward compatibility, assume that the reconnection is allowed in the
+  // absence of the key
+  int value = 1;
+  btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED, &value);
+  *reconnect_allowed = (value != 0);
+
+  return BT_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
  *
  * Function         btif_storage_add_hid_device_info
@@ -1347,8 +1393,12 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
                               (uint8_t*)dscp_info.descriptor.dsc_list, &len);
         }
         RawAddress::FromString(name, bd_addr);
+
+        bool reconnect_allowed = false;
+        btif_storage_get_hid_connection_policy(bd_addr, &reconnect_allowed);
+
         // add extracted information to BTA HH
-        if (btif_hh_add_added_dev(bd_addr, attr_mask)) {
+        if (btif_hh_add_added_dev(bd_addr, attr_mask, reconnect_allowed)) {
           BTA_HhAddDev(bd_addr, attr_mask, sub_class, app_id, dscp_info);
         }
       }
@@ -1388,6 +1438,7 @@ bt_status_t btif_storage_remove_hid_info(RawAddress* remote_bd_addr) {
   btif_config_remove(bdstr, "HidSSRMaxLatency");
   btif_config_remove(bdstr, "HidSSRMinTimeout");
   btif_config_remove(bdstr, "HidDescriptor");
+  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED);
   btif_config_save();
   return BT_STATUS_SUCCESS;
 }
