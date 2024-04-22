@@ -729,12 +729,19 @@ bool sdpu_compare_uuid_with_attr(tBT_UUID* p_btuuid, tSDP_DISC_ATTR* p_attr) {
   uint16_t attr_len = SDP_DISC_ATTR_LEN(p_attr->attr_len_type);
 
   /* Since both UUIDs are compressed, lengths must match  */
-  if (p_btuuid->len != attr_len) return (false);
+  if (p_btuuid->len != attr_len) {
+    SDP_TRACE_ERROR("invalid length for discovery attribute");
+    return (false);
+  }
 
   if (p_btuuid->len == 2)
     return (bool)(p_btuuid->uu.uuid16 == p_attr->attr_value.v.u16);
   else if (p_btuuid->len == 4)
     return (bool)(p_btuuid->uu.uuid32 == p_attr->attr_value.v.u32);
+  else if (attr_len != MAX_UUID_SIZE) {
+    SDP_TRACE_ERROR("invalid length for discovery attribute");
+    return (false);
+  }
   else if (!memcmp(p_btuuid->uu.uuid128, (void*)p_attr->attr_value.v.array,
                    MAX_UUID_SIZE))
     return (true);
