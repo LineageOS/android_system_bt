@@ -251,6 +251,7 @@ typedef union
 #define SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY  (1 << 6) /* used on slave to resolve race condition */
 #define SMP_PAIR_FLAG_HAVE_PEER_COMM      (1 << 7) /* used to resolve race condition */
 #define SMP_PAIR_FLAG_HAVE_LOCAL_PUBL_KEY (1 << 8) /* used on slave to resolve race condition */
+#define SMP_PAIR_FLAGS_CMD_CONFIRM_SENT   (1 << 9)
 
 /* check if authentication requirement need MITM protection */
 #define SMP_NO_MITM_REQUIRED(x)  (((x) & SMP_AUTH_YN_BIT) == 0)
