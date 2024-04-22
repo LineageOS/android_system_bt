@@ -275,6 +275,7 @@ void smp_send_pair_rsp(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 void smp_send_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
   smp_send_cmd(SMP_OPCODE_CONFIRM, p_cb);
+  p_cb->flags |= SMP_PAIR_FLAGS_CMD_CONFIRM_SENT;
 }
 
 /*******************************************************************************
@@ -608,6 +609,16 @@ void smp_proc_init(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
 
   if (smp_command_has_invalid_parameters(p_cb)) {
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+    return;
+  }
+
+  if (!((p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) &&
+    (p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT)) &&
+    !(p_cb->flags & SMP_PAIR_FLAGS_CMD_CONFIRM_SENT))
+  {
+    // in legacy pairing, the peer should send its rand after
+    // we send our confirm
     smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
     return;
   }
