@@ -81,7 +81,10 @@ using bluetooth::Uuid;
 #define BTIF_STORAGE_KEY_ADAPTER_SCANMODE "ScanMode"
 #define BTIF_STORAGE_KEY_LOCAL_IO_CAPS "LocalIOCaps"
 #define BTIF_STORAGE_KEY_LOCAL_IO_CAPS_BLE "LocalIOCapsBLE"
+#define BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE "MaxSessionKeySize"
 #define BTIF_STORAGE_KEY_ADAPTER_DISC_TIMEOUT "DiscoveryTimeout"
+#define BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED \
+  "SecureConnectionsSupported"
 
 #define BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED "HidReConnectAllowed"
 
@@ -265,7 +268,14 @@ static int prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       btif_config_set_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_SUBVER,
                           info->sub_ver);
     } break;
-
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED:
+      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED,
+                          *(uint8_t*)prop->val);
+      break;
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE:
+      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE,
+                          *(uint8_t*)prop->val);
+      break;
     default:
       BTIF_TRACE_ERROR("Unknown prop type:%d", prop->type);
       return false;
@@ -390,6 +400,25 @@ static int cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
         if (ret)
           ret = btif_config_get_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_SUBVER,
                                     &info->sub_ver);
+      }
+    } break;
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED: {
+      int val;
+
+      if (prop->len >= (int)sizeof(uint8_t)) {
+        ret = btif_config_get_int(
+            bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED, &val);
+        *(uint8_t*)prop->val = (uint8_t)val;
+      }
+    } break;
+
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE: {
+      int val;
+
+      if (prop->len >= (int)sizeof(uint8_t)) {
+        ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE,
+                                  &val);
+        *(uint8_t*)prop->val = (uint8_t)val;
       }
     } break;
 

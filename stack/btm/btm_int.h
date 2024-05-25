@@ -238,6 +238,8 @@ extern void btm_sec_abort_access_req(const RawAddress& bd_addr);
 extern void btm_sec_auth_complete(uint16_t handle, uint8_t status);
 extern void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                                    uint8_t encr_enable);
+bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle,
+                                           uint8_t key_size);
 extern void btm_sec_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t status, uint8_t enc_mode);
 extern tBTM_STATUS btm_sec_disconnect(uint16_t handle, uint8_t reason);
@@ -256,6 +258,7 @@ extern void btm_sec_link_key_notification(const RawAddress& p_bda,
 extern void btm_sec_link_key_request(const RawAddress& p_bda);
 extern void btm_sec_pin_code_request(const RawAddress& p_bda);
 extern void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset);
+void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size);
 extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                         uint8_t res, bool is_le_trasnport);
 extern void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,

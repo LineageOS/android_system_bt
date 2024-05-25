@@ -224,6 +224,109 @@ static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
 
 /*******************************************************************************
  *
+ * Function         btm_sec_is_device_sc_downgrade
+ *
+ * Description      Check for a stored device record matching the candidate
+ *                  device, and return true if the stored device has reported
+ *                  that it supports Secure Connections mode and the candidate
+ *                  device reports that it does not.  Otherwise, return false.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+static bool btm_sec_is_device_sc_downgrade(uint16_t hci_handle,
+                                           bool secure_connections_supported) {
+  if (secure_connections_supported) return false;
+
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return false;
+
+  uint8_t property_val = 0;
+  bt_property_t property = {
+      .type = BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
+      .len = sizeof(uint8_t),
+      .val = &property_val};
+
+  bt_status_t cached =
+      btif_storage_get_remote_device_property(&p_dev_rec->bd_addr, &property);
+
+  if (cached == BT_STATUS_FAIL) return false;
+
+  return (bool)property_val;
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_store_device_sc_support
+ *
+ * Description      Save Secure Connections support for this device to file
+ *
+ ******************************************************************************/
+
+static void btm_sec_store_device_sc_support(uint16_t hci_handle,
+                                            bool secure_connections_supported) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return;
+
+  uint8_t property_val = (uint8_t)secure_connections_supported;
+  bt_property_t property = {
+      .type = BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
+      .len = sizeof(uint8_t),
+      .val = &property_val};
+
+  btif_storage_set_remote_device_property(&p_dev_rec->bd_addr, &property);
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_is_session_key_size_downgrade
+ *
+ * Description      Check if there is a stored device record matching this
+ *                  handle, and return true if the stored record has a lower
+ *                  session key size than the candidate device.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle,
+                                           uint8_t key_size) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return false;
+
+  uint8_t property_val = 0;
+  bt_property_t property = {.type = BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE,
+                            .len = sizeof(uint8_t),
+                            .val = &property_val};
+
+  bt_status_t cached =
+      btif_storage_get_remote_device_property(&p_dev_rec->bd_addr, &property);
+
+  if (cached == BT_STATUS_FAIL) return false;
+
+  return property_val > key_size;
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_update_session_key_size
+ *
+ * Description      Store the max session key size to disk, if possible.
+ *
+ ******************************************************************************/
+void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return;
+
+  uint8_t property_val = key_size;
+  bt_property_t property = {.type = BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE,
+                            .len = sizeof(uint8_t),
+                            .val = &property_val};
+
+  btif_storage_set_remote_device_property(&p_dev_rec->bd_addr, &property);
+}
+
+/*******************************************************************************
+ *
  * Function         access_secure_service_from_temp_bond
  *
  * Description      a utility function to test whether an access to
