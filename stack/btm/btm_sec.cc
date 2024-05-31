@@ -4543,6 +4543,13 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
     }
   }
 
+  if (p_dev_rec->is_bond_type_persistent() &&
+      (p_dev_rec->is_device_type_br_edr() ||
+       p_dev_rec->is_device_type_dual_mode())) {
+    btm_sec_store_device_sc_support(p_dev_rec->get_br_edr_hci_handle(),
+                                    p_dev_rec->SupportsSecureConnections());
+  }
+
   /* If name is not known at this point delay calling callback until the name is
    */
   /* resolved. Unless it is a HID Device and we really need to send all link
@@ -5669,6 +5676,15 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
                                bool sc_supported) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
   if (p_dev_rec == nullptr) return;
+
+  // Drop the connection here if the remote attempts to downgrade from Secure
+  // Connections mode.
+  if (btm_sec_is_device_sc_downgrade(hci_handle, sc_supported)) {
+    btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+    btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_AUTH_FAILURE, hci_handle);
+    LOG_WARN(LOG_TAG, "Remote attempted to downgrade from Secure Connections mode");
+    return;
+  }
 
   /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
