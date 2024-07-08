@@ -146,6 +146,13 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
         /* Wait till we get all the responses */
         if (fixed_queue_length(p_cmd->multi_rsp_q) == p_cmd->multi_req.num_handles)
         {
+            // We need at least one extra byte for the opcode
+            if (mtu == 0)
+            {
+                GATT_TRACE_ERROR("Invalid MTU");
+                p_cmd->status = GATT_ILLEGAL_PARAMETER;
+                return(TRUE);
+            }
             len = sizeof(BT_HDR) + L2CAP_MIN_OFFSET + mtu;
             p_buf = (BT_HDR *)osi_calloc(len);
             p_buf->offset = L2CAP_MIN_OFFSET;
