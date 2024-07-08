@@ -143,6 +143,13 @@ static void build_read_multi_rsp(tGATT_SR_CMD* p_cmd, uint16_t mtu) {
   uint8_t* p;
   bool is_overflow = false;
 
+  // We need at least one extra byte for the opcode
+  if (mtu == 0) {
+    LOG(ERROR) << "Invalid MTU";
+    p_cmd->status = GATT_ILLEGAL_PARAMETER;
+    return;
+  }
+
   len = sizeof(BT_HDR) + L2CAP_MIN_OFFSET + mtu;
   BT_HDR* p_buf = (BT_HDR*)osi_calloc(len);
   p_buf->offset = L2CAP_MIN_OFFSET;
