@@ -193,7 +193,7 @@ static void build_read_multi_rsp(tGATT_SR_CMD* p_cmd, uint16_t mtu) {
 
       len = std::min((size_t) p_rsp->attr_value.len, mtu - total_len);
 
-      if (len == 0) {
+      if (total_len == mtu && p_rsp->attr_value.len > 0) {
         VLOG(1) << "Buffer space not enough for this data item, skipping";
         break;
       }
