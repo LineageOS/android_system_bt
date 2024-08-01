@@ -194,7 +194,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
                     len = (p_rsp->attr_value.len < mtu - total_len) ?
                            p_rsp->attr_value.len : mtu - total_len;
 
-                    if (len == 0)
+                    if (total_len == mtu && p_rsp->attr_value.len > 0)
                     {
                         GATT_TRACE_DEBUG ("Buffer space not enough for this data item, skipping");
                         break;
