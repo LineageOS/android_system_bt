@@ -1949,7 +1949,7 @@ void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced)
     UINT8       role, status, bda_type;
     UINT16      handle;
     BD_ADDR     bda;
-    UINT16      conn_interval, conn_latency, conn_timeout;
+    UINT16      conn_interval = 0, conn_latency = 0, conn_timeout = 0;
     BOOLEAN     match = FALSE;
     UNUSED(evt_len);
 
