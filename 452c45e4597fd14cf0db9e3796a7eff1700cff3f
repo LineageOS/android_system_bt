@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7addaba9_0af141aa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2024-09-02T03:53:03Z",
+      "side": 1,
+      "message": "NOTE: This is /not/ part of this ASB but some part of one of the prior ASBs requites this on many vendor HALs (Marvell, etc.)",
+      "revId": "452c45e4597fd14cf0db9e3796a7eff1700cff3f",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
