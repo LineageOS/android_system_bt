@@ -51,6 +51,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
+#include "main/shim/dumpsys.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
@@ -1227,6 +1228,16 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
 
     if (btm_cb.btm_def_link_policy)
       BTM_SetLinkPolicy(p_acl_cb->remote_addr, &btm_cb.btm_def_link_policy);
+  } else if (p_acl_cb->transport == BT_TRANSPORT_LE) {
+    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_acl_cb->remote_addr);
+    if (p_dev_rec == nullptr) {
+      LOG_WARN(LOG_TAG, "No security record for %s",
+               PRIVATE_ADDRESS(p_acl_cb->remote_addr));
+    } else if (p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) {
+      btm_ble_set_encryption(
+          p_acl_cb->remote_addr, BTM_BLE_SEC_ENCRYPT,
+          p_dev_rec->role_master ? BTM_ROLE_MASTER : BTM_ROLE_SLAVE);
+    }
   }
 #endif
   if (p_acl_cb->link_up_issued) {
