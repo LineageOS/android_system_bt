@@ -59,17 +59,18 @@ void AVCT_Register() {
   /* initialize AVCTP data structures */
   memset(&avct_cb, 0, sizeof(tAVCT_CB));
 
+  uint16_t sec = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
+
   /* register PSM with L2CAP */
   L2CA_Register2(AVCT_PSM, avct_l2c_appl, true /* enable_snoop */, nullptr,
-                 kAvrcMtu, 0, BTA_SEC_AUTHENTICATE);
+                 kAvrcMtu, 0, sec);
 
   /* Include the browsing channel which uses eFCR */
   tL2CAP_ERTM_INFO ertm_info;
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
 
   L2CA_Register2(AVCT_BR_PSM, avct_l2c_br_appl, true /*enable_snoop*/,
-                 &ertm_info, kAvrcBrMtu, AVCT_MIN_BROWSE_MTU,
-                 BTA_SEC_AUTHENTICATE);
+                 &ertm_info, kAvrcBrMtu, AVCT_MIN_BROWSE_MTU, sec);
 
 #if defined(AVCT_INITIAL_TRACE_LEVEL)
   avct_cb.trace_level = AVCT_INITIAL_TRACE_LEVEL;
