@@ -29,6 +29,7 @@
 #include "avdtc_api.h"
 #include "bt_target.h"
 #include "bt_types.h"
+#include "bta_api.h"
 #include "btm_api.h"
 #include "btu.h"
 #include "l2c_api.h"
@@ -89,14 +90,15 @@ void avdt_scb_transport_channel_timer_timeout(void* data) {
  *
  ******************************************************************************/
 void AVDT_Register(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
+  uint16_t sec = p_reg->sec_mask | BTA_SEC_ENCRYPT;
   /* register PSM with L2CAP */
   L2CA_Register(AVDT_PSM, (tL2CAP_APPL_INFO*)&avdt_l2c_appl,
                 true /* enable_snoop */);
 
   /* set security level */
-  BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVDTP, p_reg->sec_mask,
+  BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVDTP, sec,
                        AVDT_PSM, BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG);
-  BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVDTP, p_reg->sec_mask,
+  BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVDTP, sec,
                        AVDT_PSM, BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG);
 
   /* do not use security on the media channel */

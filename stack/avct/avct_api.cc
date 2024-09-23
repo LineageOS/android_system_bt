@@ -29,6 +29,7 @@
 #include "bt_target.h"
 #include "bt_types.h"
 #include "bt_utils.h"
+#include "bta_api.h"
 #include "btm_api.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
@@ -68,15 +69,17 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br,
   /* initialize AVCTP data structures */
   memset(&avct_cb, 0, sizeof(tAVCT_CB));
 
+  uint8_t sec = (uint8_t)(sec_mask | BTA_SEC_ENCRYPT);
+
   /* Include the browsing channel which uses eFCR */
   L2CA_Register(AVCT_BR_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_br_appl,
                 true /*enable_snoop*/);
 
   /* AVCTP browsing channel uses the same security service as AVCTP control
    * channel */
-  BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_BR_PSM,
+  BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVCTP, sec, AVCT_BR_PSM,
                        0, 0);
-  BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_BR_PSM,
+  BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVCTP, sec, AVCT_BR_PSM,
                        0, 0);
 
   if (mtu_br < AVCT_MIN_BROWSE_MTU) mtu_br = AVCT_MIN_BROWSE_MTU;
