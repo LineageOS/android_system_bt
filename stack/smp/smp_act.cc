@@ -677,6 +677,17 @@ void smp_proc_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
+  if (!((p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) &&
+        (p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT)) &&
+      !(p_cb->flags & SMP_PAIR_FLAGS_CMD_CONFIRM_SENT)) {
+    // in legacy pairing, the peer should send its rand after
+    // we send our confirm
+    tSMP_INT_DATA smp_int_data{};
+    smp_int_data.status = SMP_INVALID_PARAMETERS;
+    smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
+    return;
+  }
+
   /* save the SRand for comparison */
   STREAM_TO_ARRAY(p_cb->rrand.data(), p, OCTET16_LEN);
 }
