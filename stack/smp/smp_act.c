@@ -2052,6 +2052,8 @@ void smp_process_secure_connection_oob_data(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
 {
     SMP_TRACE_DEBUG("%s", __func__);
 
+    UINT8 reason;
+
     tSMP_SC_OOB_DATA *p_sc_oob_data = &p_cb->sc_oob_data;
     if (p_sc_oob_data->loc_oob_data.present)
     {
@@ -2062,6 +2064,16 @@ void smp_process_secure_connection_oob_data(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
     {
         SMP_TRACE_EVENT ("local OOB randomizer is absent");
         memset(p_cb->local_random, 0, sizeof (p_cb->local_random));
+    }
+
+    if (p_cb->peer_oob_flag == SMP_OOB_PRESENT && !p_sc_oob_data->loc_oob_data.present)
+    {
+        SMP_TRACE_WARNING(
+            "local OOB data is not present but peer claims to have received it; dropping "
+            "connection", __func__);
+        reason = SMP_OOB_FAIL;
+        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
+        return;
     }
 
     if (!p_sc_oob_data->peer_oob_data.present)
@@ -2076,7 +2088,7 @@ void smp_process_secure_connection_oob_data(tSMP_CB *p_cb, tSMP_INT_DATA *p_data
         memcpy(p_cb->remote_commitment, p_sc_oob_data->peer_oob_data.commitment,
                sizeof(p_cb->remote_commitment));
 
-        UINT8 reason = SMP_CONFIRM_VALUE_ERR;
+        reason = SMP_CONFIRM_VALUE_ERR;
         /* check commitment */
         if (!smp_check_commitment(p_cb))
         {
