@@ -237,9 +237,9 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
 
   if (p_lcb != NULL && p_acl != NULL && p_lcb->link_state != LST_CONNECTED) {
     /* update link status */
+    p_lcb->link_state = LST_CONNECTED;
     btm_establish_continue(p_acl);
     /* update l2cap link status and send callback */
-    p_lcb->link_state = LST_CONNECTED;
     l2cu_process_fixed_chnl_resp(p_lcb);
   }
 
