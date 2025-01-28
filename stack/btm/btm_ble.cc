@@ -41,6 +41,7 @@
 #include "hcimsgs.h"
 #include "log/log.h"
 #include "l2c_int.h"
+#include "main/shim/dumpsys.h"
 #include "openssl/mem.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -1464,7 +1465,7 @@ void btm_ble_link_sec_check(const RawAddress& bd_addr,
     BTM_TRACE_DEBUG("dev_rec sec_flags=0x%x", p_dev_rec->sec_flags);
 
     /* currently encrpted  */
-    if (p_dev_rec->sec_flags & BTM_SEC_LE_ENCRYPTED) {
+    if (p_dev_rec->is_le_device_encrypted()) {
       if (p_dev_rec->sec_flags & BTM_SEC_LE_AUTHENTICATED)
         cur_sec_level = BTM_LE_SEC_AUTHENTICATED;
       else
@@ -1529,6 +1530,9 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
   switch (sec_act) {
     case BTM_BLE_SEC_ENCRYPT:
       if (link_role == BTM_ROLE_MASTER) {
+        if (p_rec->is_le_device_encrypted()) {
+          return BTM_SUCCESS;
+        }
         /* start link layer encryption using the security info stored */
         cmd = btm_ble_start_encrypt(bd_addr, false, NULL);
         break;
@@ -1886,6 +1890,38 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   return;
 }
 
+static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
+                                        const tSMP_EVT_DATA* p_data) {
+  // Encryption request in peripheral role results in SMP Security request. SMP
+  // may generate a SMP_COMPLT_EVT failure event cases like below: 1) Some
+  // central devices don't handle cross-over between encryption and SMP security
+  // request 2) Link may get disconnected after the SMP security request was
+  // sent.
+  if (p_data->cmplt.reason != SMP_SUCCESS && !p_dev_rec->role_master &&
+      btm_cb.pairing_bda != p_dev_rec->bd_addr &&
+      btm_cb.pairing_bda != p_dev_rec->ble.pseudo_addr &&
+      p_dev_rec->is_le_link_key_known() &&
+      p_dev_rec->ble.key_type != BTM_LE_KEY_NONE) {
+    if (p_dev_rec->is_le_device_encrypted()) {
+      LOG(WARNING) << __func__
+                   << "Bonded device "
+                   << PRIVATE_ADDRESS(p_dev_rec->bd_addr)
+                   << " is already encrypted, ignoring SMP failure";
+      return true;
+    } else if (p_data->cmplt.reason == SMP_CONN_TOUT) {
+      LOG(WARNING) << __func__
+                   << "Bonded device "
+                   << PRIVATE_ADDRESS(p_dev_rec->bd_addr)
+                   << " disconnected while waiting for encryption, "
+                      "ignoring SMP failure";
+      l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /*****************************************************************************
  *  Function        btm_proc_smp_cback
  *
@@ -1933,6 +1969,10 @@ uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
         FALLTHROUGH_INTENDED; /* FALLTHROUGH */
 
       case SMP_COMPLT_EVT:
+        if (btm_ble_complete_evt_ignore(p_dev_rec, p_data)) {
+          return BTM_SUCCESS;
+        }
+
         if (btm_cb.api.p_le_callback) {
           /* the callback function implementation may change the IO
            * capability... */

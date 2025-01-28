@@ -519,6 +519,13 @@ typedef struct {
 #define BTM_SEC_STATE_DISCONNECTING_BLE 8  /* disconnecting BLE */
 #define BTM_SEC_STATE_DISCONNECTING_BOTH 9 /* disconnecting BR/EDR and BLE */
 
+  bool is_le_device_encrypted() const {
+    return sec_flags & BTM_SEC_LE_ENCRYPTED;
+  }
+  bool is_le_link_key_known() const {
+    return sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN;
+  }
+
   uint8_t sec_state;  /* Operating state                    */
   bool is_security_state_idle() const {
     return sec_state == BTM_SEC_STATE_IDLE;
