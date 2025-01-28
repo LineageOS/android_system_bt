@@ -1380,6 +1380,9 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr,
   switch (sec_act) {
     case BTM_BLE_SEC_ENCRYPT:
       if (link_role == HCI_ROLE_CENTRAL) {
+        if (p_rec->is_le_device_encrypted()) {
+          return BTM_SUCCESS;
+        }
         /* start link layer encryption using the security info stored */
         cmd = btm_ble_start_encrypt(bd_addr, false, NULL);
         break;
@@ -1724,6 +1727,35 @@ void btm_ble_connected_from_address_with_type(
                     address_with_type.type, addr_matched);
 }
 
+static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
+                                        const tSMP_EVT_DATA* p_data) {
+  // Encryption request in peripheral role results in SMP Security request. SMP
+  // may generate a SMP_COMPLT_EVT failure event cases like below: 1) Some
+  // central devices don't handle cross-over between encryption and SMP security
+  // request 2) Link may get disconnected after the SMP security request was
+  // sent.
+  if (p_data->cmplt.reason != SMP_SUCCESS && !p_dev_rec->role_central &&
+      btm_cb.pairing_bda != p_dev_rec->bd_addr &&
+      btm_cb.pairing_bda != p_dev_rec->ble.pseudo_addr &&
+      p_dev_rec->is_le_link_key_known() &&
+      p_dev_rec->ble.key_type != BTM_LE_KEY_NONE) {
+    if (p_dev_rec->is_le_device_encrypted()) {
+      LOG_WARN("Bonded device %s is already encrypted, ignoring SMP failure",
+               PRIVATE_ADDRESS(p_dev_rec->bd_addr));
+      return true;
+    } else if (p_data->cmplt.reason == SMP_CONN_TOUT) {
+      LOG_WARN(
+          "Bonded device %s disconnected while waiting for encryption, "
+          "ignoring SMP failure",
+          PRIVATE_ADDRESS(p_dev_rec->bd_addr));
+      l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 /*****************************************************************************
  *  Function        btm_proc_smp_cback
  *
@@ -1771,6 +1803,10 @@ tBTM_STATUS btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
         FALLTHROUGH_INTENDED; /* FALLTHROUGH */
 
       case SMP_COMPLT_EVT:
+        if (btm_ble_complete_evt_ignore(p_dev_rec, p_data)) {
+          return BTM_SUCCESS;
+        }
+
         if (btm_cb.api.p_le_callback) {
           /* the callback function implementation may change the IO
            * capability... */
