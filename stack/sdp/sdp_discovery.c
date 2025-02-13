@@ -938,6 +938,12 @@ static UINT8 *add_attr (UINT8 *p, UINT8 *p_end, tSDP_DISCOVERY_DB *p_db, tSDP_DI
 
     nest_level &= ~(SDP_ADDITIONAL_LIST_MASK);
 
+    if (p + sizeof(uint8_t) > p_end)
+    {
+        SDP_TRACE_WARNING("bad arguments to add_addr", __func__);
+        return NULL;
+    }
+
     type = *p++;
     p = sdpu_get_len_from_type(p, p_end, type, &attr_len);
     if (p == NULL || (p + attr_len) > p_end)
