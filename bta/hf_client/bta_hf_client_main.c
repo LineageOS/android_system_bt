@@ -246,6 +246,19 @@ void bta_hf_client_scb_init(void)
     alarm_free(bta_hf_client_cb.scb.collision_timer);
     alarm_free(bta_hf_client_cb.scb.at_cb.resp_timer);
     alarm_free(bta_hf_client_cb.scb.at_cb.hold_timer);
+
+    if (bta_hf_client_cb.scb.p_disc_db)
+    {
+        if (!SDP_CancelServiceSearch(bta_hf_client_cb.scb.p_disc_db))
+        {
+            APPL_TRACE_WARNING("Unable to cancel SDP service discovery peer: %02x:%02x:%02x:%02x:%02x:%02x",
+                   bta_hf_client_cb.scb.peer_addr[0], bta_hf_client_cb.scb.peer_addr[1],
+                   bta_hf_client_cb.scb.peer_addr[2], bta_hf_client_cb.scb.peer_addr[3],
+                   bta_hf_client_cb.scb.peer_addr[4], bta_hf_client_cb.scb.peer_addr[5]);
+        }
+        bta_hf_client_free_db(NULL);
+    }
+
     memset(&bta_hf_client_cb.scb, 0, sizeof(tBTA_HF_CLIENT_SCB));
     bta_hf_client_cb.scb.collision_timer =
       alarm_new("bta_hf_client.scb_collision_timer");
