@@ -1138,6 +1138,8 @@ void smp_proc_srk_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s", __func__);
     smp_update_key_mask (p_cb, SMP_SEC_KEY_TYPE_CSRK, TRUE);
 
+    smp_key_distribution_by_transport(p_cb, NULL);
+
     /* save CSRK to security record */
     le_key.pcsrk_key.sec_level = p_cb->sec_level;
     memcpy (le_key.pcsrk_key.csrk, p_data, BT_OCTET16_LEN);   /* get peer CSRK */
@@ -1145,7 +1147,6 @@ void smp_proc_srk_info(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
 
     if ((p_cb->peer_auth_req & SMP_AUTH_BOND) && (p_cb->loc_auth_req & SMP_AUTH_BOND))
         btm_sec_save_le_key(p_cb->pairing_bda, BTM_LE_KEY_PCSRK, &le_key, TRUE);
-    smp_key_distribution_by_transport(p_cb, NULL);
 }
 
 /*******************************************************************************
