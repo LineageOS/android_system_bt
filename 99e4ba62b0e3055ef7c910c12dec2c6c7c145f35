@@ -16,6 +16,23 @@
       "message": "cm14? old repo?",
       "revId": "99e4ba62b0e3055ef7c910c12dec2c6c7c145f35",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "833dafc1_065d2250",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2025-09-07T17:48:36Z",
+      "side": 1,
+      "message": "Yes, backported fixes to Nougat for older devices.\nBuilds for and runs on Moto G5 Cedric.",
+      "revId": "99e4ba62b0e3055ef7c910c12dec2c6c7c145f35",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
