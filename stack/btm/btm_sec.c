@@ -2049,6 +2049,14 @@ static BOOLEAN btm_sec_is_upgrade_possible(tBTM_SEC_DEV_REC  *p_dev_rec, BOOLEAN
              * it probably would not want to upgrade the link key based on the security level database */
             is_possible = TRUE;
         }
+
+        /*if authentication is requirement & currently on temp bonding
+         * trigger pairing */
+        if ((p_dev_rec->security_required &
+            (is_originator ? BTM_SEC_OUT_AUTHENTICATE : BTM_SEC_IN_AUTHENTICATE)) &&
+             p_dev_rec->bond_type == BOND_TYPE_TEMPORARY) {
+            is_possible = TRUE;
+        }
     }
     BTM_TRACE_DEBUG ("%s() is_possible: %d sec_flags: 0x%x", __func__, is_possible, p_dev_rec->sec_flags);
     return is_possible;
