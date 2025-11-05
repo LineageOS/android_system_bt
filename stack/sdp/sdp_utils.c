@@ -55,11 +55,10 @@ static const UINT8  sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10,
 *******************************************************************************/
 tCONN_CB *sdpu_find_ccb_by_cid (UINT16 cid)
 {
-    UINT16       xx;
-    tCONN_CB     *p_ccb;
+    tCONN_CB *p_ccb = sdp_cb.ccb;
 
     /* Look through each connection control block */
-    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
+    for (UINT16 xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
     {
         if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->connection_id == cid))
             return (p_ccb);
@@ -83,13 +82,12 @@ tCONN_CB *sdpu_find_ccb_by_cid (UINT16 cid)
 tCONN_CB *sdpu_find_ccb_by_db (tSDP_DISCOVERY_DB *p_db)
 {
 #if SDP_CLIENT_ENABLED == TRUE
-    UINT16       xx;
-    tCONN_CB     *p_ccb;
+    tCONN_CB *p_ccb = sdp_cb.ccb;
 
     if (p_db)
     {
         /* Look through each connection control block */
-        for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
+        for (UINT16 xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
         {
             if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->p_db == p_db))
                 return (p_ccb);
@@ -112,11 +110,10 @@ tCONN_CB *sdpu_find_ccb_by_db (tSDP_DISCOVERY_DB *p_db)
 *******************************************************************************/
 tCONN_CB *sdpu_allocate_ccb (void)
 {
-    UINT16       xx;
-    tCONN_CB     *p_ccb;
+    tCONN_CB *p_ccb = sdp_cb.ccb;
 
     /* Look through each connection control block for a free one */
-    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
+    for (UINT16 xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
     {
         if (p_ccb->con_state == SDP_STATE_IDLE)
         {
@@ -171,11 +168,10 @@ void sdpu_release_ccb (tCONN_CB *p_ccb)
 *******************************************************************************/
 void sdpu_update_ccb_cont_info (UINT32 handle)
 {
-    UINT16       xx;
-    tCONN_CB     *p_ccb;
+    tCONN_CB *p_ccb = sdp_cb.ccb;
 
     /* Look through each connection control block */
-    for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
+    for (UINT16 xx = 0; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++)
     {
         if ((p_ccb->con_state != SDP_STATE_IDLE) && (p_ccb->cont_info.curr_sdp_rec) && (p_ccb->cont_info.curr_sdp_rec->record_handle == handle))
         {
@@ -205,26 +201,39 @@ void sdpu_update_ccb_cont_info (UINT32 handle)
 ** Returns          Pointer to next byte in the output buffer.
 **
 *******************************************************************************/
-UINT8 *sdpu_build_attrib_seq (UINT8 *p_out, UINT16 *p_attr, UINT16 num_attrs)
+UINT8 *sdpu_build_attrib_seq (UINT8 *p_out, UINT16 *p_attr, UINT16 num_attrs, UINT16 *bytes_left)
 {
-    UINT16  xx;
+    int content_len, header_len;
+
+    /* If no attributes, assume a 4-byte wildcard */
+    if (!p_attr) {
+        content_len = 5;
+    } else {
+        content_len = num_attrs * 3;
+    }
 
     /* First thing is the data element header. See if the length fits 1 byte */
-    /* If no attributes, assume a 4-byte wildcard */
-    if (!p_attr)
-        xx = 5;
-    else
-        xx = num_attrs * 3;
+    if (content_len > 255) {
+        header_len = 3;
+    } else {
+        header_len = 2;
+    }
 
-    if (xx > 255)
+    if (*bytes_left < content_len + header_len) {
+        SDP_TRACE_ERROR("SDP: No space for attrib seq");
+        return p_out;
+    }
+    *bytes_left -= (header_len + content_len);
+
+    if (content_len > 255)
     {
         UINT8_TO_BE_STREAM  (p_out, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
-        UINT16_TO_BE_STREAM (p_out, xx);
+        UINT16_TO_BE_STREAM (p_out, content_len);
     }
     else
     {
         UINT8_TO_BE_STREAM (p_out, (DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
-        UINT8_TO_BE_STREAM (p_out, xx);
+        UINT8_TO_BE_STREAM (p_out, content_len);
     }
 
     /* If there are no attributes specified, assume caller wants wildcard */
@@ -237,7 +246,7 @@ UINT8 *sdpu_build_attrib_seq (UINT8 *p_out, UINT16 *p_attr, UINT16 num_attrs)
     else
     {
         /* Loop through and put in all the attributes(s) */
-        for (xx = 0; xx < num_attrs; xx++, p_attr++)
+        for (UINT16 xx = 0; xx < num_attrs; xx++, p_attr++)
         {
             UINT8_TO_BE_STREAM  (p_out, (UINT_DESC_TYPE << 3) | SIZE_TWO_BYTES);
             UINT16_TO_BE_STREAM (p_out, *p_attr);
@@ -706,9 +715,7 @@ UINT8 *sdpu_get_len_from_type (UINT8 *p, UINT8 *p_end, UINT8 type,
 *******************************************************************************/
 BOOLEAN sdpu_is_base_uuid (UINT8 *p_uuid)
 {
-    UINT16    xx;
-
-    for (xx = 4; xx < MAX_UUID_SIZE; xx++)
+    for (UINT16 xx = 4; xx < MAX_UUID_SIZE; xx++)
         if (p_uuid[xx] != sdp_base_uuid[xx])
             return (FALSE);
 
@@ -958,11 +965,10 @@ UINT16 sdpu_get_attrib_seq_len(tSDP_RECORD *p_rec, tSDP_ATTR_SEQ *attr_seq)
 {
     tSDP_ATTRIBUTE *p_attr;
     UINT16 len1 = 0;
-    UINT16 xx;
     BOOLEAN is_range = FALSE;
     UINT16 start_id=0, end_id=0;
 
-    for (xx = 0; xx < attr_seq->num_attr; xx++)
+    for (UINT16 xx = 0; xx < attr_seq->num_attr; xx++)
     {
         if (is_range == FALSE)
         {
