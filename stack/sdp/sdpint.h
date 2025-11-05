@@ -255,7 +255,8 @@ extern tCONN_CB* sdpu_allocate_ccb(void);
 extern void sdpu_release_ccb(tCONN_CB* p_ccb);
 
 extern uint8_t* sdpu_build_attrib_seq(uint8_t* p_out, uint16_t* p_attr,
-                                      uint16_t num_attrs);
+                                      uint16_t num_attrs, uint16_t& bytes_left);
+
 extern uint8_t* sdpu_build_attrib_entry(uint8_t* p_out, tSDP_ATTRIBUTE* p_attr);
 extern void sdpu_build_n_send_error(tCONN_CB* p_ccb, uint16_t trans_num,
                                     uint16_t error_code, char* p_error_text);
