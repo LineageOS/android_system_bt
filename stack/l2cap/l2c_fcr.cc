@@ -243,7 +243,7 @@ BT_HDR* l2c_fcr_clone_buf(BT_HDR* p_buf, uint16_t new_offset,
    * NOTE: We allocate extra L2CAP_FCS_LEN octets, in case we need to put
    * the FCS (Frame Check Sequence) at the end of the buffer.
    */
-  uint16_t buf_size = no_of_bytes + sizeof(BT_HDR) + new_offset + L2CAP_FCS_LEN;
+  uint32_t buf_size = no_of_bytes + sizeof(BT_HDR) + new_offset + L2CAP_FCS_LEN;
   BT_HDR* p_buf2 = (BT_HDR*)osi_malloc(buf_size);
 
   p_buf2->offset = new_offset;
