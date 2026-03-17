@@ -22,6 +22,7 @@
 static const char BT_UTILS_MODULE[] = "bt_utils_module";
 
 #include <stdbool.h>
+#include <stdint.h>
 /*******************************************************************************
 **  Type definitions
 ********************************************************************************/
@@ -79,4 +80,8 @@ bool remove_iot_device(const char *filename, char* header,
     unsigned char* device_details, tBLACKLIST_METHOD method_type);
 bt_soc_type get_soc_type();
 #define UNUSED(x) (void)(x)
+#ifndef ADDRESS_TO_LOGGABLE_CSTR
+const char* addr_to_string(const uint8_t addr[6]);
+#define ADDRESS_TO_LOGGABLE_CSTR(addr) addr_to_string(addr)
+#endif
 #endif /* BT_UTILS_H */
