@@ -446,16 +446,23 @@ void smp_generate_compare(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
 /** This function is called when STK is generated proceed to send the encrypt
  * the link using STK. */
 static void smp_process_stk(tSMP_CB* p_cb, Octet16* p) {
-  tSMP_KEY key;
-
-  SMP_TRACE_DEBUG("smp_process_stk ");
   smp_mask_enc_key(p_cb->loc_enc_size, p);
 
-  key.key_type = SMP_KEY_TYPE_STK;
-  key.p_data = p->data();
+    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
+       p_cb->selected_association_model == SMP_MODEL_KEY_NOTIF) {
+    p_cb->passkey_display_state.confirmed = true;
+    p_cb->tk = *p;
+    if (!p_cb->passkey_display_state.approved) {
+      SMP_TRACE_DEBUG("Waiting for user to approve pairing %s",
+                      p_cb->pairing_bda.ToString().c_str());
+      return;
+    }
+  }
 
-  tSMP_INT_DATA smp_int_data;
-  smp_int_data.key = key;
+  SMP_TRACE_EVENT("addr:%s", p_cb->pairing_bda.ToString().c_str());
+
+  tSMP_INT_DATA smp_int_data = {.key = {.key_type = SMP_KEY_TYPE_STK, .p_data = p->data()}};
+
   smp_sm_event(p_cb, SMP_KEY_READY_EVT, &smp_int_data);
 }
 

@@ -299,6 +299,11 @@ typedef struct {
   bool wait_for_authorization_complete;
   tSMP_STATUS cert_failure; /*failure case for certification */
   alarm_t* delayed_auth_timer_ent;
+
+  struct {
+    bool approved;   // User has approved the pairing
+    bool confirmed;  // Remote device has confirmed the passkey
+  } passkey_display_state;
 } tSMP_CB;
 
 /* Server Action functions are of this type */

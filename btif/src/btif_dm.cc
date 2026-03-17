@@ -2608,6 +2608,9 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   pairing_cb.is_ssp = false;
   cod = COD_UNCLASSIFIED;
 
+  pairing_cb.is_le_only = true;
+  pairing_cb.is_le_nc = false;
+
   invoke_ssp_request_cb(bd_addr, bd_name, cod,
                         BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
                         p_ssp_key_notif->passkey);
