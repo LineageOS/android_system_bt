@@ -260,7 +260,40 @@ BOOLEAN SMP_PairCancel (BD_ADDR bd_addr)
 *******************************************************************************/
 void SMP_SecurityGrant(BD_ADDR bd_addr, UINT8 res)
 {
-    SMP_TRACE_EVENT ("SMP_SecurityGrant ");
+    SMP_TRACE_EVENT("SMP_SecurityGrant: bd_addr:%s res:%d br_state:%d cb_evt:%hhu "
+                    "pairing_bda:%s assoc_model:%d", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+                 res, smp_cb.br_state, smp_cb.cb_evt,
+                 ADDRESS_TO_LOGGABLE_CSTR(smp_cb.pairing_bda),
+                 smp_cb.selected_association_model);
+
+    if (smp_cb.pairing_bda == bd_addr &&
+        (smp_cb.selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
+         smp_cb.selected_association_model == SMP_MODEL_KEY_NOTIF)) {
+      if (res == SMP_SUCCESS) {
+        // Passkey/Entry pairing approved
+        smp_cb.passkey_display_state.approved = TRUE;
+        if (smp_cb.passkey_display_state.confirmed) {
+          SMP_TRACE_EVENT("Passkey/Display pairing approved %s",
+                          ADDRESS_TO_LOGGABLE_CSTR(smp_cb.pairing_bda));
+          tSMP_KEY key;
+          tSMP_INT_DATA smp_int_data;
+          key.key_type = SMP_KEY_TYPE_TK;
+          key.p_data = smp_cb.tk;
+          smp_int_data.key = key;
+
+          memset(smp_cb.tk, 0, BT_OCTET16_LEN);
+          smp_sm_event(&smp_cb, SMP_KEY_READY_EVT, &smp_int_data);
+        } else {
+          SMP_TRACE_EVENT("Waiting for %s to enter passkey",
+                          ADDRESS_TO_LOGGABLE_CSTR(smp_cb.pairing_bda));
+        }
+      } else {
+        // Passkey/Entry pairing rejected
+        uint8_t failure = SMP_PAIR_AUTH_FAIL;
+        smp_sm_event(&smp_cb, SMP_AUTH_CMPL_EVT, &failure);
+      }
+      return;
+    }
 
     // If just showing consent dialog, send response
     if (smp_cb.cb_evt == SMP_CONSENT_REQ_EVT)
