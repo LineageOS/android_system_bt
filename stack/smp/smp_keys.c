@@ -780,18 +780,31 @@ static void smp_process_compare(tSMP_CB *p_cb, tSMP_ENC *p)
 *******************************************************************************/
 static void smp_process_stk(tSMP_CB *p_cb, tSMP_ENC *p)
 {
-    tSMP_KEY    key;
-
-    SMP_TRACE_DEBUG ("smp_process_stk ");
 #if (SMP_DEBUG == TRUE)
     SMP_TRACE_ERROR("STK Generated");
 #endif
     smp_mask_enc_key(p_cb->loc_enc_size, p->param_buf);
 
+    if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_PASSKEY_DISP ||
+       p_cb->selected_association_model == SMP_MODEL_KEY_NOTIF) {
+          p_cb->passkey_display_state.confirmed = TRUE;
+          memcpy(p_cb->tk, p->param_buf, BT_OCTET16_LEN);
+       if (!p_cb->passkey_display_state.approved) {
+           SMP_TRACE_DEBUG("Waiting for user to approve pairing %s",
+                      ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+           return;
+       }
+    }
+
+    SMP_TRACE_EVENT("addr:%s", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+
+    tSMP_KEY key;
+    tSMP_INT_DATA smp_int_data;
     key.key_type = SMP_KEY_TYPE_STK;
     key.p_data   = p->param_buf;
+    smp_int_data.key = key;
 
-    smp_sm_event(p_cb, SMP_KEY_READY_EVT, &key);
+    smp_sm_event(p_cb, SMP_KEY_READY_EVT, &smp_int_data);
 }
 
 /*******************************************************************************

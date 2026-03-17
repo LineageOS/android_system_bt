@@ -342,6 +342,11 @@ typedef struct
     BOOLEAN         wait_for_authorization_complete;
     UINT8           cert_failure; /*failure case for certification */
     alarm_t         *delayed_auth_timer_ent;
+
+    struct {
+      BOOLEAN approved;   // User has approved the pairing
+      BOOLEAN confirmed;  // Remote device has confirmed the passkey
+    } passkey_display_state;
 }tSMP_CB;
 
 /* Server Action functions are of this type */
