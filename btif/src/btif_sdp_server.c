@@ -45,13 +45,10 @@
 
 static pthread_mutex_t sdp_lock = PTHREAD_RECURSIVE_MUTEX_INITIALIZER_NP;
 
-/**
- * The need for a state variable have been reduced to two states.
- * The remaining state control is handled by program flow
- */
 typedef enum {
     SDP_RECORD_FREE = 0,
     SDP_RECORD_ALLOCED,
+    SDP_RECORD_CREATE_INITIATED,
 } sdp_state_t;
 
 typedef struct {
@@ -62,6 +59,8 @@ typedef struct {
 
 #define MAX_SDP_SLOTS 128
 static sdp_slot_t sdp_slots[MAX_SDP_SLOTS];
+static int sdp_record_creation_pending_ids[MAX_SDP_SLOTS];
+static int sdp_pending_count = 0;
 
 /*****************************************************************************
  * LOCAL Functions
@@ -248,23 +247,19 @@ static int free_sdp_slot(int id) {
  * Caller of this function should held mutex with sdp_lock
  */
 static const sdp_slot_t* start_create_sdp(int id) {
-    sdp_slot_t* sdp_slot;
     if(id >= MAX_SDP_SLOTS) {
         APPL_TRACE_ERROR("%s() failed - id %d is invalid", __func__, id);
         return NULL;
     }
-    if(sdp_slots[id].state == SDP_RECORD_ALLOCED) {
-        sdp_slot = &(sdp_slots[id]);
-    } else {
+    if (sdp_slots[id].state == SDP_RECORD_FREE) {
         /* The record have been removed before this event occurred - e.g. deinit */
-        sdp_slot = NULL;
+        APPL_TRACE_ERROR(
+                "%s() failed - state for id %d is sdp_slots[id].state = %d expected %d",
+                __func__, id, sdp_slots[id].state, SDP_RECORD_CREATE_INITIATED);
+        return NULL;
     }
-    if(sdp_slot == NULL) {
-        APPL_TRACE_ERROR("%s() failed - state for id %d is "
-                "sdp_slots[id].state = %d expected %d", __func__,
-                id, sdp_slots[id].state, SDP_RECORD_ALLOCED);
-    }
-    return sdp_slot;
+    sdp_slots[id].state = SDP_RECORD_CREATE_INITIATED;
+    return &(sdp_slots[id]);
 }
 /***
  * Caller of this function should held mutex with sdp_lock
@@ -298,6 +293,22 @@ bt_status_t remove_sdp_record(int record_id) {
         return BT_STATUS_FAIL;
     }
 
+    pthread_mutex_lock(&sdp_lock);
+    if (sdp_slots[record_id].state == SDP_RECORD_CREATE_INITIATED) {
+        if (sdp_pending_count < MAX_SDP_SLOTS) {
+            sdp_record_creation_pending_ids[sdp_pending_count++] = record_id;
+        }
+        pthread_mutex_unlock(&sdp_lock);
+        return BT_STATUS_SUCCESS;
+    }
+
+    if (sdp_slots[record_id].state == SDP_RECORD_FREE) {
+        pthread_mutex_unlock(&sdp_lock);
+        BTIF_TRACE_WARNING("Sdp Server %s attempted to remove record already removed or never created", __FUNCTION__);
+        return BT_STATUS_FAIL;
+    }
+    pthread_mutex_unlock(&sdp_lock);
+
     /* Get the Record handle, and free the slot */
     handle = free_sdp_slot(record_id);
     BTIF_TRACE_DEBUG("Sdp Server %s id=%d to handle=0x%08x",
@@ -308,9 +319,24 @@ bt_status_t remove_sdp_record(int record_id) {
         BTA_SdpRemoveRecordByUser(INT_TO_PTR(handle));
         return BT_STATUS_SUCCESS;
     }
-    BTIF_TRACE_DEBUG("Sdp Server %s - record already removed - or never created", __FUNCTION__);
     return BT_STATUS_FAIL;
 }
+
+static void sdp_check_pending_records() {
+    int pending_ids[MAX_SDP_SLOTS];
+    int count = 0;
+
+    pthread_mutex_lock(&sdp_lock);
+    count = sdp_pending_count;
+    memcpy(pending_ids, sdp_record_creation_pending_ids, sizeof(int) * count);
+    sdp_pending_count = 0;
+    pthread_mutex_unlock(&sdp_lock);
+
+    for (int i = 0; i < count; i++) {
+        remove_sdp_record(pending_ids[i]);
+    }
+}
+
 
 /******************************************************************************
  * CALLBACK FUNCTIONS
@@ -357,7 +383,15 @@ void on_create_record_event(int id) {
             set_sdp_handle(id, handle);
         }
     }
+
+    sdp_slots[id].state = SDP_RECORD_ALLOCED;
+    bool has_pending = (sdp_pending_count > 0);
+
     pthread_mutex_unlock(&sdp_lock);
+
+    if (has_pending) {
+        sdp_check_pending_records();
+    }
 }
 
 void on_remove_record_event(int handle) {
