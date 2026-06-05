@@ -16,6 +16,23 @@
       "message": "I have made one last change, this is ready now.  Please get this topic over again.",
       "revId": "7ed6ced8d827ea2367e0d3278847096353b00959",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3741973d_72139f3d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2026-06-05T16:43:22Z",
+      "side": 1,
+      "message": "Okay, repopick went through this time. Building now.",
+      "revId": "7ed6ced8d827ea2367e0d3278847096353b00959",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
