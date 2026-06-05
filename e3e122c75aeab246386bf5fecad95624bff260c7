@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1a8b6e35_ed4b605b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2026-06-05T07:14:45Z",
+      "side": 1,
+      "message": "repopick_topic n-asb-2026-06 fails for me:\n\n~/nougat/lineage14$ repopick_topic n-asb-2026-06\n  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n                                 Dload  Upload   Total   Spent    Left  Speed\n100     8  100     8    0     0     46      0 --:--:-- --:--:-- --:--:--    47\ncalling ./repopick.py\nApplying change number 358736...\n--\u003e Subject:       \"Revert \"Revert \"[RESTRICT AUTOMERGE] Validate buffer length in sdpu_build_uuid_seq\"\"\"\n--\u003e Project path:  system/bt\n--\u003e Change number: 358736 (Patch Set 2)\n[\u0027git fetch github\u0027, u\u0027refs/changes/36/358736/2\u0027]\nVon https://github.com/LineageOS/android_system_bt\n * branch              refs/changes/36/358736/2 -\u003e FETCH_HEAD\nautomatischer Merge von stack/sdp/sdp_discovery.c\nHEAD losgelöst von 48d8da8b\nSie führen gerade \"cherry-pick\" von Commit 6b7cc8f6 aus.\n  (alle Konflikte behoben: führen Sie \"git cherry-pick --continue\" aus)\n  (benutzen Sie \"git cherry-pick --skip\", um diesen Patch auszulassen)\n  (benutzen Sie \"git cherry-pick --abort\", um die Cherry-Pick-Operation abzubrechen)\n\nnichts zu committen, Arbeitsverzeichnis unverändert\nDer letzte \"cherry-pick\" ist jetzt leer, möglicherweise durch eine Konfliktauflösung.\nWenn Sie dies trotzdem committen wollen, benutzen Sie:\n\n    git commit --allow-empty\n\nAndernfalls benutzen Sie bitte \u0027git cherry-pick --skip\u0027\nERROR: git command failed",
+      "revId": "e3e122c75aeab246386bf5fecad95624bff260c7",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
