@@ -33,6 +33,23 @@
       "message": "Okay, repopick went through this time. Building now.",
       "revId": "7ed6ced8d827ea2367e0d3278847096353b00959",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc77a810_ec55ea0d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2026-06-05T20:46:49Z",
+      "side": 1,
+      "message": "New build is running on my Moto G5 Cedric. THANK YOU!",
+      "revId": "7ed6ced8d827ea2367e0d3278847096353b00959",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
