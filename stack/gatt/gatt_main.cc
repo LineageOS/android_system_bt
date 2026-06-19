@@ -165,6 +165,7 @@ void gatt_free(void) {
 
     fixed_queue_free(gatt_cb.tcb[i].pending_ind_q, NULL);
     gatt_cb.tcb[i].pending_ind_q = NULL;
+    gatt_cb.tcb[i].pending_notif_q.clear();
 
     alarm_free(gatt_cb.tcb[i].conf_timer);
     gatt_cb.tcb[i].conf_timer = NULL;

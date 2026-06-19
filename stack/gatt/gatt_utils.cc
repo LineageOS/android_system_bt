@@ -91,6 +91,8 @@ const char* const op_code_name[] = {"UNKNOWN",
 void gatt_free_pending_ind(tGATT_TCB* p_tcb) {
   VLOG(1) << __func__;
 
+  p_tcb->pending_notif_q.clear();
+
   if (p_tcb->pending_ind_q == NULL) return;
 
   /* release all queued indications */
@@ -164,6 +166,11 @@ void gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind) {
   tGATT_VALUE* p_buf = (tGATT_VALUE*)osi_malloc(sizeof(tGATT_VALUE));
   memcpy(p_buf, p_ind, sizeof(tGATT_VALUE));
   fixed_queue_enqueue(p_tcb->pending_ind_q, p_buf);
+}
+
+void gatt_add_pending_notif(tGATT_TCB* p_tcb, tGATT_VALUE* p_notif) {
+  VLOG(1) << "enqueue a pending notification";
+  p_tcb->pending_notif_q.push_back(*p_notif);
 }
 
 /*******************************************************************************

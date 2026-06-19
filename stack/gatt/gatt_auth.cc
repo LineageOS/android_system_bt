@@ -162,6 +162,30 @@ void gatt_enc_cmpl_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
 
   if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENC_PENDING) return;
 
+  if (result == BTM_SUCCESS) {
+    gatts_chk_pending_ind(*p_tcb);
+    gatts_chk_pending_notif(*p_tcb);
+  } else {
+    while (p_tcb->pending_ind_q != NULL &&
+           !fixed_queue_is_empty(p_tcb->pending_ind_q)) {
+      tGATT_VALUE* p_buf =
+          (tGATT_VALUE*)fixed_queue_try_dequeue(p_tcb->pending_ind_q);
+      tGATTS_DATA gatts_data;
+      gatts_data.handle = p_buf->handle;
+      gatt_sr_send_req_callback(p_buf->conn_id, GATT_INSUF_ENCRYPTION,
+                                GATTS_REQ_TYPE_CONF, &gatts_data);
+      osi_free(p_buf);
+    }
+    while (!p_tcb->pending_notif_q.empty()) {
+      tGATT_VALUE notif = p_tcb->pending_notif_q.front();
+      p_tcb->pending_notif_q.pop_front();
+      tGATTS_DATA gatts_data;
+      gatts_data.handle = notif.handle;
+      gatt_sr_send_req_callback(notif.conn_id, GATT_INSUF_ENCRYPTION,
+                                GATTS_REQ_TYPE_CONF, &gatts_data);
+    }
+  }
+
   if (p_tcb->pending_enc_clcb.empty()) {
     LOG(ERROR) << StringPrintf("%s: no operation waiting for encrypting",
                                __func__);
@@ -233,6 +257,9 @@ void gatt_notify_enc_cmpl(const RawAddress& bd_addr) {
     }
     p_tcb->pending_enc_clcb = new_pending_clcbs;
   }
+
+  gatts_chk_pending_ind(*p_tcb);
+  gatts_chk_pending_notif(*p_tcb);
 }
 /*******************************************************************************
  *

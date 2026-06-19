@@ -142,6 +142,47 @@ static tGATT_STATUS gatts_check_attr_readability(const tGATT_ATTR& attr,
   return GATT_SUCCESS;
 }
 
+/** Check attribute notifiability. Returns status of operation. */
+static tGATT_STATUS gatts_check_attr_notifiability(const tGATT_ATTR& attr,
+                                                   UNUSED_ATTR uint16_t offset,
+                                                   tGATT_SEC_FLAG sec_flag,
+                                                   uint8_t key_size) {
+  uint16_t min_key_size;
+  tGATT_PERM perm = attr.permission;
+
+  min_key_size = ((perm & GATT_ENCRYPT_KEY_SIZE_MASK) >> 12);
+  if (min_key_size != 0) {
+    min_key_size += 6;
+  }
+
+  if ((perm & GATT_READ_AUTH_REQUIRED) &&
+      !(sec_flag & GATT_SEC_FLAG_LKEY_UNAUTHED) &&
+      !(sec_flag & BTM_SEC_FLAG_ENCRYPTED)) {
+    LOG(ERROR) << "GATT_INSUF_AUTHENTICATION";
+    return GATT_INSUF_AUTHENTICATION;
+  }
+
+  if ((perm & GATT_READ_MITM_REQUIRED) &&
+      !(sec_flag & GATT_SEC_FLAG_LKEY_AUTHED)) {
+    LOG(ERROR) << "GATT_INSUF_AUTHENTICATION: MITM Required";
+    return GATT_INSUF_AUTHENTICATION;
+  }
+
+  if ((perm & GATT_READ_ENCRYPTED_REQUIRED) &&
+      !(sec_flag & GATT_SEC_FLAG_ENCRYPTED)) {
+    LOG(ERROR) << "GATT_INSUF_ENCRYPTION";
+    return GATT_INSUF_ENCRYPTION;
+  }
+
+  if ((perm & GATT_READ_ENCRYPTED_REQUIRED) &&
+      (sec_flag & GATT_SEC_FLAG_ENCRYPTED) && (key_size < min_key_size)) {
+    LOG(ERROR) << "GATT_INSUF_KEY_SIZE";
+    return GATT_INSUF_KEY_SIZE;
+  }
+
+  return GATT_SUCCESS;
+}
+
 /*******************************************************************************
  *
  * Function         read_attr_value
@@ -485,6 +526,18 @@ tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB* p_db, bool is_long,
   if (!p_attr) return GATT_NOT_FOUND;
 
   return gatts_check_attr_readability(*p_attr, 0, is_long, sec_flag, key_size);
+}
+
+/* check if attribute can be notified. All parameters as in gatts_read_attr_perm_check */
+tGATT_STATUS gatts_notify_attr_perm_check(tGATT_SVC_DB* p_db, uint16_t handle,
+                                          tGATT_SEC_FLAG sec_flag,
+                                          uint8_t key_size) {
+  tGATT_ATTR* p_attr = find_attr_by_handle(p_db, handle);
+  if (!p_attr) {
+    return GATT_NOT_FOUND;
+  }
+
+  return gatts_check_attr_notifiability(*p_attr, 0, sec_flag, key_size);
 }
 
 /*******************************************************************************

@@ -283,6 +283,7 @@ typedef struct {
   tGATT_SR_CMD sr_cmd;
   uint16_t indicate_handle;
   fixed_queue_t* pending_ind_q;
+  std::list<tGATT_VALUE> pending_notif_q;
 
   alarm_t* conf_timer; /* peer confirm to indication timer */
 
@@ -458,6 +459,7 @@ extern bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
 extern void gatt_set_srv_chg(void);
 extern void gatt_delete_dev_from_srv_chg_clt_list(const RawAddress& bd_addr);
 extern void gatt_add_pending_ind(tGATT_TCB* p_tcb, tGATT_VALUE* p_ind);
+extern void gatt_add_pending_notif(tGATT_TCB* p_tcb, tGATT_VALUE* p_notif);
 extern void gatt_free_srvc_db_buffer_app_id(const bluetooth::Uuid& app_id);
 extern bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb);
 
@@ -568,6 +570,12 @@ extern tGATT_STATUS gatts_read_attr_value_by_handle(
 extern tGATT_STATUS gatts_write_attr_perm_check(
     tGATT_SVC_DB* p_db, uint8_t op_code, uint16_t handle, uint16_t offset,
     uint8_t* p_data, uint16_t len, tGATT_SEC_FLAG sec_flag, uint8_t key_size);
+extern tGATT_STATUS gatts_notify_attr_perm_check(tGATT_SVC_DB* p_db,
+                                                 uint16_t handle,
+                                                 tGATT_SEC_FLAG sec_flag,
+                                                 uint8_t key_size);
+extern void gatts_chk_pending_ind(tGATT_TCB& tcb);
+extern void gatts_chk_pending_notif(tGATT_TCB& tcb);
 extern tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB* p_db, bool is_long,
                                                uint16_t handle,
                                                tGATT_SEC_FLAG sec_flag,

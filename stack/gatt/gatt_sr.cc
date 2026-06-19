@@ -1145,7 +1145,7 @@ void gatts_proc_srv_chg_ind_ack(tGATT_TCB tcb) {
  * Returns          void
  *
  ******************************************************************************/
-static void gatts_chk_pending_ind(tGATT_TCB& tcb) {
+void gatts_chk_pending_ind(tGATT_TCB& tcb) {
   VLOG(1) << __func__;
 
   tGATT_VALUE* p_buf =
@@ -1154,6 +1154,30 @@ static void gatts_chk_pending_ind(tGATT_TCB& tcb) {
     GATTS_HandleValueIndication(p_buf->conn_id, p_buf->handle, p_buf->len,
                                 p_buf->value);
     osi_free(fixed_queue_try_remove_from_queue(tcb.pending_ind_q, p_buf));
+  }
+}
+
+void gatts_chk_pending_notif(tGATT_TCB& tcb) {
+  VLOG(1) << __func__;
+
+  size_t count = tcb.pending_notif_q.size();
+  while (count > 0) {
+    count--;
+    tGATT_VALUE notif = tcb.pending_notif_q.front();
+    tcb.pending_notif_q.pop_front();
+
+    tGATT_STATUS status = GATTS_HandleValueNotification(
+        notif.conn_id, notif.handle, notif.len, notif.value);
+    if (status != GATT_SUCCESS && status != GATT_PENDING) {
+      LOG(WARNING) << "Unable to send GATT server handle value conn_id:"
+                   << notif.conn_id << " status: " << static_cast<int>(status);
+    }
+    if (status != GATT_PENDING) {
+      tGATTS_DATA gatts_data;
+      gatts_data.handle = notif.handle;
+      gatt_sr_send_req_callback(notif.conn_id, status, GATTS_REQ_TYPE_CONF,
+                                &gatts_data);
+    }
   }
 }
 
