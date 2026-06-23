@@ -1162,15 +1162,33 @@ uint16_t sdpu_get_attrib_entry_len(tSDP_ATTRIBUTE* p_attr) {
  ******************************************************************************/
 uint8_t* sdpu_build_partial_attrib_entry(uint8_t* p_out, tSDP_ATTRIBUTE* p_attr,
                                          uint16_t len, uint16_t* offset) {
-  uint8_t* p_attr_buff =
-      (uint8_t*)osi_malloc(sizeof(uint8_t) * SDP_MAX_ATTR_LEN);
-  sdpu_build_attrib_entry(p_attr_buff, p_attr);
-
   uint16_t attr_len = sdpu_get_attrib_entry_len(p_attr);
+
+  if (p_attr->len > SDP_MAX_ATTR_LEN) {
+    SDP_TRACE_ERROR("%s attr payload len %d exceeds SDP_MAX_ATTR_LEN", __func__,
+                    p_attr->len);
+    return p_out;
+  }
+
+  uint8_t* p_attr_buff = (uint8_t*)osi_malloc(attr_len);
+  if (p_attr_buff == nullptr) {
+    SDP_TRACE_ERROR("%s Failed to allocate buffer for attribute entry",
+                    __func__);
+    return p_out;
+  }
+
+  sdpu_build_attrib_entry(p_attr_buff, p_attr);
 
   if (len > SDP_MAX_ATTR_LEN) {
     SDP_TRACE_ERROR("%s len %d exceeds SDP_MAX_ATTR_LEN", __func__, len);
     len = SDP_MAX_ATTR_LEN;
+  }
+
+  if (*offset >= attr_len) {
+    SDP_TRACE_ERROR("%s invalid offset %d for attr_len %d", __func__, *offset,
+                    attr_len);
+    osi_free(p_attr_buff);
+    return p_out;
   }
 
   size_t len_to_copy =
