@@ -477,16 +477,20 @@ BOOLEAN SDP_AddAttribute (UINT32 handle, UINT16 attr_id, UINT8 attr_type,
             p_attr->type = attr_type;
             p_attr->len  = attr_len;
 
-            if (p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN)
+            if (attr_len > SDP_MAX_ATTR_LEN ||
+	        p_rec->free_pad_ptr + attr_len >= SDP_MAX_PAD_LEN)
             {
                 /* do truncate only for text string type descriptor */
                 if (attr_type == TEXT_STR_DESC_TYPE)
                 {
+                    UINT32 max_allowed_len =
+                        (SDP_MAX_ATTR_LEN < (SDP_MAX_PAD_LEN - p_rec->free_pad_ptr))
+                        ? SDP_MAX_ATTR_LEN : (SDP_MAX_PAD_LEN - p_rec->free_pad_ptr);
                     SDP_TRACE_WARNING("SDP_AddAttribute: attr_len:%d too long. truncate to (%d)",
-                        attr_len, SDP_MAX_PAD_LEN - p_rec->free_pad_ptr );
+                        attr_len, max_allowed_len);
 
-                    attr_len = SDP_MAX_PAD_LEN - p_rec->free_pad_ptr;
-                    p_val[SDP_MAX_PAD_LEN - p_rec->free_pad_ptr - 1] = '\0';
+                    attr_len = max_allowed_len;
+                    p_val[attr_len - 1] = '\0';
                 }
                 else
                     attr_len = 0;
