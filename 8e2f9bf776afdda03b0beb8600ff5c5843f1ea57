@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99fb8fcd_fdb02533",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 25691
+      },
+      "writtenOn": "2026-09-21T07:08:51Z",
+      "side": 1,
+      "message": "I\u0027ve done a repo-sync and am trying to apply the unmerged topics in order to build with the September patches. Sync fails with this error message:\n...\nApplying change number 488969...\n--\u003e Subject:       \"sdp: Validate buffer length in sdpu_build_attrib_seq\"\n--\u003e Project path:  system/bt\n--\u003e Change number: 488969 (Patch Set 1)\n[\u0027git fetch github\u0027, u\u0027refs/changes/69/488969/1\u0027]\nVon https://github.com/LineageOS/android_system_bt\n * branch              refs/changes/69/488969/1 -\u003e FETCH_HEAD\nautomatischer Merge von stack/sdp/sdp_discovery.c\nKONFLIKT (Inhalt): Merge-Konflikt in stack/sdp/sdp_discovery.c\nautomatischer Merge von stack/sdp/sdp_utils.c\nerror: Konnte 8e2f9bf7... (sdp: Validate buffer length in sdpu_build_attrib_seq) nicht anwenden\nHinweis: Lösen Sie alle Konflikte manuell auf, markieren Sie diese mit\nHinweis: \"git add/rm \u003cPfadspezifikation\u003e\" und führen Sie dann\nHinweis: \"git cherry-pick --continue\" aus.\nHinweis: Sie können stattdessen auch diesen Commit auslassen, indem\nHinweis: Sie \"git cherry-pick --skip\" ausführen.\nHinweis: Um abzubrechen und zurück zum Zustand vor \"git cherry-pick\" zu\nHinweis: gelangen, führen Sie \"git cherry-pick --abort\" aus.\nPreimage für \u0027stack/sdp/sdp_discovery.c\u0027 aufgezeichnet.\nERROR: git command failed\n...",
+      "revId": "8e2f9bf776afdda03b0beb8600ff5c5843f1ea57",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ]
+}
